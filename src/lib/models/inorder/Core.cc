@@ -12,30 +12,32 @@ namespace inorder {
 Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
-           arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
+           arch::sendSyscallToHandler handleSyscall, ryml::Tree config)
     : mmu_(mmu),
       isa_(isa),
       registerFileSet_(SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToIssueBuffer_(1, nullptr),
-      issuePorts_(config["Execution-Units"].size(), {1, nullptr}),
-      completionSlots_(
-          config["Execution-Units"].size() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>(),
-          {1, nullptr}),
+      issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
+      completionSlots_(config["Execution-Units"].num_children() +
+                           SimInfo::getValue<int>(
+                               config["Pipeline-Widths"]["LSQ-Completion"]),
+                       {1, nullptr}),
       loadStoreQueue_(
-          config["Queue-Sizes"]["Load"].as<unsigned int>(),
-          config["Queue-Sizes"]["Store"].as<unsigned int>(), mmu_,
-          {completionSlots_.data() + config["Execution-Units"].size(),
-           config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
+          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
+          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]), mmu_,
+          {completionSlots_.data() + config["Execution-Units"].num_children(),
+           SimInfo::getValue<size_t>(
+               config["Pipeline-Widths"]["LSQ-Completion"])},
           [this](auto regs, auto values) {
             issueUnit_.forwardOperands(regs, values);
           },
           simeng::pipeline::CompletionOrder::INORDER),
-      fetchUnit_(fetchToDecodeBuffer_, mmu_,
-                 config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
-                 branchPredictor),
+      fetchUnit_(
+          fetchToDecodeBuffer_, mmu_,
+          SimInfo::getValue<uint16_t>(config["Fetch"]["Fetch-Block-Size"]), isa,
+          branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToIssueBuffer_, branchPredictor),
       staging_(),
       issueUnit_(
@@ -50,13 +52,12 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto insn) { retireInstruction(insn); }),
       portAllocator_(portAllocator),
       handleSyscall_(handleSyscall) {
-  for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
+  for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
-    if (config["Execution-Units"][i]["Blocking-Groups"].IsDefined()) {
-      for (YAML::Node gp : config["Execution-Units"][i]["Blocking-Groups"]) {
-        blockingGroups.push_back(gp.as<uint16_t>());
-      }
+    for (ryml::NodeRef grp :
+         config["Execution-Units"][i]["Blocking-Group-Nums"]) {
+      blockingGroups.push_back(SimInfo::getValue<uint16_t>(grp));
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -66,11 +67,11 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         [this](auto insn) { loadStoreQueue_.startLoad(insn); },
         [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },
         [this](auto insn) { raiseException(insn); }, branchPredictor,
-        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups,
-        false);
+        SimInfo::getValue<bool>(config["Execution-Units"][i]["Pipelined"]),
+        blockingGroups, false);
   }
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+  exceptionHandlerFactory(SimInfo::getISA());
 }
 
 void Core::tick() {

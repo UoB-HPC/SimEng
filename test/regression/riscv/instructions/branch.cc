@@ -216,8 +216,7 @@ TEST_P(InstBranch, BGEU) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstBranch,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

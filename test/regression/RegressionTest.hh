@@ -51,14 +51,14 @@ enum CoreType { EMULATION, INORDER, OUTOFORDER };
  * execution has completed.
  */
 class RegressionTest
-    : public ::testing::TestWithParam<std::tuple<CoreType, YAML::Node>> {
+    : public ::testing::TestWithParam<std::tuple<CoreType, std::string>> {
  protected:
   virtual ~RegressionTest();
 
   virtual void TearDown() override;
 
   /** Generate a default YAML-formatted configuration. */
-  virtual YAML::Node generateConfig() const = 0;
+  virtual void generateConfig() const = 0;
 
   /** Run the assembly in `source`, building it for the target `triple` and ISA
    * extensions. */

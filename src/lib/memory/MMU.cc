@@ -8,28 +8,26 @@ namespace simeng {
 namespace memory {
 
 MMU::MMU(VAddrTranslator fn)
-    : cacheLineWidth_(
-          Config::get()["Memory-Hierarchy"]["Cache-Line-Width"].as<uint64_t>()),
+    : cacheLineWidth_(SimInfo::getValue<uint64_t>(
+          SimInfo::getConfig()["Memory-Hierarchy"]["Cache-Line-Width"])),
       translate_(fn) {
   // Initialise Memory bandwidth and request limits
   // TODO: replace with cleaner solution in the ModelConfig itself
-  if (Config::get()["Core"]["Simulation-Mode"].as<std::string>() !=
+  ryml::Tree config = SimInfo::getConfig();
+  if (SimInfo::getValue<std::string>(config["Core"]["Simulation-Mode"]) !=
       "emulation") {
-    loadBandwidth_ =
-        Config::get()["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint64_t>();
-    storeBandwidth_ =
-        Config::get()["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint64_t>();
-    requestLimit_ =
-        Config::get()["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
-            .as<uint64_t>();
-    loadRequestLimit_ =
-        Config::get()["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
-            .as<uint64_t>();
-    storeRequestLimit_ =
-        Config::get()["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
-            .as<uint64_t>();
+    loadBandwidth_ = SimInfo::getValue<uint64_t>(
+        config["LSQ-Memory-Interface"]["Load-Bandwidth"]);
+    storeBandwidth_ = SimInfo::getValue<uint64_t>(
+        config["LSQ-Memory-Interface"]["Store-Bandwidth"]);
+    requestLimit_ = SimInfo::getValue<uint64_t>(
+        config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]);
+    loadRequestLimit_ = SimInfo::getValue<uint64_t>(
+        config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]);
+    storeRequestLimit_ = SimInfo::getValue<uint64_t>(
+        config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]);
     exclusiveRequests_ =
-        Config::get()["LSQ-Memory-Interface"]["Exclusive"].as<bool>();
+        SimInfo::getValue<bool>(config["LSQ-Memory-Interface"]["Exclusive"]);
   } else {
     // If core model is emulation, remove all bandwidth and request limits. This
     // ensures single cycle processing of each instruction.

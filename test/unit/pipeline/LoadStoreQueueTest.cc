@@ -42,7 +42,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         storeUopPtr2(storeUop2),
         memory(std::make_shared<memory::FixedLatencyMemory>(1024, latency)),
         connection() {
-    Config::set(DEFAULT_CONFIG);
     // Set up MMU->Memory connection
     mmu = std::make_shared<memory::MMU>(fn);
     port1 = mmu->initPort();

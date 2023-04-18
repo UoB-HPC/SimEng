@@ -4,8 +4,7 @@ namespace simeng {
 
 CoreInstance::CoreInstance(std::shared_ptr<memory::MMU> mmu,
                            arch::sendSyscallToHandler handleSyscall)
-    : config_(Config::get()), mmu_(mmu), handleSyscall_(handleSyscall) {
-  setSimulationMode();
+    : config_(SimInfo::getConfig()), mmu_(mmu), handleSyscall_(handleSyscall) {
   createCore();
 }
 
@@ -20,14 +19,16 @@ void CoreInstance::createCore() {
   // Construct branch predictor object
   predictor_ = std::make_unique<simeng::GenericPredictor>();
 
-  // Extract port arrangement from config file
+  // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
-  std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
-  for (size_t i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Group-Support"];
+  std::vector<std::vector<uint16_t>> portArrangement(
+      config_ports.num_children());
+  for (size_t i = 0; i < config_ports.num_children(); i++) {
+    auto config_groups = config_ports[i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
-    for (size_t j = 0; j < config_groups.size(); j++) {
-      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
+    for (size_t j = 0; j < config_groups.num_children(); j++) {
+      portArrangement[i].push_back(
+          SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
   portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
@@ -59,5 +60,4 @@ std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
   }
   return core_;
 }
-
 }  // namespace simeng

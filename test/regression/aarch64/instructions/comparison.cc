@@ -412,8 +412,7 @@ TEST_P(InstComparison, tstx) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstComparison,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

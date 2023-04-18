@@ -71,7 +71,7 @@ class MMUTest : public testing::Test {
         ", Load-Bandwidth: 24, Store-Bandwidth: 24, "
         "Permitted-Requests-Per-Cycle: 5, Permitted-Loads-Per-Cycle: 5, "
         "Permitted-Stores-Per-Cycle: 5}}";
-    Config::set(configStr.c_str());
+    SimInfo::addToConfig(configStr);
 
     mmu = std::make_shared<memory::MMU>(fn);
 

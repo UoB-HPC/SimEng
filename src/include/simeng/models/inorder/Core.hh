@@ -26,7 +26,7 @@ class Core : public simeng::Core {
   Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
-       YAML::Node& config = Config::get());
+       ryml::Tree config = SimInfo::getConfig());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -103,11 +103,11 @@ class Core : public simeng::Core {
 
   /** Create an instance of the exception handler based on the chosen
    * architecture. */
-  void exceptionHandlerFactory(std::string isa) {
-    if (isa == "AArch64")
+  void exceptionHandlerFactory(ISA isa) {
+    if (isa == ISA::AArch64)
       exceptionHandler_ =
           std::make_unique<simeng::arch::aarch64::ExceptionHandler>(*this);
-    else if (isa == "rv64")
+    else if (isa == ISA::RV64)
       exceptionHandler_ =
           std::make_unique<simeng::arch::riscv::ExceptionHandler>(*this);
   }

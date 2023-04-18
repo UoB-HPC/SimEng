@@ -937,11 +937,10 @@ TEST_P(Syscall, futex_wake) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AArch64, Syscall,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}")),
-                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
+                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                                           std::make_tuple(INORDER, "{}"),
+                                           std::make_tuple(OUTOFORDER, "{}")),
+                         paramToString);
 
 }  // namespace

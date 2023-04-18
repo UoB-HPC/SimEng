@@ -32,13 +32,16 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       OS_(OS),
       sendToMem_(sendToMem) {
   // Parse ELF file
-  YAML::Node& config = Config::get();
+  ryml::Tree config = SimInfo::getConfig();
   uint64_t heapSize =
-      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
-  uint64_t stackSize =
-      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
+      upAlign(SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
+              PAGE_SIZE);
+  uint64_t stackSize = upAlign(
+      SimInfo::getValue<uint64_t>(config["Process-Image"]["Stack-Size"]),
+      PAGE_SIZE);
   uint64_t mmapSize =
-      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
+      upAlign(SimInfo::getValue<uint64_t>(config["Process-Image"]["Mmap-Size"]),
+              PAGE_SIZE);
 
   pageTable_ = std::make_shared<PageTable>();
 
@@ -178,13 +181,16 @@ Process::Process(span<char> instructions, SimOS* OS, uint64_t TGID,
 
   pageTable_ = std::make_shared<PageTable>();
 
-  YAML::Node& config = Config::get();
+  ryml::Tree config = SimInfo::getConfig();
   uint64_t heapSize =
-      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
-  uint64_t stackSize =
-      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
+      upAlign(SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
+              PAGE_SIZE);
+  uint64_t stackSize = upAlign(
+      SimInfo::getValue<uint64_t>(config["Process-Image"]["Stack-Size"]),
+      PAGE_SIZE);
   uint64_t mmapSize =
-      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
+      upAlign(SimInfo::getValue<uint64_t>(config["Process-Image"]["Mmap-Size"]),
+              PAGE_SIZE);
 
   uint64_t instrSize = upAlign(instructions.size(), PAGE_SIZE);
   uint64_t instrEnd = instrSize;
@@ -298,9 +304,10 @@ uint64_t Process::createStack(uint64_t stackStart) {
     stringBytes.push_back(0);
   }
   // Environment strings
-  for (size_t i = 0; i < Config::get()["Environment-Variables"].size(); i++) {
+  ryml::Tree config = SimInfo::getConfig();
+  for (size_t i = 0; i < config["Environment-Variables"].num_children(); i++) {
     std::string envVar =
-        Config::get()["Environment-Variables"][i].as<std::string>();
+        SimInfo::getValue<std::string>(config["Environment-Variables"][i]);
     for (int i = 0; i < envVar.size(); i++) {
       stringBytes.push_back(envVar.c_str()[i]);
     }

@@ -7,8 +7,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "simeng/Config.hh"
 #include "simeng/Instruction.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/pipeline/InOrderStager.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"

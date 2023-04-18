@@ -1556,8 +1556,7 @@ TEST_P(InstAtomic, amomaxu_d) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstAtomic,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

@@ -14,7 +14,6 @@ namespace {
 
 // Test that we can write data and it completes after a number of cycles.
 TEST(FixedLatencyMemoryTest, WriteData) {
-  Config::set(DEFAULT_CONFIG);
   // Create a memory interface with a two cycle latency
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::FixedLatencyMemory>(4, 2);
@@ -72,7 +71,6 @@ TEST(FixedLatencyMemoryTest, UntimedWriteData) {
 
 // Test that we can write data and it completes after a number of cycles.
 TEST(FixedLatencyMemoryTest, ReadData) {
-  Config::set(DEFAULT_CONFIG);
   // Create a memory interface with a two cycle latency
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::FixedLatencyMemory>(4, 2);
@@ -116,7 +114,6 @@ TEST(FixedLatencyMemoryTest, ReadData) {
 
 // Test that out-of-bounds memory reads are correctly handled.
 TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
-  Config::set(DEFAULT_CONFIG);
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::FixedLatencyMemory>(4, 1);
 

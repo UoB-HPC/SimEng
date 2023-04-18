@@ -3,7 +3,7 @@
 #include "../MockInstruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "simeng/Config.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 
@@ -25,7 +25,6 @@ const uint16_t dataSize = 512;
 
 // A simple LL/SC case.
 TEST(LLSCTest, successfulLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -72,7 +71,6 @@ TEST(LLSCTest, successfulLLSC) {
 
 // A simple failing LL/SC case.
 TEST(LLSCTest, failingLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -120,7 +118,6 @@ TEST(LLSCTest, failingLLSC) {
 
 // Pass the LL/SC with an interleaved write to another address.
 TEST(LLSCTest, nonAffectingWrite) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -177,7 +174,6 @@ TEST(LLSCTest, nonAffectingWrite) {
 
 // Fail the LL/SC due to an aligned write closing the monitor.
 TEST(LLSCTest, alignedWriteMonitorClose) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -234,7 +230,6 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
 
 // Fail the LL/SC due to an unaligned write closing the monitor.
 TEST(LLSCTest, unalignedWriteMonitorClose) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -292,7 +287,6 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
 
 // Pass the LL/SC with the second of 2 valid monitors being the target monitor.
 TEST(LLSCTest, replacedMonitorSuccess) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -350,7 +344,6 @@ TEST(LLSCTest, replacedMonitorSuccess) {
 
 // Fail the LL/SC with the first of 2 valid monitors being the target monitor.
 TEST(LLSCTest, replacedMonitorFailure) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -409,7 +402,6 @@ TEST(LLSCTest, replacedMonitorFailure) {
 // Fail the LL/SC due to a context switch being performed between the load and
 // store.
 TEST(LLSCTest, contextSwitchFailure) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -460,7 +452,6 @@ TEST(LLSCTest, contextSwitchFailure) {
 
 // Pass an initial LL/SC pair, and then fail a second SC
 TEST(LLSCTest, secondWriteFailure) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -525,7 +516,6 @@ TEST(LLSCTest, secondWriteFailure) {
 
 // Pass an LL/SC pair, with both instructions having multiple aligned targets
 TEST(LLSCTest, successfulMultiLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -574,7 +564,6 @@ TEST(LLSCTest, successfulMultiLLSC) {
 // Pass an LL/SC pair, with both instructions having multiple aligned targets
 // but crossing a cache line boundary between targets
 TEST(LLSCTest, successfulMultiCachelineLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -623,7 +612,6 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
 // Pass an LL/SC pair, with both instructions having multiple targets, one of
 // which is unaligned
 TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -674,7 +662,6 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
 // Fail an LL/SC pair, with the SC having multiple targets; one in a valid cache
 // line, one not
 TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -726,7 +713,6 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
 // Fail an LL/SC pair, with the SC having multiple targets; one of which is
 // unaligned
 TEST(LLSCTest, failUnalignedStoreLLSC) {
-  Config::set(DEFAULT_CONFIG);
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {

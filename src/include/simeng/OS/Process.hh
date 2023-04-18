@@ -5,7 +5,6 @@
 #include <functional>
 #include <memory>
 
-#include "simeng/Config.hh"
 #include "simeng/Elf.hh"
 #include "simeng/OS/FileDesc.hh"
 #include "simeng/OS/MemRegion.hh"

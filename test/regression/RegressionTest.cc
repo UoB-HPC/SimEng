@@ -29,16 +29,14 @@ void RegressionTest::run(const char* source, const char* triple,
   assemble(source, triple, extensions);
   if (HasFatalFailure()) return;
 
-  // Get pre-defined config file for OoO model
-  YAML::Node config = generateConfig();
-  Config::set(config);
-
+  // Generate the predefined model config
+  generateConfig();
   // Due to SimInfo being static, we need to reset the architectural register
   // file each time the config file is updated
   simeng::SimInfo::resetArchRegs();
 
-  const size_t memorySize =
-      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
+  const size_t memorySize = simeng::SimInfo::getValue<size_t>(
+      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
 
   // Initialise the simulation memory
   memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);
