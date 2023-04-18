@@ -679,8 +679,7 @@ TEST_P(InstStore, sturh) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstStore,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

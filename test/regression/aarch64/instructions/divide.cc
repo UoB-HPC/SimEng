@@ -62,8 +62,7 @@ TEST_P(InstDiv, udiv) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstDiv,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

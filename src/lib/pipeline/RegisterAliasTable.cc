@@ -127,7 +127,7 @@ void RegisterAliasTable::reset(
       freeQueues_[type].push(tag);
     }
 
-    // Fill history and destination Tables with defualt values
+    // Fill history and destination Tables with default values
     std::fill(historyTable_[type].begin(), historyTable_[type].end(), NULL);
     std::fill(destinationTable_[type].begin(), destinationTable_[type].end(),
               NULL);

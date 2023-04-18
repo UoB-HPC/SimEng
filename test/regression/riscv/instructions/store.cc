@@ -90,8 +90,7 @@ TEST_P(InstStore, sd) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstStore,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

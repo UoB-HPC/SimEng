@@ -3,7 +3,6 @@
 #include <forward_list>
 #include <unordered_map>
 
-#include "simeng/Config.hh"
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"

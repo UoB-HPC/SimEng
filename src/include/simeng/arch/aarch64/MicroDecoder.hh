@@ -2,7 +2,6 @@
 
 #include <forward_list>
 
-#include "simeng/Config.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 

@@ -7,7 +7,7 @@ namespace {
 TEST(OSTest, CreateSimOS) {
   // Set a config file with only the options required by the aarch64
   // architecture class to function
-  Config::set(
+  simeng::SimInfo::addToConfig(
       "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
@@ -15,8 +15,9 @@ TEST(OSTest, CreateSimOS) {
       "Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: {Access-Latency: 1, "
       "Size: 100000}}, CPU-Info: {Generate-Special-Dir: False}}");
   // Create the simulation memory
-  const size_t memorySize =
-      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
+  const size_t memorySize = simeng::SimInfo::getValue<size_t>(
+      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
+
   const std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 

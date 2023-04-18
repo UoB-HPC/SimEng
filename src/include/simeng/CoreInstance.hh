@@ -3,7 +3,6 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
-#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/GenericPredictor.hh"
@@ -42,11 +41,8 @@ class CoreInstance {
   std::shared_ptr<simeng::Core> getCore() const;
 
  private:
-  /** Extract simulation mode from config file. */
-  void setSimulationMode();
-
   /** The config file describing the modelled core to be created. */
-  YAML::Node& config_;
+  ryml::Tree config_;
 
   /** Reference to the SimEng SimOS Process object. */
   std::shared_ptr<simeng::OS::Process> process_ = nullptr;

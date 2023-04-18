@@ -100,11 +100,11 @@ class Core : public simeng::Core {
 
   /** Create an instance of the exception handler based on the chosen
    * architecture. */
-  void exceptionHandlerFactory(std::string isa) {
-    if (isa == "AArch64")
+  void exceptionHandlerFactory(ISA isa) {
+    if (isa == ISA::AArch64)
       exceptionHandler_ =
           std::make_unique<simeng::arch::aarch64::ExceptionHandler>(*this);
-    else if (isa == "rv64")
+    else if (isa == ISA::RV64)
       exceptionHandler_ =
           std::make_unique<simeng::arch::riscv::ExceptionHandler>(*this);
   }

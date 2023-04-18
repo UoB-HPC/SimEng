@@ -1274,8 +1274,7 @@ TEST_P(InstLoad, ldxr) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLoad,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

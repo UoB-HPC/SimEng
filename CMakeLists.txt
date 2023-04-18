@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 include(FetchContent)
+include(CheckCXXCompilerFlag)
 set(FETCHCONTENT_QUIET OFF)
 
 # FetchContent_MakeAvailable was introduced in 3.14
@@ -35,15 +36,6 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   # this versions requires CMake >= 2.8.12 which silences the deprecation warning
   GIT_TAG        release-1.11.0
-  GIT_PROGRESS   TRUE
-)
-
-FetchContent_Declare(
-  yaml-cpp
-  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  # the latest tagged version (0.6.3) is fairly old and doesn't contain the needed CMake stuff for this to work properly
-  # hence we pick the latest working commit
-  GIT_TAG        a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
   GIT_PROGRESS   TRUE
 )
 
@@ -115,11 +107,8 @@ set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
 FetchContent_MakeAvailable_Args(capstone-lib EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
-## Setup yaml-cpp ##
-set(YAML_CPP_BUILD_TESTS OFF)
-set(YAML_CPP_INSTALL OFF)
-
-FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
+# Enable the single RYML header to be packaged into the SimEng shared library
+set(RYML_SHARED ON)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)

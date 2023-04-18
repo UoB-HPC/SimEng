@@ -85,11 +85,10 @@ TEST_P(SystemRegister, counter_timers) {
   EXPECT_EQ(getSystemRegister(0xdf02), 2);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AArch64, SystemRegister,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}")),
-                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, SystemRegister,
+                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                                           std::make_tuple(INORDER, "{}"),
+                                           std::make_tuple(OUTOFORDER, "{}")),
+                         paramToString);
 
 }  // namespace

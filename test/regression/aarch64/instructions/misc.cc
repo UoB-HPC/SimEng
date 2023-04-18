@@ -46,8 +46,7 @@ TEST_P(InstMisc, ret) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstMisc,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

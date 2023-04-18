@@ -33,7 +33,7 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
     : memory_(mem),
       pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
-  // Create tge syscall handler
+  // Create the syscall handler
   syscallHandler_ = std::make_shared<SyscallHandler>(this, mem);
 
   // Create the Special Files directory if indicated to do so in Config file
@@ -308,10 +308,10 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
   // Update stack pointer
   newProc->context_.sp = stackPtr;
-  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+  if (SimInfo::getISA() == ISA::RV64) {
     newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
         stackPtr, 8};
-  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+  } else if (SimInfo::getISA() == ISA::AArch64) {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
     // Set appropriate system register to TLS value.
@@ -445,8 +445,10 @@ void SimOS::createSpecialFileDirectory() const {
 uint64_t SimOS::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS (Dynamic
   // voltage and frequency scaling).
-  return ticks_ /
-         ((Config::get()["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
+  return ticks_ / ((SimInfo::getValue<float>(
+                        SimInfo::getConfig()["Core"]["Clock-Frequency"]) *
+                    1e9) /
+                   1e9);
 }
 
 void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {

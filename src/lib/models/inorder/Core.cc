@@ -35,7 +35,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
       handleSyscall_(handleSyscall) {
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+  exceptionHandlerFactory(SimInfo::getISA());
 }
 
 void Core::tick() {

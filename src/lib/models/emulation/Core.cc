@@ -16,7 +16,7 @@ Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
       architecturalRegisterFileSet_(registerFileSet_),
       handleSyscall_(handleSyscall) {
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+  exceptionHandlerFactory(SimInfo::getISA());
 }
 
 void Core::tick() {

@@ -6,7 +6,6 @@
 #include <string>
 #include <tuple>
 
-#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/OS/SimOS.hh"
@@ -68,8 +67,8 @@ int main(int argc, char** argv) {
   std::vector<std::string> executableArgs;
   // Determine if a config file has been supplied.
   if (argc > 1) {
-    // Set global config file to one at file path defined
-    Config::set(std::string(argv[1]));
+    // Set the global config file to one at the file path defined.
+    simeng::SimInfo::setConfig(argv[1]);
 
     // Determine if an executable has been supplied
     if (argc > 2) {
@@ -84,11 +83,11 @@ int main(int argc, char** argv) {
   }
 
   // Get the memory size from the YAML config file.
-  const size_t memorySize =
-      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
-  const uint16_t latency =
-      Config::get()["Memory-Hierarchy"]["DRAM"]["Access-Latency"]
-          .as<uint16_t>();
+  const size_t memorySize = simeng::SimInfo::getValue<size_t>(
+      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
+  const uint16_t latency = simeng::SimInfo::getValue<uint16_t>(
+      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]
+                                  ["Access-Latency"]);
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -129,7 +128,8 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << Config::getPath() << std::endl;
+  std::cout << "[SimEng] Config file: " << simeng::SimInfo::getConfigPath()
+            << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
@@ -162,27 +162,36 @@ int main(int argc, char** argv) {
 // of YAML formatted data.
 #ifdef YAML_OUTPUT
 
-  YAML::Emitter out;
-  out << YAML::BeginDoc << YAML::BeginMap;
-  out << YAML::Key << "build metadata" << YAML::Value;
-  out << YAML::BeginSeq;
-  out << "Version: " SIMENG_VERSION;
-  out << "Compile Time - Date: " __TIME__ " - " __DATE__;
-  out << "Build type: " SIMENG_BUILD_TYPE;
-  out << "Compile options: " SIMENG_COMPILE_OPTIONS;
-  out << "Test suite: " SIMENG_ENABLE_TESTS;
-  out << YAML::EndSeq;
+  ryml::Tree out;
+  ryml::NodeRef ref = out.rootref();
+  ref |= ryml::MAP;
+  ref.append_child() << ryml::key("build metadata");
+  ref["build metadata"] |= ryml::SEQ;
+  ref["build metadata"].append_child();
+  ref["build metadata"][0] << "Version: " SIMENG_VERSION;
+  ref["build metadata"].append_child();
+  ref["build metadata"][1] << "Compile Time - Date: " __TIME__ " - " __DATE__;
+  ref["build metadata"].append_child();
+  ref["build metadata"][2] << "Build type: " SIMENG_BUILD_TYPE;
+  ref["build metadata"].append_child();
+  ref["build metadata"][3] << "Compile options: " SIMENG_COMPILE_OPTIONS;
+  ref["build metadata"].append_child();
+  ref["build metadata"][4] << "Test suite: " SIMENG_ENABLE_TESTS;
   for (const auto& [key, value] : stats) {
-    out << YAML::Key << key << YAML::Value << value;
+    ref.append_child() << ryml::key(key);
+    ref[ryml::to_csubstr(key)] << value;
   }
-  out << YAML::Key << "duration" << YAML::Value << duration;
-  out << YAML::Key << "mips" << YAML::Value << mips;
-  out << YAML::Key << "cycles_per_sec" << YAML::Value
-      << std::stod(stats["cycles"]) / (duration / 1000.0);
-  out << YAML::EndMap << YAML::EndDoc;
+  ref.append_child() << ryml::key("duration");
+  ref["duration"] << duration;
+  ref.append_child() << ryml::key("mips");
+  ref["mips"] << mips;
+  ref.append_child() << ryml::key("cycles_per_sec");
+  ref["cycles_per_sec"] << std::stod(stats["cycles"]) / (duration / 1000.0);
 
   std::cout << "YAML-SEQ\n";
-  std::cout << out.c_str() << std::endl;
+  std::cout << "---\n";
+  std::cout << ryml::emitrs_yaml<std::string>(out);
+  std::cout << "...\n\n";
 
 #endif
 

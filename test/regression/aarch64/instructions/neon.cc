@@ -3601,8 +3601,7 @@ TEST_P(InstNeon, uzp) {
   CHECK_NEON(8, uint64_t, {0x1e1c1a1816141210, 0x1f1d1b1917151311});
 }
 INSTANTIATE_TEST_SUITE_P(AArch64, InstNeon,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace
