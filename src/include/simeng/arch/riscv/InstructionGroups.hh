@@ -19,11 +19,16 @@ const uint16_t STORE_INT = 9;
 const uint16_t LOAD = 10;
 const uint16_t STORE = 11;
 const uint16_t BRANCH = 12;
+const uint16_t ALL = 13;
+const uint16_t NONE = 14;
 }  // namespace InstructionGroups
 
-static constexpr uint8_t NUM_GROUPS = 13;
+static constexpr uint8_t NUM_GROUPS = 15;
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+    {InstructionGroups::ALL,
+     {InstructionGroups::INT, InstructionGroups::LOAD, InstructionGroups::STORE,
+      InstructionGroups::BRANCH}},
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_MUL,
       InstructionGroups::INT_DIV}},

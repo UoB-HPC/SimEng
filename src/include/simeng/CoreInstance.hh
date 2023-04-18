@@ -19,7 +19,6 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
-#include "yaml-cpp/yaml.h"
 
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
@@ -121,7 +120,7 @@ class CoreInstance {
   size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */
-  YAML::Node config_;
+  ryml::Tree config_;
 
   /** Reference to the SimEng linux process object. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;

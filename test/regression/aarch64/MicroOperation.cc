@@ -1081,10 +1081,9 @@ TEST_P(MicroOp, storeThenLoadPair) {
 
 INSTANTIATE_TEST_SUITE_P(
     AArch64, MicroOp,
-    ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{Micro-Operations: True}")),
-        std::make_tuple(INORDER, YAML::Load("{Micro-Operations: True}")),
-        std::make_tuple(OUTOFORDER, YAML::Load("{Micro-Operations: True}"))),
+    ::testing::Values(std::make_tuple(EMULATION, "{Micro-Operations: True}"),
+                      std::make_tuple(INORDER, "{Micro-Operations: True}"),
+                      std::make_tuple(OUTOFORDER, "{Micro-Operations: True}")),
     paramToString);
 
 }  // namespace

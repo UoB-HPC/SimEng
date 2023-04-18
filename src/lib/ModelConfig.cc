@@ -1,6 +1,11 @@
+#define RYML_SINGLE_HDR_DEFINE_NOW
 #include "simeng/ModelConfig.hh"
 
 #include <cmath>
+
+#include "arch/aarch64/InstructionMetadata.hh"
+#include "arch/riscv/InstructionMetadata.hh"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 
@@ -17,597 +22,28 @@ namespace AARCH64Opcode {
 }  // namespace AARCH64Opcode
 
 ModelConfig::ModelConfig(std::string path) {
-  // Ensure the file exists
-  std::ifstream file(path);
+  // Reset ryml::Tree used to represent the config file
+  configTree_.clear();
+  configTree_.rootref() |= ryml::MAP;
+  isDefault_ = false;
+
+  std::ifstream file(path, std::ios::binary);
+  // Check for file existence
   if (!file.is_open()) {
     std::cerr << "[SimEng:ModelConfig] Could not read " << path << std::endl;
     exit(1);
   }
+  // Read in the contents of the file and create a ryml:Tree from it
+  std::stringstream buffer;
+  buffer << file.rdbuf();
+  configTree_ = ryml::parse_in_arena(ryml::to_csubstr(buffer.str()));
   file.close();
 
-  // Read in the config file
-  configFile_ = YAML::LoadFile(path);
-
-  // Check if the config file inherits values from a base config
-  inherit();
-
-  // Validate the inputted config file
-  validate();
-}
-
-YAML::Node ModelConfig::getConfigFile() { return configFile_; }
-
-void ModelConfig::inherit() {
-  // Check if the config file includes a inheritted file
-  if (!configFile_["Inherit-From"]) {
-    return;
-  } else {
-    std::cerr << "[SimEng:ModelConfig] Config inheritance not yet supported"
-              << std::endl;
-    exit(1);
-    // TODO: Merge files
-  }
-  return;
-}
-
-void ModelConfig::validate() {
-  // Loop through expected fields and ensure a valid value exists
-  std::vector<std::string> subFields;
-  std::string root = "";
-  int validISA;
-
-  // Core
-  root = "Core";
-  subFields = {"ISA",
-               "Simulation-Mode",
-               "Clock-Frequency",
-               "Timer-Frequency",
-               "Micro-Operations",
-               "Vector-Length",
-               "Streaming-Vector-Length"};
-  validISA = nodeChecker<std::string>(
-      configFile_[root][subFields[0]], subFields[0],
-      std::vector<std::string>({"AArch64", "rv64"}), ExpectedValue::String);
-  nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
-                           {"emulation", "inorderpipelined", "outoforder"},
-                           ExpectedValue::String);
-  nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
-                     std::make_pair(0.f, 10.f), ExpectedValue::Float);
-  nodeChecker<uint32_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT32_MAX), ExpectedValue::UInteger,
-                        100);
-  nodeChecker<bool>(configFile_[root][subFields[4]], subFields[4],
-                    std::make_pair(false, true), ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
-                         1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
-  nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
-                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
-                         1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
-  subFields.clear();
-
-  // Fetch
-  root = "Fetch";
-  subFields = {"Fetch-Block-Size", "Loop-Buffer-Size",
-               "Loop-Detection-Threshold"};
-  if (nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(4, UINT16_MAX),
-                            ExpectedValue::UInteger)) {
-    uint16_t block_size = configFile_[root][subFields[0]].as<uint16_t>();
-    // Ensure fetch block size is a power of 2
-    if ((block_size & (block_size - 1)) == 0) {
-      uint8_t alignment_bits = log2(block_size);
-      configFile_[root]["Fetch-Block-Alignment-Bits"] =
-          unsigned(alignment_bits);
-    } else {
-      invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
-    }
-  }
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Process-Image
-  root = "Process-Image";
-  subFields = {"Heap-Size", "Stack-Size"};
-  // Default heap size is 1024 * 1024 * 10 = 10MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        10485760);
-  // Default stack size is 1024 * 1024 = 1MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        1048576);
-  subFields.clear();
-
-  // Loop over all subFields and add the size of each process region. This is
-  // done to calculate the minimum value allowed for the Simulation-Memory node
-  // check defined below.
-  uint64_t totalProcRegionSize = 0;
-  for (auto field : subFields) {
-    totalProcRegionSize += configFile_[root][field].as<uint64_t>();
-  }
-
-  subFields.clear();
-
-  // Register-Set
-  root = "Register-Set";
-
-  // TODO make as many subfields as possible generic to avoid repeated code
-  // e.g. AArch64 FloatingPoint/SVE-Count -> FloatingPoint-Count
-  if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
-    subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
-    nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                          std::make_pair(32, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                          std::make_pair(32, UINT16_MAX),
-                          ExpectedValue::UInteger);
-  } else if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
-    subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-                 "Predicate-Count", "Conditional-Count", "Matrix-Count"};
-    nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                          std::make_pair(32, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                          std::make_pair(32, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                          std::make_pair(17, UINT16_MAX),
-                          ExpectedValue::UInteger, 17);
-    nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                          std::make_pair(1, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                          std::make_pair(1, UINT16_MAX),
-                          ExpectedValue::UInteger, 1);
-  }
-
-  subFields.clear();
-
-  // Queue-Sizes
-  root = "Queue-Sizes";
-  subFields = {"ROB", "Load", "Store"};
-  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Pipeline-Widths
-  root = "Pipeline-Widths";
-  subFields = {"Commit", "FrontEnd", "LSQ-Completion"};
-  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Branch-Predictor
-  root = "Branch-Predictor";
-  subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
-               "RAS-entries", "Fallback-Static-Predictor"};
-  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(0, 64), ExpectedValue::UInteger);
-  nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
-  if (nodeChecker<std::string>(
-          configFile_[root][subFields[4]], subFields[4],
-          std::vector<std::string>{"Always-Taken", "Always-Not-Taken"},
-          ExpectedValue::String)) {
-    // If the Saturating-Count-Bits option is valid, set fallback static
-    // prediction to weakest value of the specific direction (i.e weakly taken
-    // or weakly not-taken)
-    if (nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
-                              std::make_pair(1, UINT64_MAX),
-                              ExpectedValue::UInteger)) {
-      // Calculate saturation counter boundary between weakly taken and
-      // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
-      // value
-      uint16_t weaklyTaken =
-          std::pow(2, (configFile_[root][subFields[1]].as<uint64_t>() - 1));
-      // Swap Fallback-Static-Predictor scheme out for equivalent saturating
-      // counter value
-      configFile_[root][subFields[4]] =
-          (configFile_[root][subFields[4]].as<std::string>() == "Always-Taken")
-              ? weaklyTaken
-              : (weaklyTaken - 1);
-    }
-  }
-  subFields.clear();
-
-  // Data Memory
-  root = "L1-Data-Memory";
-  subFields = {"Interface-Type"};
-  nodeChecker<std::string>(
-      configFile_[root][subFields[0]], root + " " + subFields[0],
-      std::vector<std::string>{"Flat", "Fixed", "External"},
-      ExpectedValue::String);
-  // Currently, fixed instruction memory interfaces are unsupported for
-  // emulation and inorder simulation modes
-  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
-    std::string mode = configFile_["Core"]["Simulation-Mode"].as<std::string>();
-    if (mode == "emulation" || mode == "inorderpipelined") {
-      invalid_ << "\t- Non-Flat data memory interface types are "
-                  "currently unsupported for 'emulation' and "
-                  "'inorderpipelined' simulation modes\n";
-    }
-  }
-
-  // Instruction Memory
-  root = "L1-Instruction-Memory";
-  subFields = {"Interface-Type"};
-  nodeChecker<std::string>(
-      configFile_[root][subFields[0]], root + " " + subFields[0],
-      std::vector<std::string>{"Flat", "Fixed", "External"},
-      ExpectedValue::String);
-  // Currently, fixed instruction memory interfaces are unsupported
-  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
-    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
-                "unsupported\n";
-  }
-
-  // LSQ-L1-Interface
-  root = "LSQ-L1-Interface";
-  subFields = {"Access-Latency",
-               "Exclusive",
-               "Load-Bandwidth",
-               "Store-Bandwidth",
-               "Permitted-Requests-Per-Cycle",
-               "Permitted-Loads-Per-Cycle",
-               "Permitted-Stores-Per-Cycle"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        1);
-  nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
-                    std::vector<bool>{true, false}, ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  subFields.clear();
-
-  // CPU-Info
-  root = "CPU-Info";
-  subFields = {"Generate-Special-Dir",
-               "Core-Count",
-               "Socket-Count",
-               "SMT",
-               "BogoMIPS",
-               "Features",
-               "CPU-Implementer",
-               "CPU-Architecture",
-               "CPU-Variant",
-               "CPU-Part",
-               "CPU-Revision",
-               "Package-Count"};
-  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
-                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<float>(configFile_[root][subFields[4]], subFields[4],
-                     std::make_pair(0.0f, std::numeric_limits<float>::max()),
-                     ExpectedValue::Float, 0.0f);
-  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "");
-  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0);
-  nodeChecker<std::string>(configFile_[root][subFields[8]], subFields[8],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[10]], subFields[10],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
-  if (nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
-                                std::make_pair(1, UINT_MAX),
-                                ExpectedValue::UInteger, 1)) {
-    uint64_t package_count = configFile_[root][subFields[11]].as<uint64_t>();
-    uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
-    // Ensure package_count size is a less than or equal to the core count, and
-    // that the core count can be divided by the package count
-    if (!((package_count <= core_count) && (core_count % package_count == 0))) {
-      invalid_
-          << "\t- Package-Count must be a Less-than or equal to Core-Count, "
-             "and Core-Count must be divisible by Package-Count.";
-    }
-  }
-  subFields.clear();
-
-  // First check that the ISA config option is valid, this protects reads from
-  // the ISA config option as well as everything that depends on them. This
-  // includes uses of groupOptions_ and groupMapping_ as these are dependent on
-  // the ISA
-  if (validISA == 1) {
-    // Generate groupOptions_ and groupMapping_
-    createGroupMapping();
-
-    // Ports
-    std::vector<std::string> portNames;
-    std::map<std::string, bool> portLinked;
-    root = "Ports";
-    size_t num_ports = configFile_[root].size();
-    if (!num_ports) {
-      missing_ << "\t- " << root << "\n";
-    }
-    for (size_t i = 0; i < num_ports; i++) {
-      YAML::Node port_node = configFile_[root][i];
-      // Get port number into a string format
-      char port_msg[10];
-      sprintf(port_msg, "Port %zu ", i);
-      std::string port_num = std::string(port_msg);
-      // Check for existence of Portname field and record name
-      if (nodeChecker<std::string>(port_node["Portname"], port_num + "Portname",
-                                   std::vector<std::string>{},
-                                   ExpectedValue::String)) {
-        std::string name = port_node["Portname"].as<std::string>();
-        // Ensure port name is unique
-        if (std::find(portNames.begin(), portNames.end(), name) ==
-            portNames.end()) {
-          portNames.push_back(name);
-          portLinked.insert({name, false});
-        } else {
-          invalid_ << "\t- " << port_num << "name \"" << name
-                   << "\" already used\n";
-        }
-      }
-      // Check for existence of Instruction-Support field
-      if (!(port_node["Instruction-Support"].IsDefined()) ||
-          port_node["Instruction-Support"].IsNull()) {
-        missing_ << "\t- " << port_num << "Instruction-Support\n";
-        continue;
-      }
-      uint16_t groupIndex = 0;
-      uint16_t opcodeIndex = 0;
-      for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
-        YAML::Node group = port_node["Instruction-Support"][j];
-        // Get group number into a string format
-        char group_msg[10];
-        sprintf(group_msg, "Group %zu ", j);
-        std::string group_num = std::string(group_msg);
-        // Check for existence of instruction group
-        if (group.as<std::string>()[0] == '~') {
-          // Extract opcode and store in config option
-          uint16_t opcode = std::stoi(group.as<std::string>().substr(
-              1, group.as<std::string>().size()));
-          configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
-              opcode;
-          if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
-            // Ensure opcode is between the bounds of 0 and Capstones'
-            // RISCV_INSTRUCTION_LIST_END
-            boundChecker(
-                configFile_["Ports"][i]["Instruction-Opcode-Support"]
-                           [opcodeIndex],
-                port_num + group_num,
-                std::make_pair(0, static_cast<int>(
-                                      RISCVOpcode::RISCV_INSTRUCTION_LIST_END)),
-                ExpectedValue::UInteger);
-          } else if (configFile_["Core"]["ISA"].as<std::string>() ==
-                     "AArch64") {
-            // Ensure opcode is between the bounds of 0 and Capstones'
-            // AArch64_INSTRUCTION_LIST_END
-            boundChecker(
-                configFile_["Ports"][i]["Instruction-Opcode-Support"]
-                           [opcodeIndex],
-                port_num + group_num,
-                std::make_pair(
-                    0, static_cast<int>(
-                           AARCH64Opcode::AArch64_INSTRUCTION_LIST_END)),
-                ExpectedValue::UInteger);
-          }
-
-          opcodeIndex++;
-        } else if (nodeChecker<std::string>(group, port_num + group_num,
-                                            groupOptions_,
-                                            ExpectedValue::String)) {
-          configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
-              unsigned(groupMapping_[group.as<std::string>()]);
-          groupIndex++;
-        }
-      }
-    }
-
-    // Reservation-Stations
-    root = "Reservation-Stations";
-    size_t num_rs = configFile_[root].size();
-    if (!num_rs) {
-      missing_ << "\t- " << root << "\n";
-    }
-    for (size_t i = 0; i < num_rs; i++) {
-      YAML::Node rs = configFile_[root][i];
-      // Get rs number into a string format
-      char rs_msg[25];
-      sprintf(rs_msg, "Reservation Station %zu ", i);
-      std::string rs_num = std::string(rs_msg);
-      nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
-                            std::make_pair(1, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
-                            std::make_pair(1, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      // Check for existence of Ports field
-      if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
-        missing_ << "\t- " << rs_num << "Ports\n";
-        continue;
-      }
-      for (size_t j = 0; j < rs["Ports"].size(); j++) {
-        YAML::Node port_node = rs["Ports"][j];
-        // Get port index into a string format
-        char port_msg[25];
-        sprintf(port_msg, "Port %zu ", j);
-        std::string port_num = std::string(port_msg);
-        if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
-                                     portNames, ExpectedValue::String)) {
-          // Change port name to port index
-          for (size_t k = 0; k < portNames.size(); k++) {
-            if (port_node.as<std::string>() == portNames[k]) {
-              configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
-              portLinked[portNames[k]] = true;
-              break;
-            }
-          }
-        }
-      }
-    }
-    // Ensure all ports have an associated reservation station
-    for (auto& port : portLinked) {
-      if (!port.second) {
-        missing_ << "\t- " << port.first
-                 << " has no associated reservation station\n";
-      }
-    }
-
-    // Execution-Units
-    root = "Execution-Units";
-    subFields = {"Pipelined", "Blocking-Groups"};
-    size_t num_units = configFile_[root].size();
-    if (!num_units) {
-      missing_ << "\t- " << root << "\n";
-    } else if (num_ports != num_units) {
-      invalid_
-          << "\t- Number of issue ports and execution units should be equal\n";
-    }
-    for (size_t i = 0; i < num_units; i++) {
-      char euNum[50];
-      sprintf(euNum, "Execution Unit %zu ", i);
-      YAML::Node euNode = configFile_[root][i];
-      nodeChecker<bool>(configFile_[root][i][subFields[0]],
-                        (std::string(euNum) + subFields[0]),
-                        std::vector<bool>{false, true}, ExpectedValue::Bool);
-      if (euNode[subFields[1]].IsDefined() &&
-          !(euNode[subFields[1]].IsNull())) {
-        // Compile set of blocking groups into a queue
-        std::queue<uint16_t> blockingGroups;
-        for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
-          char bgNum[50];
-          sprintf(bgNum, "Blocking group %zu", j);
-          if (nodeChecker<std::string>(
-                  configFile_[root][i][subFields[1]][j],
-                  (std::string(euNum) + std::string(bgNum)), groupOptions_,
-                  ExpectedValue::String)) {
-            uint16_t mappedGroup =
-                groupMapping_[euNode[subFields[1]][j].as<std::string>()];
-            blockingGroups.push(mappedGroup);
-            configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
-                mappedGroup;
-          }
-        }
-        // Expand set of blocking groups to include those that inherit from the
-        // user defined set
-        uint16_t config_index =
-            configFile_["Execution-Units"][i]["Blocking-Groups"].size();
-        while (blockingGroups.size()) {
-          // Determine if there's any inheritance
-          if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
-              arch::aarch64::groupInheritance.end()) {
-            std::vector<uint16_t> inheritedGroups =
-                arch::aarch64::groupInheritance.at(blockingGroups.front());
-            for (int k = 0; k < inheritedGroups.size(); k++) {
-              blockingGroups.push(inheritedGroups[k]);
-              configFile_["Execution-Units"][i]["Blocking-Groups"]
-                         [config_index] = inheritedGroups[k];
-              config_index++;
-            }
-          }
-          blockingGroups.pop();
-        }
-      }
-    }
-    subFields.clear();
-  }
-
-  // Latencies
-  root = "Latencies";
-  subFields = {"Instruction-Groups", "Execution-Latency",
-               "Execution-Throughput"};
-  for (size_t i = 0; i < configFile_[root].size(); i++) {
-    char latNum[50];
-    sprintf(latNum, "Latency group %zu ", i);
-    YAML::Node latNode = configFile_[root][i];
-    YAML::Node grpNode = latNode[subFields[0]];
-    if (grpNode.IsDefined() && !(grpNode.IsNull())) {
-      uint16_t groupIndex = 0;
-      uint16_t opcodeIndex = 0;
-      for (size_t j = 0; j < grpNode.size(); j++) {
-        char grpNum[50];
-        sprintf(grpNum, "Instruction group %zu ", j);
-        // Determine whether the value is an opcode or an instruction-group
-        // value
-        if (grpNode[j].as<std::string>()[0] == '~') {
-          // Extract opcode and store in config option
-          uint16_t opcode = std::stoi(grpNode[j].as<std::string>().substr(
-              1, grpNode[j].as<std::string>().size()));
-          configFile_[root][i]["Instruction-Opcode"][opcodeIndex] = opcode;
-          // Ensure opcode is between the bounds of 0 and Capstones'
-          // AArch64_INSTRUCTION_LIST_END
-          boundChecker(configFile_[root][i]["Instruction-Opcode"][opcodeIndex],
-                       (std::string(latNum) + std::string(grpNum)),
-                       std::make_pair(
-                           0, static_cast<int>(
-                                  AARCH64Opcode::AArch64_INSTRUCTION_LIST_END)),
-                       ExpectedValue::UInteger);
-          opcodeIndex++;
-        } else if (nodeChecker<std::string>(
-                       grpNode[j], (std::string(latNum) + std::string(grpNum)),
-                       groupOptions_, ExpectedValue::String)) {
-          // Map latency Instruction-Group to integer value
-          configFile_[root][i]["Instruction-Group"][groupIndex] =
-              groupMapping_[grpNode[j].as<std::string>()];
-          groupIndex++;
-        }
-      }
-    } else {
-      missing_ << "\t- " << (std::string(latNum) + subFields[0]) << "\n";
-    }
-    nodeChecker<uint16_t>(
-        latNode[subFields[1]], (std::string(latNum) + subFields[1]),
-        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(
-        latNode[subFields[2]], (std::string(latNum) + subFields[2]),
-        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  }
-  subFields.clear();
+  // Set the expectations of the config file and validate the config values
+  // within the passed config file
+  setExpectations();
+  recursiveValidate(expectations_, configTree_.rootref());
+  postValidation();
 
   std::string missingStr = missing_.str();
   std::string invalidStr = invalid_.str();
@@ -624,12 +60,725 @@ void ModelConfig::validate() {
                  "their associated field:\n"
               << invalidStr << std::endl;
   }
+  // Stop execution if the config file didn't pass checks
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;
 }
 
+ModelConfig::ModelConfig() {
+  // Generate the default config file
+  generateDefault();
+}
+
+void ModelConfig::reGenerateDefault(std::string isa) {
+  // Only re-generate the default config file if it hasn't already been
+  // generated for the specified ISA
+  if (ISA_ == isa && isDefault_) return;
+
+  ISA_ = isa;
+  generateDefault();
+}
+
+void ModelConfig::generateDefault() {
+  // Reset ryml::Tree used to represent the config file
+  configTree_.clear();
+  configTree_.rootref() |= ryml::MAP;
+  isDefault_ = true;
+
+  // Set the expectations for the default config file, construct it, and
+  // validate it to ensure correctness for the simulation
+  setExpectations(true);
+  constructDefault(expectations_, configTree_.root_id());
+  recursiveValidate(expectations_, configTree_.rootref());
+  postValidation();
+}
+
+void ModelConfig::constructDefault(expectationNode expectations,
+                                   size_t root_id) {
+  // Iterate over the expectations supplied
+  for (const auto& chld : expectations.getChildren()) {
+    std::string key = chld.getKey();
+    ExpectedType type = chld.getType();
+    // If the key is a wildcard ("*"), then change it to be an appropriate value
+    // in the resultant config file and its type to be valueless
+    if (key == "*") {
+      key = "0";
+      type = ExpectedType::Valueless;
+    }
+    // Create the ryml::NodeRef represent an config option
+    ryml::NodeRef node = configTree_.ref(root_id).append_child()
+                         << ryml::key(key);
+    // If the expectation is a sequence, then add an additional ryml::NodeRef as
+    // a child to the former to act as the sequence of values when read in later
+    if (chld.isSequence()) {
+      node |= ryml::SEQ;
+      node = configTree_.ref(node.id()).append_child();
+    }
+    // Set the value of the ryml::NodeRef based on the type. A valueless
+    // expectation informs that an additional level of the YAML hierarchy is
+    // required, thus call constructDefault again with the new ryml::NodeRef's
+    // id as the root id
+    switch (type) {
+      case ExpectedType::Bool:
+        node << chld.getDefault<bool>();
+        break;
+      case ExpectedType::Float:
+        node << chld.getDefault<float>();
+        break;
+      case ExpectedType::Integer:
+        node << chld.getDefault<int64_t>();
+        break;
+      case ExpectedType::String:
+        node << chld.getDefault<std::string>();
+        break;
+      case ExpectedType::UInteger:
+        node << chld.getDefault<uint64_t>();
+        break;
+      case ExpectedType::Valueless:
+        node |= ryml::MAP;
+        constructDefault(expectations[key], node.id());
+        break;
+    }
+  }
+}
+
+void ModelConfig::addConfigOptions(std::string config) {
+  // Construct a temporary ryml:Tree so that the values held in the passed
+  // config string can be appropriately extracted
+  ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(config));
+
+  // Add/replace the passed config options in `configTree_` and re-run
+  // validation/checks
+  recursiveAdd(tree.rootref(), configTree_.root_id());
+  recursiveValidate(expectations_, configTree_.rootref());
+  postValidation();
+}
+
+void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
+  // Iterate over the config options supplied
+  for (ryml::NodeRef chld : node.children()) {
+    ryml::NodeRef ref;
+    // If the config option doesn't already exists, add it. Otherwise get the
+    // reference to it
+    if (!configTree_.ref(id).has_child(chld.key())) {
+      ref = configTree_.ref(id).append_child() << chld.key();
+      // Set any appropriate ryml::NodeRef types
+      if (chld.is_map()) {
+        ref |= ryml::MAP;
+      }
+      if (chld.is_seq()) {
+        ref |= ryml::SEQ;
+      }
+    } else {
+      ref = configTree_.ref(id)[chld.key()];
+    }
+    if (chld.is_map()) {
+      // If the config option had children, iterate through them.
+      recursiveAdd(chld, ref.id());
+    } else if (chld.is_seq()) {
+      // If the config option is a sequence, then add the sequence of values
+      // held within the config option (its children) as children to the current
+      // ryml::Tree node identified by `id`
+      ref.clear_children();
+      for (size_t entry = 0; entry < chld.num_children(); entry++) {
+        ref.append_child();
+        ref[entry] << chld[entry].val();
+      }
+    } else {
+      // If the config option is neither a map nor a sequence, simply add its
+      // value to the ryml::Tree node reference
+      ref << chld.val();
+    }
+  }
+}
+
+void ModelConfig::setExpectations(bool isDefault) {
+  // Reset expectations
+  expectations_ = {};
+
+  // Core
+  expectations_.addChild(expectations_.create("Core"));
+
+  expectations_["Core"].addChild(expectations_.create("ISA", ISA_));
+  expectations_["Core"]["ISA"].setValueSet(std::vector{"AArch64", "rv64"});
+
+  // Early check on [Core][ISA] as its value is needed to inform the
+  // expectations of other config options
+  if (!isDefault) {
+    std::string result = expectations_["Core"]["ISA"].validateConfigNode(
+        configTree_["Core"]["ISA"]);
+    configTree_["Core"]["ISA"] >> ISA_;
+    if (result != "Success") {
+      std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA_
+                << "\" passed in config file due to \"" << result
+                << "\" error. Cannot continue with config validation. Exiting."
+                << std::endl;
+      exit(1);
+    }
+  }
+  createGroupMapping();
+
+  expectations_["Core"].addChild(
+      expectations_.create("Simulation-Mode", "emulation"));
+  expectations_["Core"]["Simulation-Mode"].setValueSet(
+      std::vector{"emulation", "inorderpipelined", "outoforder"});
+
+  expectations_["Core"].addChild(expectations_.create("Clock-Frequency", 1.f));
+  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f, 10.f);
+
+  expectations_["Core"].addChild(
+      expectations_.create<uint64_t>("Timer-Frequency", 100));
+  expectations_["Core"]["Timer-Frequency"].setValueBounds<uint64_t>(1,
+                                                                    UINT64_MAX);
+
+  expectations_["Core"].addChild(
+      expectations_.create("Micro-Operations", false));
+  expectations_["Core"]["Micro-Operations"].setValueSet(
+      std::vector{false, true});
+
+  if (ISA_ == "AArch64") {
+    expectations_["Core"].addChild(
+        expectations_.create<uint64_t, true>("Vector-Length", 512));
+    expectations_["Core"]["Vector-Length"].setValueSet(
+        std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
+                              1280, 1408, 1536, 1664, 1792, 1920, 2048});
+
+    expectations_["Core"].addChild(
+        expectations_.create<uint64_t, true>("Streaming-Vector-Length", 512));
+    expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
+        std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
+                              1280, 1408, 1536, 1664, 1792, 1920, 2048});
+  }
+
+  // Fetch
+  expectations_.addChild(expectations_.create("Fetch"));
+
+  expectations_["Fetch"].addChild(
+      expectations_.create<uint64_t>("Fetch-Block-Size", 32));
+  expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(std::vector<uint64_t>{
+      4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192, 16384, 32768, 65536});
+
+  expectations_["Fetch"].addChild(
+      expectations_.create<uint64_t>("Loop-Buffer-Size", 32));
+  expectations_["Fetch"]["Loop-Buffer-Size"].setValueBounds<uint64_t>(
+      0, UINT16_MAX);
+
+  expectations_["Fetch"].addChild(
+      expectations_.create<uint64_t>("Loop-Detection-Threshold", 5));
+  expectations_["Fetch"]["Loop-Detection-Threshold"].setValueBounds<uint64_t>(
+      0, UINT16_MAX);
+
+  // Process-Image
+  expectations_.addChild(expectations_.create("Process-Image"));
+
+  expectations_["Process-Image"].addChild(
+      expectations_.create<uint64_t>("Heap-Size", 100000));
+  expectations_["Process-Image"]["Heap-Size"].setValueBounds<uint64_t>(
+      1, UINT64_MAX);
+
+  expectations_["Process-Image"].addChild(
+      expectations_.create<uint64_t>("Stack-Size", 100000));
+  expectations_["Process-Image"]["Stack-Size"].setValueBounds<uint64_t>(
+      1, UINT64_MAX);
+
+  // Register-Set
+  expectations_.addChild(expectations_.create("Register-Set"));
+  if (ISA_ == "AArch64") {
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
+    expectations_["Register-Set"]["GeneralPurpose-Count"]
+        .setValueBounds<uint64_t>(32, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t>("FloatingPoint/SVE-Count", 32));
+    expectations_["Register-Set"]["FloatingPoint/SVE-Count"]
+        .setValueBounds<uint64_t>(32, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t, true>("Predicate-Count", 17));
+    expectations_["Register-Set"]["Predicate-Count"].setValueBounds<uint64_t>(
+        17, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t>("Conditional-Count", 1));
+    expectations_["Register-Set"]["Conditional-Count"].setValueBounds<uint64_t>(
+        1, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t, true>("Matrix-Count", 1));
+    expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint64_t>(
+        1, UINT16_MAX);
+  } else if (ISA_ == "rv64") {
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
+    expectations_["Register-Set"]["GeneralPurpose-Count"]
+        .setValueBounds<uint64_t>(32, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        expectations_.create<uint64_t>("FloatingPoint-Count", 32));
+    expectations_["Register-Set"]["FloatingPoint-Count"]
+        .setValueBounds<uint64_t>(32, UINT16_MAX);
+  }
+
+  // Pipeline-Widths
+  expectations_.addChild(expectations_.create("Pipeline-Widths"));
+
+  expectations_["Pipeline-Widths"].addChild(
+      expectations_.create<uint64_t>("Commit", 1));
+  expectations_["Pipeline-Widths"]["Commit"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Pipeline-Widths"].addChild(
+      expectations_.create<uint64_t>("FrontEnd", 1));
+  expectations_["Pipeline-Widths"]["FrontEnd"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Pipeline-Widths"].addChild(
+      expectations_.create<uint64_t>("LSQ-Completion", 1));
+  expectations_["Pipeline-Widths"]["LSQ-Completion"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  // Queue-Sizes
+  expectations_.addChild(expectations_.create("Queue-Sizes"));
+
+  expectations_["Queue-Sizes"].addChild(
+      expectations_.create<uint64_t>("ROB", 32));
+  expectations_["Queue-Sizes"]["ROB"].setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["Queue-Sizes"].addChild(
+      expectations_.create<uint64_t>("Load", 16));
+  expectations_["Queue-Sizes"]["Load"].setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["Queue-Sizes"].addChild(
+      expectations_.create<uint64_t>("Store", 16));
+  expectations_["Queue-Sizes"]["Store"].setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  // Branch-Predictor
+  expectations_.addChild(expectations_.create("Branch-Predictor"));
+
+  expectations_["Branch-Predictor"].addChild(
+      expectations_.create<uint64_t>("BTB-Tag-Bits", 8));
+  expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Branch-Predictor"].addChild(
+      expectations_.create<uint64_t>("Saturating-Count-Bits", 2));
+  expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
+      .setValueBounds<uint64_t>(1, 64);
+
+  expectations_["Branch-Predictor"].addChild(
+      expectations_.create<uint64_t>("Global-History-Length", 8));
+  expectations_["Branch-Predictor"]["Global-History-Length"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["Branch-Predictor"].addChild(
+      expectations_.create<uint64_t>("RAS-entries", 8));
+  expectations_["Branch-Predictor"]["RAS-entries"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Branch-Predictor"].addChild(expectations_.create<std::string>(
+      "Fallback-Static-Predictor", "Always-Taken"));
+  expectations_["Branch-Predictor"]["Fallback-Static-Predictor"].setValueSet(
+      std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
+
+  // L1-Data-Memory
+  expectations_.addChild(expectations_.create("L1-Data-Memory"));
+
+  expectations_["L1-Data-Memory"].addChild(
+      expectations_.create<std::string>("Interface-Type", "Fixed"));
+  expectations_["L1-Data-Memory"]["Interface-Type"].setValueSet(
+      std::vector<std::string>{"Flat", "Fixed", "External"});
+
+  // L1-Instruction-Memory
+  expectations_.addChild(expectations_.create("L1-Instruction-Memory"));
+
+  expectations_["L1-Instruction-Memory"].addChild(
+      expectations_.create<std::string>("Interface-Type", "Fixed"));
+  expectations_["L1-Instruction-Memory"]["Interface-Type"].setValueSet(
+      std::vector<std::string>{"Flat", "Fixed", "External"});
+
+  // LSQ-L1-Interface
+  expectations_.addChild(expectations_.create("LSQ-L1-Interface"));
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Access-Latency", 4));
+  expectations_["LSQ-L1-Interface"]["Access-Latency"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create("Exclusive", false));
+  expectations_["LSQ-L1-Interface"]["Exclusive"].setValueSet(
+      std::vector{false, true});
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Load-Bandwidth", 32));
+  expectations_["LSQ-L1-Interface"]["Load-Bandwidth"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Store-Bandwidth", 32));
+  expectations_["LSQ-L1-Interface"]["Store-Bandwidth"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Permitted-Requests-Per-Cycle", 1));
+  expectations_["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Permitted-Loads-Per-Cycle", 1));
+  expectations_["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
+      expectations_.create<uint64_t>("Permitted-Stores-Per-Cycle", 1));
+  expectations_["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  // Ports
+  expectations_.addChild(expectations_.create("Ports"));
+  expectations_["Ports"].addChild(expectations_.create<uint64_t>("*", 0));
+
+  expectations_["Ports"]["*"].addChild(expectations_.create("Portname", "0"));
+
+  expectations_["Ports"]["*"].addChild(expectations_.create<std::string, true>(
+      "Instruction-Group-Support", "ALL"));
+  expectations_["Ports"]["*"]["Instruction-Group-Support"].setValueSet(
+      groupOptions_);
+  expectations_["Ports"]["*"]["Instruction-Group-Support"].setAsSequence();
+
+  // Get the upper bound of what the opcode value can be based on the ISA
+  uint64_t maxOpcode = 0;
+  if (ISA_ == "AArch64") {
+    maxOpcode = arch::aarch64::Opcode::AArch64_INSTRUCTION_LIST_END;
+  } else if (ISA_ == "rv64") {
+    maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
+  }
+  expectations_["Ports"]["*"].addChild(expectations_.create<uint64_t, true>(
+      "Instruction-Opcode-Support", maxOpcode));
+  expectations_["Ports"]["*"]["Instruction-Opcode-Support"]
+      .setValueBounds<uint64_t>(0, maxOpcode);
+  expectations_["Ports"]["*"]["Instruction-Opcode-Support"].setAsSequence();
+
+  // Early check on [Ports][*][Portname] as the values are needed to inform
+  // the expectations of the [Reservation-Stations][*][Ports] values
+  std::vector<std::string> portnames = {"0"};
+  if (!isDefault) {
+    portnames = {};
+    // An index value used in case of error
+    uint16_t idx = 0;
+    // Get all portnames defined in the config file and ensure they are unique
+    for (ryml::NodeRef chld : configTree_["Ports"]) {
+      std::string result =
+          expectations_["Ports"]["*"]["Portname"].validateConfigNode(
+              chld["Portname"]);
+      std::string portname;
+      chld["Portname"] >> portname;
+      if (result == "Success") {
+        if (std::find(portnames.begin(), portnames.end(), portname) ==
+            portnames.end()) {
+          portnames.push_back(portname);
+        } else {
+          invalid_ << "\t- duplicate portname \"" << portname << "\"\n";
+        }
+      } else {
+        std::cerr
+            << "[SimEng:ModelConfig] Invalid portname for port " << idx
+            << ", namely \"" << portname
+            << "\", passed in config file due to \"" << result
+            << "\" error. Cannot continue with config validation. Exiting."
+            << std::endl;
+        exit(1);
+      }
+      idx++;
+    }
+  }
+
+  // Reservation-Stations
+  expectations_.addChild(expectations_.create("Reservation-Stations"));
+  expectations_["Reservation-Stations"].addChild(
+      expectations_.create<uint64_t>("*", 0));
+
+  expectations_["Reservation-Stations"]["*"].addChild(
+      expectations_.create<uint64_t>("Size", 32));
+  expectations_["Reservation-Stations"]["*"]["Size"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Reservation-Stations"]["*"].addChild(
+      expectations_.create<uint64_t>("Dispatch-Rate", 4));
+  expectations_["Reservation-Stations"]["*"]["Dispatch-Rate"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["Reservation-Stations"]["*"].addChild(
+      expectations_.create("Ports", "0"));
+  expectations_["Reservation-Stations"]["*"]["Ports"].setValueSet(portnames);
+  expectations_["Reservation-Stations"]["*"]["Ports"].setAsSequence();
+
+  // Execution-Units
+  expectations_.addChild(expectations_.create("Execution-Units"));
+  expectations_["Execution-Units"].addChild(
+      expectations_.create<uint64_t>("*", 0));
+
+  expectations_["Execution-Units"]["*"].addChild(
+      expectations_.create("Pipelined", true));
+  expectations_["Execution-Units"]["*"]["Pipelined"].setValueSet(
+      std::vector{false, true});
+
+  expectations_["Execution-Units"]["*"].addChild(
+      expectations_.create<std::string, true>("Blocking-Groups", "NONE"));
+  expectations_["Execution-Units"]["*"]["Blocking-Groups"].setValueSet(
+      groupOptions_);
+  expectations_["Execution-Units"]["*"]["Blocking-Groups"].setAsSequence();
+
+  // Latencies
+  expectations_.addChild(expectations_.create<true>("Latencies"));
+  expectations_["Latencies"].addChild(expectations_.create<uint64_t>("*", 0));
+
+  expectations_["Latencies"]["*"].addChild(
+      expectations_.create<std::string, true>("Instruction-Groups", "NONE"));
+  expectations_["Latencies"]["*"]["Instruction-Groups"].setValueSet(
+      groupOptions_);
+  expectations_["Latencies"]["*"]["Instruction-Groups"].setAsSequence();
+
+  expectations_["Latencies"]["*"].addChild(
+      expectations_.create<uint64_t, true>("Instruction-Opcodes", maxOpcode));
+  expectations_["Latencies"]["*"]["Instruction-Opcodes"]
+      .setValueBounds<uint64_t>(0, maxOpcode);
+  expectations_["Latencies"]["*"]["Instruction-Opcodes"].setAsSequence();
+
+  expectations_["Latencies"]["*"].addChild(
+      expectations_.create<uint64_t>("Execution-Latency", 1));
+  expectations_["Latencies"]["*"]["Execution-Latency"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["Latencies"]["*"].addChild(
+      expectations_.create<uint64_t, true>("Execution-Throughput", 1));
+  expectations_["Latencies"]["*"]["Execution-Throughput"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  // CPU-Info
+  expectations_.addChild(expectations_.create("CPU-Info"));
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<bool, true>("Generate-Special-Dir", false));
+  expectations_["CPU-Info"]["Generate-Special-Dir"].setValueSet(
+      std::vector{false, true});
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("Core-Count", 1));
+  expectations_["CPU-Info"]["Core-Count"].setValueBounds<uint64_t>(1,
+                                                                   UINT16_MAX);
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("Socket-Count", 1));
+  expectations_["CPU-Info"]["Socket-Count"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("SMT", 1));
+  expectations_["CPU-Info"]["SMT"].setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<float, true>("BogoMIPS", 0.f));
+  expectations_["CPU-Info"]["BogoMIPS"].setValueBounds(
+      0.f, std::numeric_limits<float>::max());
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<std::string, true>("Features", ""));
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<std::string, true>("CPU-Implementer", "0x0"));
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("CPU-Architecture", 0));
+  expectations_["CPU-Info"]["CPU-Architecture"].setValueBounds<uint64_t>(
+      0, UINT16_MAX);
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<std::string, true>("CPU-Variant", "0x0"));
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<std::string, true>("CPU-Part", "0x0"));
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("CPU-Revision", 0));
+  expectations_["CPU-Info"]["CPU-Revision"].setValueBounds<uint64_t>(
+      0, UINT16_MAX);
+
+  expectations_["CPU-Info"].addChild(
+      expectations_.create<uint64_t, true>("Package-Count", 1));
+  expectations_["CPU-Info"]["Package-Count"].setValueBounds<uint64_t>(
+      1, UINT16_MAX);
+}
+
+void ModelConfig::recursiveValidate(expectationNode expectation,
+                                    ryml::NodeRef node,
+                                    std::string hierarchyString) {
+  // Iterate over passed expectations
+  for (auto& chld : expectation.getChildren()) {
+    std::string nodeKey = chld.getKey();
+    // If the expectation is a wildcard, then iterate over the associated
+    // children in the config option using the same expectation(s)
+    if (nodeKey == "*") {
+      for (ryml::NodeRef rymlChld : node) {
+        // An index value used in case of error
+        std::string idx =
+            std::string(rymlChld.key().data(), rymlChld.key().size());
+        std::string result = chld.validateConfigNode(rymlChld);
+        if (result != "Success")
+          invalid_ << "\t- " << hierarchyString + idx + " " + result + "\n";
+        recursiveValidate(chld, rymlChld, hierarchyString + idx + ":");
+      }
+    } else if (node.has_child(ryml::to_csubstr(nodeKey))) {
+      // If the config file contains the key of the expectation node, get
+      // it
+      ryml::NodeRef rymlChld = node[ryml::to_csubstr(nodeKey)];
+      if (chld.isSequence()) {
+        // If the expectation node is a sequence, then treat the ryml::NodeRef
+        // as a parent and validate all its children against the expectation
+        // node
+        int idx = 0;
+        for (ryml::NodeRef grndChld : rymlChld) {
+          std::string result = chld.validateConfigNode(grndChld);
+          if (result != "Success")
+            invalid_ << "\t- "
+                     << hierarchyString + ":" + nodeKey + ":" +
+                            std::to_string(idx) + " " + result + "\n";
+          idx++;
+        }
+      } else {
+        // If the expectation node is not a sequence, validate the config
+        // option against the current expectations and if it has children,
+        // validate those recursively
+        std::string result = chld.validateConfigNode(rymlChld);
+        if (result != "Success")
+          invalid_ << "\t- " << hierarchyString + nodeKey + " " + result + "\n";
+        if (chld.getChildren().size()) {
+          recursiveValidate(chld, rymlChld, hierarchyString + nodeKey + ":");
+        }
+      }
+    } else {
+      // If the config file doesn't contain the key of the expectation node,
+      // create is as a child to the config ryml::NodeRef supplied. If the
+      // config option is optional, a default value will be injected,
+      // otherwise the validation will fail
+      ryml::NodeRef rymlChld = node.append_child() << ryml::key(nodeKey);
+      // Set the new ryml::NodeRef to be a sequence and give it a child node
+      if (chld.isSequence()) {
+        rymlChld |= ryml::SEQ;
+        rymlChld = rymlChld.append_child();
+      }
+      std::string result = chld.validateConfigNode(rymlChld);
+      if (result != "Success")
+        invalid_ << "\t- " << hierarchyString + nodeKey + " " + result + "\n";
+    }
+  }
+}
+
+void ModelConfig::postValidation() {
+  // Ensure package_count size is a less than or equal to the core count,
+  // and that the core count can be divided by the package count
+  uint64_t packageCount;
+  configTree_["CPU-Info"]["Package-Count"] >> packageCount;
+  uint64_t coreCount;
+  configTree_["CPU-Info"]["Core-Count"] >> coreCount;
+  if (!((packageCount <= coreCount) && (coreCount % packageCount == 0))) {
+    invalid_ << "\t- Package-Count must be a Less-than or equal to Core-Count, "
+                "and Core-Count must be divisible by Package-Count.";
+  }
+
+  // Convert all instruction group strings to their corresponding group
+  // numbers into another config option
+  for (ryml::NodeRef node : configTree_["Ports"]) {
+    // Clear or create a new Instruction-Group-Support-Nums config option
+    if (node.has_child("Instruction-Group-Support-Nums")) {
+      node["Instruction-Group-Support-Nums"].clear_children();
+    } else {
+      node.append_child() << ryml::key("Instruction-Group-Support-Nums") |=
+          ryml::SEQ;
+    }
+    // Read in each group and place its corresponding group number into the
+    // new config option
+    for (ryml::NodeRef chld : node["Instruction-Group-Support"]) {
+      std::string groupStr;
+      chld >> groupStr;
+      node["Instruction-Group-Support-Nums"].append_child()
+          << groupMapping_[groupStr];
+    }
+  }
+  for (ryml::NodeRef node : configTree_["Execution-Units"]) {
+    // Clear or create a new Blocking-Group-Nums config option
+    if (node.has_child("Blocking-Group-Nums")) {
+      node["Blocking-Group-Nums"].clear_children();
+    } else {
+      node.append_child() << ryml::key("Blocking-Group-Nums") |= ryml::SEQ;
+    }
+    // Read in each group and place its corresponding group number into the
+    // new config option
+    for (ryml::NodeRef chld : node["Blocking-Groups"]) {
+      std::string groupStr;
+      chld >> groupStr;
+      node["Blocking-Group-Nums"].append_child() << groupMapping_[groupStr];
+    }
+  }
+  for (ryml::NodeRef node : configTree_["Latencies"]) {
+    // Clear or create a new Instruction-Group-Nums config option
+    if (node.has_child("Instruction-Group-Nums")) {
+      node["Instruction-Group-Nums"].clear_children();
+    } else {
+      node.append_child() << ryml::key("Instruction-Group-Nums") |= ryml::SEQ;
+    }
+    // Read in each group and place its corresponding group number into the
+    // new config option
+    for (ryml::NodeRef chld : node["Instruction-Groups"]) {
+      std::string groupStr;
+      chld >> groupStr;
+      node["Instruction-Group-Nums"].append_child() << groupMapping_[groupStr];
+    }
+  }
+
+  // Ensure all execution ports have an associated reservation station and
+  // convert port strings to their associated port indexes
+  std::vector<std::string> portnames;
+  std::unordered_map<std::string, uint16_t> portIndexes;
+  uint16_t idx = 0;
+  // Read all available port names.
+  for (ryml::NodeRef node : configTree_["Ports"]) {
+    std::string portname;
+    node["Portname"] >> portname;
+    portnames.push_back(portname);
+    portIndexes[portname] = idx++;
+  }
+  // Iterate over all [Reservation-Stations][Ports] children
+  for (ryml::NodeRef node : configTree_["Reservation-Stations"]) {
+    // Clear or create a new Port-Nums config option
+    if (node.has_child("Port-Nums")) {
+      node["Port-Nums"].clear_children();
+    } else {
+      node.append_child() << ryml::key("Port-Nums") |= ryml::SEQ;
+    }
+    for (int i = 0; i < node["Ports"].num_children(); i++) {
+      std::string portname;
+      node["Ports"][i] >> portname;
+      std::vector<std::string>::iterator itr =
+          std::find(portnames.begin(), portnames.end(), portname);
+      // If a port is yet to be marked as linked, remove it from portnames
+      if (itr != portnames.end()) {
+        portnames.erase(itr);
+      }
+      // Place the port's corresponding index into the new config option
+      node["Port-Nums"].append_child() << portIndexes[portname];
+    }
+  }
+  // Record any unlinked port names
+  for (const auto& prt : portnames)
+    invalid_ << "\t- " << prt << " has no associated reservation station\n";
+}
+
+ryml::Tree ModelConfig::getConfig() { return configTree_; }
+
 void ModelConfig::createGroupMapping() {
-  if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
+  if (ISA_ == "AArch64") {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
@@ -715,8 +864,10 @@ void ModelConfig::createGroupMapping() {
                      "LOAD_SME",
                      "STORE_ADDRESS_SME",
                      "STORE_DATA_SME",
-                     "STORE_SME"};
-  } else if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+                     "STORE_SME",
+                     "ALL",
+                     "NONE"};
+  } else if (ISA_ == "rv64") {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
@@ -729,66 +880,17 @@ void ModelConfig::createGroupMapping() {
                      "STORE_INT",
                      "LOAD",
                      "STORE",
-                     "BRANCH"};
+                     "BRANCH",
+                     "ALL",
+                     "NONE"};
   }
   // ISA instruction group namespaces contain a set of contiguous assigned
-  // uint16_t starting from 0. Therefore, the index of each groupOptions_ entry
-  // is also its <isa>::InstructionGroups value (assuming groupOptions_ is
-  // ordered exactly as <isa>::InstructionGroups is).
+  // uint16_t starting from 0. Therefore, the index of each groupOptions_
+  // entry is also its <isa>::InstructionGroups value (assuming groupOptions_
+  // is ordered exactly as <isa>::InstructionGroups is).
   for (int grp = 0; grp < groupOptions_.size(); grp++) {
     groupMapping_[groupOptions_[grp]] = grp;
   }
-}
-
-template <typename T>
-int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
-                             const std::vector<T>& value_set,
-                             uint8_t expected) {
-  // Check for the existence of the given node
-  if (!(node.IsDefined()) || node.IsNull()) {
-    missing_ << "\t- " << field << "\n";
-    return 0;
-  }
-
-  return setChecker(node, field, value_set, expected);
-}
-
-template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
-                             const std::vector<T>& value_set, uint8_t expected,
-                             T default_value) {
-  // Check for the existence of the given node
-  if (!(node.IsDefined()) || node.IsNull()) {
-    node = default_value;
-    return 1;
-  }
-
-  return setChecker(node, field, value_set, expected);
-}
-
-template <typename T>
-int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
-                             const std::pair<T, T>& bounds, uint8_t expected) {
-  // Check for the existence of the given node
-  if (!(node.IsDefined()) || node.IsNull()) {
-    missing_ << "\t- " << field << "\n";
-    return 0;
-  }
-
-  return boundChecker(node, field, bounds, expected);
-}
-
-template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
-                             const std::pair<T, T>& bounds, uint8_t expected,
-                             const T& default_value) {
-  // Check for the existence of the given node
-  if (!(node.IsDefined()) || node.IsNull()) {
-    node = default_value;
-    return 1;
-  }
-
-  return boundChecker(node, field, bounds, expected);
 }
 
 }  // namespace simeng

@@ -664,8 +664,7 @@ TEST_P(InstArithmetic, umsubl) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstArithmetic,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

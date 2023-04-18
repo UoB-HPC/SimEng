@@ -10,8 +10,9 @@ std::unordered_map<uint32_t, std::vector<Instruction>>
     MicroDecoder::microDecodeCache;
 std::forward_list<InstructionMetadata> MicroDecoder::microMetadataCache;
 
-MicroDecoder::MicroDecoder(YAML::Node config)
-    : instructionSplit_(config["Core"]["Micro-Operations"].as<bool>()) {}
+MicroDecoder::MicroDecoder()
+    : instructionSplit_(SimInfo::getValue<bool>(
+          SimInfo::getConfig()["Core"]["Micro-Operations"])) {}
 
 MicroDecoder::~MicroDecoder() {
   microDecodeCache.clear();
