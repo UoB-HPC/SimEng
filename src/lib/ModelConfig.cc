@@ -385,7 +385,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(expectations_.create("L1-Data-Memory"));
 
   expectations_["L1-Data-Memory"].addChild(
-      expectations_.create<std::string>("Interface-Type", "Fixed"));
+      expectations_.create<std::string>("Interface-Type", "Flat"));
   expectations_["L1-Data-Memory"]["Interface-Type"].setValueSet(
       std::vector<std::string>{"Flat", "Fixed", "External"});
 
@@ -393,7 +393,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(expectations_.create("L1-Instruction-Memory"));
 
   expectations_["L1-Instruction-Memory"].addChild(
-      expectations_.create<std::string>("Interface-Type", "Fixed"));
+      expectations_.create<std::string>("Interface-Type", "Flat"));
   expectations_["L1-Instruction-Memory"]["Interface-Type"].setValueSet(
       std::vector<std::string>{"Flat", "Fixed", "External"});
 
