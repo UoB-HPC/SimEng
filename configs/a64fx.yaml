@@ -1,3 +1,6 @@
+# The following resources where utilised to create the config file and naming schemes:
+# https://github.com/fujitsu/A64FX
+
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
