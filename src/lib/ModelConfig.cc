@@ -199,8 +199,10 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Core
   expectations_.addChild(expectations_.create("Core"));
 
-  expectations_["Core"].addChild(expectations_.create("ISA", ISA_));
-  expectations_["Core"]["ISA"].setValueSet(std::vector{"AArch64", "rv64"});
+  expectations_["Core"].addChild(
+      expectations_.create<std::string>("ISA", ISA_));
+  expectations_["Core"]["ISA"].setValueSet(
+      std::vector<std::string>{"AArch64", "rv64"});
 
   // Early check on [Core][ISA] as its value is needed to inform the
   // expectations of other config options
@@ -219,9 +221,9 @@ void ModelConfig::setExpectations(bool isDefault) {
   createGroupMapping();
 
   expectations_["Core"].addChild(
-      expectations_.create("Simulation-Mode", "emulation"));
+      expectations_.create<std::string>("Simulation-Mode", "emulation"));
   expectations_["Core"]["Simulation-Mode"].setValueSet(
-      std::vector{"emulation", "inorderpipelined", "outoforder"});
+      std::vector<std::string>{"emulation", "inorderpipelined", "outoforder"});
 
   expectations_["Core"].addChild(expectations_.create("Clock-Frequency", 1.f));
   expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f, 10.f);
@@ -501,7 +503,8 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(expectations_.create("Ports"));
   expectations_["Ports"].addChild(expectations_.create<uint64_t>("*", 0));
 
-  expectations_["Ports"]["*"].addChild(expectations_.create("Portname", "0"));
+  expectations_["Ports"]["*"].addChild(
+      expectations_.create<std::string>("Portname", "0"));
 
   expectations_["Ports"]["*"].addChild(expectations_.create<std::string, true>(
       "Instruction-Group-Support", "ALL"));
@@ -572,7 +575,7 @@ void ModelConfig::setExpectations(bool isDefault) {
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Reservation-Stations"]["*"].addChild(
-      expectations_.create("Ports", "0"));
+      expectations_.create<std::string>("Ports", "0"));
   expectations_["Reservation-Stations"]["*"]["Ports"].setValueSet(portnames);
   expectations_["Reservation-Stations"]["*"]["Ports"].setAsSequence();
 
