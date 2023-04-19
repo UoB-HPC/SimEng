@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <variant>
 
-#include "simeng/ryml.hh"
+#include "simeng/yaml/ryml.hh"
 
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
