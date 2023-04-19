@@ -318,7 +318,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"retired", std::to_string(instructionsExecuted_)},
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"idle.ticks", std::to_string(idle_ticks_)},
           {"context.switches", std::to_string(contextSwitches_)}};
