@@ -99,9 +99,16 @@ int main(int argc, char** argv) {
 
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(
-          memory,
           Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
           fn, 0);
+
+  auto connection = std::make_shared<
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
+
+  auto port1 = mmu->initPort();
+  auto port2 = memory->initPort();
+
+  connection->connect(port1, port2);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =

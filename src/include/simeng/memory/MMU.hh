@@ -1,9 +1,13 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <queue>
 
-#include "simeng/memory/Mem.hh"
+#include "simeng/OS/Constants.hh"
+#include "simeng/Port.hh"
+#include "simeng/memory/MemPacket.hh"
 #include "simeng/memory/MemRequests.hh"
+#include "simeng/span.hh"
 
 typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
 
@@ -19,12 +23,11 @@ enum class MemInterfaceType {
 
 namespace memory {
 
-typedef std::function<void(DataPacket)> sendResponseToMemInterface;
-
 class MMU {
  public:
-  MMU(std::shared_ptr<Mem> memory, uint16_t latency, VAddrTranslator fn,
-      uint64_t tid);
+  MMU(uint16_t latency, VAddrTranslator fn, uint64_t tid);
+
+  ~MMU() { delete port_; }
 
   /** Tick the memory model to process the request queue. */
   void tick();
@@ -58,16 +61,17 @@ class MMU {
   /** Returns true if there are any oustanding memory requests in-flight. */
   bool hasPendingRequests() const;
 
-  /** Method used to buffer requests to memory. */
-  DataPacket bufferRequest(DataPacket request);
+  /** Method used to buffer data requests to memory. */
+  void bufferRequest(std::unique_ptr<MemPacket> request);
 
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
 
- private:
-  /** Reference to the memory */
-  std::shared_ptr<Mem> memory_ = nullptr;
+  /** Function used to initialise the Data Port used for bidirection
+   * communication. */
+  Port<std::unique_ptr<MemPacket>>* initPort();
 
+ private:
   /** The latency all requests are completed after. */
   uint16_t latency_;
 
@@ -89,6 +93,9 @@ class MMU {
   /** Callback function which invokes the OS for translation on
    * TLB misses. */
   VAddrTranslator translate_;
+
+  /** Data port used for communication with the memory hierarchy. */
+  Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
 
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow(uint64_t a, uint64_t b) const {

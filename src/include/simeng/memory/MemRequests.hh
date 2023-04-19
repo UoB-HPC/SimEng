@@ -1,5 +1,7 @@
 #pragma once
 
+#include "simeng/RegisterValue.hh"
+
 namespace simeng {
 namespace memory {
 

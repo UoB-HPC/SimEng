@@ -1,12 +1,12 @@
 #include "simeng/memory/MMU.hh"
 
-#include "simeng/OS/Constants.hh"
+#include <memory>
+
 namespace simeng {
 namespace memory {
 
-MMU::MMU(std::shared_ptr<Mem> memory, uint16_t latency, VAddrTranslator fn,
-         uint64_t tid)
-    : memory_(memory), latency_(latency), tid_(tid), translate_(fn) {}
+MMU::MMU(uint16_t latency, VAddrTranslator fn, uint64_t tid)
+    : latency_(latency), tid_(tid), translate_(fn) {}
 
 void MMU::tick() {
   tickCounter_++;
@@ -25,23 +25,11 @@ void MMU::tick() {
     if (request.write) {
       const char* wdata = request.data.getAsVector<char>();
       std::vector<char> dt(wdata, wdata + target.size);
-      // Responses to write requests are ignored because they don't contain any
-      // information relevant to the simulation.
-      bufferRequest(memory::DataPacket(target.address, target.size,
-                                       memory::WRITE_REQUEST, requestId, dt));
+      bufferRequest(memory::MemPacket::createWriteRequest(
+          target.address, target.size, requestId, dt));
     } else {
-      DataPacket req(target.address, target.size, memory::READ_REQUEST,
-                     requestId);
-      DataPacket resp = bufferRequest(req);
-
-      RegisterValue retData;
-      if (resp.inFault_) {
-        retData = RegisterValue();
-      } else {
-        retData = RegisterValue(resp.data_.data(), resp.size_);
-      }
-
-      completedReads_.push_back({target, retData, requestId});
+      bufferRequest(memory::MemPacket::createReadRequest(
+          target.address, target.size, requestId));
     }
 
     // Remove the request from the queue
@@ -60,17 +48,20 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
                            uint64_t requestId) {
-  DataPacket req(target.address, target.size, memory::READ_REQUEST, requestId);
-  DataPacket resp = bufferRequest(req);
+  uint64_t paddr = translate_(target.address, tid_);
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
-  RegisterValue retData;
-  if (resp.inFault_) {
-    retData = RegisterValue();
+  std::unique_ptr<memory::MemPacket> pkt =
+      memory::MemPacket::createReadRequest(paddr, target.size, requestId);
+  if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+    port_->recieve(MemPacket::createFaultyMemPacket());
+    return;
+  } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    pkt->setIgnored();
   } else {
-    retData = RegisterValue(resp.data_.data(), resp.size_);
+    pkt->setUntimedRead();
   }
-
-  completedInstrReads_.push_back({target, retData, requestId});
+  port_->send(std::move(pkt));
 }
 
 const span<MemoryReadResult> MMU::getCompletedReads() const {
@@ -89,25 +80,68 @@ void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 bool MMU::hasPendingRequests() const { return !pendingRequests_.empty(); }
 
-DataPacket MMU::bufferRequest(DataPacket request) {
+void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request.address_, tid_);
+  uint64_t paddr = translate_(request->address_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
-  DataPacket pkt;
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    pkt = DataPacket(true);
+    port_->recieve(MemPacket::createFaultyMemPacket());
+    return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
-    pkt = memory_->handleIgnoredRequest(request);
+    request->setIgnored();
   } else {
-    request.address_ = paddr;
-    pkt = memory_->requestAccess(request);
+    request->address_ = paddr;
   }
-  return pkt;
+  port_->send(std::move(request));
 }
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
+
+Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
+  port_ = new Port<std::unique_ptr<MemPacket>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    if (packet->isUntimedRead()) {
+      if (packet->isFaulty()) {
+        // If faulty, return no data. This signals a data abort.
+        completedInstrReads_.push_back(
+            // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
+            // definition
+            {{packet->address_, static_cast<uint8_t>(packet->size_)},
+             RegisterValue(),
+             packet->id_});
+        return;
+      }
+      completedInstrReads_.push_back(
+          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
+          // definition
+          {{packet->address_, static_cast<uint8_t>(packet->size_)},
+           RegisterValue(packet->data().data(), packet->size_),
+           packet->id_});
+      return;
+    }
+
+    if (packet->isRead()) {
+      if (packet->isFaulty()) {
+        // If faulty, return no data. This signals a data abort.
+        completedReads_.push_back(
+            // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
+            {{packet->address_, static_cast<uint8_t>(packet->size_)},
+             RegisterValue(),
+             packet->id_});
+        return;
+      }
+      completedReads_.push_back(
+          // definition
+          {{packet->address_, static_cast<uint8_t>(packet->size_)},
+           RegisterValue(packet->data().data(), packet->size_),
+           packet->id_});
+    }
+  };
+  port_->registerReceiver(fn);
+  return port_;
+}
 
 }  // namespace memory
 }  // namespace simeng
