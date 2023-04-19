@@ -6,7 +6,7 @@
 #include "simeng/Instruction.hh"
 #include "simeng/ModelConfig.hh"
 #include "simeng/RegisterFileSet.hh"
-#include "simeng/ryml.hh"
+#include "simeng/yaml/ryml.hh"
 
 namespace simeng {
 
