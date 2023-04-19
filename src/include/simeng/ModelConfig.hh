@@ -136,18 +136,40 @@ struct expectationNode {
   T getByType(const dataTypeVariant& variant) const {
     // Value existence check
     if (variant.valueless_by_exception()) {
-      std::cerr << "[SimEng:ModelConfig] No value in passed variant"
-                << std::endl;
+      std::cerr << "[SimEng:ModelConfig] No value in passed variant within "
+                   "expectationNode with key "
+                << nodeKey_ << std::endl;
       exit(1);
     }
     // Value type check
     if (!std::holds_alternative<T>(variant)) {
       std::cerr << "[SimEng:ModelConfig] Value of given type not held in "
-                   "variant. Variant holds "
-                << variant.index() << std::endl;
+                   "variant within expectationNode with key "
+                << nodeKey_ << ". Variant holds a "
+                << typeToString(variant.index())
+                << " and the expected type of this node is "
+                << typeToString(type_) << "." << std::endl;
       exit(1);
     }
     return std::get<T>(variant);
+  }
+
+  /** A utility function for converting the type held in dataTypeVariant or the
+   * value of type_ into a string via an index. */
+  std::string typeToString(size_t index) const {
+    switch (index) {
+      case 0:
+        return "bool";
+      case 1:
+        return "float";
+      case 2:
+        return "integer";
+      case 3:
+        return "string";
+      case 4:
+        return "unsigned integer";
+    }
+    return "unknown";
   }
 
   /** Setter function to set the default value for this node's associated config
