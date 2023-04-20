@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <forward_list>
 #include <queue>
 #include <unordered_map>
@@ -135,6 +136,9 @@ class Architecture : public arch::Architecture {
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
+
+  /** Counter for assigning sequence ids to all instructions. */
+  mutable uint64_t instrSeqIdCtr_ = 0;
 };
 
 }  // namespace aarch64

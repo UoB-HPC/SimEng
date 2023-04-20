@@ -4,7 +4,6 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/FlatMemoryInterface.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
@@ -22,8 +21,7 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+  Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu,
        arch::sendSyscallToHandler handleSyscall);
 
@@ -125,9 +123,6 @@ class Core : public simeng::Core {
   // multicore
   uint64_t coreId_ = 0;
 
-  /** The process memory. */
-  MemoryInterface& dataMemory_;
-
   /** The Core's Memory Management Unit. */
   std::shared_ptr<memory::MMU> mmu_;
 
@@ -152,7 +147,7 @@ class Core : public simeng::Core {
       completionSlots_;
 
   /** The previously generated addresses. */
-  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
+  std::queue<simeng::memory::MemoryAccessTarget> previousAddresses_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;

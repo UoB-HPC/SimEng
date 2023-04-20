@@ -27,8 +27,8 @@
 #include "simeng/Elf.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/SpecialFileDirGen.hh"
-#include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
+#include "simeng/memory/MemRequests.hh"
 #include "simeng/version.hh"
 
 static constexpr uint16_t PATH_MAX_LEN = 4096;
@@ -165,7 +165,7 @@ struct ProcessStateChange {
   std::vector<RegisterValue> modifiedRegisterValues;
 
   /** Memory address/width pairs to modify */
-  std::vector<MemoryAccessTarget> memoryAddresses;
+  std::vector<memory::MemoryAccessTarget> memoryAddresses;
 
   /** Values to write to memory */
   std::vector<RegisterValue> memoryAddressValues;

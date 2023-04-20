@@ -10,14 +10,15 @@ namespace simeng {
 namespace pipeline {
 
 /** Check whether requests `a` and `b` overlap. */
-bool requestsOverlap(MemoryAccessTarget a, MemoryAccessTarget b) {
+bool requestsOverlap(memory::MemoryAccessTarget a,
+                     memory::MemoryAccessTarget b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
   return !(a.address + a.size <= b.address || b.address + b.size <= a.address);
 }
 
 LoadStoreQueue::LoadStoreQueue(
-    unsigned int maxCombinedSpace, MemoryInterface& memory,
+    unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
@@ -27,7 +28,7 @@ LoadStoreQueue::LoadStoreQueue(
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
-      memory_(memory),
+      mmu_(mmu),
       exclusive_(exclusive),
       loadBandwidth_(loadBandwidth),
       storeBandwidth_(storeBandwidth),
@@ -37,7 +38,7 @@ LoadStoreQueue::LoadStoreQueue(
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
-    MemoryInterface& memory,
+    std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
@@ -48,7 +49,7 @@ LoadStoreQueue::LoadStoreQueue(
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
-      memory_(memory),
+      mmu_(mmu),
       exclusive_(exclusive),
       loadBandwidth_(loadBandwidth),
       storeBandwidth_(storeBandwidth),
@@ -111,8 +112,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                              .reqAddresses;
     // Store load addresses temporarily so that conflictions are
     // only regsitered once on most recent (program order) store
-    std::list<simeng::MemoryAccessTarget> temp_load_addr(ld_addresses.begin(),
-                                                         ld_addresses.end());
+    std::list<simeng::memory::MemoryAccessTarget> temp_load_addr(
+        ld_addresses.begin(), ld_addresses.end());
 
     // Detect reordering conflicts
     if (storeQueue_.size() > 0) {
@@ -206,7 +207,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
-    memory_.requestWrite(addresses[i], data[i]);
+    mmu_->requestWrite(addresses[i], data[i], uop->getSequenceId());
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
     requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]
@@ -443,7 +444,7 @@ void LoadStoreQueue::tick() {
           // request[Load|Store]Queue_ entry
           auto& addressQueue = itInsn->reqAddresses;
           while (addressQueue.size()) {
-            const simeng::MemoryAccessTarget req = addressQueue.front();
+            const simeng::memory::MemoryAccessTarget req = addressQueue.front();
 
             // Ensure the limit on the data transfered per cycle is adhered to
             assert(req.size <= bandwidth &&
@@ -460,7 +461,7 @@ void LoadStoreQueue::tick() {
             // Request a read from the memory interface if the requestQueue_
             // entry represents a read
             if (!isStore) {
-              memory_.requestRead(req, itInsn->insn->getSequenceId());
+              mmu_->requestRead(req, itInsn->insn->getSequenceId());
             }
 
             // Remove processed address from queue
@@ -489,7 +490,7 @@ void LoadStoreQueue::tick() {
   }
 
   // Process completed read requests
-  for (const auto& response : memory_.getCompletedReads()) {
+  for (const auto& response : mmu_->getCompletedReads()) {
     const auto& address = response.target.address;
     const auto& data = response.data;
 
@@ -513,7 +514,7 @@ void LoadStoreQueue::tick() {
       completedLoads_.push(load);
     }
   }
-  memory_.clearCompletedReads();
+  mmu_->clearCompletedReads();
 
   // Pop from the front of the completed loads queue and send to writeback
   size_t count = 0;

@@ -13,8 +13,7 @@ namespace models {
 namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
@@ -25,7 +24,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
-      dataMemory_(dataMemory),
       mmu_(mmu),
       fetchToDecodeBuffer_(
           config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), {}),
@@ -40,7 +38,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           {1, nullptr}),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<unsigned int>(),
-          config["Queue-Sizes"]["Store"].as<unsigned int>(), dataMemory,
+          config["Queue-Sizes"]["Store"].as<unsigned int>(), mmu_,
           {completionSlots_.data() + config["Execution-Units"].size(),
            config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
           [this](auto regs, auto values) {
@@ -55,7 +53,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory,
+      fetchUnit_(fetchToDecodeBuffer_, mmu_,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
                  branchPredictor),
       reorderBuffer_(
@@ -117,9 +115,8 @@ void Core::tick() {
       // Ensure that all pipeline buffers and ROB are empty, no data requests
       // are pending, and no exception is being handled before context switching
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
-          renameToDispatchBuffer_.isEmpty() &&
-          !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&
-          (exceptionGenerated_ == false)) {
+          renameToDispatchBuffer_.isEmpty() && !mmu_->hasPendingRequests() &&
+          (reorderBuffer_.size() == 0) && (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -295,7 +292,7 @@ void Core::processException() {
   assert(exceptionGenerated_ != false &&
          "[SimEng:Core] Attempted to process an exception handler that wasn't "
          "active");
-  if (dataMemory_.hasPendingRequests()) {
+  if (mmu_->hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
     return;
@@ -366,8 +363,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
+    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
+                       0);
   }
 }
 
