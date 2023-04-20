@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+#include "simeng/memory/MemRequests.hh"
+
 namespace simeng {
 namespace memory {
 
@@ -36,7 +38,7 @@ class MemPacket {
   uint64_t paddr_ = 0;
 
   /** The size of the memory operation to be performed. */
-  uint64_t size_ = 0;
+  uint16_t size_ = 0;
 
   /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
    * and data-write requests can have an ID of 0. */
@@ -87,15 +89,12 @@ class MemPacket {
   }
 
   /** Static function used to create a read request. */
-  static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
-                                                      uint64_t size,
-                                                      uint64_t reqId);
+  static std::unique_ptr<MemPacket> createReadRequest(
+      const MemoryAccessTarget& target, uint64_t reqId);
 
   /** Static function used to create a write request. */
-  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
-                                                       uint64_t size,
-                                                       uint64_t reqId,
-                                                       std::vector<char> data);
+  static std::unique_ptr<MemPacket> createWriteRequest(
+      const MemoryAccessTarget& target, uint64_t reqId, std::vector<char> data);
 
   /** Static function used to create a faulty MemPacket. */
   static std::unique_ptr<MemPacket> createFaultyMemPacket(bool isRead);
@@ -124,11 +123,12 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t vaddr, uint64_t size, MemPacketType type, uint64_t reqId);
+  MemPacket(const MemoryAccessTarget& target, MemPacketType type,
+            uint64_t reqId);
 
   /** Constructor for MemPackets which hold any data. */
-  MemPacket(uint64_t vaddr, uint64_t size, MemPacketType type, uint64_t reqId,
-            std::vector<char> data);
+  MemPacket(const MemoryAccessTarget& target, MemPacketType type,
+            uint64_t reqId, std::vector<char> data);
 };
 
 }  // namespace memory

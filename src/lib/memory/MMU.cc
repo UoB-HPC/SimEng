@@ -49,12 +49,12 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
-                           const uint64_t requestId) {
-  uint64_t paddr = translate_(target.address, tid_);
+                           uint64_t requestId) {
+  uint64_t paddr = translate_(target.vaddr, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
-  std::unique_ptr<memory::MemPacket> pkt = memory::MemPacket::createReadRequest(
-      target.address, target.size, requestId);
+  std::unique_ptr<memory::MemPacket> pkt =
+      memory::MemPacket::createReadRequest(target, requestId);
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
     port_->recieve(MemPacket::createFaultyMemPacket(true));
     return;
@@ -113,7 +113,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
         completedInstrReads_.push_back(
             // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
             // definition
-            {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
+            {{packet->vaddr_, packet->size_, packet->id_},
              RegisterValue(),
              packet->id_});
         return;
@@ -121,7 +121,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
       completedInstrReads_.push_back(
           // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
           // definition
-          {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
+          {{packet->vaddr_, packet->size_, packet->id_},
            RegisterValue(packet->data().data(), packet->size_),
            packet->id_});
       return;
@@ -133,7 +133,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
         completedReads_.push_back(
             // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
             // definition
-            {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
+            {{packet->vaddr_, packet->size_, packet->id_},
              RegisterValue(),
              packet->id_});
         return;
@@ -141,7 +141,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
       completedReads_.push_back(
           // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
           // definition
-          {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
+          {{packet->vaddr_, packet->size_, packet->id_},
            RegisterValue(packet->data().data(), packet->size_),
            packet->id_});
     }
