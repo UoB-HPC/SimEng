@@ -25,9 +25,10 @@ class MockExceptionHandler {
 class ReorderBufferTest : public testing::Test {
  public:
   ReorderBufferTest()
-      : rat({{8, 32}}, {64}),
-        memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(memory, latency, fn, tid)),
+      : memory(std::make_shared<memory::SimpleMem>(1024)),
+        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        connection(),
+        rat({{8, 32}}, {64}),
         lsq(maxLSQLoads, maxLSQStores, mmu, {nullptr, 0},
             [](auto registers, auto values) {}),
         uop(new MockInstruction),
@@ -37,7 +38,12 @@ class ReorderBufferTest : public testing::Test {
         reorderBuffer(
             maxROBSize, rat, lsq,
             [this](auto insn) { exceptionHandler.raiseException(insn); },
-            [](auto branchAddress) {}, predictor, 0, 0) {}
+            [](auto branchAddress) {}, predictor, 0, 0) {
+    // Set up MMU->Memory connection
+    port1 = mmu->initPort();
+    port2 = memory->initPort();
+    connection.connect(port1, port2);
+  }
 
  protected:
   const uint8_t maxLSQLoads = 32;
@@ -45,12 +51,15 @@ class ReorderBufferTest : public testing::Test {
   const uint8_t maxROBSize = 32;
 
   const uint64_t latency = 0;
-  const uint64_t tid = 0;
   VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return vaddr;
   };
   std::shared_ptr<memory::SimpleMem> memory;
   std::shared_ptr<memory::MMU> mmu;
+
+  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port1;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port2;
 
   RegisterAliasTable rat;
   LoadStoreQueue lsq;
@@ -67,26 +76,16 @@ class ReorderBufferTest : public testing::Test {
   ReorderBuffer reorderBuffer;
 };
 
-// Tests that an instruction can have a slot reserved in the ROB and be
-// allocated a sequence ID
+// Tests that multiple instructions can have a slot reserved in the ROB
 TEST_F(ReorderBufferTest, Reserve) {
-  uint64_t oldSeqId = std::numeric_limits<uint64_t>::max();
-  uop->setSequenceId(oldSeqId);
-
+  uint64_t freeSpace = reorderBuffer.getFreeSpace();
   reorderBuffer.reserve(uopPtr);
-
-  // Check that the sequence ID has been changed
-  EXPECT_NE(uop->getSequenceId(), oldSeqId);
+  EXPECT_NE(freeSpace, reorderBuffer.getFreeSpace());
   EXPECT_EQ(reorderBuffer.size(), 1);
-}
 
-// Tests that multiple instruction slots can be reserved, and are allocated
-// increasingly larger sequence IDs
-TEST_F(ReorderBufferTest, SequenceId) {
-  reorderBuffer.reserve(uopPtr);
+  freeSpace = reorderBuffer.getFreeSpace();
   reorderBuffer.reserve(uopPtr2);
-
-  EXPECT_LT(uop->getSequenceId(), uop2->getSequenceId());
+  EXPECT_NE(freeSpace, reorderBuffer.getFreeSpace());
   EXPECT_EQ(reorderBuffer.size(), 2);
 }
 

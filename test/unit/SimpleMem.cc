@@ -4,22 +4,57 @@
 
 namespace {
 
+/** A simple class used to recieve responses from memory. */
+class testRecv {
+ public:
+  testRecv(){};
+
+  /** Function used to initialise the Data Port used for bidirection
+   * communication. */
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* initPort() {
+    port_ = new simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>();
+    auto fn =
+        [this](std::unique_ptr<simeng::memory::MemPacket> packet) -> void {
+      this->resp = std::move(packet);
+      return;
+    };
+    port_->registerReceiver(fn);
+    return port_;
+  }
+
+  /* Holds the most recent response recieved through the port. */
+  std::unique_ptr<simeng::memory::MemPacket> resp = nullptr;
+
+ private:
+  /** Data port used for communication with the memory hierarchy. */
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port_ = nullptr;
+};
+
 TEST(SimpleMemTest, Read) {
   simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(100);
+  testRecv respRecv = testRecv();
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = respRecv.initPort();
+  connection.connect(port1, port2);
+
   std::vector<char> data = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   uint8_t dataSize = 10;
   uint64_t addr = 0;
   sMem.sendUntimedData(data, addr, dataSize);
-  auto req = simeng::memory::DataPacket(addr, dataSize,
-                                        simeng::memory::READ_REQUEST, 0);
-  auto res = sMem.requestAccess(req);
+  auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0);
+  sMem.requestAccess(std::move(req));
+  auto res = respRecv.resp->data();
   for (size_t i = 0; i < dataSize; i++) {
-    EXPECT_EQ(res.data_[i], data[i]);
+    EXPECT_EQ(res[i], data[i]);
   }
-  auto req2 = simeng::memory::DataPacket(8, 2, simeng::memory::READ_REQUEST, 0);
-  auto res2 = sMem.requestAccess(req2);
-  EXPECT_EQ(res2.data_[0], '8');
-  EXPECT_EQ(res2.data_[1], '9');
+
+  auto req2 = simeng::memory::MemPacket::createReadRequest(8, 2, 0);
+  sMem.requestAccess(std::move(req2));
+  auto res2 = respRecv.resp->data();
+  EXPECT_EQ(res2[0], '8');
+  EXPECT_EQ(res2[1], '9');
 }
 
 TEST(SimpleMemTest, UntimedWrite) {
@@ -38,16 +73,16 @@ TEST(SimpleMemTest, Write) {
   std::vector<char> data = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   uint8_t dataSize = 10;
   uint64_t addr = 0;
-  sMem.requestAccess(simeng::memory::DataPacket(
-      addr, dataSize, simeng::memory::WRITE_REQUEST, 0, data));
+  sMem.requestAccess(
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data));
   auto mem = sMem.getUntimedData(0, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
   }
   addr = 30;
-  sMem.requestAccess(simeng::memory::DataPacket(
-      30, dataSize, simeng::memory::WRITE_REQUEST, 0, data));
-  mem = sMem.getUntimedData(30, dataSize);
+  sMem.requestAccess(
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data));
+  mem = sMem.getUntimedData(addr, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
   }

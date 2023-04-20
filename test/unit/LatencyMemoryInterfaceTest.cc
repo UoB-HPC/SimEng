@@ -15,7 +15,13 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   };
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(mem, 2, fn, 0);
+      std::make_shared<simeng::memory::MMU>(2, fn);
+
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = mmu->initPort();
+  auto port2 = mem->initPort();
+  connection.connect(port1, port2);
 
   EXPECT_FALSE(mmu->hasPendingRequests());
 
@@ -23,7 +29,7 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   // Should ignore the 7 cycle latency and opt for the interface defined latency
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  mmu->requestWrite(target, value);
+  mmu->requestWrite(target, value, 0);
   EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
@@ -34,10 +40,13 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   mmu->tick();
   EXPECT_FALSE(mmu->hasPendingRequests());
 
-  auto resp = mem->requestAccess(
-      simeng::memory::DataPacket(0, 4, simeng::memory::READ_REQUEST, 0, false));
+  auto resp = mem->getUntimedData(0, 4);
+
+  // auto resp = mem->requestAccess(std::make_unique<simeng::memory::MemPacket>(
+  //     0, 4, simeng::memory::READ_REQUEST, 0));
+
   uint32_t castedValue = 0;
-  memcpy(&castedValue, resp.data_.data(), 4);
+  memcpy(&castedValue, resp.data(), 4);
   EXPECT_EQ(castedValue, 0xDEADBEEF);
 }
 
@@ -55,7 +64,13 @@ TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
   };
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(mem, 1, fn, 0);
+      std::make_shared<simeng::memory::MMU>(1, fn);
+
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = mmu->initPort();
+  auto port2 = mem->initPort();
+  connection.connect(port1, port2);
 
   // Create a target such that address + size will overflow
   simeng::memory::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
