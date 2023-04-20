@@ -6,8 +6,8 @@
 namespace simeng {
 namespace memory {
 
-MMU::MMU(uint16_t latency, VAddrTranslator fn, uint64_t tid)
-    : latency_(latency), tid_(tid), translate_(fn) {}
+MMU::MMU(const uint16_t latency, VAddrTranslator fn)
+    : latency_(latency), translate_(fn) {}
 
 void MMU::tick() {
   tickCounter_++;
@@ -38,17 +38,18 @@ void MMU::tick() {
   }
 }
 
-void MMU::requestRead(const MemoryAccessTarget& target, uint64_t requestId) {
+void MMU::requestRead(const MemoryAccessTarget& target,
+                      const uint64_t requestId) {
   pendingRequests_.push({target, tickCounter_ + latency_, requestId});
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
-                       const RegisterValue& data, uint64_t requestId) {
+                       const RegisterValue& data, const uint64_t requestId) {
   pendingRequests_.push({target, data, tickCounter_ + latency_, requestId});
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
-                           uint64_t requestId) {
+                           const uint64_t requestId) {
   uint64_t paddr = translate_(target.address, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 

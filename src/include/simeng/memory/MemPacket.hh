@@ -38,9 +38,8 @@ class MemPacket {
   /** The size of the memory operation to be performed. */
   uint64_t size_ = 0;
 
-  /** The id of a DataPacket, this is set by the memory interface. For write
-   * requests it is 0 as the memory interface doesn't specify an id for write
-   * requests. */
+  /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
+   * and data-write requests can have an ID of 0. */
   uint64_t id_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
@@ -79,7 +78,7 @@ class MemPacket {
   inline void setUntimedRead() { metadata_ = metadata_ | UntimedReadMask; }
 
   /** Function to return the data assosciated with a MemPacket. */
-  std::vector<char>& data() { return data_; }
+  const std::vector<char>& data() { return data_; }
 
   /** Function used to print the metadata assosciated with a MemPacket. */
   void printMetadata() {

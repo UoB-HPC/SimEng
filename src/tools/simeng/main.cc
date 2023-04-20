@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(
           Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
-          fn, 0);
+          fn);
 
   auto connection = std::make_shared<
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();

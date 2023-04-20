@@ -48,8 +48,9 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create the architecture
   architecture_ = createArchitecture();
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory_, 4, OS.getVAddrTranslator(),
-                                            procTID);
+      std::make_shared<simeng::memory::MMU>(memory_, 4,
+                                            OS.getVAddrTranslator());
+  mmu->setTid(procTID);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),

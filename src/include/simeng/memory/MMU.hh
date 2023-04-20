@@ -15,19 +15,11 @@ typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
 
 namespace simeng {
 
-/** The available memory interface types. */
-enum class MemInterfaceType {
-  Flat,     // A zero access latency interface
-  Fixed,    // A fixed, non-zero, access latency interface
-  External  // An interface generated outside of the standard SimEng
-            // instantiation
-};
-
 namespace memory {
 
 class MMU {
  public:
-  MMU(uint16_t latency, VAddrTranslator fn, uint64_t tid);
+  MMU(const uint16_t latency, VAddrTranslator fn);
 
   ~MMU() { delete port_; }
 
@@ -37,15 +29,16 @@ class MMU {
   /** Queue a read request from the supplied target location.
    * The caller can optionally provide an ID that will be attached to completed
    * read results. */
-  void requestRead(const MemoryAccessTarget& target, uint64_t requestId);
+  void requestRead(const MemoryAccessTarget& target, const uint64_t requestId);
 
   /** Queue a write request of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
-                    uint64_t requestId);
+                    const uint64_t requestId);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
-  void requestInstrRead(const MemoryAccessTarget& target, uint64_t requestId);
+  void requestInstrRead(const MemoryAccessTarget& target,
+                        const uint64_t requestId);
 
   /** Retrieve all completed requests. */
   const span<MemoryReadResult> getCompletedReads() const;
@@ -88,8 +81,8 @@ class MMU {
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;
 
-  /** TID of the process assosciated with this MMU. */
-  uint64_t tid_;
+  /** TID of the process currently communicating with this MMU. */
+  uint64_t tid_ = 0;
 
   /** Callback function which invokes the OS for translation on
    * TLB misses. */
