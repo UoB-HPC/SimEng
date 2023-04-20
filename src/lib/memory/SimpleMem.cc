@@ -16,10 +16,12 @@ size_t SimpleMem::getMemorySize() { return memSize_; }
 void SimpleMem::requestAccess(std::unique_ptr<MemPacket> pkt) {
   if (pkt->ignore()) {
     port_->send(handleIgnoredRequest(std::move(pkt)));
+    return;
   } else if (pkt->isUntimedRead()) {
-    std::vector<char> data = getUntimedData(pkt->address_, pkt->size_);
+    std::vector<char> data = getUntimedData(pkt->paddr_, pkt->size_);
     pkt->turnIntoReadResponse(data);
     port_->send(std::move(pkt));
+    return;
   } else if (pkt->isRequest() && pkt->isRead()) {
     port_->send(handleReadRequest(std::move(pkt)));
     return;
@@ -39,7 +41,7 @@ void SimpleMem::requestAccess(std::unique_ptr<MemPacket> pkt) {
 std::unique_ptr<MemPacket> SimpleMem::handleReadRequest(
     std::unique_ptr<MemPacket> req) {
   size_t size = req->size_;
-  uint64_t addr = req->address_;
+  uint64_t addr = req->paddr_;
   std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
   req->turnIntoReadResponse(data);
   return req;
@@ -47,7 +49,7 @@ std::unique_ptr<MemPacket> SimpleMem::handleReadRequest(
 
 std::unique_ptr<MemPacket> SimpleMem::handleWriteRequest(
     std::unique_ptr<MemPacket> req) {
-  uint64_t address = req->address_;
+  uint64_t address = req->paddr_;
   std::copy(req->data().begin(), req->data().end(), memory_.begin() + address);
   req->turnIntoWriteResponse();
   return req;

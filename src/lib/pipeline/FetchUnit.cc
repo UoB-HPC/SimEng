@@ -252,7 +252,7 @@ void FetchUnit::requestFromPC() {
     blockAddress = pc_ & blockMask_;
   }
 
-  mmu_->requestInstrRead({blockAddress, blockSize_});
+  mmu_->requestInstrRead({blockAddress, blockSize_}, 0);
 }
 
 uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }

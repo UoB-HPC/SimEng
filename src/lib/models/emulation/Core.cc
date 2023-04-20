@@ -2,6 +2,8 @@
 
 #include <cstring>
 
+#include "simeng/Core.hh"
+
 namespace simeng {
 namespace models {
 namespace emulation {
@@ -78,7 +80,8 @@ void Core::tick() {
   // Determine if new uops are needed to be fetched
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
-    mmu_->requestInstrRead({pc_, FETCH_SIZE});
+    memory::MemoryAccessTarget target = {pc_, FETCH_SIZE};
+    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
     // Find fetched memory that matches the current PC
     const auto& fetched = mmu_->getCompletedInstrReads();
     size_t fetchIndex;
@@ -135,7 +138,7 @@ void Core::tick() {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
-        mmu_->requestRead(target);
+        mmu_->requestRead(target, uop->getSequenceId());
         // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }
@@ -180,7 +183,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isStoreData()) {
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
-      mmu_->requestWrite(previousAddresses_[i], data[i]);
+      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId());
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -284,8 +287,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    mmu_->requestWrite(change.memoryAddresses[i],
-                       change.memoryAddressValues[i]);
+    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
+                       0);
   }
 }
 

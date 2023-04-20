@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "simeng/RegisterValue.hh"
 
 namespace simeng {
@@ -8,9 +10,24 @@ namespace memory {
 /** A generic memory access target; describes a region of memory to access. */
 struct MemoryAccessTarget {
   /** The address to access. */
-  uint64_t address;
+  uint64_t address = 0;
   /** The number of bytes to access at `address`. */
-  uint8_t size;
+  uint8_t size = 0;
+
+  uint64_t id = 0;
+
+  MemoryAccessTarget(uint64_t taddr, uint64_t tsize, uint64_t target_id)
+      : id(target_id) {
+    address = taddr;
+    size = tsize;
+  }
+
+  MemoryAccessTarget(uint64_t taddr, uint64_t tsize) : id(++idCtr) {
+    address = taddr;
+    size = tsize;
+  }
+
+  MemoryAccessTarget() : id(++idCtr) {}
 
   /** Check for equality of two access targets. */
   bool operator==(const MemoryAccessTarget& other) const {
@@ -19,8 +36,11 @@ struct MemoryAccessTarget {
 
   /** Check for inequality of two access targets. */
   bool operator!=(const MemoryAccessTarget& other) const {
-    return !(other == *this);
+    return other.id != id;
   }
+
+ private:
+  static inline uint64_t idCtr = 0;
 };
 
 /** A structure used for the result of memory read operations. */
@@ -53,8 +73,12 @@ struct FixedLatencyMemoryInterfaceRequest {
   /** Construct a write request. */
   FixedLatencyMemoryInterfaceRequest(const MemoryAccessTarget& target,
                                      const RegisterValue& data,
-                                     uint64_t readyAt)
-      : write(true), target(target), data(data), readyAt(readyAt) {}
+                                     uint64_t readyAt, uint64_t requestId)
+      : write(true),
+        target(target),
+        data(data),
+        readyAt(readyAt),
+        requestId(requestId) {}
 
   /** Construct a read request. */
   FixedLatencyMemoryInterfaceRequest(const MemoryAccessTarget& target,

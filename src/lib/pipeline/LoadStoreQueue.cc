@@ -207,7 +207,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
-    mmu_->requestWrite(addresses[i], data[i]);
+    mmu_->requestWrite(addresses[i], data[i], uop->getSequenceId());
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
     requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]

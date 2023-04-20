@@ -1,5 +1,6 @@
 #include "simeng/memory/MMU.hh"
 
+#include <cstdint>
 #include <memory>
 
 namespace simeng {
@@ -42,8 +43,8 @@ void MMU::requestRead(const MemoryAccessTarget& target, uint64_t requestId) {
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
-                       const RegisterValue& data) {
-  pendingRequests_.push({target, data, tickCounter_ + latency_});
+                       const RegisterValue& data, uint64_t requestId) {
+  pendingRequests_.push({target, data, tickCounter_ + latency_, requestId});
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
@@ -51,14 +52,15 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target,
   uint64_t paddr = translate_(target.address, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
-  std::unique_ptr<memory::MemPacket> pkt =
-      memory::MemPacket::createReadRequest(paddr, target.size, requestId);
+  std::unique_ptr<memory::MemPacket> pkt = memory::MemPacket::createReadRequest(
+      target.address, target.size, requestId);
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
     port_->recieve(MemPacket::createFaultyMemPacket());
     return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     pkt->setIgnored();
   } else {
+    pkt->paddr_ = paddr;
     pkt->setUntimedRead();
   }
   port_->send(std::move(pkt));
@@ -83,7 +85,7 @@ bool MMU::hasPendingRequests() const { return !pendingRequests_.empty(); }
 void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request->address_, tid_);
+  uint64_t paddr = translate_(request->vaddr_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
@@ -92,7 +94,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     request->setIgnored();
   } else {
-    request->address_ = paddr;
+    request->paddr_ = paddr;
   }
   port_->send(std::move(request));
 }
@@ -103,12 +105,13 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
   port_ = new Port<std::unique_ptr<MemPacket>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     if (packet->isUntimedRead()) {
+      // Untimed Read only used by instruction requests
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
         completedInstrReads_.push_back(
             // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
             // definition
-            {{packet->address_, static_cast<uint8_t>(packet->size_)},
+            {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
              RegisterValue(),
              packet->id_});
         return;
@@ -116,7 +119,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
       completedInstrReads_.push_back(
           // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
           // definition
-          {{packet->address_, static_cast<uint8_t>(packet->size_)},
+          {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
            RegisterValue(packet->data().data(), packet->size_),
            packet->id_});
       return;
@@ -127,14 +130,16 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
         // If faulty, return no data. This signals a data abort.
         completedReads_.push_back(
             // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-            {{packet->address_, static_cast<uint8_t>(packet->size_)},
+            // definition
+            {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
              RegisterValue(),
              packet->id_});
         return;
       }
       completedReads_.push_back(
+          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
           // definition
-          {{packet->address_, static_cast<uint8_t>(packet->size_)},
+          {{packet->vaddr_, static_cast<uint8_t>(packet->size_), packet->id_},
            RegisterValue(packet->data().data(), packet->size_),
            packet->id_});
     }

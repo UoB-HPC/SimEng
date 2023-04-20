@@ -86,6 +86,9 @@ class Architecture : public arch::Architecture {
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
+
+  /** Counter for assigning sequence ids to all instructions. */
+  mutable uint64_t instrSeqIdCtr_ = 0;
 };
 
 }  // namespace riscv

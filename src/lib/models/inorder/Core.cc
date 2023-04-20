@@ -245,7 +245,7 @@ void Core::processException() {
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
-    mmu_->requestRead(target);
+    mmu_->requestRead(target, instruction->getSequenceId());
   }
 
   // NOTE: This model only supports zero-cycle data memory models, and will not
@@ -274,7 +274,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   if (instruction->isStoreData()) {
     const auto data = instruction->getData();
     for (size_t i = 0; i < data.size(); i++) {
-      mmu_->requestWrite(previousAddresses_.front(), data[i]);
+      mmu_->requestWrite(previousAddresses_.front(), data[i], 0);
       previousAddresses_.pop();
     }
   }
@@ -363,8 +363,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    mmu_->requestWrite(change.memoryAddresses[i],
-                       change.memoryAddressValues[i]);
+    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
+                       0);
   }
 }
 

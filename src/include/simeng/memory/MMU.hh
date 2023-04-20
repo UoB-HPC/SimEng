@@ -1,5 +1,7 @@
 #pragma once
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <queue>
 
@@ -35,16 +37,15 @@ class MMU {
   /** Queue a read request from the supplied target location.
    * The caller can optionally provide an ID that will be attached to completed
    * read results. */
-  void requestRead(const MemoryAccessTarget& target, uint64_t requestId = 0);
+  void requestRead(const MemoryAccessTarget& target, uint64_t requestId);
 
   /** Queue a write request of `data` to the target location. */
-  void requestWrite(const MemoryAccessTarget& target,
-                    const RegisterValue& data);
+  void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
+                    uint64_t requestId);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
-  void requestInstrRead(const MemoryAccessTarget& target,
-                        uint64_t requestId = 0);
+  void requestInstrRead(const MemoryAccessTarget& target, uint64_t requestId);
 
   /** Retrieve all completed requests. */
   const span<MemoryReadResult> getCompletedReads() const;

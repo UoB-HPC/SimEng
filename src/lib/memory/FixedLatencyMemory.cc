@@ -46,7 +46,7 @@ void FixedLatencyMemory::tick() {
 std::unique_ptr<MemPacket> FixedLatencyMemory::handleReadRequest(
     std::unique_ptr<MemPacket> req) {
   size_t size = req->size_;
-  uint64_t addr = req->address_;
+  uint64_t addr = req->paddr_;
   std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
   req->turnIntoReadResponse(data);
   return req;
@@ -54,7 +54,7 @@ std::unique_ptr<MemPacket> FixedLatencyMemory::handleReadRequest(
 
 std::unique_ptr<MemPacket> FixedLatencyMemory::handleWriteRequest(
     std::unique_ptr<MemPacket> req) {
-  uint64_t address = req->address_;
+  uint64_t address = req->paddr_;
   std::copy(req->data().begin(), req->data().end(), memory_.begin() + address);
   req->turnIntoWriteResponse();
   return req;

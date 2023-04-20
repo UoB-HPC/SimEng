@@ -12,8 +12,8 @@ namespace memory {
 /** Enum representing the different types of MemPackets. */
 enum MemPacketType : uint8_t {
   READ_REQUEST = 0b11000000,
-  WRITE_REQUEST = 0b01000000,
-  READ_RESPONSE = 0b10000000,
+  READ_RESPONSE = 0b01000000,
+  WRITE_REQUEST = 0b10000000,
   WRITE_RESPONSE = 0b00000000,
 };
 
@@ -29,8 +29,11 @@ static constexpr uint8_t UntimedReadMask = 0b00000100;
  * operations. */
 class MemPacket {
  public:
-  /** The address at which the memory is to be accessed. */
-  uint64_t address_ = 0;
+  /** The virtual address at which the memory is to be accessed. */
+  uint64_t vaddr_ = 0;
+
+  /** The physical address at which the memory is to be accessed. */
+  uint64_t paddr_ = 0;
 
   /** The size of the memory operation to be performed. */
   uint64_t size_ = 0;
@@ -41,14 +44,14 @@ class MemPacket {
   uint64_t id_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
-  inline bool isRequest() const { return metadata_ & PacketTypeMask; }
+  inline bool isRequest() const { return metadata_ & AccessTypeMask; }
 
   /** Function which indicates whether a MemPacket is a response. */
   inline bool isResponse() const { return !isRequest(); }
 
   /** Function which indicates whether a MemPacket initiates a read
    * memory access. */
-  inline bool isRead() const { return metadata_ & AccessTypeMask; }
+  inline bool isRead() const { return metadata_ & PacketTypeMask; }
 
   /** Function which indicates whether a MemPacket initiates a write
    * memory access. */
@@ -85,12 +88,12 @@ class MemPacket {
   }
 
   /** Static function used to create a read request. */
-  static std::unique_ptr<MemPacket> createReadRequest(uint64_t address,
+  static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint64_t size,
                                                       uint64_t reqId);
 
   /** Static function used to create a write request. */
-  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t address,
+  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
                                                        uint64_t size,
                                                        uint64_t reqId,
                                                        std::vector<char> data);
@@ -122,11 +125,10 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t address, uint64_t size, MemPacketType type,
-            uint64_t reqId);
+  MemPacket(uint64_t vaddr, uint64_t size, MemPacketType type, uint64_t reqId);
 
   /** Constructor for MemPackets which hold any data. */
-  MemPacket(uint64_t address, uint64_t size, MemPacketType type, uint64_t reqId,
+  MemPacket(uint64_t vaddr, uint64_t size, MemPacketType type, uint64_t reqId,
             std::vector<char> data);
 };
 
