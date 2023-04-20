@@ -12,20 +12,17 @@ namespace inorder {
 // TODO: Replace with config options
 const unsigned int blockSize = 16;
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall)
-    : dataMemory_(dataMemory),
-      mmu_(mmu),
+    : mmu_(mmu),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, blockSize, isa,
-                 branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, mmu_, blockSize, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -59,7 +56,7 @@ void Core::tick() {
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
         executeUnit_.flush();
-        previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
+        previousAddresses_ = std::queue<memory::MemoryAccessTarget>();
         status_ = CoreStatus::idle;
         return;
       }
@@ -89,7 +86,8 @@ void Core::tick() {
   executeUnit_.tick();
 
   // Wipe any data read responses, as they will have been handled by this point
-  dataMemory_.clearCompletedReads();
+  // TODO THIS WONT WORK
+  mmu_->clearCompletedReads();
 
   // Read pending registers for ready-to-execute uop; must happen after execute
   // to allow operand forwarding to take place first
@@ -210,7 +208,7 @@ void Core::processException() {
   assert(exceptionGenerated_ != false &&
          "[SimEng:Core] Attempted to process an exception handler that wasn't "
          "active");
-  if (dataMemory_.hasPendingRequests()) {
+  if (mmu_->hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
     return;
@@ -234,7 +232,7 @@ void Core::processException() {
     if (result.idleAfterSyscall) {
       // Ensure pipeline is flushed
       executeUnit_.flush();
-      previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
+      previousAddresses_ = std::queue<memory::MemoryAccessTarget>();
       // Update core status
       status_ = CoreStatus::idle;
       contextSwitches_++;
@@ -247,12 +245,12 @@ void Core::processException() {
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
-    dataMemory_.requestRead(target);
+    mmu_->requestRead(target, instruction->getSequenceId());
   }
 
   // NOTE: This model only supports zero-cycle data memory models, and will not
   // work unless data requests are handled synchronously.
-  for (const auto& response : dataMemory_.getCompletedReads()) {
+  for (const auto& response : mmu_->getCompletedReads()) {
     instruction->supplyData(response.target.address, response.data);
   }
 
@@ -276,7 +274,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   if (instruction->isStoreData()) {
     const auto data = instruction->getData();
     for (size_t i = 0; i < data.size(); i++) {
-      dataMemory_.requestWrite(previousAddresses_.front(), data[i]);
+      mmu_->requestWrite(previousAddresses_.front(), data[i], 0);
       previousAddresses_.pop();
     }
   }
@@ -365,8 +363,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
+    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
+                       0);
   }
 }
 

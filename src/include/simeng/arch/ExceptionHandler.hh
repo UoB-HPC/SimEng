@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include "simeng/Instruction.hh"
 #include "simeng/OS/SyscallHandler.hh"
 
 namespace simeng {

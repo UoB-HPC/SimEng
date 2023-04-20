@@ -96,20 +96,21 @@ bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 
 void Instruction::setMemoryAddresses(
-    const std::vector<MemoryAccessTarget>& addresses) {
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
   memoryData.resize(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
 }
 
 void Instruction::setMemoryAddresses(
-    std::vector<MemoryAccessTarget>&& addresses) {
+    std::vector<memory::MemoryAccessTarget>&& addresses) {
   dataPending_ = addresses.size();
   memoryData.resize(addresses.size());
   memoryAddresses = std::move(addresses);
 }
 
-span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
   return {memoryAddresses.data(), memoryAddresses.size()};
 }
 

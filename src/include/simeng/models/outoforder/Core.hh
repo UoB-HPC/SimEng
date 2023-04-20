@@ -3,7 +3,6 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
@@ -29,8 +28,7 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+  Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
        YAML::Node& config = Config::get());
@@ -138,9 +136,6 @@ class Core : public simeng::Core {
 
   /** The mapped register file set. */
   pipeline::MappedRegisterFileSet mappedRegisterFileSet_;
-
-  /** The process memory. */
-  MemoryInterface& dataMemory_;
 
   /** The Core's Memory Management Unit. */
   std::shared_ptr<memory::MMU> mmu_;

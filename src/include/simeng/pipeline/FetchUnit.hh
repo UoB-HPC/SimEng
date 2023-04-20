@@ -2,8 +2,8 @@
 
 #include <queue>
 
-#include "simeng/MemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
@@ -38,7 +38,7 @@ class FetchUnit {
  public:
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
-  FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
+  FetchUnit(PipelineBuffer<MacroOp>& output, std::shared_ptr<memory::MMU> mmu,
             uint8_t blockSize, const arch::Architecture& isa,
             BranchPredictor& branchPredictor);
 
@@ -78,7 +78,7 @@ class FetchUnit {
   /** Temporarily pause the FetchUnit. */
   void pause() {
     paused_ = true;
-    instructionMemory_.clearCompletedReads();
+    mmu_->clearCompletedIntrReads();
     flushLoopBuffer();
   };
 
@@ -99,7 +99,7 @@ class FetchUnit {
   uint64_t pc_ = 0;
 
   /** An interface to the instruction memory. */
-  MemoryInterface& instructionMemory_;
+  std::shared_ptr<memory::MMU> mmu_;
 
   /** The length of the available instruction memory. */
   uint64_t programByteLength_ = 0;

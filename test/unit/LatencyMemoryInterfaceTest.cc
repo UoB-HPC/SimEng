@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-#include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 
@@ -16,26 +15,24 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   };
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
+      std::make_shared<simeng::memory::MMU>(mem, 2, fn, 0);
 
-  simeng::FixedLatencyMemoryInterface memory(mmu, 2);
-
-  EXPECT_FALSE(memory.hasPendingRequests());
+  EXPECT_FALSE(mmu->hasPendingRequests());
 
   // Write a 32-bit value to memory
   // Should ignore the 7 cycle latency and opt for the interface defined latency
-  simeng::MemoryAccessTarget target = {0, 4};
+  simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  memory.requestWrite(target, value);
-  EXPECT_TRUE(memory.hasPendingRequests());
+  mmu->requestWrite(target, value);
+  EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  mmu->tick();
+  EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick again - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
+  mmu->tick();
+  EXPECT_FALSE(mmu->hasPendingRequests());
 
   auto resp = mem->requestAccess(
       simeng::memory::DataPacket(0, 4, simeng::memory::READ_REQUEST, 0, false));
@@ -58,23 +55,21 @@ TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
   };
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
-
-  simeng::FixedLatencyMemoryInterface memory(mmu, 1);
+      std::make_shared<simeng::memory::MMU>(mem, 1, fn, 0);
 
   // Create a target such that address + size will overflow
-  simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
-  memory.requestRead(overflowTarget, 1);
+  simeng::memory::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
+  mmu->requestRead(overflowTarget, 1);
 
   // Create a regular out-of-bounds target
-  simeng::MemoryAccessTarget target = {0, 8};
-  memory.requestRead(target, 2);
+  simeng::memory::MemoryAccessTarget target = {0, 8};
+  mmu->requestRead(target, 2);
 
   // Tick once - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
+  mmu->tick();
+  EXPECT_FALSE(mmu->hasPendingRequests());
 
-  auto entries = memory.getCompletedReads();
+  auto entries = mmu->getCompletedReads();
   EXPECT_EQ(entries.size(), 2);
 
   auto overflowResult = entries[0];

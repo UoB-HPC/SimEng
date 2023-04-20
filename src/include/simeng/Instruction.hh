@@ -4,9 +4,9 @@
 
 #include "capstone/capstone.h"
 #include "simeng/BranchPredictor.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
+#include "simeng/memory/MemRequests.hh"
 #include "simeng/span.hh"
 
 using InstructionException = short;
@@ -67,13 +67,14 @@ class Instruction {
   virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
-  virtual span<const MemoryAccessTarget> generateAddresses() = 0;
+  virtual span<const memory::MemoryAccessTarget> generateAddresses() = 0;
 
   /** Provide data from a requested memory address. */
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve previously generated memory addresses. */
-  virtual span<const MemoryAccessTarget> getGeneratedAddresses() const = 0;
+  virtual span<const memory::MemoryAccessTarget> getGeneratedAddresses()
+      const = 0;
 
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;

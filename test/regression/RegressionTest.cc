@@ -2,11 +2,10 @@
 
 #include <string>
 
-#include "simeng/FixedLatencyMemoryInterface.hh"
-#include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -49,18 +48,9 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create the architecture
   architecture_ = createArchitecture();
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator(),
-                                            procTID);
-
-  // Create memory interfaces for instruction and data access.
-  // A shared_ptr to the MMU is passed to each interface.
-  simeng::FlatMemoryInterface instructionMemory(mmu);
-  std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(mmu);
-  std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(mmu, 4);
-
-  std::unique_ptr<simeng::MemoryInterface> dataMemory;
+      std::make_shared<simeng::memory::MMU>(memory_, 4,
+                                            OS.getVAddrTranslator());
+  mmu->setTid(procTID);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
@@ -79,21 +69,16 @@ void RegressionTest::run(const char* source, const char* triple,
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_shared<simeng::models::emulation::Core>(
-          instructionMemory, *flatDataMemory, *architecture_, mmu,
-          OS.getSyscallReceiver());
-      dataMemory = std::move(flatDataMemory);
+          *architecture_, mmu, OS.getSyscallReceiver());
       break;
     case INORDER:
       core_ = std::make_shared<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, *architecture_, predictor, mmu,
-          OS.getSyscallReceiver());
-      dataMemory = std::move(flatDataMemory);
+          *architecture_, predictor, mmu, OS.getSyscallReceiver());
       break;
     case OUTOFORDER:
       core_ = std::make_shared<simeng::models::outoforder::Core>(
-          instructionMemory, *fixedLatencyDataMemory, *architecture_, predictor,
-          mmu, *portAllocator, OS.getSyscallReceiver());
-      dataMemory = std::move(fixedLatencyDataMemory);
+          *architecture_, predictor, mmu, *portAllocator,
+          OS.getSyscallReceiver());
       break;
   }
 
@@ -103,12 +88,11 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Run the OS and core model until the program is complete
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
-         dataMemory->hasPendingRequests()) {
+         mmu->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
     OS.tick();
     core_->tick();
-    instructionMemory.tick();
-    dataMemory->tick();
+    mmu->tick();
     numTicks_++;
   }
 

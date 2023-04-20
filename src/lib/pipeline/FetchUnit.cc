@@ -4,11 +4,11 @@ namespace simeng {
 namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
-                     MemoryInterface& instructionMemory, uint8_t blockSize,
+                     std::shared_ptr<memory::MMU> mmu, uint8_t blockSize,
                      const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
-      instructionMemory_(instructionMemory),
+      mmu_(mmu),
       isa_(isa),
       branchPredictor_(branchPredictor),
       blockSize_(blockSize),
@@ -78,7 +78,7 @@ void FetchUnit::tick() {
     }
 
     // Find fetched memory that matches the desired block
-    const auto& fetched = instructionMemory_.getCompletedReads();
+    const auto& fetched = mmu_->getCompletedInstrReads();
 
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
@@ -204,7 +204,7 @@ void FetchUnit::tick() {
     std::memmove(fetchBuffer_, buffer + bufferOffset, bufferedBytes_);
   }
 
-  instructionMemory_.clearCompletedReads();
+  mmu_->clearCompletedIntrReads();
 }
 
 void FetchUnit::registerLoopBoundary(uint64_t branchAddress) {
@@ -252,7 +252,7 @@ void FetchUnit::requestFromPC() {
     blockAddress = pc_ & blockMask_;
   }
 
-  instructionMemory_.requestRead({blockAddress, blockSize_});
+  mmu_->requestInstrRead({blockAddress, blockSize_}, 0);
 }
 
 uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }
