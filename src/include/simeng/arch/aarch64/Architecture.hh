@@ -139,6 +139,10 @@ class Architecture : public arch::Architecture {
 
   /** Counter for assigning sequence ids to all instructions. */
   mutable uint64_t instrSeqIdCtr_ = 0;
+
+  /** The next available instruction ID. Used to identify in-order groups of
+   * micro-operations. */
+  mutable uint64_t insnId_ = 0;
 };
 
 }  // namespace aarch64
