@@ -15,10 +15,9 @@
    "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "         \
    "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, " \
-   "RAS-entries: 5, Fallback-Static-Predictor: 2}, Data-Memory: "             \
-   "{Interface-Type: Flat}, Instruction-Memory: {Interface-Type: Flat}, "     \
-   "LSQ-L1-Interface: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: " \
-   "32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "               \
+   "RAS-entries: 5, Fallback-Static-Predictor: 2}, LSQ-L1-Interface: "        \
+   "{Access-Latency: 4, Exclusive: False, Load-Bandwidth: 32, "               \
+   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                   \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
    "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
    "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \

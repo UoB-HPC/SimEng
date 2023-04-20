@@ -186,6 +186,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop = std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
+  uop->setSequenceId(++instrSeqIdCtr_);
 
   return 4;
 }

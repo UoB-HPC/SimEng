@@ -1,3 +1,5 @@
+#pragma once
+
 #include <unordered_map>
 
 namespace simeng {
@@ -6,19 +8,19 @@ namespace riscv {
 
 /** The IDs of the instruction groups for RISC-V instructions. */
 namespace InstructionGroups {
-const uint16_t INT = 0;
-const uint16_t INT_SIMPLE = 1;
-const uint16_t INT_SIMPLE_ARTH = 2;
-const uint16_t INT_SIMPLE_CMP = 3;
-const uint16_t INT_SIMPLE_LOGICAL = 4;
-const uint16_t INT_SIMPLE_SHIFT = 5;
-const uint16_t INT_MUL = 6;
-const uint16_t INT_DIV = 7;
-const uint16_t LOAD_INT = 8;
-const uint16_t STORE_INT = 9;
-const uint16_t LOAD = 10;
-const uint16_t STORE = 11;
-const uint16_t BRANCH = 12;
+static constexpr uint16_t INT = 0;
+static constexpr uint16_t INT_SIMPLE = 1;
+static constexpr uint16_t INT_SIMPLE_ARTH = 2;
+static constexpr uint16_t INT_SIMPLE_CMP = 3;
+static constexpr uint16_t INT_SIMPLE_LOGICAL = 4;
+static constexpr uint16_t INT_SIMPLE_SHIFT = 5;
+static constexpr uint16_t INT_MUL = 6;
+static constexpr uint16_t INT_DIV = 7;
+static constexpr uint16_t LOAD_INT = 8;
+static constexpr uint16_t STORE_INT = 9;
+static constexpr uint16_t LOAD = 10;
+static constexpr uint16_t STORE = 11;
+static constexpr uint16_t BRANCH = 12;
 }  // namespace InstructionGroups
 
 static constexpr uint8_t NUM_GROUPS = 13;

@@ -23,8 +23,9 @@ set(SIMENG_SOURCES
     OS/PageFrameAllocator.cc
     OS/PageTable.cc
     memory/SimpleMem.cc
-    memory/Mem.cc
+    memory/MemPacket.cc
     memory/MMU.cc
+    memory/FixedLatencyMemory.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -45,8 +46,6 @@ set(SIMENG_SOURCES
     ArchitecturalRegisterFileSet.cc
     CoreInstance.cc
     Elf.cc
-    FixedLatencyMemoryInterface.cc
-    FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
     ModelConfig.cc

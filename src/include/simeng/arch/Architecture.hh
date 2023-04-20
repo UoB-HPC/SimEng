@@ -6,7 +6,6 @@
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
-#include "simeng/MemoryInterface.hh"
 
 namespace simeng {
 
