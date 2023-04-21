@@ -91,6 +91,8 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
     request->setFault();
+    port_->recieve(std::move(request));
+    return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     request->setIgnored();
   } else {
