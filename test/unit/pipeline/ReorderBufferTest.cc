@@ -202,6 +202,13 @@ TEST_F(ReorderBufferTest, CommitStore) {
 // Tests that the reorder buffer correctly conditionally flushes instructions
 // according to their sequence ID
 TEST_F(ReorderBufferTest, Flush) {
+  // Sequence and Instruction ID set at decode stage.
+  // Manually set them
+  uop->setSequenceId(1);
+  uop->setInstructionId(1);
+  uop2->setSequenceId(2);
+  uop2->setInstructionId(2);
+
   reorderBuffer.reserve(uopPtr);
   reorderBuffer.reserve(uopPtr2);
 

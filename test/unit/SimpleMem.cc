@@ -44,13 +44,17 @@ TEST(SimpleMemTest, Read) {
   uint64_t addr = 0;
   sMem.sendUntimedData(data, addr, dataSize);
   auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0);
+  req->paddr_ = addr;
   sMem.requestAccess(std::move(req));
   auto res = respRecv.resp->data();
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(res[i], data[i]);
   }
 
-  auto req2 = simeng::memory::MemPacket::createReadRequest(8, 2, 0);
+  addr = 8;
+  dataSize = 2;
+  auto req2 = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1);
+  req2->paddr_ = addr;
   sMem.requestAccess(std::move(req2));
   auto res2 = respRecv.resp->data();
   EXPECT_EQ(res2[0], '8');
@@ -70,18 +74,30 @@ TEST(SimpleMemTest, UntimedWrite) {
 
 TEST(SimpleMemTest, Write) {
   simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(100);
+  testRecv respRecv = testRecv();
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = respRecv.initPort();
+  connection.connect(port1, port2);
+
   std::vector<char> data = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   uint8_t dataSize = 10;
   uint64_t addr = 0;
-  sMem.requestAccess(
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data));
+  auto req =
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data);
+  req->paddr_ = addr;
+  sMem.requestAccess(std::move(req));
   auto mem = sMem.getUntimedData(0, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
   }
+
   addr = 30;
-  sMem.requestAccess(
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data));
+  auto req2 =
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, data);
+  req2->paddr_ = addr;
+  sMem.requestAccess(std::move(req2));
   mem = sMem.getUntimedData(addr, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);

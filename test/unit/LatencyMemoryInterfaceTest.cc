@@ -42,9 +42,6 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
 
   auto resp = mem->getUntimedData(0, 4);
 
-  // auto resp = mem->requestAccess(std::make_unique<simeng::memory::MemPacket>(
-  //     0, 4, simeng::memory::READ_REQUEST, 0));
-
   uint32_t castedValue = 0;
   memcpy(&castedValue, resp.data(), 4);
   EXPECT_EQ(castedValue, 0xDEADBEEF);

@@ -50,9 +50,10 @@ void MemPacket::turnIntoReadResponse(std::vector<char> data) {
   data_ = data;
 }
 
-std::unique_ptr<MemPacket> MemPacket::createFaultyMemPacket() {
+std::unique_ptr<MemPacket> MemPacket::createFaultyMemPacket(bool isRead) {
   std::unique_ptr<MemPacket> pkt(new MemPacket());
   pkt->metadata_ = FaultMask;
+  pkt->metadata_ |= isRead ? READ_RESPONSE : 0;
   return pkt;
 }
 
