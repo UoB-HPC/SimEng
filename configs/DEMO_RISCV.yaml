@@ -39,8 +39,10 @@ Branch-Predictor:
   Fallback-Static-Predictor: "Always-Taken"
   Branch-Predictor:
   BTB-bitlength: 16
-LSQ-L1-Interface:
-  Access-Latency: 4
+Cache:
+  Cache-Line-Width: 128
+  L1-Access-Latency: 4
+LSQ-Memory-Interface:
   Exclusive: False
   Load-Bandwidth: 32
   Store-Bandwidth: 16

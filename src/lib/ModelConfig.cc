@@ -421,20 +421,29 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
-  // LSQ-L1-Interface
-  root = "LSQ-L1-Interface";
-  subFields = {"Access-Latency",
-               "Exclusive",
+  // Cahce
+  root = "Cache";
+  subFields = {"Cache-Line-Width", "L1-Access-Latency"};
+  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        64);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        1);
+
+  // LSQ-Memory-Interface
+  root = "LSQ-Memory-Interface";
+  subFields = {"Exclusive",
                "Load-Bandwidth",
                "Store-Bandwidth",
                "Permitted-Requests-Per-Cycle",
                "Permitted-Loads-Per-Cycle",
                "Permitted-Stores-Per-Cycle"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        1);
-  nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
                     std::vector<bool>{true, false}, ExpectedValue::Bool, false);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
                         UINT16_MAX);
@@ -445,9 +454,6 @@ void ModelConfig::validate() {
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
                         UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
                         UINT16_MAX);
   subFields.clear();

@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   const uint64_t latency =
-      Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint64_t>();
+      Config::get()["Cache"]["L1-Access-Latency"].as<uint64_t>();
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =

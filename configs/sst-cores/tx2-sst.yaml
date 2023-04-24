@@ -39,12 +39,10 @@ Branch-Predictor:
   Global-History-Length: 10
   RAS-entries: 5
   Fallback-Static-Predictor: "Always-Taken"
-L1-Data-Memory:
-  Interface-Type: External
-L1-Instruction-Memory:
-  Interface-Type: Flat
-LSQ-L1-Interface:
-  Access-Latency: 4
+Cache:
+  Cache-Line-Width: 64
+  L1-Access-Latency: 4
+LSQ-Memory-Interface:
   Exclusive: False
   Load-Bandwidth: 32
   Store-Bandwidth: 16
