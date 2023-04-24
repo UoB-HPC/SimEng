@@ -27,7 +27,7 @@ class FixedLatencyMemory : public Mem {
   virtual ~FixedLatencyMemory() override { delete port_; };
 
   /** This method requests access to memory for both read and write requests. */
-  void requestAccess(std::unique_ptr<MemPacket> pkt) override;
+  void requestAccess(std::unique_ptr<MemPacket>& pkt) override;
 
   /** This method returns the size of memory. */
   size_t getMemorySize() override;

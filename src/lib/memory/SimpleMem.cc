@@ -13,7 +13,7 @@ SimpleMem::SimpleMem(size_t size) {
 
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
-void SimpleMem::requestAccess(std::unique_ptr<MemPacket> pkt) {
+void SimpleMem::requestAccess(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->ignore()) {
     handleIgnoredRequest(pkt);
   } else if (pkt->isUntimedRead()) {
@@ -68,7 +68,7 @@ void SimpleMem::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
 Port<std::unique_ptr<MemPacket>>* SimpleMem::initPort() {
   port_ = new Port<std::unique_ptr<MemPacket>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    this->requestAccess(std::move(packet));
+    this->requestAccess(packet);
     return;
   };
   port_->registerReceiver(fn);

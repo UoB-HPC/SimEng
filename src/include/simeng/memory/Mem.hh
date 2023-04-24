@@ -25,7 +25,7 @@ class Mem {
 
   /** This method requests access to simulation memory for read and write
    * requests. */
-  virtual void requestAccess(std::unique_ptr<MemPacket> pkt) = 0;
+  virtual void requestAccess(std::unique_ptr<MemPacket>& pkt) = 0;
 
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;

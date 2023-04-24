@@ -15,7 +15,7 @@ FixedLatencyMemory::FixedLatencyMemory(size_t size, uint16_t latency) {
 
 size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
 
-void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket> pkt) {
+void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->ignore()) {
     handleIgnoredRequest(pkt);
     port_->send(std::move(pkt));
@@ -87,7 +87,7 @@ void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
 Port<std::unique_ptr<MemPacket>>* FixedLatencyMemory::initPort() {
   port_ = new Port<std::unique_ptr<MemPacket>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    this->requestAccess(std::move(packet));
+    this->requestAccess(packet);
     return;
   };
   port_->registerReceiver(fn);
