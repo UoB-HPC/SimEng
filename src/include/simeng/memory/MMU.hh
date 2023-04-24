@@ -19,7 +19,7 @@ namespace memory {
 
 class MMU {
  public:
-  MMU(const uint16_t latency, VAddrTranslator fn);
+  MMU(VAddrTranslator fn);
 
   ~MMU() {}
 
@@ -66,20 +66,14 @@ class MMU {
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
  private:
-  /** The latency all requests are completed after. */
-  uint16_t latency_;
-
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
 
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
 
-  /** A queue containing all pending memory requests. */
-  std::queue<FixedLatencyMemoryInterfaceRequest> pendingRequests_;
-
-  /** The number of times this interface has been ticked. */
-  uint64_t tickCounter_ = 0;
+  /** The number of pending requests. */
+  uint64_t pendingRequests_ = 0;
 
   /** TID of the process currently communicating with this MMU. */
   uint64_t tid_ = 0;

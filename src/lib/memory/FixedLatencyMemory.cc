@@ -47,7 +47,7 @@ void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
 }
 
 void FixedLatencyMemory::tick() {
-  while (reqQueue_.front().endLat >= ticks_) {
+  while (reqQueue_.size() && reqQueue_.front().endLat >= ticks_) {
     std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
     if (pkt->isRequest() && pkt->isRead()) {
       handleReadRequest(pkt);
