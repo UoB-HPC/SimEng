@@ -32,9 +32,9 @@ class Port {
 
  public:
   /** Function used to connect a port to a port mediator. */
-  void inline connect(PortMediator<T>* mediator, uint16_t local_id) {
+  void inline connect(PortMediator<T>* mediator, uint16_t id) {
     conn_ = mediator;
-    local_id_ = local_id;
+    id_ = id;
   };
 
   /** Function used to register a callback function called by the recieve
@@ -45,9 +45,9 @@ class Port {
    * port. */
   void inline send(T data) {
     if constexpr (is_unique_ptr<T>::value) {
-      conn_->send(std::move(data), local_id_);
+      conn_->send(std::move(data), id_);
     } else {
-      conn_->send(data, local_id_);
+      conn_->send(data, id_);
     }
   }
 
@@ -60,15 +60,15 @@ class Port {
     }
   }
 
-  uint16_t getLocalId() { return local_id_; }
+  uint16_t getId() { return id_; }
 
   /** Constructor of the Port class. */
   Port() {}
 
  private:
-  /** Id of a port local to a port mediator connection. This is mainly used to
-   * find destination ports for source ports present inside a mediator. */
-  uint16_t local_id_;
+  /** The ID of a port. Used by a mediator connection to locate the destination
+   * port of the corresponding source port. */
+  uint16_t id_;
 
   /** Pointer to a PortMediator class. */
   PortMediator<T>* conn_ = nullptr;
@@ -103,8 +103,8 @@ class PortMediator {
 
   /** Function used to send data from a port to corresponding destination port.
    */
-  void inline send(T data, uint64_t local_port_id) {
-    auto dest = dests_[local_port_id];
+  void inline send(T data, uint64_t port_id) {
+    auto dest = dests_[port_id];
     if constexpr (is_unique_ptr<T>::value) {
       dest->recieve(std::move(data));
     } else {

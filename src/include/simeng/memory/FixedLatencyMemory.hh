@@ -67,10 +67,10 @@ class FixedLatencyMemory : public Mem {
   /** Port used for communication with other classes. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
 
-  /** This method handles DataPackets of type READ_REQUEST. */
+  /** This method handles MemPackets of type READ_REQUEST. */
   void handleReadRequest(std::unique_ptr<MemPacket>& req);
 
-  /** This method handles DataPackets of type WRITE_REQUEST. */
+  /** This method handles MemPackets of type WRITE_REQUEST. */
   void handleWriteRequest(std::unique_ptr<MemPacket>& req);
 };
 

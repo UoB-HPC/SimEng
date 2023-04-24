@@ -89,12 +89,12 @@ class MemPacket {
   }
 
   /** Static function used to create a read request. */
-  static std::unique_ptr<MemPacket> createReadRequest(uint64_t address,
+  static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint16_t size,
                                                       uint64_t reqId);
 
   /** Static function used to create a write request. */
-  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t address,
+  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
                                                        uint16_t size,
                                                        uint64_t reqId,
                                                        std::vector<char> data);
@@ -103,7 +103,7 @@ class MemPacket {
   static std::unique_ptr<MemPacket> createFaultyMemPacket(bool isRead);
 
   /** Function to change a Read MemPacket into a Response. */
-  void turnIntoReadResponse(std::vector<char> data);
+  void turnIntoReadResponse(std::vector<char> payload);
 
   /** Function to change a Write MemPacket into a Response. */
   void turnIntoWriteResponse();
@@ -126,11 +126,10 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t address, uint16_t size, MemPacketType type,
-            uint64_t reqId);
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId);
 
   /** Constructor for MemPackets which hold any data. */
-  MemPacket(uint64_t address, uint16_t size, MemPacketType type, uint64_t reqId,
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
             std::vector<char> data);
 };
 
