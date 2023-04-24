@@ -21,7 +21,7 @@ class MMU {
  public:
   MMU(const uint16_t latency, VAddrTranslator fn);
 
-  ~MMU() { delete port_; }
+  ~MMU() {}
 
   /** Tick the memory model to process the request queue. */
   void tick();
@@ -63,7 +63,7 @@ class MMU {
 
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
-  Port<std::unique_ptr<MemPacket>>* initPort();
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
  private:
   /** The latency all requests are completed after. */
@@ -89,7 +89,7 @@ class MMU {
   VAddrTranslator translate_;
 
   /** Data port used for communication with the memory hierarchy. */
-  Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
 
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow(uint64_t a, uint64_t b) const {
