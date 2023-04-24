@@ -142,7 +142,7 @@ class Architecture : public arch::Architecture {
 
   /** The next available instruction ID. Used to identify in-order groups of
    * micro-operations. */
-  mutable uint64_t insnId_ = 0;
+  mutable uint64_t insnIdCtr_ = 0;
 };
 
 }  // namespace aarch64
