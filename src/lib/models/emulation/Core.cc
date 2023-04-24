@@ -64,7 +64,7 @@ void Core::tick() {
     const auto& completedReads = mmu_->getCompletedReads();
     for (const auto& response : completedReads) {
       assert(pendingReads_ > 0);
-      uop->supplyData(response.target.address, response.data);
+      uop->supplyData(response.target.vaddr, response.data);
       pendingReads_--;
     }
     mmu_->clearCompletedReads();
@@ -86,7 +86,7 @@ void Core::tick() {
     const auto& fetched = mmu_->getCompletedInstrReads();
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == pc_) {
+      if (fetched[fetchIndex].target.vaddr == pc_) {
         break;
       }
     }

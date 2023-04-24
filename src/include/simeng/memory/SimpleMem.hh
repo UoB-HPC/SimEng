@@ -16,10 +16,10 @@ class SimpleMem : public Mem {
  public:
   SimpleMem(size_t bytes);
 
-  virtual ~SimpleMem() override { delete port_; }
+  virtual ~SimpleMem() override {}
 
   /** This method requests access to memory for both read and write requests. */
-  void requestAccess(std::unique_ptr<MemPacket> pkt) override;
+  void requestAccess(std::unique_ptr<MemPacket>& pkt) override;
 
   /** This method returns the size of memory. */
   size_t getMemorySize() override;
@@ -31,11 +31,10 @@ class SimpleMem : public Mem {
   /** This method reads data from memory without incurring any latency. */
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
-  std::unique_ptr<MemPacket> handleIgnoredRequest(
-      std::unique_ptr<MemPacket> pkt) override;
+  void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
 
   /** Function used to initialise a Port used for bidirection communication. */
-  Port<std::unique_ptr<MemPacket>>* initPort() override;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
 
   /** Method to tick the memory. */
   void tick() override{};
@@ -48,13 +47,13 @@ class SimpleMem : public Mem {
   size_t memSize_;
 
   /** This method handles DataPackets of type READ_REQUEST. */
-  std::unique_ptr<MemPacket> handleReadRequest(std::unique_ptr<MemPacket> req);
+  void handleReadRequest(std::unique_ptr<MemPacket>& req);
 
   /** This method handles DataPackets of type WRITE_REQUEST. */
-  std::unique_ptr<MemPacket> handleWriteRequest(std::unique_ptr<MemPacket> req);
+  void handleWriteRequest(std::unique_ptr<MemPacket>& req);
 
   /** Port used for communication with other classes. */
-  Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
 };
 
 }  // namespace memory
