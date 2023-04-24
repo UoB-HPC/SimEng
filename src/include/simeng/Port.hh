@@ -103,8 +103,8 @@ class PortMediator {
 
   /** Function used to send data from a port to corresponding destination port.
    */
-  void inline send(T data, uint64_t port_order) {
-    auto dest = dests_[port_order];
+  void inline send(T data, uint64_t local_port_id) {
+    auto dest = dests_[local_port_id];
     if constexpr (is_unique_ptr<T>::value) {
       dest->recieve(std::move(data));
     } else {
