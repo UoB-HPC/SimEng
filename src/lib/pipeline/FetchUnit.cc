@@ -91,7 +91,7 @@ void FetchUnit::tick() {
       // memory which cannot be mapped, a data abort exception is thrown and an
       // empty register value is returned as the read payload. A data null check
       // suffices to catch these data aborts.
-      if (fetched[fetchIndex].target.address == blockAddress &&
+      if (fetched[fetchIndex].target.vaddr == blockAddress &&
           fetched[fetchIndex].data) {
         break;
       }

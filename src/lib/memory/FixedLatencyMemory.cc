@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "simeng/memory/MemPacket.hh"
+
 namespace simeng {
 namespace memory {
 
@@ -15,50 +17,55 @@ FixedLatencyMemory::FixedLatencyMemory(size_t size, uint16_t latency) {
 
 size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
 
-void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket> pkt) {
+void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->ignore()) {
-    port_->send(handleIgnoredRequest(std::move(pkt)));
+    handleIgnoredRequest(pkt);
+    port_->send(std::move(pkt));
+    return;
+  }
+  if (pkt->isUntimedRead()) {
+    pkt->turnIntoReadResponse(getUntimedData(pkt->paddr_, pkt->size_));
+    port_->send(std::move(pkt));
+    return;
   }
   LatencyPacket lpkt = {std::move(pkt), ticks_ + latency_};
   reqQueue_.push(std::move(lpkt));
 }
 
+void FixedLatencyMemory::handleReadRequest(std::unique_ptr<MemPacket>& req) {
+  size_t size = req->size_;
+  uint64_t addr = req->paddr_;
+  req->turnIntoReadResponse(
+      std::vector<char>(memory_.begin() + addr, memory_.begin() + addr + size));
+}
+
+void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
+  uint64_t address = req->paddr_;
+  std::copy(req->payload().begin(), req->payload().end(),
+            memory_.begin() + address);
+  req->turnIntoWriteResponse();
+}
+
 void FixedLatencyMemory::tick() {
   while (reqQueue_.front().endLat >= ticks_) {
-    auto req = std::move(reqQueue_.front().req);
-    if (req->isRequest() && req->isRead()) {
-      port_->send(handleReadRequest(std::move(req)));
-    } else if (req->isRequest() && req->isWrite()) {
-      port_->send(handleWriteRequest(std::move(req)));
+    std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
+    if (pkt->isRequest() && pkt->isRead()) {
+      handleReadRequest(pkt);
+    } else if (pkt->isRequest() && pkt->isWrite()) {
+      handleWriteRequest(pkt);
     } else {
-      std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
+      std::cerr << "[SimEng:SimpleMem] Invalid MemPacket type for "
                    "requesting access to memory. Requests to memory should "
                    "either be of "
                    "type READ_REQUEST or WRITE_REQUEST."
                 << std::endl;
-      port_->send(MemPacket::createFaultyMemPacket(req->isRead()));
+      pkt->setFault();
     }
+    port_->send(std::move(pkt));
     reqQueue_.pop();
   }
   ticks_++;
 };
-
-std::unique_ptr<MemPacket> FixedLatencyMemory::handleReadRequest(
-    std::unique_ptr<MemPacket> req) {
-  size_t size = req->size_;
-  uint64_t addr = req->paddr_;
-  std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
-  req->turnIntoReadResponse(data);
-  return req;
-}
-
-std::unique_ptr<MemPacket> FixedLatencyMemory::handleWriteRequest(
-    std::unique_ptr<MemPacket> req) {
-  uint64_t address = req->paddr_;
-  std::copy(req->data().begin(), req->data().end(), memory_.begin() + address);
-  req->turnIntoWriteResponse();
-  return req;
-}
 
 void FixedLatencyMemory::sendUntimedData(std::vector<char> data, uint64_t addr,
                                          size_t size) {
@@ -71,20 +78,19 @@ std::vector<char> FixedLatencyMemory::getUntimedData(uint64_t paddr,
                            memory_.begin() + paddr + size);
 }
 
-std::unique_ptr<MemPacket> FixedLatencyMemory::handleIgnoredRequest(
-    std::unique_ptr<MemPacket> pkt) {
+void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->isRead()) {
     pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
   } else {
     pkt->turnIntoWriteResponse();
   }
-  return pkt;
 }
 
-Port<std::unique_ptr<MemPacket>>* FixedLatencyMemory::initPort() {
-  port_ = new Port<std::unique_ptr<MemPacket>>();
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initPort() {
+  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    this->requestAccess(std::move(packet));
+    this->requestAccess(packet);
     return;
   };
   port_->registerReceiver(fn);
