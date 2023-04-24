@@ -207,8 +207,11 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // Set instruction address and branch prediction for each micro-op generated
   for (int i = 0; i < num_ops; i++) {
     output[i]->setSequenceId(++instrSeqIdCtr_);
+    output[i]->setInstructionId(insnIdCtr_);
     output[i]->setInstructionAddress(instructionAddress);
   }
+  // Increment insnIdCtr_
+  insnIdCtr_++;
 
   return 4;
 }

@@ -136,10 +136,6 @@ class ReorderBuffer {
    * considered a loop. */
   uint16_t loopDetectionThreshold_;
 
-  /** The next available instruction ID. Used to identify in-order groups of
-   * micro-operations. */
-  uint64_t insnId_ = 0;
-
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
 

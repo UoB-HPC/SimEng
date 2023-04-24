@@ -25,8 +25,6 @@ ReorderBuffer::ReorderBuffer(
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&
          "Attempted to reserve entry in reorder buffer when already full");
-  insn->setInstructionId(insnId_);
-  if (insn->isLastMicroOp()) insnId_++;
 
   buffer_.push_back(insn);
 }

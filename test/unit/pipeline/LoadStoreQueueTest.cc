@@ -41,7 +41,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         storeUopPtr(storeUop),
         storeUopPtr2(storeUop2),
         memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(memory, latency, fn, tid)) {
+        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        connection() {
+    // Set up MMU->Memory connection
+    port1 = mmu->initPort();
+    port2 = memory->initPort();
+    connection.connect(port1, port2);
     // Initialise memory to 1s
     memory->sendUntimedData(std::vector<char>(1024, 1), 0, 1024);
     // Set up sensible return values for the load uop
@@ -130,12 +135,15 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   MockForwardOperandsHandler forwardOperandsHandler;
 
   const uint64_t latency = 0;
-  const uint64_t tid = 0;
   VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return vaddr;
   };
   std::shared_ptr<memory::SimpleMem> memory;
   std::shared_ptr<memory::MMU> mmu;
+
+  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port1;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port2;
 };
 
 // Test that a split queue can be constructed correctly

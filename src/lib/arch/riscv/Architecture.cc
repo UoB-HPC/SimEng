@@ -187,6 +187,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   uop->setInstructionAddress(instructionAddress);
   uop->setSequenceId(++instrSeqIdCtr_);
+  uop->setInstructionId(++insnIdCtr_);
 
   return 4;
 }
