@@ -30,7 +30,7 @@ void SimpleMem::requestAccess(std::unique_ptr<MemPacket> pkt) {
                  "either be of "
                  "type READ_REQUEST or WRITE_REQUEST."
               << std::endl;
-    port_->send(MemPacket::createFaultyMemPacket());
+    port_->send(MemPacket::createFaultyMemPacket(pkt->isRead()));
   }
 }
 

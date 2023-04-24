@@ -98,7 +98,7 @@ class MemPacket {
                                                        std::vector<char> data);
 
   /** Static function used to create a faulty MemPacket. */
-  static std::unique_ptr<MemPacket> createFaultyMemPacket();
+  static std::unique_ptr<MemPacket> createFaultyMemPacket(bool isRead);
 
   /** Function to change a Read MemPacket into a Response. */
   void turnIntoReadResponse(std::vector<char> data);

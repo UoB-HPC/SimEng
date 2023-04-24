@@ -36,7 +36,7 @@ void FixedLatencyMemory::tick() {
                    "either be of "
                    "type READ_REQUEST or WRITE_REQUEST."
                 << std::endl;
-      port_->send(MemPacket::createFaultyMemPacket());
+      port_->send(MemPacket::createFaultyMemPacket(req->isRead()));
     }
     reqQueue_.pop();
   }

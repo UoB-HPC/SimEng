@@ -47,10 +47,18 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the architecture
   architecture_ = createArchitecture();
+
+  // Create MMU
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory_, 4,
-                                            OS.getVAddrTranslator());
+      std::make_shared<simeng::memory::MMU>(4, OS.getVAddrTranslator());
   mmu->setTid(procTID);
+
+  // Set up MMU->Memory connection
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = mmu->initPort();
+  auto port2 = memory_->initPort();
+  connection.connect(port1, port2);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
