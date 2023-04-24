@@ -38,8 +38,7 @@ class Mem {
   virtual std::vector<char> getUntimedData(uint64_t paddr, size_t size) = 0;
 
   /** This method handles a memory request to an ignored address range. */
-  virtual std::unique_ptr<MemPacket> handleIgnoredRequest(
-      std::unique_ptr<MemPacket> pkt) = 0;
+  virtual void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) = 0;
 
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */

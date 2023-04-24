@@ -14,7 +14,7 @@ bool requestsOverlap(memory::MemoryAccessTarget a,
                      memory::MemoryAccessTarget b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
-  return !(a.address + a.size <= b.address || b.address + b.size <= a.address);
+  return !(a.vaddr + a.size <= b.vaddr || b.vaddr + b.size <= a.vaddr);
 }
 
 LoadStoreQueue::LoadStoreQueue(
@@ -130,12 +130,12 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
             while (itLd != temp_load_addr.end()) {
               // If conflict exists, register in conflictionMap_ and delay
               // load request(s) until conflicting store retires
-              if (itLd->address == str.address) {
+              if (itLd->vaddr == str.vaddr) {
                 // Load access size must be no larger than the store access size
                 // to ensure all data is encapsulated in the later forwarding
                 if (itLd->size <= str.size) {
-                  conflictionMap_[store->getSequenceId()][str.address]
-                      .push_back({insn, itLd->size});
+                  conflictionMap_[store->getSequenceId()][str.vaddr].push_back(
+                      {insn, itLd->size});
                 } else {
                   // To ensure load doesn't match on an earlier store, generate
                   // load request for address
@@ -243,11 +243,11 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& itSt = conflictionMap_.find(uop->getSequenceId());
   if (itSt != conflictionMap_.end()) {
     for (size_t i = 0; i < addresses.size(); i++) {
-      const auto& itAddr = itSt->second.find(addresses[i].address);
+      const auto& itAddr = itSt->second.find(addresses[i].vaddr);
       if (itAddr != itSt->second.end()) {
         for (const auto& pair : itAddr->second) {
           const auto& load = pair.first;
-          load->supplyData(addresses[i].address,
+          load->supplyData(addresses[i].vaddr,
                            data[i].zeroExtend(
                                std::min(pair.second, (uint16_t)data[i].size()),
                                pair.second));
@@ -491,7 +491,7 @@ void LoadStoreQueue::tick() {
 
   // Process completed read requests
   for (const auto& response : mmu_->getCompletedReads()) {
-    const auto& address = response.target.address;
+    const auto& address = response.target.vaddr;
     const auto& data = response.data;
 
     // TODO: Detect and handle non-fatal faults (e.g. page fault)

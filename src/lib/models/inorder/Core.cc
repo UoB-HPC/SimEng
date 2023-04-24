@@ -251,7 +251,7 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   // NOTE: This model only supports zero-cycle data memory models, and will not
   // work unless data requests are handled synchronously.
   for (const auto& response : mmu_->getCompletedReads()) {
-    instruction->supplyData(response.target.address, response.data);
+    instruction->supplyData(response.target.vaddr, response.data);
   }
 
   assert(instruction->hasAllData() &&

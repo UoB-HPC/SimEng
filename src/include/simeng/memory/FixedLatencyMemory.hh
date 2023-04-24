@@ -40,8 +40,7 @@ class FixedLatencyMemory : public Mem {
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
   /** This method handles a memory request to an ignored address range. */
-  std::unique_ptr<MemPacket> handleIgnoredRequest(
-      std::unique_ptr<MemPacket> pkt) override;
+  void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
 
   /** Function used to initialise a Port used for bidirection communication. */
   Port<std::unique_ptr<MemPacket>>* initPort() override;
@@ -69,10 +68,10 @@ class FixedLatencyMemory : public Mem {
   Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
 
   /** This method handles DataPackets of type READ_REQUEST. */
-  std::unique_ptr<MemPacket> handleReadRequest(std::unique_ptr<MemPacket> req);
+  void handleReadRequest(std::unique_ptr<MemPacket>& req);
 
   /** This method handles DataPackets of type WRITE_REQUEST. */
-  std::unique_ptr<MemPacket> handleWriteRequest(std::unique_ptr<MemPacket> req);
+  void handleWriteRequest(std::unique_ptr<MemPacket>& req);
 };
 
 }  // namespace memory

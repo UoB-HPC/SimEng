@@ -11,8 +11,12 @@ MemPacket::MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type,
     : vaddr_(vaddr), size_(size), id_(reqId), metadata_(type) {}
 
 MemPacket::MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type,
-                     uint64_t reqId, std::vector<char> data)
-    : vaddr_(vaddr), size_(size), id_(reqId), metadata_(type), data_(data) {}
+                     uint64_t reqId, std::vector<char> payload)
+    : vaddr_(vaddr),
+      size_(size),
+      id_(reqId),
+      metadata_(type),
+      payload_(payload) {}
 
 std::unique_ptr<MemPacket> MemPacket::createReadRequest(uint64_t vaddr,
                                                         uint16_t size,
@@ -22,9 +26,9 @@ std::unique_ptr<MemPacket> MemPacket::createReadRequest(uint64_t vaddr,
 }
 
 std::unique_ptr<MemPacket> MemPacket::createWriteRequest(
-    uint64_t vaddr, uint16_t size, uint64_t reqId, std::vector<char> data) {
+    uint64_t vaddr, uint16_t size, uint64_t reqId, std::vector<char> payload) {
   return std::unique_ptr<MemPacket>(
-      new MemPacket(vaddr, size, WRITE_REQUEST, reqId, data));
+      new MemPacket(vaddr, size, WRITE_REQUEST, reqId, payload));
 }
 
 void MemPacket::turnIntoWriteResponse() {
@@ -38,7 +42,7 @@ void MemPacket::turnIntoWriteResponse() {
   metadata_ = metadata_ & 0b01111111;
 }
 
-void MemPacket::turnIntoReadResponse(std::vector<char> data) {
+void MemPacket::turnIntoReadResponse(std::vector<char> payload) {
   if (!isRequest() && !isRead()) {
     std::cerr << "[SimEng:MemPacket] Only MemPackets of type Read Request can "
                  "be changed into Read Response"
@@ -47,14 +51,7 @@ void MemPacket::turnIntoReadResponse(std::vector<char> data) {
   }
   // Turn into response, maintaining other metadata
   metadata_ = metadata_ & 0b01111111;
-  data_ = data;
-}
-
-std::unique_ptr<MemPacket> MemPacket::createFaultyMemPacket(bool isRead) {
-  std::unique_ptr<MemPacket> pkt(new MemPacket());
-  pkt->metadata_ = FaultMask;
-  pkt->metadata_ |= isRead ? READ_RESPONSE : 0;
-  return pkt;
+  payload_ = payload;
 }
 
 }  // namespace memory

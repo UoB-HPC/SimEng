@@ -63,7 +63,7 @@ void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].address == address && !memoryData[i]) {
+    if (memoryAddresses[i].vaddr == address && !memoryData[i]) {
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
