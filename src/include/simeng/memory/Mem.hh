@@ -42,7 +42,7 @@ class Mem {
 
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */
-  virtual Port<std::unique_ptr<MemPacket>>* initPort() = 0;
+  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() = 0;
 
   /** Method to tick the memory. */
   virtual void tick() = 0;

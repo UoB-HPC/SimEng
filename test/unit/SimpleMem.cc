@@ -1,5 +1,7 @@
 #include "simeng/memory/SimpleMem.hh"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 namespace {
@@ -11,8 +13,10 @@ class testRecv {
 
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
-  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* initPort() {
-    port_ = new simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>();
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+  initPort() {
+    port_ = std::make_shared<
+        simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>();
     auto fn =
         [this](std::unique_ptr<simeng::memory::MemPacket> packet) -> void {
       this->resp = std::move(packet);
@@ -27,7 +31,8 @@ class testRecv {
 
  private:
   /** Data port used for communication with the memory hierarchy. */
-  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port_ = nullptr;
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+      port_ = nullptr;
 };
 
 TEST(SimpleMemTest, Read) {

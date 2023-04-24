@@ -31,13 +31,10 @@ class Port {
   using InFnType = std::function<void(T)>;
 
  public:
-  /** Id of a port. */
-  const uint64_t id_;
-
   /** Function used to connect a port to a port mediator. */
-  void inline connect(PortMediator<T>* mediator, uint8_t order) {
+  void inline connect(PortMediator<T>* mediator, uint16_t local_id) {
     conn_ = mediator;
-    order_ = order;
+    local_id_ = local_id;
   };
 
   /** Function used to register a callback function called by the recieve
@@ -48,9 +45,9 @@ class Port {
    * port. */
   void inline send(T data) {
     if constexpr (is_unique_ptr<T>::value) {
-      conn_->send(std::move(data), order_);
+      conn_->send(std::move(data), local_id_);
     } else {
-      conn_->send(data, order_);
+      conn_->send(data, local_id_);
     }
   }
 
@@ -63,16 +60,15 @@ class Port {
     }
   }
 
-  /** Function which returns the order of a port. */
-  uint8_t inline getOrder() { return order_; }
+  uint16_t getLocalId() { return local_id_; }
 
   /** Constructor of the Port class. */
-  Port() : id_(idctr_++) {}
+  Port() {}
 
  private:
-  /** Order of a port used to convey the order in which the ports are connected,
-   * this is used to determine the destination of each port. */
-  uint8_t order_ = 0;
+  /** Id of a port local to a port mediator connection. This is mainly used to
+   * find destination ports for source ports present inside a mediator. */
+  uint16_t local_id_;
 
   /** Pointer to a PortMediator class. */
   PortMediator<T>* conn_ = nullptr;
@@ -89,14 +85,14 @@ class Port {
 template <typename T>
 class PortMediator {
   /** Array used to store each port. */
-  std::array<Port<T>*, 2> ports_;
+  std::array<std::shared_ptr<Port<T>>, 2> ports_;
 
   /** Array used to store the destination of each port. */
-  std::array<Port<T>*, 2> dests_;
+  std::array<std::shared_ptr<Port<T>>, 2> dests_;
 
  public:
   /** Function used to connect two ports together. */
-  void connect(Port<T>* p1, Port<T>* p2) {
+  void connect(std::shared_ptr<Port<T>> p1, std::shared_ptr<Port<T>> p2) {
     p1->connect(this, 0);
     p2->connect(this, 1);
     ports_[0] = p1;
@@ -108,7 +104,7 @@ class PortMediator {
   /** Function used to send data from a port to corresponding destination port.
    */
   void inline send(T data, uint64_t port_order) {
-    Port<T>* dest = dests_[port_order];
+    auto dest = dests_[port_order];
     if constexpr (is_unique_ptr<T>::value) {
       dest->recieve(std::move(data));
     } else {

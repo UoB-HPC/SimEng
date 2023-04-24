@@ -24,7 +24,7 @@ class FixedLatencyMemory : public Mem {
  public:
   FixedLatencyMemory(size_t bytes, uint16_t latency);
 
-  virtual ~FixedLatencyMemory() override { delete port_; };
+  virtual ~FixedLatencyMemory() override{};
 
   /** This method requests access to memory for both read and write requests. */
   void requestAccess(std::unique_ptr<MemPacket>& pkt) override;
@@ -43,7 +43,7 @@ class FixedLatencyMemory : public Mem {
   void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
 
   /** Function used to initialise a Port used for bidirection communication. */
-  Port<std::unique_ptr<MemPacket>>* initPort() override;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
 
   /** Method to tick the memory. */
   void tick() override;
@@ -65,7 +65,7 @@ class FixedLatencyMemory : public Mem {
   std::queue<LatencyPacket> reqQueue_;
 
   /** Port used for communication with other classes. */
-  Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
 
   /** This method handles DataPackets of type READ_REQUEST. */
   void handleReadRequest(std::unique_ptr<MemPacket>& req);

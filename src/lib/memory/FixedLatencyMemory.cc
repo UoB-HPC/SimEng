@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "simeng/memory/MemPacket.hh"
+
 namespace simeng {
 namespace memory {
 
@@ -84,8 +86,9 @@ void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
   }
 }
 
-Port<std::unique_ptr<MemPacket>>* FixedLatencyMemory::initPort() {
-  port_ = new Port<std::unique_ptr<MemPacket>>();
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initPort() {
+  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     this->requestAccess(packet);
     return;

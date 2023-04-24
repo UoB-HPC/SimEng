@@ -97,8 +97,8 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
 
-Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
-  port_ = new Port<std::unique_ptr<MemPacket>>();
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
+  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     if (packet->isUntimedRead()) {
       // Untimed Read only used by instruction requests

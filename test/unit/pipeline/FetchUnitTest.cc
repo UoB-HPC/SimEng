@@ -57,8 +57,10 @@ class PipelineFetchUnitTest : public testing::Test {
   std::shared_ptr<memory::MMU> mmu;
 
   simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
-  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port1;
-  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port2;
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+      port1;
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+      port2;
 
   FetchUnit fetchUnit;
 
