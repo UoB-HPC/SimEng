@@ -26,13 +26,19 @@ class PipelineFetchUnitTest : public testing::Test {
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
         memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(memory, latency, fn, tid)),
+        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        connection(),
         fetchUnit(output, mmu, 16, isa, predictor),
         uop(new MockInstruction),
         uopPtr(uop) {
     uopPtr->setInstructionAddress(0);
     fetchUnit.setProgramLength(1024);
     fetchUnit.updatePC(0);
+
+    // Set up MMU->Memory connection
+    port1 = mmu->initPort();
+    port2 = memory->initPort();
+    connection.connect(port1, port2);
   }
 
  protected:
@@ -44,12 +50,15 @@ class PipelineFetchUnitTest : public testing::Test {
   span<memory::MemoryReadResult> completedReads;
 
   const uint64_t latency = 0;
-  const uint64_t tid = 0;
   VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return vaddr;
   };
   std::shared_ptr<memory::SimpleMem> memory;
   std::shared_ptr<memory::MMU> mmu;
+
+  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port1;
+  simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>* port2;
 
   FetchUnit fetchUnit;
 
@@ -69,7 +78,7 @@ TEST_F(PipelineFetchUnitTest, Tick) {
       .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
 
   // Prefetch instructions from memory
-  mmu->requestInstrRead({0, 16});
+  mmu->requestInstrRead({0, 16}, 0);
 
   fetchUnit.tick();
 

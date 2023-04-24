@@ -56,7 +56,7 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target,
   std::unique_ptr<memory::MemPacket> pkt = memory::MemPacket::createReadRequest(
       target.address, target.size, requestId);
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    port_->recieve(MemPacket::createFaultyMemPacket());
+    port_->recieve(MemPacket::createFaultyMemPacket(true));
     return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     pkt->setIgnored();
@@ -90,7 +90,8 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    port_->recieve(MemPacket::createFaultyMemPacket());
+    request->setFault();
+    port_->recieve(std::move(request));
     return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     request->setIgnored();
@@ -144,6 +145,7 @@ Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
            RegisterValue(packet->data().data(), packet->size_),
            packet->id_});
     }
+    // Currently, ignore write responses as none are expected
   };
   port_->registerReceiver(fn);
   return port_;
