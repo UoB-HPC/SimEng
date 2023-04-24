@@ -45,8 +45,8 @@ TEST(SimpleMemTest, Read) {
   sMem.sendUntimedData(data, addr, dataSize);
   auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0);
   req->paddr_ = addr;
-  sMem.requestAccess(std::move(req));
-  auto res = respRecv.resp->data();
+  sMem.requestAccess(req);
+  auto res = respRecv.resp->payload();
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(res[i], data[i]);
   }
@@ -55,8 +55,8 @@ TEST(SimpleMemTest, Read) {
   dataSize = 2;
   auto req2 = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1);
   req2->paddr_ = addr;
-  sMem.requestAccess(std::move(req2));
-  auto res2 = respRecv.resp->data();
+  sMem.requestAccess(req2);
+  auto res2 = respRecv.resp->payload();
   EXPECT_EQ(res2[0], '8');
   EXPECT_EQ(res2[1], '9');
 }
@@ -87,7 +87,7 @@ TEST(SimpleMemTest, Write) {
   auto req =
       simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data);
   req->paddr_ = addr;
-  sMem.requestAccess(std::move(req));
+  sMem.requestAccess(req);
   auto mem = sMem.getUntimedData(0, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
@@ -97,7 +97,7 @@ TEST(SimpleMemTest, Write) {
   auto req2 =
       simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, data);
   req2->paddr_ = addr;
-  sMem.requestAccess(std::move(req2));
+  sMem.requestAccess(req2);
   mem = sMem.getUntimedData(addr, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);

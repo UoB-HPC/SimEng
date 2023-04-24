@@ -119,13 +119,13 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   // Fetch ocurred on block 0->16, with bytes 14-16 being buffered. Hence, no
   // decode
   EXPECT_EQ(mmu->getCompletedInstrReads().size(), 1);
-  EXPECT_EQ(mmu->getCompletedInstrReads()[0].target.address, 0);
+  EXPECT_EQ(mmu->getCompletedInstrReads()[0].target.vaddr, 0);
   EXPECT_EQ(mmu->getCompletedInstrReads()[0].data.size(), 16);
 
   // Expect a block starting at address 16 to be requested when we fetch again
   fetchUnit.requestFromPC();
   // Ensure that a block starting at address 16, of size 16-bytes, was fetched
-  EXPECT_EQ(mmu->getCompletedInstrReads()[1].target.address, 16);
+  EXPECT_EQ(mmu->getCompletedInstrReads()[1].target.vaddr, 16);
   EXPECT_EQ(mmu->getCompletedInstrReads()[1].data.size(), 16);
 
   // Tick again, expecting that decoding will now resume
