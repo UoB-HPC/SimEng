@@ -22,8 +22,6 @@ Process-Image:
 Simulation-Memory:
   # 2.5 GiB
   Size: 2684354560
-  Memory-Type: Fixed
-  Latency: 5
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
