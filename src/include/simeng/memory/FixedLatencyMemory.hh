@@ -72,6 +72,9 @@ class FixedLatencyMemory : public Mem {
 
   /** This method handles MemPackets of type WRITE_REQUEST. */
   void handleWriteRequest(std::unique_ptr<MemPacket>& req);
+
+  /** This method receives all requests and passes them to relevant handlers. */
+  void inline handleRequest(std::unique_ptr<MemPacket>& req);
 };
 
 }  // namespace memory

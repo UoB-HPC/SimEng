@@ -107,7 +107,7 @@ class RegressionTest
   /** The architecture instance. */
   std::unique_ptr<simeng::arch::Architecture> architecture_;
 
-  std::shared_ptr<simeng::memory::SimpleMem> memory_;
+  std::shared_ptr<simeng::memory::Mem> memory_;
 
   /** The size of the process memory in bytes. */
   size_t processMemorySize_ = 0;

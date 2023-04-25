@@ -7,46 +7,22 @@
 namespace simeng {
 namespace memory {
 
-MMU::MMU(const uint16_t latency, VAddrTranslator fn)
-    : latency_(latency), translate_(fn) {}
-
-void MMU::tick() {
-  tickCounter_++;
-
-  while (pendingRequests_.size() > 0) {
-    const auto& request = pendingRequests_.front();
-
-    if (request.readyAt > tickCounter_) {
-      // Head of queue isn't ready yet; end cycle
-      break;
-    }
-
-    const auto& target = request.target;
-    uint64_t requestId = request.requestId;
-
-    if (request.write) {
-      const char* wdata = request.data.getAsVector<char>();
-      std::vector<char> dt(wdata, wdata + target.size);
-      bufferRequest(memory::MemPacket::createWriteRequest(
-          target.vaddr, target.size, requestId, dt));
-    } else {
-      bufferRequest(memory::MemPacket::createReadRequest(
-          target.vaddr, target.size, requestId));
-    }
-
-    // Remove the request from the queue
-    pendingRequests_.pop();
-  }
-}
+MMU::MMU(VAddrTranslator fn) : translate_(fn) {}
 
 void MMU::requestRead(const MemoryAccessTarget& target,
                       const uint64_t requestId) {
-  pendingRequests_.push({target, tickCounter_ + latency_, requestId});
+  pendingDataRequests_++;
+  bufferRequest(memory::MemPacket::createReadRequest(target.vaddr, target.size,
+                                                     requestId));
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data, const uint64_t requestId) {
-  pendingRequests_.push({target, data, tickCounter_ + latency_, requestId});
+  pendingDataRequests_++;
+  const char* wdata = data.getAsVector<char>();
+  std::vector<char> dt(wdata, wdata + target.size);
+  bufferRequest(memory::MemPacket::createWriteRequest(target.vaddr, target.size,
+                                                      requestId, dt));
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
@@ -54,7 +30,8 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target,
   std::unique_ptr<memory::MemPacket> insRequest =
       memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                            requestId);
-  insRequest->setUntimedRead();
+  insRequest->markAsUntimed();
+  insRequest->markAsInstrRead();
   bufferRequest(std::move(insRequest));
 }
 
@@ -72,7 +49,7 @@ void MMU::clearCompletedReads() { completedReads_.clear(); }
 
 void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
-bool MMU::hasPendingRequests() const { return !pendingRequests_.empty(); }
+bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
 void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
@@ -81,13 +58,13 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    request->setFault();
+    request->markAsFaulty();
     port_->recieve(std::move(request));
     return;
   }
 
   if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
-    request->setIgnored();
+    request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
   }
@@ -100,35 +77,29 @@ void MMU::setTid(uint64_t tid) { tid_ = tid; }
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (packet->isUntimedRead()) {
-      // Untimed Read only used by instruction requests
-      if (packet->isFaulty()) {
-        // If faulty, return no data. This signals a data abort.
+    if (packet->isInstrRead()) {
+      if (packet->isFaulty() || packet->ignore()) {
+        // If faulty or ignored, return no data. This signals a data abort.
         completedInstrReads_.push_back(
             {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
         return;
       }
       completedInstrReads_.push_back(
-          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-          // definition
           {{packet->vaddr_, packet->size_},
            RegisterValue(packet->payload().data(), packet->size_),
            packet->id_});
       return;
     }
 
+    pendingDataRequests_--;
     if (packet->isRead()) {
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
         completedReads_.push_back(
-            // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-            // definition
             {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
         return;
       }
       completedReads_.push_back(
-          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-          // definition
           {{packet->vaddr_, packet->size_},
            RegisterValue(packet->payload().data(), packet->size_),
            packet->id_});

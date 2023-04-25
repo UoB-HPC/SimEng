@@ -1,5 +1,6 @@
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -9,8 +10,8 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
-#include "simeng/memory/SimpleMem.hh"
 #include "simeng/version.hh"
 
 /** Create a SimOS object depending on whether a binary file was specified. */
@@ -29,7 +30,7 @@ simeng::OS::SimOS simOsFactory(std::shared_ptr<simeng::memory::Mem> memory,
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
-             simeng::memory::MMU& mmu) {
+             simeng::memory::MMU& mmu, simeng::memory::Mem& mem) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
@@ -40,8 +41,8 @@ int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
     // Tick the core
     core.tick();
 
-    // Tick memory
-    mmu.tick();
+    // Tick Memory
+    mem.tick();
 
     iterations++;
   }
@@ -84,10 +85,12 @@ int main(int argc, char** argv) {
   // Get the memory size from the YAML config file.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+  const uint64_t latency =
+      Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint64_t>();
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(memorySize);
+      std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, latency);
 
   // Create the instance of the lightweight Operating system
   simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs);
@@ -98,9 +101,7 @@ int main(int argc, char** argv) {
   VAddrTranslator fn = OS.getVAddrTranslator();
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(
-          Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
-          fn);
+      std::make_shared<simeng::memory::MMU>(fn);
 
   auto connection = std::make_shared<
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
@@ -132,7 +133,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(OS, *core, *mmu);
+  iterations = simulate(OS, *core, *mmu, *memory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

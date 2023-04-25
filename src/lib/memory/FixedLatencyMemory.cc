@@ -23,11 +23,13 @@ void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
     port_->send(std::move(pkt));
     return;
   }
-  if (pkt->isUntimedRead()) {
-    pkt->turnIntoReadResponse(getUntimedData(pkt->paddr_, pkt->size_));
+
+  if (pkt->isUntimed()) {
+    handleRequest(pkt);
     port_->send(std::move(pkt));
     return;
   }
+
   LatencyPacket lpkt = {std::move(pkt), ticks_ + latency_};
   reqQueue_.push(std::move(lpkt));
 }
@@ -47,24 +49,13 @@ void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
 }
 
 void FixedLatencyMemory::tick() {
-  while (reqQueue_.front().endLat >= ticks_) {
+  ticks_++;
+  while (reqQueue_.size() && reqQueue_.front().endLat <= ticks_) {
     std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
-    if (pkt->isRequest() && pkt->isRead()) {
-      handleReadRequest(pkt);
-    } else if (pkt->isRequest() && pkt->isWrite()) {
-      handleWriteRequest(pkt);
-    } else {
-      std::cerr << "[SimEng:SimpleMem] Invalid MemPacket type for "
-                   "requesting access to memory. Requests to memory should "
-                   "either be of "
-                   "type READ_REQUEST or WRITE_REQUEST."
-                << std::endl;
-      pkt->setFault();
-    }
+    handleRequest(pkt);
     port_->send(std::move(pkt));
     reqQueue_.pop();
   }
-  ticks_++;
 };
 
 void FixedLatencyMemory::sendUntimedData(std::vector<char> data, uint64_t addr,
@@ -96,6 +87,19 @@ FixedLatencyMemory::initPort() {
   port_->registerReceiver(fn);
   return port_;
 }
-
+void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
+  if (req->isRequest() && req->isRead()) {
+    handleReadRequest(req);
+  } else if (req->isRequest() && req->isWrite()) {
+    handleWriteRequest(req);
+  } else {
+    std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
+                 "requesting access to memory. Requests to memory should "
+                 "either be of "
+                 "type READ_REQUEST or WRITE_REQUEST."
+              << std::endl;
+    req->markAsFaulty();
+  }
+}
 }  // namespace memory
 }  // namespace simeng

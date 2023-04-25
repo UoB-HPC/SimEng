@@ -17,7 +17,7 @@ set(TEST_SOURCES
     RegisterValueTest.cc
     PoolTest.cc
     ShiftValueTest.cc
-    LatencyMemoryInterfaceTest.cc
+    FixedLatencyMemoryTest.cc
     SimpleMem.cc
     PageTableTest.cc
     VmaTest.cc
