@@ -1,10 +1,12 @@
 #include "RegressionTest.hh"
 
+#include <cstdint>
 #include <string>
 
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -34,7 +36,7 @@ void RegressionTest::run(const char* source, const char* triple,
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
 
   // Initialise the simulation memory
-  memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
+  memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);
 
   // Initialise a SimOS object & create initial process from test assembly code.
   simeng::OS::SimOS OS = simeng::OS::SimOS(
@@ -50,7 +52,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create MMU
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(4, OS.getVAddrTranslator());
+      std::make_shared<simeng::memory::MMU>(OS.getVAddrTranslator());
   mmu->setTid(procTID);
 
   // Set up MMU->Memory connection
@@ -100,7 +102,7 @@ void RegressionTest::run(const char* source, const char* triple,
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
     OS.tick();
     core_->tick();
-    mmu->tick();
+    memory_->tick();
     numTicks_++;
   }
 

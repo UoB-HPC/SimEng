@@ -26,7 +26,7 @@ class PipelineFetchUnitTest : public testing::Test {
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
         memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        mmu(std::make_shared<memory::MMU>(fn)),
         connection(),
         fetchUnit(output, mmu, 16, isa, predictor),
         uop(new MockInstruction),

@@ -18,8 +18,6 @@ size_t SimpleMem::getMemorySize() { return memSize_; }
 void SimpleMem::requestAccess(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->ignore()) {
     handleIgnoredRequest(pkt);
-  } else if (pkt->isUntimedRead()) {
-    pkt->turnIntoReadResponse(getUntimedData(pkt->paddr_, pkt->size_));
   } else if (pkt->isRequest() && pkt->isRead()) {
     handleReadRequest(pkt);
   } else if (pkt->isRequest() && pkt->isWrite()) {
@@ -30,7 +28,7 @@ void SimpleMem::requestAccess(std::unique_ptr<MemPacket>& pkt) {
                  "either be of "
                  "type READ_REQUEST or WRITE_REQUEST."
               << std::endl;
-    pkt->setFault();
+    pkt->markAsFaulty();
   }
   port_->send(std::move(pkt));
 }
