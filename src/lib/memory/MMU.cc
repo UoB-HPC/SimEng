@@ -81,14 +81,12 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     if (packet->isInstrRead()) {
       if (packet->isFaulty() || packet->ignore()) {
-        // If faulty, return no data. This signals a data abort.
+        // If faulty or ignored, return no data. This signals a data abort.
         completedInstrReads_.push_back(
             {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
         return;
       }
       completedInstrReads_.push_back(
-          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-          // definition
           {{packet->vaddr_, packet->size_},
            RegisterValue(packet->payload().data(), packet->size_),
            packet->id_});
@@ -100,14 +98,10 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
         completedReads_.push_back(
-            // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-            // definition
             {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
         return;
       }
       completedReads_.push_back(
-          // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
-          // definition
           {{packet->vaddr_, packet->size_},
            RegisterValue(packet->payload().data(), packet->size_),
            packet->id_});
