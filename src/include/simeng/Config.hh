@@ -16,16 +16,17 @@ class Config {
    "Vector-Length: 512, Streaming-Vector-Length: 512}, Fetch: "                \
    "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
    "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576, Mmap-Size: " \
-   "10485760}, Simulation-Memory: {Size: 104857600}, Register-Set: "           \
-   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
-   "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "           \
-   "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
-   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
-   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
-   "RAS-entries: 5, Fallback-Static-Predictor: 2}, Cache: {Cache-Line-Width: " \
-   "128, L1-Access-Latency: 4}, LSQ-Memory-Interface: {Exclusive: False, "     \
-   "Load-Bandwidth: 32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: "   \
-   "2, Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "  \
+   "10485760}, Register-Set: {GeneralPurpose-Count: 154, "                     \
+   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
+   "128, Matrix-Count: 2}, Pipeline-Widths: {Commit: 4, FrontEnd: 4, "         \
+   "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "        \
+   "Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "           \
+   "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "    \
+   "2}, Memory-Hierarchy: {Cache-Line-Width: 256, L1-Data: {Access-Latency: "  \
+   "4, Size: 65536}, DRAM: {Access-Latency: 200, Size: 2684354560}}, "         \
+   "LSQ-Memory-Interface: {Exclusive: False, Load-Bandwidth: 32, "             \
+   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                    \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
    "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 14]}, '1': "    \
    "{Portname: Port 1, Instruction-Group-Support: [0, 14]}, '2': {Portname: "  \
    "Port 2, Instruction-Group-Support: [1, 8, 71]}, '3': {Portname: Port 4, "  \

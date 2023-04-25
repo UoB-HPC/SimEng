@@ -84,9 +84,10 @@ int main(int argc, char** argv) {
 
   // Get the memory size from the YAML config file.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
-  const uint64_t latency =
-      Config::get()["Cache"]["L1-Access-Latency"].as<uint64_t>();
+      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
+  const uint16_t latency =
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Access-Latency"]
+          .as<uint16_t>();
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =

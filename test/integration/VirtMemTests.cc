@@ -13,7 +13,8 @@ const std::string configStr =
     "Timer-Frequency: 100, Micro-Operations: True, "
     "Vector-Length: 512, Streaming-Vector-Length: 512},"
     "Process-Image: {Heap-Size: 100000, Stack-Size: 100000, Mmap-Size: "
-    "200000}, Simulation-Memory: {Size: 500000}, CPU-Info: "
+    "200000}, Memory-Hierarchy: {Cache-Line-Width: 64, L1-Data: "
+    "{Access-Latency: 1, Size: 500000}}, CPU-Info: "
     "{Generate-Special-Dir: False}}";
 
 TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
@@ -21,7 +22,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
 
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
@@ -51,7 +52,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
@@ -93,7 +94,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
@@ -137,7 +138,7 @@ TEST(VirtMemTest, UnmapSyscall) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
@@ -190,7 +191,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
@@ -244,7 +245,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
@@ -299,7 +300,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
   // Create simulation memory.
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<uint64_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 

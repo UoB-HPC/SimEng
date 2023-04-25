@@ -375,17 +375,6 @@ void ModelConfig::validate() {
 
   subFields.clear();
 
-  // Simulation-Memory
-  root = "Simulation-Memory";
-  subFields = {"Size"};
-
-  // Default simulation memory size is 1024 * 1024 * 10 = 10MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(totalProcRegionSize, UINT64_MAX),
-                        ExpectedValue::UInteger, 104857600);
-
-  subFields.clear();
-
   // Branch-Predictor
   root = "Branch-Predictor";
   subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
@@ -421,15 +410,30 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
-  // Cahce
-  root = "Cache";
-  subFields = {"Cache-Line-Width", "L1-Access-Latency"};
+  // Memory-Hierarchy
+  root = "Memory-Hierarchy";
+  subFields = {"Cache-Line-Width", "L1-Data", "DRAM"};
+  std::vector<std::string> subSubFields = {"Access-Latency", "Size"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
                         64);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        1);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]][subSubFields[0]],
+                        subSubFields[0], std::make_pair(1, UINT16_MAX),
+                        ExpectedValue::UInteger, 1);
+  // Default L1-Data size is 1024 * 32 = 32 KiB
+  uint16_t cacheLineLen = configFile_[root][subFields[0]].as<uint16_t>();
+  nodeChecker<uint64_t>(
+      configFile_[root][subFields[1]][subSubFields[1]], subSubFields[1],
+      std::make_pair(cacheLineLen, UINT64_MAX), ExpectedValue::UInteger, 32768);
+  nodeChecker<uint16_t>(configFile_[root][subFields[2]][subSubFields[0]],
+                        subSubFields[0], std::make_pair(1, UINT16_MAX),
+                        ExpectedValue::UInteger, 1);
+  // Default DRAM size is 1024 * 1024 * 10 = 10MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]][subSubFields[1]],
+                        subSubFields[1],
+                        std::make_pair(totalProcRegionSize, UINT64_MAX),
+                        ExpectedValue::UInteger, 104857600);
+  subFields.clear();
 
   // LSQ-Memory-Interface
   root = "LSQ-Memory-Interface";

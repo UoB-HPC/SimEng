@@ -13,9 +13,6 @@ Process-Image:
   Mmap-Size: 1073741824
   Heap-Size: 1073741824
   Stack-Size: 1048576
-Simulation-Memory:
-  # 2.5 GiB
-  Size: 2684354560
 Register-Set:
   GeneralPurpose-Count: 394
   FloatingPoint/SVE-Count: 432
@@ -34,9 +31,14 @@ Branch-Predictor:
   Global-History-Length: 11 
   RAS-entries: 8 
   Fallback-Static-Predictor: "Always-Taken"
-Cache:
-  Cache-Line-Width: 64
-  L1-Access-Latency: 4
+Memory-Hierarchy:
+  Cache-Line-Width: 128
+  L1-Data:
+    Access-Latency: 3
+    Size: 131072 # 128 KiB
+  DRAM:
+    Access-Latency: 200
+    Size: 2684354560 # 2.5 GiB
 LSQ-Memory-Interface:
   Exclusive: False
   L1 Load Bandwidth: 48

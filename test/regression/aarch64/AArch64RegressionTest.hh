@@ -4,24 +4,24 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-#define AARCH64_CONFIG                                                         \
-  ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "  \
-   "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                   \
-   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
-   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000, Mmap-Size: "    \
-   "200000}, Simulation-Memory: {Size: 500000}, Register-Set: "                \
-   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
-   "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "           \
-   "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "           \
-   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
-   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
-   "RAS-entries: 5, Fallback-Static-Predictor: 2}, Cache: {Cache-Line-Width: " \
-   "128, L1-Access-Latency: 4}, LSQ-Memory-Interface: {Exclusive: False, "     \
-   "Load-Bandwidth: 32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: "   \
-   "2, Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "  \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, "  \
-   "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, "  \
-   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "       \
+#define AARCH64_CONFIG                                                        \
+  ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, " \
+   "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                  \
+   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "  \
+   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000, Mmap-Size: "   \
+   "200000}, Register-Set: {GeneralPurpose-Count: 154, "                      \
+   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "    \
+   "128, Matrix-Count: 2}, Pipeline-Widths: { Commit: 4, FrontEnd: 4, "       \
+   "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "       \
+   "Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "          \
+   "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "   \
+   "2}, Memory-Hierarchy: {Cache-Line-Width: 256, L1-Data: {Access-Latency: " \
+   "1, Size: 500000}}, LSQ-Memory-Interface: {Exclusive: False, "             \
+   "Load-Bandwidth: 32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: "  \
+   "2, Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: " \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
+   "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
+   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "      \
    "{Generate-Special-Dir: False}}")
 
 /** A helper function to convert the supplied parameters of
