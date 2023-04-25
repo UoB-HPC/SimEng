@@ -1,5 +1,6 @@
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -87,10 +88,12 @@ int main(int argc, char** argv) {
   // Get the memory size from the YAML config file.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+  const uint64_t latency =
+      Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint64_t>();
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 5);
+      std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, latency);
 
   // Create the instance of the lightweight Operating system
   simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs);

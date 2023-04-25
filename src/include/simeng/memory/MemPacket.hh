@@ -25,7 +25,8 @@ static constexpr uint8_t PacketTypeMask = 0b01000000;
 static constexpr uint8_t FaultMask = 0b00100000;
 static constexpr uint8_t IgnoreMask = 0b00010000;
 static constexpr uint8_t PayloadMask = 0b00001000;
-static constexpr uint8_t UntimedReadMask = 0b00000100;
+static constexpr uint8_t InstrReadMask = 0b00000100;
+static constexpr uint8_t UntimedMemAccessMask = 0b00000010;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -61,8 +62,13 @@ class MemPacket {
   /** Function which indicates whether a MemPacket is faulty or not. */
   inline bool isFaulty() const { return metadata_ & FaultMask; }
 
-  /** Function which indicates whether a MemPacket is an untimed read or not. */
-  inline bool isUntimedRead() const { return metadata_ & UntimedReadMask; }
+  /** Function which indicates whether a MemPacket corresponds to Instruction
+   * Read. */
+  inline bool isInstrRead() const { return metadata_ & InstrReadMask; };
+
+  /** Function which indicates whether a MemPacket does an untimed memory
+   * access. */
+  inline bool isUntimed() const { return metadata_ & UntimedMemAccessMask; }
 
   /** Function which indicates whether a MemPacket should be ignored or not. */
   inline bool ignore() const { return metadata_ & IgnoreMask; }
@@ -71,13 +77,16 @@ class MemPacket {
   inline bool hasPayload() const { return metadata_ & PayloadMask; }
 
   /** Function used to mark a MemPacket as ignored. */
-  inline void setIgnored() { metadata_ = metadata_ | IgnoreMask; }
+  inline void markAsIgnored() { metadata_ = metadata_ | IgnoreMask; }
 
   /** Function used to mark a MemPacket as faulty. */
-  inline void setFault() { metadata_ = metadata_ | FaultMask; }
+  inline void markAsFaulty() { metadata_ = metadata_ | FaultMask; }
 
-  /** Function used to mark a MemPacket as an untimed read. */
-  inline void setUntimedRead() { metadata_ = metadata_ | UntimedReadMask; }
+  /** Function used to mark that a MemPacket is used to read an instruction. */
+  inline void markAsInstrRead() { metadata_ = metadata_ | InstrReadMask; }
+
+  /** Function used to mark a MemPacket to do untimed memory access. */
+  inline void markAsUntimed() { metadata_ = metadata_ | UntimedMemAccessMask; }
 
   /** Function to return the data assosciated with a MemPacket. */
   std::vector<char>& payload() { return payload_; }
@@ -116,7 +125,9 @@ class MemPacket {
    * 3rd bit indicates whether a MemPacket is faulty (1) or not (0).
    * 4th bit indicates whether a MemPacket should be ignored (1) or not (0).
    * 5th bit indicates whether a MemPacket contains a payload (1) or not (0).
-   * 6th bit indicates whether a MemPacket is an untimed Read (1) or not (0). */
+   * 6th bit indicates whether a MemPacket reads an instruction (1) or not (0).
+   * 7th bit indicates untimed (1) or timed (0) memory access.
+   */
   uint8_t metadata_ = 0;
 
   /** Payload assosciate with a MemPacket. */

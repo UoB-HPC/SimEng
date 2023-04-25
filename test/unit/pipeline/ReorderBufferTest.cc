@@ -26,7 +26,7 @@ class ReorderBufferTest : public testing::Test {
  public:
   ReorderBufferTest()
       : memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        mmu(std::make_shared<memory::MMU>(fn)),
         connection(),
         rat({{8, 32}}, {64}),
         lsq(maxLSQLoads, maxLSQStores, mmu, {nullptr, 0},

@@ -17,7 +17,7 @@ set(TEST_SOURCES
     RegisterValueTest.cc
     PoolTest.cc
     ShiftValueTest.cc
-    LatencyMemoryInterfaceTest.cc
+    FixedLatencyMemoryTest.cc
     SimpleMem.cc
     PageTableTest.cc
     VmaTest.cc
@@ -31,7 +31,7 @@ add_executable(unittests ${TEST_SOURCES})
 
 target_include_directories(unittests PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(unittests PUBLIC ${PROJECT_SOURCE_DIR}/src/lib)
-target_link_libraries(unittests libsimeng)
+target_link_libraries(unittests libsimeng bfd)
 target_link_libraries(unittests gmock_main)
 
 add_test(NAME unit_tests COMMAND unittests)

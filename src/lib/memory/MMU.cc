@@ -13,12 +13,14 @@ void MMU::tick() {}
 
 void MMU::requestRead(const MemoryAccessTarget& target,
                       const uint64_t requestId) {
+  pendingRequests_++;
   bufferRequest(memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                                      requestId));
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data, const uint64_t requestId) {
+  pendingRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
   bufferRequest(memory::MemPacket::createWriteRequest(target.vaddr, target.size,
@@ -30,7 +32,8 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target,
   std::unique_ptr<memory::MemPacket> insRequest =
       memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                            requestId);
-  insRequest->setUntimedRead();
+  insRequest->markAsUntimed();
+  insRequest->markAsInstrRead();
   bufferRequest(std::move(insRequest));
 }
 
@@ -57,13 +60,13 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    request->setFault();
+    request->markAsFaulty();
     port_->recieve(std::move(request));
     return;
   }
 
   if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
-    request->setIgnored();
+    request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
   }
@@ -76,9 +79,8 @@ void MMU::setTid(uint64_t tid) { tid_ = tid; }
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (packet->isUntimedRead()) {
-      // Untimed Read only used by instruction requests
-      if (packet->isFaulty()) {
+    if (packet->isInstrRead()) {
+      if (packet->isFaulty() || packet->ignore()) {
         // If faulty, return no data. This signals a data abort.
         completedInstrReads_.push_back(
             {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
@@ -93,6 +95,7 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       return;
     }
 
+    pendingRequests_--;
     if (packet->isRead()) {
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.

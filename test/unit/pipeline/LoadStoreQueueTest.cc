@@ -2,6 +2,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/Instruction.hh"
+#include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
@@ -40,8 +41,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         loadUopPtr2(loadUop2),
         storeUopPtr(storeUop),
         storeUopPtr2(storeUop2),
-        memory(std::make_shared<memory::SimpleMem>(1024)),
-        mmu(std::make_shared<memory::MMU>(latency, fn)),
+        memory(std::make_shared<memory::FixedLatencyMemory>(1024, latency)),
+        mmu(std::make_shared<memory::MMU>(fn)),
         connection() {
     // Set up MMU->Memory connection
     port1 = mmu->initPort();
@@ -138,7 +139,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return vaddr;
   };
-  std::shared_ptr<memory::SimpleMem> memory;
+  std::shared_ptr<memory::Mem> memory;
   std::shared_ptr<memory::MMU> mmu;
 
   simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
@@ -260,6 +261,7 @@ TEST_P(LoadStoreQueueTest, Load) {
   EXPECT_EQ(mmu->hasPendingRequests(), true);
   // Tick MMU to process load request
   mmu->tick();
+  memory->tick();
   // Expect a check against finished reads and return the result
   EXPECT_EQ(mmu->hasPendingRequests(), false);
   EXPECT_EQ(mmu->getCompletedReads().size(), 1);
