@@ -126,7 +126,7 @@ class MemPacket {
    * 4th bit indicates whether a MemPacket should be ignored (1) or not (0).
    * 5th bit indicates whether a MemPacket contains a payload (1) or not (0).
    * 6th bit indicates whether a MemPacket reads an instruction (1) or not (0).
-   * 7th bit indicates untimed (1) or timed (0) memory access.
+   * 7th bit indicates whether an untimed (1) or timed (0) memory access occurs.
    */
   uint8_t metadata_ = 0;
 

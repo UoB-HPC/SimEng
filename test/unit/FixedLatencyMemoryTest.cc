@@ -83,7 +83,6 @@ TEST(FixedLatencyMemoryTest, ReadData) {
   EXPECT_FALSE(mmu->hasPendingRequests());
 
   // Write a 32-bit value to memory
-  // Should ignore the 7 cycle latency and opt for the interface defined latency
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
   mmu->requestWrite(target, value, 0);
@@ -105,7 +104,7 @@ TEST(FixedLatencyMemoryTest, ReadData) {
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST(LatencyMemoryMemoryTest, UnMappedAddrRead) {
+TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::FixedLatencyMemory>(4, 1);
 

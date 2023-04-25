@@ -41,9 +41,6 @@ int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
     // Tick the core
     core.tick();
 
-    // Tick MMU
-    mmu.tick();
-
     // Tick Memory
     mem.tick();
 

@@ -24,7 +24,7 @@ class MMU {
   ~MMU() {}
 
   /** Tick the memory model to process the request queue. */
-  void tick();
+  void tick(){};
 
   /** Queue a read request from the supplied target location.
    * The caller can optionally provide an ID that will be attached to completed
@@ -72,8 +72,8 @@ class MMU {
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
 
-  /** The number of pending requests. */
-  uint64_t pendingRequests_ = 0;
+  /** The number of pending data requests. */
+  uint64_t pendingDataRequests_ = 0;
 
   /** TID of the process currently communicating with this MMU. */
   uint64_t tid_ = 0;

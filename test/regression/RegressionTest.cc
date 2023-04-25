@@ -102,7 +102,6 @@ void RegressionTest::run(const char* source, const char* triple,
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
     OS.tick();
     core_->tick();
-    mmu->tick();
     memory_->tick();
     numTicks_++;
   }

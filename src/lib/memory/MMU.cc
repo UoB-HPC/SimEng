@@ -9,18 +9,16 @@ namespace memory {
 
 MMU::MMU(VAddrTranslator fn) : translate_(fn) {}
 
-void MMU::tick() {}
-
 void MMU::requestRead(const MemoryAccessTarget& target,
                       const uint64_t requestId) {
-  pendingRequests_++;
+  pendingDataRequests_++;
   bufferRequest(memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                                      requestId));
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data, const uint64_t requestId) {
-  pendingRequests_++;
+  pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
   bufferRequest(memory::MemPacket::createWriteRequest(target.vaddr, target.size,
@@ -51,7 +49,7 @@ void MMU::clearCompletedReads() { completedReads_.clear(); }
 
 void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
-bool MMU::hasPendingRequests() const { return pendingRequests_ != 0; }
+bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
 void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
@@ -93,7 +91,7 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       return;
     }
 
-    pendingRequests_--;
+    pendingDataRequests_--;
     if (packet->isRead()) {
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
