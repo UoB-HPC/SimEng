@@ -206,6 +206,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
 
   // Early exit if there's no addresses to process
   if (addresses.size() == 0) {
+    // TODO: Check if atomic lock needs to be released
     storeQueue_.pop_front();
     return false;
   }

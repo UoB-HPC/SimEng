@@ -553,7 +553,12 @@ void Instruction::execute() {
         const uint32_t s = operands[0].get<uint32_t>();
         const uint32_t t = operands[1].get<uint32_t>();
         const uint32_t n = memoryData[0].get<uint32_t>();
-        if (n == s) memoryData[0] = t;
+        if (n == s) {
+          memoryData[0] = t;
+        } else {
+          // If comparison fails, don't perform store
+          setMemoryAddresses({});
+        }
         break;
       }
       case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
@@ -562,7 +567,12 @@ void Instruction::execute() {
         const uint64_t s = operands[0].get<uint64_t>();
         const uint64_t t = operands[1].get<uint64_t>();
         const uint64_t n = memoryData[0].get<uint64_t>();
-        if (n == s) memoryData[0] = t;
+        if (n == s) {
+          memoryData[0] = t;
+        } else {
+          // If comparison fails, don't perform store
+          setMemoryAddresses({});
+        }
         break;
       }
       case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
