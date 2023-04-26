@@ -82,7 +82,7 @@ TEST(PFATest, AllocateSizeGreaterThanMaxAllocationSize) {
   EXPECT_EXIT(
       { allctr.allocate(1025000000); }, ::testing::ExitedWithCode(1),
       "\\[SimEng:PageFrameAllocator\\] Cannot allocate more page frames! "
-      "Increase the \\{Simulation-Memory\\:\\{Size:<size>\\}\\} parameter "
+      "Increase the \\{Memory-Hierarchy\\:\\{DRAM:\\{Size}\\}\\} parameter "
       "in the YAML config file used to run the simulation.");
 };
 

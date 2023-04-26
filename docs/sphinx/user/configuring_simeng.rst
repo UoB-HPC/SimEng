@@ -184,7 +184,7 @@ Interface-Type
 
 .. Note:: Currently, only a ``Flat`` value is permitted for the L1 instruction cache interface. Future developments will seek to allow for more memory interfaces to be used with the L1 instruction cache.
 
-LSQ-L1-Interface
+LSQ-Memory-Interface
 ----------------
 
 This section contains the options used to configure SimEng's interface between the LSQ and the L1 data cache. These options include:
