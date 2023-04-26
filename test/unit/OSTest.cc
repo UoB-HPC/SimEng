@@ -12,11 +12,11 @@ TEST(OSTest, CreateSimOS) {
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
       "{Heap-Size: 10000, Stack-Size: 10000, Mmap-Size: 20000}, "
-      "Simulation-Memory: {Size: 100000}, CPU-Info: {Generate-Special-Dir: "
-      "False}}");
+      "Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: {Access-Latency: 1, "
+      "Size: 100000}}, CPU-Info: {Generate-Special-Dir: False}}");
   // Create the simulation memory
   const size_t memorySize =
-      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
   const std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
