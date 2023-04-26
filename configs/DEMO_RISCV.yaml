@@ -38,11 +38,11 @@ Branch-Predictor:
   BTB-bitlength: 16
 Memory-Hierarchy:
   Cache-Line-Width: 128
-  L1-Data:
+  L1-Data: # Currently not in use
     Access-Latency: 4
     Size: 32768 # 32 KiB
   DRAM:
-    Access-Latency: 200
+    Access-Latency: 4
     Size: 2684354560 # 2.5 GiB
 LSQ-Memory-Interface:
   Exclusive: False

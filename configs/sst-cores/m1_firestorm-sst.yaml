@@ -33,11 +33,11 @@ Branch-Predictor:
   Fallback-Static-Predictor: "Always-Taken"
 Memory-Hierarchy:
   Cache-Line-Width: 128
-  L1-Data:
+  L1-Data: # Currently not in use
     Access-Latency: 3
     Size: 131072 # 128 KiB
   DRAM:
-    Access-Latency: 200
+    Access-Latency: 3
     Size: 2684354560 # 2.5 GiB
 LSQ-Memory-Interface:
   Exclusive: False

@@ -85,10 +85,8 @@ int main(int argc, char** argv) {
   // Get the memory size from the YAML config file.
   const size_t memorySize =
       Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
-  // L1 latency currently used given flat memory hierarchy. Hence, we want the
-  // speed of L1, but the capacity of DRAM.
   const uint16_t latency =
-      Config::get()["Memory-Hierarchy"]["L1-Data"]["Access-Latency"]
+      Config::get()["Memory-Hierarchy"]["DRAM"]["Access-Latency"]
           .as<uint16_t>();
 
   // Create the simulation memory.
