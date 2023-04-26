@@ -4,22 +4,23 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
-#define RISCV_CONFIG                                                           \
-  ("{Core: {ISA: rv64, Simulation-Mode: emulation, Clock-Frequency: 2.5}, "    \
-   "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                      \
-   "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 100000, "         \
-   "Stack-Size: 100000, Mmap-Size: 200000}, Register-Set: "                    \
-   "{GeneralPurpose-Count: 154, FloatingPoint-Count: 90}, Pipeline-Widths: "   \
-   "{Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, LSQ-Completion: 2}, "           \
-   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
-   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
-   "RAS-entries: 5, Fallback-Static-Predictor: 0}, Cache: {Cache-Line-Width: " \
-   "128, L1-Access-Latency: 4}, LSQ-Memory-Interface: {Exclusive: False, "     \
-   "Load-Bandwidth: 32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: "   \
-   "2, Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "  \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 10, 11, 12 ]}}, "  \
-   "Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, "   \
-   "Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "                     \
+#define RISCV_CONFIG                                                          \
+  ("{Core: {ISA: rv64, Simulation-Mode: emulation, Clock-Frequency: 2.5}, "   \
+   "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                     \
+   "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 100000, "        \
+   "Stack-Size: 100000, Mmap-Size: 200000}, Register-Set: "                   \
+   "{GeneralPurpose-Count: 154, FloatingPoint-Count: 90}, Pipeline-Widths: "  \
+   "{Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
+   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "         \
+   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, " \
+   "RAS-entries: 5, Fallback-Static-Predictor: 0}, Memory-Hierarchy: "        \
+   "{Cache-Line-Width: 256, DRAM: {Access-Latency: 1, Size: 500000}}, "       \
+   "LSQ-Memory-Interface: {Exclusive: False, Load-Bandwidth: 32, "            \
+   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                   \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 10, 11, 12 ]}}, " \
+   "Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, "  \
+   "Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "                    \
    "{Generate-Special-Dir: False}}")
 
 /** A helper function to convert the supplied parameters of

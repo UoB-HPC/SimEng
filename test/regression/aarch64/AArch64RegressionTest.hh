@@ -15,7 +15,7 @@
    "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "       \
    "Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "          \
    "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "   \
-   "2}, Memory-Hierarchy: {Cache-Line-Width: 256, L1-Data: {Access-Latency: " \
+   "2}, Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: {Access-Latency: "    \
    "1, Size: 500000}}, LSQ-Memory-Interface: {Exclusive: False, "             \
    "Load-Bandwidth: 32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: "  \
    "2, Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: " \

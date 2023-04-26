@@ -23,7 +23,7 @@ class Config {
    "Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "           \
    "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "    \
    "2}, Memory-Hierarchy: {Cache-Line-Width: 256, L1-Data: {Access-Latency: "  \
-   "4, Size: 65536}, DRAM: {Access-Latency: 200, Size: 2684354560}}, "         \
+   "4, Size: 65536}, DRAM: {Access-Latency: 200, Size: 104857600}}, "          \
    "LSQ-Memory-Interface: {Exclusive: False, Load-Bandwidth: 32, "             \
    "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                    \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \

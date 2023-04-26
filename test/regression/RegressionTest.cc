@@ -33,7 +33,7 @@ void RegressionTest::run(const char* source, const char* triple,
   Config::set(config);
 
   const size_t memorySize =
-      Config::get()["Memory-Hierarchy"]["L1-Data"]["Size"].as<size_t>();
+      Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
 
   // Initialise the simulation memory
   memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);
