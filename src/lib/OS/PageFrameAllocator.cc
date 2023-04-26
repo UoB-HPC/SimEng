@@ -15,7 +15,7 @@ uint64_t PageFrameAllocator::allocate(size_t size) {
   if (size > sizeLeft_) {
     std::cerr
         << "[SimEng:PageFrameAllocator] Cannot allocate more page frames! "
-           "Increase the {Simulation-Memory:{Size:<size>}} parameter "
+           "Increase the {Memory-Hierarchy:{DRAM:{Size}}} parameter "
            "in the YAML config file used to run the simulation."
         << std::endl;
     std::exit(1);

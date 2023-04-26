@@ -67,7 +67,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
     std::cerr
         << "[SimEng:Process] Size of the simulation memory is less than the "
            "size of a single process image. Please increase the "
-           "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
+           "{Memory-Hierarchy:{DRAM:{Size}}} parameter in the YAML model "
            "config file used to run the simulation."
         << std::endl;
     std::exit(1);
@@ -198,7 +198,7 @@ Process::Process(span<char> instructions, SimOS* OS,
     std::cerr
         << "[SimEng:Process] Size of the simulation memory is less than the "
            "size of a single process image. Please increase the "
-           "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
+           "{Memory-Hierarchy:{DRAM:{Size}}} parameter in the YAML model "
            "config file used to run the simulation."
         << std::endl;
     std::exit(1);
