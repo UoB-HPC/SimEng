@@ -142,6 +142,9 @@ class ReorderBuffer {
 
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  /** The conditional store which is in-flight, waiting for its response. */
+  std::shared_ptr<Instruction> inFlightCondStr_ = nullptr;
 };
 
 }  // namespace pipeline

@@ -71,8 +71,26 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
 
-  unsigned int n;
-  for (n = 0; n < maxCommits; n++) {
+  unsigned int n = 0;
+  if (inFlightCondStr_ != nullptr) {
+    // Check if conditional store result is ready
+    bool storeCompleted =
+        lsq_.checkCondStore(inFlightCondStr_->getSequenceId());
+    if (storeCompleted) {
+      // Commit destination registers
+      const auto& destinations = inFlightCondStr_->getDestinationRegisters();
+      for (int i = 0; i < destinations.size(); i++) {
+        rat_.commit(destinations[i]);
+      }
+      n++;
+      inFlightCondStr_ = nullptr;
+    } else {
+      // Wait another cycle and check again
+      return n;
+    }
+  }
+
+  for (n; n < maxCommits; n++) {
     auto& uop = buffer_.front();
     if (!uop->canCommit()) {
       break;
@@ -84,6 +102,23 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
+    }
+
+    // Check conditional store as logic is different from regular store
+    if (uop->isStoreCond()) {
+      bool violationFound = lsq_.commitStore(uop);
+      if (violationFound) {
+        loadViolations_++;
+        // Memory order violation found; aborting commits and flushing
+        auto load = lsq_.getViolatingLoad();
+        shouldFlush_ = true;
+        flushAfter_ = load->getInstructionId() - 1;
+        pc_ = load->getInstructionAddress();
+      }
+      inFlightCondStr_ = buffer_.front();
+      buffer_.pop_front();
+      // Will take minimum 1 cycle for response to be ready, return early
+      return n;
     }
 
     const auto& destinations = uop->getDestinationRegisters();
