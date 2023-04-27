@@ -33,24 +33,30 @@ class MMU {
 
   /** Queue a write request of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
-                    const uint64_t requestId);
+                    const uint64_t requestId, bool isConditional = false);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
   void requestInstrRead(const MemoryAccessTarget& target,
                         const uint64_t requestId);
 
-  /** Retrieve all completed requests. */
+  /** Retrieve all completed data read requests. */
   const span<MemoryReadResult> getCompletedReads() const;
 
-  /** Retrieve all completed Instruction requests. */
+  /** Retrieve all completed instruction read requests. */
   const span<MemoryReadResult> getCompletedInstrReads() const;
 
-  /** Clear the completed reads. */
+  /** Retrieve all completed conditional store requests. */
+  const span<CondStoreResult> getCompletedCondStores() const;
+
+  /** Clear the completed data reads. */
   void clearCompletedReads();
 
-  /** Clear the completed Instruction reads. */
+  /** Clear the completed instruction reads. */
   void clearCompletedIntrReads();
+
+  /** Clear the completed conditional stores. */
+  void clearCompletedCondStores();
 
   /** Returns true if there are any oustanding memory requests in-flight. */
   bool hasPendingRequests() const;
@@ -71,6 +77,9 @@ class MMU {
 
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
+
+  /** A vector containing all completed conditional store request results. */
+  std::vector<CondStoreResult> completedCondStores_;
 
   /** The number of pending data requests. */
   uint64_t pendingDataRequests_ = 0;
