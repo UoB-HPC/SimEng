@@ -8,10 +8,14 @@ namespace pipeline {
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFileSet& registerFileSet,
-    std::function<void(uint64_t insnId)> flagMicroOpCommits)
+    std::function<void(Register reg)> setRegisterReady,
+    std::function<bool(uint64_t seqId)> canWriteback,
+    std::function<void(const std::shared_ptr<Instruction>&)> postWriteback)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
-      flagMicroOpCommits_(flagMicroOpCommits) {}
+      setRegisterReady_(setRegisterReady),
+      canWriteback_(canWriteback),
+      postWriteback_(postWriteback) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
@@ -20,21 +24,28 @@ void WritebackUnit::tick() {
     if (uop == nullptr) {
       continue;
     }
+    // Query if the uop can be written back; if not, stall the completion slot
+    // until it can be
+    if (!canWriteback_(uop->getSequenceId())) {
+      completionSlots_[slot].stall(true);
+      continue;
+    }
+    completionSlots_[slot].stall(false);
 
     auto& results = uop->getResults();
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file
       registerFileSet_.set(destinations[i], results[i]);
+      // Set the register as ready to be read from the register fileset
+      setRegisterReady_(destinations[i]);
     }
-    if (uop->isMicroOp()) {
-      uop->setWaitingCommit();
-      flagMicroOpCommits_(uop->getInstructionId());
-      if (uop->isLastMicroOp()) instructionsWritten_++;
-    } else {
-      uop->setCommitReady();
-      instructionsWritten_++;
-    }
+
+    // Carry out core/model specific functionality after the uops writeback has
+    // been complete
+    postWriteback_(uop);
+
+    if (uop->isLastMicroOp()) instructionsWritten_++;
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }

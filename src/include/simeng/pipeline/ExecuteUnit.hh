@@ -48,6 +48,10 @@ class ExecuteUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
+  /** Retrieve the instruction ID associated with the most recently discovered
+   * misprediction. */
+  uint64_t getFlushInsnId() const;
+
   /** Retrieve the sequence ID associated with the most recently discovered
    * misprediction. */
   uint64_t getFlushSeqId() const;
@@ -126,9 +130,13 @@ class ExecuteUnit {
    */
   uint64_t pc_;
 
+  /** The instruction ID of the youngest instruction that should remain after
+   * the current flush. */
+  uint64_t flushAfterInsnId_;
+
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
-  uint64_t flushAfter_;
+  uint64_t flushAfterSeqId_;
 
   /** The number of times this unit has been ticked. */
   uint64_t tickCounter_ = 0;

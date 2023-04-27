@@ -54,6 +54,9 @@ class Core : public simeng::Core {
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
 
+  /** A function to carry out post-writeback micro-op commit logic. */
+  void microOpWriteback(const std::shared_ptr<Instruction>& insn);
+
   /** Send a syscall to the simulated Operating System's syscall handler. */
   void sendSyscall(OS::SyscallInfo syscallInfo) const override;
 

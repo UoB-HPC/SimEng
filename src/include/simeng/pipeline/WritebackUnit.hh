@@ -14,10 +14,13 @@ class WritebackUnit {
  public:
   /** Constructs a writeback unit with references to an input buffer and
    * register file to write to. */
-  WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
-                    completionSlots,
-                RegisterFileSet& registerFileSet,
-                std::function<void(uint64_t insnId)> flagMicroOpCommits);
+  WritebackUnit(
+      std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
+          completionSlots,
+      RegisterFileSet& registerFileSet,
+      std::function<void(Register reg)> setRegisterReady,
+      std::function<bool(uint64_t seqId)> canWriteback,
+      std::function<void(const std::shared_ptr<Instruction>&)> postWriteback);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -35,9 +38,17 @@ class WritebackUnit {
   /** The register file set to write results into. */
   RegisterFileSet& registerFileSet_;
 
-  /** A function handle called to determine if uops associated to an instruction
-   * ID can now be committed. */
-  std::function<void(uint64_t insnId)> flagMicroOpCommits_;
+  /** A function handle to mark the destination registers as ready to be read
+   * from by other instructions. */
+  std::function<void(Register reg)> setRegisterReady_;
+
+  /** A function handle to query whether a instruction, identified by its unique
+   * sequence ID, can writeback. */
+  std::function<bool(uint64_t seqId)> canWriteback_;
+
+  /** A function handle to carry out logic, specific to a core/model, after the
+   * general writeback logic has been carried out. */
+  std::function<void(const std::shared_ptr<Instruction>&)> postWriteback_;
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;

@@ -58,8 +58,9 @@ class ReorderBuffer {
   /** Commit and remove up to `maxCommitSize` instructions. */
   unsigned int commit(unsigned int maxCommitSize);
 
-  /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
-  void flush(uint64_t afterSeqId);
+  /** Flush all instructions with a instruction ID greater than `afterInsnId`.
+   */
+  void flush(uint64_t afterInsnId);
 
   /** Flush all instructions from ROB. Intended for use during context switch.
    */
@@ -79,9 +80,9 @@ class ReorderBuffer {
    * discovered memory order violation. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
+  /** Retrieve the instruction ID associated with the most recently discovered
    * memory order violation. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;
@@ -122,8 +123,8 @@ class ReorderBuffer {
    */
   uint64_t pc_;
 
-  /** The sequence ID of the youngest instruction that should remain after the
-   * current flush. */
+  /** The instruction ID of the youngest instruction that should remain after
+   * the current flush. */
   uint64_t flushAfter_;
 
   /** Latest retired branch outcome with a counter. */

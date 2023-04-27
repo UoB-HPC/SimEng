@@ -44,10 +44,11 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
+          simeng::pipeline::scheduleBy::LATENCY,
+          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
               .as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
               .as<uint16_t>(),
@@ -73,7 +74,9 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
                          portAllocator, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
-          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
+          [this](auto reg) { dispatchIssueUnit_.setRegisterReady(reg); },
+          [](auto seqId) { return true; },
+          [this](auto insn) { microOpWriteback(insn); }),
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
       handleSyscall_(handleSyscall) {
@@ -194,11 +197,11 @@ void Core::flushIfNeeded() {
   // Check for flush
   bool euFlush = false;
   uint64_t targetAddress = 0;
-  uint64_t lowestSeqId = 0;
+  uint64_t lowestInsnId = 0;
   for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushSeqId() < lowestSeqId)) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
       euFlush = true;
-      lowestSeqId = eu.getFlushSeqId();
+      lowestInsnId = eu.getFlushInsnId();
       targetAddress = eu.getFlushAddress();
     }
   }
@@ -208,10 +211,10 @@ void Core::flushIfNeeded() {
     // Rename/Dispatch)
 
     if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushSeqId() < lowestSeqId)) {
+        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
-      lowestSeqId = reorderBuffer_.getFlushSeqId();
+      lowestInsnId = reorderBuffer_.getFlushInsnId();
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
@@ -227,7 +230,7 @@ void Core::flushIfNeeded() {
     renameToDispatchBuffer_.stall(false);
 
     // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer_.flush(lowestSeqId);
+    reorderBuffer_.flush(lowestInsnId);
     decodeUnit_.purgeFlushed();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
@@ -371,6 +374,17 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
   return mappedRegisterFileSet_;
+}
+
+void Core::microOpWriteback(const std::shared_ptr<Instruction>& insn) {
+  // If the passed instruction is a micro-op, communicate to the ROB that it is
+  // ready to commit
+  if (insn->isMicroOp()) {
+    insn->setWaitingCommit();
+    reorderBuffer_.commitMicroOps(insn->getInstructionId());
+  } else {
+    insn->setCommitReady();
+  }
 }
 
 void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {

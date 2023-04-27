@@ -29,6 +29,12 @@ void ExecuteUnit::tick() {
   tickCounter_++;
   shouldFlush_ = false;
 
+  // If the output is stalled, stall input
+  if (output_.isStalled()) {
+    input_.stall(true);
+    return;
+  }
+
   if (stallUntil_ <= tickCounter_) {
     input_.stall(false);
     // Input isn't stalled; process instruction and add to pipeline
@@ -151,7 +157,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
-      flushAfter_ = uop->getInstructionId();
+      flushAfterInsnId_ = uop->getInstructionId();
+      flushAfterSeqId_ = uop->getSequenceId();
       // Update the branch misprediction counter
       branchMispredicts_++;
     }
@@ -165,7 +172,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc_; }
-uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfter_; }
+uint64_t ExecuteUnit::getFlushInsnId() const { return flushAfterInsnId_; }
+uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfterSeqId_; }
 
 void ExecuteUnit::purgeFlushed() {
   if (pipeline_.size() == 0) {

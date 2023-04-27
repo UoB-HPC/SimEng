@@ -178,8 +178,6 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
 
   for (size_t i = 0; i < registers.size(); i++) {
     const auto& reg = registers[i];
-    // Flag scoreboard as ready now result is available
-    scoreboard_[reg.type][reg.tag] = true;
 
     // Supply the value to all dependent uops
     auto& dependents = dependencyMatrix_[reg.type][reg.tag];
