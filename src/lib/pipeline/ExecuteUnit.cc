@@ -123,11 +123,23 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   } else if (uop->isStoreAddress() || uop->isStoreData()) {
     if (uop->isStoreAddress()) {
       uop->generateAddresses();
+      if (uop->exceptionEncountered()) {
+        // Exception; don't pass handle load function
+        raiseException_(uop);
+        return;
+      }
     }
     if (uop->isStoreData()) {
       uop->execute();
     }
     handleStore_(uop);
+    if (uop->isStoreCond()) {
+      // If the store is marked Exclusive then it isn't sent to writeback
+      // straight away.
+      // Set commit ready and return early.
+      uop->setCommitReady();
+      return;
+    }
   } else {
     uop->execute();
   }
