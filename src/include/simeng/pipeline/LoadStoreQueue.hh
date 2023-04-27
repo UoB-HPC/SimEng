@@ -16,6 +16,10 @@ namespace pipeline {
 /** The memory access types which are processed. */
 enum accessType { LOAD = 0, STORE };
 
+/** The instruction attributes that are used to schedule their memory accesses.
+ */
+enum scheduleBy { LATENCY = 0, ID };
+
 /** A requestQueue_ entry. */
 struct requestEntry {
   /** The memory address(es) to be accessed. */
@@ -35,8 +39,8 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
+      scheduleBy scheduleCriteria = scheduleBy::LATENCY, bool exclusive = false,
+      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
@@ -49,28 +53,28 @@ class LoadStoreQueue {
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
+      scheduleBy scheduleCriteria = scheduleBy::LATENCY, bool exclusive = false,
+      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
 
-  /** Retrieve the available space for load uops. For combined queue this is the
-   * total remaining space. */
+  /** Retrieve the available space for load instructions. For combined queue
+   * this is the total remaining space. */
   unsigned int getLoadQueueSpace() const;
 
-  /** Retrieve the available space for store uops. For a combined queue this is
-   * the total remaining space. */
+  /** Retrieve the available space for store instructions. For a combined queue
+   * this is the total remaining space. */
   unsigned int getStoreQueueSpace() const;
 
-  /** Retrieve the available space for any memory uops. For a split queue this
-   * is the sum of the space in both queues. */
+  /** Retrieve the available space for any memory instructions. For a split
+   * queue this is the sum of the space in both queues. */
   unsigned int getTotalSpace() const;
 
-  /** Add a load uop to the queue. */
+  /** Add a load instruction to the queue. */
   void addLoad(const std::shared_ptr<Instruction>& insn);
 
-  /** Add a store uop to the queue. */
+  /** Add a store instruction to the queue. */
   void addStore(const std::shared_ptr<Instruction>& insn);
 
   /** Add the load instruction's memory requests to the requestQueue_. */
@@ -82,10 +86,10 @@ class LoadStoreQueue {
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
    * memory order violation during the commit. */
-  bool commitStore(const std::shared_ptr<Instruction>& uop);
+  bool commitStore(const std::shared_ptr<Instruction>& insn);
 
   /** Remove the oldest load instruction from the load queue. */
-  void commitLoad(const std::shared_ptr<Instruction>& uop);
+  void commitLoad(const std::shared_ptr<Instruction>& insn);
 
   /** Remove all flushed instructions from the queues. */
   void purgeFlushed();
@@ -140,7 +144,8 @@ class LoadStoreQueue {
   /** Retrieve the store queue space for a split queue. */
   unsigned int getStoreQueueSplitSpace() const;
 
-  /** Retrieve the total memory uop space available for a combined queue. */
+  /** Retrieve the total memory instruction space available for a combined
+   * queue. */
   unsigned int getCombinedSpace() const;
 
   /** A pointer to process memory. */
@@ -173,6 +178,9 @@ class LoadStoreQueue {
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
+
+  /** The criteria by which a scheduler schedules memory access. */
+  scheduleBy scheduleCriteria_;
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;
