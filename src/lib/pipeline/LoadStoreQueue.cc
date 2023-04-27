@@ -208,7 +208,8 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
-    mmu_->requestWrite(addresses[i], data[i], uop->getSequenceId());
+    mmu_->requestWrite(addresses[i], data[i], uop->getSequenceId(),
+                       uop->isStoreCond());
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
     requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]
@@ -266,9 +267,30 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     conflictionMap_.erase(itSt);
   }
 
-  storeQueue_.pop_front();
+  // Don't pop if conditional Str. Pop happens in `checkCondStore()`.
+  if (uop->isStoreCond()) {
+    requestedCondStores_.emplace(uop->getSequenceId(), uop);
+  } else {
+    storeQueue_.pop_front();
+  }
 
   return violatingLoad_ != nullptr;
+}
+
+bool LoadStoreQueue::checkCondStore(const uint64_t sequenceId) {
+  if (completedConditionalStores_.size() == 0) return false;
+  // SequenceId must be at the front of the queue, given only 1 can be processed
+  // at a time
+  if (completedConditionalStores_.front() != sequenceId) {
+    std::cerr
+        << "[SimEng:LoadStoreQueue] SequenceID of conditional-store at the "
+           "front of the ROB is not equal to the completed conditional-Store."
+        << std::endl;
+    exit(1);
+  }
+  storeQueue_.pop_front();
+  completedConditionalStores_.pop();
+  return true;
 }
 
 void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
@@ -490,6 +512,41 @@ void LoadStoreQueue::tick() {
     }
   }
 
+  // Process completed conditional store request
+  // TODO: will not work with conditional-store of a pair of registers
+  size_t count = 0;
+  for (const auto& response : mmu_->getCompletedCondStores()) {
+    // Find instruction that requested the memory read
+    const auto& itr = requestedCondStores_.find(response.requestId);
+    if (itr == requestedCondStores_.end()) {
+      std::cerr << "[SimEng:LoadStoreQueue] Conditional store response present "
+                   "for instruction not in requestedCondStores_ queue."
+                << std::endl;
+      exit(1);
+    }
+    // No need to check if flushed as conditional store must be at front of
+    // ROB to be committed
+
+    // Update destination register in instruction
+    itr->second->updateCondStoreResult(response.successful);
+
+    // Forward result. Given only 1 conditional store can be processed at a time
+    // (given it can only be sent when at the front of the ROB, and blocks
+    // further commits until the result has been returned), there is guarenteed
+    // to be space in the completion slot.
+    forwardOperands_(itr->second->getDestinationRegisters(),
+                     itr->second->getResults());
+
+    completionSlots_[count].getTailSlots()[0] = itr->second;
+    count++;
+
+    // Add to completedConditionalStores_ queue
+    // completedConditionalStores_
+    completedConditionalStores_.emplace(itr->second->getSequenceId());
+    requestedCondStores_.erase(itr);
+  }
+  mmu_->clearCompletedCondStores();
+
   // Process completed read requests
   for (const auto& response : mmu_->getCompletedReads()) {
     const auto& address = response.target.vaddr;
@@ -518,7 +575,6 @@ void LoadStoreQueue::tick() {
   mmu_->clearCompletedReads();
 
   // Pop from the front of the completed loads queue and send to writeback
-  size_t count = 0;
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
     const auto& insn = completedLoads_.front();
 

@@ -84,6 +84,10 @@ class LoadStoreQueue {
    * memory order violation during the commit. */
   bool commitStore(const std::shared_ptr<Instruction>& uop);
 
+  /** Checks if a given conditional store has finished executing and has its
+   * result ready to commit. */
+  bool checkCondStore(const uint64_t sequenceId);
+
   /** Remove the oldest load instruction from the load queue. */
   void commitLoad(const std::shared_ptr<Instruction>& uop);
 
@@ -115,6 +119,11 @@ class LoadStoreQueue {
 
   /** Map of loads that have requested their data, keyed by sequence ID. */
   std::unordered_map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
+
+  /** Map of conditional stores that have been sent to MMU, keyed by sequence
+   * ID. */
+  std::unordered_map<uint64_t, std::shared_ptr<Instruction>>
+      requestedCondStores_;
 
   /** A function handler to call to forward the results of a completed load. */
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
@@ -173,6 +182,10 @@ class LoadStoreQueue {
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
+
+  /** A vector of completed comditional store sequenceIds ready for writeback.
+   */
+  std::queue<uint64_t> completedConditionalStores_;
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;
