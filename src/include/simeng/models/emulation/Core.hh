@@ -170,6 +170,9 @@ class Core : public simeng::Core {
 
   /** TID of the process currently executing on the core. */
   uint64_t currentTID_ = -1;
+
+  /** The number of in-flight store-conditional requests. */
+  uint64_t inFlightStoreCondReqs_ = 0;
 };
 
 }  // namespace emulation

@@ -57,6 +57,39 @@ void Core::tick() {
     return;
   }
 
+  if (inFlightStoreCondReqs_ > 0) {
+    auto& uop = microOps_.front();
+    assert(uop->isStoreCond());
+
+    const auto& completedCondStores = mmu_->getCompletedCondStores();
+    for (const auto& response : completedCondStores) {
+      if (uop->getSequenceId() != response.requestId) {
+        std::cerr << "[SimEng:Core] Attempted to update conditional store "
+                     "result to the wrong instruction. Response requestID = "
+                  << response.requestId
+                  << ". Instruction ID = " << uop->getSequenceId() << "."
+                  << std::endl;
+        exit(1);
+      }
+      uop->updateCondStoreResult(response.successful);
+      inFlightStoreCondReqs_--;
+    }
+    mmu_->clearCompletedCondStores();
+
+    // If no more requests associated with conditional store, do writeback
+    if (inFlightStoreCondReqs_ == 0) {
+      auto results = uop->getResults();
+      auto destinations = uop->getDestinationRegisters();
+      for (size_t i = 0; i < results.size(); i++) {
+        auto reg = destinations[i];
+        registerFileSet_.set(reg, results[i]);
+      }
+      instructionsExecuted_++;
+      microOps_.pop();
+    }
+    return;
+  }
+
   if (pendingReads_ > 0) {
     // Handle pending reads to a uop
     auto& uop = microOps_.front();
@@ -180,6 +213,17 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     return;
   }
 
+  if (uop->isStoreCond()) {
+    auto data = uop->getData();
+    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
+                         true);
+      inFlightStoreCondReqs_++;
+    }
+    // Return early as we don't want to write back until we have the response
+    return;
+  }
+
   if (uop->isStoreData()) {
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
@@ -193,16 +237,9 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
-  if (uop->isStoreData()) {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
-  } else {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
+  for (size_t i = 0; i < results.size(); i++) {
+    auto reg = destinations[i];
+    registerFileSet_.set(reg, results[i]);
   }
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
