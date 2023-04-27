@@ -145,14 +145,17 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic instruction? */
   bool isAtomic() const override;
 
-  /** Is this an exclusive memory operation? */
-  bool isExclusive() const override;
-
   /** Does this instruction enforce acquire semantics? */
   bool isAcquire() const override;
 
   /** Does this instruction enforce release semantics? */
   bool isRelease() const override;
+
+  /** Is this a Load-Reserved operation? */
+  bool isLoadReserved() const override;
+
+  /** Is this a Store-Conditional operation? */
+  bool isStoreCond() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -243,8 +246,6 @@ class Instruction : public simeng::Instruction {
   bool isShift_ = false;
   /** Is this an atomic instruction? */
   bool isAtomic_ = false;
-  /** Is an exclusive memory operation. */
-  bool isExclusive_ = false;
   /** Is this a logical instruction? */
   bool isLogical_ = false;
   /** Is this a compare instruction? */
@@ -253,6 +254,10 @@ class Instruction : public simeng::Instruction {
   bool isAcquire_ = false;
   /** Enforces release semantics. */
   bool isRelease_ = false;
+  /** Is a load-reserved instruction. */
+  bool isLoadReserved_ = false;
+  /** Is a store-conditional instruction. */
+  bool isStoreCond_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

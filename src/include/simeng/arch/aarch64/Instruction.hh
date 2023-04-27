@@ -317,14 +317,17 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic operation? */
   bool isAtomic() const override;
 
-  /** Is this an exclusive memory operation? */
-  bool isExclusive() const override;
-
   /** Does this instruction enforce acquire semantics? */
   bool isAcquire() const override;
 
   /** Does this instruction enforce release semantics? */
   bool isRelease() const override;
+
+  /** Is this a Load-Reserved operation? */
+  bool isLoadReserved() const override;
+
+  /** Is this a Store-Conditional operation? */
+  bool isStoreCond() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -455,12 +458,14 @@ class Instruction : public simeng::Instruction {
   bool isBranch_ = false;
   /** Is an atomic operation. */
   bool isAtomic_ = false;
-  /** Is an exclusive memory operation. */
-  bool isExclusive_ = false;
   /** Enforces acquire semantics. */
   bool isAcquire_ = false;
   /** Enforces release semantics. */
   bool isRelease_ = false;
+  /** Is a load-reserved instruction. */
+  bool isLoadReserved_ = false;
+  /** Is a store-conditional instruction. */
+  bool isStoreCond_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
   /** Is the micro-operation opcode of the instruction, where appropriate. */

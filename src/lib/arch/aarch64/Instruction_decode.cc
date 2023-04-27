@@ -492,11 +492,17 @@ void Instruction::decode() {
     // detect any changes, a store will conditionally update memory if it is
     // permitted to do so and end monitoring, else its result will indicate the
     // failure to do so)
+
+    // Identify Load-Reserved instructions (aka Load-Link / Load-Locked)
     if (metadata.opcode == Opcode::AArch64_LDAXRW ||
-        metadata.opcode == Opcode::AArch64_LDAXRX ||
-        metadata.opcode == Opcode::AArch64_STLXRW ||
+        metadata.opcode == Opcode::AArch64_LDAXRX) {
+      isLoadReserved_ = true;
+    }
+
+    // Identify Store-Conditional instructions
+    if (metadata.opcode == Opcode::AArch64_STLXRW ||
         metadata.opcode == Opcode::AArch64_STLXRX) {
-      isExclusive_ = true;
+      isStoreCond_ = true;
     }
 
     // The following instructions enforce acquire memory semantics

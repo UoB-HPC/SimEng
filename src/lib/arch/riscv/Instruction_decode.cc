@@ -98,10 +98,10 @@ void Instruction::decode() {
     case Opcode::RISCV_LR_W_AQ:
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL:
-      // These instructions are considered to be exclusive Loads
+      // These instructions are considered to be Load-reserved
       // (i.e. will begin an exculsivity monitor on a memory region to
       // detect any changes)
-      isExclusive_ = true;
+      isLoadReserved_ = true;
       [[fallthrough]];
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
@@ -120,10 +120,10 @@ void Instruction::decode() {
     case Opcode::RISCV_SC_W_AQ:
     case Opcode::RISCV_SC_W_RL:
     case Opcode::RISCV_SC_W_AQ_RL:
-      // These instructions are considered to be exclusive (conditional) Stores
+      // These instructions are considered to be Store-Conditionals
       // (i.e. will conditionally update memory if it is permitted to do so and
       // end monitoring, else its result will indicate the failure to do so)
-      isExclusive_ = true;
+      isStoreCond_ = true;
       [[fallthrough]];
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
@@ -255,7 +255,7 @@ void Instruction::decode() {
       // destination register
       if ((isBranch() && metadata.opcode != Opcode::RISCV_JAL &&
            metadata.opcode != Opcode::RISCV_JALR) ||
-          (isStoreAddress() && !(isAtomic() || isExclusive()))) {
+          (isStoreAddress() && !(isAtomic() || isStoreCond()))) {
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
         if (sourceRegisters[sourceRegisterCount] ==
