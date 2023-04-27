@@ -249,6 +249,14 @@ uint64_t Instruction::extendOffset(uint64_t value,
   return extendValue(value, op.ext, op.shift.value);
 }
 
+void Instruction::updateCondStoreResult(const bool success) {
+  assert(isStoreCond_ &&
+         "[SimEng:Instruction] Attempted to update the result register of a "
+         "non-conditional-store instruction.");
+  RegisterValue result = {(uint64_t)0 | !success, 8};
+  results[0] = result;
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
