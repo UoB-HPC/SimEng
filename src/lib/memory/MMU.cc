@@ -17,12 +17,15 @@ void MMU::requestRead(const MemoryAccessTarget& target,
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
-                       const RegisterValue& data, const uint64_t requestId) {
+                       const RegisterValue& data, const uint64_t requestId,
+                       bool isConditional) {
   pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
-  bufferRequest(memory::MemPacket::createWriteRequest(target.vaddr, target.size,
-                                                      requestId, dt));
+  std::unique_ptr<MemPacket> req =
+      MemPacket::createWriteRequest(target.vaddr, target.size, requestId, dt);
+  if (isConditional) req->markAsCondStore();
+  bufferRequest(std::move(req));
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
@@ -45,9 +48,16 @@ const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
           completedInstrReads_.size()};
 }
 
+const span<CondStoreResult> MMU::getCompletedCondStores() const {
+  return {const_cast<CondStoreResult*>(completedCondStores_.data()),
+          completedCondStores_.size()};
+}
+
 void MMU::clearCompletedReads() { completedReads_.clear(); }
 
 void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
+
+void MMU::clearCompletedCondStores() { completedCondStores_.clear(); }
 
 bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
@@ -104,7 +114,14 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
            RegisterValue(packet->payload().data(), packet->size_),
            packet->id_});
     }
-    // Currently, ignore write responses as none are expected
+    if (packet->isCondStore()) {
+      // TODO update when global monitor / atomics support added.
+      bool success = true;
+      if (packet->isFaulty()) {
+        success = false;
+      }
+      completedCondStores_.push_back({packet->id_, success});
+    }
   };
   port_->registerReceiver(fn);
   return port_;
