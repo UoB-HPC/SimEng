@@ -170,6 +170,14 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
+void Instruction::updateCondStoreResult(const bool success) {
+  assert(isStoreCond_ &&
+         "[SimEng:Instruction] Attempted to update the result register of a "
+         "non-conditional-store instruction.");
+  RegisterValue result = {(uint64_t)0 | !success, 8};
+  results[0] = result;
+}
+
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

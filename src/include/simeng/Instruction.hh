@@ -194,6 +194,9 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
 
+  /** Update the result register for a conditional store instruction. */
+  virtual void updateCondStoreResult(const bool success) = 0;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;

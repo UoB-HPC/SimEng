@@ -43,6 +43,8 @@ class MockInstruction : public Instruction {
 
   MOCK_METHOD0(getSupportedPorts, const std::vector<uint16_t>&());
 
+  MOCK_METHOD1(updateCondStoreResult, void(const bool success));
+
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;
