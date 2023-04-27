@@ -83,7 +83,8 @@ void RegressionTest::run(const char* source, const char* triple,
       break;
     case INORDER:
       core_ = std::make_shared<simeng::models::inorder::Core>(
-          *architecture_, predictor, mmu, OS.getSyscallReceiver());
+          *architecture_, predictor, mmu, *portAllocator,
+          OS.getSyscallReceiver());
       break;
     case OUTOFORDER:
       core_ = std::make_shared<simeng::models::outoforder::Core>(

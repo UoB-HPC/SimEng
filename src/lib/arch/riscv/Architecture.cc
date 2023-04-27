@@ -77,9 +77,9 @@ Architecture::Architecture() {
     }
   }
 
-  // ports entries in the groupExecutionInfo_ entries only apply for models
-  // using the outoforder core archetype
-  if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
+  // Ports entries in the groupExecutionInfo_ entries only apply for
+  // non-emulation core archetypes
+  if (config["Core"]["Simulation-Mode"].as<std::string>() != "emulation") {
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].size(); i++) {

@@ -54,7 +54,7 @@ void CoreInstance::createCore() {
                                                               handleSyscall_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
-        *arch_, *predictor_, mmu_, handleSyscall_);
+        *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);

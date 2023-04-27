@@ -6,9 +6,12 @@
 #include "simeng/Core.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
+#include "simeng/pipeline/BlockingIssueUnit.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
 #include "simeng/pipeline/FetchUnit.hh"
+#include "simeng/pipeline/InOrderStager.hh"
+#include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/WritebackUnit.hh"
 
 namespace simeng {
@@ -18,12 +21,12 @@ namespace inorder {
 /** A simple scalar in-order pipelined core model. */
 class Core : public simeng::Core {
  public:
-  /** Construct a core model, providing an ISA and branch predictor to use,
-   * along with a pointer and size of instruction memory, and a pointer to
-   * process memory. */
+  /** Construct a core model, providing an ISA, branch predictor, mmu, and port
+   * allocator to use, along with a handler to raise a syscall. */
   Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       std::shared_ptr<memory::MMU> mmu,
-       arch::sendSyscallToHandler handleSyscall);
+       std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
+       arch::sendSyscallToHandler handleSyscall,
+       YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -78,22 +81,24 @@ class Core : public simeng::Core {
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
-  void raiseException(const std::shared_ptr<Instruction>& instruction);
+  void raiseException(const std::shared_ptr<Instruction>& insn);
 
   /** Handle an exception raised during the cycle. */
-  void handleException();
+  bool handleException();
 
-  /** Load and supply memory data requested by an instruction. */
-  void loadData(const std::shared_ptr<Instruction>& instruction);
+  /** Handle execution of a load instruction. */
+  void handleLoad(const std::shared_ptr<Instruction>& insn);
+
   /** Store data supplied by an instruction to memory. */
-  void storeData(const std::shared_ptr<Instruction>& instruction);
+  void storeData(const std::shared_ptr<Instruction>& insn);
+
+  /** A function to carry out logic associated with the retirement of a
+   * instruction post writeback. */
+  void retireInstruction(const std::shared_ptr<Instruction>& insn);
 
   /** Forward operands to the most recently decoded instruction. */
   void forwardOperands(const span<Register>& destinations,
                        const span<RegisterValue>& values);
-
-  /** Read pending registers for the most recently decoded instruction. */
-  void readRegisters();
 
   /** Process the active exception. */
   void processException();
@@ -112,8 +117,8 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const OS::ProcessStateChange& change);
 
-  /** Handle requesting/execution of a load instruction. */
-  void handleLoad(const std::shared_ptr<Instruction>& instruction);
+  /** Inspect units and flush pipelines if required. */
+  void flushIfNeeded();
 
   /** The current state the core is in. */
   CoreStatus status_ = CoreStatus::idle;
@@ -140,14 +145,18 @@ class Core : public simeng::Core {
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
   /** The buffer between decode and execute. */
-  pipeline::PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer_;
+  pipeline::PipelineBuffer<std::shared_ptr<Instruction>> decodeToIssueBuffer_;
+
+  /** The issue ports; single-width buffers between issue and execute. */
+  std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
+      issuePorts_;
 
   /** The buffer between execute and writeback. */
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
 
-  /** The previously generated addresses. */
-  std::queue<simeng::memory::MemoryAccessTarget> previousAddresses_;
+  /** The core's load/store queue. */
+  pipeline::LoadStoreQueue loadStoreQueue_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
@@ -155,12 +164,29 @@ class Core : public simeng::Core {
   /** The decode unit; decodes instructions into uops and reads operands. */
   pipeline::DecodeUnit decodeUnit_;
 
-  /** The execute unit; executes uops and sends to writeback, also forwarding
-   * results. */
-  pipeline::ExecuteUnit executeUnit_;
+  /** The inorder stager unit; tracks in program-order instructions issued to
+   * ensure writeback functionality occurs in program-order. */
+  pipeline::InOrderStager staging_;
+
+  /** The issue unit; reads operands, and issues ready instructions to the
+   * execution unit in program-order. */
+  pipeline::BlockingIssueUnit issueUnit_;
+
+  /** The set of execution units; executes uops and sends to writeback, also
+   * forwarding results to issue. */
+  std::vector<pipeline::ExecuteUnit> executionUnits_;
 
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
+
+  /** The port allocator unit; allocates a port that an instruction will be
+   * issued from based on a defined algorithm. */
+  pipeline::PortAllocator& portAllocator_;
+
+  /** A queue of store address uops that have been retired that future store
+   * data uops can use to commit the load in the core's load/store queue unit.
+   */
+  std::queue<std::shared_ptr<Instruction>> completedStoreAddrUops_ = {};
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
@@ -174,6 +200,10 @@ class Core : public simeng::Core {
 
   /** Indicates whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
+
+  /** Indicates whether an excpetion has been registered with the core's
+   * exception handler. */
+  bool exceptionRegistered_ = false;
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;

@@ -31,12 +31,14 @@ set(SIMENG_SOURCES
     models/outoforder/Core.cc
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
-    pipeline/M1PortAllocator.cc
+    pipeline/BlockingIssueUnit.cc
     pipeline/DecodeUnit.cc
     pipeline/DispatchIssueUnit.cc
     pipeline/ExecuteUnit.cc
     pipeline/FetchUnit.cc
+    pipeline/InOrderStager.cc
     pipeline/LoadStoreQueue.cc
+    pipeline/M1PortAllocator.cc
     pipeline/MappedRegisterFileSet.cc
     pipeline/RegisterAliasTable.cc
     pipeline/RenameUnit.cc
