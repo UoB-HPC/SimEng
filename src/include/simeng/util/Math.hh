@@ -3,7 +3,7 @@
 
 /** This function checks if number 'n' is a power of 2. */
 template <class T>
-static constexpr bool isPow2(const T& n) {
+static inline constexpr bool isPow2(const T& n) {
   //  Given that 'n' is non-zero, and a power of 2, it can be represented by x
   //  bits with only the most significant bit equalling 1 e.g. 8 = 0x1000.
   //  Subtracting one from 'n' gives us a bit of pattern with x-1 number of 1s
@@ -21,7 +21,7 @@ static constexpr bool isPow2(const T& n) {
 /** This function is used to round 'val' down to the nearest multiple of
  * 'align'. 'align' must be a power of two.*/
 template <class T, class U>
-static constexpr T downAlign(const T& val, const U& align) {
+static inline constexpr T downAlign(const T& val, const U& align) {
   if (!isPow2(align)) {
     std::cerr << "[SimEng:Math] Alignment value is not power of 2" << std::endl;
     std::exit(1);
@@ -46,7 +46,7 @@ static constexpr T downAlign(const T& val, const U& align) {
 /** This function is used to round 'val' up to the nearest multiple to align.
  * 'align' must be a power of 2. */
 template <class T, class U>
-static constexpr T upAlign(const T& val, const U& align) {
+static inline constexpr T upAlign(const T& val, const U& align) {
   if (!isPow2(align)) {
     std::cerr << "[SimEng:Math] Alignment value is not power of 2" << std::endl;
     std::exit(1);
