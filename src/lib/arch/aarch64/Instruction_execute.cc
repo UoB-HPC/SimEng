@@ -4552,8 +4552,8 @@ void Instruction::execute() {
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE
         memoryData[0] = operands[0];
-        // TODO: Implement atomic memory access
-        results[0] = static_cast<uint64_t>(0);
+        // Result[0] is set later on in pipeline as its value depends on if the
+        // store is successful or not.
         break;
       }
       case Opcode::AArch64_STPDi:    // stp dt1, dt2, [xn, #imm]
