@@ -45,10 +45,10 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
           simeng::pipeline::scheduleBy::LATENCY,
-          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
               .as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
               .as<uint16_t>(),

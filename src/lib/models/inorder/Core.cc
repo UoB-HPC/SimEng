@@ -32,14 +32,14 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
             issueUnit_.forwardOperands(regs, values);
           },
           simeng::pipeline::scheduleBy::ID,
-          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
               .as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+          config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
               .as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+          config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
