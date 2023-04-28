@@ -60,12 +60,16 @@ class ExecuteUnit {
    * stall, if applicable. */
   void purgeFlushed();
 
-  /** Query whether the execution unit is empty and not currently processing any
-   * instructions. */
-  bool isEmpty();
+  /** Flush the EU pipeline of any instructions whose sequenceId is greater the
+   * passed ID. */
+  void seqIdFlush(uint64_t afterSeqId);
 
   /** Flushed EU pipeline of any instructions. */
   void flush();
+
+  /** Query whether the execution unit is empty and not currently processing any
+   * instructions. */
+  bool isEmpty();
 
   /** Retrieve the number of branch instructions that have been executed. */
   uint64_t getBranchExecutedCount() const;

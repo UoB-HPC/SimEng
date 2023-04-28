@@ -177,12 +177,15 @@ void Core::flushIfNeeded() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
-    decodeToIssueBuffer_.fill(nullptr);
     decodeUnit_.purgeFlushed();
+    decodeToIssueBuffer_.fill(nullptr);
     issueUnit_.flush(lowestSeqId);
-    staging_.flush(lowestSeqId);
     for (auto& port : issuePorts_) {
       port.fill(nullptr);
+    }
+    staging_.flush(lowestSeqId);
+    for (auto& eu : executionUnits_) {
+      eu.seqIdFlush(lowestSeqId);
     }
     // Given instructions can flow out-of-order during execution due to
     // differing latencies, the completion slots need to be cleared

@@ -223,6 +223,56 @@ void ExecuteUnit::purgeFlushed() {
   }
 }
 
+void ExecuteUnit::seqIdFlush(uint64_t afterSeqId) {
+  if (pipeline_.size() == 0) {
+    return;
+  }
+
+  // If the newest instruction has been flushed, clear any stalls.
+  if (pipeline_.back().insn->getSequenceId() > afterSeqId) {
+    stallUntil_ = tickCounter_;
+  }
+
+  // Iterate over the pipeline and remove flushed instructions
+  while (!pipeline_.empty()) {
+    if (pipeline_.back().insn->getSequenceId() <= afterSeqId) {
+      break;
+    }
+    pipeline_.pop_back();
+  }
+
+  // If first blocking in-flight instruction is flushed, ensure another
+  // non-flushed stalled instruction takes it place in the pipeline if
+  // available.
+  bool replace = false;
+  if (operationsStalled_.size() > 0 &&
+      operationsStalled_.front()->getSequenceId() > afterSeqId) {
+    replace = true;
+  }
+  auto itStall = operationsStalled_.begin();
+  while (itStall != operationsStalled_.end()) {
+    auto& entry = *itStall;
+    if (entry->getSequenceId() > afterSeqId) {
+      itStall = operationsStalled_.erase(itStall);
+    } else {
+      itStall++;
+    }
+  }
+
+  if (replace && operationsStalled_.size() > 0) {
+    // Add uop to pipeline
+    auto& uop = operationsStalled_.front();
+    pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
+    pipeline_.back().insn = std::move(uop);
+    operationsStalled_.front() = pipeline_.back().insn;
+  }
+}
+
+void ExecuteUnit::flush() {
+  pipeline_.clear();
+  operationsStalled_.clear();
+}
+
 uint64_t ExecuteUnit::getBranchExecutedCount() const {
   return branchesExecuted_;
 }
@@ -234,11 +284,6 @@ bool ExecuteUnit::isEmpty() {
   // Execution unit is considered empty if no instructions are present in the
   // pipeline_ and operationsStalled_ queues
   return !(pipeline_.size() != 0 || operationsStalled_.size() != 0);
-}
-
-void ExecuteUnit::flush() {
-  pipeline_.clear();
-  operationsStalled_.clear();
 }
 
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
