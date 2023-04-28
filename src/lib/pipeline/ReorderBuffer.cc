@@ -84,6 +84,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       }
       n++;
       inFlightCondStr_ = nullptr;
+      // Return early to ensure result is written back to reg file
+      return n;
     } else {
       // Wait another cycle and check again
       return n;

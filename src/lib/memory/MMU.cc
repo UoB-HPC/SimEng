@@ -117,7 +117,7 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
     if (packet->isCondStore()) {
       // TODO update when global monitor / atomics support added.
       bool success = true;
-      if (packet->isFaulty()) {
+      if (packet->isFaulty() || packet->ignore()) {
         success = false;
       }
       completedCondStores_.push_back({packet->id_, success});
