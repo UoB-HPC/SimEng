@@ -1,4 +1,5 @@
 add_executable(regression-riscv
+            ConditionalStoreTest.cc
             RISCVRegressionTest.cc
             RISCVRegressionTest.hh
             LoadStoreQueue.cc
