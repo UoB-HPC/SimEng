@@ -501,13 +501,13 @@ void Instruction::execute() {
     case Opcode::RISCV_SC_D_AQ_RL: {
       // TODO check "reservation set" hasn't been written to before performing
       // store
-      // TODO write rd correctly based on whether sc succeeds
       // TODO check that address is naturally aligned to operand size,
       //  if not raise address-misaligned/access-fault exception
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
       memoryData[0] = operands[0];
-      results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      // Result[0] is set later on in pipeline as its value depends on if the
+      // store is successful or not.
       break;
     }
     case Opcode::RISCV_AMOSWAP_W:  // AMOSWAP.W rd,rs1,rs2
