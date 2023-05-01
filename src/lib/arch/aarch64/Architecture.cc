@@ -2,7 +2,7 @@
 #include <cassert>
 
 #include "InstructionMetadata.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -23,15 +23,18 @@ Architecture::Architecture(kernel::Linux& kernel)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Initialise SVE and SME vector lengths
-  ryml::Tree config = SimInfo::getConfig();
-  VL_ = SimInfo::getValue<uint64_t>(config["Core"]["Vector-Length"]);
-  SVL_ = SimInfo::getValue<uint64_t>(config["Core"]["Streaming-Vector-Length"]);
+  ryml::Tree config = config::SimInfo::getConfig();
+  VL_ = config::SimInfo::getValue<uint64_t>(config["Core"]["Vector-Length"]);
+  SVL_ = config::SimInfo::getValue<uint64_t>(
+      config["Core"]["Streaming-Vector-Length"]);
   // Initialise virtual counter timer increment frequency
   vctModulo_ =
-      (SimInfo::getValue<float>(config["Core"]["Clock-Frequency"]) * 1e9) /
-      (SimInfo::getValue<uint32_t>(config["Core"]["Timer-Frequency"]) * 1e6);
+      (config::SimInfo::getValue<float>(config["Core"]["Clock-Frequency"]) *
+       1e9) /
+      (config::SimInfo::getValue<uint32_t>(config["Core"]["Timer-Frequency"]) *
+       1e6);
   // Generate zero-indexed system register map
-  std::vector<arm64_sysreg> sysRegs = SimInfo::getSysRegVec();
+  std::vector<arm64_sysreg> sysRegs = config::SimInfo::getSysRegVec();
   for (size_t i = 0; i < sysRegs.size(); i++) {
     systemRegisterMap_[sysRegs[i]] = systemRegisterMap_.size();
   }
@@ -54,13 +57,13 @@ Architecture::Architecture(kernel::Linux& kernel)
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
     ryml::NodeRef port_node = config["Latencies"][i];
     uint16_t latency =
-        SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
+        config::SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
     uint16_t throughput =
-        SimInfo::getValue<uint16_t>(port_node["Execution-Throughput"]);
+        config::SimInfo::getValue<uint16_t>(port_node["Execution-Throughput"]);
     for (size_t j = 0; j < port_node["Instruction-Group-Nums"].num_children();
          j++) {
-      uint16_t group =
-          SimInfo::getValue<uint16_t>(port_node["Instruction-Group-Nums"][j]);
+      uint16_t group = config::SimInfo::getValue<uint16_t>(
+          port_node["Instruction-Group-Nums"][j]);
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Set zero inheritance distance for latency assignment as it's explicitly
@@ -94,8 +97,8 @@ Architecture::Architecture(kernel::Linux& kernel)
     // Store any opcode-based latency override
     for (size_t j = 0; j < port_node["Instruction-Opcodes"].num_children();
          j++) {
-      uint16_t opcode =
-          SimInfo::getValue<uint16_t>(port_node["Instruction-Opcodes"][j]);
+      uint16_t opcode = config::SimInfo::getValue<uint16_t>(
+          port_node["Instruction-Opcodes"][j]);
       opcodeExecutionInfo_[opcode].latency = latency;
       opcodeExecutionInfo_[opcode].stallCycles = throughput;
     }
@@ -103,8 +106,8 @@ Architecture::Architecture(kernel::Linux& kernel)
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
   // using the outoforder core archetype
-  if (SimInfo::getValue<std::string>(config["Core"]["Simulation-Mode"]) ==
-      "outoforder") {
+  if (config::SimInfo::getValue<std::string>(
+          config["Core"]["Simulation-Mode"]) == "outoforder") {
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -112,7 +115,7 @@ Architecture::Architecture(kernel::Linux& kernel)
       ryml::NodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
-        uint16_t group = SimInfo::getValue<uint16_t>(group_node[j]);
+        uint16_t group = config::SimInfo::getValue<uint16_t>(group_node[j]);
         uint16_t newPort = static_cast<uint16_t>(i);
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
@@ -137,7 +140,7 @@ Architecture::Architecture(kernel::Linux& kernel)
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
-        uint16_t opcode = SimInfo::getValue<uint16_t>(opcode_node[j]);
+        uint16_t opcode = config::SimInfo::getValue<uint16_t>(opcode_node[j]);
         opcodeExecutionInfo_.try_emplace(
             opcode, simeng::arch::aarch64::ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
@@ -292,21 +295,22 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure() const {
-  ryml::Tree config = SimInfo::getConfig();
+  ryml::Tree config = config::SimInfo::getConfig();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
-  uint16_t matCount =
-      SimInfo::getValue<uint16_t>(config["Register-Set"]["Matrix-Count"]) *
-      (SimInfo::getValue<uint16_t>(config["Core"]["Streaming-Vector-Length"]) /
-       8);
-  return {{8, SimInfo::getValue<uint16_t>(
+  uint16_t matCount = config::SimInfo::getValue<uint16_t>(
+                          config["Register-Set"]["Matrix-Count"]) *
+                      (config::SimInfo::getValue<uint16_t>(
+                           config["Core"]["Streaming-Vector-Length"]) /
+                       8);
+  return {{8, config::SimInfo::getValue<uint16_t>(
                   config["Register-Set"]["GeneralPurpose-Count"])},
-          {256, SimInfo::getValue<uint16_t>(
+          {256, config::SimInfo::getValue<uint16_t>(
                     config["Register-Set"]["FloatingPoint/SVE-Count"])},
-          {32, SimInfo::getValue<uint16_t>(
+          {32, config::SimInfo::getValue<uint16_t>(
                    config["Register-Set"]["Predicate-Count"])},
-          {1, SimInfo::getValue<uint16_t>(
+          {1, config::SimInfo::getValue<uint16_t>(
                   config["Register-Set"]["Conditional-Count"])},
           {8, getNumSystemRegisters()},
           {256, matCount}};
@@ -314,23 +318,25 @@ Architecture::getConfigPhysicalRegisterStructure() const {
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
     const {
-  ryml::Tree config = SimInfo::getConfig();
+  ryml::Tree config = config::SimInfo::getConfig();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
-  uint16_t matCount =
-      SimInfo::getValue<uint16_t>(config["Register-Set"]["Matrix-Count"]) *
-      (SimInfo::getValue<uint16_t>(config["Core"]["Streaming-Vector-Length"]) /
-       8);
-  return {
-      SimInfo::getValue<uint16_t>(
-          config["Register-Set"]["GeneralPurpose-Count"]),
-      SimInfo::getValue<uint16_t>(
-          config["Register-Set"]["FloatingPoint/SVE-Count"]),
-      SimInfo::getValue<uint16_t>(config["Register-Set"]["Predicate-Count"]),
-      SimInfo::getValue<uint16_t>(config["Register-Set"]["Conditional-Count"]),
-      getNumSystemRegisters(),
-      matCount};
+  uint16_t matCount = config::SimInfo::getValue<uint16_t>(
+                          config["Register-Set"]["Matrix-Count"]) *
+                      (config::SimInfo::getValue<uint16_t>(
+                           config["Core"]["Streaming-Vector-Length"]) /
+                       8);
+  return {config::SimInfo::getValue<uint16_t>(
+              config["Register-Set"]["GeneralPurpose-Count"]),
+          config::SimInfo::getValue<uint16_t>(
+              config["Register-Set"]["FloatingPoint/SVE-Count"]),
+          config::SimInfo::getValue<uint16_t>(
+              config["Register-Set"]["Predicate-Count"]),
+          config::SimInfo::getValue<uint16_t>(
+              config["Register-Set"]["Conditional-Count"]),
+          getNumSystemRegisters(),
+          matCount};
 }
 
 /** The SVCR value is stored in Architecture to allow the value to be

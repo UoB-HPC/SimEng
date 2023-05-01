@@ -5,7 +5,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -33,7 +33,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Due to SimInfo being static, we need to reset the architectural register
   // file each time the config file is updated
-  simeng::SimInfo::resetArchRegs();
+  simeng::config::SimInfo::resetArchRegs();
 
   // Create a linux process from the assembled code block.
   // Memory allocation for process images also takes place

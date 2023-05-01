@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 
