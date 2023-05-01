@@ -64,12 +64,12 @@ class LinuxProcess {
    *
    * The first argument is a path to an executable ELF file. */
   LinuxProcess(const std::vector<std::string>& commandLine,
-               ryml::Tree config = config::SimInfo::getConfig());
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
   LinuxProcess(span<char> instructions,
-               ryml::Tree config = config::SimInfo::getConfig());
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~LinuxProcess();
 
