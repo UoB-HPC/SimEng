@@ -452,7 +452,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Memory-Hierarchy"]["L1-Data"].addChild(
       expectations_.create<uint64_t>("Size", 32768));
   expectations_["Memory-Hierarchy"]["L1-Data"]["Size"].setValueBounds<uint64_t>(
-      cacheLineWidth, UINT16_MAX);
+      cacheLineWidth, UINT64_MAX);
 
   expectations_["Memory-Hierarchy"].addChild(expectations_.create("DRAM"));
 
