@@ -6,7 +6,7 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -16,7 +16,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
-  ryml::Tree config = SimInfo::getConfig();
+  ryml::Tree config = config::SimInfo::getConfig();
 
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
@@ -33,8 +33,9 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  for (size_t i = 0; i < SimInfo::getSysRegVec().size(); i++) {
-    systemRegisterMap_[SimInfo::getSysRegVec()[i]] = systemRegisterMap_.size();
+  for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
+    systemRegisterMap_[config::SimInfo::getSysRegVec()[i]] =
+        systemRegisterMap_.size();
   }
 
   cycleSystemReg_ = {
@@ -51,13 +52,13 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
     ryml::NodeRef port_node = config["Latencies"][i];
     uint16_t latency =
-        SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
+        config::SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
     uint16_t throughput =
-        SimInfo::getValue<uint16_t>(port_node["Execution-Throughput"]);
+        config::SimInfo::getValue<uint16_t>(port_node["Execution-Throughput"]);
     for (size_t j = 0; j < port_node["Instruction-Group-Nums"].num_children();
          j++) {
-      uint16_t group =
-          SimInfo::getValue<uint16_t>(port_node["Instruction-Group-Nums"][j]);
+      uint16_t group = config::SimInfo::getValue<uint16_t>(
+          port_node["Instruction-Group-Nums"][j]);
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Set zero inheritance distance for latency assignment as it's explicitly
@@ -91,8 +92,8 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
     // Store any opcode-based latency override
     for (size_t j = 0; j < port_node["Instruction-Opcodes"].num_children();
          j++) {
-      uint16_t opcode =
-          SimInfo::getValue<uint16_t>(port_node["Instruction-Opcodes"][j]);
+      uint16_t opcode = config::SimInfo::getValue<uint16_t>(
+          port_node["Instruction-Opcodes"][j]);
       opcodeExecutionInfo_[opcode].latency = latency;
       opcodeExecutionInfo_[opcode].stallCycles = throughput;
     }
@@ -100,8 +101,8 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
   // using the outoforder core archetype
-  if (SimInfo::getValue<std::string>(config["Core"]["Simulation-Mode"]) ==
-      "outoforder") {
+  if (config::SimInfo::getValue<std::string>(
+          config["Core"]["Simulation-Mode"]) == "outoforder") {
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -109,7 +110,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
       ryml::NodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
-        uint16_t group = SimInfo::getValue<uint16_t>(group_node[j]);
+        uint16_t group = config::SimInfo::getValue<uint16_t>(group_node[j]);
         uint16_t newPort = static_cast<uint16_t>(i);
 
         groupExecutionInfo_[group].ports.push_back(newPort);
@@ -135,7 +136,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
-        uint16_t opcode = SimInfo::getValue<uint16_t>(opcode_node[j]);
+        uint16_t opcode = config::SimInfo::getValue<uint16_t>(opcode_node[j]);
         opcodeExecutionInfo_.try_emplace(
             opcode, simeng::arch::riscv::executionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
@@ -262,20 +263,20 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure() const {
-  ryml::Tree config = SimInfo::getConfig();
-  return {{8, SimInfo::getValue<uint16_t>(
+  ryml::Tree config = config::SimInfo::getConfig();
+  return {{8, config::SimInfo::getValue<uint16_t>(
                   config["Register-Set"]["GeneralPurpose-Count"])},
-          {8, SimInfo::getValue<uint16_t>(
+          {8, config::SimInfo::getValue<uint16_t>(
                   config["Register-Set"]["FloatingPoint-Count"])},
           {8, getNumSystemRegisters()}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
     const {
-  ryml::Tree config = SimInfo::getConfig();
-  return {SimInfo::getValue<uint16_t>(
+  ryml::Tree config = config::SimInfo::getConfig();
+  return {config::SimInfo::getValue<uint16_t>(
               config["Register-Set"]["GeneralPurpose-Count"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
               config["Register-Set"]["FloatingPoint-Count"]),
           getNumSystemRegisters()};
 }

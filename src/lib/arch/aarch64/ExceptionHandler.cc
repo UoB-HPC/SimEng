@@ -652,7 +652,7 @@ bool ExceptionHandler::init() {
     // Get Architecture
     const Architecture& arch = instruction_.getArchitecture();
     // Retrieve register file structure from architecture
-    auto regFileStruct = SimInfo::getArchRegStruct();
+    auto regFileStruct = config::SimInfo::getArchRegStruct();
     // Retrieve metadata from architecture
     auto metadata = instruction_.getMetadata();
 

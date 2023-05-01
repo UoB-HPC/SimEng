@@ -23,10 +23,10 @@ void AArch64RegressionTest::run(const char* source) {
 
 void AArch64RegressionTest::generateConfig() const {
   // Re-generate the default config for the AArch64 ISA
-  simeng::SimInfo::generateDefault(simeng::ISA::AArch64);
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
 
   // Add the base additional AArch64 test suite config options
-  simeng::SimInfo::addToConfig(AARCH64_ADDITIONAL_CONFIG);
+  simeng::config::SimInfo::addToConfig(AARCH64_ADDITIONAL_CONFIG);
   std::string mode;
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -39,10 +39,11 @@ void AArch64RegressionTest::generateConfig() const {
       mode = "outoforder";
       break;
   }
-  simeng::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode + "}}");
+  simeng::config::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode +
+                                       "}}");
 
   // Add the test specific config options
-  simeng::SimInfo::addToConfig(std::get<1>(GetParam()));
+  simeng::config::SimInfo::addToConfig(std::get<1>(GetParam()));
 }
 
 std::unique_ptr<simeng::arch::Architecture>
@@ -53,7 +54,7 @@ AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
 std::unique_ptr<simeng::pipeline::PortAllocator>
 AArch64RegressionTest::createPortAllocator() const {
   // Extract the port arrangement from the config file
-  ryml::Tree config = simeng::SimInfo::getConfig();
+  ryml::Tree config = simeng::config::SimInfo::getConfig();
   std::vector<std::vector<uint16_t>> portArrangement(
       config["Ports"].num_children());
   for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -61,7 +62,7 @@ AArch64RegressionTest::createPortAllocator() const {
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
       portArrangement[i].push_back(
-          simeng::SimInfo::getValue<uint16_t>(config_groups[j]));
+          simeng::config::SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(

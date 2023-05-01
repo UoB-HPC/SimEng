@@ -5,25 +5,28 @@
 namespace simeng {
 
 SpecialFileDirGen::SpecialFileDirGen() {
-  ryml::Tree config = SimInfo::getConfig();
+  ryml::Tree config = config::SimInfo::getConfig();
   // Import all values from config file
-  core_count = SimInfo::getValue<uint64_t>(config["CPU-Info"]["Core-Count"]);
+  core_count =
+      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Core-Count"]);
   socket_count =
-      SimInfo::getValue<uint64_t>(config["CPU-Info"]["Socket-Count"]);
-  smt = SimInfo::getValue<uint64_t>(config["CPU-Info"]["SMT"]);
-  bogoMIPS = SimInfo::getValue<float>(config["CPU-Info"]["BogoMIPS"]);
-  features = SimInfo::getValue<std::string>(config["CPU-Info"]["Features"]);
-  cpu_implementer =
-      SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Implementer"]);
-  cpu_architecture =
-      SimInfo::getValue<uint64_t>(config["CPU-Info"]["CPU-Architecture"]);
+      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Socket-Count"]);
+  smt = config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["SMT"]);
+  bogoMIPS = config::SimInfo::getValue<float>(config["CPU-Info"]["BogoMIPS"]);
+  features =
+      config::SimInfo::getValue<std::string>(config["CPU-Info"]["Features"]);
+  cpu_implementer = config::SimInfo::getValue<std::string>(
+      config["CPU-Info"]["CPU-Implementer"]);
+  cpu_architecture = config::SimInfo::getValue<uint64_t>(
+      config["CPU-Info"]["CPU-Architecture"]);
   cpu_variant =
-      SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Variant"]);
-  cpu_part = SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Part"]);
+      config::SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Variant"]);
+  cpu_part =
+      config::SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Part"]);
   cpu_revision =
-      SimInfo::getValue<uint64_t>(config["CPU-Info"]["CPU-Revision"]);
+      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["CPU-Revision"]);
   package_count =
-      SimInfo::getValue<uint64_t>(config["CPU-Info"]["Package-Count"]);
+      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Package-Count"]);
 }
 
 void SpecialFileDirGen::RemoveExistingSFDir() {

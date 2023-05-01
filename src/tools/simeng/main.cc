@@ -7,7 +7,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   // Determine if a config file has been supplied.
   if (argc > 1) {
     // Set the global config file to one at the file path defined.
-    simeng::SimInfo::setConfig(argv[1]);
+    simeng::config::SimInfo::setConfig(argv[1]);
 
     // Determine if an executable has been supplied
     if (argc > 2) {
@@ -85,13 +85,13 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Output general simulation details
-  std::cout << "[SimEng] Running in " << simeng::SimInfo::getSimModeStr()
-            << " mode" << std::endl;
+  std::cout << "[SimEng] Running in "
+            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << simeng::SimInfo::getConfigPath()
-            << std::endl;
+  std::cout << "[SimEng] Config file: "
+            << simeng::config::SimInfo::getConfigPath() << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;

@@ -8,7 +8,7 @@
 #include <unordered_set>
 
 #include "simeng/Instruction.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 

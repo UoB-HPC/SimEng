@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "simeng/BranchPredictor.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 

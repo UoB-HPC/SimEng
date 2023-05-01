@@ -16,6 +16,7 @@ set(SIMENG_SOURCES
     arch/riscv/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
+    config/ModelConfig.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -41,7 +42,6 @@ set(SIMENG_SOURCES
     FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
-    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
