@@ -17,7 +17,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            arch::sendSyscallToHandler handleSyscall)
     : mmu_(mmu),
       isa_(isa),
-      registerFileSet_(SimInfo::getArchRegStruct()),
+      registerFileSet_(config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
@@ -35,7 +35,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
       handleSyscall_(handleSyscall) {
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(SimInfo::getISA());
+  exceptionHandlerFactory(config::SimInfo::getISA());
 }
 
 void Core::tick() {
@@ -421,7 +421,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
-  auto regFileStruc = SimInfo::getArchRegStruct();
+  auto regFileStruc = config::SimInfo::getArchRegStruct();
   newContext.regFile.resize(regFileStruc.size());
   for (size_t i = 0; i < regFileStruc.size(); i++) {
     newContext.regFile[i].resize(regFileStruc[i].quantity);

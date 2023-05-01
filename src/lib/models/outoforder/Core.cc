@@ -21,57 +21,61 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
       registerFileSet_(physicalRegisterStructures_),
-      registerAliasTable_(SimInfo::getArchRegStruct(),
+      registerAliasTable_(config::SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       mmu_(mmu),
       fetchToDecodeBuffer_(
-          SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]), {}),
+          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
+          {}),
       decodeToRenameBuffer_(
-          SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
+          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
           nullptr),
       renameToDispatchBuffer_(
-          SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
+          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
           nullptr),
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(config["Execution-Units"].num_children() +
-                           SimInfo::getValue<int>(
+                           config::SimInfo::getValue<int>(
                                config["Pipeline-Widths"]["LSQ-Completion"]),
                        {1, nullptr}),
       loadStoreQueue_(
-          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
-          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]), mmu_,
+          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
+          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]),
+          mmu_,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
-           SimInfo::getValue<size_t>(
+           config::SimInfo::getValue<size_t>(
                config["Pipeline-Widths"]["LSQ-Completion"])},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          SimInfo::getValue<bool>(config["LSQ-Memory-Interface"]["Exclusive"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<bool>(
+              config["LSQ-Memory-Interface"]["Exclusive"]),
+          config::SimInfo::getValue<uint16_t>(
               config["LSQ-Memory-Interface"]["Load-Bandwidth"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
               config["LSQ-Memory-Interface"]["Store-Bandwidth"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
               config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
               config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
               config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"])),
-      fetchUnit_(
-          fetchToDecodeBuffer_, mmu_,
-          SimInfo::getValue<uint16_t>(config["Fetch"]["Fetch-Block-Size"]), isa,
-          branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, mmu_,
+                 config::SimInfo::getValue<uint16_t>(
+                     config["Fetch"]["Fetch-Block-Size"]),
+                 isa, branchPredictor),
       reorderBuffer_(
-          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["ROB"]),
+          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["ROB"]),
           registerAliasTable_, loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
           [this](auto branchAddress) {
             fetchUnit_.registerLoopBoundary(branchAddress);
           },
           branchPredictor,
-          SimInfo::getValue<uint16_t>(config["Fetch"]["Loop-Buffer-Size"]),
-          SimInfo::getValue<uint16_t>(
+          config::SimInfo::getValue<uint16_t>(
+              config["Fetch"]["Loop-Buffer-Size"]),
+          config::SimInfo::getValue<uint16_t>(
               config["Fetch"]["Loop-Detection-Threshold"])),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
@@ -83,14 +87,15 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      commitWidth_(SimInfo::getValue<int>(config["Pipeline-Widths"]["Commit"])),
+      commitWidth_(
+          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["Commit"])),
       handleSyscall_(handleSyscall) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
     for (ryml::NodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
-      blockingGroups.push_back(SimInfo::getValue<uint16_t>(grp));
+      blockingGroups.push_back(config::SimInfo::getValue<uint16_t>(grp));
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -100,7 +105,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
-        SimInfo::getValue<bool>(config["Execution-Units"][i]["Pipelined"]),
+        config::SimInfo::getValue<bool>(
+            config["Execution-Units"][i]["Pipelined"]),
         blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
@@ -108,7 +114,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(SimInfo::getISA());
+  exceptionHandlerFactory(config::SimInfo::getISA());
 }
 
 void Core::tick() {
@@ -451,7 +457,7 @@ std::map<std::string, std::string> Core::getStats() const {
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
   // Need to reset mapping in register file
-  registerAliasTable_.reset(SimInfo::getArchRegStruct(),
+  registerAliasTable_.reset(config::SimInfo::getArchRegStruct(),
                             physicalRegisterQuantities_);
 
   currentTID_ = newContext.TID;
@@ -493,7 +499,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
-  auto regFileStruc = SimInfo::getArchRegStruct();
+  auto regFileStruc = config::SimInfo::getArchRegStruct();
   newContext.regFile.resize(regFileStruc.size());
   for (size_t i = 0; i < regFileStruc.size(); i++) {
     newContext.regFile[i].resize(regFileStruc[i].quantity);

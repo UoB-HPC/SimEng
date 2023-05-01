@@ -4,15 +4,17 @@ namespace simeng {
 
 CoreInstance::CoreInstance(std::shared_ptr<memory::MMU> mmu,
                            arch::sendSyscallToHandler handleSyscall)
-    : config_(SimInfo::getConfig()), mmu_(mmu), handleSyscall_(handleSyscall) {
+    : config_(config::SimInfo::getConfig()),
+      mmu_(mmu),
+      handleSyscall_(handleSyscall) {
   createCore();
 }
 
 void CoreInstance::createCore() {
   // Create the architecture, with knowledge of the OS
-  if (SimInfo::getISA() == ISA::RV64) {
+  if (config::SimInfo::getISA() == config::ISA::RV64) {
     arch_ = std::make_unique<simeng::arch::riscv::Architecture>();
-  } else if (SimInfo::getISA() == ISA::AArch64) {
+  } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     arch_ = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
@@ -28,20 +30,20 @@ void CoreInstance::createCore() {
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
       portArrangement[i].push_back(
-          SimInfo::getValue<uint16_t>(config_groups[j]));
+          config::SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
   portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 
   // Construct the core object based on the defined simulation mode
-  if (SimInfo::getSimMode() == simMode::emulation) {
+  if (config::SimInfo::getSimMode() == config::simMode::emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(*arch_, mmu_,
                                                               handleSyscall_);
-  } else if (SimInfo::getSimMode() == simMode::inorder) {
+  } else if (config::SimInfo::getSimMode() == config::simMode::inorder) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *arch_, *predictor_, mmu_, handleSyscall_);
-  } else if (SimInfo::getSimMode() == simMode::outoforder) {
+  } else if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
   }

@@ -6,8 +6,8 @@
 
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SyscallHandler.hh"
-#include "simeng/SimInfo.hh"
 #include "simeng/arch/ExceptionHandler.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 

@@ -9,8 +9,8 @@
 #include "simeng/OS/FileDesc.hh"
 #include "simeng/OS/MemRegion.hh"
 #include "simeng/OS/PageTable.hh"
-#include "simeng/SimInfo.hh"
 #include "simeng/SpecialFileDirGen.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 
