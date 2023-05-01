@@ -42,7 +42,7 @@ class CoreInstance {
 
  private:
   /** The config file describing the modelled core to be created. */
-  ryml::Tree config_;
+  ryml::ConstNodeRef config_;
 
   /** Reference to the SimEng SimOS Process object. */
   std::shared_ptr<simeng::OS::Process> process_ = nullptr;

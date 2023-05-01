@@ -21,7 +21,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Initialise SVE and SME vector lengths
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   VL_ = config::SimInfo::getValue<uint64_t>(config["Core"]["Vector-Length"]);
   SVL_ = config::SimInfo::getValue<uint64_t>(
       config["Core"]["Streaming-Vector-Length"]);
@@ -54,7 +54,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
   // Extract execution latency/throughput for each group
   std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
-    ryml::NodeRef port_node = config["Latencies"][i];
+    ryml::ConstNodeRef port_node = config["Latencies"][i];
     uint16_t latency =
         config::SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
     uint16_t throughput =
@@ -111,7 +111,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
       // Store which ports support which groups
-      ryml::NodeRef group_node =
+      ryml::ConstNodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
         uint16_t group = config::SimInfo::getValue<uint16_t>(group_node[j]);
@@ -134,7 +134,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
         }
       }
       // Store any opcode-based port support override
-      ryml::NodeRef opcode_node =
+      ryml::ConstNodeRef opcode_node =
           config["Ports"][i]["Instruction-Opcode-Support"];
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
@@ -273,7 +273,7 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure() const {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
@@ -296,7 +296,7 @@ Architecture::getConfigPhysicalRegisterStructure() const {
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
     const {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to convert
   // physical counts from whole-ZA to rows-in-ZA.
