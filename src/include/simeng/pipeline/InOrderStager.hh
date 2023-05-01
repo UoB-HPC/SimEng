@@ -22,9 +22,8 @@ class InOrderStager {
   /** The constructor of the unit. */
   InOrderStager();
 
-  /** A function to record the issuing of instructions by a passed unique
-   * sequence ID. */
-  void recordIssue(uint64_t seqId);
+  /** A function to record the issuing of instructions. */
+  void recordIssue(const std::shared_ptr<Instruction>& insn);
 
   /** A function to query whether an instruction can writeback based on its
    * unique sequence ID being the youngest in program-order recorded by the
@@ -52,7 +51,7 @@ class InOrderStager {
 
  private:
   /** A queue to hold all in–flight issued instructions in a program-order. */
-  std::deque<uint64_t> issueOrderQueue_;
+  std::deque<std::shared_ptr<Instruction>> issueOrderQueue_;
 };
 
 }  // namespace pipeline
