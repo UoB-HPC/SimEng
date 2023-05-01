@@ -200,8 +200,12 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Core
   expectations_.addChild(expectations_.create("Core"));
 
-  expectations_["Core"].addChild(
-      expectations_.create<std::string>("ISA", "AArch64"));
+  if (ISA_ == ISA::AArch64)
+    expectations_["Core"].addChild(
+        expectations_.create<std::string>("ISA", "AArch64"));
+  else if (ISA_ == ISA::RV64)
+    expectations_["Core"].addChild(
+        expectations_.create<std::string>("ISA", "rv64"));
   expectations_["Core"]["ISA"].setValueSet(
       std::vector<std::string>{"AArch64", "rv64"});
 
