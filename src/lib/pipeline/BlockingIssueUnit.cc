@@ -9,7 +9,9 @@ namespace pipeline {
 BlockingIssueUnit::BlockingIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& input,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-    PortAllocator& portAllocator, std::function<void(uint64_t)> recordIssue,
+    PortAllocator& portAllocator,
+    std::function<void(const std::shared_ptr<Instruction>&)> recordIssue,
+    LoadStoreQueue& lsq,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     const RegisterFileSet& registerFileSet,
     const std::vector<uint16_t>& physicalRegisterStructure)
@@ -18,6 +20,7 @@ BlockingIssueUnit::BlockingIssueUnit(
       portAllocator_(portAllocator),
       scoreboard_(physicalRegisterStructure.size()),
       recordIssue_(recordIssue),
+      lsq_(lsq),
       raiseException_(raiseException),
       registerFileSet_(registerFileSet) {
   YAML::Node& config = Config::get();
@@ -56,7 +59,7 @@ void BlockingIssueUnit::tick() {
     // If a instruction has an exception to raise, record its issue but omit
     // from sending to an exceution unit as it would be unsafe
     if (uop->exceptionEncountered()) {
-      recordIssue_(uop->getSequenceId());
+      recordIssue_(uop);
       raiseException_(uop);
       issueQueue_.pop_front();
       continue;
@@ -124,7 +127,15 @@ void BlockingIssueUnit::tick() {
 
     // Record that this uop has been issue and send to an execution unit through
     // allocated port
-    recordIssue_(uop->getSequenceId());
+    recordIssue_(uop);
+
+    if (uop->isLoad()) {
+      lsq_.addLoad(uop);
+    }
+    if (uop->isStoreAddress()) {
+      lsq_.addStore(uop);
+    }
+
     issuePorts_[port].getTailSlots()[0] = std::move(uop);
     portAllocator_.issued(port);
 
@@ -185,7 +196,15 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
             scoreboard_[reg.type][reg.tag] = {false, uop->getSequenceId()};
           }
 
-          recordIssue_(uop->getSequenceId());
+          recordIssue_(uop);
+
+          if (uop->isLoad()) {
+            lsq_.addLoad(uop);
+          }
+          if (uop->isStoreAddress()) {
+            lsq_.addStore(uop);
+          }
+
           issuePorts_[port].getTailSlots()[0] = std::move(uop);
           portAllocator_.issued(port);
 

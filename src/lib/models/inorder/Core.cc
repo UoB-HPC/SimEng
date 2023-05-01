@@ -48,7 +48,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       staging_(),
       issueUnit_(
           decodeToIssueBuffer_, issuePorts_, portAllocator,
-          [this](auto seqId) { staging_.recordIssue(seqId); },
+          [this](auto insn) { staging_.recordIssue(insn); }, loadStoreQueue_,
           [this](auto insn) { raiseException(insn); }, registerFileSet_,
           isa.getConfigPhysicalRegisterQuantities()),
       writebackUnit_(
@@ -172,7 +172,7 @@ void Core::flushIfNeeded() {
   }
   if (euFlush) {
     // Flush was requested at execute stage
-    // Update PC and wipe pipeline buffers
+    // Update PC and wipe pipeline buffers/units
 
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
@@ -180,13 +180,24 @@ void Core::flushIfNeeded() {
     decodeUnit_.purgeFlushed();
     decodeToIssueBuffer_.fill(nullptr);
     issueUnit_.flush(lowestSeqId);
-    for (auto& port : issuePorts_) {
-      port.fill(nullptr);
-    }
     staging_.flush(lowestSeqId);
     for (auto& eu : executionUnits_) {
-      eu.seqIdFlush(lowestSeqId);
+      eu.purgeFlushed();
     }
+    loadStoreQueue_.purgeFlushed();
+
+    // Given instructions can flow out-of-order during execution due to
+    // differing latencies, the issue ports need to be cleared conditionally
+    // based on the sequence IDs
+    for (auto& port : issuePorts_) {
+      if (port.getHeadSlots()[0] != nullptr &&
+          port.getHeadSlots()[0]->getSequenceId() > lowestSeqId)
+        port.getHeadSlots()[0] = nullptr;
+      if (port.getTailSlots()[0] != nullptr &&
+          port.getTailSlots()[0]->getSequenceId() > lowestSeqId)
+        port.getTailSlots()[0] = nullptr;
+    }
+
     // Given instructions can flow out-of-order during execution due to
     // differing latencies, the completion slots need to be cleared
     // conditionally based on the sequence IDs
@@ -315,6 +326,7 @@ bool Core::handleException() {
   for (auto& eu : executionUnits_) {
     eu.flush();
   }
+  loadStoreQueue_.purgeFlushed();
   for (auto& buffer : issuePorts_) {
     buffer.fill(nullptr);
   }
@@ -360,17 +372,11 @@ void Core::processException() {
 }
 
 void Core::handleLoad(const std::shared_ptr<Instruction>& insn) {
-  // Add the load instruction to the LSQ's load queue and start the load
-  loadStoreQueue_.addLoad(insn);
+  // Start the load in the LSQ
   loadStoreQueue_.startLoad(insn);
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& insn) {
-  // If the passed store instruction is/contains a store address uop, add thr
-  // store to the LSQ's store queue
-  if (insn->isStoreAddress()) {
-    loadStoreQueue_.addStore(insn);
-  }
   // Supply the data to be stored to the recently added store address uop
   // within the LSQ (a check for whether the passed instruction is/contains a
   // store data uop is done within the supplyStoreData call)

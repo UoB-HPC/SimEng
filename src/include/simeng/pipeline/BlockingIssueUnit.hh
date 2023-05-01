@@ -10,6 +10,7 @@
 #include "simeng/Config.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/InOrderStager.hh"
+#include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 
@@ -27,7 +28,9 @@ class BlockingIssueUnit {
   BlockingIssueUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& input,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-      PortAllocator& portAllocator, std::function<void(uint64_t)> recordIssue,
+      PortAllocator& portAllocator,
+      std::function<void(const std::shared_ptr<Instruction>&)> recordIssue,
+      LoadStoreQueue& lsq,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       const RegisterFileSet& registerFileSet,
       const std::vector<uint16_t>& physicalRegisterStructure);
@@ -87,7 +90,10 @@ class BlockingIssueUnit {
 
   /** A function to record the issue of an instruction to enable the tracking of
    * in program-order instruction execution and writeback. */
-  std::function<void(uint64_t)> recordIssue_;
+  std::function<void(const std::shared_ptr<Instruction>&)> recordIssue_;
+
+  /** A reference to the loadt/store queue. */
+  LoadStoreQueue& lsq_;
 
   /** A function handle called upon exception generation. */
   std::function<void(const std::shared_ptr<Instruction>&)> raiseException_;
