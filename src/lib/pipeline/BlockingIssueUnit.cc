@@ -23,7 +23,6 @@ BlockingIssueUnit::BlockingIssueUnit(
       lsq_(lsq),
       raiseException_(raiseException),
       registerFileSet_(registerFileSet) {
-  YAML::Node& config = Config::get();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], {true, -1});
