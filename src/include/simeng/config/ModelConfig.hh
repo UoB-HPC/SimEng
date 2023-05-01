@@ -42,24 +42,6 @@ class ModelConfig {
   /** Append/replace config options within the held config file. */
   void addConfigOptions(std::string config);
 
-  void recursivePrint(ryml::NodeRef node, int depth = 0) {
-    for (ryml::NodeRef chld : node.children()) {
-      for (int i = 0; i < depth; i++) std::cerr << "\t";
-      if (chld.is_map()) {
-        std::cerr << chld.key() << ": " << std::endl;
-        recursivePrint(chld, depth + 1);
-      } else if (chld.is_seq()) {
-        std::cerr << chld.key() << ": " << std::endl;
-        for (int i = 0; i < chld.num_children(); i++) {
-          for (int i = 0; i < depth + 1; i++) std::cerr << "\t";
-          std::cerr << "- " << chld[i].val() << std::endl;
-        }
-      } else {
-        std::cerr << chld.key() << ": " << chld.val() << std::endl;
-      }
-    }
-  }
-
  private:
   /** A utility function to construct a default config file and pass it through
    * validation and post-validation logic. */
