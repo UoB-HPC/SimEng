@@ -5,7 +5,7 @@
 namespace simeng {
 
 GenericPredictor::GenericPredictor() {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   btbBits_ = config::SimInfo::getValue<uint64_t>(
       config["Branch-Predictor"]["BTB-Tag-Bits"]);
   // Calculate the saturation counter boundary between weakly taken and

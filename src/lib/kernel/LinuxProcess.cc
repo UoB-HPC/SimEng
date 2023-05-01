@@ -17,7 +17,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           ryml::Tree config)
+                           ryml::ConstNodeRef config)
     : STACK_SIZE(config::SimInfo::getValue<uint64_t>(
           config["Process-Image"]["Stack-Size"])),
       HEAP_SIZE(config::SimInfo::getValue<uint64_t>(
@@ -64,7 +64,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, ryml::Tree config)
+LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
     : STACK_SIZE(config::SimInfo::getValue<uint64_t>(
           config["Process-Image"]["Stack-Size"])),
       HEAP_SIZE(config::SimInfo::getValue<uint64_t>(

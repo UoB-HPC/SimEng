@@ -120,7 +120,7 @@ class CoreInstance {
   size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */
-  ryml::Tree config_;
+  ryml::ConstNodeRef config_;
 
   /** Reference to the SimEng linux process object. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;

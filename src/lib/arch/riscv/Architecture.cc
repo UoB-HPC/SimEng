@@ -16,7 +16,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
 
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
@@ -50,7 +50,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   // Extract execution latency/throughput for each group
   std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
-    ryml::NodeRef port_node = config["Latencies"][i];
+    ryml::ConstNodeRef port_node = config["Latencies"][i];
     uint16_t latency =
         config::SimInfo::getValue<uint16_t>(port_node["Execution-Latency"]);
     uint16_t throughput =
@@ -107,7 +107,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
       // Store which ports support which groups
-      ryml::NodeRef group_node =
+      ryml::ConstNodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
         uint16_t group = config::SimInfo::getValue<uint16_t>(group_node[j]);
@@ -131,7 +131,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
         }
       }
       // Store any opcode-based port support override
-      ryml::NodeRef opcode_node =
+      ryml::ConstNodeRef opcode_node =
           config["Ports"][i]["Instruction-Opcode-Support"];
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
@@ -263,7 +263,7 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure() const {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   return {{8, config::SimInfo::getValue<uint16_t>(
                   config["Register-Set"]["GeneralPurpose-Count"])},
           {8, config::SimInfo::getValue<uint16_t>(
@@ -273,7 +273,7 @@ Architecture::getConfigPhysicalRegisterStructure() const {
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
     const {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   return {config::SimInfo::getValue<uint16_t>(
               config["Register-Set"]["GeneralPurpose-Count"]),
           config::SimInfo::getValue<uint16_t>(

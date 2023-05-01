@@ -26,7 +26,9 @@ class SimInfo {
  public:
   /** A getter function to retrieve the ryml::Tree representing the underlying
    * model config file. */
-  static ryml::Tree getConfig() { return getInstance()->validatedConfig_; }
+  static ryml::ConstNodeRef getConfig() {
+    return getInstance()->validatedConfig_.crootref();
+  }
 
   /** A setter function to set the model config file from a path to a YAML file.
    */
@@ -56,7 +58,7 @@ class SimInfo {
   /** A utility function to get a value, of a specified type, from a config
    * option. */
   template <typename T>
-  static T getValue(ryml::NodeRef node) {
+  static T getValue(ryml::ConstNodeRef node) {
     T val;
     node >> val;
     return val;
@@ -97,11 +99,6 @@ class SimInfo {
 
   /** A function used to reset the architectural register file structure. */
   static void resetArchRegs() { getInstance()->resetArchRegStruct(); }
-
-  static void printConfig() {
-    getInstance()->mdlCnf_.recursivePrint(
-        getInstance()->validatedConfig_.rootref());
-  }
 
  private:
   SimInfo() {
@@ -146,20 +143,6 @@ class SimInfo {
                            arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
                            arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
                            arm64_sysreg::ARM64_SYSREG_SVCR};
-      // Initialise architectural reg structures
-      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      // Set the size of SME ZA in bytes by dividing the SVL by 8
-      uint16_t ZAbits;
-      validatedConfig_["Core"]["Streaming-Vector-Length"] >> ZAbits;
-      const uint16_t ZAsize = ZAbits / 8;
-      archRegStruct_ = {
-          {8, 32},          // General purpose
-          {256, 32},        // Vector
-          {32, 17},         // Predicate
-          {1, 1},           // NZCV
-          {8, numSysRegs},  // System
-          {256, ZAsize},    // Matrix (Each row is a register)
-      };
     } else if (isa == "rv64") {
       isa_ = config::ISA::RV64;
       // Define system registers
@@ -169,14 +152,10 @@ class SimInfo {
                            arch::riscv::riscv_sysreg::RISCV_SYSREG_CYCLE,
                            arch::riscv::riscv_sysreg::RISCV_SYSREG_TIME,
                            arch::riscv::riscv_sysreg::RISCV_SYSREG_INSTRET};
-      // Initialise architectural reg structures
-      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      archRegStruct_ = {
-          {8, 32},          // General purpose
-          {8, 32},          // Floating Point
-          {8, numSysRegs},  // System
-      };
     }
+
+    // Initialise architectural reg structures by using the reset functionality
+    resetArchRegStruct();
 
     // Get Simulation mode
     std::string mode;

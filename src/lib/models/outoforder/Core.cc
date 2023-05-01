@@ -16,7 +16,7 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, ryml::Tree config)
+           pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
@@ -97,7 +97,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
-    for (ryml::NodeRef grp :
+    for (ryml::ConstNodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
       blockingGroups.push_back(config::SimInfo::getValue<uint16_t>(grp));
     }
