@@ -156,15 +156,15 @@ class expectationNode {
    * value of type_ into a string via an index. */
   std::string typeToString(size_t index) const {
     switch (index) {
-      case 0:
+      case ExpectedType::Bool:
         return "bool";
-      case 1:
+      case ExpectedType::Float:
         return "float";
-      case 2:
+      case ExpectedType::Integer:
         return "integer";
-      case 3:
+      case ExpectedType::String:
         return "string";
-      case 4:
+      case ExpectedType::UInteger:
         return "unsigned integer";
     }
     return "unknown";
