@@ -236,17 +236,12 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
                                      [31] = {processes_[tid]->context_.sp, 8};
     // Set the system registers
-    auto sysRegVec = config::SimInfo::getSysRegVec();
-    auto dczItr = std::find(sysRegVec.begin(), sysRegVec.end(),
-                            arm64_sysreg::ARM64_SYSREG_DCZID_EL0);
-    assert(dczItr != sysRegVec.end() &&
-           "[SimEng:SimOS] DCZID_EL0 was not defined in the System Register "
-           "Vector. Please ensure it is included in "
-           "config::SimInfo::sysRegisterEnums_.");
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                                     [dczItr - sysRegVec.begin()] = {
+    processes_[tid]
+        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                          [config::SimInfo::getSysRegVecIndex(
+                              arm64_sysreg::ARM64_SYSREG_DCZID_EL0)] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 
@@ -314,10 +309,11 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
-    // Set appropriate system register to TLS value.
+    // Set appropriate system register to TLS value
     newProc->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                             [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] = {
-        tls, 8};
+                             [config::SimInfo::getSysRegVecIndex(
+                                 arm64_sysreg::ARM64_SYSREG_TPIDR_EL0)] = {tls,
+                                                                           8};
   }
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
