@@ -21,6 +21,8 @@ void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
     auto& uop = completionSlots_[slot].getHeadSlots()[0];
 
+    completionSlots_[slot].stall(false);
+
     if (uop == nullptr) {
       continue;
     }
@@ -30,7 +32,6 @@ void WritebackUnit::tick() {
       completionSlots_[slot].stall(true);
       continue;
     }
-    completionSlots_[slot].stall(false);
 
     auto& results = uop->getResults();
     auto& destinations = uop->getDestinationRegisters();
