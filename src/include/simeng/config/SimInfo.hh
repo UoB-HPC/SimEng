@@ -16,9 +16,6 @@ namespace config {
 /** Enum representing the possible simulation modes. */
 enum simMode { emulation, inorder, outoforder };
 
-/** Enum representing the possible ISAs. */
-enum ISA { AArch64, RV64 };
-
 /** A SimInfo class to hold values, specified by the constructed ryml::Tree
  * object in the ModelConfig class and manually, used after the instantiation of
  * the current simulation and its objects. */
@@ -45,9 +42,9 @@ class SimInfo {
   /** A function to generate a default config file based on a passed ISA. */
   static void generateDefault(ISA isa) {
     if (isa == config::ISA::AArch64)
-      getInstance()->mdlCnf_.reGenerateDefault("AArch64");
+      getInstance()->mdlCnf_.reGenerateDefault(ISA::AArch64);
     else if (isa == config::ISA::RV64)
-      getInstance()->mdlCnf_.reGenerateDefault("rv64");
+      getInstance()->mdlCnf_.reGenerateDefault(ISA::RV64);
 
     // Replace the validated config with the new default config
     getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
