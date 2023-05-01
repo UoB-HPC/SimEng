@@ -17,7 +17,7 @@ DispatchIssueUnit::DispatchIssueUnit(
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator) {
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);

@@ -54,7 +54,7 @@ AArch64RegressionTest::createArchitecture() const {
 std::unique_ptr<simeng::pipeline::PortAllocator>
 AArch64RegressionTest::createPortAllocator() const {
   // Extract the port arrangement from the config file
-  ryml::Tree config = simeng::config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
   std::vector<std::vector<uint16_t>> portArrangement(
       config["Ports"].num_children());
   for (size_t i = 0; i < config["Ports"].num_children(); i++) {

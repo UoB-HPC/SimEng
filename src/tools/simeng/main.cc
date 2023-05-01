@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Get the memory size from the YAML config file.
+  // Get the memory size from the YAML config file
   const size_t memorySize = simeng::config::SimInfo::getValue<size_t>(
-      simeng::config::SimInfo::getConfig()["Simulation-Memory"]["Size"]);
+      simeng::config::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
   const uint16_t latency = simeng::config::SimInfo::getValue<uint16_t>(
       simeng::config::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]
                                           ["Access-Latency"]);

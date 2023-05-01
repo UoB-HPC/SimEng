@@ -32,7 +32,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       OS_(OS),
       sendToMem_(sendToMem) {
   // Parse ELF file
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   uint64_t heapSize = upAlign(
       config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
       PAGE_SIZE);
@@ -181,7 +181,7 @@ Process::Process(span<char> instructions, SimOS* OS, uint64_t TGID,
 
   pageTable_ = std::make_shared<PageTable>();
 
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   uint64_t heapSize = upAlign(
       config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
       PAGE_SIZE);
@@ -304,7 +304,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
     stringBytes.push_back(0);
   }
   // Environment strings
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   for (size_t i = 0; i < config["Environment-Variables"].num_children(); i++) {
     std::string envVar = config::SimInfo::getValue<std::string>(
         config["Environment-Variables"][i]);
