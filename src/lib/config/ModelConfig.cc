@@ -71,7 +71,7 @@ ModelConfig::ModelConfig() {
   generateDefault();
 }
 
-void ModelConfig::reGenerateDefault(std::string isa) {
+void ModelConfig::reGenerateDefault(ISA isa) {
   // Only re-generate the default config file if it hasn't already been
   // generated for the specified ISA
   if (ISA_ == isa && isDefault_) return;
@@ -106,7 +106,7 @@ void ModelConfig::constructDefault(expectationNode expectations,
       key = "0";
       type = ExpectedType::Valueless;
     }
-    // Create the ryml::NodeRef represent an config option
+    // Create the ryml::NodeRef representing a config option
     ryml::NodeRef node = configTree_.ref(root_id).append_child()
                          << ryml::key(key);
     // If the expectation is a sequence, then add an additional ryml::NodeRef as
@@ -201,7 +201,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(expectations_.create("Core"));
 
   expectations_["Core"].addChild(
-      expectations_.create<std::string>("ISA", ISA_));
+      expectations_.create<std::string>("ISA", "AArch64"));
   expectations_["Core"]["ISA"].setValueSet(
       std::vector<std::string>{"AArch64", "rv64"});
 
@@ -210,13 +210,20 @@ void ModelConfig::setExpectations(bool isDefault) {
   if (!isDefault) {
     std::string result = expectations_["Core"]["ISA"].validateConfigNode(
         configTree_["Core"]["ISA"]);
-    configTree_["Core"]["ISA"] >> ISA_;
+    std::string ISA;
+    configTree_["Core"]["ISA"] >> ISA;
     if (result != "Success") {
-      std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA_
+      std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
                 << "\" passed in config file due to \"" << result
                 << "\" error. Cannot continue with config validation. Exiting."
                 << std::endl;
       exit(1);
+    }
+    // Set ISA_
+    if (ISA == "AArch64") {
+      ISA_ = ISA::AArch64;
+    } else if ("rv64") {
+      ISA_ = ISA::RV64;
     }
   }
   createGroupMapping();
@@ -239,7 +246,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Core"]["Micro-Operations"].setValueSet(
       std::vector{false, true});
 
-  if (ISA_ == "AArch64") {
+  if (ISA_ == ISA::AArch64) {
     expectations_["Core"].addChild(
         expectations_.create<uint64_t, true>("Vector-Length", 512));
     expectations_["Core"]["Vector-Length"].setValueSet(
@@ -318,7 +325,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // Register-Set
   expectations_.addChild(expectations_.create("Register-Set"));
-  if (ISA_ == "AArch64") {
+  if (ISA_ == ISA::AArch64) {
     expectations_["Register-Set"].addChild(
         expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
@@ -343,7 +350,7 @@ void ModelConfig::setExpectations(bool isDefault) {
         expectations_.create<uint64_t, true>("Matrix-Count", 1));
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint64_t>(
         1, UINT16_MAX);
-  } else if (ISA_ == "rv64") {
+  } else if (ISA_ == ISA::RV64) {
     expectations_["Register-Set"].addChild(
         expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
@@ -515,9 +522,9 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // Get the upper bound of what the opcode value can be based on the ISA
   uint64_t maxOpcode = 0;
-  if (ISA_ == "AArch64") {
+  if (ISA_ == ISA::AArch64) {
     maxOpcode = arch::aarch64::Opcode::AArch64_INSTRUCTION_LIST_END;
-  } else if (ISA_ == "rv64") {
+  } else if (ISA_ == ISA::RV64) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }
   expectations_["Ports"]["*"].addChild(expectations_.create<uint64_t, true>(
@@ -849,7 +856,7 @@ void ModelConfig::postValidation() {
 ryml::Tree ModelConfig::getConfig() { return configTree_; }
 
 void ModelConfig::createGroupMapping() {
-  if (ISA_ == "AArch64") {
+  if (ISA_ == ISA::AArch64) {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
@@ -938,7 +945,7 @@ void ModelConfig::createGroupMapping() {
                      "STORE_SME",
                      "ALL",
                      "NONE"};
-  } else if (ISA_ == "rv64") {
+  } else if (ISA_ == ISA::RV64) {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",

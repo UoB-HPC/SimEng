@@ -19,6 +19,9 @@
 namespace simeng {
 namespace config {
 
+/** Enum representing the possible ISAs. */
+enum ISA { AArch64, RV64 };
+
 // Forward declaration for SimInfo.
 class SimInfo;
 
@@ -37,7 +40,7 @@ class ModelConfig {
   ryml::Tree getConfig();
 
   /** Re-generate the default config file based on the passed isa. */
-  void reGenerateDefault(std::string isa);
+  void reGenerateDefault(ISA isa);
 
   /** Append/replace config options within the held config file. */
   void addConfigOptions(std::string config);
@@ -86,7 +89,7 @@ class ModelConfig {
   /** The ISA currently being simulated. Various config options rely on the
    * knowledge of the ISA under simulation thus a variable is used to keep track
    * of its value. */
-  std::string ISA_ = "AArch64";
+  ISA ISA_ = ISA::AArch64;
 
   /** Whether the config file was created from default values. */
   bool isDefault_ = true;
