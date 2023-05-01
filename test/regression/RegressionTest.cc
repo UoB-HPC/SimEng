@@ -6,7 +6,7 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -33,10 +33,10 @@ void RegressionTest::run(const char* source, const char* triple,
   generateConfig();
   // Due to SimInfo being static, we need to reset the architectural register
   // file each time the config file is updated
-  simeng::SimInfo::resetArchRegs();
+  simeng::config::SimInfo::resetArchRegs();
 
-  const size_t memorySize = simeng::SimInfo::getValue<size_t>(
-      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
+  const size_t memorySize = simeng::config::SimInfo::getValue<size_t>(
+      simeng::config::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
 
   // Initialise the simulation memory
   memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);

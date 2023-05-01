@@ -4,11 +4,12 @@
 #include <string>
 
 #include "simeng/Instruction.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/RegisterFileSet.hh"
-#include "simeng/yaml/ryml.hh"
+#include "simeng/config/ModelConfig.hh"
+#include "simeng/config/yaml/ryml.hh"
 
 namespace simeng {
+namespace config {
 
 #define DEFAULT_STR "Default"
 
@@ -41,9 +42,9 @@ class SimInfo {
 
   /** A function to generate a default config file based on a passed ISA. */
   static void generateDefault(ISA isa) {
-    if (isa == ISA::AArch64)
+    if (isa == config::ISA::AArch64)
       getInstance()->mdlCnf_.reGenerateDefault("AArch64");
-    else if (isa == ISA::RV64)
+    else if (isa == config::ISA::RV64)
       getInstance()->mdlCnf_.reGenerateDefault("rv64");
 
     // Replace the validated config with the new default config
@@ -122,7 +123,7 @@ class SimInfo {
   /** Create a model config from a passed YAML file path. */
   void makeConfig(std::string path) {
     // Recreate the model config instance from the YAML file path
-    mdlCnf_ = simeng::ModelConfig(path);
+    mdlCnf_ = simeng::config::ModelConfig(path);
     // Update the validated config file
     validatedConfig_ = mdlCnf_.getConfig();
     extractValues();
@@ -135,7 +136,7 @@ class SimInfo {
     std::string isa;
     validatedConfig_["Core"]["ISA"] >> isa;
     if (isa == "AArch64") {
-      isa_ = ISA::AArch64;
+      isa_ = config::ISA::AArch64;
       // Define system registers
       sysRegisterEnums_ = {arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
                            arm64_sysreg::ARM64_SYSREG_FPCR,
@@ -160,7 +161,7 @@ class SimInfo {
           {256, ZAsize},    // Matrix (Each row is a register)
       };
     } else if (isa == "rv64") {
-      isa_ = ISA::RV64;
+      isa_ = config::ISA::RV64;
       // Define system registers
       sysRegisterEnums_ = {};
       // Initialise architectural reg structures
@@ -176,13 +177,13 @@ class SimInfo {
     std::string mode;
     validatedConfig_["Core"]["Simulation-Mode"] >> mode;
     if (mode == "emulation") {
-      mode_ = simMode::emulation;
+      mode_ = config::simMode::emulation;
       modeStr_ = "Emulation";
     } else if (mode == "inorderpipelined") {
-      mode_ = simMode::inorder;
+      mode_ = config::simMode::inorder;
       modeStr_ = "In-Order Pipelined";
     } else if (mode == "outoforder") {
-      mode_ = simMode::outoforder;
+      mode_ = config::simMode::outoforder;
       modeStr_ = "Out-of-Order";
     }
 
@@ -196,7 +197,7 @@ class SimInfo {
     // relies on SVL), it is possible that if the config was to change the
     // register quantities would be incorrect. This function provides a way to
     // reset the Architectural register structure.
-    if (isa_ == ISA::AArch64) {
+    if (isa_ == config::ISA::AArch64) {
       uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
       // Set the size of SME ZA in bytes by dividing the SVL by 8
       uint16_t ZAbits;
@@ -210,7 +211,7 @@ class SimInfo {
           {8, numSysRegs},  // System
           {256, ZAsize},    // Matrix (Each row is a register)
       };
-    } else if (isa_ == ISA::RV64) {
+    } else if (isa_ == config::ISA::RV64) {
       uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
       archRegStruct_ = {
           {8, 32},          // General purpose
@@ -225,7 +226,7 @@ class SimInfo {
 
   /** The ModelConfig instance used to create and maintain the model config
    * file. */
-  simeng::ModelConfig mdlCnf_;
+  simeng::config::ModelConfig mdlCnf_;
 
   /** The path of the model config file. Defaults to "Default". */
   std::string configFilePath_ = "Default";
@@ -250,4 +251,6 @@ class SimInfo {
   /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
 };
+
+}  // namespace config
 }  // namespace simeng

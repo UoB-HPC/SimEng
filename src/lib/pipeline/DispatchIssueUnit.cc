@@ -17,7 +17,7 @@ DispatchIssueUnit::DispatchIssueUnit(
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator) {
-  ryml::Tree config = SimInfo::getConfig();
+  ryml::Tree config = config::SimInfo::getConfig();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
@@ -30,8 +30,9 @@ DispatchIssueUnit::DispatchIssueUnit(
     auto reservation_station = config["Reservation-Stations"][i];
     // Create ReservationStation struct to be stored
     ReservationStation rs = {
-        SimInfo::getValue<uint16_t>(reservation_station["Size"]),
-        SimInfo::getValue<uint16_t>(reservation_station["Dispatch-Rate"]),
+        config::SimInfo::getValue<uint16_t>(reservation_station["Size"]),
+        config::SimInfo::getValue<uint16_t>(
+            reservation_station["Dispatch-Rate"]),
         0,
         {}};
     // Resize rs port attribute to match what's defined in config file
@@ -39,8 +40,8 @@ DispatchIssueUnit::DispatchIssueUnit(
     for (size_t j = 0; j < reservation_station["Port-Nums"].num_children();
          j++) {
       // Iterate over issue ports in config
-      uint16_t issue_port =
-          SimInfo::getValue<uint16_t>(reservation_station["Port-Nums"][j]);
+      uint16_t issue_port = config::SimInfo::getValue<uint16_t>(
+          reservation_station["Port-Nums"][j]);
       rs.ports[j].issuePort = issue_port;
       // Add port mapping entry, resizing vector if needed
       if ((issue_port + 1) > portMapping_.size()) {

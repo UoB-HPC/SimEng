@@ -3,7 +3,7 @@
 #include "../MockInstruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 

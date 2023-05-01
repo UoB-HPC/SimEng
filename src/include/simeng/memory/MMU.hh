@@ -9,7 +9,7 @@
 #include "simeng/Instruction.hh"
 #include "simeng/OS/Constants.hh"
 #include "simeng/Port.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MemPacket.hh"
 #include "simeng/memory/MemRequests.hh"
 #include "simeng/span.hh"

@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string>
 
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/version.hh"
 
 namespace simeng {

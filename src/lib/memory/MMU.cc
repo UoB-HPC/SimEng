@@ -8,26 +8,27 @@ namespace simeng {
 namespace memory {
 
 MMU::MMU(VAddrTranslator fn)
-    : cacheLineWidth_(SimInfo::getValue<uint64_t>(
-          SimInfo::getConfig()["Memory-Hierarchy"]["Cache-Line-Width"])),
+    : cacheLineWidth_(config::SimInfo::getValue<uint64_t>(
+          config::SimInfo::getConfig()["Memory-Hierarchy"]
+                                      ["Cache-Line-Width"])),
       translate_(fn) {
   // Initialise Memory bandwidth and request limits
   // TODO: replace with cleaner solution in the ModelConfig itself
-  ryml::Tree config = SimInfo::getConfig();
-  if (SimInfo::getValue<std::string>(config["Core"]["Simulation-Mode"]) !=
-      "emulation") {
-    loadBandwidth_ = SimInfo::getValue<uint64_t>(
+  ryml::Tree config = config::SimInfo::getConfig();
+  if (config::SimInfo::getValue<std::string>(
+          config["Core"]["Simulation-Mode"]) != "emulation") {
+    loadBandwidth_ = config::SimInfo::getValue<uint64_t>(
         config["LSQ-Memory-Interface"]["Load-Bandwidth"]);
-    storeBandwidth_ = SimInfo::getValue<uint64_t>(
+    storeBandwidth_ = config::SimInfo::getValue<uint64_t>(
         config["LSQ-Memory-Interface"]["Store-Bandwidth"]);
-    requestLimit_ = SimInfo::getValue<uint64_t>(
+    requestLimit_ = config::SimInfo::getValue<uint64_t>(
         config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]);
-    loadRequestLimit_ = SimInfo::getValue<uint64_t>(
+    loadRequestLimit_ = config::SimInfo::getValue<uint64_t>(
         config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]);
-    storeRequestLimit_ = SimInfo::getValue<uint64_t>(
+    storeRequestLimit_ = config::SimInfo::getValue<uint64_t>(
         config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]);
-    exclusiveRequests_ =
-        SimInfo::getValue<bool>(config["LSQ-Memory-Interface"]["Exclusive"]);
+    exclusiveRequests_ = config::SimInfo::getValue<bool>(
+        config["LSQ-Memory-Interface"]["Exclusive"]);
   } else {
     // If core model is emulation, remove all bandwidth and request limits. This
     // ensures single cycle processing of each instruction.
@@ -336,6 +337,7 @@ bool MMU::checkLLSCMonitor(const std::shared_ptr<Instruction>& strCond) {
 
 void MMU::updateLLSCMonitor(const MemoryAccessTarget& storeTarget) {
   if (cacheLineMonitor_.second == true) {
+    std::cerr << "MONIOTRED" << std::endl;
     // Assume unaligned access, need to check both possible cache lines
     if (cacheLineMonitor_.first.count(
             downAlign(storeTarget.vaddr, cacheLineWidth_)) == 1) {

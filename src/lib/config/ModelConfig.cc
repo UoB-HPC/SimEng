@@ -1,13 +1,14 @@
 #define RYML_SINGLE_HDR_DEFINE_NOW
-#include "simeng/ModelConfig.hh"
+#include "simeng/config/ModelConfig.hh"
 
 #include <cmath>
 
 #include "arch/aarch64/InstructionMetadata.hh"
 #include "arch/riscv/InstructionMetadata.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
+namespace config {
 
 /** RISC-V opcodes. Each opcode represents a unique RISC-V operation. */
 namespace RISCVOpcode {
@@ -963,4 +964,5 @@ void ModelConfig::createGroupMapping() {
   }
 }
 
+}  // namespace config
 }  // namespace simeng

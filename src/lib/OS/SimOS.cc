@@ -37,7 +37,7 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
   syscallHandler_ = std::make_shared<SyscallHandler>(this, mem);
 
   // Create the Special Files directory if indicated to do so in Config file
-  if (SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
+  if (config::SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
 }
 
 void SimOS::tick() {
@@ -227,22 +227,22 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   }
 
   // Set Initial state of registers
-  if (SimInfo::getISA() == ISA::RV64) {
+  if (config::SimInfo::getISA() == config::ISA::RV64) {
     // Set the stack pointer register
     processes_[tid]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
         processes_[tid]->context_.sp, 8};
-  } else if (SimInfo::getISA() == ISA::AArch64) {
+  } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     // Set the stack pointer register
     processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
                                      [31] = {processes_[tid]->context_.sp, 8};
     // Set the system registers
-    auto sysRegVec = SimInfo::getSysRegVec();
+    auto sysRegVec = config::SimInfo::getSysRegVec();
     auto dczItr = std::find(sysRegVec.begin(), sysRegVec.end(),
                             arm64_sysreg::ARM64_SYSREG_DCZID_EL0);
-    assert(
-        dczItr != sysRegVec.end() &&
-        "[SimEng:SimOS] DCZID_EL0 was not defined in the System Register "
-        "Vector. Please ensure it is included in SimInfo::sysRegisterEnums_.");
+    assert(dczItr != sysRegVec.end() &&
+           "[SimEng:SimOS] DCZID_EL0 was not defined in the System Register "
+           "Vector. Please ensure it is included in "
+           "config::SimInfo::sysRegisterEnums_.");
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
     processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
@@ -308,10 +308,10 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
   // Update stack pointer
   newProc->context_.sp = stackPtr;
-  if (SimInfo::getISA() == ISA::RV64) {
+  if (config::SimInfo::getISA() == config::ISA::RV64) {
     newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
         stackPtr, 8};
-  } else if (SimInfo::getISA() == ISA::AArch64) {
+  } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
     // Set appropriate system register to TLS value.
@@ -445,10 +445,11 @@ void SimOS::createSpecialFileDirectory() const {
 uint64_t SimOS::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS (Dynamic
   // voltage and frequency scaling).
-  return ticks_ / ((SimInfo::getValue<float>(
-                        SimInfo::getConfig()["Core"]["Clock-Frequency"]) *
-                    1e9) /
-                   1e9);
+  return ticks_ /
+         ((config::SimInfo::getValue<float>(
+               config::SimInfo::getConfig()["Core"]["Clock-Frequency"]) *
+           1e9) /
+          1e9);
 }
 
 void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {

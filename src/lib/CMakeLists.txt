@@ -14,6 +14,7 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
+    config/ModelConfig.cc
     OS/MemRegion.cc
     OS/Process.cc
     OS/SimOS.cc
@@ -49,7 +50,6 @@ set(SIMENG_SOURCES
     CoreInstance.cc
     Elf.cc
     GenericPredictor.cc
-    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc

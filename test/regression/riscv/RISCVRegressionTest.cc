@@ -16,10 +16,10 @@ void RISCVRegressionTest::run(const char* source) {
 // TODO create yaml
 void RISCVRegressionTest::generateConfig() const {
   // Re-generate the default config for the rv64 ISA
-  simeng::SimInfo::generateDefault(simeng::ISA::RV64);
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::RV64);
 
   // Add the base additional RISCV test suite config options
-  simeng::SimInfo::addToConfig(RISCV_ADDITIONAL_CONFIG);
+  simeng::config::SimInfo::addToConfig(RISCV_ADDITIONAL_CONFIG);
   std::string mode;
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -33,10 +33,11 @@ void RISCVRegressionTest::generateConfig() const {
       break;
   }
 
-  simeng::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode + "}}");
+  simeng::config::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode +
+                                       "}}");
 
   // Add the test specific config options
-  simeng::SimInfo::addToConfig(std::get<1>(GetParam()));
+  simeng::config::SimInfo::addToConfig(std::get<1>(GetParam()));
 }
 
 std::unique_ptr<simeng::arch::Architecture>
@@ -47,7 +48,7 @@ RISCVRegressionTest::createArchitecture() const {
 std::unique_ptr<simeng::pipeline::PortAllocator>
 RISCVRegressionTest::createPortAllocator() const {
   // Extract the port arrangement from the config file
-  ryml::Tree config = simeng::SimInfo::getConfig();
+  ryml::Tree config = simeng::config::SimInfo::getConfig();
   std::vector<std::vector<uint16_t>> portArrangement(
       config["Ports"].num_children());
   for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -55,7 +56,7 @@ RISCVRegressionTest::createPortAllocator() const {
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
       portArrangement[i].push_back(
-          simeng::SimInfo::getValue<uint16_t>(config_groups[j]));
+          simeng::config::SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(

@@ -9,7 +9,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/OS/SimOS.hh"
-#include "simeng/SimInfo.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/version.hh"
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   // Determine if a config file has been supplied.
   if (argc > 1) {
     // Set the global config file to one at the file path defined.
-    simeng::SimInfo::setConfig(argv[1]);
+    simeng::config::SimInfo::setConfig(argv[1]);
 
     // Determine if an executable has been supplied
     if (argc > 2) {
@@ -86,11 +86,11 @@ int main(int argc, char** argv) {
   }
 
   // Get the memory size from the YAML config file.
-  const size_t memorySize = simeng::SimInfo::getValue<size_t>(
-      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]["Size"]);
-  const uint16_t latency = simeng::SimInfo::getValue<uint16_t>(
-      simeng::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]
-                                  ["Access-Latency"]);
+  const size_t memorySize = simeng::config::SimInfo::getValue<size_t>(
+      simeng::config::SimInfo::getConfig()["Simulation-Memory"]["Size"]);
+  const uint16_t latency = simeng::config::SimInfo::getValue<uint16_t>(
+      simeng::config::SimInfo::getConfig()["Memory-Hierarchy"]["DRAM"]
+                                          ["Access-Latency"]);
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -126,13 +126,13 @@ int main(int argc, char** argv) {
   OS.registerCore(core);
 
   // Output general simulation details
-  std::cout << "[SimEng] Running in " << simeng::SimInfo::getSimModeStr()
-            << " mode" << std::endl;
+  std::cout << "[SimEng] Running in "
+            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << simeng::SimInfo::getConfigPath()
-            << std::endl;
+  std::cout << "[SimEng] Config file: "
+            << simeng::config::SimInfo::getConfigPath() << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;

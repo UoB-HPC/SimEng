@@ -15,29 +15,30 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            arch::sendSyscallToHandler handleSyscall, ryml::Tree config)
     : mmu_(mmu),
       isa_(isa),
-      registerFileSet_(SimInfo::getArchRegStruct()),
+      registerFileSet_(config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToIssueBuffer_(1, nullptr),
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(config["Execution-Units"].num_children() +
-                           SimInfo::getValue<int>(
+                           config::SimInfo::getValue<int>(
                                config["Pipeline-Widths"]["LSQ-Completion"]),
                        {1, nullptr}),
       loadStoreQueue_(
-          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
-          SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]), mmu_,
+          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
+          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]),
+          mmu_,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
-           SimInfo::getValue<size_t>(
+           config::SimInfo::getValue<size_t>(
                config["Pipeline-Widths"]["LSQ-Completion"])},
           [this](auto regs, auto values) {
             issueUnit_.forwardOperands(regs, values);
           },
           simeng::pipeline::CompletionOrder::INORDER),
-      fetchUnit_(
-          fetchToDecodeBuffer_, mmu_,
-          SimInfo::getValue<uint16_t>(config["Fetch"]["Fetch-Block-Size"]), isa,
-          branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, mmu_,
+                 config::SimInfo::getValue<uint16_t>(
+                     config["Fetch"]["Fetch-Block-Size"]),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToIssueBuffer_, branchPredictor),
       staging_(),
       issueUnit_(
@@ -57,7 +58,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
     std::vector<uint16_t> blockingGroups = {};
     for (ryml::NodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
-      blockingGroups.push_back(SimInfo::getValue<uint16_t>(grp));
+      blockingGroups.push_back(config::SimInfo::getValue<uint16_t>(grp));
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -67,11 +68,12 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         [this](auto insn) { loadStoreQueue_.startLoad(insn); },
         [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },
         [this](auto insn) { raiseException(insn); }, branchPredictor,
-        SimInfo::getValue<bool>(config["Execution-Units"][i]["Pipelined"]),
+        config::SimInfo::getValue<bool>(
+            config["Execution-Units"][i]["Pipelined"]),
         blockingGroups, false);
   }
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(SimInfo::getISA());
+  exceptionHandlerFactory(config::SimInfo::getISA());
 }
 
 void Core::tick() {
@@ -501,7 +503,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
-  auto regFileStruc = SimInfo::getArchRegStruct();
+  auto regFileStruc = config::SimInfo::getArchRegStruct();
   newContext.regFile.resize(regFileStruc.size());
   for (size_t i = 0; i < regFileStruc.size(); i++) {
     newContext.regFile[i].resize(regFileStruc[i].quantity);
