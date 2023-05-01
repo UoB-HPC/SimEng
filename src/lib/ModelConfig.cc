@@ -464,7 +464,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Memory-Hierarchy"]["DRAM"].addChild(
       expectations_.create<uint64_t>("Size", 104857600));
   expectations_["Memory-Hierarchy"]["DRAM"]["Size"].setValueBounds<uint64_t>(
-      simMemLowerBound, UINT16_MAX);
+      simMemLowerBound, UINT64_MAX);
 
   // LSQ-Memory-Interface
   expectations_.addChild(expectations_.create("LSQ-Memory-Interface"));
