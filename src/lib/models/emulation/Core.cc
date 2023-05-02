@@ -326,7 +326,7 @@ std::map<std::string, std::string> Core::getStats() const {
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
   currentTID_ = newContext.TID;
-  programByteLength_ = newContext.progByteLen;
+  programByteLength_ = newContext.dataSectionEnd;
   pc_ = newContext.pc;
   for (size_t type = 0; type < newContext.regFile.size(); type++) {
     for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
@@ -355,7 +355,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc = pc_;
-  // progByteLen will not change in process so do not need to set it
+  // dataSectionEnd will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();
   newContext.regFile.resize(regFileStruc.size());
