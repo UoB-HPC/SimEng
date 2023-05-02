@@ -1,4 +1,5 @@
 set(TEST_SOURCES
+    ConfigTest.cc
     VirtMemTests.cc
     ../testenv/FilesEnv.cc
     )
