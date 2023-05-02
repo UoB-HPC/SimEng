@@ -415,7 +415,8 @@ void Process::initContext(
   context_.TID = TID_;
   context_.pc = entryPoint_;
   context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
+  // Remove padding (equal to PAGE_SIZE) from heapStart to get .data end
+  context_.dataSectionEnd = getHeapStart() - PAGE_SIZE;
   // Initialise all registers to 0
   size_t numTypes = regFileStructure.size();
   context_.regFile.reserve(numTypes);

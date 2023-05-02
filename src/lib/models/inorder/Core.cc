@@ -382,7 +382,7 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
   currentTID_ = newContext.TID;
-  fetchUnit_.setProgramLength(newContext.progByteLen);
+  fetchUnit_.setProgramLength(newContext.dataSectionEnd);
   fetchUnit_.updatePC(newContext.pc);
   for (size_t type = 0; type < newContext.regFile.size(); type++) {
     for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
@@ -419,7 +419,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
       exceptionGenerated_
           ? exceptionGeneratingInstruction_->getInstructionAddress() + 4
           : fetchUnit_.getPC();
-  // progByteLen will not change in process so do not need to set it
+  // dataSectionEnd will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();
   newContext.regFile.resize(regFileStruc.size());
