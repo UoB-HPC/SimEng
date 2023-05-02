@@ -7,13 +7,18 @@
 namespace simeng {
 namespace memory {
 
-MMU::MMU(VAddrTranslator fn) : translate_(fn) {}
+MMU::MMU(VAddrTranslator fn)
+    : cacheLineWidth_(
+          Config::get()["Memory-Hierarchy"]["Cache-Line-Width"].as<uint64_t>()),
+      translate_(fn) {}
 
 void MMU::requestRead(const MemoryAccessTarget& target,
-                      const uint64_t requestId) {
+                      const uint64_t requestId, bool isReserved) {
   pendingDataRequests_++;
-  bufferRequest(memory::MemPacket::createReadRequest(target.vaddr, target.size,
-                                                     requestId));
+  std::unique_ptr<memory::MemPacket> req = memory::MemPacket::createReadRequest(
+      target.vaddr, target.size, requestId);
+  if (isReserved) req->markAsResLoad();
+  bufferRequest(std::move(req));
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
@@ -77,12 +82,31 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
+    // If Load-Reserved, add new Monitor for cache line
+    if (request->isResLoad()) {
+      cacheLineMonitor_.push_back(paddr);
+    }
+    if (request->isWrite()) {
+      auto itr =
+          std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(), paddr);
+      if (itr != cacheLineMonitor_.end()) {
+        // For all stores, remove any present monitor
+        cacheLineMonitor_.erase(itr);
+      } else if (request->isCondStore()) {
+        // Monitor expired, fail conditional store
+        request->markAsIgnored();
+      }
+    }
   }
 
   port_->send(std::move(request));
 }
 
-void MMU::setTid(uint64_t tid) { tid_ = tid; }
+void MMU::setTid(uint64_t tid) {
+  tid_ = tid;
+  // TID only updated on context switch, must clear cache line monitor
+  cacheLineMonitor_.clear();
+}
 
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();

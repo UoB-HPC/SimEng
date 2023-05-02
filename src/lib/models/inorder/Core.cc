@@ -244,7 +244,8 @@ void Core::processException() {
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
-    mmu_->requestRead(target, instruction->getSequenceId());
+    mmu_->requestRead(target, instruction->getSequenceId(),
+                      instruction->isLoadReserved());
   }
 
   // NOTE: This model only supports zero-cycle data memory models, and will not

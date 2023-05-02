@@ -39,7 +39,7 @@ void MemPacket::turnIntoWriteResponse() {
     std::exit(1);
   }
   // Turn into response, maintaining other metadata
-  metadata_ = metadata_ & 0b01111111;
+  metadata_ = metadata_ & 0b0111111111111111;
 }
 
 void MemPacket::turnIntoReadResponse(std::vector<char> payload) {
@@ -50,7 +50,7 @@ void MemPacket::turnIntoReadResponse(std::vector<char> payload) {
     std::exit(1);
   }
   // Turn into response, maintaining other metadata
-  metadata_ = metadata_ & 0b01111111;
+  metadata_ = metadata_ & 0b0111111111111111;
   payload_ = payload;
 }
 
