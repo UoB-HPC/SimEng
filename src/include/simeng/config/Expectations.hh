@@ -246,10 +246,16 @@ class expectationNode {
     std::string retStr = "Success";
     // Value existence check
     if (!node.has_val()) {
-      // If the node is optional, fill in the missing config value with held
-      // default value
+      // If the node is optional, fill in the missing config
+      // value with held default value
       if (isOptional_) {
-        node << getByType<T>(defaultValue_);
+        // If the node is a sequence, add the default value to a new child
+        if (isSequence_) {
+          node |= ryml::SEQ;
+          node = node.append_child() << getByType<T>(defaultValue_);
+        } else {
+          node << getByType<T>(defaultValue_);
+        }
       } else {
         retStr = "has no value";
         return retStr;
