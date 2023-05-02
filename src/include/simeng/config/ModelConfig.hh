@@ -39,13 +39,19 @@ class ModelConfig {
   /** A getter function to retrieve the validated and formatted config file. */
   ryml::Tree getConfig();
 
-  /** Re-generate the default config file based on the passed isa. */
-  void reGenerateDefault(ISA isa);
+  /** Re-generate the default config file based on the passed isa. A force bool
+   * is used to force the re-generation of the default regardless of rpeviously
+   * set ISA. */
+  void reGenerateDefault(ISA isa, bool force = false);
 
   /** Append/replace config options within the held config file. */
   void addConfigOptions(std::string config);
 
  private:
+  /** A utility function to pass configTree_ through validation checks and
+   * output any errors where necessary. */
+  void validate();
+
   /** A utility function to construct a default config file and pass it through
    * validation and post-validation logic. */
   void generateDefault();
