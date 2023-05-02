@@ -34,7 +34,7 @@ TEST(OSTest, CreateSimOS) {
   // Check CPU context
   // PC is always 0 for processes assembled by SimEng
   EXPECT_EQ(proc->context_.pc, 0);
-  EXPECT_GT(proc->context_.progByteLen, 0);
+  EXPECT_GT(proc->context_.dataSectionEnd, 0);
   EXPECT_GT(proc->context_.sp, 0);
   EXPECT_GT(proc->context_.regFile.size(), 0);
   // Check Initial Process' state

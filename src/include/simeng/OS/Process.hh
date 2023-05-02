@@ -40,7 +40,7 @@ struct cpuContext {
   uint64_t pc;
   // SP only used in process construction. Actual value lives in regFile
   uint64_t sp;
-  uint64_t progByteLen;
+  uint64_t dataSectionEnd;
   std::vector<std::vector<RegisterValue>> regFile;
 };
 

@@ -396,7 +396,7 @@ void Process::initContext(
   context_.TID = TID_;
   context_.pc = entryPoint_;
   context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
+  context_.dataSectionEnd = getHeapStart();
   // Initialise all registers to 0
   size_t numTypes = regFileStructure.size();
   context_.regFile.reserve(numTypes);
