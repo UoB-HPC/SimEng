@@ -43,6 +43,18 @@ ModelConfig::ModelConfig(std::string path) {
   // Set the expectations of the config file and validate the config values
   // within the passed config file
   setExpectations();
+  validate();
+}
+
+ModelConfig::ModelConfig() {
+  // Generate the default config file
+  generateDefault();
+}
+
+void ModelConfig::validate() {
+  missing_.clear();
+  invalid_.clear();
+
   recursiveValidate(expectations_, configTree_.rootref());
   postValidation();
 
@@ -63,19 +75,12 @@ ModelConfig::ModelConfig(std::string path) {
   }
   // Stop execution if the config file didn't pass checks
   if (missingStr.length() || invalidStr.length()) exit(1);
-  return;
 }
 
-ModelConfig::ModelConfig() {
-  // Generate the default config file
-  generateDefault();
-}
-
-void ModelConfig::reGenerateDefault(ISA isa) {
+void ModelConfig::reGenerateDefault(ISA isa, bool force) {
   // Only re-generate the default config file if it hasn't already been
   // generated for the specified ISA
-  if (ISA_ == isa && isDefault_) return;
-
+  if (!force && (ISA_ == isa && isDefault_)) return;
   ISA_ = isa;
   generateDefault();
 }
@@ -90,8 +95,7 @@ void ModelConfig::generateDefault() {
   // validate it to ensure correctness for the simulation
   setExpectations(true);
   constructDefault(expectations_, configTree_.root_id());
-  recursiveValidate(expectations_, configTree_.rootref());
-  postValidation();
+  validate();
 }
 
 void ModelConfig::constructDefault(expectationNode expectations,
@@ -151,8 +155,8 @@ void ModelConfig::addConfigOptions(std::string config) {
   // Add/replace the passed config options in `configTree_` and re-run
   // validation/checks
   recursiveAdd(tree.rootref(), configTree_.root_id());
-  recursiveValidate(expectations_, configTree_.rootref());
-  postValidation();
+  setExpectations();
+  validate();
 }
 
 void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
@@ -162,7 +166,8 @@ void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
     // If the config option doesn't already exists, add it. Otherwise get the
     // reference to it
     if (!configTree_.ref(id).has_child(chld.key())) {
-      ref = configTree_.ref(id).append_child() << chld.key();
+      std::string key = std::string(chld.key().data(), chld.key().size());
+      ref = configTree_.ref(id).append_child() << ryml::key(key);
       // Set any appropriate ryml::NodeRef types
       if (chld.is_map()) {
         ref |= ryml::MAP;
@@ -657,8 +662,8 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
           std::string result = chld.validateConfigNode(grndChld);
           if (result != "Success")
             invalid_ << "\t- "
-                     << hierarchyString + ":" + nodeKey + ":" +
-                            std::to_string(idx) + " " + result + "\n";
+                     << hierarchyString + nodeKey + ":" + std::to_string(idx) +
+                            " " + result + "\n";
           idx++;
         }
       } else {
@@ -678,11 +683,6 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
       // config option is optional, a default value will be injected,
       // otherwise the validation will fail
       ryml::NodeRef rymlChld = node.append_child() << ryml::key(nodeKey);
-      // Set the new ryml::NodeRef to be a sequence and give it a child node
-      if (chld.isSequence()) {
-        rymlChld |= ryml::SEQ;
-        rymlChld = rymlChld.append_child();
-      }
       std::string result = chld.validateConfigNode(rymlChld);
       if (result != "Success")
         invalid_ << "\t- " << hierarchyString + nodeKey + " " + result + "\n";
@@ -699,7 +699,7 @@ void ModelConfig::postValidation() {
   configTree_["CPU-Info"]["Core-Count"] >> coreCount;
   if (!((packageCount <= coreCount) && (coreCount % packageCount == 0))) {
     invalid_ << "\t- Package-Count must be a Less-than or equal to Core-Count, "
-                "and Core-Count must be divisible by Package-Count.";
+                "and Core-Count must be divisible by Package-Count\n";
   }
 
   // Convert all instruction group strings to their corresponding group
@@ -754,6 +754,13 @@ void ModelConfig::postValidation() {
 
   // Ensure all execution ports have an associated reservation station and
   // convert port strings to their associated port indexes
+  if (configTree_["Ports"].num_children() !=
+      configTree_["Execution-Units"].num_children()) {
+    invalid_ << "\t- The number of execution units ("
+             << configTree_["Execution-Units"].num_children()
+             << ") must match the number of ports ("
+             << configTree_["Ports"].num_children() << ")\n";
+  }
   std::vector<std::string> portnames;
   std::unordered_map<std::string, uint16_t> portIndexes;
   uint16_t idx = 0;

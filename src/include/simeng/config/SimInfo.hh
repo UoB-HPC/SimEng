@@ -40,11 +40,11 @@ class SimInfo {
   }
 
   /** A function to generate a default config file based on a passed ISA. */
-  static void generateDefault(ISA isa) {
+  static void generateDefault(ISA isa, bool force = false) {
     if (isa == config::ISA::AArch64)
-      getInstance()->mdlCnf_.reGenerateDefault(ISA::AArch64);
+      getInstance()->mdlCnf_.reGenerateDefault(ISA::AArch64, force);
     else if (isa == config::ISA::RV64)
-      getInstance()->mdlCnf_.reGenerateDefault(ISA::RV64);
+      getInstance()->mdlCnf_.reGenerateDefault(ISA::RV64, force);
 
     // Replace the validated config with the new default config
     getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
