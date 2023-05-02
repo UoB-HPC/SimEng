@@ -171,7 +171,7 @@ void Core::tick() {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
-        mmu_->requestRead(target, uop->getSequenceId());
+        mmu_->requestRead(target, uop->getSequenceId(), uop->isLoadReserved());
         // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }

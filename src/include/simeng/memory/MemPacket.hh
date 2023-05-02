@@ -12,22 +12,23 @@ namespace simeng {
 namespace memory {
 
 /** Enum representing the different types of MemPackets. */
-enum MemPacketType : uint8_t {
-  READ_REQUEST = 0b11000000,
-  READ_RESPONSE = 0b01000000,
-  WRITE_REQUEST = 0b10000000,
-  WRITE_RESPONSE = 0b00000000,
+enum MemPacketType : uint16_t {
+  READ_REQUEST = 0b1100000000000000,
+  READ_RESPONSE = 0b0100000000000000,
+  WRITE_REQUEST = 0b1000000000000000,
+  WRITE_RESPONSE = 0b0000000000000000,
 };
 
 /** Masks used for manipulating the metadata associated with a MemPacket. */
-static constexpr uint8_t AccessTypeMask = 0b10000000;
-static constexpr uint8_t PacketTypeMask = 0b01000000;
-static constexpr uint8_t FaultMask = 0b00100000;
-static constexpr uint8_t IgnoreMask = 0b00010000;
-static constexpr uint8_t PayloadMask = 0b00001000;
-static constexpr uint8_t InstrReadMask = 0b00000100;
-static constexpr uint8_t UntimedMemAccessMask = 0b00000010;
-static constexpr uint8_t CondStoreMask = 0b00000001;
+static constexpr uint16_t AccessTypeMask = 0b1000000000000000;
+static constexpr uint16_t PacketTypeMask = 0b0100000000000000;
+static constexpr uint16_t FaultMask = 0b0010000000000000;
+static constexpr uint16_t IgnoreMask = 0b0001000000000000;
+static constexpr uint16_t PayloadMask = 0b0000100000000000;
+static constexpr uint16_t InstrReadMask = 0b0000010000000000;
+static constexpr uint16_t UntimedMemAccessMask = 0b0000001000000000;
+static constexpr uint16_t CondStoreMask = 0b0000000100000000;
+static constexpr uint16_t ResLoadMask = 0b0000000100000000;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -77,7 +78,12 @@ class MemPacket {
   /** Function which indicates whether a MemPacket contains a payload.  */
   inline bool hasPayload() const { return metadata_ & PayloadMask; }
 
+  /** Function which indicates whether a MemPacket is for a conditional Store.
+   */
   inline bool isCondStore() const { return metadata_ & CondStoreMask; }
+
+  /** Function which indicates whether a MemPacket is for a reserved load. */
+  inline bool isResLoad() const { return metadata_ & ResLoadMask; }
 
   /** Function used to mark a MemPacket as ignored. */
   inline void markAsIgnored() { metadata_ = metadata_ | IgnoreMask; }
@@ -91,7 +97,11 @@ class MemPacket {
   /** Function used to mark a MemPacket to do untimed memory access. */
   inline void markAsUntimed() { metadata_ = metadata_ | UntimedMemAccessMask; }
 
+  /** Function used to mark a MemPacket as a conditional store. */
   inline void markAsCondStore() { metadata_ = metadata_ | CondStoreMask; }
+
+  /** Function used to mark a MemPacket as a reserved load. */
+  inline bool markAsResLoad() const { return metadata_ | ResLoadMask; }
 
   /** Function to return the data assosciated with a MemPacket. */
   std::vector<char>& payload() { return payload_; }
@@ -133,8 +143,9 @@ class MemPacket {
    * 6th bit indicates whether a MemPacket reads an instruction (1) or not (0).
    * 7th bit indicates whether an untimed (1) or timed (0) memory access occurs.
    * 8th bit indicates whether a MemPacket is (1) a conditional-str or not (0).
+   * 9th bit indicates whether a MemPacket is (1) a reserved load or not (0).
    */
-  uint8_t metadata_ = 0;
+  uint16_t metadata_ = 0;
 
   /** Payload assosciate with a MemPacket. */
   std::vector<char> payload_;

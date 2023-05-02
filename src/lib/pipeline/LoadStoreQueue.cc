@@ -494,7 +494,8 @@ void LoadStoreQueue::tick() {
             // Request a read from the memory interface if the requestQueue_
             // entry represents a read
             if (!isStore) {
-              mmu_->requestRead(req, itInsn->insn->getSequenceId());
+              mmu_->requestRead(req, itInsn->insn->getSequenceId(),
+                                itInsn->insn->isLoadReserved());
             }
 
             // Remove processed address from queue

@@ -5,11 +5,13 @@
 #include <memory>
 #include <queue>
 
+#include "simeng/Config.hh"
 #include "simeng/OS/Constants.hh"
 #include "simeng/Port.hh"
 #include "simeng/memory/MemPacket.hh"
 #include "simeng/memory/MemRequests.hh"
 #include "simeng/span.hh"
+#include "simeng/util/Math.hh"
 
 typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
 
@@ -29,7 +31,8 @@ class MMU {
   /** Queue a read request from the supplied target location.
    * The caller can optionally provide an ID that will be attached to completed
    * read results. */
-  void requestRead(const MemoryAccessTarget& target, const uint64_t requestId);
+  void requestRead(const MemoryAccessTarget& target, const uint64_t requestId,
+                   bool isReserved = false);
 
   /** Queue a write request of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
@@ -86,6 +89,12 @@ class MMU {
 
   /** TID of the process currently communicating with this MMU. */
   uint64_t tid_ = 0;
+
+  /** Vector to keep track of the current monitored cache lines. */
+  std::vector<uint64_t> cacheLineMonitor_;
+
+  /** Width of a cache line. */
+  const uint64_t cacheLineWidth_;
 
   /** Callback function which invokes the OS for translation on
    * TLB misses. */
