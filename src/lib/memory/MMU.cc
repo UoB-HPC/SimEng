@@ -84,17 +84,33 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     request->paddr_ = paddr;
     // If Load-Reserved, add new Monitor for cache line
     if (request->isResLoad()) {
-      cacheLineMonitor_.push_back(paddr);
-    }
-    if (request->isWrite()) {
+      cacheLineMonitor_.push_back(downAlign(paddr, cacheLineWidth_));
+    } else if (request->isCondStore()) {
+      // If monitor exists, clear it and proceed. Else, fail store
       auto itr =
           std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(), paddr);
       if (itr != cacheLineMonitor_.end()) {
-        // For all stores, remove any present monitor
         cacheLineMonitor_.erase(itr);
-      } else if (request->isCondStore()) {
-        // Monitor expired, fail conditional store
+      } else {
         request->markAsIgnored();
+      }
+    } else if (request->isWrite()) {
+      // Check if write requests overlaps any open cache line monitors. If yes,
+      // remove monitors to invalidate them.
+      uint64_t clStart = downAlign(paddr, cacheLineWidth_);
+      // Unaligned requests could cover 2 cache lines
+      uint64_t clEnd = downAlign(paddr + request->size_, cacheLineWidth_);
+      auto itr = std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(),
+                           clStart);
+      if (itr != cacheLineMonitor_.end()) {
+        cacheLineMonitor_.erase(itr);
+      }
+      if (clStart != clEnd) {
+        itr = std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(),
+                        clEnd);
+        if (itr != cacheLineMonitor_.end()) {
+          cacheLineMonitor_.erase(itr);
+        }
       }
     }
   }
