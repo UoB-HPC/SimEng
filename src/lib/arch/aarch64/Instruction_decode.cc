@@ -495,13 +495,17 @@ void Instruction::decode() {
 
     // Identify Load-Reserved instructions (aka Load-Link / Load-Locked)
     if (metadata.opcode == Opcode::AArch64_LDAXRW ||
-        metadata.opcode == Opcode::AArch64_LDAXRX) {
+        metadata.opcode == Opcode::AArch64_LDAXRX ||
+        metadata.opcode == Opcode::AArch64_LDXRW ||
+        metadata.opcode == Opcode::AArch64_LDXRX) {
       isLoadReserved_ = true;
     }
 
     // Identify Store-Conditional instructions
     if (metadata.opcode == Opcode::AArch64_STLXRW ||
-        metadata.opcode == Opcode::AArch64_STLXRX) {
+        metadata.opcode == Opcode::AArch64_STLXRX ||
+        metadata.opcode == Opcode::AArch64_STXRW ||
+        metadata.opcode == Opcode::AArch64_STXRX) {
       isStoreCond_ = true;
     }
 
