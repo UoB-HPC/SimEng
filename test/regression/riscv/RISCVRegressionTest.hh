@@ -8,7 +8,7 @@
   ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
    "Floating-Point-Count: 90}, L1-Data-Memory: {Interface-Type: Fixed}, "      \
    "L1-Instruction-Memory: {Interface-Type: Flat}, Ports: {'0': {Portname: "   \
-   "Port 0, Instruction-Group-Support: [INT, LOAD, STORE, BRANCH]}}}")
+   "0, Instruction-Group-Support: [INT, LOAD, STORE, BRANCH]}}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
