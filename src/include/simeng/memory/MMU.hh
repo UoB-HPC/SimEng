@@ -32,16 +32,17 @@ class MMU {
    * The caller can optionally provide an ID that will be attached to completed
    * read results. */
   void requestRead(const MemoryAccessTarget& target, const uint64_t requestId,
-                   bool isReserved = false);
+                   const uint64_t instructionID, bool isReserved = false);
 
   /** Queue a write request of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
-                    const uint64_t requestId, bool isConditional = false);
+                    const uint64_t requestId, const uint64_t instructionID,
+                    bool isConditional = false);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
   void requestInstrRead(const MemoryAccessTarget& target,
-                        const uint64_t requestId);
+                        const uint64_t requestId, const uint64_t instructionID);
 
   /** Retrieve all completed data read requests. */
   const span<MemoryReadResult> getCompletedReads() const;
@@ -70,6 +71,14 @@ class MMU {
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
 
+  /** Updates the local cache line monitor to enforce correct LL/SC behaviour.
+   */
+  void updateLLSCMonitor(const std::unique_ptr<MemPacket>& request);
+
+  /** Removes all cache line monitors that have been added via a speculated
+   * reserved-load instruction. */
+  void flushLLSCMonitor(const uint64_t instructionID);
+
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
@@ -90,8 +99,12 @@ class MMU {
   /** TID of the process currently communicating with this MMU. */
   uint64_t tid_ = 0;
 
-  /** Vector to keep track of the current monitored cache lines. */
-  std::vector<uint64_t> cacheLineMonitor_;
+  // Given a single monitor per core, we model "weak" LL/SC support, as is the
+  // case in the majority of hardware.
+  /** The current monitored cache line, and the instructionID of the
+   * instruction. that created them.
+   * Pair = {address of cache line, instructionID} */
+  std::pair<uint64_t, uint64_t> cacheLineMonitor_ = {};
 
   /** Width of a cache line. */
   const uint64_t cacheLineWidth_;

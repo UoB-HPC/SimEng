@@ -80,7 +80,7 @@ TEST_F(PipelineFetchUnitTest, Tick) {
       .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
 
   // Prefetch instructions from memory
-  mmu->requestInstrRead({0, 16}, 0);
+  mmu->requestInstrRead({0, 16}, 0, 0);
 
   fetchUnit.tick();
 

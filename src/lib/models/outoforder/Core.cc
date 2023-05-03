@@ -238,6 +238,8 @@ void Core::flushIfNeeded() {
       eu.purgeFlushed();
     }
 
+    mmu_->flushLLSCMonitor(lowestInsnId);
+
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
@@ -287,6 +289,7 @@ void Core::handleException() {
   for (auto& eu : executionUnits_) {
     eu.purgeFlushed();
   }
+  mmu_->flushLLSCMonitor(exceptionGeneratingInstruction_->getSequenceId());
 
   exceptionHandler_->registerException(exceptionGeneratingInstruction_);
   processException();
@@ -367,7 +370,7 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0);
+                       0, 0);
   }
 }
 
