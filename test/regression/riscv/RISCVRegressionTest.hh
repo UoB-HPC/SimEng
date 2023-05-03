@@ -7,7 +7,7 @@
 #define RISCV_ADDITIONAL_CONFIG                                                \
   ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
    "Floating-Point-Count: 90}, Memory-Hierarchy: {Cache-Line-Width: 256, "     \
-   "DRAM: {Size: 500000}}, Ports: {'0': {Portname: Port 0, "                   \
+   "DRAM: {Size: 500000}}, Ports: {'0': {Portname: 0, "                        \
    "Instruction-Group-Support: [INT, LOAD, STORE, BRANCH]}}}")
 
 /** A helper function to convert the supplied parameters of
