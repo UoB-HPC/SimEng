@@ -20,7 +20,10 @@ namespace config {
 
 /** An enum containing all supported data types that can be expected of a config
  * option. */
-enum ExpectedType { Bool, Float, Integer, String, UInteger, Valueless };
+enum ExpectedType { Bool, Double, Float, Integer, String, UInteger, Valueless };
+
+/** String to represent a wildcard node key. */
+const std::string wildcard = "*";
 
 /** A class to hold the expectations of a specific config option. Each class
  * is considered to be one node of a tree-like structure which maps onto the
@@ -35,7 +38,7 @@ enum ExpectedType { Bool, Float, Integer, String, UInteger, Valueless };
  * that held in the `ExpectedType` enum. */
 class expectationNode {
   using dataTypeVariant =
-      std::variant<bool, float, int64_t, std::string, uint64_t>;
+      std::variant<bool, double, float, int64_t, std::string, uint64_t>;
 
  public:
   expectationNode(){};
@@ -128,6 +131,8 @@ class expectationNode {
     switch (index) {
       case ExpectedType::Bool:
         return "bool";
+      case ExpectedType::Double:
+        return "double";
       case ExpectedType::Float:
         return "float";
       case ExpectedType::Integer:
@@ -188,6 +193,8 @@ class expectationNode {
       switch (type_) {
         case ExpectedType::Bool:
           return validateConfigNodeWithType<bool>(node);
+        case ExpectedType::Double:
+          return validateConfigNodeWithType<double>(node);
         case ExpectedType::Float:
           return validateConfigNodeWithType<float>(node);
         case ExpectedType::Integer:
@@ -253,10 +260,12 @@ class expectationNode {
 
     if (definedBounds_) {
       // Check for value between bounds
-      if (getByType<T>(expectedBounds_.first) > nodeVal ||
-          getByType<T>(expectedBounds_.second) < nodeVal) {
+      if (getByType<T>(expectedBounds_.first) > nodeVal) {
         node >> retStr;
-        retStr = " not in bounds";
+        retStr += " less than lower bound";
+      } else if (getByType<T>(expectedBounds_.second) < nodeVal) {
+        node >> retStr;
+        retStr += " greater than upper bound";
       }
     }
 
@@ -273,7 +282,7 @@ class expectationNode {
     for (size_t chld = 0; chld < nodeChildren_.size(); chld++) {
       if (nodeChildren_[chld].getKey() == childKey)
         return nodeChildren_[chld];
-      else if (nodeChildren_[chld].getKey() == "*")
+      else if (nodeChildren_[chld].getKey() == wildcard)
         wildIndex = chld;
     }
 
@@ -291,7 +300,7 @@ class expectationNode {
   /** Constructor for expectationNode instances. */
   expectationNode(std::string key, ExpectedType type, bool optional)
       : nodeKey_(key), type_(type), isOptional_(optional) {
-    if (nodeKey_ == "*") isWild_ = true;
+    if (nodeKey_ == wildcard) isWild_ = true;
   }
 
   /** The key of this node used for indexing the tree-like expectationNode
