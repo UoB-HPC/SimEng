@@ -8,9 +8,8 @@
   ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
    "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
    "128, Matrix-Count: 2}, Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: "   \
-   "{Size: 500000}}, Ports: {'0': {Portname: Port 0, "                         \
-   "Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, "        \
-   "BRANCH, SME]}}}")
+   "{Size: 500000}}, Ports: {'0': {Portname: 0, Instruction-Group-Support: "   \
+   "[INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME]}}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
@@ -67,7 +66,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
 inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     CoreType type) {
   std::vector<std::tuple<CoreType, std::string>> coreSVLPairs;
-  for (uint64_t i = 128; i <= 2048; i += 128) {
+  for (uint64_t i = 128; i <= 2048; i *= 2) {
     coreSVLPairs.push_back(std::make_tuple(
         type, "{Core: {Streaming-Vector-Length: " + std::to_string(i) + "}}"));
   }
