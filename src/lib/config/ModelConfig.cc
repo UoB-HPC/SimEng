@@ -104,9 +104,9 @@ void ModelConfig::constructDefault(expectationNode expectations,
   for (const auto& chld : expectations.getChildren()) {
     std::string key = chld.getKey();
     ExpectedType type = chld.getType();
-    // If the key is a wildcard ("*"), then change it to be an appropriate value
+    // If the key is a wildcard , then change it to be an appropriate value
     // in the resultant config file and its type to be valueless
-    if (key == "*") {
+    if (key == wildcard) {
       key = "0";
       type = ExpectedType::Valueless;
     }
@@ -126,6 +126,9 @@ void ModelConfig::constructDefault(expectationNode expectations,
     switch (type) {
       case ExpectedType::Bool:
         node << chld.getDefault<bool>();
+        break;
+      case ExpectedType::Double:
+        node << chld.getDefault<double>();
         break;
       case ExpectedType::Float:
         node << chld.getDefault<float>();
@@ -245,10 +248,30 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Core"].addChild(expectations_.create("Clock-Frequency", 1.f));
   expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f, 10.f);
 
+  // Early check on ["Core"]["Clock-Frequency"] as values are needed to inform
+  // the expected lower bound of the ["Core"]["Timer-Frequency"] value
+  uint64_t tFreqUpperBound = 1000;
+  if (!isDefault) {
+    std::string result =
+        expectations_["Core"]["Clock-Frequency"].validateConfigNode(
+            configTree_["Core"]["Clock-Frequency"]);
+    float cFreq;
+    configTree_["Core"]["Clock-Frequency"] >> cFreq;
+    if (result != "Success") {
+      std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
+                << cFreq << "\" passed in config file due to \"" << result
+                << "\" error. Cannot continue with config validation. Exiting."
+                << std::endl;
+      exit(1);
+    }
+
+    tFreqUpperBound = cFreq * 1000;
+  }
+
   expectations_["Core"].addChild(
       expectations_.create<uint64_t>("Timer-Frequency", 100));
-  expectations_["Core"]["Timer-Frequency"].setValueBounds<uint64_t>(1,
-                                                                    UINT64_MAX);
+  expectations_["Core"]["Timer-Frequency"].setValueBounds<uint64_t>(
+      1, tFreqUpperBound);
 
   expectations_["Core"].addChild(
       expectations_.create("Micro-Operations", false));
@@ -265,8 +288,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Core"].addChild(
         expectations_.create<uint64_t, true>("Streaming-Vector-Length", 512));
     expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
-                              1280, 1408, 1536, 1664, 1792, 1920, 2048});
+        std::vector<uint64_t>{128, 256, 384, 512, 1024, 2048});
   }
 
   // Fetch
@@ -456,16 +478,17 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // Ports
   expectations_.addChild(expectations_.create("Ports"));
-  expectations_["Ports"].addChild(expectations_.create<uint64_t>("*", 0));
+  expectations_["Ports"].addChild(expectations_.create<uint64_t>(wildcard, 0));
 
-  expectations_["Ports"]["*"].addChild(
+  expectations_["Ports"][wildcard].addChild(
       expectations_.create<std::string>("Portname", "0"));
 
-  expectations_["Ports"]["*"].addChild(expectations_.create<std::string, true>(
-      "Instruction-Group-Support", "ALL"));
-  expectations_["Ports"]["*"]["Instruction-Group-Support"].setValueSet(
+  expectations_["Ports"][wildcard].addChild(
+      expectations_.create<std::string, true>("Instruction-Group-Support",
+                                              "ALL"));
+  expectations_["Ports"][wildcard]["Instruction-Group-Support"].setValueSet(
       groupOptions_);
-  expectations_["Ports"]["*"]["Instruction-Group-Support"].setAsSequence();
+  expectations_["Ports"][wildcard]["Instruction-Group-Support"].setAsSequence();
 
   // Get the upper bound of what the opcode value can be based on the ISA
   uint64_t maxOpcode = 0;
@@ -474,11 +497,13 @@ void ModelConfig::setExpectations(bool isDefault) {
   } else if (ISA_ == ISA::RV64) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }
-  expectations_["Ports"]["*"].addChild(expectations_.create<uint64_t, true>(
-      "Instruction-Opcode-Support", maxOpcode));
-  expectations_["Ports"]["*"]["Instruction-Opcode-Support"]
+  expectations_["Ports"][wildcard].addChild(
+      expectations_.create<uint64_t, true>("Instruction-Opcode-Support",
+                                           maxOpcode));
+  expectations_["Ports"][wildcard]["Instruction-Opcode-Support"]
       .setValueBounds<uint64_t>(0, maxOpcode);
-  expectations_["Ports"]["*"]["Instruction-Opcode-Support"].setAsSequence();
+  expectations_["Ports"][wildcard]["Instruction-Opcode-Support"]
+      .setAsSequence();
 
   // Early check on [Ports][*][Portname] as the values are needed to inform
   // the expectations of the [Reservation-Stations][*][Ports] values
@@ -490,7 +515,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     // Get all portnames defined in the config file and ensure they are unique
     for (ryml::NodeRef chld : configTree_["Ports"]) {
       std::string result =
-          expectations_["Ports"]["*"]["Portname"].validateConfigNode(
+          expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
               chld["Portname"]);
       std::string portname;
       chld["Portname"] >> portname;
@@ -517,63 +542,65 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Reservation-Stations
   expectations_.addChild(expectations_.create("Reservation-Stations"));
   expectations_["Reservation-Stations"].addChild(
-      expectations_.create<uint64_t>("*", 0));
+      expectations_.create<uint64_t>(wildcard, 0));
 
-  expectations_["Reservation-Stations"]["*"].addChild(
+  expectations_["Reservation-Stations"][wildcard].addChild(
       expectations_.create<uint64_t>("Size", 32));
-  expectations_["Reservation-Stations"]["*"]["Size"].setValueBounds<uint64_t>(
-      1, UINT16_MAX);
-
-  expectations_["Reservation-Stations"]["*"].addChild(
-      expectations_.create<uint64_t>("Dispatch-Rate", 4));
-  expectations_["Reservation-Stations"]["*"]["Dispatch-Rate"]
+  expectations_["Reservation-Stations"][wildcard]["Size"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
-  expectations_["Reservation-Stations"]["*"].addChild(
+  expectations_["Reservation-Stations"][wildcard].addChild(
+      expectations_.create<uint64_t>("Dispatch-Rate", 4));
+  expectations_["Reservation-Stations"][wildcard]["Dispatch-Rate"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["Reservation-Stations"][wildcard].addChild(
       expectations_.create<std::string>("Ports", "0"));
-  expectations_["Reservation-Stations"]["*"]["Ports"].setValueSet(portnames);
-  expectations_["Reservation-Stations"]["*"]["Ports"].setAsSequence();
+  expectations_["Reservation-Stations"][wildcard]["Ports"].setValueSet(
+      portnames);
+  expectations_["Reservation-Stations"][wildcard]["Ports"].setAsSequence();
 
   // Execution-Units
   expectations_.addChild(expectations_.create("Execution-Units"));
   expectations_["Execution-Units"].addChild(
-      expectations_.create<uint64_t>("*", 0));
+      expectations_.create<uint64_t>(wildcard, 0));
 
-  expectations_["Execution-Units"]["*"].addChild(
+  expectations_["Execution-Units"][wildcard].addChild(
       expectations_.create("Pipelined", true));
-  expectations_["Execution-Units"]["*"]["Pipelined"].setValueSet(
+  expectations_["Execution-Units"][wildcard]["Pipelined"].setValueSet(
       std::vector{false, true});
 
-  expectations_["Execution-Units"]["*"].addChild(
+  expectations_["Execution-Units"][wildcard].addChild(
       expectations_.create<std::string, true>("Blocking-Groups", "NONE"));
-  expectations_["Execution-Units"]["*"]["Blocking-Groups"].setValueSet(
+  expectations_["Execution-Units"][wildcard]["Blocking-Groups"].setValueSet(
       groupOptions_);
-  expectations_["Execution-Units"]["*"]["Blocking-Groups"].setAsSequence();
+  expectations_["Execution-Units"][wildcard]["Blocking-Groups"].setAsSequence();
 
   // Latencies
   expectations_.addChild(expectations_.create<true>("Latencies"));
-  expectations_["Latencies"].addChild(expectations_.create<uint64_t>("*", 0));
+  expectations_["Latencies"].addChild(
+      expectations_.create<uint64_t>(wildcard, 0));
 
-  expectations_["Latencies"]["*"].addChild(
+  expectations_["Latencies"][wildcard].addChild(
       expectations_.create<std::string, true>("Instruction-Groups", "NONE"));
-  expectations_["Latencies"]["*"]["Instruction-Groups"].setValueSet(
+  expectations_["Latencies"][wildcard]["Instruction-Groups"].setValueSet(
       groupOptions_);
-  expectations_["Latencies"]["*"]["Instruction-Groups"].setAsSequence();
+  expectations_["Latencies"][wildcard]["Instruction-Groups"].setAsSequence();
 
-  expectations_["Latencies"]["*"].addChild(
+  expectations_["Latencies"][wildcard].addChild(
       expectations_.create<uint64_t, true>("Instruction-Opcodes", maxOpcode));
-  expectations_["Latencies"]["*"]["Instruction-Opcodes"]
+  expectations_["Latencies"][wildcard]["Instruction-Opcodes"]
       .setValueBounds<uint64_t>(0, maxOpcode);
-  expectations_["Latencies"]["*"]["Instruction-Opcodes"].setAsSequence();
+  expectations_["Latencies"][wildcard]["Instruction-Opcodes"].setAsSequence();
 
-  expectations_["Latencies"]["*"].addChild(
+  expectations_["Latencies"][wildcard].addChild(
       expectations_.create<uint64_t>("Execution-Latency", 1));
-  expectations_["Latencies"]["*"]["Execution-Latency"].setValueBounds<uint64_t>(
-      1, UINT16_MAX);
+  expectations_["Latencies"][wildcard]["Execution-Latency"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
 
-  expectations_["Latencies"]["*"].addChild(
+  expectations_["Latencies"][wildcard].addChild(
       expectations_.create<uint64_t, true>("Execution-Throughput", 1));
-  expectations_["Latencies"]["*"]["Execution-Throughput"]
+  expectations_["Latencies"][wildcard]["Execution-Throughput"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   // CPU-Info
@@ -591,12 +618,11 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["CPU-Info"].addChild(
       expectations_.create<uint64_t, true>("Socket-Count", 1));
-  expectations_["CPU-Info"]["Socket-Count"].setValueBounds<uint64_t>(
-      1, UINT16_MAX);
+  expectations_["CPU-Info"]["Socket-Count"].setValueSet<uint64_t>({1});
 
   expectations_["CPU-Info"].addChild(
       expectations_.create<uint64_t, true>("SMT", 1));
-  expectations_["CPU-Info"]["SMT"].setValueBounds<uint64_t>(1, UINT16_MAX);
+  expectations_["CPU-Info"]["SMT"].setValueSet<uint64_t>({1});
 
   expectations_["CPU-Info"].addChild(
       expectations_.create<float, true>("BogoMIPS", 0.f));
@@ -639,7 +665,7 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
     std::string nodeKey = chld.getKey();
     // If the expectation is a wildcard, then iterate over the associated
     // children in the config option using the same expectation(s)
-    if (nodeKey == "*") {
+    if (nodeKey == wildcard) {
       for (ryml::NodeRef rymlChld : node) {
         // An index value used in case of error
         std::string idx =
