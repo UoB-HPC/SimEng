@@ -45,7 +45,7 @@ void RegressionTest::run(const char* source, const char* triple,
   uint64_t procTID = 1;  // Initial process always has TID = 1
   process_ = OS.getProcess(procTID);
   ASSERT_TRUE(process_->isValid());
-  processMemorySize_ = process_->context_.dataSectionEnd;
+  processMemorySize_ = process_->context_.progByteLen;
 
   // Create the architecture
   architecture_ = createArchitecture();

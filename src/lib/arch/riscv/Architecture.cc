@@ -138,6 +138,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     uop = std::make_shared<Instruction>(*this, metadataCache.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
+    uop->setSequenceId(instrSeqIdCtr_++);
+    uop->setInstructionId(insnIdCtr_++);
     // Return non-zero value to avoid fatal error
     return 1;
   }
@@ -186,8 +188,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop = std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
-  uop->setSequenceId(++instrSeqIdCtr_);
-  uop->setInstructionId(++insnIdCtr_);
+  uop->setSequenceId(instrSeqIdCtr_++);
+  uop->setInstructionId(insnIdCtr_++);
 
   return 4;
 }
