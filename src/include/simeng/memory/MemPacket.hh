@@ -28,7 +28,7 @@ static constexpr uint16_t PayloadMask = 0b0000100000000000;
 static constexpr uint16_t InstrReadMask = 0b0000010000000000;
 static constexpr uint16_t UntimedMemAccessMask = 0b0000001000000000;
 static constexpr uint16_t CondStoreMask = 0b0000000100000000;
-static constexpr uint16_t ResLoadMask = 0b0000000100000000;
+static constexpr uint16_t ResLoadMask = 0b0000000010000000;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -44,8 +44,12 @@ class MemPacket {
   uint16_t size_ = 0;
 
   /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
-   * and data-write requests can have an ID of 0. */
+   * and data-write requests can have an ID of 0.
+   * Is equivalent to the requesting instruction's sequenceID. */
   uint64_t id_ = 0;
+
+  /** The instructionID of the instruction which issued the request. */
+  uint64_t insnId_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
@@ -101,7 +105,7 @@ class MemPacket {
   inline void markAsCondStore() { metadata_ = metadata_ | CondStoreMask; }
 
   /** Function used to mark a MemPacket as a reserved load. */
-  inline bool markAsResLoad() const { return metadata_ | ResLoadMask; }
+  inline void markAsResLoad() { metadata_ = metadata_ | ResLoadMask; }
 
   /** Function to return the data assosciated with a MemPacket. */
   std::vector<char>& payload() { return payload_; }
@@ -115,12 +119,14 @@ class MemPacket {
   /** Static function used to create a read request. */
   static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint16_t size,
-                                                      uint64_t reqId);
+                                                      uint64_t reqId,
+                                                      uint64_t insnId);
 
   /** Static function used to create a write request. */
   static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
                                                        uint16_t size,
                                                        uint64_t reqId,
+                                                       uint64_t insnId,
                                                        std::vector<char> data);
 
   /** Static function used to create a faulty MemPacket. */
@@ -154,11 +160,12 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId);
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
+            uint64_t insnId);
 
   /** Constructor for MemPackets which hold any data. */
   MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
-            std::vector<char> data);
+            uint64_t insnId, std::vector<char> data);
 };
 
 }  // namespace memory

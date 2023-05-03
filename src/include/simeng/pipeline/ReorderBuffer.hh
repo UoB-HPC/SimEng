@@ -81,7 +81,7 @@ class ReorderBuffer {
 
   /** Retrieve the sequence ID associated with the most recently discovered
    * memory order violation. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;

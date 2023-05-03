@@ -48,7 +48,7 @@ TEST(SimpleMemTest, Read) {
   uint8_t dataSize = 10;
   uint64_t addr = 0;
   sMem.sendUntimedData(data, addr, dataSize);
-  auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0);
+  auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0, 0);
   req->paddr_ = addr;
   sMem.requestAccess(req);
   auto res = respRecv.resp->payload();
@@ -58,7 +58,8 @@ TEST(SimpleMemTest, Read) {
 
   addr = 8;
   dataSize = 2;
-  auto req2 = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1);
+  auto req2 =
+      simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1, 1);
   req2->paddr_ = addr;
   sMem.requestAccess(req2);
   auto res2 = respRecv.resp->payload();
@@ -90,7 +91,7 @@ TEST(SimpleMemTest, Write) {
   uint8_t dataSize = 10;
   uint64_t addr = 0;
   auto req =
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data);
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, 0, data);
   req->paddr_ = addr;
   sMem.requestAccess(req);
   auto mem = sMem.getUntimedData(0, dataSize);
@@ -100,7 +101,7 @@ TEST(SimpleMemTest, Write) {
 
   addr = 30;
   auto req2 =
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, data);
+      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, 0, data);
   req2->paddr_ = addr;
   sMem.requestAccess(req2);
   mem = sMem.getUntimedData(addr, dataSize);

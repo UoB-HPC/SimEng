@@ -29,7 +29,7 @@ TEST(FixedLatencyMemoryTest, WriteData) {
   // Should ignore the 7 cycle latency and opt for the interface defined latency
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  mmu->requestWrite(target, value, 0);
+  mmu->requestWrite(target, value, 0, 0);
   EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
@@ -85,7 +85,7 @@ TEST(FixedLatencyMemoryTest, ReadData) {
   // Write a 32-bit value to memory
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  mmu->requestWrite(target, value, 0);
+  mmu->requestWrite(target, value, 0, 0);
   EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
@@ -127,11 +127,11 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
 
   // Create a target such that address + size will overflow
   simeng::memory::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
-  mmu->requestRead(overflowTarget, 1);
+  mmu->requestRead(overflowTarget, 1, 1);
 
   // Create a regular out-of-bounds target
   simeng::memory::MemoryAccessTarget target = {0, 8};
-  mmu->requestRead(target, 2);
+  mmu->requestRead(target, 2, 2);
 
   // Tick once - request should have completed
   mem->tick();

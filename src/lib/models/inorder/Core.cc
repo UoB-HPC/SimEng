@@ -118,6 +118,7 @@ void Core::tick() {
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
     decodeUnit_.purgeFlushed();
+    mmu_->flushLLSCMonitor(executeUnit_.getFlushInsnId());
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -245,6 +246,7 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
     mmu_->requestRead(target, instruction->getSequenceId(),
+                      instruction->getInstructionId(),
                       instruction->isLoadReserved());
   }
 
@@ -274,7 +276,8 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   if (instruction->isStoreData()) {
     const auto data = instruction->getData();
     for (size_t i = 0; i < data.size(); i++) {
-      mmu_->requestWrite(previousAddresses_.front(), data[i], 0);
+      mmu_->requestWrite(previousAddresses_.front(), data[i], 0,
+                         instruction->getInstructionId());
       previousAddresses_.pop();
     }
   }
@@ -364,7 +367,7 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0);
+                       0, 0);
   }
 }
 

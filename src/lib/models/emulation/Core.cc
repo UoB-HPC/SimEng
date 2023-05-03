@@ -114,7 +114,7 @@ void Core::tick() {
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
     memory::MemoryAccessTarget target = {pc_, FETCH_SIZE};
-    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0, 0);
     // Find fetched memory that matches the current PC
     const auto& fetched = mmu_->getCompletedInstrReads();
     size_t fetchIndex;
@@ -171,7 +171,8 @@ void Core::tick() {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
-        mmu_->requestRead(target, uop->getSequenceId(), uop->isLoadReserved());
+        mmu_->requestRead(target, uop->getSequenceId(), uop->getInstructionId(),
+                          uop->isLoadReserved());
         // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }
@@ -217,7 +218,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
-                         true);
+                         uop->getInstructionId(), true);
       inFlightStoreCondReqs_++;
     }
     // Return early as we don't want to write back until we have the response
@@ -227,7 +228,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isStoreData()) {
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
-      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId());
+      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
+                         uop->getInstructionId());
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -325,7 +327,7 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0);
+                       0, 0);
   }
 }
 

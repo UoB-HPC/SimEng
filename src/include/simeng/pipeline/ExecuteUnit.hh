@@ -50,7 +50,7 @@ class ExecuteUnit {
 
   /** Retrieve the sequence ID associated with the most recently discovered
    * misprediction. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Purge flushed instructions from the internal pipeline and clear any active
    * stall, if applicable. */

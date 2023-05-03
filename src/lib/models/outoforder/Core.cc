@@ -194,11 +194,11 @@ void Core::flushIfNeeded() {
   // Check for flush
   bool euFlush = false;
   uint64_t targetAddress = 0;
-  uint64_t lowestSeqId = 0;
+  uint64_t lowestInsnId = 0;
   for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushSeqId() < lowestSeqId)) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
       euFlush = true;
-      lowestSeqId = eu.getFlushSeqId();
+      lowestInsnId = eu.getFlushInsnId();
       targetAddress = eu.getFlushAddress();
     }
   }
@@ -208,10 +208,10 @@ void Core::flushIfNeeded() {
     // Rename/Dispatch)
 
     if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushSeqId() < lowestSeqId)) {
+        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
-      lowestSeqId = reorderBuffer_.getFlushSeqId();
+      lowestInsnId = reorderBuffer_.getFlushInsnId();
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
@@ -227,13 +227,15 @@ void Core::flushIfNeeded() {
     renameToDispatchBuffer_.stall(false);
 
     // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer_.flush(lowestSeqId);
+    reorderBuffer_.flush(lowestInsnId);
     decodeUnit_.purgeFlushed();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
     for (auto& eu : executionUnits_) {
       eu.purgeFlushed();
     }
+
+    mmu_->flushLLSCMonitor(lowestInsnId);
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -283,6 +285,7 @@ void Core::handleException() {
   for (auto& eu : executionUnits_) {
     eu.purgeFlushed();
   }
+  mmu_->flushLLSCMonitor(exceptionGeneratingInstruction_->getSequenceId());
 
   exceptionHandler_->registerException(exceptionGeneratingInstruction_);
   processException();
@@ -364,7 +367,7 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0);
+                       0, 0);
   }
 }
 

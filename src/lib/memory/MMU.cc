@@ -13,31 +13,33 @@ MMU::MMU(VAddrTranslator fn)
       translate_(fn) {}
 
 void MMU::requestRead(const MemoryAccessTarget& target,
-                      const uint64_t requestId, bool isReserved) {
+                      const uint64_t requestId, const uint64_t instructionID,
+                      bool isReserved) {
   pendingDataRequests_++;
   std::unique_ptr<memory::MemPacket> req = memory::MemPacket::createReadRequest(
-      target.vaddr, target.size, requestId);
+      target.vaddr, target.size, requestId, instructionID);
   if (isReserved) req->markAsResLoad();
   bufferRequest(std::move(req));
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data, const uint64_t requestId,
-                       bool isConditional) {
+                       const uint64_t instructionID, bool isConditional) {
   pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
-  std::unique_ptr<MemPacket> req =
-      MemPacket::createWriteRequest(target.vaddr, target.size, requestId, dt);
+  std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
+      target.vaddr, target.size, requestId, instructionID, dt);
   if (isConditional) req->markAsCondStore();
   bufferRequest(std::move(req));
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
-                           uint64_t requestId) {
+                           const uint64_t requestId,
+                           const uint64_t instructionID) {
   std::unique_ptr<memory::MemPacket> insRequest =
-      memory::MemPacket::createReadRequest(target.vaddr, target.size,
-                                           requestId);
+      memory::MemPacket::createReadRequest(target.vaddr, target.size, requestId,
+                                           instructionID);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
   bufferRequest(std::move(insRequest));
@@ -82,37 +84,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
-    // If Load-Reserved, add new Monitor for cache line
-    if (request->isResLoad()) {
-      cacheLineMonitor_.push_back(downAlign(paddr, cacheLineWidth_));
-    } else if (request->isCondStore()) {
-      // If monitor exists, clear it and proceed. Else, fail store
-      auto itr =
-          std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(), paddr);
-      if (itr != cacheLineMonitor_.end()) {
-        cacheLineMonitor_.erase(itr);
-      } else {
-        request->markAsIgnored();
-      }
-    } else if (request->isWrite()) {
-      // Check if write requests overlaps any open cache line monitors. If yes,
-      // remove monitors to invalidate them.
-      uint64_t clStart = downAlign(paddr, cacheLineWidth_);
-      // Unaligned requests could cover 2 cache lines
-      uint64_t clEnd = downAlign(paddr + request->size_, cacheLineWidth_);
-      auto itr = std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(),
-                           clStart);
-      if (itr != cacheLineMonitor_.end()) {
-        cacheLineMonitor_.erase(itr);
-      }
-      if (clStart != clEnd) {
-        itr = std::find(cacheLineMonitor_.begin(), cacheLineMonitor_.end(),
-                        clEnd);
-        if (itr != cacheLineMonitor_.end()) {
-          cacheLineMonitor_.erase(itr);
-        }
-      }
-    }
+    if (!request->isInstrRead()) updateLLSCMonitor(request);
   }
 
   port_->send(std::move(request));
@@ -121,7 +93,38 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
 void MMU::setTid(uint64_t tid) {
   tid_ = tid;
   // TID only updated on context switch, must clear cache line monitor
-  cacheLineMonitor_.clear();
+  cacheLineMonitor_ = {};
+}
+
+void MMU::updateLLSCMonitor(const std::unique_ptr<MemPacket>& request) {
+  // If Load-Reserved, replace Monitored cache line
+  if (request->isResLoad()) {
+    cacheLineMonitor_ = {downAlign(request->paddr_, cacheLineWidth_),
+                         request->insnId_};
+  } else if (request->isCondStore()) {
+    // If monitor exists, clear it and proceed. Else, fail store.
+    if (std::get<0>(cacheLineMonitor_) ==
+        downAlign(request->paddr_, cacheLineWidth_)) {
+      cacheLineMonitor_ = {};
+    } else {
+      request->markAsIgnored();
+    }
+  } else if (request->isWrite()) {
+    // Check if write requests overlaps the cache line monitor. If yes,
+    // remove monitors to invalidate it.
+    if (std::get<0>(cacheLineMonitor_) ==
+            downAlign(request->paddr_, cacheLineWidth_) ||
+        std::get<0>(cacheLineMonitor_) ==
+            downAlign(request->paddr_ + request->size_, cacheLineWidth_)) {
+      cacheLineMonitor_ = {};
+    }
+  }
+}
+
+void MMU::flushLLSCMonitor(const uint64_t instructionID) {
+  if (std::get<1>(cacheLineMonitor_) >= instructionID) {
+    cacheLineMonitor_ = {};
+  }
 }
 
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
@@ -155,7 +158,6 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
            packet->id_});
     }
     if (packet->isCondStore()) {
-      // TODO update when global monitor / atomics support added.
       bool success = true;
       if (packet->isFaulty() || packet->ignore()) {
         success = false;

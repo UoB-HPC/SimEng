@@ -236,7 +236,7 @@ unsigned int ReorderBuffer::getFreeSpace() const {
 
 bool ReorderBuffer::shouldFlush() const { return shouldFlush_; }
 uint64_t ReorderBuffer::getFlushAddress() const { return pc_; }
-uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
+uint64_t ReorderBuffer::getFlushInsnId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;
