@@ -144,6 +144,9 @@ class ReorderBuffer {
 
   /** The conditional store which is in-flight, waiting for its response. */
   std::shared_ptr<Instruction> inFlightCondStr_ = nullptr;
+
+  /** Indicates if the inFlightCondStr_ has completed or not. */
+  bool completedCondStr_ = false;
 };
 
 }  // namespace pipeline
