@@ -277,12 +277,10 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
     conflictionMap_.erase(itSt);
   }
 
-  // Don't pop if conditional Str. Pop happens in `checkCondStore()`.
   if (uop->isStoreCond()) {
     requestedCondStores_.emplace(uop->getSequenceId(), uop);
-  } else {
-    storeQueue_.pop_front();
   }
+  storeQueue_.pop_front();
 
   return violatingLoad_ != nullptr;
 }
@@ -298,15 +296,6 @@ bool LoadStoreQueue::checkCondStore(const uint64_t sequenceId) {
         << std::endl;
     exit(1);
   }
-  if (storeQueue_.front().first->getSequenceId() != sequenceId) {
-    std::cerr
-        << "[SimEng:LoadStoreQueue] SequenceID of conditional-store at the "
-           "front of the ROB is not equal to the Store at the front of the "
-           "StoreQueue."
-        << std::endl;
-    exit(1);
-  }
-  storeQueue_.pop_front();
   completedConditionalStores_.pop();
   return true;
 }

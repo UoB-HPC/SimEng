@@ -74,22 +74,21 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   unsigned int n = 0;
   if (inFlightCondStr_ != nullptr) {
     // Check if conditional store result is ready
-    bool storeCompleted =
-        lsq_.checkCondStore(inFlightCondStr_->getSequenceId());
-    if (storeCompleted) {
-      // Commit destination registers
-      const auto& destinations = inFlightCondStr_->getDestinationRegisters();
-      for (int i = 0; i < destinations.size(); i++) {
-        rat_.commit(destinations[i]);
-      }
-      n++;
-      inFlightCondStr_ = nullptr;
-      // Return early to ensure result is written back to reg file
-      return n;
-    } else {
-      // Wait another cycle and check again
-      return n;
+    if (!completedCondStr_) {
+      completedCondStr_ =
+          lsq_.checkCondStore(inFlightCondStr_->getSequenceId());
+      // Return early to ensure result is written back to reg file when
+      // storeCompleted = true
+      return 0;
     }
+    // Commit destination registers
+    const auto& destinations = inFlightCondStr_->getDestinationRegisters();
+    for (int i = 0; i < destinations.size(); i++) {
+      rat_.commit(destinations[i]);
+    }
+    inFlightCondStr_ = nullptr;
+    completedCondStr_ = false;
+    n++;
   }
 
   for (n; n < maxCommits; n++) {
