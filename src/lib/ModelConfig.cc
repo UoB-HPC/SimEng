@@ -286,40 +286,46 @@ void ModelConfig::validate() {
                         std::vector<bool>{false, true}, ExpectedValue::Bool);
       if (euNode[subFields[1]].IsDefined() &&
           !(euNode[subFields[1]].IsNull())) {
-        // Compile set of blocking groups into a queue
-        std::queue<uint16_t> blockingGroups;
-        for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
-          char bgNum[50];
-          snprintf(bgNum, 50, "Blocking group %zu", j);
-          if (nodeChecker<std::string>(
-                  configFile_[root][i][subFields[1]][j],
-                  (std::string(euNum) + std::string(bgNum)), groupOptions_,
-                  ExpectedValue::String)) {
-            uint16_t mappedGroup =
-                groupMapping_[euNode[subFields[1]][j].as<std::string>()];
-            blockingGroups.push(mappedGroup);
-            configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
-                mappedGroup;
-          }
-        }
-        // Expand set of blocking groups to include those that inherit from the
-        // user defined set
-        uint16_t config_index =
-            configFile_["Execution-Units"][i]["Blocking-Groups"].size();
-        while (blockingGroups.size()) {
-          // Determine if there's any inheritance
-          if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
-              arch::aarch64::groupInheritance.end()) {
-            std::vector<uint16_t> inheritedGroups =
-                arch::aarch64::groupInheritance.at(blockingGroups.front());
-            for (int k = 0; k < inheritedGroups.size(); k++) {
-              blockingGroups.push(inheritedGroups[k]);
-              configFile_["Execution-Units"][i]["Blocking-Groups"]
-                         [config_index] = inheritedGroups[k];
-              config_index++;
+        if (configFile_["Core"]["Simulation-Mode"].as<std::string>() ==
+            "inorderpipelined") {
+          invalid_ << "\t - Execution blocking groups are not compatible with "
+                      "an inorderpipelined Simulation Mode\n";
+        } else {
+          // Compile set of blocking groups into a queue
+          std::queue<uint16_t> blockingGroups;
+          for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
+            char bgNum[50];
+            snprintf(bgNum, 50, "Blocking group %zu", j);
+            if (nodeChecker<std::string>(
+                    configFile_[root][i][subFields[1]][j],
+                    (std::string(euNum) + std::string(bgNum)), groupOptions_,
+                    ExpectedValue::String)) {
+              uint16_t mappedGroup =
+                  groupMapping_[euNode[subFields[1]][j].as<std::string>()];
+              blockingGroups.push(mappedGroup);
+              configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
+                  mappedGroup;
             }
           }
-          blockingGroups.pop();
+          // Expand set of blocking groups to include those that inherit from
+          // the user defined set
+          uint16_t config_index =
+              configFile_["Execution-Units"][i]["Blocking-Groups"].size();
+          while (blockingGroups.size()) {
+            // Determine if there's any inheritance
+            if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
+                arch::aarch64::groupInheritance.end()) {
+              std::vector<uint16_t> inheritedGroups =
+                  arch::aarch64::groupInheritance.at(blockingGroups.front());
+              for (int k = 0; k < inheritedGroups.size(); k++) {
+                blockingGroups.push(inheritedGroups[k]);
+                configFile_["Execution-Units"][i]["Blocking-Groups"]
+                           [config_index] = inheritedGroups[k];
+                config_index++;
+              }
+            }
+            blockingGroups.pop();
+          }
         }
       }
     }
