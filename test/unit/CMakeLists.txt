@@ -13,6 +13,7 @@ set(TEST_SOURCES
     FileDescArrayTest.cc
     GenericPredictorTest.cc
     ISATest.cc
+    LLSCMonitorTest.cc
     OSTest.cc
     RegisterValueTest.cc
     PoolTest.cc
