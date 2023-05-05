@@ -100,13 +100,16 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& ld_addresses = insn->getGeneratedAddresses();
-  // If the completion order is inorder, reserve an entry in completedLoads_ now
-  if (completionOrder_ == completionOrder::INORDER) completedLoads_.push(insn);
-
   if (ld_addresses.size() == 0) {
     // Early execution if not addresses need to be accessed
     insn->execute();
+    completedLoads_.push(insn);
   } else {
+    // If the completion order is inorder, reserve an entry in completedLoads_
+    // now
+    if (completionOrder_ == completionOrder::INORDER)
+      completedLoads_.push(insn);
+
     // Create a speculative entry for the load
     requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
         {{}, insn});
