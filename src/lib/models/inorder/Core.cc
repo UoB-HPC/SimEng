@@ -27,11 +27,12 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<unsigned int>(),
           config["Queue-Sizes"]["Store"].as<unsigned int>(), mmu_,
-          {completionSlots_.data() + config["Execution-Units"].size(), 1},
+          {completionSlots_.data() + config["Execution-Units"].size(),
+           config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
           [this](auto regs, auto values) {
             issueUnit_.forwardOperands(regs, values);
           },
-          simeng::pipeline::scheduleBy::ID,
+          simeng::pipeline::completionOrder::INORDER,
           config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
           config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),

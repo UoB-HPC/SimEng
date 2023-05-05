@@ -21,7 +21,7 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    scheduleBy scheduleCriteria, bool exclusive, uint16_t loadBandwidth,
+    completionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
     uint16_t storeBandwidth, uint16_t permittedRequests,
     uint16_t permittedLoads, uint16_t permittedStores)
     : completionSlots_(completionSlots),
@@ -29,7 +29,7 @@ LoadStoreQueue::LoadStoreQueue(
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       mmu_(mmu),
-      scheduleCriteria_(scheduleCriteria),
+      completionOrder_(completionOrder),
       exclusive_(exclusive),
       loadBandwidth_(loadBandwidth),
       storeBandwidth_(storeBandwidth),
@@ -42,7 +42,7 @@ LoadStoreQueue::LoadStoreQueue(
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    scheduleBy scheduleCriteria, bool exclusive, uint16_t loadBandwidth,
+    completionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
     uint16_t storeBandwidth, uint16_t permittedRequests,
     uint16_t permittedLoads, uint16_t permittedStores)
     : completionSlots_(completionSlots),
@@ -51,7 +51,7 @@ LoadStoreQueue::LoadStoreQueue(
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
       mmu_(mmu),
-      scheduleCriteria_(scheduleCriteria),
+      completionOrder_(completionOrder),
       exclusive_(exclusive),
       loadBandwidth_(loadBandwidth),
       storeBandwidth_(storeBandwidth),
@@ -100,23 +100,20 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& ld_addresses = insn->getGeneratedAddresses();
+  // If the completion order is inorder, reserve an entry in completedLoads_ now
+  if (completionOrder_ == completionOrder::INORDER) completedLoads_.push(insn);
+
   if (ld_addresses.size() == 0) {
     // Early execution if not addresses need to be accessed
     insn->execute();
-    completedLoads_.push(insn);
   } else {
-    // Set the key for the requestLoadQueue_ map based on the set schedule
-    // criteria
-    uint64_t key = 0;
-    if (scheduleCriteria_ == scheduleBy::LATENCY)
-      key = tickCounter_ + insn->getLSQLatency();
-    else if (scheduleCriteria_ == scheduleBy::ID)
-      key = insn->getSequenceId();
-
     // Create a speculative entry for the load
-    requestLoadQueue_[key].push_back({{}, insn});
+    requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
+        {{}, insn});
     // Store a reference to the reqAddresses queue for easy access
-    auto& reqAddrQueue = requestLoadQueue_[key].back().reqAddresses;
+    auto& reqAddrQueue = requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
+                             .back()
+                             .reqAddresses;
     // Store load addresses temporarily so that conflictions are
     // only regsitered once on most recent (program order) store
     std::list<simeng::memory::MemoryAccessTarget> temp_load_addr(
@@ -210,22 +207,17 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
     return false;
   }
 
-  // Set the key for the requestLoadQueue_ map based on the set schedule
-  // criteria
-  uint64_t key = 0;
-  if (scheduleCriteria_ == scheduleBy::LATENCY)
-    key = tickCounter_ + insn->getLSQLatency();
-  else if (scheduleCriteria_ == scheduleBy::ID)
-    key = insn->getSequenceId();
-
-  requestStoreQueue_[key].push_back({{}, insn});
+  requestStoreQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
+      {{}, insn});
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
     mmu_->requestWrite(addresses[i], data[i], insn->getSequenceId());
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
-    requestStoreQueue_[key].back().reqAddresses.push(addresses[i]);
+    requestStoreQueue_[tickCounter_ + insn->getLSQLatency()]
+        .back()
+        .reqAddresses.push(addresses[i]);
   }
 
   // Check all loads that have requested memory
@@ -270,7 +262,9 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
             if (load->isStoreData()) {
               supplyStoreData(load);
             }
-            completedLoads_.push(load);
+            // If the completion order is OoO, add entry to completedLoads_
+            if (completionOrder_ == completionOrder::OUTOFORDER)
+              completedLoads_.push(load);
           }
         }
       }
@@ -524,7 +518,9 @@ void LoadStoreQueue::tick() {
       if (load->isStoreData()) {
         supplyStoreData(load);
       }
-      completedLoads_.push(load);
+      // If the completion order is OoO, add entry to completedLoads_
+      if (completionOrder_ == completionOrder::OUTOFORDER)
+        completedLoads_.push(load);
     }
   }
   mmu_->clearCompletedReads();
@@ -544,6 +540,12 @@ void LoadStoreQueue::tick() {
     if (insn->isFlushed()) {
       completedLoads_.pop();
       continue;
+    }
+
+    // If the load at the front of the queue is yet to execute, continue
+    // processing next cycle
+    if (!insn->hasExecuted()) {
+      break;
     }
 
     // Forward the results

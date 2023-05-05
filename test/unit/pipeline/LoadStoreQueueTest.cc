@@ -50,9 +50,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     connection.connect(port1, port2);
     // Initialise memory to 1s
     memory->sendUntimedData(std::vector<char>(1024, 1), 0, 1024);
-    // Set up sensible return values for the load uop
+    // Set up sensible return values for the load uops
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
     ON_CALL(*loadUop, getGeneratedAddresses())
+        .WillByDefault(Return(addressesSpan));
+    ON_CALL(*loadUop2, isLoad()).WillByDefault(Return(true));
+    ON_CALL(*loadUop2, getGeneratedAddresses())
         .WillByDefault(Return(addressesSpan));
 
     // Set up sensible return values for the store uop
@@ -471,6 +474,67 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
   EXPECT_EQ(violation, false);
 
   queue.tick();
+}
+
+// Test that when the completion order of loads must be inorder, the completion
+// slots are filled in the correct order
+TEST_P(LoadStoreQueueTest, inOrderCompletion) {
+  std::vector<PipelineBuffer<std::shared_ptr<simeng::Instruction>>>
+      completionSlots(2, {1, nullptr});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 2},
+      [](auto registers, auto values) {}, completionOrder::INORDER);
+  loadUop->setSequenceId(0);
+  loadUop2->setSequenceId(1);
+  loadUop->setLSQLatency(3);
+  loadUop2->setLSQLatency(1);
+
+  loadUop->setExecuted(true);
+  loadUop2->setExecuted(true);
+
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+
+  queue.tick();
+  queue.tick();
+  queue.tick();
+  memory->tick();
+  queue.tick();
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 0);
+  EXPECT_EQ(completionSlots[1].getTailSlots()[0]->getSequenceId(), 1);
+}
+
+// Test that when the completion order of loads must be out-of-order, the
+// completion slots are filled in the correct order
+TEST_P(LoadStoreQueueTest, OoOCompletion) {
+  std::vector<PipelineBuffer<std::shared_ptr<simeng::Instruction>>>
+      completionSlots(1, {1, nullptr});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 1},
+      [](auto registers, auto values) {}, completionOrder::OUTOFORDER);
+  loadUop->setSequenceId(0);
+  loadUop2->setSequenceId(1);
+  loadUop->setLSQLatency(3);
+  loadUop2->setLSQLatency(1);
+
+  loadUop->setExecuted(true);
+  loadUop2->setExecuted(true);
+
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+
+  queue.tick();
+  memory->tick();
+  queue.tick();
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 1);
+  queue.tick();
+  memory->tick();
+  queue.tick();
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 0);
 }
 
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,

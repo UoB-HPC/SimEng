@@ -54,6 +54,8 @@ class MockInstruction : public Instruction {
 
   void setLatency(uint16_t cycles) { latency_ = cycles; }
 
+  void setLSQLatency(uint16_t cycles) { lsqExecutionLatency_ = cycles; }
+
   void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
 };
 

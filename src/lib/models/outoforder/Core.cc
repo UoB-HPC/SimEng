@@ -44,7 +44,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          simeng::pipeline::scheduleBy::LATENCY,
+          simeng::pipeline::completionOrder::OUTOFORDER,
           config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
           config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),

@@ -16,9 +16,8 @@ namespace pipeline {
 /** The memory access types which are processed. */
 enum accessType { LOAD = 0, STORE };
 
-/** The instruction attributes that are used to schedule their memory accesses.
- */
-enum scheduleBy { LATENCY = 0, ID };
+/** The order in which instructions can exit this unit. */
+enum completionOrder { INORDER = 0, OUTOFORDER };
 
 /** A requestQueue_ entry. */
 struct requestEntry {
@@ -39,8 +38,9 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      scheduleBy scheduleCriteria = scheduleBy::LATENCY, bool exclusive = false,
-      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
+      completionOrder completionOrder = completionOrder::OUTOFORDER,
+      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
+      uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
@@ -53,8 +53,9 @@ class LoadStoreQueue {
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      scheduleBy scheduleCriteria = scheduleBy::LATENCY, bool exclusive = false,
-      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
+      completionOrder completionOrder = completionOrder::OUTOFORDER,
+      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
+      uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
@@ -179,8 +180,8 @@ class LoadStoreQueue {
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
-  /** The criteria by which a scheduler schedules memory access. */
-  scheduleBy scheduleCriteria_;
+  /** The order in which instructions can be passed to the completion slots. */
+  completionOrder completionOrder_;
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;
