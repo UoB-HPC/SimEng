@@ -521,8 +521,8 @@ void LoadStoreQueue::tick() {
     }
   }
 
-  // Process completed conditional store request
-  // TODO: will not work with conditional-store of a pair of registers
+  // Process completed conditional store request. Assumes one response per
+  // instruction.
   size_t count = 0;
   for (const auto& response : mmu_->getCompletedCondStores()) {
     // Find instruction that requested the memory read
