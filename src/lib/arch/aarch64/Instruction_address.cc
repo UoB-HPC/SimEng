@@ -7,6 +7,17 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+/** NOTE: When implementing LR/SC (aka LL/SC) type instructions which operate on
+ * a pair of registers, you MUST generate a single address with the target being
+ * double the size.
+ * (i.e. for load two 32-bit values, make the target size 64-bit)
+ * This is to ensure the LL/SC functionality in the MMU works correctly for
+ * store-conditional pairs.
+ *
+ * The above assumes addresses for such instructions will be aligned for the
+ * full target (i.e. 64-bit aligned for two 32-bit targets) as per the AArch64
+ * specification. */
+
 void generateContiguousAddresses(
     uint64_t base, uint16_t num, uint8_t size,
     std::vector<simeng::memory::MemoryAccessTarget>& addresses) {

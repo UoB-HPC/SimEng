@@ -65,6 +65,21 @@ void Instruction::SMdisabled() {
   return;
 }
 
+/** NOTE: When implementing LR/SC (aka LL/SC) type instructions which operate on
+ * a pair of registers, only a SINGLE address will have been generates, so you
+ * MUST split the result in the case of loads, or merge the sources in the case
+ * of stores:
+ *  - LOAD x0, x1 --> results[0] = memoryData[0].getAsVector<uint64_t>()[0]
+ *                --> results[1] = memoryData[0].getAsVector<uint64_t>()[1]
+ *  - STR w0, w1  --> memoryData[0] = (results[0] << 32) | results[1]
+ *
+ * This is to ensure the LL/SC functionality in the MMU works correctly for
+ * store-conditional pairs.
+ *
+ * The above assumes addresses for such instructions will be aligned for the
+ * full target (i.e. 64-bit aligned for two 32-bit targets) as per the AArch64
+ * specification. */
+
 void Instruction::execute() {
   assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
