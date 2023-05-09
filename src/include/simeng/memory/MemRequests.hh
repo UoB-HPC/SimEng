@@ -50,38 +50,5 @@ struct CondStoreResult {
   bool successful;
 };
 
-/** A fixed-latency memory interface request. */
-struct FixedLatencyMemoryInterfaceRequest {
-  /** Is this a write request? */
-  bool write;
-
-  /** The memory target to access. */
-  const MemoryAccessTarget target;
-
-  /** The value to write to the target (writes only) */
-  const RegisterValue data;
-
-  /** The cycle count this request will be ready at. */
-  uint64_t readyAt;
-
-  /** A unique request identifier for read operations. */
-  uint64_t requestId;
-
-  /** Construct a write request. */
-  FixedLatencyMemoryInterfaceRequest(const MemoryAccessTarget& target,
-                                     const RegisterValue& data,
-                                     uint64_t readyAt, uint64_t requestId)
-      : write(true),
-        target(target),
-        data(data),
-        readyAt(readyAt),
-        requestId(requestId) {}
-
-  /** Construct a read request. */
-  FixedLatencyMemoryInterfaceRequest(const MemoryAccessTarget& target,
-                                     uint64_t readyAt, uint64_t requestId)
-      : write(false), target(target), readyAt(readyAt), requestId(requestId) {}
-};
-
 }  // namespace memory
 }  // namespace simeng

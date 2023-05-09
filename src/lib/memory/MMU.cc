@@ -100,6 +100,7 @@ void MMU::updateLLSCMonitor(const std::unique_ptr<MemPacket>& request) {
   // If Load-Reserved, add Monitored cache line.
   // Assumes all Load-Reserved accesses are aligned, as per ISA specs
   if (request->isResLoad()) {
+    // TODO: If read is unaligned then open a monitor on both cache lines
     cacheLineMonitor_.emplace(request->insnId_,
                               downAlign(request->paddr_, cacheLineWidth_));
   } else if (request->isCondStore()) {
