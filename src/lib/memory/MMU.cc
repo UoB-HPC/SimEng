@@ -96,15 +96,13 @@ void MMU::setTid(uint64_t tid) {
   cacheLineMonitor_.clear();
 }
 
+/** NOTE: Assumes all Load-Reserved & Store-Conditional accesses are aligned. */
 void MMU::updateLLSCMonitor(const std::unique_ptr<MemPacket>& request) {
   // If Load-Reserved, add Monitored cache line.
-  // Assumes all Load-Reserved accesses are aligned, as per ISA specs
   if (request->isResLoad()) {
-    // TODO: If read is unaligned then open a monitor on both cache lines
     cacheLineMonitor_.emplace(request->insnId_,
                               downAlign(request->paddr_, cacheLineWidth_));
   } else if (request->isCondStore()) {
-    // Assumes all Store-Conditional accesses are aligned, as per ISA specs
     // Find first insnID GT condStore (filter out monitors opened by speculated
     // instructions)
     auto itr = cacheLineMonitor_.upper_bound(request->insnId_);
