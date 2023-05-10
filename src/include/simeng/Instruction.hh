@@ -9,7 +9,7 @@
 #include "simeng/memory/MemRequests.hh"
 #include "simeng/span.hh"
 
-using InstructionException = short;
+using InstructionException = uint8_t;
 
 namespace simeng {
 
@@ -17,11 +17,16 @@ namespace simeng {
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {
  public:
+  /** Destructor */
   virtual ~Instruction(){};
 
-  /** Check whether an exception has been encountered while processing this
-   * instruction. */
-  bool exceptionEncountered() const;
+  // ------ Abstract Functions ------
+
+  /** Early misprediction check; see if it's possible to determine whether the
+   * next instruction address was mispredicted without executing the
+   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * the instruction was mispredicted, and the correct target address. */
+  virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
@@ -45,6 +50,9 @@ class Instruction {
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;
 
+  /** Get this instruction's supported set of ports. */
+  virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
+
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */
   virtual bool canExecute() const = 0;
@@ -52,56 +60,33 @@ class Instruction {
   /** Execute the instruction. */
   virtual void execute() = 0;
 
-  /** Check whether the instruction has executed and has results ready to
-   * write back. */
-  bool hasExecuted() const;
-
-  /** Mark the instruction as ready to commit. */
-  void setCommitReady();
-
-  /** Check whether the instruction has written its values back and is ready to
-   * commit. */
-  bool canCommit() const;
-
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
   virtual span<const memory::MemoryAccessTarget> generateAddresses() = 0;
 
-  /** Provide data from a requested memory address. */
-  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
-
   /** Retrieve previously generated memory addresses. */
   virtual span<const memory::MemoryAccessTarget> getGeneratedAddresses()
       const = 0;
 
+  /** Provide data from a requested memory address. */
+  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
+
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;
 
-  /** Check whether all required data has been supplied. */
-  bool hasAllData() const;
+  /** Update the result register for a conditional store instruction. */
+  virtual void updateCondStoreResult(const bool success) = 0;
 
-  /** Early misprediction check; see if it's possible to determine whether the
-   * next instruction address was mispredicted without executing the
-   * instruction. Returns a {mispredicted, target} tuple representing whether
-   * the instruction was mispredicted, and the correct target address. */
-  virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
+  /** Retrieve the instruction group this instruction belongs to. */
+  virtual uint16_t getGroup() const = 0;
 
-  /** Check for misprediction. */
-  bool wasBranchMispredicted() const;
+  /** Is this a load operation? */
+  virtual bool isLoad() const = 0;
 
-  /** Retrieve branch address. */
-  uint64_t getBranchAddress() const;
-
-  /** Was the branch taken? */
-  bool wasBranchTaken() const;
-
-  /** Retrieve branch type. */
-  virtual BranchType getBranchType() const = 0;
-
-  /** Retrieve a branch offset from the instruction's metadata if known. */
-  virtual int64_t getKnownOffset() const = 0;
+  /** Is this a Load-Reserved operation? */
+  virtual bool isLoadReserved() const = 0;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
@@ -111,8 +96,8 @@ class Instruction {
    * deal with the supply of data to be stored)? */
   virtual bool isStoreData() const = 0;
 
-  /** Is this a load operation? */
-  virtual bool isLoad() const = 0;
+  /** Is this a Store-Conditional operation? */
+  virtual bool isStoreCond() const = 0;
 
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
@@ -126,76 +111,108 @@ class Instruction {
   /** Does this instruction enforce release semantics? */
   virtual bool isRelease() const = 0;
 
-  /** Is this a Load-Reserved operation? */
-  virtual bool isLoadReserved() const = 0;
+  // ------ Defined Functions ------
 
-  /** Is this a Store-Conditional operation? */
-  virtual bool isStoreCond() const = 0;
+  /** Check for misprediction. */
+  bool wasBranchMispredicted() const {
+    assert(executed_ &&
+           "[SimEng:Instruction] Branch misprediction check requires "
+           "instruction to have executed");
+    // Flag as mispredicted if taken state was wrongly predicted, or taken and
+    // predicted target is wrong
+    return (branchTaken_ != prediction_.taken ||
+            (prediction_.target != branchAddress_));
+  }
+
+  /** Check whether an exception has been encountered while processing this
+   * instruction. */
+  bool exceptionEncountered() const { return exceptionEncountered_; }
+
+  /** Check whether the instruction has executed and has results ready to
+   * write back. */
+  bool hasExecuted() const { return executed_; }
+
+  /** Mark the instruction as ready to commit. */
+  void setCommitReady() { canCommit_ = true; }
+
+  /** Check whether the instruction has written its values back and is ready to
+   * commit. */
+  bool canCommit() const { return canCommit_; }
+
+  /** Check whether all required data has been supplied. */
+  bool hasAllData() const { return (dataPending_ == 0); }
+
+  /** Retrieve branch address. */
+  uint64_t getBranchAddress() const { return branchAddress_; }
+
+  /** Was the branch taken? */
+  bool wasBranchTaken() const { return branchTaken_; }
 
   /** Set this instruction's instruction memory address. */
-  void setInstructionAddress(uint64_t address);
+  void setInstructionAddress(uint64_t address) {
+    instructionAddress_ = address;
+  }
 
   /** Get this instruction's instruction memory address. */
-  uint64_t getInstructionAddress() const;
+  uint64_t getInstructionAddress() const { return instructionAddress_; }
 
   /** Supply a branch prediction. */
-  void setBranchPrediction(BranchPrediction prediction);
+  void setBranchPrediction(BranchPrediction prediction) {
+    prediction_ = prediction;
+  }
 
   /** Get a branch prediction. */
-  BranchPrediction getBranchPrediction() const;
+  BranchPrediction getBranchPrediction() const { return prediction_; }
 
   /** Set this instruction's sequence ID. */
-  void setSequenceId(uint64_t seqId);
+  void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
 
   /** Retrieve this instruction's sequence ID. */
-  uint64_t getSequenceId() const;
+  uint64_t getSequenceId() const { return sequenceId_; }
 
   /** Set this instruction's instruction ID. */
-  void setInstructionId(uint64_t insnId);
+  void setInstructionId(uint64_t insnId) { instructionId_ = insnId; }
 
   /** Retrieve this instruction's instruction ID. */
-  uint64_t getInstructionId() const;
+  uint64_t getInstructionId() const { return instructionId_; }
 
   /** Mark this instruction as flushed. */
-  void setFlushed();
+  void setFlushed() { flushed_ = true; }
 
   /** Check whether this instruction has been flushed. */
-  bool isFlushed() const;
-
-  /** Retrieve the instruction group this instruction belongs to. */
-  virtual uint16_t getGroup() const = 0;
+  bool isFlushed() const { return flushed_; }
 
   /** Retrieve the number of cycles this instruction will take to execute. */
-  uint16_t getLatency() const;
+  uint16_t getLatency() const { return latency_; }
 
   /** Retrieve the number of cycles this instruction will take to be prcoessed
    * by the LSQ. */
-  uint16_t getLSQLatency() const;
+  uint16_t getLSQLatency() const { return lsqExecutionLatency_; }
 
   /** Retrieve the number of cycles this instruction will block the unit
    * executing it. */
-  uint16_t getStallCycles() const;
-
-  /** Get this instruction's supported set of ports. */
-  virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
+  uint16_t getStallCycles() const { return stallCycles_; }
 
   /** Is this a micro-operation? */
-  bool isMicroOp() const;
+  bool isMicroOp() const { return isMicroOp_; }
 
   /** Is this the last uop in the possible sequence of decoded uops? */
-  bool isLastMicroOp() const;
+  bool isLastMicroOp() const { return isLastMicroOp_; }
 
   /** Set the micro-operation in an awaiting commit signal state. */
-  void setWaitingCommit();
+  void setWaitingCommit() { waitingCommit_ = true; }
 
   /** Is the micro-operation in an awaiting commit state? */
-  bool isWaitingCommit() const;
+  bool isWaitingCommit() const { return waitingCommit_; }
 
   /** Get arbitrary micro-operation index. */
-  int getMicroOpIndex() const;
+  int getMicroOpIndex() const { return microOpIndex_; }
 
-  /** Update the result register for a conditional store instruction. */
-  virtual void updateCondStoreResult(const bool success) = 0;
+  /** Retrieve branch type. */
+  BranchType getBranchType() const { return branchType_; }
+
+  /** Retrieve a branch target from the instruction's metadata if known. */
+  uint64_t getKnownOffset() const { return knownOffset_; }
 
  protected:
   /** Whether an exception has been encountered. */
