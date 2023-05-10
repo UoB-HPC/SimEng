@@ -154,7 +154,7 @@ void BlockingIssueUnit::tick() {
 void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
                                         const span<RegisterValue>& values) {
   assert(registers.size() == values.size() &&
-         "Mismatched register and value vector sizes");
+         "[SimEng:BlockingIssue] Mismatched register and value vector sizes");
 
   for (size_t i = 0; i < registers.size(); i++) {
     const auto& reg = registers[i];
@@ -164,7 +164,8 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
       auto& uop = issueQueue_.front();
       uop->supplyOperand(dependency_.second, values[i]);
       assert(uop->getSequenceId() == issueQueue_.front()->getSequenceId() &&
-             "Tried to early issue uop not at front of queue");
+             "[SimEng:BlockingIssue] Tried to early issue uop not at front of "
+             "queue");
       // If the uop is now ready to execute, identify whether it can be issued
       // to avoid pipeline bubbles
       if (issueQueue_.front()->canExecute()) {

@@ -183,8 +183,9 @@ class Core : public simeng::Core {
    * issued from based on a defined algorithm. */
   pipeline::PortAllocator& portAllocator_;
 
-  /** A queue of store address uops that have been retired that future store
-   * data uops can use to commit the load in the core's load/store queue unit.
+  /** A queue of store address uops that have been retired. Future store
+   * data uops can use this queue to commit its associated store macro-op in the
+   * core's load/store queue unit.
    */
   std::queue<std::shared_ptr<Instruction>> completedStoreAddrUops_ = {};
 

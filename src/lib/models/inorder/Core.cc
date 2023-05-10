@@ -405,7 +405,8 @@ void Core::retireInstruction(const std::shared_ptr<Instruction>& insn) {
                 insn->getInstructionId() &&
             completedStoreAddrUops_.front()->getMicroOpIndex() ==
                 insn->getMicroOpIndex()) &&
-           "Attempted to complete a store macro-op out of program order");
+           "[SimEng:Core] Attempted to complete a store macro-op out of "
+           "program order");
     loadStoreQueue_.commitStore(completedStoreAddrUops_.front());
     completedStoreAddrUops_.pop();
   }

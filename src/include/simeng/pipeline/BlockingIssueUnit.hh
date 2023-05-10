@@ -23,7 +23,7 @@ namespace pipeline {
 class BlockingIssueUnit {
  public:
   /** Construct an issue unit with references to input/output buffers,
-   * the register file, the port allocator, the and a description of the number
+   * the register file, the port allocator, and a description of the number
    * of physical registers the scoreboard needs to reflect. */
   BlockingIssueUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& input,
@@ -92,7 +92,7 @@ class BlockingIssueUnit {
    * in program-order instruction execution and writeback. */
   std::function<void(const std::shared_ptr<Instruction>&)> recordIssue_;
 
-  /** A reference to the loadt/store queue. */
+  /** A reference to the load/store queue. */
   LoadStoreQueue& lsq_;
 
   /** A function handle called upon exception generation. */
