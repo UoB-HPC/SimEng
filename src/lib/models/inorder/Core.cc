@@ -72,8 +72,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         [this](auto regs, auto values) {
           issueUnit_.forwardOperands(regs, values);
         },
-        [this](auto insn) { handleLoad(insn); },
-        [this](auto insn) { storeData(insn); },
+        [this](auto insn) { loadStoreQueue_.startLoad(insn); },
+        [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },
         [this](auto insn) { raiseException(insn); }, branchPredictor,
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
@@ -99,10 +99,6 @@ void Core::tick() {
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
         issueUnit_.flush();
-        staging_.flush();
-        for (auto& eu : executionUnits_) {
-          eu.flush();
-        }
         status_ = CoreStatus::idle;
         return;
       }
@@ -371,18 +367,6 @@ void Core::processException() {
 
   exceptionGenerated_ = false;
   exceptionRegistered_ = false;
-}
-
-void Core::handleLoad(const std::shared_ptr<Instruction>& insn) {
-  // Start the load in the LSQ
-  loadStoreQueue_.startLoad(insn);
-}
-
-void Core::storeData(const std::shared_ptr<Instruction>& insn) {
-  // Supply the data to be stored to the recently added store address uop
-  // within the LSQ (a check for whether the passed instruction is/contains a
-  // store data uop is done within the supplyStoreData call)
-  loadStoreQueue_.supplyStoreData(insn);
 }
 
 void Core::retireInstruction(const std::shared_ptr<Instruction>& insn) {

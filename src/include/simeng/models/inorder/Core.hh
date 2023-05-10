@@ -86,12 +86,6 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   bool handleException();
 
-  /** Handle execution of a load instruction. */
-  void handleLoad(const std::shared_ptr<Instruction>& insn);
-
-  /** Store data supplied by an instruction to memory. */
-  void storeData(const std::shared_ptr<Instruction>& insn);
-
   /** A function to carry out logic associated with the retirement of a
    * instruction post writeback. */
   void retireInstruction(const std::shared_ptr<Instruction>& insn);
