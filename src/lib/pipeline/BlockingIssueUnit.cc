@@ -105,7 +105,6 @@ void BlockingIssueUnit::tick() {
     // If the issue port has already been issued to this cycle, break and
     // continue issue next cycle
     if (issuePorts_[port].getTailSlots()[0] != nullptr) {
-      input_.stall(true);
       portBusyStalls_++;
       ready = false;
     }
@@ -159,14 +158,14 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
     // front of issue queue
     if (dependent_) {
       auto& uop = issueQueue_.front();
-      for (int idx = 0; idx < dependency_.size(); idx++) {
-        auto dp = dependency_[idx];
-        if (dp.first == reg) {
+      auto dp = dependency_.begin();
+      while (dp != dependency_.end()) {
+        if (dp->first == reg) {
           assert(
               uop->getSequenceId() == issueQueue_.front()->getSequenceId() &&
               "[SimEng:BlockingIssue] Tried to early issue uop not at front of "
               "queue");
-          uop->supplyOperand(dp.second, values[i]);
+          uop->supplyOperand(dp->second, values[i]);
 
           // If the uop is now ready to execute, identify whether it can be
           // issued to avoid pipeline bubbles
@@ -218,9 +217,11 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
           }
 
           // Remove registered dependency
-          dependency_.erase(dependency_.begin() + idx);
+          dp = dependency_.erase(dp);
           // Clear active dependency if all registers have been supplied
           if (dependency_.empty()) dependent_ = false;
+        } else {
+          dp++;
         }
       }
     }
@@ -230,9 +231,12 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
 void BlockingIssueUnit::setRegisterReady(Register reg) {
   scoreboard_[reg.type][reg.tag] = {true, -1};
   // Remove any dependency entries related to the passed register
-  for (int idx = 0; idx < dependency_.size(); idx++) {
-    if (reg == dependency_[idx].first)
-      dependency_.erase(dependency_.begin() + idx);
+  auto dp = dependency_.begin();
+  while (dp != dependency_.end()) {
+    if (reg == dp->first)
+      dp = dependency_.erase(dp);
+    else
+      dp++;
   }
   // Clear active dependency if all registers have been set as ready
   if (dependency_.empty()) dependent_ = false;
