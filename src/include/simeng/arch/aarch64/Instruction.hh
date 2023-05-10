@@ -174,15 +174,33 @@ const uint8_t SYSTEM = 4;
 const uint8_t MATRIX = 5;
 }  // namespace RegisterType
 
+/** The opcodes of simeng aarch64 micro-operations. */
+namespace MicroOpcode {
+const uint8_t OFFSET_IMM = 0;
+const uint8_t OFFSET_REG = 1;
+const uint8_t LDR_ADDR = 2;
+const uint8_t STR_ADDR = 3;
+const uint8_t STR_DATA = 4;
+// INVALID is the default value reserved for non-micro-operation instructions
+const uint8_t INVALID = 255;
+}  // namespace MicroOpcode
+
+/** A struct to group micro-operation information together. */
+struct MicroOpInfo {
+  bool isMicroOp = false;
+  uint8_t microOpcode = MicroOpcode::INVALID;
+  uint8_t dataSize = 0;
+  bool isLastMicroOp = true;
+  int microOpIndex = 0;
+};
+
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */
 struct ExecutionInfo {
   /** The latency for the instruction. */
   uint16_t latency = 1;
-
   /** The execution throughput for the instruction. */
   uint16_t stallCycles = 1;
-
   /** The ports that support the instruction. */
   std::vector<uint16_t> ports = {};
 };
@@ -205,26 +223,6 @@ enum class InstructionException : uint8_t {
   SMZAUpdate,
   ZAdisabled,
   SMdisabled
-};
-
-/** The opcodes of simeng aarch64 micro-operations. */
-namespace MicroOpcode {
-const uint8_t OFFSET_IMM = 0;
-const uint8_t OFFSET_REG = 1;
-const uint8_t LDR_ADDR = 2;
-const uint8_t STR_ADDR = 3;
-const uint8_t STR_DATA = 4;
-// INVALID is the default value reserved for non-micro-operation instructions
-const uint8_t INVALID = 255;
-}  // namespace MicroOpcode
-
-/** A struct to group micro-operation information together. */
-struct MicroOpInfo {
-  bool isMicroOp = false;
-  uint8_t microOpcode = MicroOpcode::INVALID;
-  uint8_t dataSize = 0;
-  bool isLastMicroOp = true;
-  int microOpIndex = 0;
 };
 
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
@@ -354,16 +352,6 @@ class Instruction : public simeng::Instruction {
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
 
-  /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
-  /** The number of source registers this instruction reads from. */
-  uint16_t sourceRegisterCount = 0;
-
-  /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
-  /** The number of destination registers this instruction writes to. */
-  uint16_t destinationRegisterCount = 0;
-
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
   std::vector<RegisterValue> operands;
@@ -375,54 +363,28 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  // Decoding
+  // ------ Decoding ------
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
 
-  /** Set the source registers of the instruction, and create a corresponding
-   * operands vector. Zero register references will be pre-supplied with a value
-   * of 0. */
-  void setSourceRegisters(const std::vector<Register>& registers);
+  /** A vector of source registers. */
+  std::vector<Register> sourceRegisters;
 
-  /** Set the destination registers for the instruction, and create a
-   * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register>& registers);
+  /** The number of source registers this instruction reads from. */
+  uint16_t sourceRegisterCount = 0;
 
-  // Scheduling
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
-  short operandsPending = 0;
+  /** A vector of destination registers. */
+  std::vector<Register> destinationRegisters;
 
-  // Execution
-  /** Generate an ExecutionNotYetImplemented exception. */
-  void executionNYI();
+  /** The number of destination registers this instruction writes to. */
+  uint16_t destinationRegisterCount = 0;
 
-  // Execution
-  /** Generate an EncodingUnallocated exception. */
-  void executionINV();
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t microOpcode_ = MicroOpcode::INVALID;
+  /** Size of data to be stored. */
+  uint8_t dataSize_ = 0;
 
-  // Execution
-  /** Generate an StreamingModeUpdate exception. */
-  void streamingModeUpdated();
-
-  // Execution
-  /** Generate an ZAregisterStatusUpdate exception. */
-  void zaRegisterStatusUpdated();
-
-  // Execution
-  /** Generate an SMZAupdate exception. */
-  void SMZAupdated();
-
-  // Execution
-  /** Generate a ZAdisabled exception. */
-  void ZAdisabled();
-
-  // Execution
-  /** Generate a SMdisabled exception. */
-  void SMdisabled();
-
-  // Instruction Identifiers
   /** Operates on scalar values */
   bool isScalarData_ = false;
   /** Operates on vector values. */
@@ -463,17 +425,49 @@ class Instruction : public simeng::Instruction {
   bool isLoadReserved_ = false;
   /** Is a store-conditional instruction. */
   bool isStoreCond_ = false;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t microOpcode_ = MicroOpcode::INVALID;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t dataSize_ = 0;
 
-  // Memory
+  // ------ Scheduling ------
+  /** The number of operands that have not yet had values supplied. Used to
+   * determine execution readiness. */
+  uint16_t operandsPending = 0;
+
+  // ------ Execution ------
+  /** Extend `value` according to `extendType`, and left-shift the result by
+   * `shift` */
+  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
+
+  /** Extend `value` using extension/shifting rules defined in `op`. */
+  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
+
+  /** Generate an ExecutionNotYetImplemented exception. */
+  void executionNYI();
+
+  /** Generate an EncodingUnallocated exception. */
+  void executionINV();
+
+  /** Generate an StreamingModeUpdate exception. */
+  void streamingModeUpdated();
+
+  /** Generate an ZAregisterStatusUpdate exception. */
+  void zaRegisterStatusUpdated();
+
+  /** Generate an SMZAupdate exception. */
+  void SMZAupdated();
+
+  /** Generate a ZAdisabled exception. */
+  void ZAdisabled();
+
+  /** Generate a SMdisabled exception. */
+  void SMdisabled();
+
+  // ------ Memory ------
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
       const std::vector<memory::MemoryAccessTarget>& addresses);
 
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
   void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
@@ -484,14 +478,6 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  // Execution helpers
-  /** Extend `value` according to `extendType`, and left-shift the result by
-   * `shift` */
-  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
-
-  /** Extend `value` using extension/shifting rules defined in `op`. */
-  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
 };
 
 }  // namespace aarch64
