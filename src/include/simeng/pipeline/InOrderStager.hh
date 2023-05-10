@@ -32,7 +32,7 @@ class InOrderStager {
 
   /** A function to supply the next instruction sequence ID which can be
    * retired. */
-  uint64_t getNextId() const;
+  uint64_t getNextSeqID() const;
 
   /** A function to record and release an instruction sequence ID from the unit
    * due to its retirement from the pipeline. */
@@ -40,7 +40,7 @@ class InOrderStager {
 
   /** A function to remove IDs from the issueOrderBuffer_ which are older than
    * the passed ID the pipeline is being flushed from. */
-  void flush(uint64_t afterSeqId);
+  void flush(uint64_t afterInsnId);
 
   /** A function to clear the issueOrderBuffer_ due to a pipeline flush. */
   void flush();

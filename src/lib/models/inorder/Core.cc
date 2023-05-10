@@ -163,11 +163,11 @@ void Core::flushIfNeeded() {
   // Check for flush
   bool euFlush = false;
   uint64_t targetAddress = 0;
-  uint64_t lowestSeqId = 0;
+  uint64_t lowestInsnId = 0;
   for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushSeqId() < lowestSeqId)) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
       euFlush = true;
-      lowestSeqId = eu.getFlushSeqId();
+      lowestInsnId = eu.getFlushInsnId();
       targetAddress = eu.getFlushAddress();
     }
   }
@@ -180,8 +180,8 @@ void Core::flushIfNeeded() {
     fetchToDecodeBuffer_.fill({});
     decodeUnit_.purgeFlushed();
     decodeToIssueBuffer_.fill(nullptr);
-    issueUnit_.flush(lowestSeqId);
-    staging_.flush(lowestSeqId);
+    issueUnit_.flush(lowestInsnId);
+    staging_.flush(lowestInsnId);
     for (auto& eu : executionUnits_) {
       eu.purgeFlushed();
     }
@@ -189,25 +189,25 @@ void Core::flushIfNeeded() {
 
     // Given instructions can flow out-of-order during execution due to
     // differing latencies, the issue ports need to be cleared conditionally
-    // based on the sequence IDs
+    // based on the instruction IDs
     for (auto& port : issuePorts_) {
       if (port.getHeadSlots()[0] != nullptr &&
-          port.getHeadSlots()[0]->getSequenceId() > lowestSeqId)
+          port.getHeadSlots()[0]->getInstructionId() > lowestInsnId)
         port.getHeadSlots()[0] = nullptr;
       if (port.getTailSlots()[0] != nullptr &&
-          port.getTailSlots()[0]->getSequenceId() > lowestSeqId)
+          port.getTailSlots()[0]->getInstructionId() > lowestInsnId)
         port.getTailSlots()[0] = nullptr;
     }
 
     // Given instructions can flow out-of-order during execution due to
     // differing latencies, the completion slots need to be cleared
-    // conditionally based on the sequence IDs
+    // conditionally based on the instruction IDs
     for (auto& slot : completionSlots_) {
       if (slot.getHeadSlots()[0] != nullptr &&
-          slot.getHeadSlots()[0]->getSequenceId() > lowestSeqId)
+          slot.getHeadSlots()[0]->getInstructionId() > lowestInsnId)
         slot.getHeadSlots()[0] = nullptr;
       if (slot.getTailSlots()[0] != nullptr &&
-          slot.getTailSlots()[0]->getSequenceId() > lowestSeqId)
+          slot.getTailSlots()[0]->getInstructionId() > lowestInsnId)
         slot.getTailSlots()[0] = nullptr;
     }
 
@@ -310,7 +310,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& insn) {
 bool Core::handleException() {
   // Only handle the generated exception if the associated instruction is the
   // next one to be written back
-  if (exceptionGeneratingInstruction_->getSequenceId() > staging_.getNextId())
+  if (exceptionGeneratingInstruction_->getSequenceId() >
+      staging_.getNextSeqID())
     return false;
 
   exceptionHandler_->registerException(exceptionGeneratingInstruction_);

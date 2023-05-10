@@ -158,7 +158,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfterInsnId_ = uop->getInstructionId();
-      flushAfterSeqId_ = uop->getSequenceId();
       // Update the branch misprediction counter
       branchMispredicts_++;
     }
@@ -173,7 +172,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc_; }
 uint64_t ExecuteUnit::getFlushInsnId() const { return flushAfterInsnId_; }
-uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfterSeqId_; }
 
 void ExecuteUnit::purgeFlushed() {
   if (pipeline_.size() == 0) {
@@ -208,51 +206,6 @@ void ExecuteUnit::purgeFlushed() {
   while (itStall != operationsStalled_.end()) {
     auto& entry = *itStall;
     if (entry->isFlushed()) {
-      itStall = operationsStalled_.erase(itStall);
-    } else {
-      itStall++;
-    }
-  }
-
-  if (replace && operationsStalled_.size() > 0) {
-    // Add uop to pipeline
-    auto& uop = operationsStalled_.front();
-    pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
-    pipeline_.back().insn = std::move(uop);
-    operationsStalled_.front() = pipeline_.back().insn;
-  }
-}
-
-void ExecuteUnit::seqIdFlush(uint64_t afterSeqId) {
-  if (pipeline_.size() == 0) {
-    return;
-  }
-
-  // If the newest instruction has been flushed, clear any stalls.
-  if (pipeline_.back().insn->getSequenceId() > afterSeqId) {
-    stallUntil_ = tickCounter_;
-  }
-
-  // Iterate over the pipeline and remove flushed instructions
-  while (!pipeline_.empty()) {
-    if (pipeline_.back().insn->getSequenceId() <= afterSeqId) {
-      break;
-    }
-    pipeline_.pop_back();
-  }
-
-  // If first blocking in-flight instruction is flushed, ensure another
-  // non-flushed stalled instruction takes it place in the pipeline if
-  // available.
-  bool replace = false;
-  if (operationsStalled_.size() > 0 &&
-      operationsStalled_.front()->getSequenceId() > afterSeqId) {
-    replace = true;
-  }
-  auto itStall = operationsStalled_.begin();
-  while (itStall != operationsStalled_.end()) {
-    auto& entry = *itStall;
-    if (entry->getSequenceId() > afterSeqId) {
       itStall = operationsStalled_.erase(itStall);
     } else {
       itStall++;

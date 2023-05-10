@@ -52,17 +52,9 @@ class ExecuteUnit {
    * misprediction. */
   uint64_t getFlushInsnId() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
-   * misprediction. */
-  uint64_t getFlushSeqId() const;
-
   /** Purge flushed instructions from the internal pipeline and clear any active
    * stall, if applicable. */
   void purgeFlushed();
-
-  /** Flush the EU pipeline of any instructions whose sequenceId is greater the
-   * passed ID. */
-  void seqIdFlush(uint64_t afterSeqId);
 
   /** Flushed EU pipeline of any instructions. */
   void flush();
@@ -137,10 +129,6 @@ class ExecuteUnit {
   /** The instruction ID of the youngest instruction that should remain after
    * the current flush. */
   uint64_t flushAfterInsnId_;
-
-  /** The sequence ID of the youngest instruction that should remain after the
-   * current flush. */
-  uint64_t flushAfterSeqId_;
 
   /** The number of times this unit has been ticked. */
   uint64_t tickCounter_ = 0;

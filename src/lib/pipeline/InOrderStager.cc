@@ -23,7 +23,7 @@ bool InOrderStager::canWriteback(uint64_t seqId) const {
   return false;
 }
 
-uint64_t InOrderStager::getNextId() const {
+uint64_t InOrderStager::getNextSeqID() const {
   // Return the next sequence ID that can undergo writeback logic, return -1 if
   // none exist
   if (issueOrderQueue_.size()) return issueOrderQueue_.front()->getSequenceId();
@@ -37,11 +37,11 @@ void InOrderStager::recordRetired(uint64_t seqId) {
   issueOrderQueue_.pop_front();
 }
 
-void InOrderStager::flush(uint64_t afterSeqId) {
+void InOrderStager::flush(uint64_t afterInsnId) {
   // Iterate backwards from the tail of the queue to find and remove entires
   // newer than `afterInsnId`
   while (!issueOrderQueue_.empty()) {
-    if (issueOrderQueue_.back()->getSequenceId() <= afterSeqId) {
+    if (issueOrderQueue_.back()->getInstructionId() <= afterInsnId) {
       break;
     }
     issueOrderQueue_.back()->setFlushed();
