@@ -64,6 +64,10 @@ void BlockingIssueUnit::tick() {
       continue;
     }
 
+    if (dependent_) {
+      break;
+    }
+
     // Register read
     // Identify remaining missing registers and supply values
     auto& sourceRegisters = uop->getOperandRegisters();
@@ -78,11 +82,9 @@ void BlockingIssueUnit::tick() {
         } else {
           // This register isn't ready yet. Stall the unit until the scoreboard
           // bit is released
-          input_.stall(true);
           ready = false;
           dependent_ = true;
-          dependency_ = {reg, i};
-          break;
+          dependency_.push_back({reg, i});
         }
       }
     }
@@ -92,7 +94,6 @@ void BlockingIssueUnit::tick() {
     auto& destinationRegisters = uop->getDestinationRegisters();
     for (const auto& reg : destinationRegisters) {
       if (!scoreboard_[reg.type][reg.tag].first) {
-        input_.stall(true);
         ready = false;
         break;
       }
@@ -114,10 +115,6 @@ void BlockingIssueUnit::tick() {
       portAllocator_.deallocate(port);
       break;
     }
-
-    // Clear any dependencies for this uop
-    dependent_ = false;
-    dependency_ = {};
 
     // Set scoreboard for all destination registers as not ready
     for (const auto& reg : destinationRegisters) {
@@ -160,70 +157,85 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
     const auto& reg = registers[i];
     // If the forwarded register is one depended on, supply value to uop at
     // front of issue queue
-    if (dependent_ && reg == dependency_.first) {
+    if (dependent_) {
       auto& uop = issueQueue_.front();
-      uop->supplyOperand(dependency_.second, values[i]);
-      assert(uop->getSequenceId() == issueQueue_.front()->getSequenceId() &&
-             "[SimEng:BlockingIssue] Tried to early issue uop not at front of "
-             "queue");
-      // If the uop is now ready to execute, identify whether it can be issued
-      // to avoid pipeline bubbles
-      if (issueQueue_.front()->canExecute()) {
-        bool ready = true;
+      for (int idx = 0; idx < dependency_.size(); idx++) {
+        auto dp = dependency_[idx];
+        if (dp.first == reg) {
+          assert(
+              uop->getSequenceId() == issueQueue_.front()->getSequenceId() &&
+              "[SimEng:BlockingIssue] Tried to early issue uop not at front of "
+              "queue");
+          uop->supplyOperand(dp.second, values[i]);
 
-        // Allocate issue port to uop
-        uint16_t port = portAllocator_.allocate(uop->getSupportedPorts());
+          // If the uop is now ready to execute, identify whether it can be
+          // issued to avoid pipeline bubbles
+          if (issueQueue_.front()->canExecute()) {
+            bool ready = true;
 
-        // Query whether port is free
-        if (issuePorts_[port].getTailSlots()[0] == nullptr) {
-          auto& destinationRegisters = uop->getDestinationRegisters();
-          // Query whether the destination registers are ready
-          for (const auto& reg : destinationRegisters) {
-            if (!scoreboard_[reg.type][reg.tag].first) {
+            // Allocate issue port to uop
+            uint16_t port = portAllocator_.allocate(uop->getSupportedPorts());
+
+            // Query whether port is free
+            if (issuePorts_[port].getTailSlots()[0] == nullptr) {
+              auto& destinationRegisters = uop->getDestinationRegisters();
+              // Query whether the destination registers are ready
+              for (const auto& reg : destinationRegisters) {
+                if (!scoreboard_[reg.type][reg.tag].first) {
+                  ready = false;
+                  break;
+                }
+              }
+            } else {
               ready = false;
-              break;
+            }
+
+            // Issue the uop if all required resources are available, else
+            // deallocate the port
+            if (ready) {
+              auto& destinationRegisters = uop->getDestinationRegisters();
+              for (const auto& reg : destinationRegisters) {
+                scoreboard_[reg.type][reg.tag] = {false,
+                                                  uop->getInstructionId()};
+              }
+
+              recordIssue_(uop);
+
+              if (uop->isLoad()) {
+                lsq_.addLoad(uop);
+              }
+              if (uop->isStoreAddress()) {
+                lsq_.addStore(uop);
+              }
+
+              issuePorts_[port].getTailSlots()[0] = std::move(uop);
+              portAllocator_.issued(port);
+
+              issueQueue_.pop_front();
+            } else {
+              portAllocator_.deallocate(port);
             }
           }
-        } else {
-          ready = false;
-        }
 
-        // Issue the uop if all required resources are available, else
-        // deallocate the port
-        if (ready) {
-          auto& destinationRegisters = uop->getDestinationRegisters();
-          for (const auto& reg : destinationRegisters) {
-            scoreboard_[reg.type][reg.tag] = {false, uop->getInstructionId()};
-          }
-
-          recordIssue_(uop);
-
-          if (uop->isLoad()) {
-            lsq_.addLoad(uop);
-          }
-          if (uop->isStoreAddress()) {
-            lsq_.addStore(uop);
-          }
-
-          issuePorts_[port].getTailSlots()[0] = std::move(uop);
-          portAllocator_.issued(port);
-
-          issueQueue_.pop_front();
-          input_.stall(false);
-        } else {
-          portAllocator_.deallocate(port);
+          // Remove registered dependency
+          dependency_.erase(dependency_.begin() + idx);
+          // Clear active dependency if all registers have been supplied
+          if (dependency_.empty()) dependent_ = false;
         }
       }
-
-      dependent_ = false;
-      dependency_ = {};
-      break;
     }
   }
 }
 
 void BlockingIssueUnit::setRegisterReady(Register reg) {
   scoreboard_[reg.type][reg.tag] = {true, -1};
+  // Remove any dependency entries related to the passed register
+  for (int idx = 0; idx < dependency_.size(); idx++) {
+    if (reg == dependency_[idx].first)
+      dependency_.erase(dependency_.begin() + idx);
+  }
+  // Clear active dependency if all registers have been set as ready
+  if (dependency_.empty()) dependent_ = false;
 }
 
 uint64_t BlockingIssueUnit::getFrontendStalls() const {
@@ -245,8 +257,8 @@ void BlockingIssueUnit::flush(uint64_t afterInsnId) {
     }
   }
 
-  // Clear any dependency and the issue queue as the assocaited instructions are
-  // guaranteed to be newer in the program-order
+  // Clear any dependencies and the issue queue as the assocaited instructions
+  // are guaranteed to be newer in the program-order
   dependent_ = false;
   dependency_ = {};
   issueQueue_.clear();
@@ -260,8 +272,8 @@ void BlockingIssueUnit::flush() {
     }
   }
 
-  // Clear any dependency and the issue queue as the assocaited instructions are
-  // guaranteed to be newer in the program-order
+  // Clear any dependencies and the issue queue as the assocaited instructions
+  // are guaranteed to be newer in the program-order
   dependent_ = false;
   dependency_ = {};
   issueQueue_.clear();

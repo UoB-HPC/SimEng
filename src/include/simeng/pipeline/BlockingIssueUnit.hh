@@ -105,10 +105,10 @@ class BlockingIssueUnit {
    * executing instruction. */
   bool dependent_ = false;
 
-  /** A pair representing a register dependency. The first entry in the pair is
-   * the register depended on, and the second is the operand index, within the
-   * dependent instruction, the dependency is associated with. */
-  std::pair<Register, uint16_t> dependency_;
+  /** A vector of pairs representing a register dependencies. The first entry in
+   * the pair is the register depended on, and the second is the operand index,
+   * within the dependent instruction, the dependency is associated with. */
+  std::vector<std::pair<Register, uint16_t>> dependency_;
 
   /** The number of cycles no instructions were issued due to an empty issue
    * queue. */
