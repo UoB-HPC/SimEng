@@ -280,6 +280,7 @@ void Core::handleException() {
   // This must happen prior to handling the exception to ensure the commit
   // state is up-to-date with the register mapping table
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
+  fetchUnit_.flushLoopBuffer();
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
@@ -313,7 +314,6 @@ void Core::processException() {
     status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
