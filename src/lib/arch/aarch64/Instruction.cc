@@ -61,6 +61,17 @@ void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
   operandsPending--;
 }
 
+bool Instruction::canExecute() const { return (operandsPending == 0); }
+
+const span<RegisterValue> Instruction::getResults() const {
+  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
+}
+
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
+  return {memoryAddresses.data(), memoryAddresses.size()};
+}
+
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
     if (memoryAddresses[i].vaddr == address && !memoryData[i]) {
@@ -84,41 +95,6 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool Instruction::canExecute() const { return (operandsPending == 0); }
-
-const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
-}
-
-bool Instruction::isStoreAddress() const { return isStoreAddress_; }
-bool Instruction::isStoreData() const { return isStoreData_; }
-bool Instruction::isLoad() const { return isLoad_; }
-bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isAtomic() const { return isAtomic_; }
-bool Instruction::isAcquire() const { return isAcquire_; }
-bool Instruction::isRelease() const { return isRelease_; }
-bool Instruction::isLoadReserved() const { return isLoadReserved_; }
-bool Instruction::isStoreCond() const { return isStoreCond_; }
-
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData.resize(addresses.size());
-  memoryAddresses = addresses;
-  dataPending_ = addresses.size();
-}
-
-void Instruction::setMemoryAddresses(
-    std::vector<memory::MemoryAccessTarget>&& addresses) {
-  dataPending_ = addresses.size();
-  memoryData.resize(addresses.size());
-  memoryAddresses = std::move(addresses);
-}
-
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
-}
-
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   assert(
       !executed_ &&
@@ -133,6 +109,24 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   // Not enough information to determine this was a misprediction
   return {false, 0};
 }
+
+bool Instruction::isStoreAddress() const { return isStoreAddress_; }
+
+bool Instruction::isStoreData() const { return isStoreData_; }
+
+bool Instruction::isLoad() const { return isLoad_; }
+
+bool Instruction::isBranch() const { return isBranch_; }
+
+bool Instruction::isAtomic() const { return isAtomic_; }
+
+bool Instruction::isAcquire() const { return isAcquire_; }
+
+bool Instruction::isRelease() const { return isRelease_; }
+
+bool Instruction::isLoadReserved() const { return isLoadReserved_; }
+
+bool Instruction::isStoreCond() const { return isStoreCond_; }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
@@ -173,6 +167,7 @@ void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   stallCycles_ = info.stallCycles;
   supportedPorts_ = info.ports;
 }
+
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;
@@ -185,6 +180,14 @@ const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;
+}
+
+void Instruction::updateCondStoreResult(const bool success) {
+  assert(isStoreCond_ &&
+         "[SimEng:Instruction] Attempted to update the result register of a "
+         "non-conditional-store instruction.");
+  RegisterValue result = {(uint64_t)0 | !success, 8};
+  results[0] = result;
 }
 
 /** Extend `value` according to `extendType`, and left-shift the result by
@@ -245,12 +248,18 @@ uint64_t Instruction::extendOffset(uint64_t value,
   return extendValue(value, op.ext, op.shift.value);
 }
 
-void Instruction::updateCondStoreResult(const bool success) {
-  assert(isStoreCond_ &&
-         "[SimEng:Instruction] Attempted to update the result register of a "
-         "non-conditional-store instruction.");
-  RegisterValue result = {(uint64_t)0 | !success, 8};
-  results[0] = result;
+void Instruction::setMemoryAddresses(
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
+  memoryData.resize(addresses.size());
+  memoryAddresses = addresses;
+  dataPending_ = addresses.size();
+}
+
+void Instruction::setMemoryAddresses(
+    std::vector<memory::MemoryAccessTarget>&& addresses) {
+  dataPending_ = addresses.size();
+  memoryData.resize(addresses.size());
+  memoryAddresses = std::move(addresses);
 }
 
 }  // namespace aarch64

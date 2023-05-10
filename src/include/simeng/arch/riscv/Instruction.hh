@@ -28,10 +28,8 @@ const uint8_t SYSTEM = 2;
 struct executionInfo {
   /** The latency for the instruction. */
   uint16_t latency = 1;
-
   /** The execution throughput for the instruction. */
   uint16_t stallCycles = 1;
-
   /** The ports that support the instruction. */
   std::vector<uint16_t> ports = {};
 };
@@ -186,16 +184,6 @@ class Instruction : public simeng::Instruction {
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
 
-  /** An array of source registers. */
-  std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
-  /** The number of source registers this instruction reads from. */
-  uint8_t sourceRegisterCount = 0;
-
-  /** An array of destination registers. */
-  std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
-  /** The number of destination registers this instruction writes to. */
-  uint8_t destinationRegisterCount = 0;
-
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
@@ -207,28 +195,23 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  // Decoding
+  // ------ Decoding ------
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
 
-  /** Invalidate instructions that are currently not yet implemented. This
- prevents errors during speculated branches with unknown destinations;
- non-executable assertions. memory is decoded into valid but not implemented
- instructions tripping assertions.
- TODO remove once all extensions are supported*/
-  void invalidateIfNotImplemented();
+  /** An array of source registers. */
+  std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
 
-  // Scheduling
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
-  short operandsPending = 0;
+  /** The number of source registers this instruction reads from. */
+  uint8_t sourceRegisterCount = 0;
 
-  // Execution
-  /** Generate an ExecutionNotYetImplemented exception. */
-  void executionNYI();
+  /** An array of destination registers. */
+  std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
 
-  // Metadata
+  /** The number of destination registers this instruction writes to. */
+  uint8_t destinationRegisterCount = 0;
+
   /** Is this a store operation? */
   bool isStore_ = false;
   /** Is this a load operation? */
@@ -256,7 +239,23 @@ class Instruction : public simeng::Instruction {
   /** Is a store-conditional instruction. */
   bool isStoreCond_ = false;
 
-  // Memory
+  /** Invalidate instructions that are currently not yet implemented. This
+ prevents errors during speculated branches with unknown destinations;
+ non-executable assertions. memory is decoded into valid but not implemented
+ instructions tripping assertions.
+ TODO remove once all extensions are supported*/
+  void invalidateIfNotImplemented();
+
+  // ------ Scheduling ------
+  /** The number of operands that have not yet had values supplied. Used to
+   * determine execution readiness. */
+  short operandsPending = 0;
+
+  // ------ Execution ------
+  /** Generate an ExecutionNotYetImplemented exception. */
+  void executionNYI();
+
+  // ------ Memory ------
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(

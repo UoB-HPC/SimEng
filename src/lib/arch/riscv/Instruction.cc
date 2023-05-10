@@ -24,7 +24,6 @@ Instruction::Instruction(const Architecture& architecture,
     : architecture_(architecture), metadata(metadata) {
   latency_ = latency;
   stallCycles_ = stallCycles;
-
   decode();
 }
 
@@ -41,10 +40,12 @@ InstructionException Instruction::getException() const { return exception_; }
 const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
+
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
+
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
@@ -52,6 +53,7 @@ bool Instruction::isOperandReady(int index) const {
 void Instruction::renameSource(uint8_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
+
 void Instruction::renameDestination(uint8_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
@@ -64,6 +66,17 @@ void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
 
   operands[i] = value;
   operandsPending--;
+}
+
+bool Instruction::canExecute() const { return (operandsPending == 0); }
+
+const span<RegisterValue> Instruction::getResults() const {
+  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
+}
+
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
+  return {memoryAddresses.data(), memoryAddresses.size()};
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -89,34 +102,6 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool Instruction::canExecute() const { return (operandsPending == 0); }
-
-const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
-}
-
-bool Instruction::isStoreAddress() const { return isStore_; }
-bool Instruction::isStoreData() const { return isStore_; }
-bool Instruction::isLoad() const { return isLoad_; }
-bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isAtomic() const { return isAtomic_; }
-bool Instruction::isAcquire() const { return isAcquire_; }
-bool Instruction::isRelease() const { return isRelease_; }
-bool Instruction::isLoadReserved() const { return isLoadReserved_; }
-bool Instruction::isStoreCond() const { return isStoreCond_; }
-
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses = addresses;
-  dataPending_ = addresses.size();
-}
-
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
-}
-
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   assert(
       !executed_ &&
@@ -131,6 +116,24 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   // Not enough information to determine this was a misprediction
   return {false, 0};
 }
+
+bool Instruction::isStoreAddress() const { return isStore_; }
+
+bool Instruction::isStoreData() const { return isStore_; }
+
+bool Instruction::isLoad() const { return isLoad_; }
+
+bool Instruction::isBranch() const { return isBranch_; }
+
+bool Instruction::isAtomic() const { return isAtomic_; }
+
+bool Instruction::isAcquire() const { return isAcquire_; }
+
+bool Instruction::isRelease() const { return isRelease_; }
+
+bool Instruction::isLoadReserved() const { return isLoadReserved_; }
+
+bool Instruction::isStoreCond() const { return isStoreCond_; }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
@@ -172,6 +175,13 @@ void Instruction::updateCondStoreResult(const bool success) {
          "non-conditional-store instruction.");
   RegisterValue result = {(uint64_t)0 | !success, 8};
   results[0] = result;
+}
+
+void Instruction::setMemoryAddresses(
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
+  memoryData = std::vector<RegisterValue>(addresses.size());
+  memoryAddresses = addresses;
+  dataPending_ = addresses.size();
 }
 
 }  // namespace riscv
