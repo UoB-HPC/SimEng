@@ -101,9 +101,6 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   // Anticipate testing instruction type; return true for branch
   ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
-  // Return branch type as unconditional by default
-  ON_CALL(*uop, getBranchType())
-      .WillByDefault(Return(BranchType::Unconditional));
 
   bool taken = true;
   uint64_t pc = 1;
@@ -118,9 +115,7 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   }));
 
   // Check that the branch predictor was updated with the results
-  EXPECT_CALL(*uop, getBranchType()).Times(1);
-  EXPECT_CALL(predictor, update(2, taken, pc, BranchType::Unconditional))
-      .Times(1);
+  EXPECT_CALL(predictor, update(2, taken, pc, BranchType::Unknown)).Times(1);
 
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))

@@ -47,7 +47,6 @@ set(SIMENG_SOURCES
     CoreInstance.cc
     Elf.cc
     GenericPredictor.cc
-    Instruction.cc
     ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc

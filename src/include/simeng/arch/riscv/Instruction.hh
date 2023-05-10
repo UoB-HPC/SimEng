@@ -37,7 +37,7 @@ struct executionInfo {
 };
 
 /** The various exceptions that can be raised by an individual instruction. */
-enum class InstructionException {
+enum class InstructionException : uint8_t {
   None = 0,
   EncodingUnallocated,
   EncodingNotYetImplemented,
@@ -121,12 +121,6 @@ class Instruction : public simeng::Instruction {
    * next instruction address was mispredicted without executing the
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
-
-  /** Retrieve branch type. */
-  BranchType getBranchType() const override;
-
-  /** Retrieve a branch offset from the instruction's metadata if known. */
-  int64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
