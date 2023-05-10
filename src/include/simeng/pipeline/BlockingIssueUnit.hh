@@ -50,9 +50,9 @@ class BlockingIssueUnit {
   void setRegisterReady(Register reg);
 
   /** Flush the scoreboard entries which have been set by instructions older
-   * than the sequence id provided. Also clear any register source dependency
+   * than the instruction id provided. Also clear any register source dependency
    * and clear the issue queue. */
-  void flush(uint64_t afterSeqId);
+  void flush(uint64_t afterInsnId);
 
   /** Flush the scoreboard entries, clear any register source dependency
    * and clear the issue queue. */

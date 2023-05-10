@@ -121,7 +121,7 @@ void BlockingIssueUnit::tick() {
 
     // Set scoreboard for all destination registers as not ready
     for (const auto& reg : destinationRegisters) {
-      scoreboard_[reg.type][reg.tag] = {false, uop->getSequenceId()};
+      scoreboard_[reg.type][reg.tag] = {false, uop->getInstructionId()};
     }
 
     // Record that this uop has been issue and send to an execution unit through
@@ -193,7 +193,7 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
         if (ready) {
           auto& destinationRegisters = uop->getDestinationRegisters();
           for (const auto& reg : destinationRegisters) {
-            scoreboard_[reg.type][reg.tag] = {false, uop->getSequenceId()};
+            scoreboard_[reg.type][reg.tag] = {false, uop->getInstructionId()};
           }
 
           recordIssue_(uop);
@@ -234,12 +234,12 @@ uint64_t BlockingIssueUnit::getPortBusyStalls() const {
   return portBusyStalls_;
 }
 
-void BlockingIssueUnit::flush(uint64_t afterSeqId) {
+void BlockingIssueUnit::flush(uint64_t afterInsnId) {
   // Set scoreboard entries as ready if they were set as unready by a newer
-  // instruction than the sequence ID passed
+  // instruction than the instruction ID passed
   for (size_t i = 0; i < scoreboard_.size(); i++) {
     for (size_t j = 0; j < scoreboard_[i].size(); j++) {
-      if (scoreboard_[i][j].second > afterSeqId) {
+      if (scoreboard_[i][j].second > afterInsnId) {
         scoreboard_[i][j] = {true, -1};
       }
     }
