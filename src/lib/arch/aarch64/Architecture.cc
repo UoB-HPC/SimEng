@@ -32,7 +32,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
        1e6);
 
   // Generate zero-indexed system register map
-  std::vector<arm64_sysreg> sysRegs = config::SimInfo::getSysRegVec();
+  std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();
   for (size_t i = 0; i < sysRegs.size(); i++) {
     systemRegisterMap_[sysRegs[i]] = systemRegisterMap_.size();
   }
