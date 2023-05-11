@@ -74,32 +74,23 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-const std::vector<memory::MemoryAccessTarget>&
-Instruction::getGeneratedAddresses() const {
-  return memoryAddresses;
-}
-
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
-  for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].vaddr == address && !memoryData[i]) {
+  for (size_t i = 0; i < memoryAddresses_.size(); i++) {
+    if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
         // memory faults (e.g. bus error, page fault, seg fault)
         exception_ = InstructionException::DataAbort;
         exceptionEncountered_ = true;
-        memoryData[i] = RegisterValue(0, memoryAddresses[i].size);
+        memoryData_[i] = RegisterValue(0, memoryAddresses_[i].size);
       } else {
-        memoryData[i] = data;
+        memoryData_[i] = data;
       }
       dataPending_--;
       return;
     }
   }
-}
-
-const std::vector<RegisterValue>& Instruction::getData() const {
-  return memoryData;
 }
 
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
@@ -179,8 +170,8 @@ void Instruction::updateCondStoreResult(const bool success) {
 
 void Instruction::setMemoryAddresses(
     const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses = addresses;
+  memoryData_ = std::vector<RegisterValue>(addresses.size());
+  memoryAddresses_ = addresses;
   dataPending_ = addresses.size();
 }
 

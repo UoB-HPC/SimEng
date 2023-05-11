@@ -79,37 +79,38 @@ void Instruction::execute() {
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
-      results[0] = RegisterValue(bitExtend(memoryData[0].get<uint8_t>(), 8), 8);
+      results[0] =
+          RegisterValue(bitExtend(memoryData_[0].get<uint8_t>(), 8), 8);
       break;
     }
     case Opcode::RISCV_LBU: {  // LBU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint8_t>(), 8), 8);
+          RegisterValue(zeroExtend(memoryData_[0].get<uint8_t>(), 8), 8);
       break;
     }
     case Opcode::RISCV_LH: {  // LH rd,rs1,imm
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint16_t>(), 16), 8);
+          RegisterValue(bitExtend(memoryData_[0].get<uint16_t>(), 16), 8);
       break;
     }
     case Opcode::RISCV_LHU: {  // LHU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint16_t>(), 16), 8);
+          RegisterValue(zeroExtend(memoryData_[0].get<uint16_t>(), 16), 8);
       break;
     }
     case Opcode::RISCV_LW: {  // LW rd,rs1,imm
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(bitExtend(memoryData_[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LWU: {  // LWU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(zeroExtend(memoryData_[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
       // Note: elements of memory data are RegisterValue's
-      results[0] = memoryData[0];
+      results[0] = memoryData_[0];
       break;
     }
     case Opcode::RISCV_SB:  // SB rs1,rs2,imm
@@ -119,7 +120,7 @@ void Instruction::execute() {
     case Opcode::RISCV_SW:  // SW rs1,rs2,imm
       [[fallthrough]];
     case Opcode::RISCV_SD: {  // SD rs1,rs2,imm
-      memoryData[0] = operands[0];
+      memoryData_[0] = operands[0];
       break;
     }
     case Opcode::RISCV_SLL: {  // SLL rd,rs1,rs2
@@ -481,14 +482,14 @@ void Instruction::execute() {
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(bitExtend(memoryData_[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LR_D:  // LR.D rd,rs1
     case Opcode::RISCV_LR_D_AQ:
     case Opcode::RISCV_LR_D_RL:
     case Opcode::RISCV_LR_D_AQ_RL: {
-      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
+      results[0] = RegisterValue(memoryData_[0].get<uint64_t>(), 8);
       break;
     }
     case Opcode::RISCV_SC_W:  // SC.W rd,rs1,rs2
@@ -505,7 +506,7 @@ void Instruction::execute() {
       //  if not raise address-misaligned/access-fault exception
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
-      memoryData[0] = operands[0];
+      memoryData_[0] = operands[0];
       // Result[0] is set later on in pipeline as its value depends on if the
       // store is successful or not.
       break;
@@ -519,92 +520,92 @@ void Instruction::execute() {
       // Store rd to memory at address rs1
       // TODO raise address misaligned or access-fault errors
       // TODO account for AQ and RL bits
-      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int64_t rd = signExtendW(memoryData_[0].get<uint32_t>());
       int32_t rs2 = operands[0].get<int32_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = rs2;
+      memoryData_[0] = rs2;
       break;
     }
     case Opcode::RISCV_AMOSWAP_D:  // AMOSWAP.D rd,rs1,rs2
     case Opcode::RISCV_AMOSWAP_D_AQ:
     case Opcode::RISCV_AMOSWAP_D_RL:
     case Opcode::RISCV_AMOSWAP_D_AQ_RL: {
-      uint64_t rd = memoryData[0].get<uint64_t>();
+      uint64_t rd = memoryData_[0].get<uint64_t>();
       uint64_t rs2 = operands[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = rs2;
+      memoryData_[0] = rs2;
       break;
     }
     case Opcode::RISCV_AMOADD_W:  // AMOADD.W rd,rs1,rs2
     case Opcode::RISCV_AMOADD_W_AQ:
     case Opcode::RISCV_AMOADD_W_RL:
     case Opcode::RISCV_AMOADD_W_AQ_RL: {
-      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int64_t rd = signExtendW(memoryData_[0].get<uint32_t>());
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int32_t>(rd + operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int32_t>(rd + operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOADD_D:  // AMOADD.D rd,rs1,rs2
     case Opcode::RISCV_AMOADD_D_AQ:
     case Opcode::RISCV_AMOADD_D_RL:
     case Opcode::RISCV_AMOADD_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<uint64_t>();
+      int64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int64_t>(rd + operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int64_t>(rd + operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOAND_W:  // AMOAND.W rd,rs1,rs2
     case Opcode::RISCV_AMOAND_W_AQ:
     case Opcode::RISCV_AMOAND_W_RL:
     case Opcode::RISCV_AMOAND_W_AQ_RL: {
-      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int64_t rd = signExtendW(memoryData_[0].get<uint32_t>());
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int32_t>(rd & operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int32_t>(rd & operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOAND_D:  // AMOAND.D rd,rs1,rs2
     case Opcode::RISCV_AMOAND_D_AQ:
     case Opcode::RISCV_AMOAND_D_RL:
     case Opcode::RISCV_AMOAND_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<uint64_t>();
+      int64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int64_t>(rd & operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int64_t>(rd & operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOOR_W:  // AMOOR.W rd,rs1,rs2
     case Opcode::RISCV_AMOOR_W_AQ:
     case Opcode::RISCV_AMOOR_W_RL:
     case Opcode::RISCV_AMOOR_W_AQ_RL: {
-      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int64_t rd = signExtendW(memoryData_[0].get<uint32_t>());
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int32_t>(rd | operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int32_t>(rd | operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOOR_D:  // AMOOR.D rd,rs1,rs2
     case Opcode::RISCV_AMOOR_D_AQ:
     case Opcode::RISCV_AMOOR_D_RL:
     case Opcode::RISCV_AMOOR_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<uint64_t>();
+      int64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int64_t>(rd | operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int64_t>(rd | operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOXOR_W:  // AMOXOR.W rd,rs1,rs2
     case Opcode::RISCV_AMOXOR_W_AQ:
     case Opcode::RISCV_AMOXOR_W_RL:
     case Opcode::RISCV_AMOXOR_W_AQ_RL: {
-      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int64_t rd = signExtendW(memoryData_[0].get<uint32_t>());
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int32_t>(rd ^ operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int32_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
     case Opcode::RISCV_AMOXOR_D:  // AMOXOR.D rd,rs1,rs2
     case Opcode::RISCV_AMOXOR_D_AQ:
     case Opcode::RISCV_AMOXOR_D_RL:
     case Opcode::RISCV_AMOXOR_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<uint64_t>();
+      int64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] = static_cast<int64_t>(rd ^ operands[0].get<int64_t>());
+      memoryData_[0] = static_cast<int64_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
 
@@ -612,18 +613,18 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMIN_W_AQ:
     case Opcode::RISCV_AMOMIN_W_RL:
     case Opcode::RISCV_AMOMIN_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
-      memoryData[0] =
-          std::min(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData_[0].get<int32_t>()), 8);
+      memoryData_[0] =
+          std::min(memoryData_[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
     }
     case Opcode::RISCV_AMOMIN_D:  // AMOMIN.D rd,rs1,rs2
     case Opcode::RISCV_AMOMIN_D_AQ:
     case Opcode::RISCV_AMOMIN_D_RL:
     case Opcode::RISCV_AMOMIN_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<int64_t>();
+      int64_t rd = memoryData_[0].get<int64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] =
+      memoryData_[0] =
           static_cast<int64_t>(std::min(rd, operands[0].get<int64_t>()));
       break;
     }
@@ -631,18 +632,19 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMINU_W_AQ:
     case Opcode::RISCV_AMOMINU_W_RL:
     case Opcode::RISCV_AMOMINU_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
-      memoryData[0] =
-          std::min(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
+      results[0] =
+          RegisterValue(signExtendW(memoryData_[0].get<uint32_t>()), 8);
+      memoryData_[0] =
+          std::min(memoryData_[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
     }
     case Opcode::RISCV_AMOMINU_D:  // AMOMINU.D rd,rs1,rs2
     case Opcode::RISCV_AMOMINU_D_AQ:
     case Opcode::RISCV_AMOMINU_D_RL:
     case Opcode::RISCV_AMOMINU_D_AQ_RL: {
-      uint64_t rd = memoryData[0].get<uint64_t>();
+      uint64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] =
+      memoryData_[0] =
           static_cast<uint64_t>(std::min(rd, operands[0].get<uint64_t>()));
       break;
     }
@@ -651,18 +653,18 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAX_W_AQ:
     case Opcode::RISCV_AMOMAX_W_RL:
     case Opcode::RISCV_AMOMAX_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
-      memoryData[0] =
-          std::max(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData_[0].get<int32_t>()), 8);
+      memoryData_[0] =
+          std::max(memoryData_[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
     }
     case Opcode::RISCV_AMOMAX_D:  // AMOMAX.D rd,rs1,rs2
     case Opcode::RISCV_AMOMAX_D_AQ:
     case Opcode::RISCV_AMOMAX_D_RL:
     case Opcode::RISCV_AMOMAX_D_AQ_RL: {
-      int64_t rd = memoryData[0].get<int64_t>();
+      int64_t rd = memoryData_[0].get<int64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] =
+      memoryData_[0] =
           static_cast<int64_t>(std::max(rd, operands[0].get<int64_t>()));
       break;
     }
@@ -670,18 +672,19 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAXU_W_AQ:
     case Opcode::RISCV_AMOMAXU_W_RL:
     case Opcode::RISCV_AMOMAXU_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
-      memoryData[0] =
-          std::max(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
+      results[0] =
+          RegisterValue(signExtendW(memoryData_[0].get<uint32_t>()), 8);
+      memoryData_[0] =
+          std::max(memoryData_[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
     }
     case Opcode::RISCV_AMOMAXU_D:  // AMOMAXU.D rd,rs1,rs2
     case Opcode::RISCV_AMOMAXU_D_AQ:
     case Opcode::RISCV_AMOMAXU_D_RL:
     case Opcode::RISCV_AMOMAXU_D_AQ_RL: {
-      uint64_t rd = memoryData[0].get<uint64_t>();
+      uint64_t rd = memoryData_[0].get<uint64_t>();
       results[0] = RegisterValue(rd, 8);
-      memoryData[0] =
+      memoryData_[0] =
           static_cast<uint64_t>(std::max(rd, operands[0].get<uint64_t>()));
       break;
     }
