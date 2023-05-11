@@ -98,11 +98,9 @@ int main(int argc, char** argv) {
   else
     std::cout << "False";
   std::cout << std::endl;
-  std::cout
-      << "[SimEng] Number of Cores: "
-      << simeng::config::SimInfo::getValue<uint64_t>(
-             simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"])
-      << std::endl;
+  uint64_t numCores;
+  simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"] >> numCores;
+  std::cout << "[SimEng] Number of Cores: " << numCores << std::endl;
   std::cout << "[SimEng] Config file: "
             << simeng::config::SimInfo::getConfigPath() << std::endl;
 

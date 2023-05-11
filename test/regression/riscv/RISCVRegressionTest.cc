@@ -55,8 +55,9 @@ RISCVRegressionTest::createPortAllocator() const {
     auto config_groups = config["Ports"][i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
-      portArrangement[i].push_back(
-          simeng::config::SimInfo::getValue<uint16_t>(config_groups[j]));
+      uint16_t grp;
+      config_groups[j] >> grp;
+      portArrangement[i].push_back(grp);
     }
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(

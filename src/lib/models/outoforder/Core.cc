@@ -99,7 +99,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
     std::vector<uint16_t> blockingGroups = {};
     for (ryml::ConstNodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
-      blockingGroups.push_back(config::SimInfo::getValue<uint16_t>(grp));
+      uint16_t grpNum;
+      grp >> grpNum;
+      blockingGroups.push_back(grpNum);
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],

@@ -29,19 +29,18 @@ DispatchIssueUnit::DispatchIssueUnit(
     // Iterate over each reservation station in config
     auto reservation_station = config["Reservation-Stations"][i];
     // Create ReservationStation struct to be stored
-    ReservationStation rs = {
-        config::SimInfo::getValue<uint16_t>(reservation_station["Size"]),
-        config::SimInfo::getValue<uint16_t>(
-            reservation_station["Dispatch-Rate"]),
-        0,
-        {}};
+    uint16_t rsSize;
+    reservation_station["Size"] >> rsSize;
+    uint16_t rsRate;
+    reservation_station["Dispatch-Rate"] >> rsRate;
+    ReservationStation rs = {rsSize, rsRate, 0, {}};
     // Resize rs port attribute to match what's defined in config file
     rs.ports.resize(reservation_station["Port-Nums"].num_children());
     for (size_t j = 0; j < reservation_station["Port-Nums"].num_children();
          j++) {
       // Iterate over issue ports in config
-      uint16_t issue_port = config::SimInfo::getValue<uint16_t>(
-          reservation_station["Port-Nums"][j]);
+      uint16_t issue_port;
+      reservation_station["Port-Nums"][j] >> issue_port;
       rs.ports[j].issuePort = issue_port;
       // Add port mapping entry, resizing vector if needed
       if ((issue_port + 1) > portMapping_.size()) {

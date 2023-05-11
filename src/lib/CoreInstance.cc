@@ -40,8 +40,8 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Convert Data-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
-  std::string dType_string = config::SimInfo::getValue<std::string>(
-      config_["L1-Data-Memory"]["Interface-Type"]);
+  std::string dType_string;
+  config_["L1-Data-Memory"]["Interface-Type"] >> dType_string;
   simeng::MemInterfaceType dType = simeng::MemInterfaceType::Flat;
   if (dType_string == "Fixed") {
     dType = simeng::MemInterfaceType::Fixed;
@@ -57,8 +57,8 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Convert Instruction-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
-  std::string iType_string = config::SimInfo::getValue<std::string>(
-      config_["L1-Instruction-Memory"]["Interface-Type"]);
+  std::string iType_string;
+  config_["L1-Instruction-Memory"]["Interface-Type"] >> iType_string;
   simeng::MemInterfaceType iType = simeng::MemInterfaceType::Flat;
   if (iType_string == "Fixed") {
     iType = simeng::MemInterfaceType::Fixed;
@@ -145,10 +145,10 @@ void CoreInstance::createL1InstructionMemory(
     instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
         processMemory_.get(), processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
+    uint16_t accessLat;
+    config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
-        config::SimInfo::getValue<uint16_t>(
-            config_["LSQ-L1-Interface"]["Access-Latency"]));
+        processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr
         << "[SimEng:CoreInstance] Unsupported memory interface type used in "
@@ -176,10 +176,10 @@ void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
     dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
         processMemory_.get(), processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
+    uint16_t accessLat;
+    config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
-        config::SimInfo::getValue<uint16_t>(
-            config_["LSQ-L1-Interface"]["Access-Latency"]));
+        processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
                  "in createL1DataMemory()."
@@ -235,8 +235,9 @@ void CoreInstance::createCore() {
     auto config_groups = config_ports[i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
-      portArrangement[i].push_back(
-          config::SimInfo::getValue<uint16_t>(config_groups[j]));
+      uint16_t grp;
+      config_groups[j] >> grp;
+      portArrangement[i].push_back(grp);
     }
   }
   portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
@@ -265,8 +266,9 @@ void CoreInstance::createCore() {
 
 void CoreInstance::createSpecialFileDirectory() {
   // Create the Special Files directory if indicated to do so in Config
-  if (config::SimInfo::getValue<bool>(
-          config_["CPU-Info"]["Generate-Special-Dir"]) == true) {
+  bool generate;
+  config_["CPU-Info"]["Generate-Special-Dir"] >> generate;
+  if (generate) {
     simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
     // Remove any current special files dir
     SFdir.RemoveExistingSFDir();

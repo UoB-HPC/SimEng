@@ -7,26 +7,17 @@ namespace simeng {
 SpecialFileDirGen::SpecialFileDirGen() {
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Import all values from config file
-  core_count =
-      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Core-Count"]);
-  socket_count =
-      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Socket-Count"]);
-  smt = config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["SMT"]);
-  bogoMIPS = config::SimInfo::getValue<float>(config["CPU-Info"]["BogoMIPS"]);
-  features =
-      config::SimInfo::getValue<std::string>(config["CPU-Info"]["Features"]);
-  cpu_implementer = config::SimInfo::getValue<std::string>(
-      config["CPU-Info"]["CPU-Implementer"]);
-  cpu_architecture = config::SimInfo::getValue<uint64_t>(
-      config["CPU-Info"]["CPU-Architecture"]);
-  cpu_variant =
-      config::SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Variant"]);
-  cpu_part =
-      config::SimInfo::getValue<std::string>(config["CPU-Info"]["CPU-Part"]);
-  cpu_revision =
-      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["CPU-Revision"]);
-  package_count =
-      config::SimInfo::getValue<uint64_t>(config["CPU-Info"]["Package-Count"]);
+  config["CPU-Info"]["Core-Count"] >> core_count;
+  config["CPU-Info"]["Socket-Count"] >> socket_count;
+  config["CPU-Info"]["SMT"] >> smt;
+  config["CPU-Info"]["BogoMIPS"] >> bogoMIPS;
+  config["CPU-Info"]["Features"] >> features;
+  config["CPU-Info"]["CPU-Implementer"] >> cpu_implementer;
+  config["CPU-Info"]["CPU-Architecture"] >> cpu_architecture;
+  config["CPU-Info"]["CPU-Variant"] >> cpu_variant;
+  config["CPU-Info"]["CPU-Part"] >> cpu_part;
+  config["CPU-Info"]["CPU-Revision"] >> cpu_revision;
+  config["CPU-Info"]["Package-Count"] >> package_count;
 }
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
