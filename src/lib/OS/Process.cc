@@ -33,15 +33,15 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       sendToMem_(sendToMem) {
   // Parse ELF file
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
-  uint64_t heapSize = upAlign(
-      config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
-      PAGE_SIZE);
-  uint64_t stackSize = upAlign(config::SimInfo::getValue<uint64_t>(
-                                   config["Process-Image"]["Stack-Size"]),
-                               PAGE_SIZE);
-  uint64_t mmapSize = upAlign(
-      config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Mmap-Size"]),
-      PAGE_SIZE);
+  uint64_t heapSize;
+  config["Process-Image"]["Heap-Size"] >> heapSize;
+  heapSize = upAlign(heapSize, PAGE_SIZE);
+  uint64_t stackSize;
+  config["Process-Image"]["Stack-Size"] >> stackSize;
+  stackSize = upAlign(stackSize, PAGE_SIZE);
+  uint64_t mmapSize;
+  config["Process-Image"]["Mmap-Size"] >> mmapSize;
+  mmapSize = upAlign(mmapSize, PAGE_SIZE);
 
   pageTable_ = std::make_shared<PageTable>();
 
@@ -182,15 +182,15 @@ Process::Process(span<char> instructions, SimOS* OS, uint64_t TGID,
   pageTable_ = std::make_shared<PageTable>();
 
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
-  uint64_t heapSize = upAlign(
-      config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"]),
-      PAGE_SIZE);
-  uint64_t stackSize = upAlign(config::SimInfo::getValue<uint64_t>(
-                                   config["Process-Image"]["Stack-Size"]),
-                               PAGE_SIZE);
-  uint64_t mmapSize = upAlign(
-      config::SimInfo::getValue<uint64_t>(config["Process-Image"]["Mmap-Size"]),
-      PAGE_SIZE);
+  uint64_t heapSize;
+  config["Process-Image"]["Heap-Size"] >> heapSize;
+  heapSize = upAlign(heapSize, PAGE_SIZE);
+  uint64_t stackSize;
+  config["Process-Image"]["Stack-Size"] >> stackSize;
+  stackSize = upAlign(stackSize, PAGE_SIZE);
+  uint64_t mmapSize;
+  config["Process-Image"]["Mmap-Size"] >> mmapSize;
+  mmapSize = upAlign(mmapSize, PAGE_SIZE);
 
   uint64_t instrSize = upAlign(instructions.size(), PAGE_SIZE);
   uint64_t instrEnd = instrSize;
@@ -306,8 +306,8 @@ uint64_t Process::createStack(uint64_t stackStart) {
   // Environment strings
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
   for (size_t i = 0; i < config["Environment-Variables"].num_children(); i++) {
-    std::string envVar = config::SimInfo::getValue<std::string>(
-        config["Environment-Variables"][i]);
+    std::string envVar;
+    config["Environment-Variables"][i] >> envVar;
     for (int i = 0; i < envVar.size(); i++) {
       stringBytes.push_back(envVar.c_str()[i]);
     }
