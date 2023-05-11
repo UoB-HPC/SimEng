@@ -14,7 +14,7 @@ TEST(ConfigTest, Default) {
   EXPECT_EQ(simeng::config::SimInfo::getSimMode(),
             simeng::config::simMode::emulation);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Emulation");
-  std::vector<arm64_sysreg> sysRegisterEnums = {
+  std::vector<uint64_t> sysRegisterEnums = {
       arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
       arm64_sysreg::ARM64_SYSREG_FPCR,
       arm64_sysreg::ARM64_SYSREG_FPSR,

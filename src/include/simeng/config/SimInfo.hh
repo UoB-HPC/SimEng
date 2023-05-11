@@ -82,15 +82,15 @@ class SimInfo {
     return getInstance()->archRegStruct_;
   }
 
-  /** A getter function to retrieve a vector of Capstone arm64_sysreg enums for
+  /** A getter function to retrieve a vector of Capstone sysreg enums for
    * all the system registers that should be utilised in simulation. */
-  static const std::vector<arm64_sysreg>& getSysRegVec() {
+  static const std::vector<uint64_t>& getSysRegVec() {
     return getInstance()->sysRegisterEnums_;
   }
 
-  /** A getter function to retrieve an index of a Capstone arm64_sysreg enum
+  /** A getter function to retrieve an index of a Capstone sysreg enum
    * within the sysRegisterEnums_ vector. */
-  static uint32_t getSysRegVecIndex(arm64_sysreg sysReg) {
+  static uint32_t getSysRegVecIndex(uint64_t sysReg) {
     auto sysRegVec = getInstance()->sysRegisterEnums_;
     auto regItr = std::find(sysRegVec.begin(), sysRegVec.end(), sysReg);
     assert(regItr != sysRegVec.end() &&
@@ -235,7 +235,7 @@ class SimInfo {
 
   /** The vector of all system register Capstone enum values used in the
    * associated Architecture class. */
-  std::vector<arm64_sysreg> sysRegisterEnums_;
+  std::vector<uint64_t> sysRegisterEnums_;
 
   /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
