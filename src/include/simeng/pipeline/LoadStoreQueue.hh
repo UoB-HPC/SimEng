@@ -163,15 +163,10 @@ class LoadStoreQueue {
   uint64_t tickCounter_ = 0;
 
   /** A map to hold load instructions that are stalled due to a detected
-   * memory reordering confliction. First key is a store's sequence id and the
-   * second key the conflicting address. The value takes the form of a vector of
-   * pairs containing a pointer to the conflicted load and the size of the data
-   * needed at that address by the load. */
-  std::unordered_map<
-      uint64_t,
-      std::unordered_map<
-          uint64_t,
-          std::vector<std::pair<std::shared_ptr<Instruction>, uint16_t>>>>
+   * memory reordering confliction.
+   * Key = a store's sequence id and the
+   * Value = a vector of conflicted loads. */
+  std::unordered_map<uint64_t, std::vector<std::shared_ptr<Instruction>>>
       conflictionMap_;
 
   /** A map between LSQ cycles and load requests ready on that cycle. */
