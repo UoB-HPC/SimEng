@@ -32,7 +32,8 @@ uint64_t InOrderStager::getNextSeqID() const {
 
 void InOrderStager::recordRetired(uint64_t seqId) {
   assert(issueOrderQueue_.front()->getSequenceId() == seqId &&
-         "Tried to record a retirement out of program order");
+         "[SimEng:InOrderStager] Tried to record a retirement out of program "
+         "order");
   // Remove sequence ID from the tracking queue
   issueOrderQueue_.pop_front();
 }

@@ -84,7 +84,7 @@ void BlockingIssueUnit::tick() {
           // bit is released
           ready = false;
           dependent_ = true;
-          dependency_.push_back({reg, i});
+          dependencies_.push_back({reg, i});
         }
       }
     }
@@ -158,8 +158,8 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
     // front of issue queue
     if (dependent_) {
       auto& uop = issueQueue_.front();
-      auto dp = dependency_.begin();
-      while (dp != dependency_.end()) {
+      auto dp = dependencies_.begin();
+      while (dp != dependencies_.end()) {
         if (dp->first == reg) {
           assert(
               uop->getSequenceId() == issueQueue_.front()->getSequenceId() &&
@@ -217,9 +217,9 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
           }
 
           // Remove registered dependency
-          dp = dependency_.erase(dp);
+          dp = dependencies_.erase(dp);
           // Clear active dependency if all registers have been supplied
-          if (dependency_.empty()) dependent_ = false;
+          if (dependencies_.empty()) dependent_ = false;
         } else {
           dp++;
         }
@@ -231,15 +231,15 @@ void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
 void BlockingIssueUnit::setRegisterReady(Register reg) {
   scoreboard_[reg.type][reg.tag] = {true, -1};
   // Remove any dependency entries related to the passed register
-  auto dp = dependency_.begin();
-  while (dp != dependency_.end()) {
+  auto dp = dependencies_.begin();
+  while (dp != dependencies_.end()) {
     if (reg == dp->first)
-      dp = dependency_.erase(dp);
+      dp = dependencies_.erase(dp);
     else
       dp++;
   }
   // Clear active dependency if all registers have been set as ready
-  if (dependency_.empty()) dependent_ = false;
+  if (dependencies_.empty()) dependent_ = false;
 }
 
 uint64_t BlockingIssueUnit::getFrontendStalls() const {
@@ -264,7 +264,7 @@ void BlockingIssueUnit::flush(uint64_t afterInsnId) {
   // Clear any dependencies and the issue queue as the assocaited instructions
   // are guaranteed to be newer in the program-order
   dependent_ = false;
-  dependency_ = {};
+  dependencies_ = {};
   issueQueue_.clear();
 }
 
@@ -279,7 +279,7 @@ void BlockingIssueUnit::flush() {
   // Clear any dependencies and the issue queue as the assocaited instructions
   // are guaranteed to be newer in the program-order
   dependent_ = false;
-  dependency_ = {};
+  dependencies_ = {};
   issueQueue_.clear();
 }
 
