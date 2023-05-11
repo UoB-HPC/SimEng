@@ -51,7 +51,7 @@ struct RegisterFileStructure {
   uint16_t bytes;
   /** The number of registers. */
   uint16_t quantity;
-  /** Check for equality of two branch RegisterFileStructure. */
+  /** Check for the equality of two RegisterFileStructure structs. */
   bool operator==(const RegisterFileStructure& other) const {
     return (bytes == other.bytes) && (quantity == other.quantity);
   }

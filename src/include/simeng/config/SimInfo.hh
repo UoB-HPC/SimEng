@@ -48,7 +48,7 @@ class SimInfo {
 
     // Replace the validated config with the new default config
     getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
-    // Update previoulsy extracted values from the config file
+    // Update previously extracted values from the config file
     getInstance()->extractValues();
   }
 

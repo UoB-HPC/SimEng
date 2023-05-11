@@ -40,7 +40,7 @@ class ModelConfig {
   ryml::Tree getConfig();
 
   /** Re-generate the default config file based on the passed isa. A force bool
-   * is used to force the re-generation of the default regardless of rpeviously
+   * is used to force the re-generation of the default regardless of previously
    * set ISA. */
   void reGenerateDefault(ISA isa, bool force = false);
 
