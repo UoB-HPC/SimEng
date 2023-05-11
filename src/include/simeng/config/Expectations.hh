@@ -220,7 +220,6 @@ class expectationNode {
    */
   template <typename T>
   std::string validateConfigNodeWithType(ryml::NodeRef node) {
-    std::string retStr = "Success";
     // Value existence check
     if (!node.has_val()) {
       // If the node is optional, fill in the missing config
@@ -234,14 +233,15 @@ class expectationNode {
           node << getByType<T>(defaultValue_);
         }
       } else {
-        retStr = "has no value";
-        return retStr;
+        return "has no value";
       }
     }
 
     // Read as check
     T nodeVal;
     node >> nodeVal;
+
+    std::ostringstream retStr;
 
     if (definedSet_) {
       // Check for value in set
@@ -253,23 +253,30 @@ class expectationNode {
         }
       }
       if (!foundInSet) {
-        node >> retStr;
-        retStr += " not in set";
+        // Construct a human readable output denoted expected set failure
+        retStr << nodeVal << " not in set {";
+        for (int i = 0; i < expectedSet_.size(); i++) {
+          retStr << getByType<T>(expectedSet_[i]);
+          if (i < expectedSet_.size() - 1) retStr << ", ";
+        }
+        retStr << "}";
+        return retStr.str();
       }
     }
 
     if (definedBounds_) {
       // Check for value between bounds
-      if (getByType<T>(expectedBounds_.first) > nodeVal) {
-        node >> retStr;
-        retStr += " less than lower bound";
-      } else if (getByType<T>(expectedBounds_.second) < nodeVal) {
-        node >> retStr;
-        retStr += " greater than upper bound";
+      if (getByType<T>(expectedBounds_.first) > nodeVal ||
+          getByType<T>(expectedBounds_.second) < nodeVal) {
+        // Construct a human readable output denoted expected bounds failure
+        retStr << nodeVal << " not in the bounds {"
+               << getByType<T>(expectedBounds_.first) << " to "
+               << getByType<T>(expectedBounds_.second) << "}";
+        return retStr.str();
       }
     }
 
-    return retStr;
+    return "Success";
   }
 
   /** Search through the held children to find a node with the key `childKey`.
