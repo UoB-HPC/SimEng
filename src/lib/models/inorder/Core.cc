@@ -184,27 +184,21 @@ void Core::flushIfNeeded() {
     loadStoreQueue_.purgeFlushed();
 
     // Given instructions can flow out-of-order during execution due to
-    // differing latencies, the issue ports need to be cleared conditionally
-    // based on the instruction IDs
-    for (auto& port : issuePorts_) {
-      if (port.getHeadSlots()[0] != nullptr &&
-          port.getHeadSlots()[0]->getInstructionId() > lowestInsnId)
-        port.getHeadSlots()[0] = nullptr;
-      if (port.getTailSlots()[0] != nullptr &&
-          port.getTailSlots()[0]->getInstructionId() > lowestInsnId)
-        port.getTailSlots()[0] = nullptr;
-    }
-
-    // Given instructions can flow out-of-order during execution due to
     // differing latencies, the completion slots need to be cleared
     // conditionally based on the instruction IDs
     for (auto& slot : completionSlots_) {
       if (slot.getHeadSlots()[0] != nullptr &&
-          slot.getHeadSlots()[0]->getInstructionId() > lowestInsnId)
+          slot.getHeadSlots()[0]->isFlushed())
         slot.getHeadSlots()[0] = nullptr;
       if (slot.getTailSlots()[0] != nullptr &&
-          slot.getTailSlots()[0]->getInstructionId() > lowestInsnId)
+          slot.getTailSlots()[0]->isFlushed())
         slot.getTailSlots()[0] = nullptr;
+    }
+
+    // If a excpetion has been generated from a flushed instruction, clear it
+    if (exceptionGenerated_ && exceptionGeneratingInstruction_->isFlushed()) {
+      exceptionGenerated_ = false;
+      exceptionGeneratingInstruction_ = nullptr;
     }
 
     flushes_++;
