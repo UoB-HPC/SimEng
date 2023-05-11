@@ -67,15 +67,8 @@ class Instruction {
   virtual const std::vector<memory::MemoryAccessTarget>&
   generateAddresses() = 0;
 
-  /** Retrieve previously generated memory addresses. */
-  virtual const std::vector<memory::MemoryAccessTarget>& getGeneratedAddresses()
-      const = 0;
-
   /** Provide data from a requested memory address. */
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
-
-  /** Retrieve supplied memory data. */
-  virtual const std::vector<RegisterValue>& getData() const = 0;
 
   /** Update the result register for a conditional store instruction. */
   virtual void updateCondStoreResult(const bool success) = 0;
@@ -143,6 +136,9 @@ class Instruction {
   /** Check whether all required data has been supplied. */
   bool hasAllData() const { return (dataPending_ == 0); }
 
+  /** Retrieve supplied memory data. */
+  const std::vector<RegisterValue>& getData() const { return memoryData_; }
+
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const { return branchAddress_; }
 
@@ -164,6 +160,12 @@ class Instruction {
 
   /** Get a branch prediction. */
   BranchPrediction getBranchPrediction() const { return prediction_; }
+
+  /** Retrieve previously generated memory addresses. */
+  virtual const std::vector<memory::MemoryAccessTarget>& getGeneratedAddresses()
+      const {
+    return memoryAddresses_;
+  }
 
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
@@ -249,12 +251,12 @@ class Instruction {
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses;
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
 
   /** A vector of memory values, that were either loaded memory, or are prepared
    * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
+   * corresponds to a `memoryAddresses_` entry. */
+  std::vector<RegisterValue> memoryData_;
 
   // ------ Branching ------
   /** The predicted branching result. */
