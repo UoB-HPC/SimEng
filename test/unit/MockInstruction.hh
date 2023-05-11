@@ -23,7 +23,7 @@ class MockInstruction : public Instruction {
   MOCK_METHOD2(supplyData, void(uint64_t address, const RegisterValue& data));
   MOCK_CONST_METHOD0(getGeneratedAddresses,
                      const std::vector<memory::MemoryAccessTarget>&());
-  MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
+  MOCK_CONST_METHOD0(getData, const std::vector<RegisterValue>&());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
                      std::tuple<bool, uint64_t>());

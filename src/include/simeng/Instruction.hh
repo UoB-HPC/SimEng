@@ -75,7 +75,7 @@ class Instruction {
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve supplied memory data. */
-  virtual span<const RegisterValue> getData() const = 0;
+  virtual const std::vector<RegisterValue>& getData() const = 0;
 
   /** Update the result register for a conditional store instruction. */
   virtual void updateCondStoreResult(const bool success) = 0;

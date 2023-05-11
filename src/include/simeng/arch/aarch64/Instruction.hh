@@ -286,7 +286,7 @@ class Instruction : public simeng::Instruction {
   void supplyData(uint64_t address, const RegisterValue& data) override;
 
   /** Retrieve supplied memory data. */
-  span<const RegisterValue> getData() const override;
+  const std::vector<RegisterValue>& getData() const override;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the

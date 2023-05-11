@@ -94,8 +94,8 @@ void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   }
 }
 
-span<const RegisterValue> Instruction::getData() const {
-  return {memoryData.data(), memoryData.size()};
+const std::vector<RegisterValue>& Instruction::getData() const {
+  return memoryData;
 }
 
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
