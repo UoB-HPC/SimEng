@@ -36,10 +36,12 @@ InstructionException Instruction::getException() const { return exception_; }
 const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
+
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
+
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
@@ -47,6 +49,7 @@ bool Instruction::isOperandReady(int index) const {
 void Instruction::renameSource(uint8_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
+
 void Instruction::renameDestination(uint8_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
@@ -67,9 +70,9 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
+const std::vector<memory::MemoryAccessTarget>&
+Instruction::getGeneratedAddresses() const {
+  return memoryAddresses;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {

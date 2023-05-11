@@ -74,9 +74,9 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
+const std::vector<memory::MemoryAccessTarget>&
+Instruction::getGeneratedAddresses() const {
+  return memoryAddresses;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {

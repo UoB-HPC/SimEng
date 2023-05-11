@@ -7,7 +7,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
+const std::vector<memory::MemoryAccessTarget>&
+Instruction::generateAddresses() {
   assert((isLoad() || isStoreAddress()) &&
          "generateAddresses called on non-load-or-store instruction");
 

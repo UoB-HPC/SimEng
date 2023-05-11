@@ -13,6 +13,7 @@ using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::Property;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace simeng {
 namespace pipeline {
@@ -165,15 +166,13 @@ TEST_F(ReorderBufferTest, CommitLoad) {
 // Tests that the reorder buffer correctly triggers a store upon commit
 TEST_F(ReorderBufferTest, CommitStore) {
   std::vector<memory::MemoryAccessTarget> addresses = {{0, 1}};
-  span<const memory::MemoryAccessTarget> addressesSpan = {addresses.data(),
-                                                          addresses.size()};
 
   std::vector<RegisterValue> data = {static_cast<uint8_t>(1)};
   span<const RegisterValue> dataSpan = {data.data(), data.size()};
 
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
   ON_CALL(*uop, isStoreData()).WillByDefault(Return(true));
-  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(addressesSpan));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(addresses));
   ON_CALL(*uop, getData()).WillByDefault(Return(dataSpan));
 
   uop->setSequenceId(1);
@@ -188,11 +187,9 @@ TEST_F(ReorderBufferTest, CommitStore) {
   uopPtr->setCommitReady();
 
   // Check that the correct value will be written to memory
-  // EXPECT_CALL(mmu, requestWrite(addresses[0],
-  //                               Property(&RegisterValue::get<uint8_t>, 1)))
-  //     .Times(1);
-
   reorderBuffer.commit(1);
+  EXPECT_EQ(mmu->hasPendingRequests(), false);
+  EXPECT_EQ(memory->getUntimedData(0, 1)[0], (uint8_t)1);
 
   // Check that the store was committed and removed from the LSQ
   EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
