@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <vector>
 
 #include "capstone/capstone.h"
@@ -137,7 +138,9 @@ class Instruction {
   bool hasAllData() const { return (dataPending_ == 0); }
 
   /** Retrieve supplied memory data. */
-  const std::vector<RegisterValue>& getData() const { return memoryData_; }
+  virtual const std::vector<RegisterValue>& getData() const {
+    return memoryData_;
+  }
 
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const { return branchAddress_; }

@@ -216,7 +216,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isStoreCond()) {
     auto data = uop->getData();
-    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+    for (size_t i = 0; i < data.size(); i++) {
       mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
                          uop->getInstructionId(), true);
       inFlightStoreCondReqs_++;
@@ -227,7 +227,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isStoreData()) {
     auto data = uop->getData();
-    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+    for (size_t i = 0; i < data.size(); i++) {
       mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
                          uop->getInstructionId());
     }
