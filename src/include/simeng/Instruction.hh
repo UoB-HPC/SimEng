@@ -64,10 +64,11 @@ class Instruction {
   virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
-  virtual span<const memory::MemoryAccessTarget> generateAddresses() = 0;
+  virtual const std::vector<memory::MemoryAccessTarget>&
+  generateAddresses() = 0;
 
   /** Retrieve previously generated memory addresses. */
-  virtual span<const memory::MemoryAccessTarget> getGeneratedAddresses()
+  virtual const std::vector<memory::MemoryAccessTarget>& getGeneratedAddresses()
       const = 0;
 
   /** Provide data from a requested memory address. */
@@ -221,17 +222,41 @@ class Instruction {
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress_;
 
-  /** Whether or not this instruction has been executed. */
-  bool executed_ = false;
-
   /** Whether or not this instruction is ready to commit. */
   bool canCommit_ = false;
 
-  // Memory
+  // ------ Execution ------
+  /** Whether or not this instruction has been executed. */
+  bool executed_ = false;
+
+  /** The number of cycles this instruction takes to execute. */
+  uint16_t latency_ = 1;
+
+  /** The number of cycles a load or store instruction takes to execute within
+   * the load/store queue. */
+  uint16_t lsqExecutionLatency_ = 1;
+
+  /** The number of cycles this instruction will stall the unit executing it
+   * for. */
+  uint16_t stallCycles_ = 1;
+
+  /** The execution ports that this instruction can be issued to. */
+  std::vector<uint16_t> supportedPorts_ = {};
+
+  // ------ Memory ------
   /** The number of data items that still need to be supplied. */
   uint8_t dataPending_ = 0;
 
-  // Branches
+  /** The memory addresses this instruction accesses, as a vector of {offset,
+   * width} pairs. */
+  std::vector<memory::MemoryAccessTarget> memoryAddresses;
+
+  /** A vector of memory values, that were either loaded memory, or are prepared
+   * for sending to memory (according to instruction type). Each entry
+   * corresponds to a `memoryAddresses` entry. */
+  std::vector<RegisterValue> memoryData;
+
+  // ------ Branching ------
   /** The predicted branching result. */
   BranchPrediction prediction_ = {false, 0};
 
@@ -248,7 +273,7 @@ class Instruction {
    * The default value of 0 represents an unknown branch offset.*/
   int64_t knownOffset_ = 0;
 
-  // Flushing
+  // ------ Flushing ------
   /** This instruction's sequence ID; a higher ID represents a chronologically
    * newer instruction. */
   uint64_t sequenceId_;
@@ -256,21 +281,7 @@ class Instruction {
   /** Has this instruction been flushed? */
   bool flushed_ = false;
 
-  /** The number of cycles this instruction takes to execute. */
-  uint16_t latency_ = 1;
-
-  /** The number of cycles a load or store instruction takes to execute within
-   * the load/store queue. */
-  uint16_t lsqExecutionLatency_ = 1;
-
-  /** The number of cycles this instruction will stall the unit executing it
-   * for. */
-  uint16_t stallCycles_ = 1;
-
-  /** The execution ports that this instruction can be issued to. */
-  std::vector<uint16_t> supportedPorts_ = {};
-
-  // Micro operations
+  // ------ Micro operations ------
   /** Is a resultant micro-operation from an instruction split? */
   bool isMicroOp_ = false;
 

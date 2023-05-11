@@ -276,10 +276,11 @@ class Instruction : public simeng::Instruction {
   const span<RegisterValue> getResults() const override;
 
   /** Generate memory addresses this instruction wishes to access. */
-  span<const memory::MemoryAccessTarget> generateAddresses() override;
+  const std::vector<memory::MemoryAccessTarget>& generateAddresses() override;
 
   /** Retrieve previously generated memory addresses. */
-  span<const memory::MemoryAccessTarget> getGeneratedAddresses() const override;
+  const std::vector<memory::MemoryAccessTarget>& getGeneratedAddresses()
+      const override;
 
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
@@ -469,15 +470,6 @@ class Instruction : public simeng::Instruction {
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
-
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
 };
 
 }  // namespace aarch64

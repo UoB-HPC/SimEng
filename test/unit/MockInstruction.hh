@@ -18,10 +18,11 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(canExecute, bool());
   MOCK_METHOD0(execute, void());
   MOCK_CONST_METHOD0(getResults, const span<RegisterValue>());
-  MOCK_METHOD0(generateAddresses, span<const memory::MemoryAccessTarget>());
+  MOCK_METHOD0(generateAddresses,
+               const std::vector<memory::MemoryAccessTarget>&());
   MOCK_METHOD2(supplyData, void(uint64_t address, const RegisterValue& data));
   MOCK_CONST_METHOD0(getGeneratedAddresses,
-                     span<const memory::MemoryAccessTarget>());
+                     const std::vector<memory::MemoryAccessTarget>&());
   MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,

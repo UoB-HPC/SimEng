@@ -11,6 +11,7 @@ using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Property;
 using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace simeng {
 namespace pipeline {
@@ -30,7 +31,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   LoadStoreQueueTest()
       : completionSlots({{1, nullptr}}),
         addresses({{0, 1}}),
-        addressesSpan({addresses.data(), addresses.size()}),
         data({RegisterValue(static_cast<uint8_t>(1))}),
         dataSpan({data.data(), data.size()}),
         loadUop(new MockInstruction),
@@ -53,13 +53,13 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     // Set up sensible return values for the load uop
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
     ON_CALL(*loadUop, getGeneratedAddresses())
-        .WillByDefault(Return(addressesSpan));
+        .WillByDefault(ReturnRef(addresses));
 
     // Set up sensible return values for the store uop
     ON_CALL(*storeUop, isStoreAddress()).WillByDefault(Return(true));
     ON_CALL(*storeUop, isStoreData()).WillByDefault(Return(true));
     ON_CALL(*storeUop, getGeneratedAddresses())
-        .WillByDefault(Return(addressesSpan));
+        .WillByDefault(ReturnRef(addresses));
     ON_CALL(*storeUop, getData()).WillByDefault(Return(dataSpan));
   }
 
@@ -118,7 +118,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
       completionSlots;
 
   std::vector<memory::MemoryAccessTarget> addresses;
-  span<const memory::MemoryAccessTarget> addressesSpan;
 
   std::vector<RegisterValue> data;
   span<const RegisterValue> dataSpan;
@@ -361,27 +360,23 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
   std::vector<memory::MemoryAccessTarget> storeAddresses = {{0, 2}};
   std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
 
-  span<const memory::MemoryAccessTarget> storeAddressesSpan = {
-      storeAddresses.data(), storeAddresses.size()};
   span<const RegisterValue> storeDataSpan = {storeData.data(),
                                              storeData.size()};
 
   // The load will read two bytes, at addresses 1 and 2; this will overlap with
   // the written data at address 1
   std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 2}};
-  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
-      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeAddressesSpan));
+      .WillRepeatedly(ReturnRef(storeAddresses));
   EXPECT_CALL(*storeUop, getData())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(storeDataSpan));
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddressesSpan));
+      .WillRepeatedly(ReturnRef(loadAddresses));
 
   // Execute a load-after-store sequence
   bool violation = executeRAWSequence(queue);
@@ -396,12 +391,10 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
 
   // A different address to the one being stored to
   std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 1}};
-  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
-      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddressesSpan));
+      .WillRepeatedly(ReturnRef(loadAddresses));
 
   // Execute a load-after-store sequence
   bool violation = executeRAWSequence(queue);
@@ -423,34 +416,28 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
 
   // Set store addresses and data
   std::vector<memory::MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
-  span<const memory::MemoryAccessTarget> storeAddressesSpan = {
-      storeAddresses.data(), storeAddresses.size()};
   std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
                                           static_cast<uint8_t>(0x10)};
   span<const RegisterValue> storeDataSpan = {storeData.data(),
                                              storeData.size()};
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeAddressesSpan));
+      .WillRepeatedly(ReturnRef(storeAddresses));
   EXPECT_CALL(*storeUop, getData())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(storeDataSpan));
 
   // Set load address which overlaps on first store address
   std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 1}};
-  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
-      loadAddresses.data(), loadAddresses.size()};
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddressesSpan));
+      .WillRepeatedly(ReturnRef(loadAddresses));
 
   // Set load address which overlaps on second store address
   std::vector<memory::MemoryAccessTarget> loadAddresses2 = {{2, 1}};
-  span<const memory::MemoryAccessTarget> loadAddressesSpan2 = {
-      loadAddresses2.data(), loadAddresses2.size()};
   EXPECT_CALL(*loadUop2, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddressesSpan2));
+      .WillRepeatedly(ReturnRef(loadAddresses2));
 
   queue.addStore(storeUopPtr);
   queue.addLoad(loadUopPtr);
