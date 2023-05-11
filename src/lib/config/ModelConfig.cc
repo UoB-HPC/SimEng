@@ -274,7 +274,7 @@ void ModelConfig::setExpectations(bool isDefault) {
       1, tFreqUpperBound);
 
   expectations_["Core"].addChild(
-      expectations_.create("Micro-Operations", false));
+      expectations_.create<bool, true>("Micro-Operations", false));
   expectations_["Core"]["Micro-Operations"].setValueSet(
       std::vector{false, true});
 
