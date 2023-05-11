@@ -93,8 +93,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     loadUop->setSequenceId(1);
     loadUop->setInstructionId(1);
 
-    // Add the memory operations to the queue in program order
-    queue.addStore(storeUopPtr);
+    // Add the load operation to the queue in program order
     queue.addLoad(loadUopPtr);
 
     // Trigger the load first, so it might incorrectly read what was in memory
@@ -102,6 +101,10 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     queue.startLoad(loadUopPtr);
     loadUop->setExecuted(true);
     loadUop->setCommitReady();
+
+    // Add store operation after load has executed otherwise conflictionMap will
+    // prevent the load from executing until after the store
+    queue.addStore(storeUopPtr);
 
     // Supply data to storeUop
     queue.supplyStoreData(storeUopPtr);
