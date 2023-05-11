@@ -168,12 +168,11 @@ TEST_F(ReorderBufferTest, CommitStore) {
   std::vector<memory::MemoryAccessTarget> addresses = {{0, 1}};
 
   std::vector<RegisterValue> data = {static_cast<uint8_t>(1)};
-  span<const RegisterValue> dataSpan = {data.data(), data.size()};
 
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
   ON_CALL(*uop, isStoreData()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(addresses));
-  ON_CALL(*uop, getData()).WillByDefault(Return(dataSpan));
+  ON_CALL(*uop, getData()).WillByDefault(ReturnRef(data));
 
   uop->setSequenceId(1);
   uop->setInstructionId(1);

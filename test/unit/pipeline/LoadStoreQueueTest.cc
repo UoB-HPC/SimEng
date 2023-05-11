@@ -32,7 +32,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
       : completionSlots({{1, nullptr}}),
         addresses({{0, 1}}),
         data({RegisterValue(static_cast<uint8_t>(1))}),
-        dataSpan({data.data(), data.size()}),
         loadUop(new MockInstruction),
         loadUop2(new MockInstruction),
         storeUop(new MockInstruction),
@@ -63,7 +62,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     ON_CALL(*storeUop, isStoreData()).WillByDefault(Return(true));
     ON_CALL(*storeUop, getGeneratedAddresses())
         .WillByDefault(ReturnRef(addresses));
-    ON_CALL(*storeUop, getData()).WillByDefault(Return(dataSpan));
+    ON_CALL(*storeUop, getData()).WillByDefault(ReturnRef(data));
   }
 
  protected:
@@ -123,7 +122,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::vector<memory::MemoryAccessTarget> addresses;
 
   std::vector<RegisterValue> data;
-  span<const RegisterValue> dataSpan;
 
   MockInstruction* loadUop;
   MockInstruction* loadUop2;
@@ -363,9 +361,6 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
   std::vector<memory::MemoryAccessTarget> storeAddresses = {{0, 2}};
   std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
 
-  span<const RegisterValue> storeDataSpan = {storeData.data(),
-                                             storeData.size()};
-
   // The load will read two bytes, at addresses 1 and 2; this will overlap with
   // the written data at address 1
   std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 2}};
@@ -375,7 +370,7 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
       .WillRepeatedly(ReturnRef(storeAddresses));
   EXPECT_CALL(*storeUop, getData())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeDataSpan));
+      .WillRepeatedly(ReturnRef(storeData));
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
@@ -421,14 +416,12 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
   std::vector<memory::MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
   std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
                                           static_cast<uint8_t>(0x10)};
-  span<const RegisterValue> storeDataSpan = {storeData.data(),
-                                             storeData.size()};
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
       .WillRepeatedly(ReturnRef(storeAddresses));
   EXPECT_CALL(*storeUop, getData())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeDataSpan));
+      .WillRepeatedly(ReturnRef(storeData));
 
   // Set load address which overlaps on first store address
   std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 1}};

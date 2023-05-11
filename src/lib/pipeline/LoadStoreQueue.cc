@@ -175,7 +175,7 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   const int microOpNum = insn->getMicroOpIndex();
 
   // Get data
-  span<const simeng::RegisterValue> data = insn->getData();
+  const auto& data = insn->getData();
 
   // Find storeQueue_ entry which is linked to the store data operation
   auto itSt = storeQueue_.begin();
@@ -202,7 +202,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
          "store queue");
 
   const auto& addresses = insn->getGeneratedAddresses();
-  span<const simeng::RegisterValue> data = storeQueue_.front().second;
+  const auto& data = storeQueue_.front().second;
 
   // Early exit if there's no addresses to process
   if (addresses.size() == 0) {

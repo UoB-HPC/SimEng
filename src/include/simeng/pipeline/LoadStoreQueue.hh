@@ -116,7 +116,7 @@ class LoadStoreQueue {
   /** The store queue: holds in-flight store instructions with its associated
    * data. */
   std::deque<std::pair<std::shared_ptr<Instruction>,
-                       span<const simeng::RegisterValue>>>
+                       std::vector<simeng::RegisterValue>>>
       storeQueue_;
 
   /** Slots to write completed load instructions into for writeback. */
