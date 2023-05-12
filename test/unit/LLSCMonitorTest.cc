@@ -1,9 +1,17 @@
 #include <memory>
 
+#include "MockInstruction.hh"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/Config.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
+
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Property;
+using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace {
 
@@ -33,7 +41,15 @@ TEST(LLSCTest, successfulLLSC) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -42,8 +58,14 @@ TEST(LLSCTest, successfulLLSC) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({8, 8}, regVal, 1, 1, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -76,7 +98,15 @@ TEST(LLSCTest, failingLLSC) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -85,8 +115,15 @@ TEST(LLSCTest, failingLLSC) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({264, 8}, regVal, 1, 1, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{264, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -119,7 +156,15 @@ TEST(LLSCTest, nonAffectingWrite) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -128,7 +173,7 @@ TEST(LLSCTest, nonAffectingWrite) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send write to different address to monitored cache line
-  mmu.requestWrite({260, 8}, {0xFFFFFFFFFFFFFFFF, 8}, 1, 1, false);
+  mmu.requestWrite({260, 8}, {0xFFFFFFFFFFFFFFFF, 8});
   // Check write happened
   auto memResp = sMem.getUntimedData(260, 8);
   std::vector<uint8_t> memRespData = {0xFF, 0xFF, 0xFF, 0xFF,
@@ -138,8 +183,15 @@ TEST(LLSCTest, nonAffectingWrite) {
   }
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({8, 8}, regVal, 2, 2, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(2);
+  uop2->setSequenceId(2);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -171,7 +223,15 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -180,8 +240,7 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send an aligned write to same cache line as monitored cache line
-  mmu.requestWrite({240, 8}, {0xFFFFFFFFFFFFFFFF, 8}, 1, 1, false);
-  // Check write happened
+  mmu.requestWrite({240, 8}, {0xFFFFFFFFFFFFFFFF, 8});
   // Check write happened
   auto memResp = sMem.getUntimedData(240, 8);
   std::vector<uint8_t> memRespData = {0xFF, 0xFF, 0xFF, 0xFF,
@@ -191,8 +250,15 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   }
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({8, 8}, regVal, 2, 2, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(2);
+  uop2->setSequenceId(2);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -224,7 +290,15 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({264, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{264, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -233,7 +307,7 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send an unaligned write to same cache line as monitored cache line
-  mmu.requestWrite({254, 8}, {0xFFFFFFFFFFFFFFFF, 8}, 1, 1, false);
+  mmu.requestWrite({254, 8}, {0xFFFFFFFFFFFFFFFF, 8});
   // Check write happened
   // Check write happened
   auto memResp = sMem.getUntimedData(254, 8);
@@ -244,8 +318,15 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   }
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({264, 8}, regVal, 2, 2, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{264, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(2);
+  uop2->setSequenceId(2);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -277,7 +358,15 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({264, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{264, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -286,7 +375,15 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send packet to open 2nd monitor
-  mmu.requestRead({32, 8}, 1, 1, true);
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{32, 8}};
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestRead(uop2);
+  // Check response
   readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 2);
   EXPECT_EQ(readResp[1].requestId, 1);
@@ -295,8 +392,15 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   EXPECT_EQ(readResp[1].data.get<uint64_t>(), 0x2726252423222120);
 
   // Send packet to close 2nd monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({32, 8}, regVal, 2, 2, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target3 = {{32, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop3 =
+      std::make_shared<simeng::MockInstruction>();
+  uop3->setInstructionId(2);
+  uop3->setSequenceId(2);
+  ON_CALL(*uop3, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop3, getGeneratedAddresses()).WillByDefault(ReturnRef(target3));
+  mmu.requestWrite(uop3, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -329,7 +433,15 @@ TEST(LLSCTest, replacedMonitorFailure) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -338,7 +450,15 @@ TEST(LLSCTest, replacedMonitorFailure) {
   EXPECT_EQ(readResp[0].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send packet to open 2nd monitor
-  mmu.requestRead({264, 8}, 1, 1, true);
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{264, 8}};
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestRead(uop2);
+  // Check response
   readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 2);
   EXPECT_EQ(readResp[1].requestId, 1);
@@ -347,8 +467,15 @@ TEST(LLSCTest, replacedMonitorFailure) {
   EXPECT_EQ(readResp[1].data.get<uint64_t>(), 0x0F0E0D0C0B0A0908);
 
   // Send packet to close 2nd monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({8, 8}, regVal, 2, 2, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target3 = {{8, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop3 =
+      std::make_shared<simeng::MockInstruction>();
+  uop3->setInstructionId(2);
+  uop3->setSequenceId(2);
+  ON_CALL(*uop3, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop3, getGeneratedAddresses()).WillByDefault(ReturnRef(target3));
+  mmu.requestWrite(uop3, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);
@@ -382,7 +509,15 @@ TEST(LLSCTest, contextSwitchFailure) {
   sMem.sendUntimedData(data, 0, dataSize);
 
   // Send packet to open monitor
-  mmu.requestRead({8, 8}, 0, 0, true);
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+  // Check response
   auto readResp = mmu.getCompletedReads();
   EXPECT_EQ(readResp.size(), 1);
   EXPECT_EQ(readResp[0].requestId, 0);
@@ -394,8 +529,15 @@ TEST(LLSCTest, contextSwitchFailure) {
   mmu.setTid(1);
 
   // Send packet to close monitor
-  simeng::RegisterValue regVal = {0x12345678DEADBEEF, 8};
-  mmu.requestWrite({8, 8}, regVal, 1, 1, true);
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
   // Inspect result
   auto writeResp = mmu.getCompletedCondStores();
   EXPECT_EQ(writeResp.size(), 1);

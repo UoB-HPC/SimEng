@@ -1,6 +1,14 @@
+#include "MockInstruction.hh"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
+
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Property;
+using ::testing::Return;
+using ::testing::ReturnRef;
 
 namespace {
 
@@ -29,7 +37,7 @@ TEST(FixedLatencyMemoryTest, WriteData) {
   // Should ignore the 7 cycle latency and opt for the interface defined latency
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  mmu->requestWrite(target, value, 0, 0);
+  mmu->requestWrite(target, value);
   EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
@@ -85,7 +93,8 @@ TEST(FixedLatencyMemoryTest, ReadData) {
   // Write a 32-bit value to memory
   simeng::memory::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
-  mmu->requestWrite(target, value, 0, 0);
+
+  mmu->requestWrite(target, value);
   EXPECT_TRUE(mmu->hasPendingRequests());
 
   // Tick once - request should still be pending
@@ -126,12 +135,26 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   connection.connect(port1, port2);
 
   // Create a target such that address + size will overflow
-  simeng::memory::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
-  mmu->requestRead(overflowTarget, 1, 1);
+  std::vector<simeng::memory::MemoryAccessTarget> overflowTarget = {
+      {UINT64_MAX, 4}};
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  uop->setSequenceId(1);
+  uop->setInstructionId(1);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(false));
+  ON_CALL(*uop, getGeneratedAddresses())
+      .WillByDefault(ReturnRef(overflowTarget));
+  mmu->requestRead(uop);
 
   // Create a regular out-of-bounds target
-  simeng::memory::MemoryAccessTarget target = {0, 8};
-  mmu->requestRead(target, 2, 2);
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{0, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setSequenceId(2);
+  uop2->setInstructionId(2);
+  ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(false));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu->requestRead(uop2);
 
   // Tick once - request should have completed
   mem->tick();
@@ -143,12 +166,12 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   auto overflowResult = entries[0];
   EXPECT_EQ(overflowResult.requestId, 1);
   EXPECT_EQ(overflowResult.data, simeng::RegisterValue());
-  EXPECT_EQ(overflowResult.target, overflowTarget);
+  EXPECT_EQ(overflowResult.target, overflowTarget[0]);
 
   auto result = entries[1];
   EXPECT_EQ(result.requestId, 2);
   EXPECT_EQ(result.data, simeng::RegisterValue());
-  EXPECT_EQ(result.target, target);
+  EXPECT_EQ(result.target, target[0]);
 }
 
 }  // namespace
