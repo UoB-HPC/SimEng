@@ -15,13 +15,18 @@ class PipelineBuffer {
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
   PipelineBuffer(int width, const T& initialValue)
-      : width(width), buffer(width * defaultLength_, initialValue),
-        length_(defaultLength_), headIndex_(defaultLength_-1),
+      : width(width),
+        buffer(width * defaultLength_, initialValue),
+        length_(defaultLength_),
+        headIndex_(defaultLength_ - 1),
         tailIndex_(0) {}
 
   PipelineBuffer(int width, const T& initialValue, int length)
-      : width(width), buffer(width * length, initialValue), length_(length),
-        headIndex_(length_-1), tailIndex_(0) {
+      : width(width),
+        buffer(width * length, initialValue),
+        length_(length),
+        headIndex_(length_ - 1),
+        tailIndex_(0) {
     assert(length_ != 0 && "Pipeline buffer length cannot be 0");
   }
 
@@ -30,14 +35,14 @@ class PipelineBuffer {
   void tick() {
     if (isStalled_) return;
 
-    //length ==1 shortcut? condition check cost
+    // length ==1 shortcut? condition check cost
 
-    if (headIndex_) { // when headIndex != 0
+    if (headIndex_) {  // when headIndex != 0
       headIndex_--;
     } else {
       headIndex_ = length_ - 1;
     }
-    if (tailIndex_) { // when tailIndex != 0
+    if (tailIndex_) {  // when tailIndex != 0
       tailIndex_--;
     } else {
       tailIndex_ = length_ - 1;

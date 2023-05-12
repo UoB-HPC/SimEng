@@ -98,7 +98,8 @@ bool ExceptionHandler::init() {
       case 57: {  // close
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         stateChange = {ChangeType::REPLACEMENT, {R0}};
-        stateChange.modifiedRegisterValues.push_back(RegisterValue(linux_.close(fd), instruction_.getArchRegWidth()));
+        stateChange.modifiedRegisterValues.push_back(
+            RegisterValue(linux_.close(fd), instruction_.getArchRegWidth()));
         break;
       }
       case 61: {  // getdents64
@@ -185,9 +186,9 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
           int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}};
-          stateChange.modifiedRegisterValues.push_back(RegisterValue(retval, instruction_.getArchRegWidth()));
+          ProcessStateChange stateChange = {ChangeType::REPLACEMENT, {R0}};
+          stateChange.modifiedRegisterValues.push_back(
+              RegisterValue(retval, instruction_.getArchRegWidth()));
           return concludeSyscall(stateChange);
         });
       }
@@ -355,9 +356,9 @@ bool ExceptionHandler::init() {
         uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
 
         kernel::stat statOut;
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}};
-        stateChange.modifiedRegisterValues.push_back(RegisterValue(linux_.fstat(fd, statOut), instruction_.getArchRegWidth()));
+        stateChange = {ChangeType::REPLACEMENT, {R0}};
+        stateChange.modifiedRegisterValues.push_back(RegisterValue(
+            linux_.fstat(fd, statOut), instruction_.getArchRegWidth()));
         stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
         stateChange.memoryAddressValues.push_back(statOut);
         break;
@@ -556,9 +557,9 @@ bool ExceptionHandler::init() {
       }
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}};
-        stateChange.modifiedRegisterValues.push_back(RegisterValue(static_cast<uint64_t>(result), instruction_.getArchRegWidth()));
+        stateChange = {ChangeType::REPLACEMENT, {R0}};
+        stateChange.modifiedRegisterValues.push_back(RegisterValue(
+            static_cast<uint64_t>(result), instruction_.getArchRegWidth()));
         break;
       }
       case 215: {  // munmap
@@ -844,7 +845,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   auto& metadata = insn.getMetadata();
   for (int8_t i = metadata.lenBytes; i > 0; i--) {
     std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(metadata.encoding[i-1]);
+              << static_cast<unsigned int>(metadata.encoding[i - 1]);
   }
   std::cout << std::dec << "    ";
   if (exception == InstructionException::EncodingUnallocated) {

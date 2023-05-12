@@ -14,11 +14,7 @@ namespace Opcode {
 #include "RISCVGenInstrInfo.inc"
 }  // namespace Opcode
 
-enum INSTR_LENGTH {
-  IL_16B,
-  IL_32B,
-  IL_INVALID
-};
+enum INSTR_LENGTH { IL_16B, IL_32B, IL_INVALID };
 
 /** A simplified RISC-V-only version of the Capstone instruction structure. */
 struct InstructionMetadata {

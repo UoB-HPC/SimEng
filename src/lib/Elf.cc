@@ -47,7 +47,8 @@ Elf::Elf(std::string path, char** imagePointer) {
   // Check whether this is a 32 or 64-bit executable
   char bitFormat;
   file.read(&bitFormat, sizeof(bitFormat));
-  if (bitFormat != ElfBitFormat::Format32 && bitFormat != ElfBitFormat::Format64) {
+  if (bitFormat != ElfBitFormat::Format32 &&
+      bitFormat != ElfBitFormat::Format64) {
     return;
   }
 
@@ -92,7 +93,8 @@ Elf::Elf(std::string path, char** imagePointer) {
     // Seek to the byte representing header entry size.
     file.seekg(0x36);
     uint16_t headerEntrySize;
-    file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
+    file.read(reinterpret_cast<char*>(&headerEntrySize),
+              sizeof(headerEntrySize));
     uint16_t headerEntries;
     file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
 
@@ -168,8 +170,8 @@ Elf::Elf(std::string path, char** imagePointer) {
     for (const auto& header : headers_) {
       if (header.type == 1) {  // LOAD
         file.seekg(header.offset);
-        // Read `fileSize` bytes from `file` into the appropriate place in process
-        // memory
+        // Read `fileSize` bytes from `file` into the appropriate place in
+        // process memory
         file.read(*imagePointer + header.virtualAddress, header.fileSize);
       }
     }
@@ -210,7 +212,8 @@ Elf::Elf(std::string path, char** imagePointer) {
     // Seek to the byte representing header entry size.
     file.seekg(0x2a);
     uint16_t headerEntrySize;
-    file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
+    file.read(reinterpret_cast<char*>(&headerEntrySize),
+              sizeof(headerEntrySize));
     uint16_t headerEntries;
     file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
 
@@ -285,8 +288,8 @@ Elf::Elf(std::string path, char** imagePointer) {
     for (const auto& header : headers32_) {
       if (header.type == 1) {  // LOAD
         file.seekg(header.offset);
-        // Read `fileSize` bytes from `file` into the appropriate place in process
-        // memory
+        // Read `fileSize` bytes from `file` into the appropriate place in
+        // process memory
         file.read(*imagePointer + header.virtualAddress, header.fileSize);
       }
     }
