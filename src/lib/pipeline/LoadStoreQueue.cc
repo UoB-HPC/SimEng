@@ -218,6 +218,29 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     }
   }
 
+  // Resolve any conflicts
+  const auto& itr = conflictionMap_.find(uop->getSequenceId());
+  if (itr != conflictionMap_.end()) {
+    // For each load, we can now execute them given the conflicting
+    // store has now been triggered
+    auto ldVec = itr->second;
+    for (auto load : ldVec) {
+      std::queue<memory::MemoryAccessTarget> targets;
+      for (auto const& addr : load->getGeneratedAddresses()) {
+        targets.emplace(addr);
+      }
+      // Use store's latency to ensure that the load doesn't overtake the store
+      // it conflicted with
+      uint64_t strLat = tickCounter_ + uop->getLSQLatency();
+      requestLoadQueue_[strLat + load->getLSQLatency()].push_back(
+          {targets, load});
+      // Register active load
+      requestedLoads_.emplace(load->getSequenceId(), load);
+    }
+    // Remove all entries for this store from conflictionMap_
+    conflictionMap_.erase(uop->getSequenceId());
+  }
+
   if (uop->isStoreCond()) {
     requestedCondStores_.emplace(uop->getSequenceId(), uop);
   }
@@ -439,27 +462,6 @@ void LoadStoreQueue::tick() {
           // Remove entry from vector iff all of its requests have been
           // scheduled
           if (addressQueue.size() == 0) {
-            if (!chooseLoad) {
-              // If its a Store instruction, Resolve any conflicts
-              const auto& itr =
-                  conflictionMap_.find(itInsn->insn->getSequenceId());
-              if (itr != conflictionMap_.end()) {
-                // For each load, we can now execute them given the conflicting
-                // store has now been triggered
-                const auto& ldVec = itr->second;
-                for (auto load : ldVec) {
-                  std::queue<memory::MemoryAccessTarget> targets;
-                  for (auto const& addr : load->getGeneratedAddresses()) {
-                    targets.emplace(addr);
-                  }
-                  requestLoadQueue_[tickCounter_ + load->getLSQLatency()]
-                      .push_back({targets, load});
-                  // Register active load
-                  requestedLoads_.emplace(load->getSequenceId(), load);
-                }
-              }
-              conflictionMap_.erase(itInsn->insn->getSequenceId());
-            }
             itInsn = itReq->second.erase(itInsn);
           }
         }
