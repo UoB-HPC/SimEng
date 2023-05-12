@@ -31,7 +31,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{address, 4}});
     } else {
       // Double
-      setMemoryAddresses({{address, 8}});
+      setMemoryAddresses({{address, archRegWidth_}});
     }
     return getGeneratedAddresses();
   }
@@ -40,7 +40,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_SD:
       [[fallthrough]];
     case Opcode::RISCV_LD: {
-      setMemoryAddresses({{address, 8}});
+      setMemoryAddresses({{address, archRegWidth_}});
       break;
     }
     case Opcode::RISCV_SW:
@@ -86,7 +86,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_LR_D_RL:
       [[fallthrough]];
     case Opcode::RISCV_LR_D_AQ_RL: {
-      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+      setMemoryAddresses({{operands[0].get<uint64_t>(), archRegWidth_}});
       break;
     }
     case Opcode::RISCV_SC_W:
@@ -106,9 +106,22 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_SC_D_RL:
       [[fallthrough]];
     case Opcode::RISCV_SC_D_AQ_RL: {
-      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      setMemoryAddresses({{operands[1].get<uint64_t>(), archRegWidth_}});
       break;
     }
+    case Opcode::RISCV_C_LW:
+    case Opcode::RISCV_C_FLWSP:
+    case Opcode::RISCV_C_LWSP: {
+      setMemoryAddresses({{operands[0].get<uint32_t>() + c_imm, 4}});
+      break;
+    }
+    case Opcode::RISCV_C_SW:
+    case Opcode::RISCV_C_FSWSP:
+    case Opcode::RISCV_C_SWSP: {
+      setMemoryAddresses({{operands[1].get<uint32_t>() + c_imm, 4}});
+      break;
+    }
+
     default:
       exceptionEncountered_ = true;
       exception_ = InstructionException::ExecutionNotYetImplemented;

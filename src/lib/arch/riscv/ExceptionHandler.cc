@@ -97,7 +97,8 @@ bool ExceptionHandler::init() {
       }
       case 57: {  // close
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.close(fd)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}};
+        stateChange.modifiedRegisterValues.push_back(RegisterValue(linux_.close(fd), instruction_.getArchRegWidth()));
         break;
       }
       case 61: {  // getdents64
@@ -185,7 +186,8 @@ bool ExceptionHandler::init() {
         return readBufferThen(bufPtr, count, [=]() {
           int64_t retval = linux_.write(fd, dataBuffer.data(), count);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
+              ChangeType::REPLACEMENT, {R0}};
+          stateChange.modifiedRegisterValues.push_back(RegisterValue(retval, instruction_.getArchRegWidth()));
           return concludeSyscall(stateChange);
         });
       }
@@ -354,7 +356,8 @@ bool ExceptionHandler::init() {
 
         kernel::stat statOut;
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_.fstat(fd, statOut)}};
+            ChangeType::REPLACEMENT, {R0}};
+        stateChange.modifiedRegisterValues.push_back(RegisterValue(linux_.fstat(fd, statOut), instruction_.getArchRegWidth()));
         stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
         stateChange.memoryAddressValues.push_back(statOut);
         break;
@@ -554,7 +557,8 @@ bool ExceptionHandler::init() {
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
+            ChangeType::REPLACEMENT, {R0}};
+        stateChange.modifiedRegisterValues.push_back(RegisterValue(static_cast<uint64_t>(result), instruction_.getArchRegWidth()));
         break;
       }
       case 215: {  // munmap
@@ -823,6 +827,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
       break;
+    case InstructionException::UnmappedSysReg:
+      std::cout << "unmapped system register";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";
@@ -835,9 +842,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << insn.getInstructionAddress() << ": ";
 
   auto& metadata = insn.getMetadata();
-  for (uint8_t byte : metadata.encoding) {
+  for (int8_t i = metadata.lenBytes; i > 0; i--) {
     std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(byte) << " ";
+              << static_cast<unsigned int>(metadata.encoding[i-1]);
   }
   std::cout << std::dec << "    ";
   if (exception == InstructionException::EncodingUnallocated) {

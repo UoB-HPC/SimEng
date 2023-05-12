@@ -44,27 +44,6 @@ void Core::tick() {
     return;
   }
 
-  if (pendingReads_ > 0) {
-    // Handle pending reads to a uop
-    auto& uop = microOps_.front();
-
-    const auto& completedReads = dataMemory_.getCompletedReads();
-    for (const auto& response : completedReads) {
-      assert(pendingReads_ > 0);
-      uop->supplyData(response.target.address, response.data);
-      pendingReads_--;
-    }
-    dataMemory_.clearCompletedReads();
-
-    if (pendingReads_ == 0) {
-      // Load complete: resume execution
-      execute(uop);
-    }
-
-    // More data pending, end cycle early
-    return;
-  }
-
   // Fetch
 
   // Determine if new uops are needed to be fetched
@@ -130,7 +109,13 @@ void Core::tick() {
         previousAddresses_.push_back(target);
       }
       pendingReads_ = addresses.size();
-      return;
+      const auto& completedReads = dataMemory_.getCompletedReads();
+      for (const auto& response : completedReads) {
+        assert(pendingReads_ > 0);
+        uop->supplyData(response.target.address, response.data);
+        pendingReads_--;
+      }
+      dataMemory_.clearCompletedReads();
     } else {
       // Early execution due to lacking addresses
       execute(uop);
@@ -166,6 +151,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
+    instructionsExecuted_++;
+    isa_.updateInstrTrace(uop, &registerFileSet_, ticks_); // Handle ECALL into trace here
     handleException(uop);
     return;
   }
@@ -197,7 +184,19 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     }
   }
 
-  if (uop->isLastMicroOp()) instructionsExecuted_++;
+  if (uop->isLastMicroOp()) {
+    instructionsExecuted_++;
+    // TODO: This is architecture-specific. It's here for the reference and should(will) be refactored later
+    uint16_t sysreg_instrret = isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_INSTRRET);
+    uint16_t sysreg_cycle = isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_CYCLE);
+    // NOTE: 64-bit system registers are not implemented yet
+    //TODO: Maybe make use of byteLength and remove is32BitMode() function?
+    if (isa_.is32BitMode()) {
+      registerFileSet_.set(Register{0x2, sysreg_instrret}, RegisterValue(instructionsExecuted_, 4));
+      registerFileSet_.set(Register{0x2, sysreg_cycle}, RegisterValue(ticks_, 4));
+    }
+    isa_.updateInstrTrace(uop, &registerFileSet_, ticks_);
+  }
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});

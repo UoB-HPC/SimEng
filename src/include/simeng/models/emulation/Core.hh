@@ -11,6 +11,9 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/span.hh"
 
+// TODO: This is architecture-specific, need to be refactored later. See comments in Core.cc
+#include "simeng/arch/riscv/Architecture.hh"
+
 namespace simeng {
 namespace models {
 namespace emulation {

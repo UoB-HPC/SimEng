@@ -2,6 +2,8 @@
 
 #include <forward_list>
 #include <unordered_map>
+#include <fstream>
+#include <iomanip>
 
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
@@ -13,6 +15,32 @@ using csh = size_t;
 namespace simeng {
 namespace arch {
 namespace riscv {
+
+enum riscv_sysreg {
+  SYSREG_MSTATUS = 0x300,
+  SYSREG_MSTATUSH = 0x310,
+  SYSREG_MEPC = 0x341,
+  SYSREG_MCAUSE = 0x342,
+  SYSREG_MHARTID = 0xF14,
+  SYSREG_CYCLE = 0xC00,
+  SYSREG_TIME = 0xC01,
+  SYSREG_INSTRRET = 0xC02
+};
+
+struct constantsPool {
+  const uint8_t alignMask = 0x3;
+  const uint8_t alignMaskCompressed = 0x1;
+  const uint8_t bytesLimit = 4;
+  const uint8_t bytesLimitCompressed = 2;
+  const uint8_t byteLength64 = 8;
+  const uint8_t byteLength32 = 4;
+};
+
+struct archConstants {
+  uint8_t alignMask;
+  uint8_t bytesLimit; /* Minimum bytes the decoder needs to process */
+  uint8_t regWidth; /* Register width in bytes */
+};
 
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
@@ -63,6 +91,13 @@ class Architecture : public arch::Architecture {
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const override;
 
+  /** Update trace file */
+  void updateInstrTrace(const std::shared_ptr<simeng::Instruction>& instruction,
+                        RegisterFileSet* regFile, uint64_t tick) const override;
+
+  /** Return a struct contains constants */
+  archConstants getConstants() const;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -95,6 +130,15 @@ class Architecture : public arch::Architecture {
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** A pointer to the trace file */
+  std::ofstream *traceFile_;
+
+  /** Switch for updateInstrTrace() */
+  bool traceOn_ = false;
+
+  /** A struct contains constants */
+  archConstants constants_;
 };
 
 }  // namespace riscv

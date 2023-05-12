@@ -11,6 +11,8 @@ namespace arch {
 namespace riscv {
 
 const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
+const Register Instruction::RA_REGISTER = {RegisterType::GENERAL, 1};
+const Register Instruction::SP_REGISTER = {RegisterType::GENERAL, 2};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
@@ -164,6 +166,10 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+
+void Instruction::setArchRegWidth(uint8_t len) { archRegWidth_ = len; }
+
+uint8_t Instruction::getArchRegWidth() const { return archRegWidth_; }
 
 }  // namespace riscv
 }  // namespace arch

@@ -233,7 +233,8 @@ void CoreInstance::createCore() {
   }
 
   // Create the architecture, with knowledge of the kernel
-  if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
+  if (config_["Core"]["ISA"].as<std::string>() == "rv64" ||
+      config_["Core"]["ISA"].as<std::string>() == "rv32") {
     arch_ =
         std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_);
   } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {

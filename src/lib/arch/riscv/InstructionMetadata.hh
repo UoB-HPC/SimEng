@@ -14,6 +14,12 @@ namespace Opcode {
 #include "RISCVGenInstrInfo.inc"
 }  // namespace Opcode
 
+enum INSTR_LENGTH {
+  IL_16B,
+  IL_32B,
+  IL_INVALID
+};
+
 /** A simplified RISC-V-only version of the Capstone instruction structure. */
 struct InstructionMetadata {
  public:
@@ -70,6 +76,13 @@ struct InstructionMetadata {
   /** The number of explicit operands. */
   uint8_t operandCount;
 
+  /** The instruction length for variable instruction length support. */
+  INSTR_LENGTH len;
+  uint8_t lenBytes;
+
+  /** RISC-V CSR encoding */
+  uint32_t csr = 0;
+
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
@@ -85,6 +98,9 @@ struct InstructionMetadata {
   /** RISC-V helper function
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
+
+  /** Set the byte length of instruction */
+  void setLength(uint8_t size);
 };
 
 }  // namespace riscv

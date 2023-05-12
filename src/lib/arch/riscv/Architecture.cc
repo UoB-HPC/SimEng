@@ -16,7 +16,25 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
-  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
+  is32Bit_ = ARCH_64BIT;
+  if (config["Core"]["ISA"].as<std::string>() == "rv32") {
+    is32Bit_ = ARCH_32BIT;
+  }
+
+  cs_mode csMode = CS_MODE_RISCV64;
+  constantsPool constantsPool;
+
+  if(is32Bit_) {
+    csMode = CS_MODE_RISCV32GC; // TODO Note: currently using local (1-line)modified capstone
+    constants_.alignMask = constantsPool.alignMaskCompressed;
+    constants_.regWidth = constantsPool.byteLength32;
+    constants_.bytesLimit = constantsPool.bytesLimitCompressed;
+  } else {
+    constants_.alignMask = constantsPool.alignMask;
+    constants_.regWidth = constantsPool.byteLength64;
+    constants_.bytesLimit = constantsPool.bytesLimit;
+  }
+  cs_err n = cs_open(CS_ARCH_RISCV, csMode, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
                  "to error "
@@ -25,6 +43,16 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Generate zero-indexed system register map
+  systemRegisterMap_[SYSREG_MSTATUS] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_MSTATUSH] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_MEPC] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_MCAUSE] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_MHARTID] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_CYCLE] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_TIME] = systemRegisterMap_.size();
+  systemRegisterMap_[SYSREG_INSTRRET] = systemRegisterMap_.size();
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -117,19 +145,28 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       }
     }
   }
+  if (config["Core"]["Trace"].as<bool>()) {
+    traceFile_ = new std::ofstream();
+    traceFile_->open("./trace.log");
+    traceOn_ = true;
+  }
 }
 Architecture::~Architecture() {
   cs_close(&capstoneHandle);
   decodeCache.clear();
   metadataCache.clear();
   groupExecutionInfo_.clear();
+  if(traceOn_) {
+    traceFile_->close();
+  }
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
-  if (instructionAddress & 0x3) {
+  // 2-byte when Compressed ISA is supported
+  if (instructionAddress & constants_.alignMask) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
     metadataCache.emplace_front(metadata);
@@ -142,8 +179,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= 4 &&
-         "Fewer than 4 bytes supplied to RISC-V decoder");
+  assert(bytesAvailable >= constants_.bytesLimit &&
+         "Fewer than bytes limit supplied to RISC-V decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
   uint32_t insn;
@@ -175,6 +212,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     Instruction newInsn(*this, metadataCache.front());
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
+    // Set byte length in instruction
+    newInsn.setArchRegWidth(constants_.regWidth);
     // Cache the instruction
     iter = decodeCache.insert({insn, newInsn}).first;
   }
@@ -187,7 +226,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   uop->setInstructionAddress(instructionAddress);
 
-  return 4;
+  return iter->second.getMetadata().lenBytes;
 }
 
 executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
@@ -216,9 +255,9 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
     const {
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
-      {8, 32},          // General purpose
-      {8, 32},          // Floating Point
-      {8, numSysRegs},  // System
+      {constants_.regWidth, 32},          // General purpose
+      {constants_.regWidth, 32},          // Floating Point
+      {constants_.regWidth, numSysRegs},  // System
   };
 }
 
@@ -234,12 +273,17 @@ ProcessStateChange Architecture::getInitialState() const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
-
-  uint64_t stackPointer = linux_.getInitialStackPointer();
-  // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
-  changes.modifiedRegisterValues.push_back(stackPointer);
-
+  uint64_t stackPointer;
+  // TODO: check if this conditional expression is needed
+  if(is32Bit_) {
+    stackPointer = (uint32_t)linux_.getInitialStackPointer();
+    changes.modifiedRegisterValues.push_back((uint32_t)stackPointer);
+  } else
+  {
+    stackPointer = linux_.getInitialStackPointer();
+    changes.modifiedRegisterValues.push_back(stackPointer);
+  }
   return changes;
 }
 
@@ -247,9 +291,9 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
-  return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
-          {8, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
-          {8, getNumSystemRegisters()}};
+  return {{constants_.regWidth, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
+          {constants_.regWidth, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
+          {constants_.regWidth, getNumSystemRegisters()}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
@@ -266,6 +310,76 @@ uint16_t Architecture::getNumSystemRegisters() const {
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
 }
+
+void Architecture::updateInstrTrace(const std::shared_ptr<simeng::Instruction>& instruction,
+                                    RegisterFileSet* regFile, uint64_t tick) const {
+  if(traceOn_) {
+    Instruction instr_ = *static_cast<Instruction*>(instruction.get());
+    auto& metadata = instr_.getMetadata();
+    std::stringstream s;
+    s << "0x" << std::hex << instr_.getInstructionAddress() << " ";
+    if (tick < 100000000)
+      s << "t(" << std::setfill('0') << std::setw(8) << std::dec << (uint32_t)tick << ") ";
+    else
+      s << "t(" << std::setfill('0') << std::setw(16) << std::dec << (uint32_t)tick << ") ";
+    s << "(";
+    if(metadata.len == IL_16B) {
+      s << "0000";
+    }
+    for(int8_t i=metadata.lenBytes; i>0; i--) {
+      s << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned int>(metadata.encoding[i-1]);
+    }
+    s << ") ";
+    s << metadata.mnemonic << " " << metadata.operandStr;
+    auto sources = instr_.getOperandRegisters();
+    auto destinations = instr_.getDestinationRegisters();
+    int8_t num_src = (int8_t)sources.size();
+    int8_t num_dest = (int8_t)destinations.size();
+    if((num_src + num_dest) >0) {
+      s << "    ";
+      if (num_dest > 0) {
+        s << "(d: ";
+        for(int8_t i=0;i<num_dest; i++) {
+          auto reg = destinations[i];
+          if(reg.type == RegisterType::GENERAL) {
+            s << "x" << std::dec << std::setfill('0') << std::setw(2) << reg.tag << "=0x";
+          } else if(reg.type == RegisterType::FLOAT) {
+            s << "f" << std::dec << std::setfill('0') << std::setw(2) << reg.tag << "=0x";
+          } else if(reg.type == RegisterType::SYSTEM) {
+            s << "csr_0x" << std::hex << std::setfill('0') << std::setw(3) << metadata.csr << "=0x";
+          }
+          s << std::hex << std::setfill('0') << std::setw(8) << regFile->get(reg).get<uint32_t>();
+          if(i < (num_dest-1)) {
+            s << " ";
+          }
+        }
+        s << ") ";
+      }
+      if (num_src > 0) {
+        s << "(s: ";
+        for(int8_t i=0;i<num_src; i++) {
+          auto reg = sources[i];
+          if(reg.type == RegisterType::GENERAL) {
+            s << "x" << std::dec << std::setfill('0') << std::setw(2) << reg.tag << "=0x";
+          } else if(reg.type == RegisterType::FLOAT) {
+            s << "f" << std::dec << std::setfill('0') << std::setw(2) << reg.tag << "=0x";
+          } else if(reg.type == RegisterType::SYSTEM) {
+            s << "csr_0x" << std::hex << std::setfill('0') << std::setw(3) << metadata.csr << "=0x";
+          }
+          s << std::hex << std::setfill('0') << std::setw(8) << regFile->get(reg).get<uint32_t>();
+          if(i < (num_src-1)) {
+            s << " ";
+          }
+        }
+        s << ") ";
+      }
+    }
+    s << std::endl;
+    *traceFile_ << s.str();
+    traceFile_->flush(); //Helps with debugging sometimes as all the state of previous committed instr is written to file.
+  }
+}
+archConstants Architecture::getConstants() const { return constants_; }
 
 }  // namespace riscv
 }  // namespace arch

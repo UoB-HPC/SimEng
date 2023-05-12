@@ -84,6 +84,10 @@ class Architecture : public arch::Architecture {
   /** Update the value of SVCRval_. */
   void setSVCRval(const uint64_t newVal) const;
 
+  /** Update trace file */
+  void updateInstrTrace(const std::shared_ptr<simeng::Instruction>& instruction,
+                        RegisterFileSet* regFile, uint64_t tick) const override;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to

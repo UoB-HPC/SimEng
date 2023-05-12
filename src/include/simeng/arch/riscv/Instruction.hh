@@ -47,7 +47,21 @@ enum class InstructionException {
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
+  UnmappedSysReg,
   NoAvailablePort
+};
+
+enum CInstructionFormat {
+  CIF_CR,
+  CIF_CI,
+  CIF_CSS,
+  CIF_CIW,
+  CIF_CL,
+  CIF_CS,
+  CIF_CA,
+  CIF_CB,
+  CIF_CJ,
+  CIF_INVALID
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -163,13 +177,22 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
+  static const Register RA_REGISTER;
+  static const Register SP_REGISTER;
+
+  /** Set register byte width */
+  void setArchRegWidth(uint8_t len);
+
+  /** ONLY valid after decode. Return regByteWidth */
+  uint8_t getArchRegWidth() const;
+
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 2;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 1;
+  static const uint8_t MAX_DESTINATION_REGISTERS = 2; //CSRs can be another destination apart from std RD
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -198,10 +221,18 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
+  /** The length of instruction in bytes. */
+  uint8_t archRegWidth_;
+
   // Decoding
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
+
+  bool decode16();
+
+  /** Deal with CSR when decoding */
+  bool decodeCsr();
 
   /** Invalidate instructions that are currently not yet implemented. This
  prevents errors during speculated branches with unknown destinations;
@@ -238,6 +269,13 @@ class Instruction : public simeng::Instruction {
   bool isLogical_ = false;
   /** Is this a compare instruction? */
   bool isCompare_ = false;
+  /** Is this a csr operation instruction? */
+  bool isCsr_ = false;
+
+  CInstructionFormat instFormat_ = CIF_INVALID;
+
+  /** Extracted value of current immediate from metadata */
+  uint32_t c_imm = 0;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
@@ -252,6 +290,9 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
+
+  /** Return integer register value, to support both 32-bit and 64-bit mode */
+  int64_t getSignedInt(RegisterValue& value) const;
 };
 
 }  // namespace riscv

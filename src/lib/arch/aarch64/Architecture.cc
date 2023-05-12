@@ -325,6 +325,10 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_ = newVal;
 }
 
+void Architecture::updateInstrTrace(const std::shared_ptr<simeng::Instruction>& instruction,
+                                    simeng::RegisterFileSet* regFile, uint64_t tick) const {
+  }
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

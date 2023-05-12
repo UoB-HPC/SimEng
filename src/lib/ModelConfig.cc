@@ -67,7 +67,7 @@ void ModelConfig::validate() {
                "Streaming-Vector-Length"};
   validISA = nodeChecker<std::string>(
       configFile_[root][subFields[0]], subFields[0],
-      std::vector<std::string>({"AArch64", "rv64"}), ExpectedValue::String);
+      std::vector<std::string>({"AArch64", "rv64", "rv32"}), ExpectedValue::String);
   nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -146,7 +146,8 @@ void ModelConfig::validate() {
               1, group.as<std::string>().size()));
           configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
               opcode;
-          if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+          if (configFile_["Core"]["ISA"].as<std::string>() == "rv64" ||
+              configFile_["Core"]["ISA"].as<std::string>() == "rv32") {
             // Ensure opcode is between the bounds of 0 and Capstones'
             // RISCV_INSTRUCTION_LIST_END
             boundChecker(
@@ -233,7 +234,8 @@ void ModelConfig::validate() {
 
     // TODO make as many subfields as possible generic to avoid repeated code
     // e.g. AArch64 FloatingPoint/SVE-Count -> FloatingPoint-Count
-    if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+    if (configFile_["Core"]["ISA"].as<std::string>() == "rv64" ||
+        configFile_["Core"]["ISA"].as<std::string>() == "rv32") {
       // Register-Set
       root = "Register-Set";
       subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
@@ -707,7 +709,8 @@ void ModelConfig::createGroupMapping() {
                      "STORE_ADDRESS_SME",
                      "STORE_DATA_SME",
                      "STORE_SME"};
-  } else if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+  } else if (configFile_["Core"]["ISA"].as<std::string>() == "rv64" ||
+             configFile_["Core"]["ISA"].as<std::string>() == "rv32") {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",

@@ -62,6 +62,10 @@ uint64_t zeroExtend(uint64_t bits, uint64_t msb) {
   return rightShift;
 }
 
+inline int64_t Instruction::getSignedInt(RegisterValue& value) const {
+  return (archRegWidth_ == 4) ? (int64_t)value.get<int32_t>() : value.get<int64_t>();
+}
+
 void Instruction::executionNYI() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::ExecutionNotYetImplemented;
@@ -79,32 +83,38 @@ void Instruction::execute() {
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
-      results[0] = RegisterValue(bitExtend(memoryData[0].get<uint8_t>(), 8), 8);
+      results[0] = RegisterValue(bitExtend(memoryData[0].get<uint8_t>(), 8),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LBU: {  // LBU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint8_t>(), 8), 8);
+          RegisterValue(zeroExtend(memoryData[0].get<uint8_t>(), 8),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LH: {  // LH rd,rs1,imm
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint16_t>(), 16), 8);
+          RegisterValue(bitExtend(memoryData[0].get<uint16_t>(), 16),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LHU: {  // LHU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint16_t>(), 16), 8);
+          RegisterValue(zeroExtend(memoryData[0].get<uint16_t>(), 16),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LW: {  // LW rd,rs1,imm
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LWU: {  // LWU rd,rs1,imm
       results[0] =
-          RegisterValue(zeroExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(zeroExtend(memoryData[0].get<uint32_t>(), 32),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
@@ -123,19 +133,19 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_SLL: {  // SLL rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
       const int64_t rs2 =
-          operands[1].get<int64_t>() & 63;  // Only use lowest 6 bits
+          getSignedInt(operands[1]) & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 << rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SLLI: {  // SLLI rd,rs1,shamt
-      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
       const int64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 << shamt);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SLLW: {  // SLLW rd,rs1,rs2
@@ -143,7 +153,7 @@ void Instruction::execute() {
       const int32_t rs2 =
           operands[1].get<int32_t>() & 63;  // Only use lowest 6 bits
       int64_t out = signExtendW(static_cast<int32_t>(rs1 << rs2));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SLLIW: {  // SLLIW rd,rs1,shamt
@@ -151,7 +161,7 @@ void Instruction::execute() {
       const int32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 << shamt));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRL: {  // SRL rd,rs1,rs2
@@ -159,7 +169,7 @@ void Instruction::execute() {
       const uint64_t rs2 =
           operands[1].get<uint64_t>() & 63;  // Only use lowest 6 bits
       uint64_t out = static_cast<uint64_t>(rs1 >> rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRLI: {  // SRLI rd,rs1,shamt
@@ -167,7 +177,7 @@ void Instruction::execute() {
       const uint64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = static_cast<uint64_t>(rs1 >> shamt);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRLW: {  // SRLW rd,rs1,rs2
@@ -175,7 +185,7 @@ void Instruction::execute() {
       const uint32_t rs2 =
           operands[1].get<uint32_t>() & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint64_t>(rs1 >> rs2));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRLIW: {  // SRLIW rd,rs1,shamt
@@ -183,23 +193,23 @@ void Instruction::execute() {
       const uint32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 >> shamt));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRA: {  // SRA rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
       const int64_t rs2 =
-          operands[1].get<int64_t>() & 63;  // Only use lowest 6 bits
+          getSignedInt(operands[1]) & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 >> rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRAI: {  // SRAI rd,rs1,shamt
-      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
       const int64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 >> shamt);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRAW: {  // SRAW rd,rs1,rs2
@@ -207,7 +217,7 @@ void Instruction::execute() {
       const int32_t rs2 =
           operands[1].get<int32_t>() & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int32_t>(rs1 >> rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SRAIW: {  // SRAIW rd,rs1,shamt
@@ -215,55 +225,55 @@ void Instruction::execute() {
       const int32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int32_t>(rs1 >> shamt);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ADD: {  // ADD rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 + rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ADDW: {  // ADDW rd,rs1,rs2
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>();
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 + rs2));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ADDI: {  // ADDI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 + rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ADDIW: {  // ADDIW rd,rs1,imm
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t imm = metadata.operands[2].imm;
       uint64_t out = signExtendW(rs1 + imm);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SUB: {  // SUB rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 - rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SUBW: {  // SUBW rd,rs1,rs2
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>();
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 - rs2));
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_LUI: {  // LUI rd,imm
       uint64_t out = signExtendW(metadata.operands[1].imm
                                  << 12);  // Shift into upper 20 bits
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_AUIPC: {  // AUIPC rd,imm
@@ -271,58 +281,58 @@ void Instruction::execute() {
       const int64_t uimm = signExtendW(metadata.operands[1].imm
                                        << 12);  // Shift into upper 20 bits
       uint64_t out = static_cast<uint64_t>(pc + uimm);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_XOR: {  // XOR rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 ^ rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_XORI: {  // XORI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 ^ imm);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_OR: {  // OR rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 | rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ORI: {  // ORI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 | imm);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_AND: {  // AND rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 & rs2);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_ANDI: {  // ANDI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 & imm);
-      results[0] = RegisterValue(out, 8);
+      results[0] = RegisterValue(out, archRegWidth_);
       break;
     }
     case Opcode::RISCV_SLT: {  // SLT rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
       if (rs1 < rs2) {
-        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), archRegWidth_);
       }
       break;
     }
@@ -330,19 +340,19 @@ void Instruction::execute() {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs1 < rs2) {
-        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), archRegWidth_);
       }
       break;
     }
     case Opcode::RISCV_SLTI: {  // SLTI rd,rs1,imm
-      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
       const int64_t imm = metadata.operands[2].imm;
       if (rs1 < imm) {
-        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), archRegWidth_);
       }
       break;
     }
@@ -350,9 +360,9 @@ void Instruction::execute() {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = static_cast<int64_t>(metadata.operands[2].imm);
       if (rs1 < imm) {
-        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), archRegWidth_);
       }
       break;
     }
@@ -383,8 +393,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_BLT: {  // BLT rs1,rs2,imm
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
       if (rs1 < rs2) {
         branchAddress_ = instructionAddress_ +
                          metadata.operands[2].imm;  // Set LSB of result to 0
@@ -409,8 +419,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_BGE: {  // BGE rs1,rs2,imm
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
+
       if (rs1 >= rs2) {
         branchAddress_ = instructionAddress_ +
                          metadata.operands[2].imm;  // Set LSB of result to 0
@@ -438,7 +449,7 @@ void Instruction::execute() {
       branchAddress_ = instructionAddress_ +
                        metadata.operands[1].imm;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + 4, 8);
+      results[0] = RegisterValue(instructionAddress_ + 4, archRegWidth_);
       break;
     }
     case Opcode::RISCV_JALR: {  // JALR rd,rs1,imm
@@ -446,7 +457,7 @@ void Instruction::execute() {
           (operands[0].get<uint64_t>() + metadata.operands[2].imm) &
           ~1;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + 4, 8);
+      results[0] = RegisterValue(instructionAddress_ + 4, archRegWidth_);
       break;
     }
       // TODO EBREAK
@@ -481,14 +492,15 @@ void Instruction::execute() {
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
       results[0] =
-          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
+          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32),
+                                 archRegWidth_);
       break;
     }
     case Opcode::RISCV_LR_D:  // LR.D rd,rs1
     case Opcode::RISCV_LR_D_AQ:
     case Opcode::RISCV_LR_D_RL:
     case Opcode::RISCV_LR_D_AQ_RL: {
-      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
+      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), archRegWidth_);
       break;
     }
     case Opcode::RISCV_SC_W:  // SC.W rd,rs1,rs2
@@ -507,7 +519,7 @@ void Instruction::execute() {
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
       memoryData[0] = operands[0];
-      results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      results[0] = RegisterValue(static_cast<uint64_t>(0), archRegWidth_);
       break;
     }
     case Opcode::RISCV_AMOSWAP_W:  // AMOSWAP.W rd,rs1,rs2
@@ -521,7 +533,7 @@ void Instruction::execute() {
       // TODO account for AQ and RL bits
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
       int32_t rs2 = operands[0].get<int32_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = rs2;
       break;
     }
@@ -531,7 +543,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOSWAP_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
       uint64_t rs2 = operands[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = rs2;
       break;
     }
@@ -540,7 +552,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOADD_W_RL:
     case Opcode::RISCV_AMOADD_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int32_t>(rd + operands[0].get<int64_t>());
       break;
     }
@@ -549,7 +561,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOADD_D_RL:
     case Opcode::RISCV_AMOADD_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int64_t>(rd + operands[0].get<int64_t>());
       break;
     }
@@ -558,7 +570,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOAND_W_RL:
     case Opcode::RISCV_AMOAND_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int32_t>(rd & operands[0].get<int64_t>());
       break;
     }
@@ -567,7 +579,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOAND_D_RL:
     case Opcode::RISCV_AMOAND_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int64_t>(rd & operands[0].get<int64_t>());
       break;
     }
@@ -576,7 +588,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOOR_W_RL:
     case Opcode::RISCV_AMOOR_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int32_t>(rd | operands[0].get<int64_t>());
       break;
     }
@@ -585,7 +597,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOOR_D_RL:
     case Opcode::RISCV_AMOOR_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int64_t>(rd | operands[0].get<int64_t>());
       break;
     }
@@ -594,7 +606,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOXOR_W_RL:
     case Opcode::RISCV_AMOXOR_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int32_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
@@ -603,7 +615,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOXOR_D_RL:
     case Opcode::RISCV_AMOXOR_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] = static_cast<int64_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
@@ -612,7 +624,8 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMIN_W_AQ:
     case Opcode::RISCV_AMOMIN_W_RL:
     case Opcode::RISCV_AMOMIN_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()),
+                                 archRegWidth_);
       memoryData[0] =
           std::min(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
@@ -622,7 +635,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMIN_D_RL:
     case Opcode::RISCV_AMOMIN_D_AQ_RL: {
       int64_t rd = memoryData[0].get<int64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] =
           static_cast<int64_t>(std::min(rd, operands[0].get<int64_t>()));
       break;
@@ -631,7 +644,8 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMINU_W_AQ:
     case Opcode::RISCV_AMOMINU_W_RL:
     case Opcode::RISCV_AMOMINU_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()),
+                                 archRegWidth_);
       memoryData[0] =
           std::min(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
@@ -641,7 +655,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMINU_D_RL:
     case Opcode::RISCV_AMOMINU_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] =
           static_cast<uint64_t>(std::min(rd, operands[0].get<uint64_t>()));
       break;
@@ -651,7 +665,8 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAX_W_AQ:
     case Opcode::RISCV_AMOMAX_W_RL:
     case Opcode::RISCV_AMOMAX_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()),
+                                 archRegWidth_);
       memoryData[0] =
           std::max(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
@@ -661,7 +676,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAX_D_RL:
     case Opcode::RISCV_AMOMAX_D_AQ_RL: {
       int64_t rd = memoryData[0].get<int64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] =
           static_cast<int64_t>(std::max(rd, operands[0].get<int64_t>()));
       break;
@@ -670,7 +685,8 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAXU_W_AQ:
     case Opcode::RISCV_AMOMAXU_W_RL:
     case Opcode::RISCV_AMOMAXU_W_AQ_RL: {
-      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()),
+                                 archRegWidth_);
       memoryData[0] =
           std::max(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
@@ -680,7 +696,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAXU_D_RL:
     case Opcode::RISCV_AMOMAXU_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = RegisterValue(rd, 8);
+      results[0] = RegisterValue(rd, archRegWidth_);
       memoryData[0] =
           static_cast<uint64_t>(std::max(rd, operands[0].get<uint64_t>()));
       break;
@@ -688,9 +704,9 @@ void Instruction::execute() {
 
       // Integer multiplication division extension (M)
     case Opcode::RISCV_MUL: {  // MUL rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
-      results[0] = RegisterValue(static_cast<int64_t>(rs1 * rs2), 8);
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
+      results[0] = RegisterValue(static_cast<int64_t>(rs1 * rs2), archRegWidth_);
       break;
     }
       //    case Opcode::RISCV_MULH: {//MULH rd,rs1,rs2
@@ -704,7 +720,7 @@ void Instruction::execute() {
     case Opcode::RISCV_MULHU: {  // MULHU rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
-      results[0] = RegisterValue(mulhiuu(rs1, rs2), 8);
+      results[0] = RegisterValue(mulhiuu(rs1, rs2), archRegWidth_);
       break;
     }
       //    case Opcode::RISCV_MULHSU: {//MULHSU rd,rs1,rs2
@@ -718,21 +734,21 @@ void Instruction::execute() {
     case Opcode::RISCV_MULW: {  // MULW rd,rs1,rs2
       const uint32_t rs1 = operands[0].get<uint32_t>();
       const uint32_t rs2 = operands[1].get<uint32_t>();
-      results[0] = RegisterValue(signExtendW(rs1 * rs2), 8);
+      results[0] = RegisterValue(signExtendW(rs1 * rs2), archRegWidth_);
       break;
     }
 
     case Opcode::RISCV_DIV: {  // DIV rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), archRegWidth_);
       } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
         // division overflow
-        results[0] = RegisterValue(rs1, 8);
+        results[0] = RegisterValue(rs1, archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<int64_t>(rs1 / rs2), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(rs1 / rs2), archRegWidth_);
       }
       break;
     }
@@ -741,13 +757,15 @@ void Instruction::execute() {
       const int32_t rs2 = operands[1].get<int32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), archRegWidth_);
       } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
         // division overflow
-        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)),
+                                   archRegWidth_);
       } else {
         results[0] =
-            RegisterValue(static_cast<int64_t>(signExtendW(rs1 / rs2)), 8);
+            RegisterValue(static_cast<int64_t>(signExtendW(rs1 / rs2)),
+                                   archRegWidth_);
       }
       break;
     }
@@ -756,9 +774,9 @@ void Instruction::execute() {
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(rs1 / rs2), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1 / rs2), archRegWidth_);
       }
       break;
     }
@@ -767,24 +785,24 @@ void Instruction::execute() {
       const uint32_t rs2 = operands[1].get<uint32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), archRegWidth_);
       } else {
         results[0] =
-            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 / rs2)), 8);
+            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 / rs2)), archRegWidth_);
       }
       break;
     }
     case Opcode::RISCV_REM: {  // REM rd,rs1,rs2
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
+      const int64_t rs1 = getSignedInt(operands[0]);
+      const int64_t rs2 = getSignedInt(operands[1]);
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<uint64_t>(rs1), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1), archRegWidth_);
       } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
         // division overflow
-        results[0] = RegisterValue(static_cast<int64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(0), archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<int64_t>(rs1 % rs2), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(rs1 % rs2), archRegWidth_);
       }
       break;
     }
@@ -793,13 +811,15 @@ void Instruction::execute() {
       const int32_t rs2 = operands[1].get<int32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)),
+                                   archRegWidth_);
       } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
         // division overflow
-        results[0] = RegisterValue(static_cast<int64_t>(0), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(0), archRegWidth_);
       } else {
         results[0] =
-            RegisterValue(static_cast<int64_t>(signExtendW(rs1 % rs2)), 8);
+            RegisterValue(static_cast<int64_t>(signExtendW(rs1 % rs2)),
+                                   archRegWidth_);
       }
       break;
     }
@@ -808,9 +828,9 @@ void Instruction::execute() {
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(rs1, 8);
+        results[0] = RegisterValue(rs1, archRegWidth_);
       } else {
-        results[0] = RegisterValue(static_cast<uint64_t>(rs1 % rs2), 8);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1 % rs2), archRegWidth_);
       }
       break;
     }
@@ -819,11 +839,212 @@ void Instruction::execute() {
       const uint32_t rs2 = operands[1].get<uint32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)),
+                                   archRegWidth_);
       } else {
         results[0] =
-            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 % rs2)), 8);
+            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 % rs2)), archRegWidth_);
       }
+      break;
+    }
+    case Opcode::RISCV_CSRRC: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = old_csr_value & ~(operands[1].get<uint32_t>());
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+    }
+    case Opcode::RISCV_CSRRCI: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = old_csr_value & ~(c_imm);
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+    }
+    case Opcode::RISCV_CSRRS: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = old_csr_value | (operands[1].get<uint32_t>());
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+      break;
+    }
+    case Opcode::RISCV_CSRRSI: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = old_csr_value | (c_imm);
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+      break;
+    }
+    case Opcode::RISCV_CSRRW: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = operands[1].get<uint32_t>();
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+      break;
+    }
+    case Opcode::RISCV_CSRRWI: {
+      uint32_t old_csr_value = operands[0].get<uint32_t>();
+      uint32_t new_csr_value = c_imm;
+      results[0] = RegisterValue(new_csr_value, 4);
+      results[1] = RegisterValue(old_csr_value, 4);
+      break;
+    }
+    case Opcode::RISCV_C_ADD: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      uint32_t out = (rs1 + rs2);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_ADDI4SPN:
+    case Opcode::RISCV_C_ADDI16SP:
+    case Opcode::RISCV_C_ADDI: {
+      uint32_t out = (operands[0].get<uint32_t>() + c_imm);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    //case Opcode::RISCV_C_ADDIW:
+    //case Opcode::RISCV_C_ADDW:
+    case Opcode::RISCV_C_AND: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      uint32_t out = (rs1 & rs2);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_ANDI: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      uint32_t out = (rs1 & c_imm);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_BEQZ: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      if (rs1 == 0) {
+        branchAddress_ = (uint32_t)(instructionAddress_ + c_imm);  // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 2;
+        branchTaken_ = false;
+      }
+      break;
+    }
+    case Opcode::RISCV_C_BNEZ: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      if (rs1 != 0) {
+        branchAddress_ = (uint32_t)(instructionAddress_ + c_imm);
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 2;
+        branchTaken_ = false;
+      }
+      break;
+    }
+    case Opcode::RISCV_C_EBREAK:
+      break;
+    case Opcode::RISCV_C_FLD:
+      break;
+    case Opcode::RISCV_C_FLDSP:
+      break;
+    case Opcode::RISCV_C_FLW:
+      break;
+    case Opcode::RISCV_C_FLWSP:
+      break;
+    case Opcode::RISCV_C_FSD:
+      break;
+    case Opcode::RISCV_C_FSDSP:
+      break;
+    case Opcode::RISCV_C_FSW:
+      break;
+    case Opcode::RISCV_C_J:
+    case Opcode::RISCV_C_JAL: {
+      branchAddress_ = (uint32_t)(instructionAddress_ + c_imm);
+      branchTaken_ = true;
+      results[0] = RegisterValue(static_cast<uint32_t>(instructionAddress_ + 2), 4);
+      break;
+    }
+    case Opcode::RISCV_C_JR:
+    case Opcode::RISCV_C_JALR: {
+      branchAddress_ = (operands[0].get<uint32_t>()) & ~1;// Set LSB of result to 0
+      branchTaken_ = true;
+      results[0] = RegisterValue(static_cast<uint32_t>(instructionAddress_ + 2), 4);
+      break;
+    }
+    case Opcode::RISCV_C_LD:
+    case Opcode::RISCV_C_LDSP:
+      break;
+    case Opcode::RISCV_C_LI: {
+      uint32_t out = signExtendW(metadata.operands[1].imm);
+      results[0] = RegisterValue(static_cast<uint32_t>(out), 4);
+      break;
+    }
+    case Opcode::RISCV_C_LUI: {
+      uint32_t out = signExtendW(metadata.operands[1].imm
+                                 << 12);  // Shift into upper 20 bits
+      results[0] = RegisterValue(static_cast<uint32_t>(out), 4);
+      break;
+    }
+    case Opcode::RISCV_C_LW:
+    case Opcode::RISCV_C_LWSP: {
+      results[0] = RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 4);
+      break;
+    }
+    case Opcode::RISCV_C_MV: {
+      results[0] = RegisterValue(operands[0].get<int32_t>(), 4);
+      break;
+    }
+    case Opcode::RISCV_C_NOP:
+      break;
+    case Opcode::RISCV_C_OR: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      uint32_t out = (rs1 | rs2);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_SD:
+      break;
+    case Opcode::RISCV_C_SDSP:
+      break;
+    case Opcode::RISCV_C_SLLI: {
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t shamt = c_imm & 63;  // Only use lowest 6 bits
+      int32_t out = (rs1 << shamt);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_SRAI: {
+      const int32_t rs1 = operands[0].get<int32_t>();
+      int32_t out = (rs1 >> (c_imm & 63));
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_SRLI: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      uint32_t out = (rs1 >> (c_imm & 63));
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_SUB: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      uint32_t out = (rs1 - rs2);
+      results[0] = RegisterValue(out, 4);
+      break;
+    }
+    case Opcode::RISCV_C_SUBW:
+      break;
+    case Opcode::RISCV_C_SW:
+    case Opcode::RISCV_C_FSWSP:
+    case Opcode::RISCV_C_SWSP: {
+      memoryData[0] = operands[0];
+      break;
+    }
+    case Opcode::RISCV_C_UNIMP:
+      break;
+    case Opcode::RISCV_C_XOR: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      uint32_t out = (rs1 ^ rs2);
+      results[0] = RegisterValue(out, 4);
       break;
     }
 
