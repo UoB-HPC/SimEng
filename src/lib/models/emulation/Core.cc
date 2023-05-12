@@ -213,12 +213,15 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isStoreData()) {
     auto data = uop->getData();
-    uop->setMemoryAddresses(previousAddresses_);
-    mmu_->requestWrite(uop, data);
-    if (uop->isStoreCond()) {
-      inFlightStoreCondReqs_ = previousAddresses_.size();
-      // Return early as we don't want to write back until we have the response
-      return;
+    if (data.size() != 0) {
+      uop->setMemoryAddresses(previousAddresses_);
+      mmu_->requestWrite(uop, data);
+      if (uop->isStoreCond()) {
+        inFlightStoreCondReqs_ = previousAddresses_.size();
+        // Return early as we don't want to write back until we have the
+        // response
+        return;
+      }
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
