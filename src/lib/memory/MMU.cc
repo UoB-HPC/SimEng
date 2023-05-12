@@ -12,34 +12,57 @@ MMU::MMU(VAddrTranslator fn)
           Config::get()["Memory-Hierarchy"]["Cache-Line-Width"].as<uint64_t>()),
       translate_(fn) {}
 
-void MMU::requestRead(const MemoryAccessTarget& target,
-                      const uint64_t requestId, const uint64_t instructionID,
-                      bool isReserved) {
-  pendingDataRequests_++;
-  std::unique_ptr<memory::MemPacket> req = memory::MemPacket::createReadRequest(
-      target.vaddr, target.size, requestId, instructionID);
-  if (isReserved) req->markAsResLoad();
-  bufferRequest(std::move(req));
+void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
+  uint64_t requestId = uop->getSequenceId();
+  uint64_t instructionID = uop->getInstructionId();
+  bool isReserved = uop->isLoadReserved();
+
+  const auto& targets = uop->getGeneratedAddresses();
+  for (auto& target : targets) {
+    pendingDataRequests_++;
+    std::unique_ptr<memory::MemPacket> req =
+        memory::MemPacket::createReadRequest(target.vaddr, target.size,
+                                             requestId, instructionID);
+    if (isReserved) req->markAsResLoad();
+    bufferRequest(std::move(req));
+  }
+}
+
+void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
+                       const std::vector<RegisterValue>& data) {
+  uint64_t requestId = uop->getSequenceId();
+  uint64_t instructionID = uop->getInstructionId();
+  bool isConditional = uop->isStoreCond();
+
+  const auto& targets = uop->getGeneratedAddresses();
+  assert(data.size() == targets.size() &&
+         "[SimEng:MMU] Number of addresses does not match the number of data "
+         "elements to write.");
+  for (int i = 0; i < targets.size(); i++) {
+    pendingDataRequests_++;
+    const auto& target = targets[i];
+    const char* wdata = data[i].getAsVector<char>();
+    std::vector<char> dt(wdata, wdata + target.size);
+    std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
+        target.vaddr, target.size, requestId, instructionID, dt);
+    if (isConditional) req->markAsCondStore();
+    bufferRequest(std::move(req));
+  }
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
-                       const RegisterValue& data, const uint64_t requestId,
-                       const uint64_t instructionID, bool isConditional) {
+                       const RegisterValue& data) {
   pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
-  std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
-      target.vaddr, target.size, requestId, instructionID, dt);
-  if (isConditional) req->markAsCondStore();
+  std::unique_ptr<MemPacket> req =
+      MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
   bufferRequest(std::move(req));
 }
 
-void MMU::requestInstrRead(const MemoryAccessTarget& target,
-                           const uint64_t requestId,
-                           const uint64_t instructionID) {
+void MMU::requestInstrRead(const MemoryAccessTarget& target) {
   std::unique_ptr<memory::MemPacket> insRequest =
-      memory::MemPacket::createReadRequest(target.vaddr, target.size, requestId,
-                                           instructionID);
+      memory::MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
   bufferRequest(std::move(insRequest));

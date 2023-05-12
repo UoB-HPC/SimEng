@@ -363,8 +363,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0, 0);
+    mmu_->requestWrite(change.memoryAddresses[i],
+                       change.memoryAddressValues[i]);
   }
 }
 

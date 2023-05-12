@@ -114,7 +114,7 @@ void Core::tick() {
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
     memory::MemoryAccessTarget target = {pc_, FETCH_SIZE};
-    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0, 0);
+    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     // Find fetched memory that matches the current PC
     const auto& fetched = mmu_->getCompletedInstrReads();
     size_t fetchIndex;
@@ -170,12 +170,9 @@ void Core::tick() {
     if (addresses.size() > 0) {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
-      for (auto const& target : addresses) {
-        mmu_->requestRead(target, uop->getSequenceId(), uop->getInstructionId(),
-                          uop->isLoadReserved());
-        // Store addresses for use by next store data operation
-        previousAddresses_.push_back(target);
-      }
+      mmu_->requestRead(uop);
+      // Store addresses for use by next store data operation
+      previousAddresses_ = addresses;
       pendingReads_ = addresses.size();
       return;
     } else {
@@ -214,22 +211,14 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     return;
   }
 
-  if (uop->isStoreCond()) {
-    auto data = uop->getData();
-    for (size_t i = 0; i < data.size(); i++) {
-      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
-                         uop->getInstructionId(), true);
-      inFlightStoreCondReqs_++;
-    }
-    // Return early as we don't want to write back until we have the response
-    return;
-  }
-
   if (uop->isStoreData()) {
     auto data = uop->getData();
-    for (size_t i = 0; i < data.size(); i++) {
-      mmu_->requestWrite(previousAddresses_[i], data[i], uop->getSequenceId(),
-                         uop->getInstructionId());
+    uop->setMemoryAddresses(previousAddresses_);
+    mmu_->requestWrite(uop, data);
+    if (uop->isStoreCond()) {
+      inFlightStoreCondReqs_ = previousAddresses_.size();
+      // Return early as we don't want to write back until we have the response
+      return;
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -326,8 +315,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    mmu_->requestWrite(change.memoryAddresses[i], change.memoryAddressValues[i],
-                       0, 0);
+    mmu_->requestWrite(change.memoryAddresses[i],
+                       change.memoryAddressValues[i]);
   }
 }
 

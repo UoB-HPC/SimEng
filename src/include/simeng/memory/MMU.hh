@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "simeng/Config.hh"
+#include "simeng/Instruction.hh"
 #include "simeng/OS/Constants.hh"
 #include "simeng/Port.hh"
 #include "simeng/memory/MemPacket.hh"
@@ -28,21 +29,21 @@ class MMU {
   /** Tick the memory model to process the request queue. */
   void tick(){};
 
-  /** Queue a read request from the supplied target location.
-   * The caller can optionally provide an ID that will be attached to completed
-   * read results. */
-  void requestRead(const MemoryAccessTarget& target, const uint64_t requestId,
-                   const uint64_t instructionID, bool isReserved = false);
+  /** Queue a read request. */
+  void requestRead(const std::shared_ptr<Instruction>& uop);
 
-  /** Queue a write request of `data` to the target location. */
-  void requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
-                    const uint64_t requestId, const uint64_t instructionID,
-                    bool isConditional = false);
+  /** Queue a write request. */
+  void requestWrite(const std::shared_ptr<Instruction>& uop,
+                    const std::vector<RegisterValue>& data);
+
+  /** Queue a write request of `data` to the target location that is not
+   * associated to an instruction. */
+  void requestWrite(const MemoryAccessTarget& target,
+                    const RegisterValue& data);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
-  void requestInstrRead(const MemoryAccessTarget& target,
-                        const uint64_t requestId, const uint64_t instructionID);
+  void requestInstrRead(const MemoryAccessTarget& target);
 
   /** Retrieve all completed data read requests. */
   const span<MemoryReadResult> getCompletedReads() const;

@@ -16,14 +16,6 @@ namespace pipeline {
 /** The memory access types which are processed. */
 enum accessType { LOAD = 0, STORE };
 
-/** A requestQueue_ entry. */
-struct requestEntry {
-  /** The memory address(es) to be accessed. */
-  std::queue<simeng::memory::MemoryAccessTarget> reqAddresses;
-  /** The instruction sending the request(s). */
-  std::shared_ptr<Instruction> insn;
-};
-
 /** A load store queue (known as "load/store buffers" or "memory order buffer").
  * Holds in-flight memory access requests to ensure load/store consistency. */
 class LoadStoreQueue {
@@ -170,10 +162,12 @@ class LoadStoreQueue {
       conflictionMap_;
 
   /** A map between LSQ cycles and load requests ready on that cycle. */
-  std::map<uint64_t, std::deque<requestEntry>> requestLoadQueue_;
+  std::map<uint64_t, std::deque<std::shared_ptr<Instruction>>>
+      requestLoadQueue_;
 
   /** A map between LSQ cycles and store requests ready on that cycle. */
-  std::map<uint64_t, std::deque<requestEntry>> requestStoreQueue_;
+  std::map<uint64_t, std::deque<std::shared_ptr<Instruction>>>
+      requestStoreQueue_;
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
