@@ -74,6 +74,13 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
+void Instruction::setMemoryAddresses(
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
+  memoryData_ = std::vector<RegisterValue>(addresses.size());
+  memoryAddresses_ = addresses;
+  dataPending_ = addresses.size();
+}
+
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
     if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
@@ -172,13 +179,6 @@ void Instruction::updateCondStoreResult(const bool success) {
          "non-conditional-store instruction.");
   RegisterValue result = {(uint64_t)0 | !success, 8};
   results[0] = result;
-}
-
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData_ = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses_ = addresses;
-  dataPending_ = addresses.size();
 }
 
 }  // namespace riscv

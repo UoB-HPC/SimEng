@@ -68,6 +68,11 @@ class Instruction {
   virtual const std::vector<memory::MemoryAccessTarget>&
   generateAddresses() = 0;
 
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  virtual void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses) = 0;
+
   /** Provide data from a requested memory address. */
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 

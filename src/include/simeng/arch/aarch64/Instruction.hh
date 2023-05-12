@@ -302,6 +302,11 @@ class Instruction : public simeng::Instruction {
   /** Generate memory addresses this instruction wishes to access. */
   const std::vector<memory::MemoryAccessTarget>& generateAddresses() override;
 
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses) override;
+
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
 
@@ -465,11 +470,6 @@ class Instruction : public simeng::Instruction {
   void SMdisabled();
 
   // ------ Memory ------
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
-
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);

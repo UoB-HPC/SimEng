@@ -70,6 +70,20 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
+void Instruction::setMemoryAddresses(
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
+  memoryData_.resize(addresses.size());
+  memoryAddresses_ = addresses;
+  dataPending_ = addresses.size();
+}
+
+void Instruction::setMemoryAddresses(
+    std::vector<memory::MemoryAccessTarget>&& addresses) {
+  dataPending_ = addresses.size();
+  memoryData_.resize(addresses.size());
+  memoryAddresses_ = std::move(addresses);
+}
+
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
     if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
@@ -248,20 +262,6 @@ uint64_t Instruction::extendOffset(uint64_t value,
     }
   }
   return extendValue(value, op.ext, op.shift.value);
-}
-
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData_.resize(addresses.size());
-  memoryAddresses_ = addresses;
-  dataPending_ = addresses.size();
-}
-
-void Instruction::setMemoryAddresses(
-    std::vector<memory::MemoryAccessTarget>&& addresses) {
-  dataPending_ = addresses.size();
-  memoryData_.resize(addresses.size());
-  memoryAddresses_ = std::move(addresses);
 }
 
 }  // namespace aarch64
