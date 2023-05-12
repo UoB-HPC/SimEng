@@ -5,6 +5,7 @@ set(TEST_SOURCES
     pipeline/DecodeUnitTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/FetchUnitTest.cc
+    pipeline/InOrderStagerTest.cc
     pipeline/LoadStoreQueueTest.cc
     pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
