@@ -65,8 +65,7 @@ TEST_F(PipelineInOrderStagerTest, RecordIssue) {
   EXPECT_EQ(inOrderStagerUnit.canWriteback(uop2->getSequenceId()), true);
 }
 
-// Tests that the InOrder Stager unit records/tracks issued instructions
-// correctly
+// Tests that the InOrder Stager unit flush logic is correct
 TEST_F(PipelineInOrderStagerTest, Flush) {
   inOrderStagerUnit.recordIssue(uopPtr);
   inOrderStagerUnit.recordIssue(uopPtr2);
