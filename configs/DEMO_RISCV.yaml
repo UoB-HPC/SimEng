@@ -6,6 +6,7 @@
 Core:
   ISA: rv64
   Simulation-Mode: outoforder
+  Trace: false
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
 Fetch:

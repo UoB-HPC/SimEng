@@ -64,10 +64,12 @@ void ModelConfig::validate() {
                "Timer-Frequency",
                "Micro-Operations",
                "Vector-Length",
-               "Streaming-Vector-Length"};
+               "Streaming-Vector-Length",
+               "Trace"};
   validISA = nodeChecker<std::string>(
       configFile_[root][subFields[0]], subFields[0],
-      std::vector<std::string>({"AArch64", "rv64", "rv32"}), ExpectedValue::String);
+      std::vector<std::string>({"AArch64", "rv64", "rv32"}),
+      ExpectedValue::String);
   nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -86,6 +88,8 @@ void ModelConfig::validate() {
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
+  nodeChecker<bool>(configFile_[root][subFields[7]], subFields[7],
+                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
   subFields.clear();
 
   // First check that the ISA config option is valid, this protects reads from
