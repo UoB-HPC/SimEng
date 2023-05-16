@@ -93,58 +93,38 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
 void MMU::setTid(uint64_t tid) {
   tid_ = tid;
   // TID only updated on context switch, must clear cache line monitor
-  cacheLineMonitor_.clear();
+  cacheLineMonitor_.second = false;
 }
 
 /** NOTE: Assumes all Load-Reserved & Store-Conditional accesses are aligned. */
 void MMU::updateLLSCMonitor(const std::unique_ptr<MemPacket>& request) {
   // If Load-Reserved, add Monitored cache line.
   if (request->isResLoad()) {
-    cacheLineMonitor_.emplace(request->insnId_,
-                              downAlign(request->paddr_, cacheLineWidth_));
+    cacheLineMonitor_ = {downAlign(request->paddr_, cacheLineWidth_), true};
   } else if (request->isCondStore()) {
-    // Find first insnID GT condStore (filter out monitors opened by speculated
-    // instructions)
-    auto itr = cacheLineMonitor_.upper_bound(request->insnId_);
-    // We know that the previous monitor to this is our valid monitor
-    if (itr == cacheLineMonitor_.begin()) {
-      // If first monitor in map is GT condStore, no valid monitor exists
-      request->markAsIgnored();
-    } else {
-      // Get previous monitor
-      itr--;
+    // See if monitor is valid
+    if (cacheLineMonitor_.second) {
       // See if cache lines match, if yes, remove monitor and proceed
-      if (downAlign(request->paddr_, cacheLineWidth_) == itr->second) {
-        cacheLineMonitor_.clear();
+      if (downAlign(request->paddr_, cacheLineWidth_) ==
+          cacheLineMonitor_.first) {
+        cacheLineMonitor_.second = false;
       } else {
         // If no match, fail condStore
         request->markAsIgnored();
       }
+    } else {
+      // If not valid, fail condStore
+      request->markAsIgnored();
     }
   } else if (request->isWrite()) {
-    // Find first insnID GT condStore (filter out monitors opened by speculated
-    // instructions)
-    auto itr = cacheLineMonitor_.upper_bound(request->insnId_);
-    // We know that the previous monitor to this is our valid monitor
-    if (itr != cacheLineMonitor_.begin()) {
-      itr--;
-      // Check if write requests overlaps the cache line monitor. If yes,
-      // remove monitors to invalidate it.
-      if (downAlign(request->paddr_, cacheLineWidth_) == itr->second ||
-          downAlign(request->paddr_ + request->size_, cacheLineWidth_) ==
-              itr->second) {
-        cacheLineMonitor_.clear();
-      }
+    // Check if write requests overlaps the cache line monitor. If yes,
+    // remove monitors to invalidate it.
+    if (downAlign(request->paddr_, cacheLineWidth_) ==
+            cacheLineMonitor_.first ||
+        downAlign(request->paddr_ + request->size_, cacheLineWidth_) ==
+            cacheLineMonitor_.first) {
+      cacheLineMonitor_.second = false;
     }
-  }
-}
-
-void MMU::flushLLSCMonitor(const uint64_t instructionID) {
-  // Find first entry >= instructionID
-  auto itr = cacheLineMonitor_.lower_bound(instructionID);
-  // Remove all entries from itr to end of map
-  while (itr != cacheLineMonitor_.end()) {
-    itr = cacheLineMonitor_.erase(itr);
   }
 }
 

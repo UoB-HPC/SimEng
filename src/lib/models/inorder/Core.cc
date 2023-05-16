@@ -118,7 +118,6 @@ void Core::tick() {
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
     decodeUnit_.purgeFlushed();
-    mmu_->flushLLSCMonitor(executeUnit_.getFlushInsnId());
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {

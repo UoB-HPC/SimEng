@@ -75,10 +75,6 @@ class MMU {
    */
   void updateLLSCMonitor(const std::unique_ptr<MemPacket>& request);
 
-  /** Removes all cache line monitors that have been added via a speculated
-   * reserved-load instruction. */
-  void flushLLSCMonitor(const uint64_t instructionID);
-
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
@@ -100,15 +96,11 @@ class MMU {
   uint64_t tid_ = 0;
 
   // We model "weak" LL/SC support (as is the case in the majority of hardware)
-  // and so only one monitor can be usable. A stack is used to allow us to
-  // re-wind monitors opened by incorrectly speculated instructions. Upon usage
-  // of a monitor, the stack is emptied.
+  // and so only one monitor can be usable. Atomics are processed when at the
+  // head of ROB so no speculation, and are assumed to be correctly aligned.
 
-  /** Map holding all monitored cache lines, with only one ever usable at a
-   * time.
-   * Key = sequenceID of instruction that opened the monitor
-   * Value = address of cache line */
-  std::map<uint64_t, uint64_t> cacheLineMonitor_;
+  /** Address of currently monitored cache line, and whether it is valid.*/
+  std::pair<uint64_t, bool> cacheLineMonitor_;
 
   /** Width of a cache line. */
   const uint64_t cacheLineWidth_;

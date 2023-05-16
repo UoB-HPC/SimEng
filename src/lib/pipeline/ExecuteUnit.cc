@@ -118,7 +118,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       raiseException_(uop);
       return;
     }
-    handleLoad_(uop);
+    // For Load-Reserved and Atomics, don't start load until at head of ROB
+    if (!(uop->isLoadReserved() || uop->isAtomic())) handleLoad_(uop);
     return;
   } else if (uop->isStoreAddress() || uop->isStoreData()) {
     if (uop->isStoreAddress()) {
