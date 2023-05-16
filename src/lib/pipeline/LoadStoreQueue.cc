@@ -504,9 +504,8 @@ void LoadStoreQueue::tick() {
         supplyStoreData(load->second);
       }
       completedLoads_.push(load->second);
-    } else {
-      load++;
     }
+    load++;
   }
 
   // Pop from the front of the completed loads queue and send to writeback

@@ -171,7 +171,7 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
              "isn't in the requestedLoads_ map.");
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
-        insn->second->supplyData(packet->vaddr_, nullptr);
+        insn->second->supplyData(packet->vaddr_, RegisterValue());
       } else {
         insn->second->supplyData(packet->vaddr_,
                                  {packet->payload().data(), packet->size_});

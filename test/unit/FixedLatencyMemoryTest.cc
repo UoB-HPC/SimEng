@@ -144,6 +144,7 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(false));
   ON_CALL(*uop, getGeneratedAddresses())
       .WillByDefault(ReturnRef(overflowTarget));
+  EXPECT_CALL(*uop, supplyData(UINT64_MAX, simeng::RegisterValue())).Times(1);
   mmu->requestRead(uop);
 
   // Create a regular out-of-bounds target
@@ -154,24 +155,12 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   uop2->setInstructionId(2);
   ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(false));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  EXPECT_CALL(*uop2, supplyData(0, simeng::RegisterValue())).Times(1);
   mmu->requestRead(uop2);
 
   // Tick once - request should have completed
   mem->tick();
   EXPECT_FALSE(mmu->hasPendingRequests());
-
-  auto entries = mmu->getCompletedReads();
-  EXPECT_EQ(entries.size(), 2);
-
-  auto overflowResult = entries[0];
-  EXPECT_EQ(overflowResult.requestId, 1);
-  EXPECT_EQ(overflowResult.data, simeng::RegisterValue());
-  EXPECT_EQ(overflowResult.target, overflowTarget[0]);
-
-  auto result = entries[1];
-  EXPECT_EQ(result.requestId, 2);
-  EXPECT_EQ(result.data, simeng::RegisterValue());
-  EXPECT_EQ(result.target, target[0]);
 }
 
 }  // namespace
