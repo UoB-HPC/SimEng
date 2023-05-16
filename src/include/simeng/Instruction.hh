@@ -259,7 +259,7 @@ class Instruction {
 
   // ------ Memory ------
   /** The number of data items that still need to be supplied. */
-  uint8_t dataPending_ = 0;
+  uint16_t dataPending_ = 0;
 
   /** If the instruction is a conditional store, indicates whether the result
    * register has been updated based on store's success or failure. */

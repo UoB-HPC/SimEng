@@ -138,7 +138,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
 
   MockForwardOperandsHandler forwardOperandsHandler;
 
-  const uint64_t latency = 0;
+  const uint64_t latency = 1;
   VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return vaddr;
   };
@@ -262,18 +262,22 @@ TEST_P(LoadStoreQueueTest, Load) {
 
   // Check that a read request is made to the memory interface
   EXPECT_EQ(mmu->hasPendingRequests(), true);
-  // Tick MMU to process load request
-  mmu->tick();
-  memory->tick();
-  // Expect a check against finished reads and return the result
-  EXPECT_EQ(mmu->hasPendingRequests(), false);
-  EXPECT_EQ(mmu->getCompletedReads().size(), 1);
-
-  // Check that the LSQ supplies the right data to the instruction
-  // TODO: Replace with check for call over memory interface in future?
+  // Check that the MMU supplies the right data to the instruction
   EXPECT_CALL(*loadUop,
               supplyData(0, Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
+  // Tick Memory to process load request
+  memory->tick();
+  // Expect a check against finished reads and return the result
+  EXPECT_EQ(mmu->hasPendingRequests(), false);
+  if (!mmu->hasPendingRequests()) {
+    // If no pending requests then know uop has all data
+    loadUop->setDataPending(0);
+  }
+
+  // Check LSQ detects load has all data and begins execution to assign values
+  // to registers
+  EXPECT_CALL(*loadUop, execute()).Times(1);
 
   // Tick the queue to complete the load
   queue.tick();

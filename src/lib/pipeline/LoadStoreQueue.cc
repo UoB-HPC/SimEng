@@ -509,9 +509,8 @@ void LoadStoreQueue::tick() {
       // If the completion order is OoO, add entry to completedLoads_
       if (completionOrder_ == CompletionOrder::OUTOFORDER)
         completedLoads_.push(load->second);
-    } else {
-      load++;
     }
+    load++;
   }
 
   // Pop from the front of the completed loads queue and send to writeback
