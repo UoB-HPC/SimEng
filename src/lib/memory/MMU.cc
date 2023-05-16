@@ -16,7 +16,10 @@ void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   uint64_t requestId = uop->getSequenceId();
   uint64_t instructionID = uop->getInstructionId();
   bool isReserved = uop->isLoadReserved();
+  // Register load in map
+  requestedLoads_[requestId] = uop;
 
+  // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   for (auto& target : targets) {
     pendingDataRequests_++;
@@ -34,6 +37,10 @@ void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   uint64_t instructionID = uop->getInstructionId();
   bool isConditional = uop->isStoreCond();
 
+  // Register conditional store in map
+  if (isConditional) requestedCondStore_[requestId] = uop;
+
+  // Create and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   assert(data.size() == targets.size() &&
          "[SimEng:MMU] Number of addresses does not match the number of data "
@@ -52,6 +59,7 @@ void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data) {
+  // Create and fire off request
   pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
@@ -61,6 +69,7 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
+  // Create and fire off request
   std::unique_ptr<memory::MemPacket> insRequest =
       memory::MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
   insRequest->markAsUntimed();
@@ -68,26 +77,12 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target) {
   bufferRequest(std::move(insRequest));
 }
 
-const span<MemoryReadResult> MMU::getCompletedReads() const {
-  return {const_cast<MemoryReadResult*>(completedReads_.data()),
-          completedReads_.size()};
-}
-
 const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
   return {const_cast<MemoryReadResult*>(completedInstrReads_.data()),
           completedInstrReads_.size()};
 }
 
-const span<CondStoreResult> MMU::getCompletedCondStores() const {
-  return {const_cast<CondStoreResult*>(completedCondStores_.data()),
-          completedCondStores_.size()};
-}
-
-void MMU::clearCompletedReads() { completedReads_.clear(); }
-
 void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
-
-void MMU::clearCompletedCondStores() { completedCondStores_.clear(); }
 
 bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
@@ -170,23 +165,35 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
 
     pendingDataRequests_--;
     if (packet->isRead()) {
+      const auto& insn = requestedLoads_.find(packet->id_);
+      assert(insn != requestedLoads_.end() &&
+             "[SimEng:MMU] Tried to supply result to a load instruction that "
+             "isn't in the requestedLoads_ map.");
       if (packet->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
-        completedReads_.push_back(
-            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
-        return;
+        insn->second->supplyData(packet->vaddr_, nullptr);
+      } else {
+        insn->second->supplyData(packet->vaddr_,
+                                 {packet->payload().data(), packet->size_});
       }
-      completedReads_.push_back(
-          {{packet->vaddr_, packet->size_},
-           RegisterValue(packet->payload().data(), packet->size_),
-           packet->id_});
+      // If instruction has all data, remove from requestedLoads_ map
+      if (insn->second->hasAllData()) {
+        requestedLoads_.erase(insn);
+      }
     }
     if (packet->isCondStore()) {
+      // Assumes one response per instruction.
       bool success = true;
       if (packet->isFaulty() || packet->ignore()) {
         success = false;
       }
-      completedCondStores_.push_back({packet->id_, success});
+      const auto& insn = requestedCondStore_.find(packet->id_);
+      assert(insn != requestedCondStore_.end() &&
+             "[SimEng:MMU] Tried to supply result to a conditional store that "
+             "isn't in the completedCondStores_ map.");
+      insn->second->updateCondStoreResult(success);
+      // Conditonal store now has result. Remove from map
+      requestedCondStore_.erase(insn);
     }
   };
   port_->registerReceiver(fn);

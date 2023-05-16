@@ -115,12 +115,11 @@ class LoadStoreQueue {
   span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
 
   /** Map of loads that have requested their data, keyed by sequence ID. */
-  std::unordered_map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
+  std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
   /** Map of conditional stores that have been sent to MMU, keyed by sequence
    * ID. */
-  std::unordered_map<uint64_t, std::shared_ptr<Instruction>>
-      requestedCondStores_;
+  std::map<uint64_t, std::shared_ptr<Instruction>> requestedCondStores_;
 
   /** A function handler to call to forward the results of a completed load. */
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;

@@ -45,23 +45,11 @@ class MMU {
    * latency as instruction cache is not currently modelled. */
   void requestInstrRead(const MemoryAccessTarget& target);
 
-  /** Retrieve all completed data read requests. */
-  const span<MemoryReadResult> getCompletedReads() const;
-
   /** Retrieve all completed instruction read requests. */
   const span<MemoryReadResult> getCompletedInstrReads() const;
 
-  /** Retrieve all completed conditional store requests. */
-  const span<CondStoreResult> getCompletedCondStores() const;
-
-  /** Clear the completed data reads. */
-  void clearCompletedReads();
-
   /** Clear the completed instruction reads. */
   void clearCompletedIntrReads();
-
-  /** Clear the completed conditional stores. */
-  void clearCompletedCondStores();
 
   /** Returns true if there are any oustanding memory requests in-flight. */
   bool hasPendingRequests() const;
@@ -81,14 +69,19 @@ class MMU {
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
  private:
-  /** A vector containing all completed read requests. */
-  std::vector<MemoryReadResult> completedReads_;
+  /** A map containing all load instructions waiting for their results.
+   * Key = Instruction sequenceID
+   * Value = Instruction */
+  std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
+
+  /** A map containing all conditional store instructions waiting for their
+   * results.
+   * Key = Instruction sequenceID
+   * Value = Instruction */
+  std::map<uint64_t, std::shared_ptr<Instruction>> requestedCondStore_;
 
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
-
-  /** A vector containing all completed conditional store request results. */
-  std::vector<CondStoreResult> completedCondStores_;
 
   /** The number of pending data requests. */
   uint64_t pendingDataRequests_ = 0;
