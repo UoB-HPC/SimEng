@@ -201,8 +201,6 @@ void Core::flushIfNeeded() {
       exceptionGeneratingInstruction_ = nullptr;
     }
 
-    mmu_->flushLLSCMonitor(lowestInsnId);
-
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage

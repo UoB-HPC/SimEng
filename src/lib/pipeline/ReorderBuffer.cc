@@ -93,17 +93,29 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
   for (n; n < maxCommits; n++) {
     auto& uop = buffer_.front();
-    if (!uop->canCommit()) {
-      break;
-    }
-
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
     }
+
+    // Process atomics & Load-Reserved once they reach front of ROB
+    if (!sentAtomic_ && (uop->isLoad()) &&
+        (uop->isLoadReserved() || uop->isAtomic())) {
+      if (uop->getGeneratedAddresses().size() > 0) {
+        lsq_.startLoad(uop);
+        sentAtomic_ = true;
+      }
+      // Early return so load can be processed
+      return n;
+    }
+
+    if (!uop->canCommit()) {
+      break;
+    }
+
+    if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     // Check conditional store as logic is different from regular store
     if (uop->isStoreCond()) {
@@ -185,6 +197,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       }
     }
     buffer_.pop_front();
+    // Reset sentAtomic if needed
+    if (sentAtomic_) sentAtomic_ = false;
   }
 
   return n;

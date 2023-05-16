@@ -238,8 +238,6 @@ void Core::flushIfNeeded() {
       eu.purgeFlushed();
     }
 
-    mmu_->flushLLSCMonitor(lowestInsnId);
-
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
@@ -289,7 +287,6 @@ void Core::handleException() {
   for (auto& eu : executionUnits_) {
     eu.purgeFlushed();
   }
-  mmu_->flushLLSCMonitor(exceptionGeneratingInstruction_->getSequenceId());
 
   exceptionHandler_->registerException(exceptionGeneratingInstruction_);
   processException();
