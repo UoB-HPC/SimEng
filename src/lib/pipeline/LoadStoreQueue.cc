@@ -466,67 +466,48 @@ void LoadStoreQueue::tick() {
     }
   }
 
-  // Process completed conditional store request. Assumes one response per
-  // instruction.
+  // Process completed conditional store request.
   size_t count = 0;
-  for (const auto& response : mmu_->getCompletedCondStores()) {
-    // Find instruction that requested the memory read
-    const auto& itr = requestedCondStores_.find(response.requestId);
-    if (itr == requestedCondStores_.end()) {
-      std::cerr << "[SimEng:LoadStoreQueue] Conditional store response present "
-                   "for instruction not in requestedCondStores_ queue."
-                << std::endl;
-      exit(1);
-    }
+  auto itr = requestedCondStores_.begin();
+  while (itr != requestedCondStores_.end()) {
+    const auto& store = itr->second;
     // No need to check if flushed as conditional store must be at front of
     // ROB to be committed
 
-    // Update destination register in instruction
-    itr->second->updateCondStoreResult(response.successful);
+    // Check to see if conditional store is ready, if yes then forward result
+    // and pass to writeback
+    if (store->isCondResultReady()) {
+      // Forward result. Given only 1 conditional store can be processed at a
+      // time (as it can only be sent when at the front of the ROB, and blocks
+      // further commits until the result has been returned), there is
+      // guarenteed to be space in the completion slot.
+      forwardOperands_(store->getDestinationRegisters(), store->getResults());
+      completionSlots_[count].getTailSlots()[0] = std::move(store);
+      count++;
 
-    // Forward result. Given only 1 conditional store can be processed at a time
-    // (given it can only be sent when at the front of the ROB, and blocks
-    // further commits until the result has been returned), there is guarenteed
-    // to be space in the completion slot.
-    forwardOperands_(itr->second->getDestinationRegisters(),
-                     itr->second->getResults());
-
-    completionSlots_[count].getTailSlots()[0] = itr->second;
-    count++;
-
-    // Add to completedConditionalStores_ queue
-    // completedConditionalStores_
-    completedConditionalStores_.emplace(itr->second->getSequenceId());
-    requestedCondStores_.erase(itr);
+      // Add to completedConditionalStores_ queue
+      // completedConditionalStores_
+      completedConditionalStores_.emplace(itr->first);
+      itr = requestedCondStores_.erase(itr);
+    } else {
+      itr++;
+    }
   }
-  mmu_->clearCompletedCondStores();
 
   // Process completed read requests
-  for (const auto& response : mmu_->getCompletedReads()) {
-    const auto& address = response.target.vaddr;
-    const auto& data = response.data;
-
-    // TODO: Detect and handle non-fatal faults (e.g. page fault)
-
-    // Find instruction that requested the memory read
-    const auto& itr = requestedLoads_.find(response.requestId);
-    if (itr == requestedLoads_.end()) {
-      continue;
-    }
-
-    // Supply data to the instruction and execute if it is ready
-    const auto& load = itr->second;
-    load->supplyData(address, data);
-    if (load->hasAllData()) {
+  auto load = requestedLoads_.begin();
+  while (load != requestedLoads_.end()) {
+    if (load->second->hasAllData() && !load->second->hasExecuted()) {
       // This load has completed
-      load->execute();
-      if (load->isStoreData()) {
-        supplyStoreData(load);
+      load->second->execute();
+      if (load->second->isStoreData()) {
+        supplyStoreData(load->second);
       }
-      completedLoads_.push(load);
+      completedLoads_.push(load->second);
+    } else {
+      load++;
     }
   }
-  mmu_->clearCompletedReads();
 
   // Pop from the front of the completed loads queue and send to writeback
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {

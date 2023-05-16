@@ -225,6 +225,10 @@ class Instruction {
   /** Retrieve a branch target from the instruction's metadata if known. */
   uint64_t getKnownOffset() const { return knownOffset_; }
 
+  /** Returns whether the result register has been updated following a
+   * conditional store. */
+  bool isCondResultReady() const { return condResultReady_; }
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -256,6 +260,10 @@ class Instruction {
   // ------ Memory ------
   /** The number of data items that still need to be supplied. */
   uint8_t dataPending_ = 0;
+
+  /** If the instruction is a conditional store, indicates whether the result
+   * register has been updated based on store's success or failure. */
+  bool condResultReady_ = false;
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */

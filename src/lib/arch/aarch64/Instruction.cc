@@ -204,6 +204,7 @@ void Instruction::updateCondStoreResult(const bool success) {
          "non-conditional-store instruction.");
   RegisterValue result = {(uint64_t)0 | !success, 8};
   results[0] = result;
+  condResultReady_ = true;
 }
 
 /** Extend `value` according to `extendType`, and left-shift the result by

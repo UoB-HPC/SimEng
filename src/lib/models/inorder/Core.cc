@@ -85,10 +85,6 @@ void Core::tick() {
   decodeUnit_.tick();
   executeUnit_.tick();
 
-  // Wipe any data read responses, as they will have been handled by this point
-  // TODO THIS WONT WORK
-  mmu_->clearCompletedReads();
-
   // Read pending registers for ready-to-execute uop; must happen after execute
   // to allow operand forwarding to take place first
   readRegisters();
@@ -247,9 +243,10 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
 
   // NOTE: This model only supports zero-cycle data memory models, and will not
   // work unless data requests are handled synchronously.
-  for (const auto& response : mmu_->getCompletedReads()) {
-    instruction->supplyData(response.target.vaddr, response.data);
-  }
+  // for (const auto& response : mmu_->getCompletedReads()) {
+  //   instruction->supplyData(response.target.vaddr, response.data);
+  // }
+  // Instruction is now supplied data inside MMU
 
   assert(instruction->hasAllData() &&
          "[SimEng:Core] Load instruction failed to obtain all data this cycle");

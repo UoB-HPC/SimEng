@@ -61,23 +61,9 @@ void Core::tick() {
     auto& uop = microOps_.front();
     assert(uop->isStoreCond());
 
-    const auto& completedCondStores = mmu_->getCompletedCondStores();
-    for (const auto& response : completedCondStores) {
-      if (uop->getSequenceId() != response.requestId) {
-        std::cerr << "[SimEng:Core] Attempted to update conditional store "
-                     "result to the wrong instruction. Response requestID = "
-                  << response.requestId
-                  << ". Instruction ID = " << uop->getSequenceId() << "."
-                  << std::endl;
-        exit(1);
-      }
-      uop->updateCondStoreResult(response.successful);
-      inFlightStoreCondReqs_--;
-    }
-    mmu_->clearCompletedCondStores();
-
-    // If no more requests associated with conditional store, do writeback
-    if (inFlightStoreCondReqs_ == 0) {
+    // If conditional store has completed, do writeback
+    if (uop->isCondResultReady()) {
+      inFlightStoreCondReqs_ = 0;
       auto results = uop->getResults();
       auto destinations = uop->getDestinationRegisters();
       for (size_t i = 0; i < results.size(); i++) {
@@ -93,16 +79,8 @@ void Core::tick() {
   if (pendingReads_ > 0) {
     // Handle pending reads to a uop
     auto& uop = microOps_.front();
-
-    const auto& completedReads = mmu_->getCompletedReads();
-    for (const auto& response : completedReads) {
-      assert(pendingReads_ > 0);
-      uop->supplyData(response.target.vaddr, response.data);
-      pendingReads_--;
-    }
-    mmu_->clearCompletedReads();
-
-    if (pendingReads_ == 0) {
+    if (uop->hasAllData()) {
+      pendingReads_ = 0;
       // Load complete: resume execution
       execute(uop);
     }
