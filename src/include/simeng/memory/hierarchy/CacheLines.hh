@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstring>
 #include <memory>
 
 #include "simeng/RegisterValue.hh"
@@ -10,48 +11,92 @@ namespace simeng::memory::hierarchy {
 class CacheLine {
  public:
   inline virtual uint32_t getTag() = 0;
+  inline virtual void setTag(uint64_t tag) = 0;
   inline virtual bool isValid(uint16_t offset = 0) = 0;
-  inline virtual bool isDirty(uint16_t offset = 0) = 0;
   inline virtual void setValid(uint16_t offset = 0) = 0;
-  inline virtual void setDirty(uint16_t offset = 0) = 0;
   inline virtual void setInvalid(uint16_t offset = 0) = 0;
+  inline virtual bool isDirty(uint16_t offset = 0) = 0;
+  inline virtual void setDirty(uint16_t offset = 0) = 0;
   inline virtual void setNotDirty(uint16_t offset = 0) = 0;
-  /* virtual std::vector<char> load(uint16_t size, uint16_t offset = 0) = 0;
-  virtual void write(std::vector<char> data, uint16_t size,
-                     uint16_t offset = 0) = 0; */
+  virtual char* getData() = 0;
+  virtual void supplyData(std::vector<char> data, uint16_t offset) = 0;
+  virtual const char* begin() = 0;
+  virtual const char* end() = 0;
+  virtual void setPaddr(uint64_t paddr) = 0;
+  virtual uint64_t getPaddr() = 0;
+  virtual bool isBusy() = 0;
+  virtual void setBusy() = 0;
+  virtual void setNotBusy() = 0;
 };
 
 struct UnSectoredCacheLine : public CacheLine {
  public:
   enum class CacheLineMasks : uint16_t {
     ValidMask = 0b1000000000000000,
-    DirtyMask = 0b0100000000000000
+    DirtyMask = 0b0100000000000000,
+    EvictionMask = 0b0010000000000000,
+    BusyMask = 0b0001000000000000,
   };
 
-  inline uint32_t getTag() { return tag_; }
-  inline bool isValid(uint16_t offset = 0) {
+  UnSectoredCacheLine(uint32_t size) : size_(size) {
+    lineData_ = new char(size);
+  }
+
+  inline uint32_t getTag() override { return tag_; }
+  inline void setTag(uint64_t tag) override { tag_ = tag; }
+  inline bool isValid(uint16_t offset = 0) override {
     return metadata_ & static_cast<uint16_t>(CacheLineMasks::ValidMask);
   }
-  inline bool isDirty(uint16_t offset = 0) {
+  inline bool isDirty(uint16_t offset = 0) override {
     return metadata_ & static_cast<uint16_t>(CacheLineMasks::DirtyMask);
   }
-  inline void setValid(uint16_t offset = 0) {
+  inline void setValid(uint16_t offset = 0) override {
     metadata_ = metadata_ | static_cast<uint16_t>(CacheLineMasks::ValidMask);
   }
-  inline void setDirty(uint16_t offset = 0) {
+  inline void setDirty(uint16_t offset = 0) override {
     metadata_ = metadata_ | static_cast<uint16_t>(CacheLineMasks::DirtyMask);
   }
-  inline void setInvalid(uint16_t offset = 0) {
+  inline void setInvalid(uint16_t offset = 0) override {
+    tag_ = -1;
     metadata_ = metadata_ & ~(static_cast<uint16_t>(CacheLineMasks::ValidMask));
   }
-  inline void setNotDirty(uint16_t offset = 0) {
+  inline void setNotDirty(uint16_t offset = 0) override {
     metadata_ = metadata_ & ~(static_cast<uint16_t>(CacheLineMasks::DirtyMask));
+  }
+  inline void setInEviction() {
+    metadata_ = metadata_ | static_cast<uint16_t>(CacheLineMasks::EvictionMask);
+  }
+  char* getData() override { return lineData_; };
+  const char* begin() override { return lineData_; }
+
+  const char* end() override { return lineData_ + size_; }
+
+  void setPaddr(uint64_t paddr) override { paddr_ = paddr; }
+
+  uint64_t getPaddr() override { return paddr_; }
+
+  void supplyData(std::vector<char> data, uint16_t offset) override {
+    std::memcpy(lineData_ + offset, data.data(), data.size());
+  };
+
+  bool isBusy() override {
+    return metadata_ & static_cast<uint16_t>(CacheLineMasks::BusyMask);
+  }
+
+  void setBusy() override {
+    metadata_ = metadata_ | static_cast<uint16_t>(CacheLineMasks::BusyMask);
+  }
+
+  void setNotBusy() override {
+    metadata_ = metadata_ & ~(static_cast<uint16_t>(CacheLineMasks::BusyMask));
   }
 
  private:
-  uint64_t tag_;
-  uint8_t metadata_;
-  uint8_t* lineData_;
+  char* lineData_;
+  uint64_t paddr_ = 0;
+  uint64_t tag_ = -1;
+  uint32_t size_ = 0;
+  uint16_t metadata_ = 0;
 };
 
 }  // namespace simeng::memory::hierarchy

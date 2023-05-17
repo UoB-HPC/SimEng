@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "simeng/memory/MemRequests.hh"
+#include "simeng/memory/hierarchy/CacheInfo.hh"
 
 namespace simeng {
 namespace memory {
@@ -43,6 +44,9 @@ class MemPacket {
   /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
    * and data-write requests can have an ID of 0. */
   uint64_t id_ = 0;
+
+  /***/
+  hierarchy::CacheInfo cinfo;
 
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
@@ -107,6 +111,8 @@ class MemPacket {
 
   /** Function to change a Write MemPacket into a Response. */
   void turnIntoWriteResponse();
+
+  ~MemPacket() {}
 
  protected:
   /** Metadata data associated with a MemPacket.
