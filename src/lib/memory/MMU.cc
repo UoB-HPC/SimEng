@@ -15,7 +15,12 @@ MMU::MMU(VAddrTranslator fn)
 void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   uint64_t requestId = uop->getSequenceId();
   uint64_t instructionID = uop->getInstructionId();
-  bool isReserved = uop->isLoadReserved();
+
+  // Check if new cacheLineMonitor needs to be opened
+  if (uop->isLoadReserved()) {
+    openLLSCMonitor(uop);
+  }
+
   // Register load in map
   requestedLoads_[requestId] = uop;
 
@@ -26,22 +31,28 @@ void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
     std::unique_ptr<memory::MemPacket> req =
         memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                              requestId, instructionID);
-    if (isReserved) req->markAsResLoad();
-    bufferRequest(std::move(req));
+    issueRequest(std::move(req));
   }
 }
 
 void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
                        const std::vector<RegisterValue>& data) {
-  uint64_t requestId = uop->getSequenceId();
-  uint64_t instructionID = uop->getInstructionId();
   bool isConditional = uop->isStoreCond();
-
-  // Register conditional store in map
-  if (isConditional) requestedCondStore_[requestId] = uop;
+  if (isConditional) {
+    if (checkLLSCMonitor(uop) == false) {
+      // No valid monitor, fail store
+      uop->updateCondStoreResult(false);
+      return;
+    } else {
+      uop->updateCondStoreResult(true);
+    }
+  }
 
   // Create and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
+  uint64_t requestId = uop->getSequenceId();
+  uint64_t instructionID = uop->getInstructionId();
+
   assert(data.size() == targets.size() &&
          "[SimEng:MMU] Number of addresses does not match the number of data "
          "elements to write.");
@@ -52,8 +63,8 @@ void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
     std::vector<char> dt(wdata, wdata + target.size);
     std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
         target.vaddr, target.size, requestId, instructionID, dt);
-    if (isConditional) req->markAsCondStore();
-    bufferRequest(std::move(req));
+    if (!isConditional) updateLLSCMonitor(target);
+    issueRequest(std::move(req));
   }
 }
 
@@ -65,7 +76,8 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
   std::vector<char> dt(wdata, wdata + target.size);
   std::unique_ptr<MemPacket> req =
       MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
-  bufferRequest(std::move(req));
+  updateLLSCMonitor(target);
+  issueRequest(std::move(req));
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
@@ -74,7 +86,7 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target) {
       memory::MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
-  bufferRequest(std::move(insRequest));
+  issueRequest(std::move(insRequest));
 }
 
 const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
@@ -86,7 +98,13 @@ void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
-void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
+void MMU::setTid(uint64_t tid) {
+  tid_ = tid;
+  // TID only updated on context switch, must clear cache line monitor
+  cacheLineMonitor_.second = false;
+}
+
+void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
   uint64_t paddr = translate_(request->vaddr_, tid_);
@@ -102,46 +120,72 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
-    if (!request->isInstrRead()) updateLLSCMonitor(request);
   }
 
   port_->send(std::move(request));
 }
 
-void MMU::setTid(uint64_t tid) {
-  tid_ = tid;
-  // TID only updated on context switch, must clear cache line monitor
-  cacheLineMonitor_.second = false;
+void MMU::openLLSCMonitor(const std::shared_ptr<Instruction>& loadRes) {
+  assert(loadRes->isLoadReserved() &&
+         "[SimEng:MMU] Cannot open an LL/SC monitor with a non-load-reserved "
+         "instruction.");
+  // For each target, extract which cache lines they are contained within
+  cacheLineMonitor_ = {{}, true};
+  const auto& targets = loadRes->getGeneratedAddresses();
+  // We can use Vaddr for LL/SC monitor given that a) monitors are unique to a
+  // thread, and b) all addresses within the same cache line will have the
+  // same upper (64-log2(cacheLineWidth))-bits.
+  for (auto& target : targets) {
+    // Add cache lines to set. Assumes access is unaligned, but in the case it
+    // is aligned the use of a std::set ensures uniqueness of elements.
+    cacheLineMonitor_.first.emplace(downAlign(target.vaddr, cacheLineWidth_));
+    cacheLineMonitor_.first.emplace(
+        downAlign(target.vaddr + target.size, cacheLineWidth_));
+  }
 }
 
-/** NOTE: Assumes all Load-Reserved & Store-Conditional accesses are aligned. */
-void MMU::updateLLSCMonitor(const std::unique_ptr<MemPacket>& request) {
-  // If Load-Reserved, add Monitored cache line.
-  if (request->isResLoad()) {
-    cacheLineMonitor_ = {downAlign(request->paddr_, cacheLineWidth_), true};
-  } else if (request->isCondStore()) {
-    // See if monitor is valid
-    if (cacheLineMonitor_.second) {
-      // See if cache lines match, if yes, remove monitor and proceed
-      if (downAlign(request->paddr_, cacheLineWidth_) ==
-          cacheLineMonitor_.first) {
-        cacheLineMonitor_.second = false;
-      } else {
-        // If no match, fail condStore
-        request->markAsIgnored();
-      }
-    } else {
-      // If not valid, fail condStore
-      request->markAsIgnored();
+bool MMU::checkLLSCMonitor(const std::shared_ptr<Instruction>& strCond) {
+  assert(strCond->isStoreCond() &&
+         "[SimEng:MMU] Can only check a cache line monitor with a "
+         "store-conditional instruction.");
+  if (cacheLineMonitor_.second == false) {
+    return false;
+  }
+  // For each target, check whether it is contained within the monitored region
+  const auto& targets = strCond->getGeneratedAddresses();
+  for (auto& target : targets) {
+    // Assume unaligned access, need to check both possible cache lines
+    if (cacheLineMonitor_.first.count(
+            downAlign(target.vaddr, cacheLineWidth_)) == 0) {
+      // Not in monitored region, fail
+      return false;
     }
-  } else if (request->isWrite()) {
-    // Check if write requests overlaps the cache line monitor. If yes,
-    // remove monitors to invalidate it.
-    if (downAlign(request->paddr_, cacheLineWidth_) ==
-            cacheLineMonitor_.first ||
-        downAlign(request->paddr_ + request->size_, cacheLineWidth_) ==
-            cacheLineMonitor_.first) {
+    if (cacheLineMonitor_.first.count(
+            downAlign(target.vaddr + target.size, cacheLineWidth_)) == 0) {
+      // Not in monitored region, fail
+      return false;
+    }
+  }
+  // All targets within monitor, return true to proceed with conditional store
+  // and invalidate monitor
+  cacheLineMonitor_.second = false;
+  return true;
+}
+
+void MMU::updateLLSCMonitor(const MemoryAccessTarget& storeTarget) {
+  if (cacheLineMonitor_.second == true) {
+    // Assume unaligned access, need to check both possible cache lines
+    if (cacheLineMonitor_.first.count(
+            downAlign(storeTarget.vaddr, cacheLineWidth_)) == 1) {
+      // In monitored region, invalidate monitor
       cacheLineMonitor_.second = false;
+      return;
+    }
+    if (cacheLineMonitor_.first.count(downAlign(
+            storeTarget.vaddr + storeTarget.size, cacheLineWidth_)) == 1) {
+      // In monitored region, invalidate monitor
+      cacheLineMonitor_.second = false;
+      return;
     }
   }
 }
@@ -180,20 +224,6 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       if (insn->second->hasAllData()) {
         requestedLoads_.erase(insn);
       }
-    }
-    if (packet->isCondStore()) {
-      // Assumes one response per instruction.
-      bool success = true;
-      if (packet->isFaulty() || packet->ignore()) {
-        success = false;
-      }
-      const auto& insn = requestedCondStore_.find(packet->id_);
-      assert(insn != requestedCondStore_.end() &&
-             "[SimEng:MMU] Tried to supply result to a conditional store that "
-             "isn't in the completedCondStores_ map.");
-      insn->second->updateCondStoreResult(success);
-      // Conditonal store now has result. Remove from map
-      requestedCondStore_.erase(insn);
     }
   };
   port_->registerReceiver(fn);

@@ -504,4 +504,253 @@ TEST(LLSCTest, secondWriteFailure) {
   }
 }
 
+// Pass an LL/SC pair, with both instructions having multiple aligned targets
+TEST(LLSCTest, successfulMultiLLSC) {
+  Config::set(DEFAULT_CONFIG);
+  // Set-up the memory environment.
+  std::vector<char> data;
+  for (uint16_t i = 0; i < dataSize; i++) {
+    data.push_back(i);
+  }
+  simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(dataSize);
+  simeng::memory::MMU mmu = simeng::memory::MMU(fn);
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = mmu.initPort();
+  connection.connect(port1, port2);
+  sMem.sendUntimedData(data, 0, dataSize);
+
+  // Send packet to open monitor
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}, {16, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop->setDataPending(2);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+
+  // Send packet to close monitor
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
+                                               {0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestWrite(uop2, regVal);
+  // Check write happened
+  auto memResp = sMem.getUntimedData(8, 16);
+  std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
+                                      0x78, 0x56, 0x34, 0x12};
+  for (int i = 0; i < memResp.size(); i++) {
+    EXPECT_EQ((uint8_t)memResp[i], memRespData[i % 8]);
+  }
+}
+
+// Pass an LL/SC pair, with both instructions having multiple aligned targets
+// but crossing a cache line boundary between targets
+TEST(LLSCTest, successfulMultiCachelineLLSC) {
+  Config::set(DEFAULT_CONFIG);
+  // Set-up the memory environment.
+  std::vector<char> data;
+  for (uint16_t i = 0; i < dataSize; i++) {
+    data.push_back(i);
+  }
+  simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(dataSize);
+  simeng::memory::MMU mmu = simeng::memory::MMU(fn);
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = mmu.initPort();
+  connection.connect(port1, port2);
+  sMem.sendUntimedData(data, 0, dataSize);
+
+  // Send packet to open monitor
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{248, 8}, {256, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop->setDataPending(2);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+
+  // Send packet to close monitor
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
+                                               {0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestWrite(uop2, regVal);
+  // Check write happened
+  auto memResp = sMem.getUntimedData(248, 16);
+  std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
+                                      0x78, 0x56, 0x34, 0x12};
+  for (int i = 0; i < memResp.size(); i++) {
+    EXPECT_EQ((uint8_t)memResp[i], memRespData[i % 8]);
+  }
+}
+
+// Pass an LL/SC pair, with both instructions having multiple targets, one of
+// which is unaligned
+TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
+  Config::set(DEFAULT_CONFIG);
+  // Set-up the memory environment.
+  std::vector<char> data;
+  for (uint16_t i = 0; i < dataSize; i++) {
+    data.push_back(i);
+  }
+  simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(dataSize);
+  simeng::memory::MMU mmu = simeng::memory::MMU(fn);
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = mmu.initPort();
+  connection.connect(port1, port2);
+  sMem.sendUntimedData(data, 0, dataSize);
+
+  // Send packet to open monitor
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}, {250, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop->setDataPending(2);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+
+  // Send packet to close monitor
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
+                                               {0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestWrite(uop2, regVal);
+  // Check write happened
+  auto memResp = sMem.getUntimedData(8, 8);
+  auto memResp2 = sMem.getUntimedData(250, 8);
+  std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
+                                      0x78, 0x56, 0x34, 0x12};
+  for (int i = 0; i < memResp.size(); i++) {
+    EXPECT_EQ((uint8_t)memResp[i], memRespData[i]);
+    EXPECT_EQ((uint8_t)memResp2[i], memRespData[i]);
+  }
+}
+
+// Fail an LL/SC pair, with the SC having multiple targets; one in a valid cache
+// line, one not
+TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
+  Config::set(DEFAULT_CONFIG);
+  // Set-up the memory environment.
+  std::vector<char> data;
+  for (uint16_t i = 0; i < dataSize; i++) {
+    data.push_back(i);
+  }
+  simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(dataSize);
+  simeng::memory::MMU mmu = simeng::memory::MMU(fn);
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = mmu.initPort();
+  connection.connect(port1, port2);
+  sMem.sendUntimedData(data, 0, dataSize);
+
+  // Send packet to open monitor
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop->setDataPending(1);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+
+  // Send packet to close monitor
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}, {264, 8}};
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
+                                               {0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
+  // Check writes didn't happened
+  auto memResp = sMem.getUntimedData(8, 8);
+  auto memResp2 = sMem.getUntimedData(264, 8);
+  std::vector<uint8_t> memRespData = {0x08, 0x09, 0x0A, 0x0B,
+                                      0x0C, 0x0D, 0x0E, 0x0F};
+  for (int i = 0; i < memResp.size(); i++) {
+    EXPECT_EQ((uint8_t)memResp[i], memRespData[i]);
+    EXPECT_EQ((uint8_t)memResp2[i], memRespData[i]);
+  }
+}
+
+// Fail an LL/SC pair, with the SC having multiple targets; one of which is
+// unaligned
+TEST(LLSCTest, failUnalignedStoreLLSC) {
+  Config::set(DEFAULT_CONFIG);
+  // Set-up the memory environment.
+  std::vector<char> data;
+  for (uint16_t i = 0; i < dataSize; i++) {
+    data.push_back(i);
+  }
+  simeng::memory::SimpleMem sMem = simeng::memory::SimpleMem(dataSize);
+  simeng::memory::MMU mmu = simeng::memory::MMU(fn);
+  auto connection =
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+  auto port1 = sMem.initPort();
+  auto port2 = mmu.initPort();
+  connection.connect(port1, port2);
+  sMem.sendUntimedData(data, 0, dataSize);
+
+  // Send packet to open monitor
+  std::shared_ptr<simeng::MockInstruction> uop =
+      std::make_shared<simeng::MockInstruction>();
+  std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop->setDataPending(1);
+  ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
+  mmu.requestRead(uop);
+
+  // Send packet to close monitor
+  std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}, {252, 8}};
+  std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
+                                               {0x12345678DEADBEEF, 8}};
+  std::shared_ptr<simeng::MockInstruction> uop2 =
+      std::make_shared<simeng::MockInstruction>();
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+  ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
+  mmu.requestWrite(uop2, regVal);
+  // Check writes didn't happened
+  auto memResp = sMem.getUntimedData(8, 8);
+  auto memResp2 = sMem.getUntimedData(252, 8);
+  std::vector<uint8_t> memRespData = {0x08, 0x09, 0x0A, 0x0B,
+                                      0x0C, 0x0D, 0x0E, 0x0F};
+  std::vector<uint8_t> memRespData2 = {0xFC, 0xFD, 0xFE, 0xFF,
+                                       0x00, 0x01, 0x02, 0x03};
+  for (int i = 0; i < memResp.size(); i++) {
+    EXPECT_EQ((uint8_t)memResp[i], memRespData[i]);
+    EXPECT_EQ((uint8_t)memResp2[i], memRespData2[i]);
+  }
+}
+
 }  // namespace

@@ -54,31 +54,32 @@ class MMU {
   /** Returns true if there are any oustanding memory requests in-flight. */
   bool hasPendingRequests() const;
 
-  /** Method used to buffer data requests to memory. */
-  void bufferRequest(std::unique_ptr<MemPacket> request);
-
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
-
-  /** Updates the local cache line monitor to enforce correct LL/SC behaviour.
-   */
-  void updateLLSCMonitor(const std::unique_ptr<MemPacket>& request);
 
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
  private:
+  /** Method used to buffer data requests to memory. */
+  void issueRequest(std::unique_ptr<MemPacket> request);
+
+  /** Open a new cache line monitor. */
+  void openLLSCMonitor(const std::shared_ptr<Instruction>& loadRes);
+
+  /** Checks whether a valid monitor is open for a store conditional. Returns
+   * whether the store can proceed or not. */
+  bool checkLLSCMonitor(const std::shared_ptr<Instruction>& strCond);
+
+  /** Potentially updates the local cache line monitor to enforce correct LL/SC
+   * behaviour. */
+  void updateLLSCMonitor(const MemoryAccessTarget& storeTarget);
+
   /** A map containing all load instructions waiting for their results.
    * Key = Instruction sequenceID
    * Value = Instruction */
   std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
-
-  /** A map containing all conditional store instructions waiting for their
-   * results.
-   * Key = Instruction sequenceID
-   * Value = Instruction */
-  std::map<uint64_t, std::shared_ptr<Instruction>> requestedCondStore_;
 
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
@@ -92,9 +93,9 @@ class MMU {
   // We model "weak" LL/SC support (as is the case in the majority of hardware)
   // and so only one monitor can be usable. Atomics are processed when at the
   // head of ROB so no speculation, and are assumed to be correctly aligned.
-
-  /** Address of currently monitored cache line, and whether it is valid.*/
-  std::pair<uint64_t, bool> cacheLineMonitor_;
+  /** The cache line monitor represented as a pair. Containes a set of cache
+   * line addresses within monitor, and whether the monitor is valid. */
+  std::pair<std::set<uint64_t>, bool> cacheLineMonitor_;
 
   /** Width of a cache line. */
   const uint64_t cacheLineWidth_;
