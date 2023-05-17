@@ -117,9 +117,8 @@ class LoadStoreQueue {
   /** Map of loads that have requested their data, keyed by sequence ID. */
   std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
-  /** Map of conditional stores that have been sent to MMU, keyed by sequence
-   * ID. */
-  std::map<uint64_t, std::shared_ptr<Instruction>> requestedCondStores_;
+  /** The conditional store that has been sent to MMU. */
+  std::shared_ptr<Instruction> requestedCondStore_;
 
   /** A function handler to call to forward the results of a completed load. */
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
@@ -180,9 +179,9 @@ class LoadStoreQueue {
   /** The order in which instructions can be passed to the completion slots. */
   CompletionOrder completionOrder_;
 
-  /** A vector of completed conditional store sequenceIds ready for writeback.
+  /** A completed conditional store's sequenceID ready for writeback & commit.
    */
-  std::queue<uint64_t> completedConditionalStores_;
+  uint64_t completedConditionalStore_ = -1;
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;

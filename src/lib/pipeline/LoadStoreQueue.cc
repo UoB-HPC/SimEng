@@ -237,7 +237,10 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreCond()) {
-    requestedCondStores_.emplace(uop->getSequenceId(), uop);
+    assert(requestedCondStore_ == nullptr &&
+           "[SimEng:LoadStoreQueue] Tried to issue a second conditional store "
+           "whilst one is already in flight.");
+    requestedCondStore_ = uop;
   }
   storeQueue_.pop_front();
 
@@ -245,17 +248,15 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 }
 
 bool LoadStoreQueue::checkCondStore(const uint64_t sequenceId) {
-  if (completedConditionalStores_.size() == 0) return false;
-  // SequenceId must be at the front of the queue, given only 1 can be processed
-  // at a time
-  if (completedConditionalStores_.front() != sequenceId) {
+  if (completedConditionalStore_ == -1) return false;
+  if (completedConditionalStore_ != sequenceId) {
     std::cerr
         << "[SimEng:LoadStoreQueue] SequenceID of conditional-store at the "
            "front of the ROB is not equal to the completed conditional-Store."
         << std::endl;
     exit(1);
   }
-  completedConditionalStores_.pop();
+  completedConditionalStore_ = -1;
   return true;
 }
 
@@ -469,31 +470,27 @@ void LoadStoreQueue::tick() {
     }
   }
 
-  // Process completed conditional store request.
+  // Initialise completion counter
   size_t count = 0;
-  auto itr = requestedCondStores_.begin();
-  while (itr != requestedCondStores_.end()) {
-    const auto& store = itr->second;
-    // No need to check if flushed as conditional store must be at front of
-    // ROB to be committed
 
-    // Check to see if conditional store is ready, if yes then forward result
-    // and pass to writeback
-    if (store->isCondResultReady()) {
+  // Process completed conditional store request.
+  // No need to check if flushed as conditional store must be at front of
+  // ROB to be committed
+  // Check to see if conditional store is ready, if yes then forward result
+  // and pass to writeback
+  if (requestedCondStore_ != nullptr) {
+    if (requestedCondStore_->isCondResultReady()) {
+      completedConditionalStore_ = requestedCondStore_->getSequenceId();
       // Forward result. Given only 1 conditional store can be processed at a
       // time (as it can only be sent when at the front of the ROB, and blocks
       // further commits until the result has been returned), there is
       // guarenteed to be space in the completion slot.
-      forwardOperands_(store->getDestinationRegisters(), store->getResults());
-      completionSlots_[count].getTailSlots()[0] = std::move(store);
+      forwardOperands_(requestedCondStore_->getDestinationRegisters(),
+                       requestedCondStore_->getResults());
+      completionSlots_[count].getTailSlots()[0] =
+          std::move(requestedCondStore_);
       count++;
-
-      // Add to completedConditionalStores_ queue
-      // completedConditionalStores_
-      completedConditionalStores_.emplace(itr->first);
-      itr = requestedCondStores_.erase(itr);
-    } else {
-      itr++;
+      requestedCondStore_ = nullptr;
     }
   }
 
