@@ -1,9 +1,9 @@
 Building SimEng with SST
 ========================
 
-Prerequisits
-------------
-In addition to CMake and a compiler that supports C++17, version **12.0.x** of SST and SST-Elements are required.
+Prerequisites
+*************
+In addition to CMake and a compiler that supports C++17, version **12.0.x** of SST-Core and SST-Elements are required.
 
 .. warning::
     Please ensure that while installing SST-Elements, the initial configuration step should include the
@@ -17,18 +17,18 @@ In addition to CMake and a compiler that supports C++17, version **12.0.x** of S
     to the SST install directory.
 
 Build Steps
------------
-Two flags have been added to the CMake configuration step to enable integration with SST:
+***********
+Two flags have been added to SimEng's CMake configuration step to enable integration with SST:
 
 .. code-block:: text
 
        -DSIMENG_ENABLE_SST={ON, OFF} // Defaults to OFF
        -DSST_INSTALL_DIR=<sst-core_install_directory> // Path to the SST-Core install location
 
-The rest of the steps for building SimEng with SST integration remain the same as the standalone SimEng installation i.e the build step and the install step.
+The rest of the steps for building and installing SimEng with SST integration remain the same as a standalone SimEng :ref:`installation<Building_SimEng>` i.e the build step and the install step.
 
 Validation
-----------
+**********
 A successful SST installation should also install the ``sst-info`` executable. This executable is used to print all the components registered with SST-Core which
 can be used in an SST simulation. To verify a successful installation of SimEng with SST integration enabled, the command ``sst-info --libs=libsstsimeng``  
 should output:
