@@ -46,8 +46,6 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           },
           simeng::pipeline::CompletionOrder::OUTOFORDER,
           config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
               .as<uint16_t>(),
           config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]

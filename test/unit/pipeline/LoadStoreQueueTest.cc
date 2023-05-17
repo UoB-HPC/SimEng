@@ -43,6 +43,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         memory(std::make_shared<memory::FixedLatencyMemory>(1024, latency)),
         mmu(std::make_shared<memory::MMU>(fn)),
         connection() {
+    Config::set(DEFAULT_CONFIG);
     // Set up MMU->Memory connection
     port1 = mmu->initPort();
     port2 = memory->initPort();
@@ -471,6 +472,14 @@ TEST_P(LoadStoreQueueTest, inOrderCompletion) {
   LoadStoreQueue queue = LoadStoreQueue(
       MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 2},
       [](auto registers, auto values) {}, CompletionOrder::INORDER);
+
+  loadUop->delegateExecute();
+  loadUop->delegateSupplyData();
+  loadUop2->delegateExecute();
+  loadUop2->delegateSupplyData();
+
+  loadUop->setDataPending(1);
+  loadUop2->setDataPending(1);
   loadUop->setSequenceId(0);
   loadUop2->setSequenceId(1);
   loadUop->setLSQLatency(3);
@@ -501,13 +510,19 @@ TEST_P(LoadStoreQueueTest, OoOCompletion) {
   LoadStoreQueue queue = LoadStoreQueue(
       MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 1},
       [](auto registers, auto values) {}, CompletionOrder::OUTOFORDER);
+
+  loadUop->delegateExecute();
+  loadUop->delegateSupplyData();
+  loadUop2->delegateExecute();
+  loadUop2->delegateSupplyData();
+
+  loadUop->setDataPending(1);
+  loadUop2->setDataPending(1);
+
   loadUop->setSequenceId(0);
   loadUop2->setSequenceId(1);
   loadUop->setLSQLatency(3);
   loadUop2->setLSQLatency(1);
-
-  loadUop->setExecuted(true);
-  loadUop2->setExecuted(true);
 
   queue.addLoad(loadUopPtr);
   queue.addLoad(loadUopPtr2);

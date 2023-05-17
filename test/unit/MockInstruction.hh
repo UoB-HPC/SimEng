@@ -46,6 +46,17 @@ class MockInstruction : public Instruction {
 
   MOCK_METHOD1(updateCondStoreResult, void(const bool success));
 
+  void delegateExecute() {
+    ON_CALL(*this, execute).WillByDefault([this]() { executed_ = true; });
+  }
+
+  void delegateSupplyData() {
+    ON_CALL(*this, supplyData)
+        .WillByDefault([this](uint64_t address, const RegisterValue& data) {
+          dataPending_--;
+        });
+  }
+
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;

@@ -7,9 +7,6 @@
 
 #define DEFAULT_STR "Default"
 
-/** A Config class to hold a single instance of a global config file. */
-class Config {
- private:
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
    "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
@@ -41,6 +38,9 @@ class Config {
    "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "   \
    "0x0, CPU-Revision: 0, Package-Count: 1}}")
 
+/** A Config class to hold a single instance of a global config file. */
+class Config {
+ private:
   /** Constructor of a Config object. */
   Config() { config_ = YAML::Load(DEFAULT_CONFIG); }
 
