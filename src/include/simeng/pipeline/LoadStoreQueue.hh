@@ -27,9 +27,7 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
-      uint16_t permittedRequests = UINT16_MAX,
+      bool exclusive = false, uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
 
@@ -41,9 +39,7 @@ class LoadStoreQueue {
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
-      uint16_t permittedRequests = UINT16_MAX,
+      bool exclusive = false, uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
 
@@ -176,12 +172,6 @@ class LoadStoreQueue {
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;
-
-  /** The amount of data readable from the L1D cache per cycle. */
-  uint16_t loadBandwidth_;
-
-  /** The amount of data writable to the L1D cache per cycle. */
-  uint16_t storeBandwidth_;
 
   /** The combined limit of loads and store requests permitted per cycle. */
   uint16_t totalLimit_;

@@ -21,8 +21,7 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
-    uint16_t permittedRequests, uint16_t permittedLoads,
+    bool exclusive, uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
@@ -30,8 +29,6 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(true),
       mmu_(mmu),
       exclusive_(exclusive),
-      loadBandwidth_(loadBandwidth),
-      storeBandwidth_(storeBandwidth),
       totalLimit_(permittedRequests),
       // Set per-cycle limits for each request type
       reqLimits_{permittedLoads, permittedStores} {};
@@ -41,8 +38,7 @@ LoadStoreQueue::LoadStoreQueue(
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
-    uint16_t permittedRequests, uint16_t permittedLoads,
+    bool exclusive, uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
@@ -51,8 +47,6 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(false),
       mmu_(mmu),
       exclusive_(exclusive),
-      loadBandwidth_(loadBandwidth),
-      storeBandwidth_(storeBandwidth),
       totalLimit_(permittedRequests),
       // Set per-cycle limits for each request type
       reqLimits_{permittedLoads, permittedStores} {};
@@ -340,11 +334,9 @@ void LoadStoreQueue::purgeFlushed() {
 
 void LoadStoreQueue::tick() {
   tickCounter_++;
-  // Send memory requests adhering to set bandwidth and number of permitted
-  // requests per cycle
+  // Send memory requests adhering to the number of permitted requests per cycle
   // Index 0: loads, index 1: stores
   std::array<uint16_t, 2> reqCounts = {0, 0};
-  std::array<uint64_t, 2> dataTransfered = {0, 0};
   std::array<bool, 2> exceededLimits = {false, false};
   auto itLoad = requestLoadQueue_.begin();
   auto itStore = requestStoreQueue_.begin();
@@ -377,7 +369,6 @@ void LoadStoreQueue::tick() {
     // Get next request to schedule
     auto& itReq = chooseLoad ? itLoad : itStore;
     auto itInsn = itReq->second.begin();
-    auto bandwidth = chooseLoad ? loadBandwidth_ : storeBandwidth_;
 
     // Check if earliest request is ready
     if (itReq->first <= tickCounter_) {
@@ -416,40 +407,6 @@ void LoadStoreQueue::tick() {
           }
           // Remove entry from vector
           itInsn = itReq->second.erase(itInsn);
-
-          // auto& addressQueue = itInsn->reqAddresses;
-          // while (addressQueue.size()) {
-          //   const simeng::memory::MemoryAccessTarget req =
-          //   addressQueue.front();
-
-          //   // Ensure the limit on the data transfered per cycle is adhered
-          //   to assert(req.size <= bandwidth &&
-          //          "Individual memory request from LoadStoreQueue exceeds L1
-          //          " "bandwidth set and thus will never be submitted");
-          //   dataTransfered[isStore] += req.size;
-          //   if (dataTransfered[isStore] > bandwidth) {
-          //     // No more requests can be scheduled this cycle
-          //     exceededLimits[isStore] = true;
-          //     itInsn = itReq->second.end();
-          //     break;
-          //   }
-
-          //   // Request a read from the memory interface if the requestQueue_
-          //   // entry represents a read
-          //   if (!isStore) {
-          //     mmu_->requestRead(req, itInsn->insn->getSequenceId(),
-          //                       itInsn->insn->getInstructionId(),
-          //                       itInsn->insn->isLoadReserved());
-          //   }
-
-          //   // Remove processed address from queue
-          //   addressQueue.pop();
-          // }
-          // // Remove entry from vector iff all of its requests have been
-          // // scheduled
-          // if (addressQueue.size() == 0) {
-          //   itInsn = itReq->second.erase(itInsn);
-          // }
         }
       }
 
