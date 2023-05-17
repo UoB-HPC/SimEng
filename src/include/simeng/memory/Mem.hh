@@ -37,12 +37,12 @@ class Mem {
   /** This method reads data from memory without incurring any latency. */
   virtual std::vector<char> getUntimedData(uint64_t paddr, size_t size) = 0;
 
-  /** This method handles a memory request to an ignored address range. */
-  virtual void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) = 0;
-
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */
   virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() = 0;
+  /***/
+  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+  initUntimedPort() = 0;
 
   /** Method to tick the memory. */
   virtual void tick() = 0;

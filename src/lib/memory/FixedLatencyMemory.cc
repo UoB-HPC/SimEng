@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "simeng/memory/MemPacket.hh"
 
@@ -18,15 +19,12 @@ FixedLatencyMemory::FixedLatencyMemory(size_t size, uint16_t latency) {
 size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
 
 void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->ignore()) {
-    handleIgnoredRequest(pkt);
-    port_->send(std::move(pkt));
-    return;
-  }
-
-  if (pkt->isUntimed()) {
-    handleRequest(pkt);
-    port_->send(std::move(pkt));
+  if (pkt->isUntimedRead()) {
+    std::cerr << "Cannot do untimed memory access through timed port please use"
+                 "the untimed port"
+              << std::endl;
+    pkt->setFault();
+    timedPort_->send(std::move(pkt));
     return;
   }
 
@@ -35,28 +33,29 @@ void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
 }
 
 void FixedLatencyMemory::handleReadRequest(std::unique_ptr<MemPacket>& req) {
-  size_t size = req->size_;
-  uint64_t addr = req->paddr_;
-  req->turnIntoReadResponse(
-      std::vector<char>(memory_.begin() + addr, memory_.begin() + addr + size));
+  req->cinfo.data = std::vector<char>(
+      memory_.begin() + req->cinfo.basePaddr,
+      memory_.begin() + req->cinfo.basePaddr + req->cinfo.size);
 }
 
 void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
-  uint64_t address = req->paddr_;
-  std::copy(req->payload().begin(), req->payload().end(),
+  uint64_t address = req->cinfo.clineAddr;
+  std::copy(req->cinfo.data.begin(), req->cinfo.data.end(),
             memory_.begin() + address);
-  req->turnIntoWriteResponse();
 }
 
 void FixedLatencyMemory::tick() {
   ticks_++;
-  while (reqQueue_.size() && reqQueue_.front().endLat <= ticks_) {
+  while (reqQueue_.size() && ticks_ >= reqQueue_.front().endLat) {
     std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
-    handleRequest(pkt);
-    port_->send(std::move(pkt));
+    if (pkt->cinfo.dirty) {
+      handleWriteRequest(pkt);
+    }
+    handleReadRequest(pkt);
+    timedPort_->send(std::move(pkt));
     reqQueue_.pop();
   }
-};
+}
 
 void FixedLatencyMemory::sendUntimedData(std::vector<char> data, uint64_t addr,
                                          size_t size) {
@@ -69,23 +68,31 @@ std::vector<char> FixedLatencyMemory::getUntimedData(uint64_t paddr,
                            memory_.begin() + paddr + size);
 }
 
-void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->isRead()) {
-    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
-  } else {
-    pkt->turnIntoWriteResponse();
-  }
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initPort() {
+  timedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    this->requestAccess(packet);
+  };
+  timedPort_->registerReceiver(fn);
+  return timedPort_;
 }
 
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-FixedLatencyMemory::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+FixedLatencyMemory::initUntimedPort() {
+  untimedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    this->requestAccess(packet);
-    return;
+    if (!packet->isUntimedRead()) {
+      std::cerr << "Cannot do timed access through untimed port please use the "
+                   "timed port."
+                << std::endl;
+      std::exit(1);
+    }
+    packet->turnIntoReadResponse(getUntimedData(packet->paddr_, packet->size_));
+    untimedPort_->send(std::move(packet));
   };
-  port_->registerReceiver(fn);
-  return port_;
+  untimedPort_->registerReceiver(fn);
+  return untimedPort_;
 }
 void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
   if (req->isRequest() && req->isRead()) {

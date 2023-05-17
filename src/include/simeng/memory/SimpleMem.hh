@@ -31,10 +31,11 @@ class SimpleMem : public Mem {
   /** This method reads data from memory without incurring any latency. */
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
-  void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
-
   /** Function used to initialise a Port used for bidirection communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
+
+  /***/
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initUntimedPort() override;
 
   /** Method to tick the memory. */
   void tick() override{};
@@ -52,8 +53,14 @@ class SimpleMem : public Mem {
   /** This method handles DataPackets of type WRITE_REQUEST. */
   void handleWriteRequest(std::unique_ptr<MemPacket>& req);
 
+  /***/
+  void doUntimedAccess(std::unique_ptr<MemPacket>& req);
+
   /** Port used for communication with other classes. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> timedPort_ = nullptr;
+
+  /***/
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> untimedPort_ = nullptr;
 };
 
 }  // namespace memory

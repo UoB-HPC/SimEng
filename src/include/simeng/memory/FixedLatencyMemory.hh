@@ -39,11 +39,11 @@ class FixedLatencyMemory : public Mem {
   /** This method reads data from memory without incurring any latency. */
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
-  /** This method handles a memory request to an ignored address range. */
-  void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
-
   /** Function used to initialise a Port used for bidirection communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
+
+  /***/
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initUntimedPort() override;
 
   /** Method to tick the memory. */
   void tick() override;
@@ -65,7 +65,10 @@ class FixedLatencyMemory : public Mem {
   std::queue<LatencyPacket> reqQueue_;
 
   /** Port used for communication with other classes. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> timedPort_ = nullptr;
+
+  /***/
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> untimedPort_ = nullptr;
 
   /** This method handles MemPackets of type READ_REQUEST. */
   void handleReadRequest(std::unique_ptr<MemPacket>& req);

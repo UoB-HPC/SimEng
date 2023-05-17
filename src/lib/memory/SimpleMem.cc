@@ -16,35 +16,29 @@ SimpleMem::SimpleMem(size_t size) {
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
 void SimpleMem::requestAccess(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->ignore()) {
-    handleIgnoredRequest(pkt);
-  } else if (pkt->isRequest() && pkt->isRead()) {
-    handleReadRequest(pkt);
-  } else if (pkt->isRequest() && pkt->isWrite()) {
-    handleWriteRequest(pkt);
-  } else {
-    std::cerr << "[SimEng:SimpleMem] Invalid MemPacket type for "
-                 "requesting access to memory. Requests to memory should "
-                 "either be of "
-                 "type READ_REQUEST or WRITE_REQUEST."
+  if (pkt->isUntimedRead()) {
+    std::cerr << "Cannot do untimed access through a timed port please used "
+                 "the untimed port."
               << std::endl;
-    pkt->markAsFaulty();
+    pkt->setFault();
+    return;
   }
-  port_->send(std::move(pkt));
+  if (pkt->cinfo.dirty) {
+    handleWriteRequest(pkt);
+  }
+  handleReadRequest(pkt);
 }
 
 void SimpleMem::handleReadRequest(std::unique_ptr<MemPacket>& req) {
-  size_t size = req->size_;
-  uint64_t addr = req->paddr_;
-  req->turnIntoReadResponse(
-      std::vector<char>(memory_.begin() + addr, memory_.begin() + addr + size));
+  req->cinfo.data = std::vector<char>(
+      memory_.begin() + req->cinfo.basePaddr,
+      memory_.begin() + req->cinfo.basePaddr + req->cinfo.size);
 }
 
 void SimpleMem::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
-  uint64_t address = req->paddr_;
-  std::copy(req->payload().begin(), req->payload().end(),
+  uint64_t address = req->cinfo.clineAddr;
+  std::copy(req->cinfo.data.begin(), req->cinfo.data.end(),
             memory_.begin() + address);
-  req->turnIntoWriteResponse();
 }
 
 void SimpleMem::sendUntimedData(std::vector<char> data, uint64_t addr,
@@ -57,22 +51,32 @@ std::vector<char> SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
                            memory_.begin() + paddr + size);
 }
 
-void SimpleMem::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->isRead()) {
-    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
-  } else {
-    pkt->turnIntoWriteResponse();
-  }
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initPort() {
+  timedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    requestAccess(packet);
+    timedPort_->send(std::move(packet));
+  };
+  timedPort_->registerReceiver(fn);
+  return timedPort_;
 }
 
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initUntimedPort() {
+  untimedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    this->requestAccess(packet);
-    return;
+    if (!packet->isUntimedRead()) {
+      std::cerr << "Cannot do timed access through untimed port please use the "
+                   "timed port."
+                << std::endl;
+      std::exit(1);
+    }
+    packet->turnIntoReadResponse(std::vector<char>(packet->size_, '\0'));
+    untimedPort_->send(std::move(packet));
   };
-  port_->registerReceiver(fn);
-  return port_;
+
+  untimedPort_->registerReceiver(fn);
+  return untimedPort_;
 }
 
 }  // namespace memory

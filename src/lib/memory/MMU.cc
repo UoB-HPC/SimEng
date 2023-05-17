@@ -35,6 +35,15 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target,
   bufferRequest(std::move(insRequest));
 }
 
+void MMU::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
+  if (pkt->isRead()) {
+    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
+  } else {
+    pkt->payload().clear();
+    pkt->turnIntoWriteResponse();
+  }
+}
+
 const span<MemoryReadResult> MMU::getCompletedReads() const {
   return {const_cast<MemoryReadResult*>(completedReads_.data()),
           completedReads_.size()};
@@ -69,6 +78,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     request->paddr_ = paddr;
   }
 
+  request->paddr_ = paddr;
   port_->send(std::move(request));
 }
 

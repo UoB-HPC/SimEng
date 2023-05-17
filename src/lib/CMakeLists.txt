@@ -26,6 +26,7 @@ set(SIMENG_SOURCES
     memory/MemPacket.cc
     memory/MMU.cc
     memory/FixedLatencyMemory.cc
+    memory/hierarchy/SetAssosciativeCache.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -52,6 +53,7 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
+    Backward.cc
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
@@ -62,7 +64,7 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone yaml-cpp)
+target_link_libraries(libsimeng capstone yaml-cpp bfd)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})

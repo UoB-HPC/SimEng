@@ -1,3 +1,6 @@
+#pragma once
+
+#include <bitset>
 #include <cmath>
 #include <cstdint>
 #include <memory>
@@ -33,7 +36,9 @@ class TagScheme {
 class PIPT : public TagScheme {
  public:
   PIPT(uint32_t cacheSize, uint16_t clw, uint16_t assosciativity)
-      : TagScheme(cacheSize, clw, assosciativity) {}
+      : TagScheme(cacheSize, clw, assosciativity) {
+    calcMasks(cacheSize, clw, assosciativity);
+  }
 
   inline uint16_t calcByteOffset(std::unique_ptr<MemPacket>& pkt) override {
     return pkt->paddr_ & byteOffsetMask_;
