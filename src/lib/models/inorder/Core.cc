@@ -92,7 +92,8 @@ void Core::tick() {
       // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToIssueBuffer_.isEmpty() &&
           staging_.isEmpty() && !mmu_->hasPendingRequests() &&
-          (exceptionGenerated_ == false)) {
+          (exceptionGenerated_ == false) &&
+          (!loadStoreQueue_.hasPendingStores())) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -330,9 +331,10 @@ void Core::processException() {
   assert(exceptionRegistered_ != false &&
          "[SimEng:Core] Attempted to process an exception which wasn't "
          "registered with the handler");
-  if (mmu_->hasPendingRequests()) {
+  if (mmu_->hasPendingRequests() || loadStoreQueue_.hasPendingStores()) {
     // Must wait for all memory requests to complete before processing the
     // exception
+    loadStoreQueue_.tick();  // Manually tick LSQ to clear outstanding stores
     return;
   }
 

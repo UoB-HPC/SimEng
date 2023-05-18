@@ -93,6 +93,10 @@ class LoadStoreQueue {
   /** Process received load data and send any completed loads for writeback. */
   void tick();
 
+  /** Whether there are any stores which have been committed from ROB (so fired
+   * off to memory), but have not been dispatched to the MMU yet. */
+  bool hasPendingStores() const;
+
   /** Retrieve the load instruction associated with the most recently discovered
    * memory order violation. */
   std::shared_ptr<Instruction> getViolatingLoad() const;

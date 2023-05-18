@@ -30,7 +30,8 @@ void Core::tick() {
     case CoreStatus::switching:
       // Ensure there are no instructions left to execute and there's no active
       // exception before context switching.
-      if (microOps_.empty() && (exceptionGenerated_ == false)) {
+      if (microOps_.empty() && (exceptionGenerated_ == false) &&
+          pendingReads_ == 0) {
         macroOp_.clear();
         pendingReads_ = 0;
         previousAddresses_.clear();

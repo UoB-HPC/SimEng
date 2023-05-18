@@ -49,6 +49,7 @@ TEST(LLSCTest, successfulLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
@@ -59,6 +60,7 @@ TEST(LLSCTest, successfulLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(8, 8);
   std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
@@ -94,6 +96,7 @@ TEST(LLSCTest, failingLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
@@ -105,6 +108,7 @@ TEST(LLSCTest, failingLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write didn't happened
   auto memResp = sMem.getUntimedData(264, 8);
   std::vector<uint8_t> memRespData = {0x08, 0x09, 0x0A, 0x0B,
@@ -140,6 +144,7 @@ TEST(LLSCTest, nonAffectingWrite) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send write to different address to monitored cache line
   mmu.requestWrite({260, 8}, {0xFFFFFFFFFFFFFFFF, 8});
@@ -161,6 +166,7 @@ TEST(LLSCTest, nonAffectingWrite) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   memResp = sMem.getUntimedData(8, 8);
   memRespData = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12};
@@ -195,6 +201,7 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send an aligned write to same cache line as monitored cache line
   mmu.requestWrite({240, 8}, {0xFFFFFFFFFFFFFFFF, 8});
@@ -216,6 +223,7 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write didn't happened
   memResp = sMem.getUntimedData(8, 8);
   memRespData = {0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
@@ -250,6 +258,7 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send an unaligned write to same cache line as monitored cache line
   mmu.requestWrite({254, 8}, {0xFFFFFFFFFFFFFFFF, 8});
@@ -272,6 +281,7 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write didn't happened
   memResp = sMem.getUntimedData(264, 8);
   memRespData = {0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
@@ -306,6 +316,7 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to open 2nd monitor
   std::shared_ptr<simeng::MockInstruction> uop2 =
@@ -327,6 +338,7 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   ON_CALL(*uop3, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop3, getGeneratedAddresses()).WillByDefault(ReturnRef(target3));
   mmu.requestWrite(uop3, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(32, 8);
   std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
@@ -362,6 +374,7 @@ TEST(LLSCTest, replacedMonitorFailure) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to open 2nd monitor
   std::shared_ptr<simeng::MockInstruction> uop2 =
@@ -383,6 +396,7 @@ TEST(LLSCTest, replacedMonitorFailure) {
   ON_CALL(*uop3, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop3, getGeneratedAddresses()).WillByDefault(ReturnRef(target3));
   mmu.requestWrite(uop3, regVal);
+  mmu.tick();
   // Check write didn't happened
   auto memResp = sMem.getUntimedData(8, 8);
   std::vector<uint8_t> memRespData = {0x08, 0x09, 0x0A, 0x0B,
@@ -419,6 +433,7 @@ TEST(LLSCTest, contextSwitchFailure) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Emulate context switch by changing TID held in MMU
   mmu.setTid(1);
@@ -433,6 +448,7 @@ TEST(LLSCTest, contextSwitchFailure) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write didn't happened
   auto memResp = sMem.getUntimedData(8, 8);
   std::vector<uint8_t> memRespData = {0x08, 0x09, 0x0A, 0x0B,
@@ -468,6 +484,7 @@ TEST(LLSCTest, secondWriteFailure) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
@@ -479,6 +496,7 @@ TEST(LLSCTest, secondWriteFailure) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(8, 8);
   std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
@@ -496,6 +514,7 @@ TEST(LLSCTest, secondWriteFailure) {
   ON_CALL(*uop3, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop3, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop3, regVal);
+  mmu.tick();
   // Check write didn't happened
   memResp = sMem.getUntimedData(8, 8);
   memRespData = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12};
@@ -531,6 +550,7 @@ TEST(LLSCTest, successfulMultiLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
@@ -542,6 +562,7 @@ TEST(LLSCTest, successfulMultiLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(8, 16);
   std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
@@ -579,6 +600,7 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
@@ -590,6 +612,7 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(248, 16);
   std::vector<uint8_t> memRespData = {0xEF, 0xBE, 0xAD, 0xDE,
@@ -627,6 +650,7 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8},
@@ -638,6 +662,7 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check write happened
   auto memResp = sMem.getUntimedData(8, 8);
   auto memResp2 = sMem.getUntimedData(250, 8);
@@ -677,6 +702,7 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}, {264, 8}};
@@ -689,6 +715,7 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check writes didn't happened
   auto memResp = sMem.getUntimedData(8, 8);
   auto memResp2 = sMem.getUntimedData(264, 8);
@@ -728,6 +755,7 @@ TEST(LLSCTest, failUnalignedStoreLLSC) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
+  mmu.tick();
 
   // Send packet to close monitor
   std::vector<simeng::memory::MemoryAccessTarget> target2 = {{8, 8}, {252, 8}};
@@ -740,6 +768,7 @@ TEST(LLSCTest, failUnalignedStoreLLSC) {
   ON_CALL(*uop2, isStoreCond()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestWrite(uop2, regVal);
+  mmu.tick();
   // Check writes didn't happened
   auto memResp = sMem.getUntimedData(8, 8);
   auto memResp2 = sMem.getUntimedData(252, 8);

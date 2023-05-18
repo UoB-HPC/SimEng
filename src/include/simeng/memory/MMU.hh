@@ -27,17 +27,19 @@ class MMU {
   ~MMU() {}
 
   /** Tick the memory model to process the request queue. */
-  void tick(){};
+  void tick();
 
-  /** Queue a read request. */
-  void requestRead(const std::shared_ptr<Instruction>& uop);
+  /** Queue a read request. Returns true if there is space for the request.
+   * Return false otherwise. */
+  bool requestRead(const std::shared_ptr<Instruction>& uop);
 
-  /** Queue a write request. */
-  void requestWrite(const std::shared_ptr<Instruction>& uop,
+  /** Queue a write request. Returns true if there is space for the request.
+   * Return false otherwise. */
+  bool requestWrite(const std::shared_ptr<Instruction>& uop,
                     const std::vector<RegisterValue>& data);
 
-  /** Queue a write request of `data` to the target location that is not
-   * associated to an instruction. */
+  /** Process a write request of `data` to the target location that is not
+   * associated to an instruction, or bound band bandwidth limits. */
   void requestWrite(const MemoryAccessTarget& target,
                     const RegisterValue& data);
 
@@ -62,6 +64,9 @@ class MMU {
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
  private:
+  /** Process load or store requests. */
+  void processRequests(const bool isStore);
+
   /** Method used to buffer data requests to memory. */
   void issueRequest(std::unique_ptr<MemPacket> request);
 
@@ -75,6 +80,11 @@ class MMU {
   /** Potentially updates the local cache line monitor to enforce correct LL/SC
    * behaviour. */
   void updateLLSCMonitor(const MemoryAccessTarget& storeTarget);
+
+  /** Returns true if unsigned overflow occurs. */
+  bool unsignedOverflow(uint64_t a, uint64_t b) const {
+    return (a + b) < a || (a + b) < b;
+  }
 
   /** A map containing all load instructions waiting for their results.
    * Key = Instruction sequenceID
@@ -100,17 +110,44 @@ class MMU {
   /** Width of a cache line. */
   const uint64_t cacheLineWidth_;
 
+  /** Fixed array containing vectors for all loads and store requests.
+   * First in array contains all load requests for a number of instructions.
+   * Each inner vector represents a single instruction.
+   *
+   * Second in array contains all store requests for a number of instructions.
+   * Each inner vector represents a single instruction. */
+  std::array<std::vector<std::vector<std::unique_ptr<MemPacket>>>, 2>
+      loadsStores_;
+
+  /** Constant indexes for the loadStores_ array. */
+  static constexpr uint8_t LD = 0;
+  static constexpr uint8_t STR = 1;
+
+  /** The per-cycle total load bandwidth. */
+  uint64_t loadBandwidth_;
+
+  /** The per-cycle total store bandwidth. */
+  uint64_t storeBandwidth_;
+
+  /** The number of total requests (instructions) permitted per cycle. */
+  uint64_t requestLimit_;
+
+  /** The number of load requests (instructions) permitted per cycle. */
+  uint64_t loadRequestLimit_;
+
+  /** The number of store requests (instructions) permitted per cycle. */
+  uint64_t storeRequestLimit_;
+
+  /** If true, then load and stores can share pipes. If false then there are
+   * individual load and store pipes. */
+  bool exclusiveRequests_;
+
   /** Callback function which invokes the OS for translation on
    * TLB misses. */
   VAddrTranslator translate_;
 
   /** Data port used for communication with the memory hierarchy. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
-
-  /** Returns true if unsigned overflow occurs. */
-  bool unsignedOverflow(uint64_t a, uint64_t b) const {
-    return (a + b) < a || (a + b) < b;
-  }
 };
 
 }  // namespace memory
