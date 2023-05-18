@@ -8,6 +8,7 @@ SimEng configuration files are written in a YAML format, and provide values for 
 The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.
 
 .. _core:
+
 Core
 ----
 
@@ -28,6 +29,9 @@ These core types are primarily referred to as core "archetypes".
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 
+ISA
+    The Instruction Set Architecture under simulation. The options are ``AArch64`` and ``rv64``.
+
 Simulation-Mode
     The core archetype to use, the options are ``emulation``, ``inorderpipelined``, and ``outoforder``.
 
@@ -42,10 +46,10 @@ Timer Frequency
 Micro-Operations
     Whether to enable instruction splitting for pre-defined Macro Operations or not.
 
-Vector-Length
+Vector-Length (Only in use when ISA is ``AArch64``)
     The vector length used by instructions belonging to Arm's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
 
-Streaming-Vector-Length
+Streaming-Vector-Length (Only in use when ISA is ``AArch64``)
     The vector length used by instructions belonging to Arm's Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.
 
 Fetch
@@ -76,22 +80,32 @@ Stack- Size
 Register-set
 ------------
 
-The number of physical registers, of each type, to be used under the register renaming scheme. These types include:
+The number of physical registers, of each type, to be used under the register renaming scheme. The register types supported are ISA dependent. The types available for each supported ISA are as followed:
 
-GeneralPurpose-Count
+AArch64
+
+- GeneralPurpose-Count
     The number of physical general-purpose registers.
 
-FloatingPoint/SVE-Count
+- FloatingPoint/SVE-Count
     The number of physical floating point registers. Also considered as the number of Arm SVE extension ``z`` registers where appropriate.
 
-Predicate-Count (Optional)
+- Predicate-Count (Optional)
     The number of physical Arm SVE extension predicate registers.
 
-Conditional-Count
+- Conditional-Count
     The number of physical status/flag/conditional-code registers.
 
-Matrix-Count
+- Matrix-Count (Optional)
     The number of physical ``za`` SME registers.
+
+RISC-V
+
+- GeneralPurpose-Count
+    The number of physical general-purpose registers.
+
+- FloatingPoint-Count
+    The number of physical floating point registers.
 
 Pipeline-widths
 ---------------
@@ -179,7 +193,7 @@ Access-Latency
     The cycle latency of L1 cache access.
 
 Exclusive
-    If set to true, only one type of memeory access (read or write) can be performed per cycle.
+    If set to true, only one type of memory access (read or write) can be performed per cycle.
 
 Load-Bandwidth
     The number of bytes permitted to be loaded per cycle.
@@ -201,7 +215,7 @@ Permitted-Stores-Per-Cycle
 Ports
 -----
 
-Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>`.
+Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <>`.
 
 To define a port, the following structure must be adhered to:
 

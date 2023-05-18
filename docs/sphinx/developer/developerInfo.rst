@@ -97,6 +97,9 @@ Directory structure
 
 ``src/tools/``
     Source code for SimEng executables
+
+``sst/``
+    Source code for SimEng's integration with the Structural Simulation Toolkit (SST)
     
 .. ``test/kernels/``
 ..     Tests for simulation accuracy and performance

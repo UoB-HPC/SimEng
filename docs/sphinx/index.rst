@@ -40,11 +40,11 @@ SimEng is a framework for building modern, cycle-accurate processor simulators. 
 - Fast, typically 4-5X faster than gem5
 - Easy to use and modify to model desired microarchitecture configurations. New cores can be configured in just a few hours
 - Scalable, from simple scalar microarchitectures up to the most sophisticated, superscalar, out-of-order designs
-- Capable of supporting a wide range of instruction set architectures (ISAs), starting with AArch64 but eventually including RISC-V, x86, POWER, etc.
+- Capable of supporting a wide range of instruction set architectures (ISAs), starting with AArch64 and RISC-V, but eventually including x86, POWER, etc.
 - Accurate, aiming for simulated cycle times being within 5-10% of real hardware
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 16,000 lines or so implementing the specifics of the AArch64 ISA, and around 19,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
+SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 17,000 and 3,000 lines or so implementing the specifics of the AArch64 and RISC-V ISAs respectively, and around 27,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
 
 
 Features
@@ -58,7 +58,7 @@ The main component provided by the simulator is a discrete processor core model,
   :width: 500
   :alt: Generic Core Model
 
-A future release of SimEng will support multi-core and memory hierarchy simulation by integrating with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). We have already implemented a prototype integrating SimEng with SST to provide a model of the memory hierarchy, and this worked well.
+A future release of SimEng will support multi-core simulation by integrating with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). We have already implemented an integration of SimEng with SST's memory hierarchy which worked well, more information can be found in the :doc:`SST Integration section <sst/index>`.
 
 
 Talks and presentations
@@ -77,7 +77,7 @@ Additionally, other works concerning SimEng and its use can be found below:
 Release
 -------
 
-This is SimEng's sixth release, so should be considered beta level software (version 0.9.4). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
+This is SimEng's seventh release, and should be considered beta level software (version 0.9.5). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
 
 SimEng is released under the same license as LLVM, the permissive `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license. We are passionate about enabling experimentation with computer architectures, and want users and developers in academic and industry to have complete freedom to use SimEng anyway they wish, including using it in commercial settings.
 

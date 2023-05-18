@@ -36,10 +36,8 @@ Instruction Groups
 ******************
 Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA are detailed below:
 
-.. image:: ../../../assets/instruction_groups.png
+.. image:: ../../../assets/instruction_groups_AArch64.png
   :alt: AArch64 instruction groups
-
-.. Note:: The SME group is not present in the diagram, but follows the same structure as the SVE identifier.
 
 The above diagram describes the instruction groups currently implemented for the AArch64 ISA. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. The naming convention of the AArch64 instruction groups combines each of the levels within the above diagram through ``_`` characters, the top level is used first and connected to the required lower levels following the relationships shown. For example, to express an instruction group containing integer logical operations without any shift operands, the group ``INT_SIMPLE_LOGICAL_NOSHIFT`` would be used. Another example for all operations (excluding loads and stores) that operate on vector values would simply be ``VECTOR``. The groups/subgroups chosen in the above diagram are derived from common separations in execution unit support and execution latencies of studied HPC processors.
 
