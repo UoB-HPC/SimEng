@@ -481,7 +481,7 @@ void LoadStoreQueue::tick() {
 
   // Pop from the front of the completed loads queue and send to writeback
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
-    const auto& insn = completedLoads_.front();
+    auto& insn = completedLoads_.front();
 
     // Don't process load instruction if it has been flushed
     if (insn->isFlushed()) {

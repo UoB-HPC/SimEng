@@ -70,7 +70,7 @@ void MMU::processRequests(const bool isStore) {
     auto insn = loadsStores_[isStore].begin();
     // Process as many requests as possible within bandwidth limit
     auto pkt = insn->begin();
-    while (pkt != insn->end() && bandwidthUsed < bandwidthLimit) {
+    while (pkt != insn->end()) {
       // Check that sending this packet won't exceed bandwidth
       if ((bandwidthUsed + (*pkt)->size_) <= bandwidthLimit) {
         bandwidthUsed += (*pkt)->size_;
