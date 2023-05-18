@@ -97,7 +97,7 @@ AArch64
     The number of physical status/flag/conditional-code registers.
 
 - Matrix-Count (Optional)
-    The number of physical ``za`` SME registers.
+    The number of physical ``za`` Arm SME registers.
 
 RISC-V
 

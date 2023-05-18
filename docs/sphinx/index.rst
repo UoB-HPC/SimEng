@@ -98,8 +98,7 @@ Contributors
 
 Major contributors to SimEng to date include:
 
-Project leader:
-- Simon McIntosh-Smith
+Project leader: Simon McIntosh-Smith
 
 Current development team:
 
@@ -109,10 +108,12 @@ Current development team:
 - Dan Weaver
     
 Original SimEng design and implementation:
+
 - Hal Jones
 - James Price
 
 Additional Contributors:
+
 - Ainsley Rutterford
 - Andrei Poenaru
 - Harry Waugh
