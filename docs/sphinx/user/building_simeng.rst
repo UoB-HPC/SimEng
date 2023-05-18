@@ -1,3 +1,5 @@
+.. _Building_SimEng:
+
 Building SimEng
 ===============
 
