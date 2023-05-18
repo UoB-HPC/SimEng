@@ -110,7 +110,7 @@ abstract classes inherit the ``MemBackend`` abstract class and require a differe
 ``SimpleMemoryBackendConvertor`` specified as ``memHierarchy.simpleMemBackendConvertor``, ``FlagMemBackend`` requires a 
 ``FlagMemBackendConvertor`` specified as ``memHierarchy.flagMemBackendConvertor`` and ``ExtMemBackend`` requires a ``ExtMemBackendConvertor`` specified as ``memHierarchy.extMemBackendConvertor``. 
 
-Most of the memory timing models present inside SST inherit from the ``SimpleMemBackend`` abstract class and SST provides a variety of memory backends
+Most of the memory timing models present inside SST inherit the ``SimpleMemBackend`` abstract class and SST provides a variety of memory backends
 to choose from e.g. ``memHierarchy.simpleMem``, ``memHierarchy.simpleDRAM``, etc. 
 
 By default the ``MemoryController`` equips the ``backend`` SubComponent slot with ``memHierarchy.simpleMem`` and ``backendConvertor`` SubComponent 
