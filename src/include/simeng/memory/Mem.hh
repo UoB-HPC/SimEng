@@ -40,7 +40,8 @@ class Mem {
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */
   virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() = 0;
-  /***/
+
+  /** This method is used to initialise a Port for untimed memory access. */
   virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
   initUntimedPort() = 0;
 

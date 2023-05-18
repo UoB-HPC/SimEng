@@ -21,7 +21,8 @@ TEST_F(CacheTestEngine, CacheTest1) {
       .expectedResponse({'2', '2', '2', '2'})
       .expectedElapsedTicks(6)
       .add();
-  newEvent<EventType::Tick>().tickFor(10).add();
+  newEvent<EventType::Tick>().tickFor(10);
+
   run();
 }
 
