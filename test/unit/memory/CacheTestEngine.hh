@@ -88,13 +88,13 @@ struct TickEvent : public Event {
 };
 
 struct ExpectationResult {
-  uint64_t endTick;
+  uint64_t endTick = 0;
   std::vector<char> resultPayload;
 };
 
 struct Expectation {
-  uint64_t startTick;
-  uint64_t elapsedTicks;
+  uint64_t startTick = 0;
+  uint64_t expectedTicks = 0;
   std::vector<char> expectedPayload;
   std::string message;
 
@@ -114,23 +114,23 @@ struct UntimedReadExpectation : public Expectation {
 };
 
 struct ReadRequestExpectation : public Expectation {
-  ReadRequestExpectation(std::vector<char> data, uint64_t elapsed) {
+  ReadRequestExpectation(std::vector<char> data, uint64_t ticks) {
     expectedPayload = data;
-    elapsedTicks = elapsed;
+    expectedTicks = ticks;
   };
   void expect(ExpectationResult& res) override {
     uint64_t elapsed = res.endTick - startTick;
-    EXPECT_EQ(elapsed, elapsedTicks) << message;
+    EXPECT_EQ(elapsed, expectedTicks) << message;
     EXPECT_THAT(expectedPayload, testing::ContainerEq(res.resultPayload))
         << "Failure: " << message;
   }
 };
 
 struct WriteRequestExpectation : public Expectation {
-  WriteRequestExpectation(uint64_t elapsed) { elapsedTicks = elapsed; }
+  WriteRequestExpectation(uint64_t ticks) { expectedTicks = ticks; }
   void expect(ExpectationResult& res) override {
     uint64_t elapsed = res.endTick - startTick;
-    EXPECT_GE(elapsed, elapsedTicks) << "Failure: " << message;
+    EXPECT_GE(elapsed, expectedTicks) << "Failure: " << message;
   }
 };
 
