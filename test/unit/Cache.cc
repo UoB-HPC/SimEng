@@ -81,7 +81,7 @@ class SetAssosciativeCacheTest : public testing::Test {
     cacheToMem.connect(cacheBottomPort, memPort);
   }
 };
-/**
+
 TEST_F(SetAssosciativeCacheTest, CacheRebuild) {
   // This test is put here just to show how you can change cache parameters for
   // tests (if need be). The default configuration is as follows:
@@ -106,7 +106,6 @@ TEST_F(SetAssosciativeCacheTest, CacheRebuild) {
   rebuild();
   ASSERT_EQ(cache.getSize(), cacheSize);
 }
-*/
 
 TEST_F(SetAssosciativeCacheTest, CacheReadMiss) {
   memory.sendUntimedData({'5'}, 8, 1);
