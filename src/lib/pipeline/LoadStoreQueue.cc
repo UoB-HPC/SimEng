@@ -492,7 +492,7 @@ void LoadStoreQueue::tick() {
       continue;
     }
 
-    const auto& insn = completedLoads_.front();
+    auto& insn = completedLoads_.front();
 
     // Don't process load instruction if it has been flushed
     if (insn->isFlushed()) {
