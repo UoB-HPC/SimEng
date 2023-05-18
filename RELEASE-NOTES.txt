@@ -6,7 +6,7 @@ You can find all the user and developer documentation on the SimEng webpage:
 
    https://uob-hpc.github.io/SimEng/index.html
 
-SimEng should be fast, much faster than other cycle-level CPU simulators. The fastest hardware we’ve run it on is a 2021 Apple M1 Mac mini, where we’ve measured SimEng running at up to ~1 MIPS for the Out of Order (OoO) core in our ThunderX2 and A64fx models. SVE (vector) codes are more complex to simulate and tend to be slower - on the same hardware we saw simulated SVE codes running at around 0.6 MIPS. SimEng should also be accurate - most of the codes we’ve tested report cycle counts within 5-10% of real hardware, for our ThunderX2 and A64fx models.
+SimEng should be fast, much faster than other cycle-level CPU simulators. The fastest hardware we’ve run it on is a 2021 Apple M1 Mac mini, where we’ve measured SimEng running at up to ~1 MIPS for the Out of Order (OoO) core in our ThunderX2 and A64fx models. SVE (vector) codes are more complex to simulate and tend to be slower - on the same hardware we saw simulated SVE codes running at around 0.6 MIPS.
 
 Things that should work in this release include:
 * Static AArch64, with SVE/SME, binaries compiled with either GCC 7.3 or later, or Arm Clang 20/LLVM 9 or later
