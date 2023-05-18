@@ -147,8 +147,13 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(false));
   ON_CALL(*uop, getGeneratedAddresses())
       .WillByDefault(ReturnRef(overflowTarget));
-  EXPECT_CALL(*uop, supplyData(UINT64_MAX, simeng::RegisterValue())).Times(1);
   mmu->requestRead(uop);
+
+  // Tick once - request should have completed
+  EXPECT_CALL(*uop, supplyData(UINT64_MAX, simeng::RegisterValue())).Times(1);
+  mmu->tick();
+  mem->tick();
+  EXPECT_FALSE(mmu->hasPendingRequests());
 
   // Create a regular out-of-bounds target
   std::vector<simeng::memory::MemoryAccessTarget> target = {{0, 8}};
@@ -158,10 +163,11 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   uop2->setInstructionId(2);
   ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(false));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
-  EXPECT_CALL(*uop2, supplyData(0, simeng::RegisterValue())).Times(1);
   mmu->requestRead(uop2);
 
   // Tick once - request should have completed
+  EXPECT_CALL(*uop2, supplyData(0, simeng::RegisterValue())).Times(1);
+  mmu->tick();
   mem->tick();
   EXPECT_FALSE(mmu->hasPendingRequests());
 }

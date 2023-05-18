@@ -10,9 +10,96 @@ namespace memory {
 MMU::MMU(VAddrTranslator fn)
     : cacheLineWidth_(
           Config::get()["Memory-Hierarchy"]["Cache-Line-Width"].as<uint64_t>()),
-      translate_(fn) {}
+      translate_(fn) {
+  // Initialise Memory bandwidth and request limits
+  // TODO: replace with cleaner solution in the ModelConfig itself
+  if (Config::get()["Core"]["Simulation-Mode"].as<std::string>() !=
+      "emulation") {
+    loadBandwidth_ =
+        Config::get()["LSQ-Memory-Interface"]["Load-Bandwidth"].as<uint64_t>();
+    storeBandwidth_ =
+        Config::get()["LSQ-Memory-Interface"]["Store-Bandwidth"].as<uint64_t>();
+    requestLimit_ =
+        Config::get()["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
+            .as<uint64_t>();
+    loadRequestLimit_ =
+        Config::get()["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
+            .as<uint64_t>();
+    storeRequestLimit_ =
+        Config::get()["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
+            .as<uint64_t>();
+    exclusiveRequests_ =
+        Config::get()["LSQ-Memory-Interface"]["Exclusive"].as<bool>();
+  } else {
+    // If core model is emulation, remove all bandwidth and request limits. This
+    // ensures single cycle processing of each instruction.
+    loadBandwidth_ = UINT64_MAX;
+    storeBandwidth_ = UINT64_MAX;
+    requestLimit_ = UINT64_MAX;
+    loadRequestLimit_ = UINT64_MAX;
+    storeRequestLimit_ = UINT64_MAX;
+    exclusiveRequests_ = true;
+  }
+}
 
-void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
+void MMU::tick() {
+  /** NOTE: The number of instructions present in each of the load / store
+   * vectors is limited inside the `requestRead()` and `requestWrite()`
+   * functions when we add to these vectors.
+   * - Total instructions across loads and stores will equal (at most) to
+   *   requestLimit_.
+   * - Total loads will not exceed loadRequestLimit_.
+   * - Total stores will not exceed storeRequestLimit_.
+   * - If exclusiveRequests_ == true, then there will only be stores or loads
+   *   at any one time. */
+  if (exclusiveRequests_) {
+    // If exclusive access, see which access type has available instructions.
+    bool isStore = loadsStores_[STR].size() != 0;
+    processRequests(isStore);
+  } else {
+    // Process Stores first (same as LSQ)
+    processRequests(STR);
+    processRequests(LD);
+  }
+}
+
+void MMU::processRequests(const bool isStore) {
+  uint64_t bandwidthLimit = isStore ? storeBandwidth_ : loadBandwidth_;
+  uint64_t bandwidthUsed = 0;
+  while (loadsStores_[isStore].size() > 0) {
+    auto insn = loadsStores_[isStore].begin();
+    // Process as many requests as possible within bandwidth limit
+    auto pkt = insn->begin();
+    while (pkt != insn->end() && bandwidthUsed < bandwidthLimit) {
+      // Check that sending this packet won't exceed bandwidth
+      if ((bandwidthUsed + (*pkt)->size_) <= bandwidthLimit) {
+        bandwidthUsed += (*pkt)->size_;
+        issueRequest(std::move(*pkt));
+        pkt = insn->erase(pkt);
+      } else {
+        // Bandwidth will be exceeded. Stop sending instruction packets
+        return;
+      }
+    }
+    // If insn is now empty (all requests have been sent) then remove it
+    // from the vector
+    if (insn->size() == 0) {
+      loadsStores_[isStore].erase(insn);
+    }
+  }
+}
+
+bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
+  // Check if space for instruction
+  // If exclusive then no loads permitted if store still being processed
+  if (exclusiveRequests_ && (loadsStores_[STR].size() != 0)) return false;
+  // Check total limit isn't met if not exclusive
+  if (!exclusiveRequests_ &&
+      (loadsStores_[LD].size() + loadsStores_[STR].size() == requestLimit_))
+    return false;
+  // Check space left for a load
+  if (loadsStores_[LD].size() == loadRequestLimit_) return false;
+
   uint64_t requestId = uop->getSequenceId();
   uint64_t instructionID = uop->getInstructionId();
 
@@ -24,6 +111,8 @@ void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   // Register load in map
   requestedLoads_[requestId] = uop;
 
+  // Initialise space in loads
+  loadsStores_[LD].push_back({});
   // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   for (auto& target : targets) {
@@ -31,28 +120,40 @@ void MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
     std::unique_ptr<memory::MemPacket> req =
         memory::MemPacket::createReadRequest(target.vaddr, target.size,
                                              requestId, instructionID);
-    issueRequest(std::move(req));
+    loadsStores_[LD].back().push_back(std::move(req));
   }
+  return true;
 }
 
-void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
+bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
                        const std::vector<RegisterValue>& data) {
+  // Check if space for instruction
+  // If exclusive then no stores permitted if load still being processed
+  if (exclusiveRequests_ && (loadsStores_[LD].size() != 0)) return false;
+  // Check total limit isn't met if not exclusive
+  if (!exclusiveRequests_ &&
+      (loadsStores_[LD].size() + loadsStores_[STR].size() == requestLimit_))
+    return false;
+  // Check space left for a store
+  if (loadsStores_[STR].size() == storeRequestLimit_) return false;
+
   bool isConditional = uop->isStoreCond();
   if (isConditional) {
     if (checkLLSCMonitor(uop) == false) {
       // No valid monitor, fail store
       uop->updateCondStoreResult(false);
-      return;
+      return true;
     } else {
       uop->updateCondStoreResult(true);
     }
   }
 
+  // Initialise space in stores
+  loadsStores_[STR].push_back({});
   // Create and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   uint64_t requestId = uop->getSequenceId();
   uint64_t instructionID = uop->getInstructionId();
-
   assert(data.size() == targets.size() &&
          "[SimEng:MMU] Number of addresses does not match the number of data "
          "elements to write.");
@@ -64,8 +165,9 @@ void MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
     std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
         target.vaddr, target.size, requestId, instructionID, dt);
     if (!isConditional) updateLLSCMonitor(target);
-    issueRequest(std::move(req));
+    loadsStores_[STR].back().push_back(std::move(req));
   }
+  return true;
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
@@ -104,6 +206,46 @@ void MMU::setTid(uint64_t tid) {
   cacheLineMonitor_.second = false;
 }
 
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
+  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    if (packet->isInstrRead()) {
+      if (packet->isFaulty() || packet->ignore()) {
+        // If faulty or ignored, return no data. This signals a data abort.
+        completedInstrReads_.push_back(
+            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
+        return;
+      }
+      completedInstrReads_.push_back(
+          {{packet->vaddr_, packet->size_},
+           RegisterValue(packet->payload().data(), packet->size_),
+           packet->id_});
+      return;
+    }
+
+    pendingDataRequests_--;
+    if (packet->isRead()) {
+      const auto& insn = requestedLoads_.find(packet->id_);
+      assert(insn != requestedLoads_.end() &&
+             "[SimEng:MMU] Tried to supply result to a load instruction that "
+             "isn't in the requestedLoads_ map.");
+      if (packet->isFaulty()) {
+        // If faulty, return no data. This signals a data abort.
+        insn->second->supplyData(packet->vaddr_, RegisterValue());
+      } else {
+        insn->second->supplyData(packet->vaddr_,
+                                 {packet->payload().data(), packet->size_});
+      }
+      // If instruction has all data, remove from requestedLoads_ map
+      if (insn->second->hasAllData()) {
+        requestedLoads_.erase(insn);
+      }
+    }
+  };
+  port_->registerReceiver(fn);
+  return port_;
+}
+
 void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
@@ -134,7 +276,8 @@ void MMU::openLLSCMonitor(const std::shared_ptr<Instruction>& loadRes) {
   const auto& targets = loadRes->getGeneratedAddresses();
   // We can use Vaddr for LL/SC monitor given that a) monitors are unique to a
   // thread, and b) all addresses within the same cache line will have the
-  // same upper (64-log2(cacheLineWidth))-bits.
+  // same upper (64-log2(cacheLineWidth))-bits, which is the resolution we are
+  // aligning to also
   for (auto& target : targets) {
     // Add cache lines to set. Assumes access is unaligned, but in the case it
     // is aligned the use of a std::set ensures uniqueness of elements.
@@ -188,46 +331,6 @@ void MMU::updateLLSCMonitor(const MemoryAccessTarget& storeTarget) {
       return;
     }
   }
-}
-
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
-  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (packet->isInstrRead()) {
-      if (packet->isFaulty() || packet->ignore()) {
-        // If faulty or ignored, return no data. This signals a data abort.
-        completedInstrReads_.push_back(
-            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
-        return;
-      }
-      completedInstrReads_.push_back(
-          {{packet->vaddr_, packet->size_},
-           RegisterValue(packet->payload().data(), packet->size_),
-           packet->id_});
-      return;
-    }
-
-    pendingDataRequests_--;
-    if (packet->isRead()) {
-      const auto& insn = requestedLoads_.find(packet->id_);
-      assert(insn != requestedLoads_.end() &&
-             "[SimEng:MMU] Tried to supply result to a load instruction that "
-             "isn't in the requestedLoads_ map.");
-      if (packet->isFaulty()) {
-        // If faulty, return no data. This signals a data abort.
-        insn->second->supplyData(packet->vaddr_, RegisterValue());
-      } else {
-        insn->second->supplyData(packet->vaddr_,
-                                 {packet->payload().data(), packet->size_});
-      }
-      // If instruction has all data, remove from requestedLoads_ map
-      if (insn->second->hasAllData()) {
-        requestedLoads_.erase(insn);
-      }
-    }
-  };
-  port_->registerReceiver(fn);
-  return port_;
 }
 
 }  // namespace memory

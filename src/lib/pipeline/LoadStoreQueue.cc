@@ -169,17 +169,21 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   // Early exit if there's no addresses to process
   if (addresses.size() == 0) {
-    // TODO: Check if atomic lock needs to be released
+    // TODO: Check if atomic lock needs to be released (not LL/SC monitor)
     storeQueue_.pop_front();
     return false;
   }
 
-  // Submit request write to memory interface early as the architectural state
-  // considers the store to be retired and thus its operation complete
-  mmu_->requestWrite(uop, data);
-  // Still add sequenceID to requestQueue_ to ensure contention of resources is
-  // correctly simulated
-  requestStoreQueue_[tickCounter_ + uop->getLSQLatency()].push_back(uop);
+  // Supply the data to store to the instruction. Can't be done in
+  // `supplyStoreData` as addresses may not have been calculated
+  assert(addresses.size() == data.size() &&
+         "[SimEng:LoadStoreQueue] Tried to supply data to an store instruction "
+         "with un-equal addresses and data items.");
+  for (int i = 0; i < data.size(); i++) {
+    uop->supplyData(addresses[i].vaddr, data[i]);
+  }
+
+  requestStoreQueue_[tickCounter_].push_back(uop);
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
@@ -203,28 +207,6 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
         }
       }
     }
-  }
-
-  // Resolve any conflicts
-  const auto& itr = conflictionMap_.find(uop->getSequenceId());
-  if (itr != conflictionMap_.end()) {
-    // For each load, we can now execute them given the conflicting
-    // store has now been triggered
-    auto ldVec = itr->second;
-    for (auto load : ldVec) {
-      std::queue<memory::MemoryAccessTarget> targets;
-      for (auto const& addr : load->getGeneratedAddresses()) {
-        targets.emplace(addr);
-      }
-      // Use store's latency to ensure that the load doesn't overtake the store
-      // it conflicted with
-      uint64_t strLat = tickCounter_ + uop->getLSQLatency();
-      requestLoadQueue_[strLat + load->getLSQLatency()].push_back(load);
-      // Register active load
-      requestedLoads_.emplace(load->getSequenceId(), load);
-    }
-    // Remove all entries for this store from conflictionMap_
-    conflictionMap_.erase(uop->getSequenceId());
   }
 
   if (uop->isStoreCond()) {
@@ -338,6 +320,7 @@ void LoadStoreQueue::tick() {
   // Index 0: loads, index 1: stores
   std::array<uint16_t, 2> reqCounts = {0, 0};
   std::array<bool, 2> exceededLimits = {false, false};
+  std::vector<std::shared_ptr<Instruction>> resolvedConflicts = {};
   auto itLoad = requestLoadQueue_.begin();
   auto itStore = requestStoreQueue_.begin();
   while (requestLoadQueue_.size() + requestStoreQueue_.size() > 0) {
@@ -368,7 +351,6 @@ void LoadStoreQueue::tick() {
 
     // Get next request to schedule
     auto& itReq = chooseLoad ? itLoad : itStore;
-    auto itInsn = itReq->second.begin();
 
     // Check if earliest request is ready
     if (itReq->first <= tickCounter_) {
@@ -380,8 +362,8 @@ void LoadStoreQueue::tick() {
       // If LSQ only allows one type of request within a cycle, prevent other
       // type from being scheduled
       if (exclusive_) exceededLimits[!isStore] = true;
-
       // Iterate over requests ready this cycle
+      auto itInsn = itReq->second.begin();
       while (itInsn != itReq->second.end()) {
         // Speculatively increment count of this request type
         reqCounts[isStore]++;
@@ -402,11 +384,38 @@ void LoadStoreQueue::tick() {
         } else {
           // Schedule requests from the queue of addresses in
           // request[Load|Store]Queue_ entry
-          if (!isStore) {
-            mmu_->requestRead((*itInsn));
+          bool accepted = false;
+          if (isStore) {
+            accepted = mmu_->requestWrite((*itInsn), (*itInsn)->getData());
+          } else {
+            accepted = mmu_->requestRead((*itInsn));
           }
-          // Remove entry from vector
-          itInsn = itReq->second.erase(itInsn);
+          // Remove entry from vector if accepted (available bandwidth this
+          // cycle)
+          if (accepted) {
+            // If Store, resolve conflicts & load violations
+            if (isStore) {
+              auto itr = conflictionMap_.find((*itInsn)->getSequenceId());
+              if (itr != conflictionMap_.end()) {
+                // For each load, we can now execute them given the conflicting
+                // store has now been triggered
+                auto ldVec = itr->second;
+                for (auto load : ldVec) {
+                  resolvedConflicts.push_back(load);
+                }
+                // Remove all entries for this store from conflictionMap_
+                conflictionMap_.erase(itr);
+              }
+            }
+            itInsn = itReq->second.erase(itInsn);
+          } else {
+            // No more requests of this type can be scheduled this cycle
+            exceededLimits[isStore] = true;
+            // Remove speculative increment to ensure it doesn't count for
+            // comparisons aginast the totalLimit_
+            reqCounts[isStore]--;
+            break;
+          }
         }
       }
 
@@ -423,6 +432,14 @@ void LoadStoreQueue::tick() {
       break;
     }
   }
+
+  // Add newly resolved loads to requested load queues
+  for (auto load : resolvedConflicts) {
+    // Add additional tick to latency incase LSQLatency = 0
+    requestLoadQueue_[tickCounter_ + 1 + load->getLSQLatency()].push_back(load);
+    requestedLoads_.emplace(load->getSequenceId(), load);
+  }
+  resolvedConflicts.clear();
 
   // Initialise completion counter
   size_t count = 0;
@@ -488,6 +505,10 @@ std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {
 }
 
 bool LoadStoreQueue::isCombined() const { return combined_; }
+
+bool LoadStoreQueue::hasPendingStores() const {
+  return !(requestStoreQueue_.size() == 0);
+}
 
 }  // namespace pipeline
 }  // namespace simeng

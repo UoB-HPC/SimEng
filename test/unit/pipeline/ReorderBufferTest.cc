@@ -178,6 +178,7 @@ TEST_F(ReorderBufferTest, CommitStore) {
   uop->setInstructionId(1);
 
   lsq.addStore(uopPtr);
+  EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores - 1);
 
   reorderBuffer.reserve(uopPtr);
 
@@ -185,16 +186,19 @@ TEST_F(ReorderBufferTest, CommitStore) {
 
   uopPtr->setCommitReady();
 
-  // Check that the correct value will be written to memory
   reorderBuffer.commit(1);
-  EXPECT_EQ(mmu->hasPendingRequests(), false);
-  EXPECT_EQ(memory->getUntimedData(0, 1)[0], (uint8_t)1);
 
   // Check that the store was committed and removed from the LSQ
   EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
 
-  // Tick lsq to complete store
+  // Tick lsq to trigger store request
   lsq.tick();
+  EXPECT_EQ(mmu->hasPendingRequests(), true);
+
+  // Tick MMU to complete store
+  mmu->tick();
+  EXPECT_EQ(mmu->hasPendingRequests(), false);
+  EXPECT_EQ(memory->getUntimedData(0, 1)[0], (uint8_t)1);
 }
 
 // Tests that the reorder buffer correctly conditionally flushes instructions

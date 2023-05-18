@@ -264,7 +264,8 @@ TEST_P(LoadStoreQueueTest, Load) {
   EXPECT_CALL(*loadUop,
               supplyData(0, Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
-  // Tick Memory to process load request
+  // Tick MMU and Memory to process load request
+  mmu->tick();
   memory->tick();
   // Expect a check against finished reads and return the result
   EXPECT_EQ(mmu->hasPendingRequests(), false);
