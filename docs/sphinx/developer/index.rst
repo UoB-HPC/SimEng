@@ -25,6 +25,7 @@ The following information is intended for those users of SimEng who wish to modi
 
    * :doc:`Abstract Structure <arch/abstract>`
    * :doc:`AArch64 <arch/supported/aarch64>`
+   * :doc:`RISC-V <arch/supported/riscv>`
    
 * :doc:`Testing <test/index>`
 
