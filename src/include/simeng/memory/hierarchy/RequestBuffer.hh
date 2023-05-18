@@ -16,11 +16,20 @@ namespace hierarchy {
 
 typedef uint32_t RequestBufferIndex;
 
-template <uint16_t initLen = 512>
+/** The RequestBuffer class is used to store all std::unique_ptr<MemPacket>.
+ * The class exposes functions to add and remove unique pointers from the
+ * buffer. It also exposes a operator[] to reference a unique pointer given its
+ * index in the buffer. This class was implemented to facilate request
+ * processing in caches by reducing the number of std::move operations required
+ * to move std::unique_ptr<MemPacket> to different queues. By using the
+ * RequestBuffer we only need to store the RequestBufferIndex of a
+ * std::unique_ptr<MemPacket> which can then be used to reference it. */
 class RequestBuffer {
  public:
-  RequestBuffer() { buffer_.reserve(initLen); };
+  /** Constructor of the RequestBuffer. */
+  RequestBuffer(uint16_t initSize = 512) { buffer_.reserve(initSize); };
 
+  /** Function used to add a std::unique_ptr<MemPacket> to the RequestBuffer. */
   uint32_t allocate(std::unique_ptr<MemPacket>& pkt) {
     if (freeIndeces_.size()) {
       RequestBufferIndex index = freeIndeces_.top();
@@ -33,6 +42,8 @@ class RequestBuffer {
     return index;
   }
 
+  /** Function used to reference a std::unique_ptr<MemPacket> stored inside the
+   * RequestBuffer given its RequestBufferIndex. */
   std::unique_ptr<MemPacket>& operator[](RequestBufferIndex index) {
     if (index >= buffer_.size()) {
       std::cerr << "[SimEng::RequestBuffer] Tried to index the request buffer "
@@ -43,6 +54,8 @@ class RequestBuffer {
     return buffer_[index];
   }
 
+  /** Function used to remove a std::unique_ptr<MemPacket> from the
+   * RequestBuffer given its index. */
   std::unique_ptr<MemPacket> remove(RequestBufferIndex index) {
     if (index >= buffer_.size()) {
       std::cerr << "[SimEng::RequestBuffer] Tried to remove an entry from the "
@@ -57,8 +70,13 @@ class RequestBuffer {
     return pkt;
   }
 
+  /** Function used to return the size of the RequestBuffer. */
+  auto getSize() { return buffer_.size(); }
+
  private:
+  /** Vector used to store std::unique_ptr<MemPacket>. */
   std::vector<std::unique_ptr<MemPacket>> buffer_;
+  /** Stack used to stores RequestBufferIndex(s) that can be used again. */
   std::stack<RequestBufferIndex> freeIndeces_;
 };
 

@@ -26,6 +26,7 @@ set(SIMENG_SOURCES
     memory/MemPacket.cc
     memory/MMU.cc
     memory/FixedLatencyMemory.cc
+    memory/hierarchy/LRU.cc
     memory/hierarchy/SetAssosciativeCache.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
