@@ -8,15 +8,27 @@
 
 namespace simeng::memory::hierarchy {
 
+/** The CacheLine class represent a cache line/cache block in SimEng. This is an
+ * abstract class and it defines an API which any concrete implementation of a
+ * cache line has to implement. All types of cache line/block need to inherit
+ * this abstract class.  */
 class CacheLine {
  public:
+  /** Function which returns the tag of the cache line. */
   inline virtual uint32_t getTag() = 0;
+  /** Function which sets the tag of a cache line. */
   inline virtual void setTag(uint64_t tag) = 0;
+  /** Function which returns the validity of a cache line. */
   inline virtual bool isValid(uint16_t offset = 0) = 0;
+  /** Function which marks the cache line as valid. */
   inline virtual void setValid(uint16_t offset = 0) = 0;
+  /** Function which marks the cache line as invalid. */
   inline virtual void setInvalid(uint16_t offset = 0) = 0;
+  /** Function which returns whether a cache line is dirty or not. */
   inline virtual bool isDirty(uint16_t offset = 0) = 0;
+  /** Function which marks the cache line as dirty. */
   inline virtual void setDirty(uint16_t offset = 0) = 0;
+  /** Function which marks the cache line as not dirty. */
   inline virtual void setNotDirty(uint16_t offset = 0) = 0;
   virtual char* getData() = 0;
   virtual void supplyData(std::vector<char> data, uint16_t offset) = 0;

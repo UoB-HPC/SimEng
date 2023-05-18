@@ -42,7 +42,7 @@ class FixedLatencyMemory : public Mem {
   /** Function used to initialise a Port used for bidirection communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
 
-  /***/
+  /** Function used to initialise a Port used for untimed memory access. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initUntimedPort() override;
 
   /** Method to tick the memory. */
@@ -67,7 +67,7 @@ class FixedLatencyMemory : public Mem {
   /** Port used for communication with other classes. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> timedPort_ = nullptr;
 
-  /***/
+  /** Port used for recieving untimed memory requests. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> untimedPort_ = nullptr;
 
   /** This method handles MemPackets of type READ_REQUEST. */

@@ -46,7 +46,7 @@ class MemPacket {
    * and data-write requests can have an ID of 0. */
   uint64_t id_ = 0;
 
-  /***/
+  /** Reference to the CacheInfo used to store information related to caches. */
   hierarchy::CacheInfo cinfo;
 
   /** Function which indicates whether a MemPacket is a request. */
