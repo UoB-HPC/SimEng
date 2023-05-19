@@ -215,7 +215,7 @@ Permitted-Stores-Per-Cycle
 Ports
 -----
 
-Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <>`.
+Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <riscv-instruction-groups>`.
 
 To define a port, the following structure must be adhered to:
 

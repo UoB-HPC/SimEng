@@ -35,7 +35,7 @@ The above diagram follows the same structure as :ref:`AArch64 instruction groups
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``) with the ``format ~{CAPSTONE_OPCODE}``.
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
 
 .. _riscv-adding-instructions:
 

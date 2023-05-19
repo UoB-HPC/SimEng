@@ -50,7 +50,7 @@ SimEng places an emphasis on performance and ease of use, whilst maintaining a c
 Features
 --------
 
-Currently, SimEng targets the Armv9.2-a ISA with support for the SVE, SVE2, and SME extensions as well as RISC-V rv64ima. SimEng has the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware, with additional support for single-threaded OpenMP binaries too. SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache; a future release will add a proper memory hierarchy model (see the discussion about SST below).
+Currently, SimEng targets the Armv9.2-a ISA with support for the SVE, SVE2, and SME extensions as well as RISC-V rv64ima. SimEng has the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware, with additional support for single-threaded OpenMP binaries too. Internally, SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache. However, we have a tested integration with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST) allowing for a full memory model to be simulated; more information can be found in the :doc:`SST Integration section <sst/index>`.
 
 The main component provided by the simulator is a discrete processor core model, shown in diagrammatic form below.  This model accepts a clock signal and supports a memory access interface. A single YAML format configuration file can be passed to the simulation to specify models of existing microarchitectures, such as Marvell's ThunderX2 or Fujitsu's A64fx, or to model hypothetical core designs.
 
@@ -58,7 +58,7 @@ The main component provided by the simulator is a discrete processor core model,
   :width: 500
   :alt: Generic Core Model
 
-A future release of SimEng will support multi-core simulation by integrating with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). We have already implemented an integration of SimEng with SST's memory hierarchy which worked well, more information can be found in the :doc:`SST Integration section <sst/index>`.
+A future release of SimEng will support multi-core simulation by integrating with the SST.
 
 
 Talks and presentations
