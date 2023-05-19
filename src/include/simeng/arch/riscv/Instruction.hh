@@ -125,7 +125,7 @@ class Instruction : public simeng::Instruction {
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
 
-  /** Retrieve a branch target from the instruction's metadata if known. */
+  /** Retrieve a branch offset from the instruction's metadata if known. */
   int64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which

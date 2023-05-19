@@ -99,7 +99,7 @@ class Instruction {
   /** Retrieve branch type. */
   virtual BranchType getBranchType() const = 0;
 
-  /** Retrieve a branch target from the instruction's metadata if known. */
+  /** Retrieve a branch offset from the instruction's metadata if known. */
   virtual int64_t getKnownOffset() const = 0;
 
   /** Is this a store address operation (a subcategory of store operations which
@@ -208,7 +208,8 @@ class Instruction {
   /** What type of branch this instruction is. */
   BranchType branchType_ = BranchType::Unknown;
 
-  /** If the branch target is known at the time of decode, store it. */
+  /** The branch offset that may be known at the time of instruction decoding.
+   * The default value of 0 represents an unknown branch offset.*/
   int64_t knownOffset_ = 0;
 
   // Flushing

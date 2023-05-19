@@ -27,8 +27,8 @@ class GenericPredictor : public BranchPredictor {
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known target if not 0. Returns a branch direction and
-   * branch target address. */
+   * branch type, and a known branch offset if not 0. Returns a branch direction
+   * and branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
                            int64_t knownOffset) override;
 
