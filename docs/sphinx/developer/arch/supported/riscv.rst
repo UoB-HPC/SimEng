@@ -31,11 +31,11 @@ Through a combination of the above identifiers, an instruction can be allocated 
 .. image:: ../../../assets/instruction_groups_RISCV.png
   :alt: RISC-V instruction groups
 
-The above diagram follows the same structure as :ref:`AArch64 instruction groups <aarch64-instruction-groups>`. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. Each of the above levels is combined through the _ character, working from the top level of the diagram to the bottom. Lower levels are not required if a larger set of instructions is desired. For example the instruction group INT is valid and would encapsulate all instructions that perform integer operations, while INT_MUL is also valid but would only encapsulate the 5 multiply instructions.
+The above diagram follows the same structure as :ref:`AArch64 instruction groups <aarch64-instruction-groups>`. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. Each of the above levels is combined through the ``_`` character, working from the top level of the diagram to the bottom. Lower levels are not required if a larger set of instructions is desired. For example the instruction group ``INT`` is valid and would encapsulate all instructions that perform integer operations, while ``INT_MUL`` is also valid but would only encapsulate the 5 multiply instructions.
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc) with the format ~{CAPSTONE_OPCODE}.
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``) with the ``format ~{CAPSTONE_OPCODE}``.
 
 .. _riscv-adding-instructions:
 
