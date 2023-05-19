@@ -100,8 +100,7 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   // Check space left for a load
   if (loadsStores_[LD].size() == loadRequestLimit_) return false;
 
-  uint64_t requestId = uop->getSequenceId();
-  uint64_t instructionID = uop->getInstructionId();
+  uint64_t seqId = uop->getSequenceId();
 
   // Check if new cacheLineMonitor needs to be opened
   if (uop->isLoadReserved()) {
@@ -109,7 +108,7 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   }
 
   // Register load in map
-  requestedLoads_[requestId] = uop;
+  requestedLoads_[seqId] = uop;
 
   // Initialise space in loads
   loadsStores_[LD].push_back({});
@@ -118,8 +117,7 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   for (auto& target : targets) {
     pendingDataRequests_++;
     std::unique_ptr<memory::MemPacket> req =
-        memory::MemPacket::createReadRequest(target.vaddr, target.size,
-                                             requestId, instructionID);
+        memory::MemPacket::createReadRequest(target.vaddr, target.size, seqId);
     loadsStores_[LD].back().push_back(std::move(req));
   }
   return true;
@@ -152,8 +150,7 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   loadsStores_[STR].push_back({});
   // Create and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
-  uint64_t requestId = uop->getSequenceId();
-  uint64_t instructionID = uop->getInstructionId();
+  uint64_t seqId = uop->getSequenceId();
   assert(data.size() == targets.size() &&
          "[SimEng:MMU] Number of addresses does not match the number of data "
          "elements to write.");
@@ -162,8 +159,8 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
     const auto& target = targets[i];
     const char* wdata = data[i].getAsVector<char>();
     std::vector<char> dt(wdata, wdata + target.size);
-    std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
-        target.vaddr, target.size, requestId, instructionID, dt);
+    std::unique_ptr<MemPacket> req =
+        MemPacket::createWriteRequest(target.vaddr, target.size, seqId, dt);
     if (!isConditional) updateLLSCMonitor(target);
     loadsStores_[STR].back().push_back(std::move(req));
   }
@@ -177,7 +174,7 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
   std::unique_ptr<MemPacket> req =
-      MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
+      MemPacket::createWriteRequest(target.vaddr, target.size, 0, dt);
   updateLLSCMonitor(target);
   issueRequest(std::move(req));
 }
@@ -185,7 +182,7 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
   // Create and fire off request
   std::unique_ptr<memory::MemPacket> insRequest =
-      memory::MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
+      memory::MemPacket::createReadRequest(target.vaddr, target.size, 0);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
   issueRequest(std::move(insRequest));
@@ -212,20 +209,21 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
     if (packet->isInstrRead()) {
       if (packet->isFaulty() || packet->ignore()) {
         // If faulty or ignored, return no data. This signals a data abort.
-        completedInstrReads_.push_back(
-            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
+        completedInstrReads_.push_back({{packet->vaddr_, packet->size_},
+                                        RegisterValue(),
+                                        packet->insnSeqId_});
         return;
       }
       completedInstrReads_.push_back(
           {{packet->vaddr_, packet->size_},
            RegisterValue(packet->payload().data(), packet->size_),
-           packet->id_});
+           packet->insnSeqId_});
       return;
     }
 
     pendingDataRequests_--;
     if (packet->isRead()) {
-      const auto& insn = requestedLoads_.find(packet->id_);
+      const auto& insn = requestedLoads_.find(packet->insnSeqId_);
       assert(insn != requestedLoads_.end() &&
              "[SimEng:MMU] Tried to supply result to a load instruction that "
              "isn't in the requestedLoads_ map.");
