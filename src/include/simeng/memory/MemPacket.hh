@@ -12,21 +12,21 @@ namespace simeng {
 namespace memory {
 
 /** Enum representing the different types of MemPackets. */
-enum MemPacketType : uint16_t {
-  READ_REQUEST = 0b1100000000000000,
-  READ_RESPONSE = 0b0100000000000000,
-  WRITE_REQUEST = 0b1000000000000000,
-  WRITE_RESPONSE = 0b0000000000000000,
+enum MemPacketType : uint8_t {
+  READ_REQUEST = 0b11000000,
+  READ_RESPONSE = 0b01000000,
+  WRITE_REQUEST = 0b10000000,
+  WRITE_RESPONSE = 0b00000000,
 };
 
 /** Masks used for manipulating the metadata associated with a MemPacket. */
-static constexpr uint16_t AccessTypeMask = 0b1000000000000000;
-static constexpr uint16_t PacketTypeMask = 0b0100000000000000;
-static constexpr uint16_t FaultMask = 0b0010000000000000;
-static constexpr uint16_t IgnoreMask = 0b0001000000000000;
-static constexpr uint16_t PayloadMask = 0b0000100000000000;
-static constexpr uint16_t InstrReadMask = 0b0000010000000000;
-static constexpr uint16_t UntimedMemAccessMask = 0b0000001000000000;
+static constexpr uint8_t AccessTypeMask = 0b10000000;
+static constexpr uint8_t PacketTypeMask = 0b01000000;
+static constexpr uint8_t FaultMask = 0b00100000;
+static constexpr uint8_t IgnoreMask = 0b00010000;
+static constexpr uint8_t PayloadMask = 0b00001000;
+static constexpr uint8_t InstrReadMask = 0b00000100;
+static constexpr uint8_t UntimedMemAccessMask = 0b00000010;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -41,13 +41,8 @@ class MemPacket {
   /** The size of the memory operation to be performed. */
   uint16_t size_ = 0;
 
-  /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
-   * and data-write requests can have an ID of 0.
-   * Is equivalent to the requesting instruction's sequenceID. */
-  uint64_t id_ = 0;
-
-  /** The instructionID of the instruction which issued the request. */
-  uint64_t insnId_ = 0;
+  /* The sequenceId of the uop which issued the memory request. */
+  uint64_t insnSeqId_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
@@ -104,14 +99,12 @@ class MemPacket {
   /** Static function used to create a read request. */
   static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint16_t size,
-                                                      uint64_t reqId,
-                                                      uint64_t insnId);
+                                                      uint64_t seqId);
 
   /** Static function used to create a write request. */
   static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
                                                        uint16_t size,
-                                                       uint64_t reqId,
-                                                       uint64_t insnId,
+                                                       uint64_t seqId,
                                                        std::vector<char> data);
 
   /** Static function used to create a faulty MemPacket. */
@@ -134,7 +127,7 @@ class MemPacket {
    * 6th bit indicates whether a MemPacket reads an instruction (1) or not (0).
    * 7th bit indicates whether an untimed (1) or timed (0) memory access occurs.
    */
-  uint16_t metadata_ = 0;
+  uint8_t metadata_ = 0;
 
   /** Payload assosciate with a MemPacket. */
   std::vector<char> payload_;
@@ -143,12 +136,11 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
-            uint64_t insnId);
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t seqId);
 
   /** Constructor for MemPackets which hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
-            uint64_t insnId, std::vector<char> data);
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t seqId,
+            std::vector<char> data);
 };
 
 }  // namespace memory
