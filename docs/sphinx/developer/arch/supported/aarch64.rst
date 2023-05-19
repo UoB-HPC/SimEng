@@ -36,10 +36,8 @@ Instruction Groups
 ******************
 Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA are detailed below:
 
-.. image:: ../../../assets/instruction_groups.png
+.. image:: ../../../assets/instruction_groups_AArch64.png
   :alt: AArch64 instruction groups
-
-.. Note:: The SME group is not present in the diagram, but follows the same structure as the SVE identifier.
 
 The above diagram describes the instruction groups currently implemented for the AArch64 ISA. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. The naming convention of the AArch64 instruction groups combines each of the levels within the above diagram through ``_`` characters, the top level is used first and connected to the required lower levels following the relationships shown. For example, to express an instruction group containing integer logical operations without any shift operands, the group ``INT_SIMPLE_LOGICAL_NOSHIFT`` would be used. Another example for all operations (excluding loads and stores) that operate on vector values would simply be ``VECTOR``. The groups/subgroups chosen in the above diagram are derived from common separations in execution unit support and execution latencies of studied HPC processors.
 
@@ -156,13 +154,13 @@ SimEng supports the Arm SVE extension and thus the use of ``Z`` vector registers
 
 Scalable Matrix Extension
 ''''''''''''''''''''''''''
-Also supported is the Arm SME extension and thus the use of ``ZA`` sub-tile registers. The implementation of the ``ZA`` register is to treat each horizontal row the same as a vector (or ``Z``) register. Therefore, if a source operand is a sub-tile of ``ZA`` and contains 16 rows, then there will be 16 corresponding entries in the ``operands`` vector. Likewise, if a destination operand is ``ZA`` or a sub-tile of ``ZA`` then the ``results`` vector will require the corresponding number of horizontal rows. 
+Also supported is the Arm SME extension and thus the use of ``ZA`` sub-tile registers. The implementation of the ``ZA`` register is to treat each horizontal row the same as a vector register. Therefore, if a source operand is a sub-tile of ``ZA`` and contains 16 rows, then there will be 16 corresponding entries in the ``operands`` vector. Likewise, if a destination operand is ``ZA`` or a sub-tile of ``ZA`` then the ``results`` vector will require the corresponding number of horizontal rows. 
 
 SME instructions can also operate on sub-tile slices; individual rows or columns within a sub-tile. Regardless of whether a whole sub-tile or a slice is used as a source operand, all rows associated with said tile will be added to the ``operands`` vector. There are two reasons for this. First, the index value pointing to the relevant slice cannot be evaluated before instruction execution, thus, all sub-tile rows need to be provided. Second, if the source slice is a vertical slice (or a column of the sub-tile) then an element from each row is needed to construct the correct output.
 
 Furthermore, a similar situation is present when a sub-tile slice is a destination operand. The ``results`` vector will expect a ``registerValue`` entry for each row of the targetted sub-tile, again due to the same two reasons listed previously. But, when a sub-tile slice is a destination operand, **all** associated rows of the sub-tile will also be added to the ``operands`` vector. Again, this is down to two key, similar reasons. First, when a destination is a sub-tile slice, we only want to update that row or column. As the we are unable to calculate which slice will be our destination before execution has commenced, all possible slices must be added to the ``results`` vector. If we were to not provide a ``RegisterValue`` to each entry of the ``results`` vector, the default value is 0. Therefore, in order to not zero-out the other slices within the sub-tile we will need access to their current values. Secondly, if the destination is a vertical slice (or sub-tile column) then only one element per row should be updated; the rest should remain unchanged.
 
-Before implementing any SME functionality we highly recommend familiarising yourself with the specification; found `here <https://developer.arm.com/documentation/ddi0616/latest>`_.
+Before implementing any further SME functionality we highly recommend familiarising yourself with the specification; found `here <https://developer.arm.com/documentation/ddi0616/latest>`_.
 
 .. Note:: We strongly encourage adding regression tests for each implemented instruction at the same time as adding execution behaviour to ensure functional validity.
 
