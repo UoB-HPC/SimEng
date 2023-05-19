@@ -29,6 +29,16 @@ class PipelineBuffer {
     headIsStart = !headIsStart;
   }
 
+  /** Return the slots waiting to be processed by the next pipeline unit */
+  const T* getPendingSlots() const {
+    // If stalled head and tail slots won't have been swapped
+    if (isStalled_) {
+      return getTailSlots();
+    } else {
+      return getHeadSlots();
+    }
+  }
+
   /** Get a tail slots pointer. */
   T* getTailSlots() {
     T* ptr = buffer.data();

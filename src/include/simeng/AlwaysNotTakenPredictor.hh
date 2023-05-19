@@ -11,7 +11,7 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
   /** Generate a branch prediction for the specified instruction address; will
    * always predict not taken. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           uint64_t knownTarget) override;
+                           int64_t knownOffset) override;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. As this model is static, this does nothing. */

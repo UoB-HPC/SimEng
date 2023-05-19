@@ -65,6 +65,10 @@ class ExecuteUnit {
   /** Retrieve the number of active execution cycles. */
   uint64_t getCycles() const;
 
+  /** Query whether the execution unit is empty and not currently processing any
+   * instructions. */
+  bool isEmpty() const;
+
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */

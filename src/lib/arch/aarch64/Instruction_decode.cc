@@ -368,7 +368,7 @@ void Instruction::decode() {
     switch (metadata.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       case Opcode::AArch64_BR: {  // br xn
         branchType_ = BranchType::Unconditional;
@@ -376,7 +376,7 @@ void Instruction::decode() {
       }
       case Opcode::AArch64_BL:  // bl #imm
         branchType_ = BranchType::SubroutineCall;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       case Opcode::AArch64_BLR: {  // blr xn
         branchType_ = BranchType::SubroutineCall;
@@ -387,7 +387,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       }
       case Opcode::AArch64_CBNZW:  // cbnz wn, #imm
@@ -401,7 +401,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[1].imm;
+        knownOffset_ = metadata.operands[1].imm;
         break;
       }
       case Opcode::AArch64_TBNZW:  // tbnz wn, #imm, label
@@ -415,7 +415,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[2].imm;
+        knownOffset_ = metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_RET: {  // ret {xr}

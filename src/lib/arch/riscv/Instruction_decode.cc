@@ -239,6 +239,20 @@ void Instruction::decode() {
     isCompare_ = true;
   }
 
+  if ((Opcode::RISCV_MUL <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_MULW)) {
+    // Multiply instructions
+    isMultiply_ = true;
+  }
+
+  if (((Opcode::RISCV_REM <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_REMW) ||
+       (Opcode::RISCV_DIV <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_DIVW))) {
+    // Divide instructions
+    isDivide_ = true;
+  }
+
   // Set branch type
   switch (metadata.opcode) {
     case Opcode::RISCV_BEQ:
@@ -248,12 +262,12 @@ void Instruction::decode() {
     case Opcode::RISCV_BGE:
     case Opcode::RISCV_BGEU:
       branchType_ = BranchType::Conditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[2].imm;
+      knownOffset_ = metadata.operands[2].imm;
       break;
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
       branchType_ = BranchType::Unconditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
+      knownOffset_ = metadata.operands[1].imm;
       break;
   }
 }

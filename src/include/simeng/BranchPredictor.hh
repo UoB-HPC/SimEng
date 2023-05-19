@@ -47,9 +47,9 @@ class BranchPredictor {
   virtual ~BranchPredictor(){};
 
   /** Generate a branch prediction for the specified instruction address with a
-   * branch type and possible known target. */
+   * branch type and possible known branch offset. */
   virtual BranchPrediction predict(uint64_t address, BranchType type,
-                                   uint64_t knownTarget) = 0;
+                                   int64_t knownOffset) = 0;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. */
