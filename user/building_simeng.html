@@ -116,6 +116,13 @@
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
 </ul>
+<p class="caption"><span class="caption-text">SST Integration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../sst/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/understanding_sst.html">Understanding SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/running_simeng_with_sst.html">Running SimEng with SST</a></li>
+</ul>
 
             
           
@@ -183,7 +190,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="building-simeng">
-<h1>Building SimEng<a class="headerlink" href="#building-simeng" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Building SimEng<a class="headerlink" href="#building-simeng" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>Building SimEng requires CMake and a compiler that supports C++17.</p>
@@ -222,7 +229,7 @@ cmake -B build -S .
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">LLVM versions greater than 12 or less than 9 are not supported. We’d recommend using LLVM 12 where possible.</p>
+<p class="last">LLVM versions greater than 14 or less than 8 are not supported. We’d recommend using LLVM 14.0.5 where possible as this has been verified by us to work correctly.</p>
 </div>
 <ol class="loweralpha simple" start="2">
 <li>Two additional flags are available when building SimEng. Firstly is <code class="docutils literal"><span class="pre">-DSIMENG_SANITIZE={ON,</span> <span class="pre">OFF}</span></code> which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is <code class="docutils literal"><span class="pre">-SIMENG_OPTIMIZE={ON,</span> <span class="pre">OFF}</span></code> which attempts to optimise the framework’s compilation for the host machine through a set of compiler flags and options.</li>

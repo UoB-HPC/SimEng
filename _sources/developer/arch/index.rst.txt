@@ -14,3 +14,4 @@ Below provides more information on the abstract structure of a SimEng architectu
 
    abstract
    supported/aarch64
+   supported/riscv

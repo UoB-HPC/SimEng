@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Understanding SST &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running SimEng with SST" href="running_simeng_with_sst.html" />
+    <link rel="prev" title="Building SimEng with SST" href="building_simeng_with_sst.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/components/index.html">Simulation Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">SST Integration</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_simeng_with_sst.html">Building SimEng with SST</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Understanding SST</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#main-classes">Main Classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sst-component">SST::Component</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sst-subcomponent">SST::SubComponent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sst-link">SST::Link</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#sst-memory-model">SST Memory Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simeng-core">SimEng Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standardmem">StandardMem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standardinterface">StandardInterface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cache">Cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memorycontroller">MemoryController</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#memorybackend">MemoryBackend</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="running_simeng_with_sst.html">Running SimEng with SST</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Understanding SST</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/sst/understanding_sst.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="understanding-sst">
+<span id="u-sst"></span><h1>Understanding SST<a class="headerlink" href="#understanding-sst" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Information in this entire section has been adapted from: Ziqi Wang, <a class="reference external" href="https://wangziqi2013.github.io/article/2022/01/16/sst-mem-hierarchy.html">“Understanding Memory Hierarchy Simulation in SST”</a></p>
+</div>
+<p>SST is used to simulate the memory hierarchy in SimEng. Since the entire simulation runs inside SST, SimEng needs to interact (send and recieve requests) with
+the memory hierarchy inside SST through an interface. The rest is handled by SST. To make sure the desired behaviour is achieved, SST needs to be appropriately
+configured. The SST simulation is configured using a <code class="docutils literal"><span class="pre">config.py</span></code> python file, which contains all components and connections between them.</p>
+<div class="section" id="main-classes">
+<h2>Main Classes<a class="headerlink" href="#main-classes" title="Permalink to this headline">¶</a></h2>
+<p>This section only provides a brief overview of classes in the SST-Core API which are fundamental to running a simulation in SST. For more information regarding
+the SST-Core API please check the official <a class="reference external" href="http://sst-simulator.org/sst-docs/docs/core/component/introduction">SST-Core API documentation</a>.</p>
+<div class="section" id="sst-component">
+<h3>SST::Component<a class="headerlink" href="#sst-component" title="Permalink to this headline">¶</a></h3>
+<p>SST Component is a class in SST which represents any entity that takes in a clock from SST and performs an action on every clock tick. It is the main object
+for simulation and all models inherit from SST Component. Each component inside SST has to be registered with <strong>SST-Core.</strong> To find information about any
+component, the <code class="docutils literal"><span class="pre">sst-info</span></code> command can be used to display details such as configuration options, ports, etc. The output of the <code class="docutils literal"><span class="pre">sst-info</span></code> command can be
+filtered using the <code class="docutils literal"><span class="pre">--libs</span></code> flag.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">All SST components can be instantiated and configured via the use of a <code class="docutils literal"><span class="pre">config.py</span></code> file.</p>
+</div>
+</div>
+<div class="section" id="sst-subcomponent">
+<h3>SST::SubComponent<a class="headerlink" href="#sst-subcomponent" title="Permalink to this headline">¶</a></h3>
+<p>SubComponent is a class loadable through the <code class="docutils literal"><span class="pre">SST::Factory</span></code> class which allows dynamic functionality to be added to a Component. The SubComponent API is nearly
+identical to the Component API and all the calls are forwarded to the parent Component. SubComponents are always attached to Components via slots and communicate
+with the component via the same.</p>
+</div>
+<div class="section" id="sst-link">
+<h3>SST::Link<a class="headerlink" href="#sst-link" title="Permalink to this headline">¶</a></h3>
+<p>Links in SST are used to establish communication between two SST components. Links are attached to SST components at ports. These ports are defined for each
+Component and are documented via the registration <code class="docutils literal"><span class="pre">MACROS</span></code> provided by SST.</p>
+</div>
+</div>
+<div class="section" id="sst-memory-model">
+<h2>SST Memory Model<a class="headerlink" href="#sst-memory-model" title="Permalink to this headline">¶</a></h2>
+<img alt="SST Memory Model" class="align-center" src="../_images/sst_mem_model.png" />
+<p>This section describes details about components&nbsp;that are&nbsp;fundamental to the SST memory model&nbsp;and&nbsp;required for configuring a SST simulation. Each of the
+components mentioned here has configuration parameters which need to be specified in order for the SimEng SST simulation to work.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Some configuration parameters, ports and subcomponent slots necessary for understanding the memory model are not mentioned in this section. More information about
+configuration parameters and connecting components through ports and subcomponents slots will be provided in <a class="reference internal" href="running_simeng_with_sst.html#running-simeng-w-sst"><span class="std std-ref">Running SimEng with SST.</span></a></p>
+</div>
+<div class="section" id="simeng-core">
+<h3>SimEng Core<a class="headerlink" href="#simeng-core" title="Permalink to this headline">¶</a></h3>
+<p>For the SST simulation, the actual SimEng core is instantiated in a wrapper class and registered as a custom SST component, so it can receive clock ticks from
+SST. This component is called <code class="docutils literal"><span class="pre">SimengCore</span></code>.</p>
+</div>
+<div class="section" id="standardmem">
+<h3>StandardMem<a class="headerlink" href="#standardmem" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">StandardMem</span></code> is an interface defined in SST-Core present at the namespace <code class="docutils literal"><span class="pre">SST::Interfaces::StandardMem</span></code>. This interface acts as an entry point between the
+SimEng core and SST’s memory model. Memory requests are generated by the SimEng core in the form of class&nbsp; <code class="docutils literal"><span class="pre">SST::Interfaces::StandardMem::Request</span></code> objects, and
+then given to the interface class via function calls. The interface class then translates the memory requests into memory event objects that are internally
+used by the memory hierarchy.&nbsp;When a response event is received from the SST memory model,
+the interface class finds the matching request object, generates a response object of class <code class="docutils literal"><span class="pre">SST::Interfaces::StandardMem::Response</span></code> and returns it to the
+SimEng core via a callback function.</p>
+</div>
+<div class="section" id="standardinterface">
+<h3>StandardInterface<a class="headerlink" href="#standardinterface" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal"><span class="pre">StandardInterface</span></code> is a subcomponent which implements the <code class="docutils literal"><span class="pre">StandardMem</span></code> interface. It is present in the <code class="docutils literal"><span class="pre">memHierarchy</span></code> module and needs to be configured
+before the simulation starts. <code class="docutils literal"><span class="pre">StandardInterface</span></code> is instantiated as a subcomponent of the SimEng core. <code class="docutils literal"><span class="pre">SimengCore</span></code> uses <code class="docutils literal"><span class="pre">StandardInterface</span></code> for
+communicating memory requests. The <code class="docutils literal"><span class="pre">StandardInterface</span></code> component communicates with the SimEng core using the port <code class="docutils literal"><span class="pre">port</span></code>. The same port is used to communicate
+with the highest-level component in the memory hierarchy. Communication with memory components can also be established using the subcomponent slot <code class="docutils literal"><span class="pre">cpulink</span></code>.
+Configuration details about <code class="docutils literal"><span class="pre">StandardInterface</span></code> can be found using the command: <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.standardInterface</span></code></p>
+</div>
+<div class="section" id="cache">
+<h3>Cache<a class="headerlink" href="#cache" title="Permalink to this headline">¶</a></h3>
+<p>Because of its size and complexity, the implementation of Cache simulation in SST is divided over multiple files. However, the <code class="docutils literal"><span class="pre">CacheController</span></code> class is the
+main contact during simulation. The <code class="docutils literal"><span class="pre">CacheController</span></code> class is aliased as <strong>Cache</strong> in SST. Caches in SST communicate through ports <code class="docutils literal"><span class="pre">low_network_0</span></code>  and
+<code class="docutils literal"><span class="pre">high_network_0</span></code>. The <code class="docutils literal"><span class="pre">high_network_0</span></code> port is used to connect to either the SimEng core (via <code class="docutils literal"><span class="pre">StandardMem</span></code> interface) or to higher levels of cache,
+whereas the <code class="docutils literal"><span class="pre">low_network_0</span></code> port is used to connect to lower levels of cache or the main memory of the SST memory model.</p>
+<p>The Cache component also has some subcomponent slots (<code class="docutils literal"><span class="pre">memlink</span></code> and <code class="docutils literal"><span class="pre">cpulink</span></code>) which can be used instead of ports to establish communication as well.</p>
+<p>Information about different configuration parameters, ports and subcomponent slots required for simulation can be found using the command: <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.Cache</span></code></p>
+</div>
+<div class="section" id="memorycontroller">
+<h3>MemoryController<a class="headerlink" href="#memorycontroller" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal"><span class="pre">MemoryController</span></code> class implements the memory controller interface. The memory controller object sits between the last level cache and the memory backend
+and it serves as an entry point for accessing the main memory. It is a SubComponent slot called <code class="docutils literal"><span class="pre">backendConverter</span></code> which stores a reference to the backend convertor
+object that is responsible for translating between memory hierarchy’s event type and the backend’s event type. The memory controller object is derived from the
+<code class="docutils literal"><span class="pre">Component</span></code> class, meaning that it can be instantiated in the configuration file, and connected to the upper-level components. All memory requests to the main
+memory (e.g RAM) go through the <code class="docutils literal"><span class="pre">MemoryController</span></code>.</p>
+<p>The controller object also serves as an upper-level container for other memory-related components. These related components are loaded into subcomponent slots.
+Its <code class="docutils literal"><span class="pre">backend</span></code> slot stores a reference to the memory backend that implements the timing of the main memory. Its <code class="docutils literal"><span class="pre">cpulink</span></code> slot stores a reference to the
+memory link object (either a direct link or a network-on-chip endpoint) that the controller uses to communicate with upper-level components in the memory
+hierarchy. However, instead of using the <code class="docutils literal"><span class="pre">cpulink</span></code> slot, the controller can also communicate with higher memory components through the <code class="docutils literal"><span class="pre">direct_link</span></code> port.
+In addition, the <code class="docutils literal"><span class="pre">backendConvertor</span></code> slot stores a reference to a memory backend convertor object which is responsible for converting memory events coming
+from the cache hierarchy to requests used by the memory backend.</p>
+<p>Information about the different configuration parameters, ports and subcomponent slots required for simulation can be found using the command: <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.MemController</span></code></p>
+</div>
+<div class="section" id="memorybackend">
+<h3>MemoryBackend<a class="headerlink" href="#memorybackend" title="Permalink to this headline">¶</a></h3>
+<p>The memory backend implements the timing model of the main memory. All memory backend implementations must inherit from the base abstract class <code class="docutils literal"><span class="pre">MemBackend</span></code>
+present in the file&nbsp;<code class="docutils literal"><span class="pre">memBackend.h</span></code> in the <strong>SST-Elements</strong> source code.&nbsp;Class <code class="docutils literal"><span class="pre">MemBackend</span></code> is an abstract class and hence cannot be directly instantiated.
+The abstract class inherits the <code class="docutils literal"><span class="pre">SubComponent</span></code> class and must be loaded into the slot of the memory controller, as we have already discussed above.</p>
+<p>All memory backend models defined in SST inherit one of the three abstract classes i.e <code class="docutils literal"><span class="pre">SimpleMemBackend</span></code>, <code class="docutils literal"><span class="pre">FlagMemBackend</span></code> and <code class="docutils literal"><span class="pre">ExtMemBackend</span></code>; All these
+abstract classes inherit the <code class="docutils literal"><span class="pre">MemBackend</span></code> abstract class and require a different kind of memory backend convertor.  <code class="docutils literal"><span class="pre">SimpleMemBackend</span></code> requires a
+<code class="docutils literal"><span class="pre">SimpleMemoryBackendConvertor</span></code> specified as <code class="docutils literal"><span class="pre">memHierarchy.simpleMemBackendConvertor</span></code>, <code class="docutils literal"><span class="pre">FlagMemBackend</span></code> requires a
+<code class="docutils literal"><span class="pre">FlagMemBackendConvertor</span></code> specified as <code class="docutils literal"><span class="pre">memHierarchy.flagMemBackendConvertor</span></code> and <code class="docutils literal"><span class="pre">ExtMemBackend</span></code> requires a <code class="docutils literal"><span class="pre">ExtMemBackendConvertor</span></code> specified as <code class="docutils literal"><span class="pre">memHierarchy.extMemBackendConvertor</span></code>.</p>
+<p>Most of the memory timing models present inside SST inherit the <code class="docutils literal"><span class="pre">SimpleMemBackend</span></code> abstract class and SST provides a variety of memory backends
+to choose from e.g. <code class="docutils literal"><span class="pre">memHierarchy.simpleMem</span></code>, <code class="docutils literal"><span class="pre">memHierarchy.simpleDRAM</span></code>, etc.</p>
+<p>By default the <code class="docutils literal"><span class="pre">MemoryController</span></code> equips the <code class="docutils literal"><span class="pre">backend</span></code> SubComponent slot with <code class="docutils literal"><span class="pre">memHierarchy.simpleMem</span></code> and <code class="docutils literal"><span class="pre">backendConvertor</span></code> SubComponent
+slot with <code class="docutils literal"><span class="pre">memHierarchy.simpleMemBackendConvertor</span></code>. Different memory backends and backend memory convertors can be specified in the configuration params for
+<code class="docutils literal"><span class="pre">MemoryController</span></code>.</p>
+<p>The memory backend is the last level in the memory hierarchy and does not need to connect to any component further down.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="running_simeng_with_sst.html" class="btn btn-neutral float-right" title="Running SimEng with SST" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="building_simeng_with_sst.html" class="btn btn-neutral float-left" title="Building SimEng with SST" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

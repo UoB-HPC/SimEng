@@ -49,7 +49,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Overview" href="../../user/index.html" />
-    <link rel="prev" title="AArch64" href="../arch/supported/aarch64.html" /> 
+    <link rel="prev" title="RISCV" href="../arch/supported/riscv.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -107,6 +107,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#test-lifecycle">Test lifecycle</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#current-regression-suites">Current regression suites</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#aarch64-regression-suite">AArch64 regression suite</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#risc-v-regression-suite">RISC-V regression suite</a></li>
 </ul>
 </li>
 </ul>
@@ -123,6 +124,13 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">SST Integration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sst/understanding_sst.html">Understanding SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sst/running_simeng_with_sst.html">Running SimEng with SST</a></li>
 </ul>
 
             
@@ -202,12 +210,13 @@
 <li><a class="reference internal" href="#test-lifecycle" id="id3">Test lifecycle</a></li>
 <li><a class="reference internal" href="#current-regression-suites" id="id4">Current regression suites</a><ul>
 <li><a class="reference internal" href="#aarch64-regression-suite" id="id5">AArch64 regression suite</a></li>
+<li><a class="reference internal" href="#risc-v-regression-suite" id="id6">RISC-V regression suite</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#unit-suite" id="id6">Unit suite</a></li>
-<li><a class="reference internal" href="#running-the-test-suites" id="id7">Running the test suites</a></li>
+<li><a class="reference internal" href="#unit-suite" id="id7">Unit suite</a></li>
+<li><a class="reference internal" href="#running-the-test-suites" id="id8">Running the test suites</a></li>
 </ul>
 </li>
 </ul>
@@ -253,10 +262,36 @@
 </div>
 <p><strong>Note</strong>, the <code class="docutils literal"><span class="pre">RUN_AARCH64</span></code> function is a proxy call to the <code class="docutils literal"><span class="pre">run</span></code> function in the <code class="docutils literal"><span class="pre">RegressionTest</span></code> class with the “aarch64” target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in <code class="docutils literal"><span class="pre">test/regression/aarch64/AArch64RegressionTest.hh</span></code>.</p>
 </div>
+<div class="section" id="risc-v-regression-suite">
+<h4><a class="toc-backref" href="#id6">RISC-V regression suite</a><a class="headerlink" href="#risc-v-regression-suite" title="Permalink to this headline">¶</a></h4>
+<p>The RISC-V regression test suite is located under the <code class="docutils literal"><span class="pre">test/regression/riscv/</span></code> directory. Within this can be found the following test cases:</p>
+<ul class="simple">
+<li>instructions/: This directory holds tests for the functionality of each implemented instruction and their pseudoinstructions.</li>
+<li>LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.</li>
+<li>SmokeTest: Trivial ISA related tests.</li>
+<li>Syscall: Ensure the correct functionality of RISC-V system calls.</li>
+</ul>
+<p>Each RISC-V test casts follows the same structure as above using a set of <code class="docutils literal"><span class="pre">TEST_P</span></code> functions, and a single <code class="docutils literal"><span class="pre">INSTANTIATE_TEST_SUITE_P</span></code> call.</p>
+<p>The standard structure of an RISC-V regression test body is as followed:</p>
+<div class="highlight-text"><div class="highlight"><pre><span></span>TEST_P(Test_Case_Name, Test_Name) {
+   ** Any additions to initialHeapData_ **
+
+   RUN_RISCV(&quot;R(
+      ...
+      instructions to be run
+      ...
+   )&quot;);
+
+   ** Comparisons against values in the SimEng model after simulation **
+}
+</pre></div>
+</div>
+<p><strong>Note</strong>, the <code class="docutils literal"><span class="pre">RUN_RISCV</span></code> function is a proxy call to the <code class="docutils literal"><span class="pre">run</span></code> function in the <code class="docutils literal"><span class="pre">RegressionTest</span></code> class with the “riscv” target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in <code class="docutils literal"><span class="pre">test/regression/riscv/RISCVRegressionTest.hh</span></code>.</p>
+</div>
 </div>
 </div>
 <div class="section" id="unit-suite">
-<h2><a class="toc-backref" href="#id6">Unit suite</a><a class="headerlink" href="#unit-suite" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id7">Unit suite</a><a class="headerlink" href="#unit-suite" title="Permalink to this headline">¶</a></h2>
 <p>The tests contained in SimEng’s unit test suite create an isolated instance of a SimEng component. During the tests, hardcoded inputs are supplied to the component and specific functions belonging to the component are invoked. GoogleTest <code class="docutils literal"><span class="pre">EXPECT</span></code> functions are used throughout this process to form expectations. These expectations relate to the return values of functions and the logic held within them, for example, the calling of other functions with defined parameters.</p>
 <p>Due to the use of isolated instances of SimEng components, certain linked objects or passed inputs have not interacted with the expected prior stages of the processor pipeline. Therefore, they are deemed to be in an incorrect state, for the test context, and may cause unrealistic behaviour. To combat this, the GoogleTest <a class="reference external" href="https://github.com/google/googletest/tree/master/googlemock">gMock</a> library has been used to create mock instances of these objects. When using these mock instances, function logic and return values can be pre-defined and thus mimic the correct behaviour for the test context. Currently, mock instances exist for the following abstract classes:</p>
 <ul class="simple">
@@ -267,7 +302,7 @@
 </ul>
 </div>
 <div class="section" id="running-the-test-suites">
-<h2><a class="toc-backref" href="#id7">Running the test suites</a><a class="headerlink" href="#running-the-test-suites" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id8">Running the test suites</a><a class="headerlink" href="#running-the-test-suites" title="Permalink to this headline">¶</a></h2>
 <p>Whilst <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">{BUILD_DIR}</span> <span class="pre">--target</span> <span class="pre">test</span></code> can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a <code class="docutils literal"><span class="pre">--gtest_filter=&quot;&lt;regex&gt;&quot;</span></code> filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:</p>
 <dl class="docutils">
 <dt>Parameterised test:</dt>
@@ -290,7 +325,7 @@
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
         <a href="../../user/index.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="../arch/supported/aarch64.html" class="btn btn-neutral float-left" title="AArch64" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../arch/supported/riscv.html" class="btn btn-neutral float-left" title="RISCV" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

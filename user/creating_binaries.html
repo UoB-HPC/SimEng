@@ -48,6 +48,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Overview" href="../sst/index.html" />
     <link rel="prev" title="Configuring SimEng" href="configuring_simeng.html" /> 
 </head>
 
@@ -110,6 +111,13 @@
 <li class="toctree-l1"><a class="reference internal" href="running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Creating Binaries</a></li>
+</ul>
+<p class="caption"><span class="caption-text">SST Integration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../sst/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/understanding_sst.html">Understanding SST</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sst/running_simeng_with_sst.html">Running SimEng with SST</a></li>
 </ul>
 
             
@@ -179,12 +187,17 @@
             
   <div class="section" id="creating-binaries">
 <h1>Creating Binaries<a class="headerlink" href="#creating-binaries" title="Permalink to this headline">¶</a></h1>
-<p>SimEng uses real aarch64 statically linked binaries for its workloads. To date, the following compilers have been used to compile our codes of interest:</p>
+<p>SimEng uses real AArch64 and RISC-V statically linked binaries for its workloads. To date, the following compilers have been used to compile our codes of interest:</p>
+<p>AArch64</p>
 <ul class="simple">
 <li>GCC 8.3.0</li>
 <li>GCC 9.3.0</li>
 <li>GCC 10.3.0</li>
 <li>ArmClang 20.0</li>
+</ul>
+<p>RISC-V</p>
+<ul class="simple">
+<li>GCC 12.2.0</li>
 </ul>
 </div>
 
@@ -194,6 +207,7 @@
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../sst/index.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
         <a href="configuring_simeng.html" class="btn btn-neutral float-left" title="Configuring SimEng" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 

@@ -60,6 +60,36 @@ The standard structure of an AArch64 regression test body is as followed:
 
 **Note**, the ``RUN_AARCH64`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "aarch64" target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in ``test/regression/aarch64/AArch64RegressionTest.hh``.
 
+RISC-V regression suite
+'''''''''''''''''''''''
+
+The RISC-V regression test suite is located under the ``test/regression/riscv/`` directory. Within this can be found the following test cases:
+
+- instructions/: This directory holds tests for the functionality of each implemented instruction and their pseudoinstructions.
+- LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.
+- SmokeTest: Trivial ISA related tests.
+- Syscall: Ensure the correct functionality of RISC-V system calls.
+
+Each RISC-V test casts follows the same structure as above using a set of ``TEST_P`` functions, and a single ``INSTANTIATE_TEST_SUITE_P`` call.
+
+The standard structure of an RISC-V regression test body is as followed:
+
+.. code-block:: text
+
+   TEST_P(Test_Case_Name, Test_Name) {
+      ** Any additions to initialHeapData_ **
+
+      RUN_RISCV("R(
+         ...
+         instructions to be run
+         ...
+      )");
+
+      ** Comparisons against values in the SimEng model after simulation **
+   }
+
+**Note**, the ``RUN_RISCV`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "riscv" target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in ``test/regression/riscv/RISCVRegressionTest.hh``.
+
 Unit suite
 ----------
 
