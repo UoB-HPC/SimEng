@@ -21,7 +21,7 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    completionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
+    CompletionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
     uint16_t storeBandwidth, uint16_t permittedRequests,
     uint16_t permittedLoads, uint16_t permittedStores)
     : completionSlots_(completionSlots),
@@ -42,7 +42,7 @@ LoadStoreQueue::LoadStoreQueue(
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    completionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
+    CompletionOrder completionOrder, bool exclusive, uint16_t loadBandwidth,
     uint16_t storeBandwidth, uint16_t permittedRequests,
     uint16_t permittedLoads, uint16_t permittedStores)
     : completionSlots_(completionSlots),
@@ -107,7 +107,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   } else {
     // If the completion order is inorder, reserve an entry in completedLoads_
     // now
-    if (completionOrder_ == completionOrder::INORDER)
+    if (completionOrder_ == CompletionOrder::INORDER)
       completedLoads_.push(insn);
 
     // Create a speculative entry for the load
@@ -266,7 +266,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
               supplyStoreData(load);
             }
             // If the completion order is OoO, add entry to completedLoads_
-            if (completionOrder_ == completionOrder::OUTOFORDER)
+            if (completionOrder_ == CompletionOrder::OUTOFORDER)
               completedLoads_.push(load);
           }
         }
@@ -522,7 +522,7 @@ void LoadStoreQueue::tick() {
         supplyStoreData(load);
       }
       // If the completion order is OoO, add entry to completedLoads_
-      if (completionOrder_ == completionOrder::OUTOFORDER)
+      if (completionOrder_ == CompletionOrder::OUTOFORDER)
         completedLoads_.push(load);
     }
   }

@@ -17,7 +17,7 @@ namespace pipeline {
 enum accessType { LOAD = 0, STORE };
 
 /** The order in which instructions can exit this unit. */
-enum completionOrder { INORDER = 0, OUTOFORDER };
+enum class CompletionOrder { INORDER = 0, OUTOFORDER };
 
 /** A requestQueue_ entry. */
 struct requestEntry {
@@ -38,7 +38,7 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      completionOrder completionOrder = completionOrder::OUTOFORDER,
+      CompletionOrder completionOrder = CompletionOrder::OUTOFORDER,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
@@ -53,7 +53,7 @@ class LoadStoreQueue {
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      completionOrder completionOrder = completionOrder::OUTOFORDER,
+      CompletionOrder completionOrder = CompletionOrder::OUTOFORDER,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
@@ -181,7 +181,7 @@ class LoadStoreQueue {
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
   /** The order in which instructions can be passed to the completion slots. */
-  completionOrder completionOrder_;
+  CompletionOrder completionOrder_;
 
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;

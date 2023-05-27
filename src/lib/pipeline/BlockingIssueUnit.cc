@@ -120,8 +120,8 @@ void BlockingIssueUnit::tick() {
       scoreboard_[reg.type][reg.tag] = {false, uop->getInstructionId()};
     }
 
-    // Record that this uop has been issue and send to an execution unit through
-    // allocated port
+    // Record that this uop has been issued and send to an execution unit
+    // through allocated port
     recordIssue_(uop);
 
     if (uop->isLoad()) {

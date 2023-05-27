@@ -483,7 +483,7 @@ TEST_P(LoadStoreQueueTest, inOrderCompletion) {
       completionSlots(2, {1, nullptr});
   LoadStoreQueue queue = LoadStoreQueue(
       MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 2},
-      [](auto registers, auto values) {}, completionOrder::INORDER);
+      [](auto registers, auto values) {}, CompletionOrder::INORDER);
   loadUop->setSequenceId(0);
   loadUop2->setSequenceId(1);
   loadUop->setLSQLatency(3);
@@ -513,7 +513,7 @@ TEST_P(LoadStoreQueueTest, OoOCompletion) {
       completionSlots(1, {1, nullptr});
   LoadStoreQueue queue = LoadStoreQueue(
       MAX_LOADS, MAX_STORES, mmu, {completionSlots.data(), 1},
-      [](auto registers, auto values) {}, completionOrder::OUTOFORDER);
+      [](auto registers, auto values) {}, CompletionOrder::OUTOFORDER);
   loadUop->setSequenceId(0);
   loadUop2->setSequenceId(1);
   loadUop->setLSQLatency(3);
