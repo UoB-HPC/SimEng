@@ -123,10 +123,10 @@ TEST(ConfigTest, Default) {
   EXPECT_EQ(emittedConfig, expectedValues);
 }
 
+// Test that getting values from the config returns the correct values
 TEST(ConfigTest, GetValue) {
   simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
   ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
-  // Test that getting values from the config returns the correct values
   EXPECT_EQ(
       simeng::config::SimInfo::getValue<std::string>(config["Core"]["ISA"]),
       "AArch64");
@@ -141,8 +141,8 @@ TEST(ConfigTest, GetValue) {
             false);
 }
 
+// Test that editting existing and adding new values is correct
 TEST(ConfigTest, AddConfigValues) {
-  // Test that editting existing and adding new values is correct
   simeng::config::SimInfo::addToConfig("{Core: {Simulation-Mode: outoforder}}");
   simeng::config::SimInfo::addToConfig("{Core: {Key: Value}}");
   simeng::config::SimInfo::addToConfig("{TestA: {Key: Value}}");
@@ -183,9 +183,9 @@ TEST(ConfigTest, AddConfigValues) {
   EXPECT_EQ(config["Execution-Units"].num_children(), 2);
 }
 
+// Test that adding an invalid entry fails the config validation
 TEST(ConfigTest, FailedExpectation) {
   simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64, true);
-  // Test that adding an invalid entry fails the config validation
   ASSERT_DEATH(
       {
         simeng::config::SimInfo::addToConfig(
@@ -229,6 +229,81 @@ TEST(ConfigTest, FailedExpectation) {
             ": False}}}");
       },
       "- Port 1 has no associated reservation station");
+}
+
+// Test that ExpectationNode validation checks work as expected
+TEST(ConfigTest, validation) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<bool>(true,
+                                                               "CHILD_BOOL"));
+  expectations["HEAD"]["CHILD_BOOL"].setValueSet<bool>({false});
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<float>(123.456f,
+                                                                "CHILD_FLOAT"));
+  expectations["HEAD"]["CHILD_FLOAT"].setValueBounds<float>(456.789f, 789.456f);
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<std::string>(
+          "STR", "CHILD_STRING"));
+  expectations["HEAD"]["CHILD_STRING"].setValueSet<std::string>(
+      {"HELLO", "WORLD", "SIMENG"});
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<uint64_t>(
+          333, "CHILD_UINT"));
+  expectations["HEAD"]["CHILD_UINT"].setValueBounds<uint64_t>(345, 678);
+
+  ryml::Tree tree;
+  tree.rootref() |= ryml::MAP;
+  ryml::NodeRef ref;
+  size_t id = tree.root_id();
+  tree.ref(id).append_child() << ryml::key("noVal");
+  ref = tree.ref(id).append_child() << ryml::key("bool");
+  ref << true;
+  ref = tree.ref(id).append_child() << ryml::key("float");
+  ref << 123.456f;
+  ref = tree.ref(id).append_child() << ryml::key("string");
+  ref << "STR";
+  ref = tree.ref(id).append_child() << ryml::key("uint");
+  ref << 333;
+
+  EXPECT_EQ(expectations["HEAD"]["CHILD_BOOL"]
+                .validateConfigNode(tree.rootref()["bool"])
+                .message,
+            "1 not in set {0}");
+  EXPECT_EQ(expectations["HEAD"]["CHILD_FLOAT"]
+                .validateConfigNode(tree.rootref()["float"])
+                .message,
+            "123.456 not in the bounds {456.789 to 789.456}");
+  EXPECT_EQ(expectations["HEAD"]["CHILD_STRING"]
+                .validateConfigNode(tree.rootref()["string"])
+                .message,
+            "STR not in set {HELLO, WORLD, SIMENG}");
+  EXPECT_EQ(expectations["HEAD"]["CHILD_UINT"]
+                .validateConfigNode(tree.rootref()["uint"])
+                .message,
+            "333 not in the bounds {345 to 678}");
+}
+
+// Test that adding multiple wild ExpectationNodes to the same parent fails
+TEST(ConfigTest, multipleWildNodes) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation(
+          simeng::config::wildcard));
+  ASSERT_DEATH(
+      {
+        expectations["HEAD"].addChild(
+            simeng::config::ExpectationNode::createExpectation(
+                simeng::config::wildcard));
+      },
+      "Attempted to add multiple wild nodes to the same ExpectationNode "
+      "instance of key HEAD");
 }
 
 }  // namespace

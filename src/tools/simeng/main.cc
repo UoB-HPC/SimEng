@@ -143,8 +143,6 @@ int main(int argc, char** argv) {
       << simeng::config::SimInfo::getValue<uint64_t>(
              simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"])
       << std::endl;
-  std::cout << "[SimEng] Config file: "
-            << simeng::config::SimInfo::getConfigPath() << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
