@@ -5,7 +5,6 @@
 
 #include "arch/aarch64/InstructionMetadata.hh"
 #include "arch/riscv/InstructionMetadata.hh"
-#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace config {
@@ -98,7 +97,7 @@ void ModelConfig::generateDefault() {
   validate();
 }
 
-void ModelConfig::constructDefault(expectationNode expectations,
+void ModelConfig::constructDefault(ExpectationNode expectations,
                                    size_t root_id) {
   // Iterate over the expectations supplied
   for (const auto& chld : expectations.getChildren()) {
@@ -206,27 +205,27 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_ = {};
 
   // Core
-  expectations_.addChild(expectations_.create("Core"));
+  expectations_.addChild(ExpectationNode::createExpectation("Core"));
 
   if (ISA_ == ISA::AArch64)
     expectations_["Core"].addChild(
-        expectations_.create<std::string>("ISA", "AArch64"));
+        ExpectationNode::createExpectation<std::string>("AArch64", "ISA"));
   else if (ISA_ == ISA::RV64)
     expectations_["Core"].addChild(
-        expectations_.create<std::string>("ISA", "rv64"));
+        ExpectationNode::createExpectation<std::string>("rv64", "ISA"));
   expectations_["Core"]["ISA"].setValueSet(
       std::vector<std::string>{"AArch64", "rv64"});
 
   // Early check on [Core][ISA] as its value is needed to inform the
   // expectations of other config options
   if (!isDefault) {
-    std::string result = expectations_["Core"]["ISA"].validateConfigNode(
+    ValidationResult result = expectations_["Core"]["ISA"].validateConfigNode(
         configTree_["Core"]["ISA"]);
     std::string ISA;
     configTree_["Core"]["ISA"] >> ISA;
-    if (result != "Success") {
+    if (result.errored) {
       std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
-                << "\" passed in config file due to \"" << result
+                << "\" passed in config file due to \"" << result.message
                 << "\" error. Cannot continue with config validation. Exiting."
                 << std::endl;
       exit(1);
@@ -241,25 +240,28 @@ void ModelConfig::setExpectations(bool isDefault) {
   createGroupMapping();
 
   expectations_["Core"].addChild(
-      expectations_.create<std::string>("Simulation-Mode", "emulation"));
+      ExpectationNode::createExpectation<std::string>("emulation",
+                                                      "Simulation-Mode"));
   expectations_["Core"]["Simulation-Mode"].setValueSet(
       std::vector<std::string>{"emulation", "inorderpipelined", "outoforder"});
 
-  expectations_["Core"].addChild(expectations_.create("Clock-Frequency", 1.f));
+  expectations_["Core"].addChild(
+      ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency"));
   expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f, 10.f);
 
   // Early check on ["Core"]["Clock-Frequency"] as values are needed to inform
   // the expected lower bound of the ["Core"]["Timer-Frequency"] value
   uint64_t tFreqUpperBound = 1000;
   if (!isDefault) {
-    std::string result =
+    ValidationResult result =
         expectations_["Core"]["Clock-Frequency"].validateConfigNode(
             configTree_["Core"]["Clock-Frequency"]);
     float cFreq;
     configTree_["Core"]["Clock-Frequency"] >> cFreq;
-    if (result != "Success") {
+    if (result.errored) {
       std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
-                << cFreq << "\" passed in config file due to \"" << result
+                << cFreq << "\" passed in config file due to \""
+                << result.message
                 << "\" error. Cannot continue with config validation. Exiting."
                 << std::endl;
       exit(1);
@@ -269,223 +271,238 @@ void ModelConfig::setExpectations(bool isDefault) {
   }
 
   expectations_["Core"].addChild(
-      expectations_.create<uint64_t>("Timer-Frequency", 100));
+      ExpectationNode::createExpectation<uint64_t>(100, "Timer-Frequency"));
   expectations_["Core"]["Timer-Frequency"].setValueBounds<uint64_t>(
       1, tFreqUpperBound);
 
-  expectations_["Core"].addChild(
-      expectations_.create<bool, true>("Micro-Operations", false));
+  expectations_["Core"].addChild(ExpectationNode::createExpectation<bool>(
+      false, "Micro-Operations", true));
   expectations_["Core"]["Micro-Operations"].setValueSet(
       std::vector{false, true});
 
   if (ISA_ == ISA::AArch64) {
-    expectations_["Core"].addChild(
-        expectations_.create<uint64_t, true>("Vector-Length", 512));
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+        512, "Vector-Length", true));
     expectations_["Core"]["Vector-Length"].setValueSet(
         std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
                               1280, 1408, 1536, 1664, 1792, 1920, 2048});
 
-    expectations_["Core"].addChild(
-        expectations_.create<uint64_t, true>("Streaming-Vector-Length", 512));
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+        512, "Streaming-Vector-Length", true));
     expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
         std::vector<uint64_t>{128, 256, 384, 512, 1024, 2048});
   }
 
   // Fetch
-  expectations_.addChild(expectations_.create("Fetch"));
+  expectations_.addChild(ExpectationNode::createExpectation("Fetch"));
 
   expectations_["Fetch"].addChild(
-      expectations_.create<uint64_t>("Fetch-Block-Size", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "Fetch-Block-Size"));
   expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(std::vector<uint64_t>{
       4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192, 16384, 32768, 65536});
 
   expectations_["Fetch"].addChild(
-      expectations_.create<uint64_t>("Loop-Buffer-Size", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "Loop-Buffer-Size"));
   expectations_["Fetch"]["Loop-Buffer-Size"].setValueBounds<uint64_t>(
       0, UINT16_MAX);
 
-  expectations_["Fetch"].addChild(
-      expectations_.create<uint64_t>("Loop-Detection-Threshold", 5));
+  expectations_["Fetch"].addChild(ExpectationNode::createExpectation<uint64_t>(
+      5, "Loop-Detection-Threshold"));
   expectations_["Fetch"]["Loop-Detection-Threshold"].setValueBounds<uint64_t>(
       0, UINT16_MAX);
 
   // Process-Image
-  expectations_.addChild(expectations_.create("Process-Image"));
+  expectations_.addChild(ExpectationNode::createExpectation("Process-Image"));
 
   expectations_["Process-Image"].addChild(
-      expectations_.create<uint64_t>("Heap-Size", 100000));
+      ExpectationNode::createExpectation<uint64_t>(100000, "Heap-Size"));
   expectations_["Process-Image"]["Heap-Size"].setValueBounds<uint64_t>(
       1, UINT64_MAX);
 
   expectations_["Process-Image"].addChild(
-      expectations_.create<uint64_t>("Stack-Size", 100000));
+      ExpectationNode::createExpectation<uint64_t>(100000, "Stack-Size"));
   expectations_["Process-Image"]["Stack-Size"].setValueBounds<uint64_t>(
       1, UINT64_MAX);
 
   // Register-Set
-  expectations_.addChild(expectations_.create("Register-Set"));
+  expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
   if (ISA_ == ISA::AArch64) {
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
+        ExpectationNode::createExpectation<uint64_t>(32,
+                                                     "GeneralPurpose-Count"));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint64_t>(32, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t>("FloatingPoint/SVE-Count", 32));
+        ExpectationNode::createExpectation<uint64_t>(
+            32, "FloatingPoint/SVE-Count"));
     expectations_["Register-Set"]["FloatingPoint/SVE-Count"]
         .setValueBounds<uint64_t>(32, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t, true>("Predicate-Count", 17));
+        ExpectationNode::createExpectation<uint64_t>(17, "Predicate-Count",
+                                                     true));
     expectations_["Register-Set"]["Predicate-Count"].setValueBounds<uint64_t>(
         17, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t>("Conditional-Count", 1));
+        ExpectationNode::createExpectation<uint64_t>(1, "Conditional-Count"));
     expectations_["Register-Set"]["Conditional-Count"].setValueBounds<uint64_t>(
         1, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t, true>("Matrix-Count", 1));
+        ExpectationNode::createExpectation<uint64_t>(1, "Matrix-Count", true));
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint64_t>(
         1, UINT16_MAX);
   } else if (ISA_ == ISA::RV64) {
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t>("GeneralPurpose-Count", 32));
+        ExpectationNode::createExpectation<uint64_t>(32,
+                                                     "GeneralPurpose-Count"));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint64_t>(32, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
-        expectations_.create<uint64_t>("FloatingPoint-Count", 32));
+        ExpectationNode::createExpectation<uint64_t>(32,
+                                                     "FloatingPoint-Count"));
     expectations_["Register-Set"]["FloatingPoint-Count"]
         .setValueBounds<uint64_t>(32, UINT16_MAX);
   }
 
   // Pipeline-Widths
-  expectations_.addChild(expectations_.create("Pipeline-Widths"));
+  expectations_.addChild(ExpectationNode::createExpectation("Pipeline-Widths"));
 
   expectations_["Pipeline-Widths"].addChild(
-      expectations_.create<uint64_t>("Commit", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Commit"));
   expectations_["Pipeline-Widths"]["Commit"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["Pipeline-Widths"].addChild(
-      expectations_.create<uint64_t>("FrontEnd", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "FrontEnd"));
   expectations_["Pipeline-Widths"]["FrontEnd"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["Pipeline-Widths"].addChild(
-      expectations_.create<uint64_t>("LSQ-Completion", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "LSQ-Completion"));
   expectations_["Pipeline-Widths"]["LSQ-Completion"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   // Queue-Sizes
-  expectations_.addChild(expectations_.create("Queue-Sizes"));
+  expectations_.addChild(ExpectationNode::createExpectation("Queue-Sizes"));
 
   expectations_["Queue-Sizes"].addChild(
-      expectations_.create<uint64_t>("ROB", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "ROB"));
   expectations_["Queue-Sizes"]["ROB"].setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Queue-Sizes"].addChild(
-      expectations_.create<uint64_t>("Load", 16));
+      ExpectationNode::createExpectation<uint64_t>(16, "Load"));
   expectations_["Queue-Sizes"]["Load"].setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Queue-Sizes"].addChild(
-      expectations_.create<uint64_t>("Store", 16));
+      ExpectationNode::createExpectation<uint64_t>(16, "Store"));
   expectations_["Queue-Sizes"]["Store"].setValueBounds<uint64_t>(1, UINT16_MAX);
 
   // Branch-Predictor
-  expectations_.addChild(expectations_.create("Branch-Predictor"));
+  expectations_.addChild(
+      ExpectationNode::createExpectation("Branch-Predictor"));
 
   expectations_["Branch-Predictor"].addChild(
-      expectations_.create<uint64_t>("BTB-Tag-Bits", 8));
+      ExpectationNode::createExpectation<uint64_t>(8, "BTB-Tag-Bits"));
   expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["Branch-Predictor"].addChild(
-      expectations_.create<uint64_t>("Saturating-Count-Bits", 2));
+      ExpectationNode::createExpectation<uint64_t>(2, "Saturating-Count-Bits"));
   expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
       .setValueBounds<uint64_t>(1, 64);
 
   expectations_["Branch-Predictor"].addChild(
-      expectations_.create<uint64_t>("Global-History-Length", 8));
+      ExpectationNode::createExpectation<uint64_t>(8, "Global-History-Length"));
   expectations_["Branch-Predictor"]["Global-History-Length"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Branch-Predictor"].addChild(
-      expectations_.create<uint64_t>("RAS-entries", 8));
+      ExpectationNode::createExpectation<uint64_t>(8, "RAS-entries"));
   expectations_["Branch-Predictor"]["RAS-entries"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
-  expectations_["Branch-Predictor"].addChild(expectations_.create<std::string>(
-      "Fallback-Static-Predictor", "Always-Taken"));
+  expectations_["Branch-Predictor"].addChild(
+      ExpectationNode::createExpectation<std::string>(
+          "Always-Taken", "Fallback-Static-Predictor"));
   expectations_["Branch-Predictor"]["Fallback-Static-Predictor"].setValueSet(
       std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
 
   // L1-Data-Memory
-  expectations_.addChild(expectations_.create("L1-Data-Memory"));
+  expectations_.addChild(ExpectationNode::createExpectation("L1-Data-Memory"));
 
   expectations_["L1-Data-Memory"].addChild(
-      expectations_.create<std::string>("Interface-Type", "Flat"));
+      ExpectationNode::createExpectation<std::string>("Flat",
+                                                      "Interface-Type"));
   expectations_["L1-Data-Memory"]["Interface-Type"].setValueSet(
       std::vector<std::string>{"Flat", "Fixed", "External"});
 
   // L1-Instruction-Memory
-  expectations_.addChild(expectations_.create("L1-Instruction-Memory"));
+  expectations_.addChild(
+      ExpectationNode::createExpectation("L1-Instruction-Memory"));
 
   expectations_["L1-Instruction-Memory"].addChild(
-      expectations_.create<std::string>("Interface-Type", "Flat"));
+      ExpectationNode::createExpectation<std::string>("Flat",
+                                                      "Interface-Type"));
   expectations_["L1-Instruction-Memory"]["Interface-Type"].setValueSet(
       std::vector<std::string>{"Flat", "Fixed", "External"});
 
   // LSQ-L1-Interface
-  expectations_.addChild(expectations_.create("LSQ-L1-Interface"));
+  expectations_.addChild(
+      ExpectationNode::createExpectation("LSQ-L1-Interface"));
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Access-Latency", 4));
+      ExpectationNode::createExpectation<uint64_t>(4, "Access-Latency"));
   expectations_["LSQ-L1-Interface"]["Access-Latency"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create("Exclusive", false));
+      ExpectationNode::createExpectation<bool>(false, "Exclusive"));
   expectations_["LSQ-L1-Interface"]["Exclusive"].setValueSet(
       std::vector{false, true});
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Load-Bandwidth", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "Load-Bandwidth"));
   expectations_["LSQ-L1-Interface"]["Load-Bandwidth"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Store-Bandwidth", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "Store-Bandwidth"));
   expectations_["LSQ-L1-Interface"]["Store-Bandwidth"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Permitted-Requests-Per-Cycle", 1));
+      ExpectationNode::createExpectation<uint64_t>(
+          1, "Permitted-Requests-Per-Cycle"));
   expectations_["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Permitted-Loads-Per-Cycle", 1));
+      ExpectationNode::createExpectation<uint64_t>(
+          1, "Permitted-Loads-Per-Cycle"));
   expectations_["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
-      expectations_.create<uint64_t>("Permitted-Stores-Per-Cycle", 1));
+      ExpectationNode::createExpectation<uint64_t>(
+          1, "Permitted-Stores-Per-Cycle"));
   expectations_["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   // Ports
-  expectations_.addChild(expectations_.create("Ports"));
-  expectations_["Ports"].addChild(expectations_.create<uint64_t>(wildcard, 0));
+  expectations_.addChild(ExpectationNode::createExpectation("Ports"));
+  expectations_["Ports"].addChild(
+      ExpectationNode::createExpectation<uint64_t>(0, wildcard));
 
   expectations_["Ports"][wildcard].addChild(
-      expectations_.create<std::string>("Portname", "0"));
+      ExpectationNode::createExpectation<std::string>("0", "Portname"));
 
   expectations_["Ports"][wildcard].addChild(
-      expectations_.create<std::string, true>("Instruction-Group-Support",
-                                              "ALL"));
+      ExpectationNode::createExpectation<std::string>(
+          "ALL", "Instruction-Group-Support", true));
   expectations_["Ports"][wildcard]["Instruction-Group-Support"].setValueSet(
       groupOptions_);
   expectations_["Ports"][wildcard]["Instruction-Group-Support"].setAsSequence();
@@ -498,8 +515,8 @@ void ModelConfig::setExpectations(bool isDefault) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }
   expectations_["Ports"][wildcard].addChild(
-      expectations_.create<uint64_t, true>("Instruction-Opcode-Support",
-                                           maxOpcode));
+      ExpectationNode::createExpectation<uint64_t>(
+          maxOpcode, "Instruction-Opcode-Support", true));
   expectations_["Ports"][wildcard]["Instruction-Opcode-Support"]
       .setValueBounds<uint64_t>(0, maxOpcode);
   expectations_["Ports"][wildcard]["Instruction-Opcode-Support"]
@@ -514,12 +531,12 @@ void ModelConfig::setExpectations(bool isDefault) {
     uint16_t idx = 0;
     // Get all portnames defined in the config file and ensure they are unique
     for (ryml::NodeRef chld : configTree_["Ports"]) {
-      std::string result =
+      ValidationResult result =
           expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
               chld["Portname"]);
       std::string portname;
       chld["Portname"] >> portname;
-      if (result == "Success") {
+      if (!result.errored) {
         if (std::find(portnames.begin(), portnames.end(), portname) ==
             portnames.end()) {
           portnames.push_back(portname);
@@ -530,7 +547,7 @@ void ModelConfig::setExpectations(bool isDefault) {
         std::cerr
             << "[SimEng:ModelConfig] Invalid portname for port " << idx
             << ", namely \"" << portname
-            << "\", passed in config file due to \"" << result
+            << "\", passed in config file due to \"" << result.message
             << "\" error. Cannot continue with config validation. Exiting."
             << std::endl;
         exit(1);
@@ -540,124 +557,132 @@ void ModelConfig::setExpectations(bool isDefault) {
   }
 
   // Reservation-Stations
-  expectations_.addChild(expectations_.create("Reservation-Stations"));
+  expectations_.addChild(
+      ExpectationNode::createExpectation("Reservation-Stations"));
   expectations_["Reservation-Stations"].addChild(
-      expectations_.create<uint64_t>(wildcard, 0));
+      ExpectationNode::createExpectation<uint64_t>(0, wildcard));
 
   expectations_["Reservation-Stations"][wildcard].addChild(
-      expectations_.create<uint64_t>("Size", 32));
+      ExpectationNode::createExpectation<uint64_t>(32, "Size"));
   expectations_["Reservation-Stations"][wildcard]["Size"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Reservation-Stations"][wildcard].addChild(
-      expectations_.create<uint64_t>("Dispatch-Rate", 4));
+      ExpectationNode::createExpectation<uint64_t>(4, "Dispatch-Rate"));
   expectations_["Reservation-Stations"][wildcard]["Dispatch-Rate"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Reservation-Stations"][wildcard].addChild(
-      expectations_.create<std::string>("Ports", "0"));
+      ExpectationNode::createExpectation<std::string>("0", "Ports"));
   expectations_["Reservation-Stations"][wildcard]["Ports"].setValueSet(
       portnames);
   expectations_["Reservation-Stations"][wildcard]["Ports"].setAsSequence();
 
   // Execution-Units
-  expectations_.addChild(expectations_.create("Execution-Units"));
+  expectations_.addChild(ExpectationNode::createExpectation("Execution-Units"));
   expectations_["Execution-Units"].addChild(
-      expectations_.create<uint64_t>(wildcard, 0));
+      ExpectationNode::createExpectation<uint64_t>(0, wildcard));
 
   expectations_["Execution-Units"][wildcard].addChild(
-      expectations_.create("Pipelined", true));
+      ExpectationNode::createExpectation<bool>(true, "Pipelined"));
   expectations_["Execution-Units"][wildcard]["Pipelined"].setValueSet(
       std::vector{false, true});
 
   expectations_["Execution-Units"][wildcard].addChild(
-      expectations_.create<std::string, true>("Blocking-Groups", "NONE"));
+      ExpectationNode::createExpectation<std::string>("NONE", "Blocking-Groups",
+                                                      true));
   expectations_["Execution-Units"][wildcard]["Blocking-Groups"].setValueSet(
       groupOptions_);
   expectations_["Execution-Units"][wildcard]["Blocking-Groups"].setAsSequence();
 
   // Latencies
-  expectations_.addChild(expectations_.create<true>("Latencies"));
+  expectations_.addChild(ExpectationNode::createExpectation("Latencies", true));
   expectations_["Latencies"].addChild(
-      expectations_.create<uint64_t>(wildcard, 0));
+      ExpectationNode::createExpectation<uint64_t>(0, wildcard));
 
   expectations_["Latencies"][wildcard].addChild(
-      expectations_.create<std::string, true>("Instruction-Groups", "NONE"));
+      ExpectationNode::createExpectation<std::string>(
+          "NONE", "Instruction-Groups", true));
   expectations_["Latencies"][wildcard]["Instruction-Groups"].setValueSet(
       groupOptions_);
   expectations_["Latencies"][wildcard]["Instruction-Groups"].setAsSequence();
 
   expectations_["Latencies"][wildcard].addChild(
-      expectations_.create<uint64_t, true>("Instruction-Opcodes", maxOpcode));
+      ExpectationNode::createExpectation<uint64_t>(
+          maxOpcode, "Instruction-Opcodes", true));
   expectations_["Latencies"][wildcard]["Instruction-Opcodes"]
       .setValueBounds<uint64_t>(0, maxOpcode);
   expectations_["Latencies"][wildcard]["Instruction-Opcodes"].setAsSequence();
 
   expectations_["Latencies"][wildcard].addChild(
-      expectations_.create<uint64_t>("Execution-Latency", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Execution-Latency"));
   expectations_["Latencies"][wildcard]["Execution-Latency"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   expectations_["Latencies"][wildcard].addChild(
-      expectations_.create<uint64_t, true>("Execution-Throughput", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Execution-Throughput",
+                                                   true));
   expectations_["Latencies"][wildcard]["Execution-Throughput"]
       .setValueBounds<uint64_t>(1, UINT16_MAX);
 
   // CPU-Info
-  expectations_.addChild(expectations_.create("CPU-Info"));
+  expectations_.addChild(ExpectationNode::createExpectation("CPU-Info"));
 
-  expectations_["CPU-Info"].addChild(
-      expectations_.create<bool, true>("Generate-Special-Dir", false));
+  expectations_["CPU-Info"].addChild(ExpectationNode::createExpectation<bool>(
+      false, "Generate-Special-Dir", true));
   expectations_["CPU-Info"]["Generate-Special-Dir"].setValueSet(
       std::vector{false, true});
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("Core-Count", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Core-Count", true));
   expectations_["CPU-Info"]["Core-Count"].setValueBounds<uint64_t>(1,
                                                                    UINT16_MAX);
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("Socket-Count", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Socket-Count", true));
   expectations_["CPU-Info"]["Socket-Count"].setValueSet<uint64_t>({1});
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("SMT", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "SMT", true));
   expectations_["CPU-Info"]["SMT"].setValueSet<uint64_t>({1});
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<float, true>("BogoMIPS", 0.f));
+      ExpectationNode::createExpectation<float>(0.f, "BogoMIPS", true));
   expectations_["CPU-Info"]["BogoMIPS"].setValueBounds(
       0.f, std::numeric_limits<float>::max());
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<std::string, true>("Features", ""));
+      ExpectationNode::createExpectation<std::string>("", "Features", true));
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<std::string, true>("CPU-Implementer", "0x0"));
+      ExpectationNode::createExpectation<std::string>("0x0", "CPU-Implementer",
+                                                      true));
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("CPU-Architecture", 0));
+      ExpectationNode::createExpectation<uint64_t>(0, "CPU-Architecture",
+                                                   true));
   expectations_["CPU-Info"]["CPU-Architecture"].setValueBounds<uint64_t>(
       0, UINT16_MAX);
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<std::string, true>("CPU-Variant", "0x0"));
+      ExpectationNode::createExpectation<std::string>("0x0", "CPU-Variant",
+                                                      true));
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<std::string, true>("CPU-Part", "0x0"));
+      ExpectationNode::createExpectation<std::string>("0x0", "CPU-Part", true));
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("CPU-Revision", 0));
+      ExpectationNode::createExpectation<uint64_t>(0, "CPU-Revision", true));
   expectations_["CPU-Info"]["CPU-Revision"].setValueBounds<uint64_t>(
       0, UINT16_MAX);
 
   expectations_["CPU-Info"].addChild(
-      expectations_.create<uint64_t, true>("Package-Count", 1));
+      ExpectationNode::createExpectation<uint64_t>(1, "Package-Count", true));
   expectations_["CPU-Info"]["Package-Count"].setValueBounds<uint64_t>(
       1, UINT16_MAX);
 }
 
-void ModelConfig::recursiveValidate(expectationNode expectation,
+void ModelConfig::recursiveValidate(ExpectationNode expectation,
                                     ryml::NodeRef node,
                                     std::string hierarchyString) {
   // Iterate over passed expectations
@@ -670,9 +695,10 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
         // An index value used in case of error
         std::string idx =
             std::string(rymlChld.key().data(), rymlChld.key().size());
-        std::string result = chld.validateConfigNode(rymlChld);
-        if (result != "Success")
-          invalid_ << "\t- " << hierarchyString + idx + " " + result + "\n";
+        ValidationResult result = chld.validateConfigNode(rymlChld);
+        if (result.errored)
+          invalid_ << "\t- "
+                   << hierarchyString + idx + " " + result.message + "\n";
         recursiveValidate(chld, rymlChld, hierarchyString + idx + ":");
       }
     } else if (node.has_child(ryml::to_csubstr(nodeKey))) {
@@ -685,20 +711,21 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
         // node
         int idx = 0;
         for (ryml::NodeRef grndChld : rymlChld) {
-          std::string result = chld.validateConfigNode(grndChld);
-          if (result != "Success")
+          ValidationResult result = chld.validateConfigNode(grndChld);
+          if (result.errored)
             invalid_ << "\t- "
                      << hierarchyString + nodeKey + ":" + std::to_string(idx) +
-                            " " + result + "\n";
+                            " " + result.message + "\n";
           idx++;
         }
       } else {
         // If the expectation node is not a sequence, validate the config
         // option against the current expectations and if it has children,
         // validate those recursively
-        std::string result = chld.validateConfigNode(rymlChld);
-        if (result != "Success")
-          invalid_ << "\t- " << hierarchyString + nodeKey + " " + result + "\n";
+        ValidationResult result = chld.validateConfigNode(rymlChld);
+        if (result.errored)
+          invalid_ << "\t- "
+                   << hierarchyString + nodeKey + " " + result.message + "\n";
         if (chld.getChildren().size()) {
           recursiveValidate(chld, rymlChld, hierarchyString + nodeKey + ":");
         }
@@ -709,9 +736,10 @@ void ModelConfig::recursiveValidate(expectationNode expectation,
       // config option is optional, a default value will be injected,
       // otherwise the validation will fail
       ryml::NodeRef rymlChld = node.append_child() << ryml::key(nodeKey);
-      std::string result = chld.validateConfigNode(rymlChld);
-      if (result != "Success")
-        invalid_ << "\t- " << hierarchyString + nodeKey + " " + result + "\n";
+      ValidationResult result = chld.validateConfigNode(rymlChld);
+      if (result.errored)
+        invalid_ << "\t- "
+                 << hierarchyString + nodeKey + " " + result.message + "\n";
     }
   }
 }

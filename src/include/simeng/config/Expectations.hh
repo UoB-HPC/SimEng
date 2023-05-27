@@ -10,6 +10,7 @@
 #include <queue>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <variant>
 
@@ -48,65 +49,92 @@
 namespace simeng {
 namespace config {
 
-/** An enum containing all supported data types that can be expected of a config
- * option. */
-enum ExpectedType { Bool, Double, Float, Integer, String, UInteger, Valueless };
+/** An enum containing all supported data types that can be expected of a
+ * config option. */
+enum class ExpectedType {
+  Bool,
+  Double,
+  Float,
+  Integer,
+  String,
+  UInteger,
+  Valueless
+};
 
 /** String to represent a wildcard node key. */
 const std::string wildcard = "*";
+
+/** A struct to hold whether the validation was an error and an accompanying
+ * outcome message. */
+struct ValidationResult {
+  bool errored;
+  std::string message;
+};
 
 /** A class to hold the expectations of a specific config option. Each class
  * is considered to be one node of a tree-like structure which maps onto the
  * hierarchical YAML structure of the passed/generated config file. Each node
  * can contain any number of children, each of which is another instance of the
- * `expectationNode` class for another config option. The expectation placed on
+ * `ExpectationNode` class for another config option. The expectation placed on
  * each config option can be defined as a type, a set of values to which it must
  * belong, and a set of bounds it must lie between. A default value is also
  * expected for the sake of default construction and generation of default
  * config files. The values of such expectations are held within a
  * `std::variant` which can hold one of the expected data types equivalent to
  * that held in the `ExpectedType` enum. */
-class expectationNode {
-  using dataTypeVariant =
+class ExpectationNode {
+ public:
+  using DataTypeVariant =
       std::variant<bool, double, float, int64_t, std::string, uint64_t>;
 
- public:
-  expectationNode(){};
+  /** A templated struct to store a boolean value denoting whether a passed
+   * typename T belongs to one types represented in ExpectedType. */
+  template <typename T>
+  struct is_expected_type
+      : std::integral_constant<bool, std::is_same<bool, T>::value ||
+                                         std::is_same<double, T>::value ||
+                                         std::is_same<float, T>::value ||
+                                         std::is_same<int64_t, T>::value ||
+                                         std::is_same<std::string, T>::value ||
+                                         std::is_same<uint64_t, T>::value> {};
 
-  ~expectationNode(){};
-
-  /** A templated function to allow for the creation of an `expectationNode`
-   * instance. The instance created is one with a value and a key. A key,
-   * default value, type, and a flag denoting whether the node is optional are
+  /** A templated function to allow for the creation of an `ExpectationNode`
+   * instance. The instance created is one with a value and a key. A default
+   * value, key, type, and a bool denoting whether the node is optional are
    * provided to the underlying constructor. */
-  template <typename T, bool optional = false>
-  expectationNode create(std::string key, T defaultValue) {
-    dataTypeVariant defValVariant = defaultValue;
+  template <typename T>
+  static ExpectationNode createExpectation(T defaultValue, std::string key,
+                                           bool optional = false) {
+    // Ensure templated type is of an expected type
+    static_assert(is_expected_type<T>::value &&
+                  "[SimEng:ModelConfig] Unexpected type given to "
+                  "ExpectationNode::create");
+    DataTypeVariant defValVariant = defaultValue;
     ExpectedType type = static_cast<ExpectedType>(defValVariant.index());
-    // The instance created must have a value so ensure the passed type reflects
-    // requirement
-    if (type == ExpectedType::Valueless) {
-      std::cerr << "[SimEng:ModelConfig] Cannot create a node with a default "
-                   "value and an expected "
-                   "type of `Valueless`"
-                << std::endl;
-      exit(1);
-    }
-    expectationNode node = expectationNode(key, type, optional);
+    ExpectationNode node = ExpectationNode(key, type, optional);
     node.setDefaultValue(defValVariant);
     return node;
   }
 
-  /** A templated function to allow for the creation of an `expectationNode`
-   * instance. The instance created is one with only a key. A key and a flag
-   * denoting whether the node is optional are provided to the underlying
-   * constructor. */
-  template <bool optional = false>
-  expectationNode create(std::string key) {
-    expectationNode node =
-        expectationNode(key, ExpectedType::Valueless, optional);
+  /** A templated function to allow for the creation of an `ExpectationNode`
+   * instance with a key but no associated value. A key and a bool denoting
+   * whether the node is optional are provided to the underlying constructor. */
+  static ExpectationNode createExpectation(std::string key,
+                                           bool optional = false) {
+    ExpectationNode node =
+        ExpectationNode(key, ExpectedType::Valueless, optional);
     return node;
   }
+
+  /** Constructor for ExpectationNode instances. */
+  ExpectationNode(std::string key, ExpectedType type, bool optional)
+      : nodeKey_(key), type_(type), isOptional_(optional) {
+    if (nodeKey_ == wildcard) isWild_ = true;
+  }
+
+  ExpectationNode(){};
+
+  ~ExpectationNode(){};
 
   /** A getter function to retrieve the key of a node. */
   std::string getKey() const { return nodeKey_; }
@@ -120,9 +148,9 @@ class expectationNode {
   /** A getter function to retrieve the value type of a node. */
   ExpectedType getType() const { return type_; }
 
-  /** A getter function to retrieve the child expectationNode instances of this
+  /** A getter function to retrieve the child ExpectationNode instances of this
    * node. */
-  std::vector<expectationNode> getChildren() const { return nodeChildren_; }
+  std::vector<ExpectationNode> getChildren() const { return nodeChildren_; }
 
   /** A getter function to retrieve whether the expectations should be applied
    * to a sequence of config values. */
@@ -134,42 +162,47 @@ class expectationNode {
   /** A utility function used by the class to get a value from a `std::variant`
    * with error handling if the passed type is not currently stored. */
   template <typename T>
-  T getByType(const dataTypeVariant& variant) const {
+  T getByType(const DataTypeVariant& variant) const {
+    // Ensure templated type is of an expected type
+    static_assert(is_expected_type<T>::value &&
+                  "[SimEng:ModelConfig] Unexpected type given to "
+                  "ExpectationNode::getByType");
+
     // Value existence check
     if (variant.valueless_by_exception()) {
       std::cerr << "[SimEng:ModelConfig] No value in passed variant within "
-                   "expectationNode with key "
+                   "ExpectationNode with key "
                 << nodeKey_ << std::endl;
       exit(1);
     }
     // Value type check
     if (!std::holds_alternative<T>(variant)) {
-      std::cerr << "[SimEng:ModelConfig] Value of given type not held in "
-                   "variant within expectationNode with key "
+      std::cerr << "[SimEng:ModelConfig] A value of given type not held in "
+                   "variant within ExpectationNode with key "
                 << nodeKey_ << ". Variant holds a "
                 << typeToString(variant.index())
                 << " and the expected type of this node is "
-                << typeToString(type_) << "." << std::endl;
+                << typeToString(static_cast<size_t>(type_)) << "." << std::endl;
       exit(1);
     }
     return std::get<T>(variant);
   }
 
-  /** A utility function for converting the type held in dataTypeVariant or the
+  /** A utility function for converting the type held in DataTypeVariant or the
    * value of type_ into a string via an index. */
   std::string typeToString(size_t index) const {
     switch (index) {
-      case ExpectedType::Bool:
+      case static_cast<size_t>(ExpectedType::Bool):
         return "bool";
-      case ExpectedType::Double:
+      case static_cast<size_t>(ExpectedType::Double):
         return "double";
-      case ExpectedType::Float:
+      case static_cast<size_t>(ExpectedType::Float):
         return "float";
-      case ExpectedType::Integer:
+      case static_cast<size_t>(ExpectedType::Integer):
         return "integer";
-      case ExpectedType::String:
+      case static_cast<size_t>(ExpectedType::String):
         return "string";
-      case ExpectedType::UInteger:
+      case static_cast<size_t>(ExpectedType::UInteger):
         return "unsigned integer";
     }
     return "unknown";
@@ -177,7 +210,7 @@ class expectationNode {
 
   /** Setter function to set the default value for this node's associated config
    * option. */
-  void setDefaultValue(dataTypeVariant var) { defaultValue_ = var; }
+  void setDefaultValue(DataTypeVariant var) { defaultValue_ = var; }
 
   /** Setter function to set the expected bounds for this node's associated
    * config option. */
@@ -194,13 +227,26 @@ class expectationNode {
   void setValueSet(std::vector<T> set) {
     definedSet_ = true;
     for (const T s : set) {
-      dataTypeVariant dtv = s;
+      DataTypeVariant dtv = s;
       expectedSet_.push_back(dtv);
     }
   }
 
   /** Add a child node to the vector of children within this node. */
-  void addChild(expectationNode chld) { nodeChildren_.push_back(chld); }
+  void addChild(ExpectationNode chld) {
+    // Ensure that if the new child is wild, one does not already exist in this
+    // instance's children
+    if (chld.getKey() == wildcard) {
+      if (hasWild_) {
+        std::cerr << "[SimEng:ModelConfig] Attempted to add multiple wild "
+                     "nodes to the same ExpectationNode instance of key "
+                  << nodeKey_ << std::endl;
+        exit(1);
+      }
+      hasWild_ = true;
+    }
+    nodeChildren_.push_back(chld);
+  }
 
   /** A setter function which denotes this node's expectations should be applied
    * to a sequence of config values. */
@@ -208,15 +254,14 @@ class expectationNode {
 
   /** An intermediary function which sets the expectations that the passed
    * config option should be checked against. */
-  std::string validateConfigNode(ryml::NodeRef node) {
+  ValidationResult validateConfigNode(ryml::NodeRef node) {
     // If the node is a wild, then only a key will exist in the validation
     // check
     if (isWild_) {
-      std::string retStr = "Success";
       if (!node.has_key()) {
-        retStr = "has no key";
+        return {true, "has no key"};
       }
-      return retStr;
+      return {false, "Success"};
     } else {
       // Continue to validate the passed config option based on the held
       // expected type
@@ -236,11 +281,10 @@ class expectationNode {
         case ExpectedType::Valueless: {
           // If the node has no value, then only a key will exist in the
           // validation check
-          std::string retStr = "Success";
           if (!node.has_key() && !isOptional_) {
-            retStr = "has no key";
+            return {true, "has no key"};
           }
-          return retStr;
+          return {false, "Success"};
         }
       }
     }
@@ -249,7 +293,7 @@ class expectationNode {
   /** A function to validate a passed config option against held expectations.
    */
   template <typename T>
-  std::string validateConfigNodeWithType(ryml::NodeRef node) {
+  ValidationResult validateConfigNodeWithType(ryml::NodeRef node) {
     // Value existence check
     if (!node.has_val()) {
       // If the node is optional, fill in the missing config
@@ -263,7 +307,7 @@ class expectationNode {
           node << getByType<T>(defaultValue_);
         }
       } else {
-        return "has no value";
+        return {true, "has no value"};
       }
     }
 
@@ -290,7 +334,7 @@ class expectationNode {
           if (i < expectedSet_.size() - 1) retStr << ", ";
         }
         retStr << "}";
-        return retStr.str();
+        return {true, retStr.str()};
       }
     }
 
@@ -302,18 +346,18 @@ class expectationNode {
         retStr << nodeVal << " not in the bounds {"
                << getByType<T>(expectedBounds_.first) << " to "
                << getByType<T>(expectedBounds_.second) << "}";
-        return retStr.str();
+        return {true, retStr.str()};
       }
     }
 
-    return "Success";
+    return {false, "Success"};
   }
 
   /** Search through the held children to find a node with the key `childKey`.
    * If no `childKey` can be found, then it is considered to be fatal for the
    * simulation. However, if a wild node is present within the children,
    * then return said child. */
-  expectationNode& operator[](std::string childKey) {
+  ExpectationNode& operator[](std::string childKey) {
     int wildIndex = -1;
     // Search children for childKey and record latest wildcard children
     for (size_t chld = 0; chld < nodeChildren_.size(); chld++) {
@@ -334,13 +378,7 @@ class expectationNode {
   }
 
  private:
-  /** Constructor for expectationNode instances. */
-  expectationNode(std::string key, ExpectedType type, bool optional)
-      : nodeKey_(key), type_(type), isOptional_(optional) {
-    if (nodeKey_ == wildcard) isWild_ = true;
-  }
-
-  /** The key of this node used for indexing the tree-like expectationNode
+  /** The key of this node used for indexing the tree-like ExpectationNode
    * structure. */
   std::string nodeKey_ = "INVALID";
 
@@ -357,14 +395,18 @@ class expectationNode {
    * key). All values are validated against this node's expectations. */
   bool isSequence_ = false;
 
-  /** Whether this instance of expectationNode is wild. If true, then when
-   * indexing this instance of expectationNode, any passed key will match. This
+  /** Whether this instance of ExpectationNode is wild. If true, then when
+   * indexing this instance of ExpectationNode, any passed key will match. This
    * is primarily used when one config option has many "child" values or YAML
    * structures which follow the same pattern. */
   bool isWild_ = false;
 
+  /** Whether this instance of ExpectationNode has a child node which is wild.
+   * Each parent node can only have one wild node in its children. */
+  bool hasWild_ = false;
+
   /** The default value for the associated config option. */
-  dataTypeVariant defaultValue_;
+  DataTypeVariant defaultValue_;
 
   /** Whether a value set has been defined as part of the expectation for the
    * associated config option. */
@@ -372,7 +414,7 @@ class expectationNode {
 
   /** The set of values the associated config option is expected to belong to.
    */
-  std::vector<dataTypeVariant> expectedSet_;
+  std::vector<DataTypeVariant> expectedSet_;
 
   /** Whether a value bounds have been defined as part of the expectation for
    * the associated config option. */
@@ -380,11 +422,11 @@ class expectationNode {
 
   /** The value bounds the associated config option is expected to lie between.
    */
-  std::pair<dataTypeVariant, dataTypeVariant> expectedBounds_;
+  std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_;
 
-  /** The instances of expectationNode's held within this node. Considered to be
+  /** The instances of ExpectationNode's held within this node. Considered to be
    * the children of this node. */
-  std::vector<expectationNode> nodeChildren_;
+  std::vector<ExpectationNode> nodeChildren_;
 };
 
 }  // namespace config

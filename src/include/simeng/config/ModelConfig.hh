@@ -20,10 +20,7 @@ namespace simeng {
 namespace config {
 
 /** Enum representing the possible ISAs. */
-enum ISA { AArch64, RV64 };
-
-// Forward declaration for SimInfo.
-class SimInfo;
+enum class ISA { AArch64, RV64 };
 
 /** A class to correctly validate and format the provided
  * configuration YAML file. */
@@ -59,7 +56,7 @@ class ModelConfig {
   /** Construct a default config file within `configTree_` from the default
    * value information held within `expectations`. A `root_id` is supplied as an
    * index for adding new config options to the `configTree` ryml::Tree. */
-  void constructDefault(expectationNode expectations, size_t root_id);
+  void constructDefault(ExpectationNode expectations, size_t root_id);
 
   /** A utility function to recursively iterate over the passed NodeRef and its
    * children and add them to the held config file `configTree_`. A `id` is
@@ -67,16 +64,16 @@ class ModelConfig {
    * ryml::Tree. */
   void recursiveAdd(ryml::NodeRef node, size_t id);
 
-  /** Create the expectationNode tree-like structure `expectations_` which holds
+  /** Create the ExpectationNode tree-like structure `expectations_` which holds
    * all expectations on the values of passed/created config files. */
   void setExpectations(bool isDefault = false);
 
   /** A utility function to recursively iterate over all instances of
-   * expectationNode in `expectations` and the values within the config file,
-   * calling expectationNode validate functionality on each associated config
+   * ExpectationNode in `expectations` and the values within the config file,
+   * calling ExpectationNode validate functionality on each associated config
    * option. A `hierarchyString` is used for printouts concerning errored
    * validation. */
-  void recursiveValidate(expectationNode expectation, ryml::NodeRef node,
+  void recursiveValidate(ExpectationNode expectation, ryml::NodeRef node,
                          std::string hierarchyString = "");
 
   /** A set of formatting and checks performed on the config file after its
@@ -102,7 +99,7 @@ class ModelConfig {
 
   /** The first node of the tree-like structure containing the expectations of
    * all config options used within the simulation. */
-  expectationNode expectations_ = expectationNode();
+  ExpectationNode expectations_ = ExpectationNode();
 
   /** The ISA specific vector of instruction group strings for matching
    * against user inputted groups. */
