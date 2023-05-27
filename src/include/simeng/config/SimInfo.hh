@@ -14,7 +14,7 @@ namespace config {
 #define DEFAULT_STR "Default"
 
 /** Enum representing the possible simulation modes. */
-enum simMode { emulation, inorder, outoforder };
+enum class simMode { emulation, inorder, outoforder };
 
 /** A SimInfo class to hold values, specified by the constructed ryml::Tree
  * object in the ModelConfig class and manually, used after the instantiation of
@@ -46,6 +46,9 @@ class SimInfo {
     else if (isa == config::ISA::RV64)
       getInstance()->mdlCnf_.reGenerateDefault(ISA::RV64, force);
 
+    // Update config path to be the default string
+    getInstance()->setConfigPath(DEFAULT_STR);
+
     // Replace the validated config with the new default config
     getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
     // Update previously extracted values from the config file
@@ -63,6 +66,11 @@ class SimInfo {
 
   /** A getter function to retrieve the config file path. */
   static std::string getConfigPath() { return getInstance()->configFilePath_; }
+
+  /** A setter function to set the config file path. */
+  static std::string setConfigPath(std::string path) {
+    return getInstance()->configFilePath_ = path;
+  }
 
   /** A getter function to retrieve the simulation mode of the current SimEng
    * instance. */
@@ -130,6 +138,10 @@ class SimInfo {
   void makeConfig(std::string path) {
     // Recreate the model config instance from the YAML file path
     mdlCnf_ = simeng::config::ModelConfig(path);
+
+    // Update config path to be the passed path
+    configFilePath_ = path;
+
     // Update the validated config file
     validatedConfig_ = mdlCnf_.getConfig();
     extractValues();
