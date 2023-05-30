@@ -438,7 +438,7 @@ void LoadStoreQueue::tick() {
 
   // Add newly resolved loads to requested load queues
   for (auto load : resolvedConflicts) {
-    // Add additional tick to latency incase LSQLatency = 0
+    // Add additional tick to start load next cycle.
     requestLoadQueue_[tickCounter_ + 1 + load->getLSQLatency()].push_back(load);
     requestedLoads_.emplace(load->getSequenceId(), load);
   }
