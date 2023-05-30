@@ -91,7 +91,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     n++;
   }
 
-  for (n; n < maxCommits; n++) {
+  for (; n < maxCommits; n++) {
     auto& uop = buffer_.front();
 
     if (uop->exceptionEncountered()) {
