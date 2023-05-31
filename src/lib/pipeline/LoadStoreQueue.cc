@@ -121,10 +121,6 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
       }
     }
     // No conflict found, process load
-    std::queue<memory::MemoryAccessTarget> targets;
-    for (auto const& addr : ld_addresses) {
-      targets.emplace(addr);
-    }
     requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(insn);
     // Register active load
     requestedLoads_.emplace(insn->getSequenceId(), insn);

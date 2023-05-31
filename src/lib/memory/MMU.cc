@@ -95,10 +95,10 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   if (exclusiveRequests_ && (loadsStores_[STR].size() != 0)) return false;
   // Check total limit isn't met if not exclusive
   if (!exclusiveRequests_ &&
-      (loadsStores_[LD].size() + loadsStores_[STR].size() == requestLimit_))
+      (loadsStores_[LD].size() + loadsStores_[STR].size() >= requestLimit_))
     return false;
   // Check space left for a load
-  if (loadsStores_[LD].size() == loadRequestLimit_) return false;
+  if (loadsStores_[LD].size() >= loadRequestLimit_) return false;
 
   uint64_t seqId = uop->getSequenceId();
 
@@ -130,10 +130,10 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   if (exclusiveRequests_ && (loadsStores_[LD].size() != 0)) return false;
   // Check total limit isn't met if not exclusive
   if (!exclusiveRequests_ &&
-      (loadsStores_[LD].size() + loadsStores_[STR].size() == requestLimit_))
+      (loadsStores_[LD].size() + loadsStores_[STR].size() >= requestLimit_))
     return false;
   // Check space left for a store
-  if (loadsStores_[STR].size() == storeRequestLimit_) return false;
+  if (loadsStores_[STR].size() >= storeRequestLimit_) return false;
 
   bool isConditional = uop->isStoreCond();
   if (isConditional) {
