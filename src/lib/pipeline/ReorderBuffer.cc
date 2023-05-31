@@ -142,6 +142,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
+      // TODO: If aqcuire, flush
     }
     if (uop->isStoreAddress()) {
       bool violationFound = lsq_.commitStore(uop);
