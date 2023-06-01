@@ -34,9 +34,15 @@ struct CacheLatencyPacket {
   /** Clock cycle at which the memory request can be processed. endLatency of 0
    * signifies immediate processing. */
   uint64_t endLatency = 0;
+  /** This is the index of cache line which is evicted or fetched. */
+  uint16_t clineIdx = -1;
   /** Constructor for CacheLatencyPacket. */
   CacheLatencyPacket(RequestBufferIndex idx, uint64_t endLat)
-      : reqBufIdx(idx), endLatency(endLat) {}
+      : reqBufIdx(idx), endLatency(endLat), clineIdx(-1) {}
+  /** Constructor for CacheLatencyPacket. */
+  CacheLatencyPacket(RequestBufferIndex idx, uint64_t endLat,
+                     uint64_t cacheLineIdx)
+      : reqBufIdx(idx), endLatency(endLat), clineIdx(cacheLineIdx) {}
 };
 
 /** The CacheLatencyInfo struct holds values for all latencies to be applied on

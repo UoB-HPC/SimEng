@@ -114,10 +114,10 @@ class SetAssosciativeCache : public Cache {
   AccessInfo checkHit(std::unique_ptr<MemPacket>& pkt);
 
   /** Function used to read from a cache line. */
-  void doRead(std::unique_ptr<MemPacket>& req);
+  void doRead(std::unique_ptr<MemPacket>& req, uint16_t clineIdx);
 
   /** Function used to write to a cache line. */
-  void doWrite(std::unique_ptr<MemPacket>& req);
+  void doWrite(std::unique_ptr<MemPacket>& req, uint16_t clineIdx);
 
   /** Function used to handle response from the bottom port i.e from lower level
    * of memory.*/

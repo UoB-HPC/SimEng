@@ -102,6 +102,32 @@ class RegisterValue {
     }
   }
 
+  template <class T>
+  const T* begin() const {
+    return getAsVector<T>();
+  }
+
+  template <class T>
+  const T* end() const {
+    return getAsVector<T>() + bytes;
+  }
+
+  template <>
+  const char* begin<char>() const {
+    if (isLocal()) {
+      return value;
+    }
+    return ptr.get();
+  }
+
+  template <>
+  const char* end<char>() const {
+    if (isLocal()) {
+      return value + bytes;
+    }
+    return ptr.get() + bytes;
+  }
+
   /** Retrieve the number of bytes stored. */
   constexpr size_t size() const { return bytes; }
 
