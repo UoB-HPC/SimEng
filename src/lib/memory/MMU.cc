@@ -79,7 +79,7 @@ void MMU::processRequests(const bool isStore) {
           if (pkt + 1 == insn->end()) {
             const auto& str = requestedStores_.find((*pkt)->insnSeqId_);
             assert(str != requestedStores_.end() && "[SimEng:MMU] Tried.");
-            // Set as read to commit if the store is non-conditional. Store
+            // Set as ready to commit if the store is non-conditional. Store
             // conditional operations have to pass through the writeback unit
             // again before commitment (thus delay setting as ready to commit)
             if (!str->second->isStoreCond()) str->second->setCommitReady();

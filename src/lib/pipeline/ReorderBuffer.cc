@@ -72,7 +72,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
 
   unsigned int n = 0;
-
   for (; n < maxCommits; n++) {
     auto& uop = buffer_.front();
 
