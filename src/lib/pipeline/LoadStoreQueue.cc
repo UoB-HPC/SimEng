@@ -487,9 +487,5 @@ std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {
 
 bool LoadStoreQueue::isCombined() const { return combined_; }
 
-bool LoadStoreQueue::hasPendingStores() const {
-  return !(requestStoreQueue_.size() == 0);
-}
-
 }  // namespace pipeline
 }  // namespace simeng
