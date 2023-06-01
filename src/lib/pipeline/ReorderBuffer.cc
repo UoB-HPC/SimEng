@@ -72,24 +72,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
 
   unsigned int n = 0;
-  if (inFlightCondStr_ != nullptr) {
-    // Check if conditional store result is ready
-    if (!completedCondStr_) {
-      completedCondStr_ =
-          lsq_.checkCondStore(inFlightCondStr_->getSequenceId());
-      // Return early to ensure result is written back to reg file when
-      // storeCompleted = true
-      return 0;
-    }
-    // Commit destination registers
-    const auto& destinations = inFlightCondStr_->getDestinationRegisters();
-    for (int i = 0; i < destinations.size(); i++) {
-      rat_.commit(destinations[i]);
-    }
-    inFlightCondStr_ = nullptr;
-    completedCondStr_ = false;
-    n++;
-  }
 
   for (; n < maxCommits; n++) {
     auto& uop = buffer_.front();
@@ -115,24 +97,18 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
-
-    // Check conditional store as logic is different from regular store
-    if (uop->isStoreCond()) {
-      bool violationFound = lsq_.commitStore(uop);
-      if (violationFound) {
-        loadViolations_++;
-        // Memory order violation found; aborting commits and flushing
-        auto load = lsq_.getViolatingLoad();
-        shouldFlush_ = true;
-        flushAfter_ = load->getInstructionId() - 1;
-        pc_ = load->getInstructionAddress();
-      }
-      inFlightCondStr_ = buffer_.front();
-      buffer_.pop_front();
-      // Will take minimum 1 cycle for response to be ready, return early
+    // If the uop is a store address operation, begin the processing of its
+    // memory accesses
+    if (uop->isStoreAddress() && !startedStore_) {
+      // Reset commit ready status until the store's memory accesses have been
+      // sent from the MMU
+      uop->setCommitReady(false);
+      lsq_.startStore(uop);
+      startedStore_ = true;
       return n;
     }
+
+    if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     const auto& destinations = uop->getDestinationRegisters();
     for (int i = 0; i < destinations.size(); i++) {
@@ -145,6 +121,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       // TODO: If aqcuire, flush
     }
     if (uop->isStoreAddress()) {
+      startedStore_ = false;
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
         loadViolations_++;

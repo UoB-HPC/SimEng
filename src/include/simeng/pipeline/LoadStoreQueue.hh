@@ -61,20 +61,19 @@ class LoadStoreQueue {
   /** Add a store uop to the queue. */
   void addStore(const std::shared_ptr<Instruction>& insn);
 
-  /** Add the load instruction's memory requests to the requestQueue_. */
+  /** Add the load instruction's memory requests to the requestLoadQueue_. */
   void startLoad(const std::shared_ptr<Instruction>& insn);
 
   /** Supply the data to be stored by a store operation. */
   void supplyStoreData(const std::shared_ptr<Instruction>& insn);
 
+  /** Add the store instruction's memory requests to the requestStoreQueue_. */
+  void startStore(const std::shared_ptr<Instruction>& uop);
+
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
    * memory order violation during the commit. */
   bool commitStore(const std::shared_ptr<Instruction>& uop);
-
-  /** Checks if a given conditional store has finished executing and has its
-   * result ready to commit. */
-  bool checkCondStore(const uint64_t sequenceId);
 
   /** Remove the oldest load instruction from the load queue. */
   void commitLoad(const std::shared_ptr<Instruction>& uop);

@@ -142,6 +142,10 @@ class ReorderBuffer {
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
 
+  /** Whether a store, at the front of the ROB, has memory accesses currently
+   * being processed. */
+  bool startedStore_ = false;
+
   /** The conditional store which is in-flight, waiting for its response. */
   std::shared_ptr<Instruction> inFlightCondStr_ = nullptr;
 

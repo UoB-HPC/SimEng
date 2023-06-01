@@ -91,6 +91,11 @@ class MMU {
    * Value = Instruction */
   std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
+  /** A map containing all store instructions waiting for their results.
+   * Key = Instruction sequenceID
+   * Value = Instruction */
+  std::map<uint64_t, std::shared_ptr<Instruction>> requestedStores_;
+
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
 

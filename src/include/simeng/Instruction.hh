@@ -132,8 +132,8 @@ class Instruction {
    * write back. */
   bool hasExecuted() const { return executed_; }
 
-  /** Mark the instruction as ready to commit. */
-  void setCommitReady() { canCommit_ = true; }
+  /** Mark the instruction commit status. */
+  void setCommitReady(bool canCommit = true) { canCommit_ = canCommit; }
 
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
