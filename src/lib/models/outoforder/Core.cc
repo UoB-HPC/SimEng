@@ -43,14 +43,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
-          },
-          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
-              .as<uint16_t>()),
+          }),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
                  branchPredictor),

@@ -20,36 +20,24 @@ bool requestsOverlap(memory::MemoryAccessTarget a,
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint16_t permittedRequests, uint16_t permittedLoads,
-    uint16_t permittedStores)
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
-      mmu_(mmu),
-      exclusive_(exclusive),
-      totalLimit_(permittedRequests),
-      // Set per-cycle limits for each request type
-      reqLimits_{permittedLoads, permittedStores} {};
+      mmu_(mmu){};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint16_t permittedRequests, uint16_t permittedLoads,
-    uint16_t permittedStores)
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
-      mmu_(mmu),
-      exclusive_(exclusive),
-      totalLimit_(permittedRequests),
-      // Set per-cycle limits for each request type
-      reqLimits_{permittedLoads, permittedStores} {};
+      mmu_(mmu){};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
@@ -413,7 +401,6 @@ void LoadStoreQueue::tick() {
   // and pass to writeback
   if (requestedCondStore_ != nullptr) {
     if (requestedCondStore_->isCondResultReady()) {
-      completedConditionalStore_ = requestedCondStore_->getSequenceId();
       // Forward result. Given only 1 conditional store can be processed at a
       // time (as it can only be sent when at the front of the ROB, and blocks
       // further commits until the result has been returned), there is

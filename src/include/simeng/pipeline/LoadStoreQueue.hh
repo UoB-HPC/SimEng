@@ -26,10 +26,7 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t permittedRequests = UINT16_MAX,
-      uint16_t permittedLoads = UINT16_MAX,
-      uint16_t permittedStores = UINT16_MAX);
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
    * load and store instructions, supplying completion slots for loads and an
@@ -38,10 +35,7 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t permittedRequests = UINT16_MAX,
-      uint16_t permittedLoads = UINT16_MAX,
-      uint16_t permittedStores = UINT16_MAX);
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
   /** Retrieve the available space for load uops. For combined queue this is the
    * total remaining space. */
@@ -168,19 +162,6 @@ class LoadStoreQueue {
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
-
-  /** A completed comditional store's sequenceID ready for writeback & commit.
-   */
-  uint64_t completedConditionalStore_ = -1;
-
-  /** Whether the LSQ can only process loads xor stores within a cycle. */
-  bool exclusive_;
-
-  /** The combined limit of loads and store requests permitted per cycle. */
-  uint16_t totalLimit_;
-
-  /** The number of loads and stores permitted per cycle. */
-  std::array<uint16_t, 2> reqLimits_;
 };
 
 }  // namespace pipeline

@@ -314,6 +314,7 @@ TEST_P(LoadStoreQueueTest, Store) {
   // Check that MMU has no requests
   EXPECT_EQ(mmu->hasPendingRequests(), false);
 
+  queue.startStore(storeUopPtr);
   queue.commitStore(storeUopPtr);
   // Tick the queue to complete the store
   queue.tick();

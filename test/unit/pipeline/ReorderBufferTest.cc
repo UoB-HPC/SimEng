@@ -188,9 +188,6 @@ TEST_F(ReorderBufferTest, CommitStore) {
 
   reorderBuffer.commit(1);
 
-  // Check that the store was committed and removed from the LSQ
-  EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
-
   // Tick lsq to trigger store request
   lsq.tick();
   EXPECT_EQ(mmu->hasPendingRequests(), true);
@@ -199,6 +196,11 @@ TEST_F(ReorderBufferTest, CommitStore) {
   mmu->tick();
   EXPECT_EQ(mmu->hasPendingRequests(), false);
   EXPECT_EQ(memory->getUntimedData(0, 1)[0], (uint8_t)1);
+
+  reorderBuffer.commit(1);
+
+  // Check that the store was committed and removed from the LSQ
+  EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
 }
 
 // Tests that the reorder buffer correctly conditionally flushes instructions
