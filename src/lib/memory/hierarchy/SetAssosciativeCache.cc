@@ -79,9 +79,9 @@ void SetAssosciativeCache::tick() {
     auto& cpkt = mshrSecondaryQueue_.front();
     auto& req = requestBuffer_[cpkt.reqBufIdx];
     if (req->isRead()) {
-      doRead(req);
+      doRead(req, cpkt.clineIdx);
     } else {
-      doWrite(req);
+      doWrite(req, cpkt.clineIdx);
     }
     queueToTopLevel_.push(cpkt);
     mshrSecondaryQueue_.pop();
@@ -91,7 +91,7 @@ void SetAssosciativeCache::tick() {
   while (mshrPrimaryReqs_.size() && itr != mshrPrimaryReqs_.end()) {
     auto& clatpkt = *itr;
     auto& req = requestBuffer_[clatpkt.reqBufIdx];
-    auto& cline = cacheLines_[req->cinfo.clineIdx];
+    auto& cline = cacheLines_[clatpkt.clineIdx];
 
     if (!cline.isBusy()) {
       auto& mshrReg = mshr_.getMshrReg(req->cinfo.basePaddr, clw_);
@@ -122,8 +122,7 @@ void SetAssosciativeCache::tick() {
 
     if (info.hit && info.valid) {
       uint64_t latency = ticks_ + latencyInfo_.accessLatency;
-      req->cinfo.clineIdx = info.lineIdx;
-      hitQueue_.push({reqBufferIdx, latency});
+      hitQueue_.push({reqBufferIdx, latency, info.lineIdx});
       waitQueue_.pop();
       continue;
     }
@@ -141,13 +140,13 @@ void SetAssosciativeCache::tick() {
       uint16_t clineIdx = clineIdxInSet + (set * assosciativity_);
       auto& cline = cacheLines_[clineIdx];
 
-      req->cinfo.clineIdx = clineIdx;
       req->cinfo.clineAddr = cline.getPaddr();
 
       // Construct the AccessInfo struct and determine if replacement is dirty.
       info = {cline.isValid(), cline.isDirty(), false, clineIdx};
 
       if (cline.isBusy()) {
+        clatpkt.clineIdx = clineIdx;
         mshr_.allocateMshr(reqBufferIdx, basePaddr, clw_, info, true);
         mshrPrimaryReqs_.push_back(clatpkt);
         waitQueue_.pop();
@@ -179,9 +178,9 @@ void SetAssosciativeCache::tick() {
     auto& clatpkt = hitQueue_.front();
     auto& req = requestBuffer_[clatpkt.reqBufIdx];
     if (req->isRead()) {
-      doRead(req);
+      doRead(req, clatpkt.clineIdx);
     } else {
-      doWrite(req);
+      doWrite(req, clatpkt.clineIdx);
     }
     queueToTopLevel_.push(clatpkt);
     hitQueue_.pop();
@@ -196,9 +195,9 @@ void SetAssosciativeCache::tick() {
   }
 }
 
-void SetAssosciativeCache::doRead(std::unique_ptr<MemPacket>& memPkt) {
+void SetAssosciativeCache::doRead(std::unique_ptr<MemPacket>& memPkt,
+                                  uint16_t clineIdx) {
   // TODO: assert size assert
-  uint16_t clineIdx = memPkt->cinfo.clineIdx;
   auto& cline = cacheLines_[clineIdx];
   uint16_t byteOffset = tagScheme_->calcByteOffset(memPkt);
   uint16_t setNum = tagScheme_->calcSetIndex(memPkt);
@@ -207,9 +206,9 @@ void SetAssosciativeCache::doRead(std::unique_ptr<MemPacket>& memPkt) {
   replacementPolicy_.updateUsage(setNum, clineIdx);
 }
 
-void SetAssosciativeCache::doWrite(std::unique_ptr<MemPacket>& memPkt) {
+void SetAssosciativeCache::doWrite(std::unique_ptr<MemPacket>& memPkt,
+                                   uint16_t clineIdx) {
   // TODO: assert size assert
-  uint16_t clineIdx = memPkt->cinfo.clineIdx;
   auto& cline = cacheLines_[clineIdx];
   uint16_t byteOffset = tagScheme_->calcByteOffset(memPkt);
   uint16_t setNum = tagScheme_->calcSetIndex(memPkt);
@@ -237,7 +236,7 @@ void SetAssosciativeCache::handleResponseFromBottomPort(
   primaryEntry.reqBufIdx = requestBuffer_.allocate(pkt);
 
   for (auto& mshrEntry : mshrReg.entries) {
-    mshrSecondaryQueue_.push({mshrEntry.reqBufIdx, 0});
+    mshrSecondaryQueue_.push({mshrEntry.reqBufIdx, 0, clineIdx});
   }
 }
 

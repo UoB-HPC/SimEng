@@ -22,8 +22,6 @@ struct CacheInfo {
   uint64_t basePaddr = 0;
   /** size is an alias of cache line width. */
   uint16_t size = 0;
-  /** This is the index of cache line which is evicted or fetched. */
-  uint16_t clineIdx = -1;
   /** This signifies if the cache line is dirty. */
   bool dirty = false;
   /** This vector carries the data of cache line being evicted. It is empty
