@@ -73,6 +73,19 @@ void MMU::processRequests(const bool isStore) {
     while (pkt != insn->end()) {
       // Check that sending this packet won't exceed bandwidth
       if ((bandwidthUsed + (*pkt)->size_) <= bandwidthLimit) {
+        // If the request is a store, and is the last packet associated with
+        // this instruction, set the store to be ready to commit
+        if (isStore) {
+          if (pkt + 1 == insn->end()) {
+            const auto& str = requestedStores_.find((*pkt)->insnSeqId_);
+            assert(str != requestedStores_.end() && "[SimEng:MMU] Tried.");
+            // Set as read to commit if the store is non-conditional. Store
+            // conditional operations have to pass through the writeback unit
+            // again before commitment (thus delay setting as ready to commit)
+            if (!str->second->isStoreCond()) str->second->setCommitReady();
+            requestedStores_.erase(str);
+          }
+        }
         bandwidthUsed += (*pkt)->size_;
         issueRequest(std::move(*pkt));
         pkt = insn->erase(pkt);
@@ -145,6 +158,9 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
       uop->updateCondStoreResult(true);
     }
   }
+
+  // Register store in map
+  requestedStores_[uop->getSequenceId()] = uop;
 
   // Initialise space in stores
   loadsStores_[STR].push_back({});
