@@ -32,14 +32,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto regs, auto values) {
             issueUnit_.forwardOperands(regs, values);
           },
-          simeng::pipeline::CompletionOrder::INORDER,
-          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
-              .as<uint16_t>()),
+          simeng::pipeline::CompletionOrder::INORDER),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
                  branchPredictor),
@@ -53,7 +46,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto reg) { issueUnit_.setRegisterReady(reg); },
-          [this](auto seqId) { return staging_.canWriteback(seqId); },
+          [this](auto seqId) { return canWriteback(seqId); },
           [this](auto insn) { retireInstruction(insn); }),
       portAllocator_(portAllocator),
       handleSyscall_(handleSyscall) {
@@ -133,6 +126,16 @@ void Core::tick() {
   }
   loadStoreQueue_.tick();
 
+  // If there is an active store, query whether its ready to commit
+  if (activeStore_) {
+    if (completedStoreAddrUops_.front()->canCommit()) {
+      activeStore_ = false;
+      loadViolation_ =
+          loadStoreQueue_.commitStore(completedStoreAddrUops_.front());
+      completedStoreAddrUops_.pop();
+    }
+  }
+
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after
   // use, as these will now loop around and become the tail.
@@ -156,17 +159,30 @@ void Core::tick() {
 
 void Core::flushIfNeeded() {
   // Check for flush
-  bool euFlush = false;
+  bool shouldFlush = false;
   uint64_t targetAddress = 0;
   uint64_t lowestInsnId = 0;
   for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
-      euFlush = true;
+    if (eu.shouldFlush() &&
+        (!shouldFlush || eu.getFlushInsnId() < lowestInsnId)) {
+      shouldFlush = true;
       lowestInsnId = eu.getFlushInsnId();
       targetAddress = eu.getFlushAddress();
     }
   }
-  if (euFlush) {
+  // If a load violation has been detected, flush from the voilating load iff
+  // it's older than any flushes in the EUs
+  if (loadViolation_) {
+    loadViolations_++;
+    // Memory order violation found; flushing
+    auto load = loadStoreQueue_.getViolatingLoad();
+    if (!shouldFlush || (load->getInstructionId() - 1) < lowestInsnId) {
+      lowestInsnId = load->getInstructionId() - 1;
+      targetAddress = load->getInstructionAddress();
+      shouldFlush = true;
+    }
+  }
+  if (shouldFlush) {
     // Flush was requested at execute stage
     // Update PC and wipe pipeline buffers/units
 
@@ -276,6 +292,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+          {"lsq.loadViolations", std::to_string(loadViolations_)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
@@ -363,6 +380,13 @@ void Core::processException() {
   exceptionRegistered_ = false;
 }
 
+bool Core::canWriteback(uint64_t seqId) {
+  // If there's an active store in progress, no other instruction can be
+  // written-back
+  if (activeStore_) return false;
+  return staging_.canWriteback(seqId);
+}
+
 void Core::retireInstruction(const std::shared_ptr<Instruction>& insn) {
   // Raise an exception if the recently written back instruction has generated
   // one
@@ -386,8 +410,13 @@ void Core::retireInstruction(const std::shared_ptr<Instruction>& insn) {
                 insn->getMicroOpIndex()) &&
            "[SimEng:Core] Attempted to complete a store macro-op out of "
            "program order");
-    loadStoreQueue_.commitStore(completedStoreAddrUops_.front());
-    completedStoreAddrUops_.pop();
+    // Start the store and flag an ongoing/active store if it can't instantly
+    // commit
+    loadStoreQueue_.startStore(completedStoreAddrUops_.front());
+    if (!completedStoreAddrUops_.front()->canCommit()) {
+      activeStore_ = true;
+    } else
+      completedStoreAddrUops_.pop();
   }
 
   staging_.recordRetired(insn->getSequenceId());

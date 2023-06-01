@@ -21,37 +21,27 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    CompletionOrder completionOrder, bool exclusive, uint16_t permittedRequests,
-    uint16_t permittedLoads, uint16_t permittedStores)
+    CompletionOrder completionOrder)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       mmu_(mmu),
-      completionOrder_(completionOrder),
-      exclusive_(exclusive),
-      totalLimit_(permittedRequests),
-      // Set per-cycle limits for each request type
-      reqLimits_{permittedLoads, permittedStores} {};
+      completionOrder_(completionOrder){};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    CompletionOrder completionOrder, bool exclusive, uint16_t permittedRequests,
-    uint16_t permittedLoads, uint16_t permittedStores)
+    CompletionOrder completionOrder)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
       mmu_(mmu),
-      completionOrder_(completionOrder),
-      exclusive_(exclusive),
-      totalLimit_(permittedRequests),
-      // Set per-cycle limits for each request type
-      reqLimits_{permittedLoads, permittedStores} {};
+      completionOrder_(completionOrder){};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
@@ -89,6 +79,8 @@ void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
   loadQueue_.push_back(insn);
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
+  // std::cerr << "ADDED STORE " << std::hex << insn->getInstructionAddress()
+  //           << std::dec << ":" << insn->getSequenceId() << std::endl;
   storeQueue_.push_back({insn, {}});
 }
 
@@ -97,12 +89,12 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   if (ld_addresses.size() == 0) {
     // Early execution if not addresses need to be accessed
     insn->execute();
-    completedLoads_.push(insn);
+    completedRequests_.push(insn);
   } else {
-    // If the completion order is inorder, reserve an entry in completedLoads_
-    // now
+    // If the completion order is inorder, reserve an entry in
+    // completedRequests_ now
     if (completionOrder_ == CompletionOrder::INORDER)
-      completedLoads_.push(insn);
+      completedRequests_.push(insn);
 
     // Detect reordering conflicts
     if (storeQueue_.size() > 0) {
@@ -136,6 +128,9 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   if (!insn->isStoreData()) return;
+  std::cerr << "SUPPLIED STORE DATA " << std::hex
+            << insn->getInstructionAddress() << std::dec << ":"
+            << insn->getSequenceId() << std::endl;
   // Get identifier values
   const uint64_t macroOpNum = insn->getInstructionId();
   const int microOpNum = insn->getMicroOpIndex();
@@ -167,9 +162,12 @@ void LoadStoreQueue::startStore(const std::shared_ptr<Instruction>& uop) {
   // Early exit if there's no addresses to process
   if (addresses.size() == 0) {
     // TODO: Check if atomic lock needs to be released (not LL/SC monitor)
-    uop->setCommitReady();
     return;
   }
+
+  // Reset store's commit ready status as we need to determine any
+  // post-memory-request values to be committed
+  uop->setCommitReady(false);
 
   // Supply the data to store to the instruction. Can't be done in
   // `supplyStoreData` as addresses may not have been calculated
@@ -188,6 +186,10 @@ void LoadStoreQueue::startStore(const std::shared_ptr<Instruction>& uop) {
            "[SimEng:LoadStoreQueue] Tried to issue a second conditional store "
            "whilst one is already in flight.");
     requestedCondStore_ = uop;
+    // If the completion order is inorder, reserve an entry in
+    // completedRequests_ now
+    if (completionOrder_ == CompletionOrder::INORDER)
+      completedRequests_.push(uop);
   }
 }
 
@@ -413,24 +415,16 @@ void LoadStoreQueue::tick() {
   // Initialise completion counter
   size_t count = 0;
 
-  // Process completed conditional store request.
-  // No need to check if flushed as conditional store must be at front of
-  // ROB to be committed
-  // Check to see if conditional store is ready, if yes then forward result
-  // and pass to writeback
-  if (requestedCondStore_ != nullptr) {
+  // Process completed conditional store request
+  // This only applies to a completion order of OoO
+  // There's no need to check if it has been flushed as a conditional store must
+  // be the next-to-retire instruction
+  if (completionOrder_ == CompletionOrder::OUTOFORDER &&
+      (requestedCondStore_ != nullptr)) {
+    // Check to see if conditional store is ready, if yes then add to
+    // completedRequests_ for result forwarding and passing to writeback
     if (requestedCondStore_->isCondResultReady()) {
-      completedConditionalStore_ = requestedCondStore_->getSequenceId();
-      // Forward result. Given only 1 conditional store can be processed at a
-      // time (as it can only be sent when at the front of the ROB, and blocks
-      // further commits until the result has been returned), there is
-      // guarenteed to be space in the completion slot.
-      forwardOperands_(requestedCondStore_->getDestinationRegisters(),
-                       requestedCondStore_->getResults());
-      completionSlots_[count].getTailSlots()[0] =
-          std::move(requestedCondStore_);
-      count++;
-      requestedCondStore_ = nullptr;
+      completedRequests_.push(requestedCondStore_);
     }
   }
 
@@ -443,32 +437,36 @@ void LoadStoreQueue::tick() {
       if (load->second->isStoreData()) {
         supplyStoreData(load->second);
       }
-      // If the completion order is OoO, add entry to completedLoads_
+      // If the completion order is OoO, add entry to completedRequests_
       if (completionOrder_ == CompletionOrder::OUTOFORDER)
-        completedLoads_.push(load->second);
+        completedRequests_.push(load->second);
     }
     load++;
   }
 
   // Pop from the front of the completed loads queue and send to writeback
-  while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
+  while (completedRequests_.size() > 0 && count < completionSlots_.size()) {
     // Skip a completion slot if stalled
     if (completionSlots_[count].isStalled()) {
       count++;
       continue;
     }
 
-    auto& insn = completedLoads_.front();
+    auto& insn = completedRequests_.front();
 
     // Don't process load instruction if it has been flushed
     if (insn->isFlushed()) {
-      completedLoads_.pop();
+      completedRequests_.pop();
       continue;
     }
 
     // If the load at the front of the queue is yet to execute, continue
     // processing next cycle
-    if (!insn->hasExecuted()) {
+    if (insn->isLoad() && !insn->hasExecuted()) {
+      break;
+    }
+
+    if (insn->isStoreCond() && !insn->isCondResultReady()) {
       break;
     }
 
@@ -477,7 +475,7 @@ void LoadStoreQueue::tick() {
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 
-    completedLoads_.pop();
+    completedRequests_.pop();
 
     count++;
   }

@@ -317,6 +317,7 @@ TEST_P(LoadStoreQueueTest, Store) {
   // Check that MMU has no requests
   EXPECT_EQ(mmu->hasPendingRequests(), false);
 
+  queue.startStore(storeUopPtr);
   queue.commitStore(storeUopPtr);
   // Tick the queue to complete the store
   queue.tick();
@@ -497,6 +498,7 @@ TEST_P(LoadStoreQueueTest, inOrderCompletion) {
   queue.tick();
   queue.tick();
   queue.tick();
+  mmu->tick();
   memory->tick();
   queue.tick();
   EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 0);
@@ -531,10 +533,12 @@ TEST_P(LoadStoreQueueTest, OoOCompletion) {
   queue.startLoad(loadUopPtr2);
 
   queue.tick();
+  mmu->tick();
   memory->tick();
   queue.tick();
   EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 1);
   queue.tick();
+  mmu->tick();
   memory->tick();
   queue.tick();
   EXPECT_EQ(completionSlots[0].getTailSlots()[0]->getSequenceId(), 0);

@@ -86,6 +86,10 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   bool handleException();
 
+  /** A function to query whether the instruction associated with the passed
+   * sequence ID can writeback its results. */
+  bool canWriteback(uint64_t seqId);
+
   /** A function to carry out logic associated with the retirement of a
    * instruction post writeback. */
   void retireInstruction(const std::shared_ptr<Instruction>& insn);
@@ -183,8 +187,18 @@ class Core : public simeng::Core {
    */
   std::queue<std::shared_ptr<Instruction>> completedStoreAddrUops_ = {};
 
+  /** Whether a store is actively being processed and not yet ready for
+   * commitment. */
+  bool activeStore_ = false;
+
+  /** Whether a load vioaltion has been detected by the load store queue. */
+  bool loadViolation_ = false;
+
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
+
+  /** The number of load violations detected in the load store queue. */
+  uint64_t loadViolations_ = 0;
 
   /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;

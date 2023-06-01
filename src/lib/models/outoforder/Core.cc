@@ -44,14 +44,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          simeng::pipeline::CompletionOrder::OUTOFORDER,
-          config["LSQ-Memory-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-Memory-Interface"]["Permitted-Requests-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Loads-Per-Cycle"]
-              .as<uint16_t>(),
-          config["LSQ-Memory-Interface"]["Permitted-Stores-Per-Cycle"]
-              .as<uint16_t>()),
+          simeng::pipeline::CompletionOrder::OUTOFORDER),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
                  branchPredictor),

@@ -100,9 +100,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     // If the uop is a store address operation, begin the processing of its
     // memory accesses
     if (uop->isStoreAddress() && !startedStore_) {
-      // Reset commit ready status until the store's memory accesses have been
-      // sent from the MMU
-      uop->setCommitReady(false);
       lsq_.startStore(uop);
       startedStore_ = true;
       return n;

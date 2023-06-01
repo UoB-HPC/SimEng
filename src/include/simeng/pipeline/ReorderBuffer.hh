@@ -147,12 +147,6 @@ class ReorderBuffer {
    * being processed. */
   bool startedStore_ = false;
 
-  /** The conditional store which is in-flight, waiting for its response. */
-  std::shared_ptr<Instruction> inFlightCondStr_ = nullptr;
-
-  /** Indicates if the inFlightCondStr_ has completed or not. */
-  bool completedCondStr_ = false;
-
   /** Indicates whether the atomic (or load-reserved) at the front of the buffer
    * has been started. */
   bool sentAtomic_ = false;
