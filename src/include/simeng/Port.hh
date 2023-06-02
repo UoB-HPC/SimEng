@@ -16,10 +16,6 @@ struct is_unique_ptr : std::false_type {};
 template <class T>
 struct is_unique_ptr<std::unique_ptr<T>> : std::true_type {};
 
-// Forward declaration of the PortMediator class.
-template <typename T>
-class PortMediator;
-
 /** The Port class represents an endpoint of a bidirectional connection between
  * two classes. Only one type of data can pass through a Port, this type is
  * defined by the template parameter. */
@@ -30,10 +26,13 @@ class Port {
   /** Typedef for callback function called in the recieve function. */
   using InFnType = std::function<void(T)>;
 
+  /***/
+  using OutFnType = std::function<void(T, uint16_t)>;
+
  public:
   /** Function used to connect a port to a port mediator. */
-  void inline connect(PortMediator<T>* mediator, uint16_t id) {
-    conn_ = mediator;
+  void inline connect(OutFnType fn, uint16_t id) {
+    sendToDestination = fn;
     id_ = id;
   };
 
@@ -45,9 +44,9 @@ class Port {
    * port. */
   void inline send(T data) {
     if constexpr (is_unique_ptr<T>::value) {
-      conn_->send(std::move(data), id_);
+      sendToDestination(std::move(data), id_);
     } else {
-      conn_->send(data, id_);
+      sendToDestination(data, id_);
     }
   }
 
@@ -70,8 +69,8 @@ class Port {
    * port of the corresponding source port. */
   uint16_t id_;
 
-  /** Pointer to a PortMediator class. */
-  PortMediator<T>* conn_ = nullptr;
+  /***/
+  OutFnType sendToDestination;
 
   /** The callback function invoked in the recieve member function. */
   InFnType reciever_ = nullptr;
@@ -93,8 +92,15 @@ class PortMediator {
  public:
   /** Function used to connect two ports together. */
   void connect(std::shared_ptr<Port<T>> p1, std::shared_ptr<Port<T>> p2) {
-    p1->connect(this, 0);
-    p2->connect(this, 1);
+    auto fn = [this](T data, uint16_t port_id) -> void {
+      if constexpr (is_unique_ptr<T>::value) {
+        send(std::move(data), port_id);
+      } else {
+        send(data, port_id);
+      }
+    };
+    p1->connect(fn, 0);
+    p2->connect(fn, 1);
     ports_[0] = p1;
     ports_[1] = p2;
     dests_[0] = p2;
@@ -111,6 +117,74 @@ class PortMediator {
       dest->recieve(data);
     }
   }
+};
+
+template <typename A, typename B>
+class ConvertingPortMediator {
+  using FnConvertAToB = std::function<B(A)>;
+  using FnConvertBToA = std::function<A(B)>;
+
+ public:
+  /** Function used to connect two ports together. */
+  void connect(std::shared_ptr<Port<A>> p1, std::shared_ptr<Port<B>> p2) {
+    portA_ = p1;
+    portB_ = p2;
+
+    auto fnA = [this](A arg) -> void {
+      if constexpr (is_unique_ptr<A>::value) {
+        send(std::move(arg), 0);
+      } else {
+        send(arg, 0);
+      }
+    };
+
+    auto fnB = [this](B arg) -> void {
+      if constexpr (is_unique_ptr<B>::value) {
+        send(std::move(arg), 0);
+      } else {
+        send(arg, 0);
+      }
+    };
+
+    portA_->connect(fnA, 0);
+    portB_->connect(fnB, 0);
+  };
+
+  void send(A data, uint16_t port_id) {
+    if constexpr (is_unique_ptr<A>::value && is_unique_ptr<B>::value) {
+      portB_->recieve(std::move(fnA2B_(std::move(data))));
+    } else if constexpr (is_unique_ptr<A>::value) {
+      portB_->recieve(fnA2B_(std::move(data)));
+    } else if constexpr (is_unique_ptr<B>::value) {
+      portB_->recieve(std::move(fnA2B_(data)));
+    } else {
+      portB_->recieve(fnA2B_(data));
+    }
+  }
+
+  void send(B data, uint16_t port_id) {
+    if constexpr (is_unique_ptr<A>::value && is_unique_ptr<B>::value) {
+      portA_->recieve(std::move(fnB2A_(std::move(data))));
+    } else if constexpr (is_unique_ptr<B>::value) {
+      portA_->recieve(fnB2A_(std::move(data)));
+    } else if constexpr (is_unique_ptr<A>::value) {
+      portA_->recieve(std::move(fnB2A_(data)));
+    } else {
+      portA_->recieve(fnB2A_(data));
+    }
+  }
+
+  void registerConverters(FnConvertAToB fnA2B, FnConvertBToA fnB2A) {
+    fnA2B_ = fnA2B;
+    fnB2A_ = fnB2A;
+  }
+
+ private:
+  std::shared_ptr<Port<A>> portA_ = nullptr;
+  std::shared_ptr<Port<B>> portB_ = nullptr;
+
+  FnConvertAToB fnA2B_;
+  FnConvertBToA fnB2A_;
 };
 
 }  // namespace simeng

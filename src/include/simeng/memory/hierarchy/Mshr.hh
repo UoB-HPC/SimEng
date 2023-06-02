@@ -57,7 +57,7 @@ struct MshrEntry {
 
   /** The RequestBufferIndex of the memory request corresponding to this
    * MshrEntry. */
-  RequestBufferIndex reqBufIdx;
+  MemoryHierarchyPacket memPacket;
   /** The type of the MshrEntry. */
   MshrEntry::Type type_ = MshrEntry::Type::Secondary;
 };
@@ -100,8 +100,8 @@ class Mshr {
    * is already present for a cache line, then a MshrEntry is added to
    * corresponding MshrReg. If an MshrReg is not present then a new MshrReg is
    * allocated.  */
-  void allocateMshr(RequestBufferIndex index, uint64_t paddr, uint16_t clw,
-                    AccessInfo& info, bool busy) {
+  void allocateMshr(MemoryHierarchyPacket& memPacket, uint64_t paddr,
+                    uint16_t clw, AccessInfo& info, bool busy) {
     uint64_t addr = downAlign(paddr, clw);
     auto itr = mshrRegs_.find(addr);
 
@@ -114,11 +114,11 @@ class Mshr {
                            MshrEntry::Type::PrimaryEviction, busyMask)
                      : applyMaskOnMshrEntryType(MshrEntry::Type::PrimaryFetch,
                                                 busyMask);
-      MshrReg reg{{{index, type}}, info.dirty, info.valid, info.lineIdx};
+      MshrReg reg{{{memPacket, type}}, info.dirty, info.valid, info.lineIdx};
       mshrRegs_.insert({addr, reg});
     } else {
       // If MshrReg entry exists then it is secondary miss.
-      itr->second.entries.push_back({index});
+      itr->second.entries.push_back({memPacket});
     }
   }
 

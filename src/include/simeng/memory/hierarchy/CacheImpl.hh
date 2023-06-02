@@ -16,6 +16,8 @@ namespace simeng::memory::hierarchy {
 
 class Mshr;
 
+enum class CacheLevel : uint8_t { L1, LowerLevel };
+
 /** The AccessInfo struct is used store information regarding initial cache
  * access i.e when it is determined whether a request hits or misses. */
 struct AccessInfo {
@@ -28,21 +30,34 @@ struct AccessInfo {
 /** The CacheLatencyPacket struct holds the latency (in terms of clock cycles)
  * to be applied on the memory request. This struct holds the RequestBufferIndex
  * of the memory request in question. */
+template <class T>
 struct CacheLatencyPacket {
-  /** RequestBufferIndex of the memory request on which latency is applied. */
-  RequestBufferIndex reqBufIdx = -1;
+  /***/
+  T payload;
   /** Clock cycle at which the memory request can be processed. endLatency of 0
    * signifies immediate processing. */
   uint64_t endLatency = 0;
   /** This is the index of cache line which is evicted or fetched. */
   uint16_t clineIdx = -1;
+
   /** Constructor for CacheLatencyPacket. */
-  CacheLatencyPacket(RequestBufferIndex idx, uint64_t endLat)
-      : reqBufIdx(idx), endLatency(endLat), clineIdx(-1) {}
+  CacheLatencyPacket(T value, uint64_t endLat)
+      : endLatency(endLat), clineIdx(-1) {
+    if constexpr (is_unique_ptr<T>::value) {
+      payload = std::move(value);
+    } else {
+      payload = value;
+    }
+  }
   /** Constructor for CacheLatencyPacket. */
-  CacheLatencyPacket(RequestBufferIndex idx, uint64_t endLat,
-                     uint64_t cacheLineIdx)
-      : reqBufIdx(idx), endLatency(endLat), clineIdx(cacheLineIdx) {}
+  CacheLatencyPacket(T value, uint64_t endLat, uint64_t cacheLineIdx)
+      : endLatency(endLat), clineIdx(cacheLineIdx) {
+    if constexpr (is_unique_ptr<T>::value) {
+      payload = std::move(value);
+    } else {
+      payload = value;
+    }
+  }
 };
 
 /** The CacheLatencyInfo struct holds values for all latencies to be applied on
@@ -78,14 +93,16 @@ class Cache {
         cacheSize_(cacheSize),
         latencyInfo_(latencyInfo) {}
 
+  /***/
+  virtual std::shared_ptr<Port<CPUMemoryPacket>> initCpuPort() = 0;
+
   /** Function used to initialise port used to communicate memory requests to a
    * higher level of memory or CPU. */
-  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initTopPort() = 0;
+  virtual std::shared_ptr<Port<MemoryHierarchyPacket>> initTopPort() = 0;
 
   /** Function used to initialise port used to communicate memory requests to a
    * lower level of memory. */
-  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-  initBottomPort() = 0;
+  virtual std::shared_ptr<Port<MemoryHierarchyPacket>> initBottomPort() = 0;
 
   /** Function used to invalidate all cache lines in a cache. */
   virtual void invalidateAll() = 0;

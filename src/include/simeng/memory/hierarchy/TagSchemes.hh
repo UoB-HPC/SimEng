@@ -33,13 +33,13 @@ class TagScheme {
       : cacheSize_(cacheSize), clw_(clw), assosciativity_(assosciativity) {}
 
   /** Function which generates the set index from a MemPacket. */
-  virtual inline uint16_t calcSetIndex(std::unique_ptr<MemPacket>& pkt) = 0;
+  virtual inline uint16_t calcSetIndex(MemoryHierarchyPacket& pkt) = 0;
 
   /** Function which generates  the byte offset from a MemPacket. */
-  virtual inline uint16_t calcByteOffset(std::unique_ptr<MemPacket>& pkt) = 0;
+  virtual inline uint16_t calcByteOffset(MemoryHierarchyPacket& pkt) = 0;
 
   /** Function which generates the tag from a MemPacket. */
-  virtual inline uint16_t calcTag(std::unique_ptr<MemPacket>& pkt) = 0;
+  virtual inline uint16_t calcTag(MemoryHierarchyPacket& pkt) = 0;
 
  protected:
   /** Mask used to extract tag from address contained in the MemPacket. */
@@ -68,18 +68,18 @@ class PIPT : public TagScheme {
   }
   /** Function which calculates the byte offset from the physical address of a
    * MemPacket. */
-  inline uint16_t calcByteOffset(std::unique_ptr<MemPacket>& pkt) override {
-    return pkt->paddr_ & byteOffsetMask_;
+  inline uint16_t calcByteOffset(MemoryHierarchyPacket& pkt) override {
+    return pkt.paddr_ & byteOffsetMask_;
   }
   /** Function which calculates the set index from the physical address of a
    * MemPacket. */
-  inline uint16_t calcSetIndex(std::unique_ptr<MemPacket>& pkt) override {
-    return ((pkt->paddr_ & setIndexMask_) >> setIndexMaskShift_);
+  inline uint16_t calcSetIndex(MemoryHierarchyPacket& pkt) override {
+    return ((pkt.paddr_ & setIndexMask_) >> setIndexMaskShift_);
   }
   /** Function which calculates the tag from the physical address of a
    * MemPacket. */
-  inline uint16_t calcTag(std::unique_ptr<MemPacket>& pkt) override {
-    return ((pkt->paddr_ & tagMask_) >> tagMaskShift_);
+  inline uint16_t calcTag(MemoryHierarchyPacket& pkt) override {
+    return ((pkt.paddr_ & tagMask_) >> tagMaskShift_);
   }
 
  private:

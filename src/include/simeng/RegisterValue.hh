@@ -102,26 +102,14 @@ class RegisterValue {
     }
   }
 
-  template <class T>
-  const T* begin() const {
-    return getAsVector<T>();
-  }
-
-  template <class T>
-  const T* end() const {
-    return getAsVector<T>() + bytes;
-  }
-
-  template <>
-  const char* begin<char>() const {
+  const char* begin() const {
     if (isLocal()) {
       return value;
     }
     return ptr.get();
   }
 
-  template <>
-  const char* end<char>() const {
+  const char* end() const {
     if (isLocal()) {
       return value + bytes;
     }

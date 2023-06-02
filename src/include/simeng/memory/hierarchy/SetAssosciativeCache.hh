@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <list>
+#include <map>
 #include <memory>
 #include <queue>
 #include <vector>
@@ -11,6 +12,7 @@
 #include "simeng/memory/hierarchy/Mshr.hh"
 #include "simeng/memory/hierarchy/Replacement.hh"
 #include "simeng/memory/hierarchy/RequestBuffer.hh"
+#include "simeng/memory/hierarchy/RequestConvertor.hh"
 #include "simeng/memory/hierarchy/TagSchemes.hh"
 
 namespace simeng {
@@ -18,6 +20,7 @@ namespace memory {
 namespace hierarchy {
 
 /** This class represents a SetAssosciativeCache. */
+template <CacheLevel cache_level>
 class SetAssosciativeCache : public Cache {
  public:
   /** Constructor of the SetAssosciativeCache. */
@@ -33,13 +36,17 @@ class SetAssosciativeCache : public Cache {
     }
     replacementPolicy_ = LRU(numCacheLines, assosciativity);
   }
+
+  /***/
+  std::shared_ptr<Port<CPUMemoryPacket>> initCpuPort() override;
+
   /** Function used to initialise port used to communicate memory requests to a
    * higher level of memory or CPU. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initTopPort() override;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> initTopPort() override;
 
   /** Function used to initialise port used to communicate memory requests to a
    * lower level of memory. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initBottomPort() override;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> initBottomPort() override;
 
   /** Function used to invalidate all cache lines in a cache. */
   void invalidateAll() override;
@@ -61,25 +68,32 @@ class SetAssosciativeCache : public Cache {
   RequestBuffer requestBuffer_;
 
   /** Queue used to apply hit latency to all incoming memory requests. */
-  std::queue<CacheLatencyPacket> waitQueue_;
+  std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> waitQueue_;
 
   /** Queue used to apply access latency and process memory request which hit
    * the cache. */
-  std::queue<CacheLatencyPacket> hitQueue_;
+  std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> hitQueue_;
 
   /** Queue which contains requests to be send to a higher level of memory. */
-  std::queue<CacheLatencyPacket> queueToTopLevel_;
+  std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> queueToTopLevel_;
+
+  /** If cache is L1 this queue is used instead to queueToTopLevel to send back
+   * CPUMemoryPackets. */
+  std::queue<CacheLatencyPacket<CPUMemoryPacket>> queueToCpu_;
 
   /** Queue which contains requests to be sent to a lower level of memory. */
-  std::queue<CacheLatencyPacket> queueToLowerLevel_;
+  std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> queueToLowerLevel_;
 
   /** Queue which contains all memory requests of type
    * MshrEntry::Type::Secondary. */
-  std::queue<CacheLatencyPacket> mshrSecondaryQueue_;
+  std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> mshrSecondaryQueue_;
 
   /** Queue which contains all memory requests of which cause a primary miss on
    * a cache line. */
-  std::list<CacheLatencyPacket> mshrPrimaryReqs_;
+  std::list<CacheLatencyPacket<MemoryHierarchyPacket>> mshrPrimaryReqs_;
+
+  /***/
+  std::map<uint64_t, CPUMemoryPacket> reqMap_;
 
   /** Instantiation of Mshr class. */
   Mshr mshr_;
@@ -94,34 +108,41 @@ class SetAssosciativeCache : public Cache {
    * cache size and cache line width. */
   uint32_t numSets_;
 
+  /***/
+  std::shared_ptr<Port<CPUMemoryPacket>> cpuPort_;
+
   /** Port towards the top-level cache in hierarchy. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> topPort_;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> topPort_;
 
   /** Port towards the low-level cache in heirarchy. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> bottomPort_;
-
-  /** Queue to hold all pending requests. */
-  std::queue<CacheLatencyPacket> pendingReqs_;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> bottomPort_;
 
   /** Unique pointer to TagScheme. */
   std::unique_ptr<TagScheme> tagScheme_ = nullptr;
 
+  /***/
+  CacheLevel level_ = cache_level;
+
+  /***/
+  RequestConvertor convertor_;
+
   /** Function which allows access to cache. */
-  void accessCache(std::unique_ptr<MemPacket>& pkt);
+  void accessCache(MemoryHierarchyPacket& pkt);
 
   /** Function which checks if a MemPacket hits a cache line inside the cache.
    */
-  AccessInfo checkHit(std::unique_ptr<MemPacket>& pkt);
+  AccessInfo checkHit(MemoryHierarchyPacket& pkt);
 
   /** Function used to read from a cache line. */
-  void doRead(std::unique_ptr<MemPacket>& req, uint16_t clineIdx);
+  template <CacheLevel TValue>
+  void doRead(MemoryHierarchyPacket& req, uint16_t clineIdx);
 
   /** Function used to write to a cache line. */
-  void doWrite(std::unique_ptr<MemPacket>& req, uint16_t clineIdx);
+  void doWrite(MemoryHierarchyPacket& req, uint16_t clineIdx);
 
   /** Function used to handle response from the bottom port i.e from lower level
    * of memory.*/
-  void handleResponseFromBottomPort(std::unique_ptr<MemPacket>& pkt);
+  void handleResponseFromBottomPort(MemoryHierarchyPacket& pkt);
 };
 
 }  // namespace hierarchy
