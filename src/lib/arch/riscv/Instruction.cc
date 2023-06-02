@@ -108,23 +108,29 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   return {false, 0};
 }
 
-bool Instruction::isStoreAddress() const { return isStore_; }
+bool Instruction::isStoreAddress() const {
+  return insnTypeMetadata & isStoreMask;
+}
 
-bool Instruction::isStoreData() const { return isStore_; }
+bool Instruction::isStoreData() const { return insnTypeMetadata & isStoreMask; }
 
-bool Instruction::isLoad() const { return isLoad_; }
+bool Instruction::isLoad() const { return insnTypeMetadata & isLoadMask; }
 
-bool Instruction::isBranch() const { return isBranch_; }
+bool Instruction::isBranch() const { return insnTypeMetadata & isBranchMask; }
 
-bool Instruction::isAtomic() const { return isAtomic_; }
+bool Instruction::isAtomic() const { return insnTypeMetadata & isAtomicMask; }
 
-bool Instruction::isAcquire() const { return isAcquire_; }
+bool Instruction::isAcquire() const { return insnTypeMetadata & isAcquireMask; }
 
-bool Instruction::isRelease() const { return isRelease_; }
+bool Instruction::isRelease() const { return insnTypeMetadata & isReleaseMask; }
 
-bool Instruction::isLoadReserved() const { return isLoadReserved_; }
+bool Instruction::isLoadReserved() const {
+  return insnTypeMetadata & isLoadReservedMask;
+}
 
-bool Instruction::isStoreCond() const { return isStoreCond_; }
+bool Instruction::isStoreCond() const {
+  return insnTypeMetadata & isStoreCondMask;
+}
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
@@ -132,16 +138,16 @@ uint16_t Instruction::getGroup() const {
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
-  if (isDivide_) return base + 7;
-  if (isMultiply_) return base + 6;
-  if (isShift_) return base + 5;
-  if (isLogical_) return base + 4;
-  if (isCompare_) return base + 3;
+  if (insnTypeMetadata & isDivideMask) return base + 7;
+  if (insnTypeMetadata & isMultiplyMask) return base + 6;
+  if (insnTypeMetadata & isShiftMask) return base + 5;
+  if (insnTypeMetadata & isLogicalMask) return base + 4;
+  if (insnTypeMetadata & isCompareMask) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
 void Instruction::setExecutionInfo(const executionInfo& info) {
-  if (isLoad_ || isStore_) {
+  if (isLoad() || isStoreAddress()) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;
@@ -161,7 +167,7 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
 void Instruction::updateCondStoreResult(const bool success) {
-  assert(isStoreCond_ &&
+  assert((insnTypeMetadata & isStoreCondMask) &&
          "[SimEng:Instruction] Attempted to update the result register of a "
          "non-conditional-store instruction.");
   RegisterValue result = {(uint64_t)0 | !success, 8};

@@ -48,6 +48,22 @@ enum class InstructionException : uint8_t {
   NoAvailablePort
 };
 
+/** Masks used for manipulating the insnTypeMetadata associated with a RISC-V
+ * Instruction. */
+static constexpr uint16_t isStoreMask = 0b1000000000000000;
+static constexpr uint16_t isLoadMask = 0b0100000000000000;
+static constexpr uint16_t isBranchMask = 0b0010000000000000;
+static constexpr uint16_t isMultiplyMask = 0b0001000000000000;
+static constexpr uint16_t isDivideMask = 0b0000100000000000;
+static constexpr uint16_t isShiftMask = 0b0000010000000000;
+static constexpr uint16_t isAtomicMask = 0b0000001000000000;
+static constexpr uint16_t isLogicalMask = 0b0000000100000000;
+static constexpr uint16_t isCompareMask = 0b0000000010000000;
+static constexpr uint16_t isAcquireMask = 0b0000000001000000;
+static constexpr uint16_t isReleaseMask = 0b0000000000100000;
+static constexpr uint16_t isLoadReservedMask = 0b0000000000010000;
+static constexpr uint16_t isStoreCondMask = 0b0000000000001000;
+
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -206,32 +222,23 @@ class Instruction : public simeng::Instruction {
   /** The number of destination registers this instruction writes to. */
   uint8_t destinationRegisterCount = 0;
 
-  /** Is this a store operation? */
-  bool isStore_ = false;
-  /** Is this a load operation? */
-  bool isLoad_ = false;
-  /** Is this a branch operation? */
-  bool isBranch_ = false;
-  /** Is this a multiply operation? */
-  bool isMultiply_ = false;
-  /** Is this a divide operation? */
-  bool isDivide_ = false;
-  /** Is this a shift operation? */
-  bool isShift_ = false;
-  /** Is this an atomic instruction? */
-  bool isAtomic_ = false;
-  /** Is this a logical instruction? */
-  bool isLogical_ = false;
-  /** Is this a compare instruction? */
-  bool isCompare_ = false;
-  /** Enforces acquire semantics. */
-  bool isAcquire_ = false;
-  /** Enforces release semantics. */
-  bool isRelease_ = false;
-  /** Is a load-reserved instruction. */
-  bool isLoadReserved_ = false;
-  /** Is a store-conditional instruction. */
-  bool isStoreCond_ = false;
+  /** Metadat defining what type of Instruction this is.
+   * Each bit is used to convey the following information (From MSB to LSB):
+   * 1st bit indicates whether this is a store operation.
+   * 2nd bit indicates whether this is a load operation.
+   * 3rd bit indicates whether this is a branch operation.
+   * 4th bit indicates whether this is a multiply operation.
+   * 5th bit indicates whether this is a divide operation.
+   * 6th bit indicates whether this is a shift operation.
+   * 7th bit indicates whether this is an atomic instruction.
+   * 8th bit indicates whether this is a logical instruction.
+   * 9th bit indicates whether this is a compare instruction
+   * 10th bit indicates whether this enforces aqcuire semantics.
+   * 11th bit indicates whether this enforces release semantics.
+   * 12th bit indicates whether this is a load-reserved instruction.
+   * 13th bit indicates whether this is a store-conditional instruction.
+   */
+  uint16_t insnTypeMetadata = 0;
 
   /** Invalidate instructions that are currently not yet implemented. This
  prevents errors during speculated branches with unknown destinations;

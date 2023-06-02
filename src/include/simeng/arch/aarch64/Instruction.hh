@@ -225,6 +225,30 @@ enum class InstructionException : uint8_t {
   SMdisabled
 };
 
+/** Masks used for manipulating the insnTypeMetadata associated with an AArch64
+ * Instruction. */
+
+static constexpr uint32_t isScalarDataMask = 0b10000000000000000000000000000000;
+static constexpr uint32_t isVectorDataMask = 0b01000000000000000000000000000000;
+static constexpr uint32_t isSVEDataMask = 0b00100000000000000000000000000000;
+static constexpr uint32_t isSMEDataMask = 0b00010000000000000000000000000000;
+static constexpr uint32_t isNoShiftMask = 0b00001000000000000000000000000000;
+static constexpr uint32_t isLogicalMask = 0b00000100000000000000000000000000;
+static constexpr uint32_t isCompareMask = 0b00000010000000000000000000000000;
+static constexpr uint32_t isConvertMask = 0b00000001000000000000000000000000;
+static constexpr uint32_t isMultiplyMask = 0b00000000100000000000000000000000;
+static constexpr uint32_t isDivOrSqrtMask = 0b00000000010000000000000000000000;
+static constexpr uint32_t isPredicateMask = 0b00000000001000000000000000000000;
+static constexpr uint32_t isLoadMask = 0b00000000000100000000000000000000;
+static constexpr uint32_t isStoreAddrMask = 0b00000000000010000000000000000000;
+static constexpr uint32_t isStoreDataMask = 0b00000000000001000000000000000000;
+static constexpr uint32_t isBranchMask = 0b00000000000000100000000000000000;
+static constexpr uint32_t isAtomicMask = 0b00000000000000010000000000000000;
+static constexpr uint32_t isAcquireMask = 0b00000000000000001000000000000000;
+static constexpr uint32_t isReleaseMask = 0b00000000000000000100000000000000;
+static constexpr uint32_t isLoadRsrvdMask = 0b00000000000000000010000000000000;
+static constexpr uint32_t isStoreCondMask = 0b00000000000000000001000000000000;
+
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -379,46 +403,32 @@ class Instruction : public simeng::Instruction {
   /** Size of data to be stored. */
   uint8_t dataSize_ = 0;
 
-  /** Operates on scalar values */
-  bool isScalarData_ = false;
-  /** Operates on vector values. */
-  bool isVectorData_ = false;
-  /** Uses Z registers as source and/or destination operands. */
-  bool isSVEData_ = false;
-  /** Uses ZA register or tiles of ZA as destination. */
-  bool isSMEData_ = false;
-  /** Doesn't have a shift operand. */
-  bool isNoShift_ = true;
-  /** Is a logical operation. */
-  bool isLogical_ = false;
-  /** Is a compare operation. */
-  bool isCompare_ = false;
-  /** Is a convert operation. */
-  bool isConvert_ = false;
-  /** Is a multiply operation. */
-  bool isMultiply_ = false;
-  /** Is a divide or square root operation */
-  bool isDivideOrSqrt_ = false;
-  /** Writes to a predicate register */
-  bool isPredicate_ = false;
-  /** Is a load operation. */
-  bool isLoad_ = false;
-  /** Is a store address operation. */
-  bool isStoreAddress_ = false;
-  /** Is a store data operation. */
-  bool isStoreData_ = false;
-  /** Is a branch operation. */
-  bool isBranch_ = false;
-  /** Is an atomic operation. */
-  bool isAtomic_ = false;
-  /** Enforces acquire semantics. */
-  bool isAcquire_ = false;
-  /** Enforces release semantics. */
-  bool isRelease_ = false;
-  /** Is a load-reserved instruction. */
-  bool isLoadReserved_ = false;
-  /** Is a store-conditional instruction. */
-  bool isStoreCond_ = false;
+  /** Metadat defining what type of Instruction this is.
+   * Each bit is used to convey the following information (From MSB to LSB):
+   * 1st bit indicates whether this instruction operates on scalar values.
+   * 2nd bit indicates whether this instruction operates on vector values.
+   * 3rd bit indicates whether this instruction uses Z registers as source
+   *                   and/or destination operands.
+   * 4th bit indicates whether this instruction uses the ZA register or
+   *                   tiles of ZA as source and/or destination operands.
+   * 5th bit indicates whether this instruction doesn't have a shift operand.
+   * 6th bit indicates whether this is a logical instruction.
+   * 7th bit indicates whether this is a compare instruction.
+   * 8th bit indicates whether this is a convert instruction.
+   * 9th bit indicates whether this is a multiply operation.
+   * 10th bit indicates whether this is a divide or square root operation.
+   * 11th bit indicates whether this instruction writes to a predicate register.
+   * 12th bit indicates whether this is a load operation.
+   * 13th bit indicates whether this is a store address operation.
+   * 14th bit indicates whether this is a store data operation.
+   * 15th bit indicates whether this is a branch operation.
+   * 16th bit indicates whether this is an atomic operation.
+   * 17th bit indicates whether this instruction enforces acquire semantics.
+   * 18th bit indicates whether this instruction enforces release semantics.
+   * 19th bit indicates whether this is a load-reserved instruction.
+   * 20th bit indicates whether this is a store-conditional instruction.
+   */
+  uint32_t insnTypeMetadata = isNoShiftMask;
 
   // ------ Scheduling ------
   /** The number of operands that have not yet had values supplied. Used to

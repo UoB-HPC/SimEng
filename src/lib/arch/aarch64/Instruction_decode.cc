@@ -209,17 +209,17 @@ void Instruction::decode() {
         // Belongs to the predicate group if the detsination register is a
         // predicate
         if (op.reg >= ARM64_REG_V0) {
-          isVectorData_ = true;
+          insnTypeMetadata |= isVectorDataMask;
         } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-          isSMEData_ = true;
+          insnTypeMetadata |= isSMEDataMask;
         } else if (op.reg >= ARM64_REG_Z0) {
-          isSVEData_ = true;
+          insnTypeMetadata |= isSVEDataMask;
         } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-          isScalarData_ = true;
+          insnTypeMetadata |= isScalarDataMask;
         } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-          isPredicate_ = true;
+          insnTypeMetadata |= isPredicateMask;
         } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-          isScalarData_ = true;
+          insnTypeMetadata |= isScalarDataMask;
         }
 
         if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
@@ -260,7 +260,8 @@ void Instruction::decode() {
           operandsPending++;
           sourceRegisterCount++;
         }
-        if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
+        if (op.shift.value > 0)
+          insnTypeMetadata &= !isNoShiftMask;  // Identify shift operands
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
@@ -285,7 +286,7 @@ void Instruction::decode() {
            op.sme_index.reg < ARM64_REG_V0) ||
           (op.sme_index.reg == ARM64_REG_ZA)) {
         // Set instruction group
-        isSMEData_ = true;
+        insnTypeMetadata |= isSMEDataMask;
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
         // If WRITE, then also need to add to souce registers to maintain
@@ -302,7 +303,7 @@ void Instruction::decode() {
       } else {
         // SME_INDEX can also be for predicate
         // Set instruction group
-        isPredicate_ = true;
+        insnTypeMetadata |= isPredicateMask;
         if (op.access & cs_ac_type::CS_AC_WRITE) {
           destinationRegisters.push_back(csRegToRegister(op.sme_index.reg));
           destinationRegisterCount++;
@@ -354,12 +355,12 @@ void Instruction::decode() {
   // Identify branches
   for (size_t i = 0; i < metadata.groupCount; i++) {
     if (metadata.groups[i] == ARM64_GRP_JUMP) {
-      isBranch_ = true;
+      insnTypeMetadata |= isBranchMask;
     }
   }
 
   // Identify branch type
-  if (isBranch_) {
+  if (isBranch()) {
     switch (metadata.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
@@ -433,26 +434,26 @@ void Instruction::decode() {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
-          isStoreAddress_ = true;
+          insnTypeMetadata |= isStoreAddrMask;
         }
         if (microOpcode_ != MicroOpcode::STR_ADDR) {
-          isStoreData_ = true;
+          insnTypeMetadata |= isStoreDataMask;
         }
       } else {
-        isLoad_ = true;
+        insnTypeMetadata |= isLoadMask;
       }
     } else {
       if (microOpcode_ != MicroOpcode::STR_DATA) {
-        isStoreAddress_ = true;
+        insnTypeMetadata |= isStoreAddrMask;
       }
       if (microOpcode_ != MicroOpcode::STR_ADDR) {
-        isStoreData_ = true;
+        insnTypeMetadata |= isStoreDataMask;
       }
     }
 
     // LDADD* are considered to be both a load and a store
     if (metadata.id >= ARM64_INS_LDADD && metadata.id <= ARM64_INS_LDADDLH) {
-      isLoad_ = true;
+      insnTypeMetadata |= isLoadMask;
     }
 
     // The following are considered to be both a load and a store
@@ -466,9 +467,9 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDSETALX ||
         metadata.opcode == Opcode::AArch64_LDCLRALW ||
         metadata.opcode == Opcode::AArch64_LDCLRALX) {
-      isLoad_ = true;
-      isStoreAddress_ = true;
-      isStoreData_ = true;
+      insnTypeMetadata |= isLoadMask;
+      insnTypeMetadata |= isStoreAddrMask;
+      insnTypeMetadata |= isStoreDataMask;
     }
 
     // The following instructions are considered to be atomic
@@ -484,7 +485,7 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDCLRALX ||
         metadata.opcode == Opcode::AArch64_LDSETALW ||
         metadata.opcode == Opcode::AArch64_LDSETALX) {
-      isAtomic_ = true;
+      insnTypeMetadata |= isAtomicMask;
     }
 
     // The following instructions are considered to be exclusive memory accesses
@@ -498,7 +499,7 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDAXRX ||
         metadata.opcode == Opcode::AArch64_LDXRW ||
         metadata.opcode == Opcode::AArch64_LDXRX) {
-      isLoadReserved_ = true;
+      insnTypeMetadata |= isLoadRsrvdMask;
     }
 
     // Identify Store-Conditional instructions
@@ -506,7 +507,7 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_STLXRX ||
         metadata.opcode == Opcode::AArch64_STXRW ||
         metadata.opcode == Opcode::AArch64_STXRX) {
-      isStoreCond_ = true;
+      insnTypeMetadata |= isStoreCondMask;
     }
 
     // The following instructions enforce acquire memory semantics
@@ -526,7 +527,7 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDCLRALX ||
         metadata.opcode == Opcode::AArch64_LDSETALW ||
         metadata.opcode == Opcode::AArch64_LDSETALX) {
-      isAcquire_ = true;
+      insnTypeMetadata |= isAcquireMask;
     }
 
     // The following instructions enforce release memory semantics
@@ -546,36 +547,36 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_STLRX ||
         metadata.opcode == Opcode::AArch64_STLXRW ||
         metadata.opcode == Opcode::AArch64_STLXRX) {
-      isRelease_ = true;
+      insnTypeMetadata |= isReleaseMask;
     }
 
-    if (isStoreData_) {
+    if (isStoreData()) {
       // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
           metadata.operands[0].reg <= ARM64_REG_Z31) {
-        isSVEData_ = true;
+        insnTypeMetadata |= isSVEDataMask;
       } else if ((metadata.operands[0].reg <= ARM64_REG_S31 &&
                   metadata.operands[0].reg >= ARM64_REG_Q0) ||
                  (metadata.operands[0].reg <= ARM64_REG_H31 &&
                   metadata.operands[0].reg >= ARM64_REG_B0)) {
-        isScalarData_ = true;
+        insnTypeMetadata |= isScalarDataMask;
       } else if (metadata.operands[0].reg >= ARM64_REG_V0) {
-        isVectorData_ = true;
+        insnTypeMetadata |= isVectorDataMask;
       } else if ((metadata.operands[0].reg >= ARM64_REG_ZAB0 &&
                   metadata.operands[0].reg < ARM64_REG_V0) ||
                  metadata.operands[0].reg == ARM64_REG_ZA) {
-        isSMEData_ = true;
+        insnTypeMetadata |= isSMEDataMask;
       }
     }
   } else if (microOpcode_ == MicroOpcode::STR_DATA) {
     // Edge case for identifying store data micro-operation
-    isStoreData_ = true;
+    insnTypeMetadata |= isStoreDataMask;
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
-    isLoad_ = true;
+    insnTypeMetadata |= isLoadMask;
   }
 
   if ((264 <= metadata.opcode && metadata.opcode <= 267) ||    // AND
@@ -586,20 +587,21 @@ void Instruction::decode() {
       (1707 <= metadata.opcode && metadata.opcode <= 1736) ||  // EOR/EON (pt.2)
       (771 <= metadata.opcode && metadata.opcode <= 774) ||    // ORR/ORN
       (3748 <= metadata.opcode && metadata.opcode <= 3771)) {  // ORR/ORN (pt.2)
-    isLogical_ = true;
+    insnTypeMetadata |= isLogicalMask;
   }
 
   if ((1252 <= metadata.opcode && metadata.opcode <= 1259) ||
       (1314 <= metadata.opcode && metadata.opcode <= 1501) ||
       (1778 <= metadata.opcode && metadata.opcode <= 1799) ||
       (1842 <= metadata.opcode && metadata.opcode <= 1969)) {
-    isCompare_ = true;
+    insnTypeMetadata |= isCompareMask;
     // Capture those floating point compare instructions with no destination
     // register
     if (sourceRegisters.size() != 0) {
-      if (!(isScalarData_ || isVectorData_) &&
+      if (!(insnTypeMetadata & isScalarDataMask ||
+            insnTypeMetadata & isVectorDataMask) &&
           sourceRegisters[0].type == RegisterType::VECTOR) {
-        isScalarData_ = true;
+        insnTypeMetadata |= isScalarDataMask;
       }
     }
   }
@@ -612,11 +614,13 @@ void Instruction::decode() {
       (4063 <= metadata.opcode && metadata.opcode <= 4097) ||
       (898 <= metadata.opcode && metadata.opcode <= 904) ||
       (5608 <= metadata.opcode && metadata.opcode <= 5642)) {
-    isConvert_ = true;
+    insnTypeMetadata |= isConvertMask;
     // Capture those floating point convert instructions whose destination
     // register is general purpose
-    if (!(isScalarData_ || isVectorData_ || isSVEData_)) {
-      isScalarData_ = true;
+    if (!(insnTypeMetadata & isScalarDataMask ||
+          insnTypeMetadata & isVectorDataMask ||
+          insnTypeMetadata & isSVEDataMask)) {
+      insnTypeMetadata |= isScalarDataMask;
     }
   }
 
@@ -632,7 +636,7 @@ void Instruction::decode() {
       (2640 <= metadata.opcode && metadata.opcode <= 2661) ||
       (2665 <= metadata.opcode && metadata.opcode <= 2675) ||
       (6066 <= metadata.opcode && metadata.opcode <= 6068)) {
-    isDivideOrSqrt_ = true;
+    insnTypeMetadata |= isDivOrSqrtMask;
   }
 
   // Identify multiply operations
@@ -695,29 +699,31 @@ void Instruction::decode() {
       (5391 <= metadata.opcode && metadata.opcode <= 5394) ||
       (5791 <= metadata.opcode && metadata.opcode <= 5794) ||
       (6117 <= metadata.opcode && metadata.opcode <= 6120)) {
-    isMultiply_ = true;
+    insnTypeMetadata |= isMultiplyMask;
   }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught preciate assignment due to lacking destination register
   if (metadata.opcode == Opcode::AArch64_PTEST_PP) {
-    isPredicate_ = true;
+    insnTypeMetadata |= isPredicateMask;
   }
   // Uncaught float data assignment for FMOV move to general instructions
   if (((430 <= metadata.opcode && metadata.opcode <= 432) ||
        (2409 <= metadata.opcode && metadata.opcode <= 2429)) &&
-      !(isScalarData_ || isVectorData_)) {
-    isScalarData_ = true;
+      !(insnTypeMetadata & isScalarDataMask ||
+        insnTypeMetadata & isVectorDataMask)) {
+    insnTypeMetadata |= isScalarDataMask;
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
   if ((4341 <= metadata.opcode && metadata.opcode <= 4350) ||
       (5795 <= metadata.opcode && metadata.opcode <= 5802)) {
-    isVectorData_ = true;
+    insnTypeMetadata |= isVectorDataMask;
   }
   // Uncaught float data assignment for FCVT convert to general instructions
   if ((1976 <= metadata.opcode && metadata.opcode <= 2186) &&
-      !(isScalarData_ || isVectorData_)) {
-    isScalarData_ = true;
+      !(insnTypeMetadata & isScalarDataMask ||
+        insnTypeMetadata & isVectorDataMask)) {
+    insnTypeMetadata |= isScalarDataMask;
   }
 
   // Allocate enough entries in results vector
