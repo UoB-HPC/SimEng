@@ -87,7 +87,7 @@ void Instruction::decode() {
     case Opcode::RISCV_BGEU:
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
-      isBranch_ = true;
+      insnTypeMetadata |= isBranchMask;
       break;
       // Identify loads/stores
     case Opcode::RISCV_LR_D:
@@ -101,7 +101,7 @@ void Instruction::decode() {
       // These instructions are considered to be Load-reserved
       // (i.e. will begin an exculsivity monitor on a memory region to
       // detect any changes)
-      isLoadReserved_ = true;
+      insnTypeMetadata |= isLoadReservedMask;
       [[fallthrough]];
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
@@ -110,7 +110,7 @@ void Instruction::decode() {
     case Opcode::RISCV_LW:
     case Opcode::RISCV_LWU:
     case Opcode::RISCV_LD:
-      isLoad_ = true;
+      insnTypeMetadata |= isLoadMask;
       break;
     case Opcode::RISCV_SC_D:
     case Opcode::RISCV_SC_D_AQ:
@@ -123,13 +123,13 @@ void Instruction::decode() {
       // These instructions are considered to be Store-Conditionals
       // (i.e. will conditionally update memory if it is permitted to do so and
       // end monitoring, else its result will indicate the failure to do so)
-      isStoreCond_ = true;
+      insnTypeMetadata |= isStoreCondMask;
       [[fallthrough]];
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
     case Opcode::RISCV_SH:
     case Opcode::RISCV_SD:
-      isStore_ = true;
+      insnTypeMetadata |= isStoreMask;
       break;
   }
 
@@ -183,7 +183,7 @@ void Instruction::decode() {
       metadata.opcode == Opcode::RISCV_SC_D_AQ_RL ||
       metadata.opcode == Opcode::RISCV_SC_W_AQ ||
       metadata.opcode == Opcode::RISCV_SC_W_AQ_RL) {
-    isAcquire_ = true;
+    insnTypeMetadata |= isAcquireMask;
   }
   if (metadata.opcode == Opcode::RISCV_AMOADD_D_RL ||
       metadata.opcode == Opcode::RISCV_AMOADD_W_RL ||
@@ -229,7 +229,7 @@ void Instruction::decode() {
       metadata.opcode == Opcode::RISCV_SC_D_RL ||
       metadata.opcode == Opcode::RISCV_SC_W_AQ_RL ||
       metadata.opcode == Opcode::RISCV_SC_W_RL) {
-    isRelease_ = true;
+    insnTypeMetadata |= isReleaseMask;
   }
 
   // The following instructions are considered to be atomic
@@ -238,9 +238,9 @@ void Instruction::decode() {
   if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
       metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {
     // Atomics: both load and store
-    isLoad_ = true;
-    isStore_ = true;
-    isAtomic_ = true;
+    insnTypeMetadata |= isLoadMask;
+    insnTypeMetadata |= isStoreMask;
+    insnTypeMetadata |= isAtomicMask;
   }
 
   // Extract explicit register accesses, ignore immediates until execute
@@ -328,7 +328,7 @@ void Instruction::decode() {
       (Opcode::RISCV_SRL <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_SRLW)) {
     // Shift instructions
-    isShift_ = true;
+    insnTypeMetadata |= isShiftMask;
   }
 
   if ((Opcode::RISCV_XOR <= metadata.opcode &&
@@ -338,13 +338,13 @@ void Instruction::decode() {
       (Opcode::RISCV_AND <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_ANDI)) {
     // Logical instructions
-    isLogical_ = true;
+    insnTypeMetadata |= isLogicalMask;
   }
 
   if ((Opcode::RISCV_SLT <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_SLTU)) {
     // Compare instructions
-    isCompare_ = true;
+    insnTypeMetadata |= isCompareMask;
   }
 
   if ((Opcode::RISCV_MUL <= metadata.opcode &&
