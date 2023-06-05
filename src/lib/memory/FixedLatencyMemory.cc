@@ -5,7 +5,9 @@
 #include <memory>
 #include <vector>
 
+#include "simeng/Config.hh"
 #include "simeng/memory/MemPacket.hh"
+#include "simeng/util/Math.hh"
 
 namespace simeng {
 namespace memory {
@@ -18,41 +20,33 @@ FixedLatencyMemory::FixedLatencyMemory(size_t size, uint16_t latency) {
 
 size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
 
-void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->isUntimedRead()) {
-    std::cerr << "Cannot do untimed memory access through timed port please use"
-                 "the untimed port"
-              << std::endl;
-    pkt->setFault();
-    timedPort_->send(std::move(pkt));
-    return;
-  }
-
-  LatencyPacket lpkt = {std::move(pkt), ticks_ + latency_};
-  reqQueue_.push(std::move(lpkt));
+void FixedLatencyMemory::requestAccess(MemoryHierarchyPacket& pkt) {
+  LatencyPacket lpkt = {pkt, ticks_ + latency_};
+  reqQueue_.push(lpkt);
 }
 
-void FixedLatencyMemory::handleReadRequest(std::unique_ptr<MemPacket>& req) {
-  req->cinfo.data = std::vector<char>(
-      memory_.begin() + req->cinfo.basePaddr,
-      memory_.begin() + req->cinfo.basePaddr + req->cinfo.size);
+void FixedLatencyMemory::handleReadRequest(MemoryHierarchyPacket& req) {
+  uint64_t downAlignedAddr = downAlign(req.paddr_, MemoryHierarchyPacket::clw);
+  req.payload_ =
+      std::vector<char>(memory_.begin() + downAlignedAddr,
+                        memory_.begin() + downAlignedAddr + req.size_);
 }
 
-void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
-  uint64_t address = req->cinfo.clineAddr;
-  std::copy(req->cinfo.data.begin(), req->cinfo.data.end(),
+void FixedLatencyMemory::handleWriteRequest(MemoryHierarchyPacket& req) {
+  uint64_t address = req.clineAddr_;
+  std::copy(req.payload_.begin(), req.payload_.end(),
             memory_.begin() + address);
 }
 
 void FixedLatencyMemory::tick() {
   ticks_++;
   while (reqQueue_.size() && ticks_ >= reqQueue_.front().endLat) {
-    std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
-    if (pkt->cinfo.dirty) {
+    MemoryHierarchyPacket& pkt = reqQueue_.front().req;
+    if (pkt.type_ == MemoryAccessType::WRITE) {
       handleWriteRequest(pkt);
     }
     handleReadRequest(pkt);
-    timedPort_->send(std::move(pkt));
+    timedPort_->send(pkt);
     reqQueue_.pop();
   }
 }
@@ -68,31 +62,32 @@ std::vector<char> FixedLatencyMemory::getUntimedData(uint64_t paddr,
                            memory_.begin() + paddr + size);
 }
 
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-FixedLatencyMemory::initPort() {
-  timedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
-  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+std::shared_ptr<Port<MemoryHierarchyPacket>> FixedLatencyMemory::initPort() {
+  timedPort_ = std::make_shared<Port<MemoryHierarchyPacket>>();
+  auto fn = [this](MemoryHierarchyPacket packet) -> void {
     this->requestAccess(packet);
   };
   timedPort_->registerReceiver(fn);
   return timedPort_;
 }
 
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-FixedLatencyMemory::initUntimedPort() {
-  untimedPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
-  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (!packet->isUntimedRead()) {
-      std::cerr << "Cannot do timed access through untimed port please use the "
+std::shared_ptr<Port<CPUMemoryPacket>>
+FixedLatencyMemory::initUntimedInstrReadPort() {
+  untimedInstrReadPort_ = std::make_shared<Port<CPUMemoryPacket>>();
+  auto fn = [this](CPUMemoryPacket packet) -> void {
+    if (packet.type_ == MemoryAccessType::WRITE) {
+      std::cerr << "[SimEng:FixedLatencyMemory] Cannot perform a write "
+                   "operation through the untimed instruction read port "
+                   "please use the "
                    "timed port."
                 << std::endl;
       std::exit(1);
     }
-    packet->turnIntoReadResponse(getUntimedData(packet->paddr_, packet->size_));
-    untimedPort_->send(std::move(packet));
+    packet.payload_ = getUntimedData(packet.paddr_, packet.size_);
+    untimedInstrReadPort_->send(packet);
   };
-  untimedPort_->registerReceiver(fn);
-  return untimedPort_;
+  untimedInstrReadPort_->registerReceiver(fn);
+  return untimedInstrReadPort_;
 }
 void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
   if (req->isRequest() && req->isRead()) {

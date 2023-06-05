@@ -66,7 +66,11 @@ class MMU {
 
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
+  std::shared_ptr<Port<CPUMemoryPacket>> initDataPort();
+
+  /** Function used to initialise the Data Port used for bidirection
+   * communication. */
+  std::shared_ptr<Port<CPUMemoryPacket>> initUntimedInstrReadPort();
 
  private:
   /** A vector containing all completed read requests. */
@@ -86,7 +90,10 @@ class MMU {
   VAddrTranslator translate_;
 
   /** Data port used for communication with the memory hierarchy. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
+  std::shared_ptr<Port<CPUMemoryPacket>> port_ = nullptr;
+
+  /***/
+  std::shared_ptr<Port<CPUMemoryPacket>> untimedInstrReadPort_ = nullptr;
 
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow(uint64_t a, uint64_t b) const {

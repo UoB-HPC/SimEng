@@ -19,9 +19,11 @@ struct BasePacket {
   MemoryAccessType type_ = MemoryAccessType::NONE;
   uint64_t vaddr_ = -1;
   uint64_t paddr_ = -1;
+  uint16_t size_ = 0;
   uint64_t id_ = ++id_ctr;
-  BasePacket(MemoryAccessType type, uint64_t vaddr, uint64_t paddr)
-      : type_(type), vaddr_(vaddr), paddr_(paddr) {}
+  BasePacket(MemoryAccessType type, uint64_t vaddr, uint64_t paddr,
+             uint16_t size)
+      : type_(type), vaddr_(vaddr), paddr_(paddr), size_(size) {}
   BasePacket(){};
 
  private:
@@ -29,7 +31,6 @@ struct BasePacket {
 };
 
 struct CPUMemoryPacket : public BasePacket {
-  uint64_t size_;
   uint64_t insnReqId_;
   uint16_t insnPktId_;
   uint16_t packetOrder_;
@@ -37,8 +38,7 @@ struct CPUMemoryPacket : public BasePacket {
   CPUMemoryPacket(MemoryAccessType type, uint64_t vaddr, uint64_t paddr,
                   uint16_t size, uint64_t insnReqId, uint16_t insnPktId,
                   uint16_t packetOrder)
-      : BasePacket(type, vaddr, paddr),
-        size_(size),
+      : BasePacket(type, vaddr, paddr, size),
         insnReqId_(insnReqId),
         insnPktId_(insnPktId),
         packetOrder_(packetOrder) {}
@@ -46,12 +46,13 @@ struct CPUMemoryPacket : public BasePacket {
 };
 
 struct MemoryHierarchyPacket : public BasePacket {
+  static inline uint16_t clw = 0;
   uint64_t clineAddr_;
   uint64_t cpuPktId_;
   std::vector<char> payload_;
   MemoryHierarchyPacket(MemoryAccessType type, uint64_t vaddr, uint64_t paddr,
-                        uint64_t clineAddr, uint64_t cpuPktId)
-      : BasePacket(type, vaddr, paddr),
+                        uint16_t size, uint64_t clineAddr, uint64_t cpuPktId)
+      : BasePacket(type, vaddr, paddr, size),
         clineAddr_(clineAddr),
         cpuPktId_(cpuPktId) {}
 

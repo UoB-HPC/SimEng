@@ -19,7 +19,7 @@ class SimpleMem : public Mem {
   virtual ~SimpleMem() override {}
 
   /** This method requests access to memory for both read and write requests. */
-  void requestAccess(std::unique_ptr<MemPacket>& pkt) override;
+  void requestAccess(MemoryHierarchyPacket& pkt) override;
 
   /** This method returns the size of memory. */
   size_t getMemorySize() override;
@@ -32,10 +32,10 @@ class SimpleMem : public Mem {
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
   /** Function used to initialise a Port used for bidirection communication. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> initPort() override;
 
   /** Function used to initialise Port used for untimed memory access. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initUntimedPort() override;
+  std::shared_ptr<Port<CPUMemoryPacket>> initUntimedInstrReadPort() override;
 
   /** Method to tick the memory. */
   void tick() override{};
@@ -48,19 +48,19 @@ class SimpleMem : public Mem {
   size_t memSize_;
 
   /** This method handles DataPackets of type READ_REQUEST. */
-  void handleReadRequest(std::unique_ptr<MemPacket>& req);
+  void handleReadRequest(MemoryHierarchyPacket& req);
 
   /** This method handles DataPackets of type WRITE_REQUEST. */
-  void handleWriteRequest(std::unique_ptr<MemPacket>& req);
+  void handleWriteRequest(MemoryHierarchyPacket& req);
 
   /** This method handles untimed memory access. */
-  void doUntimedAccess(std::unique_ptr<MemPacket>& req);
+  void doUntimedAccess(MemoryHierarchyPacket& req);
 
   /** Port used for communication with other classes. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> timedPort_ = nullptr;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> timedPort_ = nullptr;
 
   /** Port used for recieving untimed memory requests. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> untimedPort_ = nullptr;
+  std::shared_ptr<Port<CPUMemoryPacket>> untimedInstrReadPort_ = nullptr;
 };
 
 }  // namespace memory

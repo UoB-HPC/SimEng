@@ -25,7 +25,7 @@ class Mem {
 
   /** This method requests access to simulation memory for read and write
    * requests. */
-  virtual void requestAccess(std::unique_ptr<MemPacket>& pkt) = 0;
+  virtual void requestAccess(MemoryHierarchyPacket& pkt) = 0;
 
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;
@@ -39,11 +39,10 @@ class Mem {
 
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */
-  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() = 0;
+  virtual std::shared_ptr<Port<MemoryHierarchyPacket>> initPort() = 0;
 
   /** This method is used to initialise a Port for untimed memory access. */
-  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-  initUntimedPort() = 0;
+  virtual std::shared_ptr<Port<CPUMemoryPacket>> initUntimedInstrReadPort() = 0;
 
   /** Method to tick the memory. */
   virtual void tick() = 0;

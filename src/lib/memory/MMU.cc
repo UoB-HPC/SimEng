@@ -84,37 +84,46 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
 
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
-  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (packet->isInstrRead()) {
-      if (packet->isFaulty() || packet->ignore()) {
-        // If faulty or ignored, return no data. This signals a data abort.
-        completedInstrReads_.push_back(
-            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
-        return;
-      }
+std::shared_ptr<Port<CPUMemoryPacket>> MMU::initDataPort() {
+  port_ = std::make_shared<Port<CPUMemoryPacket>>();
+  auto fn = [this](CPUMemoryPacket packet) -> void {
+    /**
+  if (packet->isUntimedRead()) {
+    // Untimed Read only used by instruction requests
+    if (packet->isFaulty()) {
+      // If faulty, return no data. This signals a data abort.
       completedInstrReads_.push_back(
-          {{packet->vaddr_, packet->size_},
-           RegisterValue(packet->payload().data(), packet->size_),
-           packet->id_});
+          {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
       return;
     }
-
-    pendingDataRequests_--;
-    if (packet->isRead()) {
-      if (packet->isFaulty()) {
-        // If faulty, return no data. This signals a data abort.
-        completedReads_.push_back(
-            {{packet->vaddr_, packet->size_}, RegisterValue(), packet->id_});
-        return;
-      }
+    completedInstrReads_.push_back(
+        // Risky cast from uint64_t to uint8_t due to MemoryAccessTarget
+        // definition
+        {{packet->vaddr_, packet->size_},
+         RegisterValue(packet->payload().data(), packet->size_),
+         packet->id_});
+    return;
+  }
+  */
+    if (packet.type_ == MemoryAccessType::READ) {
       completedReads_.push_back(
-          {{packet->vaddr_, packet->size_},
-           RegisterValue(packet->payload().data(), packet->size_),
-           packet->id_});
+          {{packet.vaddr_, packet.size_},
+           RegisterValue(packet.payload_.data(), packet.size_),
+           packet.id_});
     }
-    // Currently, ignore write responses as none are expected
+    // Currently, ignore write responses.
+  };
+  port_->registerReceiver(fn);
+  return port_;
+}
+
+std::shared_ptr<Port<CPUMemoryPacket>> MMU::initUntimedInstrReadPort() {
+  untimedInstrReadPort_ = std::make_shared<Port<CPUMemoryPacket>>();
+  auto fn = [this](CPUMemoryPacket packet) -> void {
+    completedInstrReads_.push_back(
+        {{packet.vaddr_, packet.size_},
+         RegisterValue(packet.payload_.data(), packet.size_),
+         packet.id_});
   };
   port_->registerReceiver(fn);
   return port_;

@@ -16,7 +16,7 @@ namespace simeng::memory::hierarchy {
 
 class Mshr;
 
-enum class CacheLevel : uint8_t { L1, LowerLevel };
+enum class CacheLevel : uint8_t { L1, LL };
 
 /** The AccessInfo struct is used store information regarding initial cache
  * access i.e when it is determined whether a request hits or misses. */
