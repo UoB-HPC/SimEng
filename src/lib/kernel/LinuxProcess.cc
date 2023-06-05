@@ -49,7 +49,16 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     isValid_ = true;
 
     // Read in process image contents
-    char* unwrappedProcImgPtr = (char*)calloc(size_, sizeof(char));
+    char* temp = (char*)calloc(size_, sizeof(char));
+    if (temp == NULL) {
+      free(unwrappedProcImgPtr);
+      std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
+                   "from checkpoint successfully! Reallocation failed."
+                << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    unwrappedProcImgPtr = temp;
+
     float progress = 0.01;
     double printThreshold = 0;
     for (int i = 0; i < size_; i++) {
@@ -72,8 +81,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
         std::cout << "] " << int(progress * 100.0) << "% \r";
       }
     }
-    std::cout << std::endl;
-    std::cout << std::endl;
+    std::cout << std::endl << std::endl;
   } else {
     config["checkpointSource"] = false;
     if (!elf.isValid()) {
@@ -106,8 +114,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     if (temp == NULL) {
       free(unwrappedProcImgPtr);
       std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
-                   "successfully! "
-                   "Reallocation failed."
+                   "successfully! Reallocation failed."
                 << std::endl;
       exit(EXIT_FAILURE);
     }
