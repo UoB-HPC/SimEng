@@ -41,8 +41,16 @@ class MemPacket {
   /** The size of the memory operation to be performed. */
   uint16_t size_ = 0;
 
-  /* The sequenceId of the uop which issued the memory request. */
+  /** The sequenceId of the uop which issued the memory request. */
   uint64_t insnSeqId_ = 0;
+
+  /** Indicates the order of an instruction's memory packets, dictated by vaddr
+   * (smallest to largest).*/
+  uint16_t packetOrderId_ = 0;
+
+  /** Indicates the ordering of a memory target which had to be split due to
+   * being unaligned. Value of `-1` indicates no split occurred.*/
+  uint16_t packetSplitId_ = -1;
 
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
@@ -99,12 +107,14 @@ class MemPacket {
   /** Static function used to create a read request. */
   static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint16_t size,
-                                                      uint64_t seqId);
+                                                      uint64_t seqId,
+                                                      uint16_t pktOrderId);
 
   /** Static function used to create a write request. */
   static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
                                                        uint16_t size,
                                                        uint64_t seqId,
+                                                       uint16_t pktOrderId,
                                                        std::vector<char> data);
 
   /** Function to change a Read MemPacket into a Response. */
@@ -133,11 +143,12 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t seqId);
+  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t seqId,
+            uint16_t pktOrderId);
 
   /** Constructor for MemPackets which hold any data. */
   MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t seqId,
-            std::vector<char> data);
+            uint16_t pktOrderId, std::vector<char> data);
 };
 
 }  // namespace memory

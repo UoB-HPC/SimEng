@@ -127,10 +127,11 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   loadsStores_[LD].push_back({});
   // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
-  for (auto& target : targets) {
+  for (int i = 0; i < targets.size(); i++) {
     pendingDataRequests_++;
+    const auto& target = targets[i];
     std::unique_ptr<memory::MemPacket> req =
-        memory::MemPacket::createReadRequest(target.vaddr, target.size, seqId);
+        MemPacket::createReadRequest(target.vaddr, target.size, seqId, i);
     loadsStores_[LD].back().push_back(std::move(req));
   }
   return true;
@@ -176,7 +177,7 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
     const char* wdata = data[i].getAsVector<char>();
     std::vector<char> dt(wdata, wdata + target.size);
     std::unique_ptr<MemPacket> req =
-        MemPacket::createWriteRequest(target.vaddr, target.size, seqId, dt);
+        MemPacket::createWriteRequest(target.vaddr, target.size, seqId, i, dt);
     if (!isConditional) updateLLSCMonitor(target);
     loadsStores_[STR].back().push_back(std::move(req));
   }
@@ -190,15 +191,17 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
   std::unique_ptr<MemPacket> req =
-      MemPacket::createWriteRequest(target.vaddr, target.size, 0, dt);
+      MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
   updateLLSCMonitor(target);
   issueRequest(std::move(req));
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
+  assert(isAligned(target, cacheLineWidth_) &&
+         "[SimEng:MMU] Unlaigned instruction read requests are not permitted.");
   // Create and fire off request
   std::unique_ptr<memory::MemPacket> insRequest =
-      memory::MemPacket::createReadRequest(target.vaddr, target.size, 0);
+      MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
   issueRequest(std::move(insRequest));

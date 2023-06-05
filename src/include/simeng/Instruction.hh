@@ -142,6 +142,9 @@ class Instruction {
   /** Check whether all required data has been supplied. */
   bool hasAllData() const { return (dataPending_ == 0); }
 
+  /** Check how many required data items haven't been supplied. */
+  uint16_t getNumDataPending() const { return dataPending_; }
+
   /** Retrieve supplied memory data. */
   virtual const std::vector<RegisterValue>& getData() const {
     return memoryData_;
