@@ -26,7 +26,7 @@ void Linux::createProcess(const LinuxProcess& process) {
   processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
                             .path = process.getPath(),
                             .startBrk = process.getHeapStart(),
-                            .currentBrk = process.getHeapStart(),
+                            .currentBrk = process.getHeapBrk(),
                             .initialStackPointer = process.getStackPointer(),
                             .mmapRegion = process.getMmapStart(),
                             .pageSize = process.getPageSize()});

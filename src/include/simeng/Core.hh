@@ -33,6 +33,14 @@ class Core {
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+
+  /** A getter that returns whether a checkpoint should be generated after an
+   * exception outcome. */
+  virtual bool shouldCheckpoint() const = 0;
+
+  /** A getter that returns the instruction address which will act as the
+   * entrypoint in the generated checkpoint file. */
+  virtual uint64_t getExecPC() const = 0;
 };
 
 }  // namespace simeng

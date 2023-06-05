@@ -1,5 +1,6 @@
 #include "simeng/models/inorder/Core.hh"
 
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <sstream>
@@ -15,7 +16,8 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           YAML::Node config)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -35,9 +37,26 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
-  // Query and apply initial state
-  auto state = isa.getInitialState();
-  applyStateChange(state);
+  if (config["checkpointSource"].as<bool>()) {
+    std::ifstream readChk;
+    readChk.open("checkpointFile.txt", std::ios::binary);
+    readChk.seekg(4);
+    std::vector<RegisterFileStructure> regFileStructs =
+        isa_.getRegisterFileStructures();
+    for (uint8_t type = 0; type < regFileStructs.size(); type++) {
+      for (uint16_t tag = 0; tag < regFileStructs[type].quantity; tag++) {
+        char* regBytes = (char*)calloc(regFileStructs[type].bytes, 1);
+        readChk.read(regBytes, regFileStructs[type].bytes);
+        RegisterValue regVal = {regBytes, regFileStructs[type].bytes};
+        architecturalRegisterFileSet_.set({type, tag}, regVal);
+      }
+    }
+    readChk.close();
+  } else {
+    // Query and apply initial state
+    auto state = isa.getInitialState();
+    applyStateChange(state);
+  }
 };
 
 void Core::tick() {
@@ -209,15 +228,15 @@ void Core::processExceptionHandler() {
     return;
   }
 
-  const auto& result = exceptionHandler_->getResult();
+  exceptionResult_ = exceptionHandler_->getResult();
 
-  if (result.fatal) {
+  if (exceptionResult_.fatal) {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(result.instructionAddress);
-    applyStateChange(result.stateChange);
+    fetchUnit_.updatePC(exceptionResult_.instructionAddress);
+    applyStateChange(exceptionResult_.stateChange);
   }
 
   exceptionHandler_ = nullptr;
@@ -361,6 +380,12 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   // Manually add the instruction to the writeback input buffer
   completionSlots_[0].getTailSlots()[0] = instruction;
 }
+
+bool Core::shouldCheckpoint() const {
+  return exceptionResult_.shouldCheckpoint;
+}
+
+uint64_t Core::getExecPC() const { return exceptionResult_.instructionAddress; }
 
 }  // namespace inorder
 }  // namespace models

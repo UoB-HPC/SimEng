@@ -1,6 +1,7 @@
 #include "simeng/models/emulation/Core.hh"
 
 #include <cstring>
+#include <fstream>
 
 namespace simeng {
 namespace models {
@@ -13,7 +14,7 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa)
+           const arch::Architecture& isa, YAML::Node config)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       programByteLength_(programByteLength),
@@ -24,9 +25,26 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
-  // Query and apply initial state
-  auto state = isa.getInitialState();
-  applyStateChange(state);
+  if (config["checkpointSource"].as<bool>()) {
+    std::ifstream readChk;
+    readChk.open("checkpointFile.txt", std::ios::binary);
+    readChk.seekg(4);
+    std::vector<RegisterFileStructure> regFileStructs =
+        isa_.getRegisterFileStructures();
+    for (uint8_t type = 0; type < regFileStructs.size(); type++) {
+      for (uint16_t tag = 0; tag < regFileStructs[type].quantity; tag++) {
+        char* regBytes = (char*)calloc(regFileStructs[type].bytes, 1);
+        readChk.read(regBytes, regFileStructs[type].bytes);
+        RegisterValue regVal = {regBytes, regFileStructs[type].bytes};
+        architecturalRegisterFileSet_.set({type, tag}, regVal);
+      }
+    }
+    readChk.close();
+  } else {
+    // Query and apply initial state
+    auto state = isa.getInitialState();
+    applyStateChange(state);
+  }
 }
 
 void Core::tick() {
@@ -224,15 +242,15 @@ void Core::processExceptionHandler() {
     return;
   }
 
-  const auto& result = exceptionHandler_->getResult();
+  exceptionResult_ = exceptionHandler_->getResult();
 
-  if (result.fatal) {
+  if (exceptionResult_.fatal) {
     pc_ = programByteLength_;
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
-    pc_ = result.instructionAddress;
-    applyStateChange(result.stateChange);
+    pc_ = exceptionResult_.instructionAddress;
+    applyStateChange(exceptionResult_.stateChange);
   }
 
   // Clear the handler
@@ -301,7 +319,13 @@ uint64_t Core::getSystemTimer() const {
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)}};
-};
+}
+
+bool Core::shouldCheckpoint() const {
+  return exceptionResult_.shouldCheckpoint;
+}
+
+uint64_t Core::getExecPC() const { return exceptionResult_.instructionAddress; }
 
 }  // namespace emulation
 }  // namespace models

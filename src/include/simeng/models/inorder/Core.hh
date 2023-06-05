@@ -22,7 +22,8 @@ class Core : public simeng::Core {
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor);
+       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+       YAML::Node config);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -44,6 +45,14 @@ class Core : public simeng::Core {
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+  /** A getter that returns whether a checkpoint should be generated after an
+   * exception outcome. */
+  bool shouldCheckpoint() const override;
+
+  /** A getter that returns the instruction address which will act as the
+   * entrypoint in the generated checkpoint file. */
+  uint64_t getExecPC() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -132,6 +141,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** The result of the most recent exception. */
+  arch::ExceptionResult exceptionResult_;
 };
 
 }  // namespace inorder

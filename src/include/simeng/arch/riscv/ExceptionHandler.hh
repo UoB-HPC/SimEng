@@ -69,7 +69,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool concludeSyscall(ProcessStateChange& stateChange);
 
   /** Sets a generic fatal result and returns true. */
-  bool fatal();
+  bool fatal(bool checkpoint = true);
 
   /** The instruction generating an exception. */
   const Instruction& instruction_;

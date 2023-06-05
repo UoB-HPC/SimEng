@@ -4,7 +4,7 @@
 
 Core:
   ISA: AArch64
-  Simulation-Mode: outoforder
+  Simulation-Mode: emulation
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
@@ -38,7 +38,7 @@ Branch-Predictor:
   RAS-entries: 8
   Fallback-Static-Predictor: "Always-Taken"
 L1-Data-Memory:
-  Interface-Type: Fixed
+  Interface-Type: Flat
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:

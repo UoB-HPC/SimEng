@@ -262,11 +262,11 @@ void CoreInstance::createCore() {
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
         *instructionMemory_, *dataMemory_, entryPoint, processMemorySize_,
-        *arch_);
+        *arch_, config_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_);
+        *arch_, *predictor_, config_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
@@ -342,4 +342,88 @@ const uint64_t CoreInstance::getHeapStart() const {
   return process_->getHeapStart();
 };
 
+void CoreInstance::checkpoint() {
+  std::ofstream chkPnt;
+  chkPnt.open("checkpointFile.txt");
+  // Write magic numbers ('S'im'E'ng 'C'heck'P'oint) to checkpoint file for
+  // later identification
+  chkPnt << "SECP";
+  // Write registers
+  std::cout << std::endl;
+  std::cout << "[SimEng:CoreInstance] Generating Checkpoint..." << std::endl;
+  std::cout << "[SimEng:CoreInstance] Checkpointing registers..." << std::endl;
+  std::vector<RegisterFileStructure> regFileStructs =
+      arch_->getRegisterFileStructures();
+  for (uint8_t type = 0; type < regFileStructs.size(); type++) {
+    for (uint16_t tag = 0; tag < regFileStructs[type].quantity; tag++) {
+      const uint8_t* regVal = core_->getArchitecturalRegisterFileSet()
+                                  .get({type, tag})
+                                  .getAsVector<uint8_t>();
+      for (int byte = 0; byte < regFileStructs[type].bytes; byte++) {
+        chkPnt << regVal[byte];
+      }
+    }
+  }
+
+  std::cout << "[SimEng:CoreInstance] Checkpointing ProcessImage..."
+            << std::endl;
+  // Write process image structure variables
+  uint64_t heapStart = process_->getHeapStart();
+  for (int byte = 0; byte < sizeof(heapStart); byte++) {
+    chkPnt << static_cast<char>((heapStart & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+  uint64_t mmapStart = process_->getMmapStart();
+  for (int byte = 0; byte < sizeof(mmapStart); byte++) {
+    chkPnt << static_cast<char>((mmapStart & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+  uint64_t entryPoint = core_->getExecPC();
+  for (int byte = 0; byte < sizeof(entryPoint); byte++) {
+    chkPnt << static_cast<char>((entryPoint & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+  uint64_t initStackPtr = process_->getStackPointer();
+  for (int byte = 0; byte < sizeof(initStackPtr); byte++) {
+    chkPnt << static_cast<char>((initStackPtr & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+  uint64_t currentBrk = kernel_.brk(0);
+  for (int byte = 0; byte < sizeof(currentBrk); byte++) {
+    chkPnt << static_cast<char>((currentBrk & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+  uint64_t imageSize = process_->getProcessImageSize();
+  for (int byte = 0; byte < sizeof(imageSize); byte++) {
+    chkPnt << static_cast<char>((imageSize & (0xffull << (byte * 8))) >>
+                                (byte * 8));
+  }
+
+  // Write memory content
+  float progress = 0.01;
+  double printThreshold = 0;
+  char* memory = process_->getProcessImage().get();
+  for (uint64_t byte = 0; byte < imageSize; byte++) {
+    chkPnt << memory[byte];
+    if (double(byte) > printThreshold) {
+      printThreshold += double(imageSize) * 0.01;
+      progress += 0.01;
+      std::cout.flush();
+      std::cout << "[";
+      int pos = 100 * progress;
+      for (int i = 0; i < 100; ++i) {
+        if (i < pos)
+          std::cout << "=";
+        else if (i == pos)
+          std::cout << ">";
+        else
+          std::cout << " ";
+      }
+      std::cout << "] " << int(progress * 100.0) << "% \r";
+    }
+  }
+  std::cout << std::endl;
+
+  chkPnt.close();
+}
 }  // namespace simeng

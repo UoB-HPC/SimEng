@@ -367,7 +367,7 @@ bool ExceptionHandler::init() {
         std::cout << "\n[SimEng:ExceptionHandler] Received exit_group syscall: "
                      "terminating with exit code "
                   << exitCode << std::endl;
-        return fatal();
+        return fatal(false);
       }
       case 96: {  // set_tid_address
         uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
@@ -848,7 +848,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
-  result_ = {false, nextInstructionAddress, stateChange};
+  result_ = {false, false, nextInstructionAddress, stateChange};
   return true;
 }
 
@@ -929,8 +929,8 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << std::endl;
 }
 
-bool ExceptionHandler::fatal() {
-  result_ = {true, 0, {}};
+bool ExceptionHandler::fatal(bool checkpoint) {
+  result_ = {true, checkpoint, instruction_.getInstructionAddress(), {}};
   return true;
 }
 

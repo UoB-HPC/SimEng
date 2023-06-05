@@ -35,6 +35,8 @@ struct ProcessStateChange {
 struct ExceptionResult {
   /** Whether execution should halt. */
   bool fatal;
+  /** Whether a checkpoint should be made. */
+  bool shouldCheckpoint;
   /** The address to resume execution from. */
   uint64_t instructionAddress;
   /** Any changes to apply to the process state. */

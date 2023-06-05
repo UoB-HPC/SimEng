@@ -37,7 +37,13 @@ Elf::Elf(std::string path, char** imagePointer) {
   char fileMagic[4];
   file.read(fileMagic, 4);
   if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    std::cerr << "[SimEng:Elf] Elf magic does not match" << std::endl;
+    // Check whether the opened file is a SimEng checkpoint file and not an ELF
+    char chkPntMagic[4] = {'S', 'E', 'C', 'P'};
+    if (std::memcmp(chkPntMagic, fileMagic, sizeof(chkPntMagic)) == 0) {
+      isCheckPoint_ = true;
+    } else {
+      std::cerr << "[SimEng:Elf] Elf magic does not match" << std::endl;
+    }
     return;
   }
 
@@ -195,6 +201,8 @@ uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
 bool Elf::isValid() const { return isValid_; }
+
+bool Elf::isCheckPoint() const { return isCheckPoint_; }
 
 uint64_t Elf::getPhdrTableAddress() const { return phdrTableAddress_; }
 

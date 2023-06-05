@@ -90,8 +90,12 @@ class CoreInstance {
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
 
-  /* Getter for heap start. */
+  /** Getter for heap start. */
+
   const uint64_t getHeapStart() const;
+
+  /** Create a checkpoint of the current architectural state. */
+  void checkpoint();
 
  private:
   /** Generate the appropriate simulation objects as parameterised by the

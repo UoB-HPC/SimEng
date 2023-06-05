@@ -57,6 +57,10 @@ class Elf {
   /** Returns if this ELF is valid */
   bool isValid() const;
 
+  /** Returns whether the supplied file path points to a SimEng checkpoint
+   * file */
+  bool isCheckPoint() const;
+
   /** Returns the virtual address to which the system first transfers
    * control */
   uint64_t getEntryPoint() const;
@@ -89,6 +93,9 @@ class Elf {
 
   /** Holds whether this ELF is valid for SimEng */
   bool isValid_ = false;
+
+  /** Holds whether the passed file path points to a SimEng checkpoint file */
+  bool isCheckPoint_ = false;
 
   /** The size of the process image */
   uint64_t processImageSize_;

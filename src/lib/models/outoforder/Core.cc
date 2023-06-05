@@ -1,6 +1,7 @@
 #include "simeng/models/outoforder/Core.hh"
 
 #include <algorithm>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <sstream>
@@ -102,9 +103,26 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
 
-  // Query and apply initial state
-  auto state = isa.getInitialState();
-  applyStateChange(state);
+  if (config["checkpointSource"].as<bool>()) {
+    std::ifstream readChk;
+    readChk.open("checkpointFile.txt", std::ios::binary);
+    readChk.seekg(4);
+    std::vector<RegisterFileStructure> regFileStructs =
+        isa_.getRegisterFileStructures();
+    for (uint8_t type = 0; type < regFileStructs.size(); type++) {
+      for (uint16_t tag = 0; tag < regFileStructs[type].quantity; tag++) {
+        char* regBytes = (char*)calloc(regFileStructs[type].bytes, 1);
+        readChk.read(regBytes, regFileStructs[type].bytes);
+        RegisterValue regVal = {regBytes, regFileStructs[type].bytes};
+        mappedRegisterFileSet_.set({type, tag}, regVal);
+      }
+    }
+    readChk.close();
+  } else {
+    // Query and apply initial state
+    auto state = isa.getInitialState();
+    applyStateChange(state);
+  }
 };
 
 void Core::tick() {
@@ -308,15 +326,15 @@ void Core::processExceptionHandler() {
     return;
   }
 
-  const auto& result = exceptionHandler_->getResult();
+  exceptionResult_ = exceptionHandler_->getResult();
 
-  if (result.fatal) {
+  if (exceptionResult_.fatal) {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(result.instructionAddress);
-    applyStateChange(result.stateChange);
+    fetchUnit_.updatePC(exceptionResult_.instructionAddress);
+    applyStateChange(exceptionResult_.stateChange);
   }
 
   exceptionHandler_ = nullptr;
@@ -431,6 +449,12 @@ std::map<std::string, std::string> Core::getStats() const {
           {"lsq.loadViolations",
            std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
+
+bool Core::shouldCheckpoint() const {
+  return exceptionResult_.shouldCheckpoint;
+}
+
+uint64_t Core::getExecPC() const { return exceptionResult_.instructionAddress; }
 
 }  // namespace outoforder
 }  // namespace models

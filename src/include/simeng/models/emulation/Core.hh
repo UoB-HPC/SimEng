@@ -23,7 +23,7 @@ class Core : public simeng::Core {
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa);
+       const arch::Architecture& isa, YAML::Node config);
 
   /** Tick the core. */
   void tick() override;
@@ -43,6 +43,14 @@ class Core : public simeng::Core {
 
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+  /** A getter that returns whether a checkpoint should be generated after an
+   * exception outcome. */
+  bool shouldCheckpoint() const override;
+
+  /** A getter that returns the instruction address which will act as the
+   * entrypoint in the generated checkpoint file. */
+  uint64_t getExecPC() const override;
 
  private:
   /** Execute an instruction. */
@@ -93,6 +101,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** The result of the most recent exception. */
+  arch::ExceptionResult exceptionResult_;
 
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;

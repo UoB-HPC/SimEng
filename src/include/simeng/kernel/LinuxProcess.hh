@@ -74,6 +74,9 @@ class LinuxProcess {
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
 
+  /** Get the current heap break address. */
+  uint64_t getHeapBrk() const;
+
   /** Get the address of the top of the stack. */
   uint64_t getStackStart() const;
 
@@ -125,6 +128,9 @@ class LinuxProcess {
 
   /** The address of the start of the heap region. */
   uint64_t heapStart_;
+
+  /** The address of the heap break. */
+  uint64_t heapBrk_;
 
   /** The address of the start of region of memory given to mmap. */
   uint64_t mmapStart_;

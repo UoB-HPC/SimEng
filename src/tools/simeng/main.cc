@@ -104,6 +104,9 @@ int main(int argc, char** argv) {
   uint64_t retired = core->getInstructionsRetiredCount();
   double mips = (retired / (static_cast<double>(duration))) / 1000.0;
 
+  // Check whether we should checkpoint
+  if (core->shouldCheckpoint()) coreInstance->checkpoint();
+
   // Print stats
   std::cout << std::endl;
   auto stats = core->getStats();

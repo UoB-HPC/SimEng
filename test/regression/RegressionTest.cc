@@ -88,13 +88,13 @@ void RegressionTest::run(const char* source, const char* triple,
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
           instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
-          *architecture_);
+          *architecture_, config);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          *architecture_, predictor, config);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:

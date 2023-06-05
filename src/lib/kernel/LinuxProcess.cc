@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 
 namespace simeng {
@@ -25,40 +26,95 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   assert(commandLine.size() > 0);
   char* unwrappedProcImgPtr;
   Elf elf(commandLine[0], &unwrappedProcImgPtr);
-  if (!elf.isValid()) {
-    return;
+  // If the passed file is a checkpoint file, extract values and create process
+  // from it
+  if (elf.isCheckPoint()) {
+    std::cout
+        << "[SimEng:LinuxProcess] Reading in checkpointed process image..."
+        << std::endl;
+    config["checkpointSource"] = true;
+    std::ifstream readChk;
+    readChk.open(commandLine[0], std::ios::binary);
+    // Navigate to correct region of checkpoint that hold process related
+    // information
+    readChk.seekg(25437, std::ios::cur);
+    // Read in process image structure information
+    readChk.read(reinterpret_cast<char*>(&heapStart_), sizeof(heapStart_));
+    readChk.read(reinterpret_cast<char*>(&mmapStart_), sizeof(mmapStart_));
+    readChk.read(reinterpret_cast<char*>(&entryPoint_), sizeof(entryPoint_));
+    readChk.read(reinterpret_cast<char*>(&stackPointer_),
+                 sizeof(stackPointer_));
+    readChk.read(reinterpret_cast<char*>(&heapBrk_), sizeof(heapBrk_));
+    readChk.read(reinterpret_cast<char*>(&size_), sizeof(size_));
+    isValid_ = true;
+
+    // Read in process image contents
+    char* unwrappedProcImgPtr = (char*)calloc(size_, sizeof(char));
+    float progress = 0.01;
+    double printThreshold = 0;
+    for (int i = 0; i < size_; i++) {
+      readChk.read(unwrappedProcImgPtr + i, sizeof(char));
+
+      if (double(i) > printThreshold) {
+        printThreshold += double(size_) * 0.01;
+        progress += 0.01;
+        std::cout.flush();
+        std::cout << "[";
+        int pos = 100 * progress;
+        for (int i = 0; i < 100; ++i) {
+          if (i < pos)
+            std::cout << "=";
+          else if (i == pos)
+            std::cout << ">";
+          else
+            std::cout << " ";
+        }
+        std::cout << "] " << int(progress * 100.0) << "% \r";
+      }
+    }
+    std::cout << std::endl;
+    std::cout << std::endl;
+  } else {
+    config["checkpointSource"] = false;
+    if (!elf.isValid()) {
+      return;
+    }
+    isValid_ = true;
+
+    entryPoint_ = elf.getEntryPoint();
+
+    progHeaderTableAddress_ = elf.getPhdrTableAddress();
+    progHeaderEntSize_ = elf.getPhdrEntrySize();
+    numProgHeaders_ = elf.getNumPhdr();
+
+    // Align heap start to a 32-byte boundary
+    heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);
+
+    // Nothing in the heap so the break address will be equal to the start of
+    // the heap region
+    heapBrk_ = heapStart_;
+
+    // Set mmap region start to be an equal distance from the stack and heap
+    // starts. Additionally, align to the page size (4kb)
+    mmapStart_ =
+        alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+
+    // Calculate process image size, including heap + stack
+    size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
+
+    char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
+    if (temp == NULL) {
+      free(unwrappedProcImgPtr);
+      std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
+                   "successfully! "
+                   "Reallocation failed."
+                << std::endl;
+      exit(EXIT_FAILURE);
+    }
+    unwrappedProcImgPtr = temp;
+
+    createStack(&unwrappedProcImgPtr);
   }
-  isValid_ = true;
-
-  entryPoint_ = elf.getEntryPoint();
-
-  progHeaderTableAddress_ = elf.getPhdrTableAddress();
-  progHeaderEntSize_ = elf.getPhdrEntrySize();
-  numProgHeaders_ = elf.getNumPhdr();
-
-  // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);
-
-  // Set mmap region start to be an equal distance from the stack and heap
-  // starts. Additionally, align to the page size (4kb)
-  mmapStart_ =
-      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
-
-  // Calculate process image size, including heap + stack
-  size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-
-  char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
-  if (temp == NULL) {
-    free(unwrappedProcImgPtr);
-    std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
-                 "successfully! "
-                 "Reallocation failed."
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  unwrappedProcImgPtr = temp;
-
-  createStack(&unwrappedProcImgPtr);
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
@@ -72,6 +128,10 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
 
   // Align heap start to a 32-byte boundary
   heapStart_ = alignToBoundary(instructions.size(), 32);
+
+  // Nothing in the heap so the break address will be equal to the start of the
+  // heap region
+  heapBrk_ = heapStart_;
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
@@ -89,6 +149,8 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
 LinuxProcess::~LinuxProcess() {}
 
 uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
+
+uint64_t LinuxProcess::getHeapBrk() const { return heapBrk_; }
 
 uint64_t LinuxProcess::getStackStart() const { return size_; }
 
