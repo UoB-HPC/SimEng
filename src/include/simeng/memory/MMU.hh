@@ -20,6 +20,14 @@ namespace simeng {
 
 namespace memory {
 
+/** Simple struct representing an entry for the requestedLoads_ map.*/
+struct reqLoadEntry {
+  /** A load instruction that is waiting on responses from memory. */
+  std::shared_ptr<Instruction> insn = nullptr;
+  /** The number of MemoryPackets sent to memory that have not returned yet. */
+  uint16_t totalPacketsRemaining = 0;
+};
+
 class MMU {
  public:
   MMU(VAddrTranslator fn);
@@ -88,159 +96,28 @@ class MMU {
 
   /** Check if given target crosses a cache line boundary. Returns true if no
    * cache line boundary is crossed. */
-  bool isAligned(const MemoryAccessTarget& target) const {
-    assert(target.size != 0 &&
-           "[SimEng:MMU] Cannot have a memory target size of 0.");
-    uint64_t startAddr = target.vaddr;
-    // Must -1 from end address as vaddr + size will give the address at end of
-    // region, but this address is not written to.
-    // i.e. vaddr = 0, size = 4 :  | | | | | | | |
-    //                      Addr:  0 1 2 3 4 5 6 7
-    //                             ^-------^
-    //                              Payload
-    // End address is 4, but we do not write to address 4 hence this is allowed
-    // to be a cache line boundary.
-    uint64_t endAddr = target.vaddr + target.size - 1;
-    // If start and end address down align to same value (w.r.t cache line
-    // width), then memory target is aligned.
-    return (downAlign(startAddr, cacheLineWidth_) ==
-            downAlign(endAddr, cacheLineWidth_));
-  }
+  bool isAligned(const MemoryAccessTarget& target) const;
 
   /** Splits a read memory access target into multiple MemPackets such that each
    * MemPacket is aligned w.r.t the cache line width.*/
   std::vector<std::unique_ptr<MemPacket>> splitReadMemTarget(
       const MemoryAccessTarget& target, uint64_t insnSeqId,
-      uint16_t pktOrderId) const {
-    std::vector<std::unique_ptr<MemPacket>> packets = {};
-    if (isAligned(target)) {
-      auto req = MemPacket::createReadRequest(target.vaddr, target.size,
-                                              insnSeqId, pktOrderId);
-      packets.push_back(std::move(req));
-      return packets;
-    }
-
-    uint64_t nextAddr = target.vaddr;
-    uint64_t remSize = static_cast<uint64_t>(target.size);
-    uint16_t nextSplitId = 0;
-    while (remSize != 0) {
-      // Get size of next target region
-      uint16_t regSize = std::min(
-          (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
-          remSize);
-      auto req = MemPacket::createReadRequest(nextAddr, regSize, insnSeqId,
-                                              pktOrderId);
-      req->packetSplitId_ = nextSplitId;
-      packets.push_back(std::move(req));
-      // Update vars
-      nextAddr += regSize;
-      remSize -= regSize;
-      nextSplitId++;
-    }
-    return packets;
-  }
+      uint16_t pktOrderId) const;
 
   /** Splits a write memory access target into multiple MemPackets such that
    * each MemPacket is aligned w.r.t the cache line width.*/
   std::vector<std::unique_ptr<MemPacket>> splitWriteMemTarget(
       const MemoryAccessTarget& target, const std::vector<char>& data,
-      uint64_t insnSeqId, uint16_t pktOrderId) const {
-    std::vector<std::unique_ptr<MemPacket>> packets = {};
-    if (isAligned(target)) {
-      auto req = MemPacket::createWriteRequest(target.vaddr, target.size,
-                                               insnSeqId, pktOrderId, data);
-      packets.push_back(std::move(req));
-      return packets;
-    }
-
-    uint64_t nextAddr = target.vaddr;
-    uint64_t remSize = static_cast<uint64_t>(target.size);
-    uint16_t nextSplitId = 0;
-    std::vector<char> remData = data;
-    while (remSize != 0) {
-      // Get size of next target region
-      uint16_t regSize = std::min(
-          (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
-          remSize);
-
-      auto regData =
-          std::vector<char>(remData.begin(), remData.begin() + regSize);
-      auto req = MemPacket::createWriteRequest(nextAddr, regSize, insnSeqId,
-                                               pktOrderId, regData);
-      req->packetSplitId_ = nextSplitId;
-      packets.push_back(std::move(req));
-      // Update vars
-      nextAddr += regSize;
-      remSize -= regSize;
-      nextSplitId++;
-      remData = std::vector<char>(remData.begin() + regSize, remData.end());
-    }
-    return packets;
-  }
+      uint64_t insnSeqId, uint16_t pktOrderId) const;
 
   /** For a given instruction, supply all data from packets in readResponses_.
    */
-  void supplyLoadData(const uint64_t insnSeqId) {
-    auto& insn = requestedLoads_.find(insnSeqId)->second;
-    assert(insn != requestedLoads_.end() &&
-           "[SimEng:MMU] Tried to supply data to a load instruction that does "
-           "not exist in the requestedLoads_ map.");
-    auto& packets = readResponses_.find(insnSeqId)->second;
-
-    int pktLim = insn->getNumDataPending();
-    for (int i = 0; i < pktLim; i++) {
-      auto& pktVec = packets[i];
-      assert(pktVec.size() > 0 &&
-             "[SimEng:MMU] Empty read response packet vector.");
-      if (pktVec.size() == 1) {
-        // Request not split, supply data normally
-        if (pktVec[0]->isFaulty()) {
-          // If faulty, return no data. This signals a data abort.
-          insn->supplyData(pktVec[0]->vaddr_, RegisterValue());
-          continue;
-        }
-        insn->supplyData(pktVec[0]->vaddr_,
-                         {pktVec[0]->payload().data(), pktVec[0]->size_});
-      } else {
-        // Request was split, merge responses before supplying data to
-        // instruction
-        uint64_t addr = pktVec[0]->vaddr_;
-        if (pktVec[0]->isFaulty()) {
-          // If faulty, return no data. This signals a data abort.
-          insn->supplyData(addr, RegisterValue());
-          continue;
-        }
-        // Initialise values with first package
-        std::vector<char> mergedData = pktVec[0]->payload();
-        uint16_t mergedSize = pktVec[0]->size_;
-        for (int j = 1; j < pktVec.size(); j++) {
-          if (pktVec[j]->isFaulty()) {
-            // If faulty, return no data. This signals a data abort.
-            insn->supplyData(addr, RegisterValue());
-            return;
-          }
-          // Increase merged size
-          mergedSize += pktVec[j]->size_;
-          // Concatonate the payload data
-          auto& tempData = pktVec[j]->payload();
-          mergedData.insert(mergedData.end(), tempData.begin(), tempData.end());
-        }
-        // Supply data to instruction
-        insn->supplyData(addr, {mergedData.data(), mergedSize});
-      }
-    }
-    assert(insn->hasAllData() &&
-           "[SimEng:MMU] Load instruction was supplied memory data but is "
-           "still waiting on further data to be supplied.");
-    // Instruction now has all data, remove entries from maps
-    requestedLoads_.erase(insnSeqId);
-    readResponses_.erase(insnSeqId);
-  }
+  void supplyLoadInsnData(const uint64_t insnSeqId);
 
   /** A map containing all load instructions waiting for their results.
    * Key = Instruction sequenceID
    * Value = Instruction */
-  std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
+  std::map<uint64_t, reqLoadEntry> requestedLoads_;
 
   /** Map containing all read response packets before they have been added to
    * their associated instruction.

@@ -120,20 +120,30 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
     openLLSCMonitor(uop);
   }
 
-  // Register load in map
-  requestedLoads_[seqId] = uop;
-
   // Initialise space in loads
   loadsStores_[LD].push_back({});
+  uint16_t totalPktsSent = 0;
   // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   for (int i = 0; i < targets.size(); i++) {
-    pendingDataRequests_++;
     const auto& target = targets[i];
-    std::unique_ptr<memory::MemPacket> req =
-        MemPacket::createReadRequest(target.vaddr, target.size, seqId, i);
-    loadsStores_[LD].back().push_back(std::move(req));
+    if (isAligned(target)) {
+      std::unique_ptr<memory::MemPacket> req =
+          MemPacket::createReadRequest(target.vaddr, target.size, seqId, i);
+      loadsStores_[LD].back().push_back(std::move(req));
+      pendingDataRequests_++;
+      totalPktsSent++;
+    } else {
+      auto packets = splitReadMemTarget(target, seqId, i);
+      pendingDataRequests_ += packets.size();
+      totalPktsSent += packets.size();
+      for (int j = 0; j < packets.size(); j++) {
+        loadsStores_[LD].back().push_back(std::move(packets[j]));
+      }
+    }
   }
+  // Register load in map
+  requestedLoads_[seqId] = {uop, totalPktsSent};
   return true;
 }
 
@@ -172,14 +182,22 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
          "[SimEng:MMU] Number of addresses does not match the number of data "
          "elements to write.");
   for (int i = 0; i < targets.size(); i++) {
-    pendingDataRequests_++;
     const auto& target = targets[i];
     const char* wdata = data[i].getAsVector<char>();
     std::vector<char> dt(wdata, wdata + target.size);
-    std::unique_ptr<MemPacket> req =
-        MemPacket::createWriteRequest(target.vaddr, target.size, seqId, i, dt);
     if (!isConditional) updateLLSCMonitor(target);
-    loadsStores_[STR].back().push_back(std::move(req));
+    if (isAligned(target)) {
+      std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
+          target.vaddr, target.size, seqId, i, dt);
+      loadsStores_[STR].back().push_back(std::move(req));
+      pendingDataRequests_++;
+    } else {
+      auto packets = splitWriteMemTarget(target, dt, seqId, i);
+      pendingDataRequests_ += packets.size();
+      for (int j = 0; j < packets.size(); j++) {
+        loadsStores_[STR].back().push_back(std::move(packets[j]));
+      }
+    }
   }
   return true;
 }
@@ -187,17 +205,25 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data) {
   // Create and fire off request
-  pendingDataRequests_++;
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
-  std::unique_ptr<MemPacket> req =
-      MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
   updateLLSCMonitor(target);
-  issueRequest(std::move(req));
+  if (isAligned(target)) {
+    std::unique_ptr<MemPacket> req =
+        MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
+    issueRequest(std::move(req));
+    pendingDataRequests_++;
+  } else {
+    auto packets = splitWriteMemTarget(target, dt, 0, 0);
+    pendingDataRequests_ += packets.size();
+    for (int i = 0; i < packets.size(); i++) {
+      issueRequest(std::move(packets[i]));
+    }
+  }
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
-  assert(isAligned(target, cacheLineWidth_) &&
+  assert(isAligned(target) &&
          "[SimEng:MMU] Unlaigned instruction read requests are not permitted.");
   // Create and fire off request
   std::unique_ptr<memory::MemPacket> insRequest =
@@ -242,20 +268,16 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
 
     pendingDataRequests_--;
     if (packet->isRead()) {
-      const auto& insn = requestedLoads_.find(packet->insnSeqId_);
-      assert(insn != requestedLoads_.end() &&
-             "[SimEng:MMU] Tried to supply result to a load instruction that "
-             "isn't in the requestedLoads_ map.");
-      if (packet->isFaulty()) {
-        // If faulty, return no data. This signals a data abort.
-        insn->second->supplyData(packet->vaddr_, RegisterValue());
-      } else {
-        insn->second->supplyData(packet->vaddr_,
-                                 {packet->payload().data(), packet->size_});
-      }
-      // If instruction has all data, remove from requestedLoads_ map
-      if (insn->second->hasAllData()) {
-        requestedLoads_.erase(insn);
+      uint64_t seqId = packet->insnSeqId_;
+      assert(requestedLoads_.find(seqId) != requestedLoads_.end() &&
+             "[SimEng:MMU] Read response packet recieved for instruction that "
+             "does not exist.");
+      readResponses_[seqId][packet->packetOrderId_].push_back(
+          std::move(packet));
+      requestedLoads_.find(seqId)->second.totalPacketsRemaining--;
+      if (requestedLoads_.find(seqId)->second.totalPacketsRemaining == 0) {
+        // All packets have come back, supply load instruction all data
+        supplyLoadInsnData(seqId);
       }
     }
   };
@@ -348,6 +370,128 @@ void MMU::updateLLSCMonitor(const MemoryAccessTarget& storeTarget) {
       return;
     }
   }
+}
+
+bool MMU::isAligned(const MemoryAccessTarget& target) const {
+  assert(target.size != 0 &&
+         "[SimEng:MMU] Cannot have a memory target size of 0.");
+  uint64_t startAddr = target.vaddr;
+  // Must -1 from end address as vaddr + size will give the address at end of
+  // region, but this address is not written to.
+  // i.e. vaddr = 0, size = 4 :  | | | | | | | |
+  //                      Addr:  0 1 2 3 4 5 6 7
+  //                             ^-------^
+  //                              Payload
+  // End address is 4, but we do not write to address 4 hence this is allowed
+  // to be a cache line boundary.
+  uint64_t endAddr = target.vaddr + target.size - 1;
+  // If start and end address down align to same value (w.r.t cache line
+  // width), then memory target is aligned.
+  return (downAlign(startAddr, cacheLineWidth_) ==
+          downAlign(endAddr, cacheLineWidth_));
+}
+
+std::vector<std::unique_ptr<MemPacket>> MMU::splitReadMemTarget(
+    const MemoryAccessTarget& target, uint64_t insnSeqId,
+    uint16_t pktOrderId) const {
+  std::vector<std::unique_ptr<MemPacket>> packets = {};
+  uint64_t nextAddr = target.vaddr;
+  uint64_t remSize = static_cast<uint64_t>(target.size);
+  uint16_t nextSplitId = 0;
+  while (remSize != 0) {
+    // Get size of next target region
+    uint16_t regSize = std::min(
+        (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
+        remSize);
+    auto req =
+        MemPacket::createReadRequest(nextAddr, regSize, insnSeqId, pktOrderId);
+    req->packetSplitId_ = nextSplitId;
+    packets.push_back(std::move(req));
+    // Update vars
+    nextAddr += regSize;
+    remSize -= regSize;
+    nextSplitId++;
+  }
+  return packets;
+}
+
+std::vector<std::unique_ptr<MemPacket>> MMU::splitWriteMemTarget(
+    const MemoryAccessTarget& target, const std::vector<char>& data,
+    uint64_t insnSeqId, uint16_t pktOrderId) const {
+  std::vector<std::unique_ptr<MemPacket>> packets = {};
+  uint64_t nextAddr = target.vaddr;
+  uint64_t remSize = static_cast<uint64_t>(target.size);
+  uint16_t nextSplitId = 0;
+  std::vector<char> remData = data;
+  while (remSize != 0) {
+    // Get size of next target region
+    uint16_t regSize = std::min(
+        (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
+        remSize);
+    // Get data for this region
+    auto regData =
+        std::vector<char>(remData.begin(), remData.begin() + regSize);
+    auto req = MemPacket::createWriteRequest(nextAddr, regSize, insnSeqId,
+                                             pktOrderId, regData);
+    req->packetSplitId_ = nextSplitId;
+    packets.push_back(std::move(req));
+    // Update vars
+    nextAddr += regSize;
+    remSize -= regSize;
+    nextSplitId++;
+    remData = std::vector<char>(remData.begin() + regSize, remData.end());
+  }
+  return packets;
+}
+
+void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
+  auto itr = requestedLoads_.find(insnSeqId);
+  assert(itr != requestedLoads_.end() &&
+         "[SimEng:MMU] Tried to supply data to a load instruction that does "
+         "not exist in the requestedLoads_ map.");
+  // Get reference to instruction for easier access
+  auto& insn = itr->second.insn;
+  // Get map of all packets, grouped by packetOrderId
+  auto& packets = readResponses_.find(insnSeqId)->second;
+  for (int i = 0; i < packets.size(); i++) {
+    // Get vector containing all packets associated to a single target
+    auto& pktVec = packets[i];
+    assert(pktVec.size() > 0 &&
+           "[SimEng:MMU] Empty read response packet vector.");
+    // Do early check on first packet for data abort
+    if (pktVec[0]->isFaulty()) {
+      // If faulty, return no data. This signals a data abort.
+      insn->supplyData(pktVec[0]->vaddr_, RegisterValue());
+      continue;
+    }
+    // Initialise values with first package
+    uint64_t addr = pktVec[0]->vaddr_;
+    std::vector<char> mergedData = pktVec[0]->payload();
+    uint16_t mergedSize = pktVec[0]->size_;
+    bool isFaulty = false;
+    // Loop over any remaining packets due to a split
+    for (int j = 1; j < pktVec.size(); j++) {
+      if (pktVec[j]->isFaulty()) {
+        // If faulty, return no data. This signals a data abort.
+        insn->supplyData(pktVec[0]->vaddr_, RegisterValue());
+        isFaulty = true;
+        break;
+      }
+      // Increase merged size
+      mergedSize += pktVec[j]->size_;
+      // Concatonate the payload data
+      auto& tempData = pktVec[j]->payload();
+      mergedData.insert(mergedData.end(), tempData.begin(), tempData.end());
+    }
+    // Supply data to instruction
+    if (!isFaulty) insn->supplyData(addr, {mergedData.data(), mergedSize});
+  }
+  assert(insn->hasAllData() &&
+         "[SimEng:MMU] Load instruction was supplied memory data but is "
+         "still waiting on further data to be supplied.");
+  // Instruction now has all data, remove entries from maps
+  requestedLoads_.erase(insnSeqId);
+  readResponses_.erase(insnSeqId);
 }
 
 }  // namespace memory

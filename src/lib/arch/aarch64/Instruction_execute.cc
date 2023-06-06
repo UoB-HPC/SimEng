@@ -5501,7 +5501,7 @@ void Instruction::execute() {
   // to 16 bytes. Thus upper 240 bytes must be ignored by being set to 0.
   for (int i = 0; i < destinationRegisterCount; i++) {
     if ((destinationRegisters[i].type == RegisterType::VECTOR) &&
-        !isSVEDataMask) {
+        !(insnTypeMetadata & isSVEDataMask)) {
       if (results[i].size() != 256)
         std::cerr << "[SimEng:Instruction_execute] " << metadata.mnemonic
                   << " opcode: " << metadata.opcode
