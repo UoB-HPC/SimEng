@@ -89,19 +89,6 @@ FixedLatencyMemory::initUntimedInstrReadPort() {
   untimedInstrReadPort_->registerReceiver(fn);
   return untimedInstrReadPort_;
 }
-void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
-  if (req->isRequest() && req->isRead()) {
-    handleReadRequest(req);
-  } else if (req->isRequest() && req->isWrite()) {
-    handleWriteRequest(req);
-  } else {
-    std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
-                 "requesting access to memory. Requests to memory should "
-                 "either be of "
-                 "type READ_REQUEST or WRITE_REQUEST."
-              << std::endl;
-    req->markAsFaulty();
-  }
-}
+
 }  // namespace memory
 }  // namespace simeng

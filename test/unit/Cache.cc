@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "simeng/Port.hh"
 #include "simeng/memory/SimpleMem.hh"
+#include "simeng/memory/hierarchy/CacheImpl.hh"
 #include "simeng/memory/hierarchy/SetAssosciativeCache.hh"
 #include "simeng/memory/hierarchy/TagSchemes.hh"
 
@@ -36,45 +37,59 @@ class SetAssosciativeCacheTest : public testing::Test {
   uint64_t memorySize = 1024 * 16;
 
   SimpleMem memory = SimpleMem(memorySize);
-  SetAssosciativeCache cache = SetAssosciativeCache(
-      clw, assosciativity, cacheSize, {hitLatency, accessLatency, missPenalty},
-      std::make_unique<PIPT>(cacheSize, clw, assosciativity));
+  SetAssosciativeCache<CacheLevel::L1> cache =
+      SetAssosciativeCache<CacheLevel::L1>(
+          clw, assosciativity, cacheSize,
+          {hitLatency, accessLatency, missPenalty},
+          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
 
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> freePort =
-      std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  std::shared_ptr<Port<CPUMemoryPacket>> freePort =
+      std::make_shared<Port<CPUMemoryPacket>>();
 
-  std::vector<std::unique_ptr<MemPacket>> responses;
-  PortMediator<std::unique_ptr<MemPacket>> cpuToCache;
-  PortMediator<std::unique_ptr<MemPacket>> cacheToMem;
+  std::vector<CPUMemoryPacket> responses;
+  PortMediator<CPUMemoryPacket> cpuToCache;
+  PortMediator<MemoryHierarchyPacket> cacheToMem;
 
   // If there is a need for changing cache parameters, call the rebuild function
   // after having done so inside the test.
   void rebuild() {
+    MemoryHierarchyPacket::clw = clw;
     memory = SimpleMem(memorySize);
-    cache = SetAssosciativeCache(
+    cache = SetAssosciativeCache<CacheLevel::L1>(
         clw, assosciativity, cacheSize,
         {hitLatency, accessLatency, missPenalty},
         std::make_unique<PIPT>(cacheSize, clw, assosciativity));
-    cpuToCache = PortMediator<std::unique_ptr<MemPacket>>();
-    cacheToMem = PortMediator<std::unique_ptr<MemPacket>>();
-    freePort = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+    cpuToCache = PortMediator<CPUMemoryPacket>();
+    cacheToMem = PortMediator<MemoryHierarchyPacket>();
+    freePort = std::make_shared<Port<CPUMemoryPacket>>();
     responses.clear();
     setup();
   }
 
+  CPUMemoryPacket createReadRequest(uint64_t addr, uint16_t size) {
+    return CPUMemoryPacket(MemoryAccessType::READ, addr, addr, size, 0, 0, 0);
+  }
+
+  CPUMemoryPacket createWriteRequest(uint64_t addr, uint16_t size,
+                                     std::vector<char> payload) {
+    CPUMemoryPacket req(MemoryAccessType::WRITE, addr, addr, size, 0, 0, 0);
+    req.payload_ = payload;
+    return req;
+  }
+
  private:
   void setup() {
+    MemoryHierarchyPacket::clw = clw;
     memory = SimpleMem(memorySize);
-    cache = SetAssosciativeCache(
+    cache = SetAssosciativeCache<CacheLevel::L1>(
         clw, assosciativity, cacheSize,
         {hitLatency, accessLatency, missPenalty},
         std::make_unique<PIPT>(cacheSize, clw, assosciativity));
-    freePort->registerReceiver([&](std::unique_ptr<MemPacket> pkt) {
-      responses.push_back(std::move(pkt));
-    });
+    freePort->registerReceiver(
+        [&](CPUMemoryPacket pkt) { responses.push_back(pkt); });
 
     auto memPort = memory.initPort();
-    auto cacheTopPort = cache.initTopPort();
+    auto cacheTopPort = cache.initCpuPort();
     auto cacheBottomPort = cache.initBottomPort();
 
     cpuToCache.connect(freePort, cacheTopPort);
@@ -109,10 +124,9 @@ TEST_F(SetAssosciativeCacheTest, CacheRebuild) {
 
 TEST_F(SetAssosciativeCacheTest, CacheReadMiss) {
   memory.sendUntimedData({'5'}, 8, 1);
-  auto req = MemPacket::createReadRequest(8, 1, 1);
-  req->paddr_ = 8;
+  auto req = CPUMemoryPacket(MemoryAccessType::READ, 8, 8, 1, 0, 0, 0);
 
-  freePort->send(std::move(req));
+  freePort->send(req);
   cache.tick();
   ASSERT_EQ(responses.size(), 0);
   cache.tick();
@@ -125,17 +139,17 @@ TEST_F(SetAssosciativeCacheTest, CacheReadMiss) {
   ASSERT_EQ(responses.size(), 0);
   cache.tick();
   ASSERT_EQ(responses.size(), 1);
+
   auto& resp = responses[0];
-  EXPECT_TRUE(resp->isRead() && resp->isResponse());
-  char a = resp->payload()[0];
+  char a = resp.payload_[0];
+
   ASSERT_EQ(a, '5');
 }
 
 TEST_F(SetAssosciativeCacheTest, CacheReadHit) {
   memory.sendUntimedData({'4'}, 8, 1);
-  auto req = MemPacket::createReadRequest(8, 1, 1);
-  req->paddr_ = 8;
-  freePort->send(std::move(req));
+  auto req = CPUMemoryPacket(MemoryAccessType::READ, 8, 8, 1, 0, 0, 0);
+  freePort->send(req);
 
   cache.tick();
   ASSERT_EQ(responses.size(), 0);
@@ -150,17 +164,14 @@ TEST_F(SetAssosciativeCacheTest, CacheReadHit) {
   cache.tick();
   ASSERT_EQ(responses.size(), 1);
   auto& resp = responses[0];
-  EXPECT_TRUE(resp->isRead() && resp->isResponse());
-  char a = resp->payload()[0];
+  char a = resp.payload_[0];
   ASSERT_EQ(a, '4');
 
   responses.clear();
   ASSERT_EQ(responses.size(), 0);
 
-  auto req2 = MemPacket::createReadRequest(8, 1, 1);
-  req2->paddr_ = 8;
-
-  freePort->send(std::move(req2));
+  auto req2 = CPUMemoryPacket(MemoryAccessType::READ, 8, 8, 1, 0, 0, 0);
+  freePort->send(req2);
 
   cache.tick();
   cache.tick();
@@ -169,17 +180,16 @@ TEST_F(SetAssosciativeCacheTest, CacheReadHit) {
   ASSERT_EQ(responses.size(), 1);
 
   auto& resp2 = responses[0];
-  EXPECT_TRUE(resp2->isRead() && resp2->isResponse());
-  a = resp2->payload()[0];
+  a = resp2.payload_[0];
   ASSERT_EQ(a, '4');
 }
 
 TEST_F(SetAssosciativeCacheTest, CacheWriteMissAndRead) {
   std::vector<char> dataVec = {'1', '2', '3', '4', '5', '6', '7', '8'};
-  auto req = MemPacket::createWriteRequest(8, 8, 1, dataVec);
-  req->paddr_ = 8;
+  auto req = CPUMemoryPacket(MemoryAccessType::WRITE, 8, 8, 8, 0, 0, 0);
+  req.payload_ = dataVec;
 
-  freePort->send(std::move(req));
+  freePort->send(req);
 
   cache.tick();
   ASSERT_EQ(responses.size(), 0);
@@ -194,15 +204,11 @@ TEST_F(SetAssosciativeCacheTest, CacheWriteMissAndRead) {
   cache.tick();
   ASSERT_EQ(responses.size(), 1);
 
-  auto& resp = responses[0];
-  EXPECT_TRUE(resp->isWrite() && resp->isResponse());
-
   responses.clear();
 
-  req = MemPacket::createReadRequest(8, 8, 1);
-  req->paddr_ = 8;
+  req = CPUMemoryPacket(MemoryAccessType::READ, 8, 8, 8, 0, 0, 0);
 
-  freePort->send(std::move(req));
+  freePort->send(req);
 
   cache.tick();
   ASSERT_EQ(responses.size(), 0);
@@ -212,10 +218,9 @@ TEST_F(SetAssosciativeCacheTest, CacheWriteMissAndRead) {
   ASSERT_EQ(responses.size(), 1);
 
   auto& rresp = responses[0];
-  EXPECT_TRUE(rresp->isRead() && rresp->isResponse());
-  EXPECT_EQ(rresp->size_, 8);
+  EXPECT_EQ(rresp.size_, 8);
   uint8_t ctr = 0;
-  for (auto ch : rresp->payload()) {
+  for (auto ch : rresp.payload_) {
     EXPECT_EQ(ch, dataVec[ctr]);
     ctr++;
   }
@@ -224,9 +229,8 @@ TEST_F(SetAssosciativeCacheTest, CacheWriteMissAndRead) {
 TEST_F(SetAssosciativeCacheTest, CapacityMiss) {
   std::array<uint64_t, 4> addrs = {0, 1024, 2048, 3072};
   for (auto addr : addrs) {
-    auto req = MemPacket::createReadRequest(addr, 1, 1);
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = CPUMemoryPacket(MemoryAccessType::READ, addr, addr, 1, 0, 0, 0);
+    freePort->send(req);
   }
   // Since miss penalty is 4, hit latency is 2 and memory is SimpleMem, after 6
   // clock ticks all requests will be handled i.e on the 6th clock tick we
@@ -246,9 +250,9 @@ TEST_F(SetAssosciativeCacheTest, CapacityMiss) {
   responses.clear();
   ASSERT_EQ(responses.size(), 0);
 
-  auto req = MemPacket::createReadRequest(addrs[1], 1, 1);
-  req->paddr_ = addrs[1];
-  freePort->send(std::move(req));
+  auto req =
+      CPUMemoryPacket(MemoryAccessType::READ, addrs[1], addrs[1], 1, 0, 0, 0);
+  freePort->send(req);
 
   cache.tick();
   ASSERT_EQ(responses.size(), 0);
@@ -262,9 +266,8 @@ TEST_F(SetAssosciativeCacheTest, CapacityMiss) {
   ASSERT_EQ(responses.size(), 0);
 
   {
-    auto req = MemPacket::createReadRequest(4096, 1, 1);
-    req->paddr_ = 4096;
-    freePort->send(std::move(req));
+    auto req = CPUMemoryPacket(MemoryAccessType::READ, 4096, 4096, 1, 0, 0, 0);
+    freePort->send(req);
 
     cache.tick();
     ASSERT_EQ(responses.size(), 0);
@@ -287,8 +290,8 @@ TEST_F(SetAssosciativeCacheTest, CapacityMiss) {
   {
     std::array<uint64_t, 4> addrs = {1024, 2048, 3072, 4096};
     for (int x = 0; x < 4; x++) {
-      req = MemPacket::createReadRequest(addrs[x], 1, 1);
-      req->paddr_ = addrs[x];
+      req = CPUMemoryPacket(MemoryAccessType::READ, addrs[x], addrs[x], 1, 0, 0,
+                            0);
       freePort->send(std::move(req));
     }
     cache.tick();
@@ -303,9 +306,8 @@ TEST_F(SetAssosciativeCacheTest, CapacityMiss) {
 TEST_F(SetAssosciativeCacheTest, MshrPrimaryFetch) {
   std::array<uint64_t, 4> addrs = {0, 1, 2, 3};
   for (auto addr : addrs) {
-    auto req = MemPacket::createReadRequest(addr, 1, 1);
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createReadRequest(addr, 1);
+    freePort->send(req);
   }
 
   // Tick two times to complete hit latency
@@ -329,10 +331,8 @@ TEST_F(SetAssosciativeCacheTest, MshrPrimaryEviction) {
   int ctr = 0;
   for (auto addr : addrs) {
     char ch = 'a' + ctr;
-    auto req =
-        MemPacket::createWriteRequest(addr, 4, 1, std::vector<char>(4, ch));
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(addr, 4, std::vector<char>(4, ch));
+    freePort->send(req);
     ctr++;
   }
 
@@ -375,10 +375,8 @@ TEST_F(SetAssosciativeCacheTest, MshrPrimaryEviction) {
   ctr = 0;
   for (auto addr : evicAddrs) {
     char writeCh = 'z' - ctr;
-    auto req = MemPacket::createWriteRequest(addr, 4, 1,
-                                             std::vector<char>(4, writeCh));
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(addr, 4, std::vector<char>(4, writeCh));
+    freePort->send(req);
 
     // Tick two times because hit latency is 2 clock cycles.
     cache.tick();
@@ -408,9 +406,8 @@ TEST_F(SetAssosciativeCacheTest, MshrPrimaryEviction) {
     }
 
     // Access newly evicted cache line to check if hit takes place (It should)
-    req = MemPacket::createReadRequest(addr, 4, 1);
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    req = createReadRequest(addr, 4);
+    freePort->send(req);
 
     // Tick 3 times because hit latency is 2 and access latency is 1
     for (int x = 0; x < 3; x++) {
@@ -420,7 +417,7 @@ TEST_F(SetAssosciativeCacheTest, MshrPrimaryEviction) {
     ASSERT_EQ(responses.size(), 1);
 
     // Check if the read response contains the correct data.
-    auto payload = responses[0]->payload();
+    auto payload = responses[0].payload_;
     for (auto ch : payload) {
       ASSERT_EQ(ch, writeCh);
     }
@@ -438,17 +435,14 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingFetched) {
 
   for (auto addr : addrs) {
     char ch = 'a' + ctr;
-    auto req =
-        MemPacket::createWriteRequest(addr, 4, 1, std::vector<char>(4, ch));
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(addr, 4, std::vector<char>(4, ch));
+    freePort->send(req);
     ctr++;
   }
 
   {
-    auto req = MemPacket::createReadRequest(4096, 4, 1);
-    req->paddr_ = 4096;
-    freePort->send(std::move(req));
+    auto req = createReadRequest(4096, 4);
+    freePort->send(req);
   }
 
   // Tick two times to complete hit latency
@@ -485,7 +479,7 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingFetched) {
   cache.tick();
   ASSERT_EQ(responses.size(), 1);
 
-  auto payload = responses[0]->payload();
+  auto payload = responses[0].payload_;
   for (auto ch : payload) {
     ASSERT_EQ(ch, 'p');
   }
@@ -502,10 +496,8 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingEvicted) {
   int ctr = 0;
   for (auto addr : addrs) {
     char ch = 'a' + ctr;
-    auto req =
-        MemPacket::createWriteRequest(addr, 4, 1, std::vector<char>(4, ch));
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(addr, 4, std::vector<char>(4, ch));
+    freePort->send(req);
     ctr++;
   }
 
@@ -517,10 +509,8 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingEvicted) {
   addrs = {4096, 5120, 6144, 7168};
   for (auto addr : addrs) {
     char ch = 'z' - ctr;
-    auto req =
-        MemPacket::createWriteRequest(addr, 4, 1, std::vector<char>(4, ch));
-    req->paddr_ = addr;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(addr, 4, std::vector<char>(4, ch));
+    freePort->send(req);
     ctr++;
   }
 
@@ -541,10 +531,8 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingEvicted) {
   }
 
   {
-    auto req =
-        MemPacket::createWriteRequest(8192, 4, 1, std::vector<char>(4, 'q'));
-    req->paddr_ = 8192;
-    freePort->send(std::move(req));
+    auto req = createWriteRequest(8192, 4, std::vector<char>(4, 'q'));
+    freePort->send(req);
     cache.tick();
     cache.tick();
   }
@@ -569,15 +557,14 @@ TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingEvicted) {
   responses.clear();
 
   {
-    auto req = MemPacket::createReadRequest(8192, 4, 1);
-    req->paddr_ = 8192;
-    freePort->send(std::move(req));
+    auto req = createReadRequest(8192, 4);
+    freePort->send(req);
 
     cache.tick();
     cache.tick();
     cache.tick();
 
-    auto payload = responses[0]->payload();
+    auto payload = responses[0].payload_;
     for (auto ch : payload) {
       ASSERT_EQ(ch, 'q');
     }

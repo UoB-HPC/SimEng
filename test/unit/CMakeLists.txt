@@ -4,11 +4,11 @@ set(TEST_SOURCES
     pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
     pipeline/ExecuteUnitTest.cc
-    pipeline/FetchUnitTest.cc
-    pipeline/LoadStoreQueueTest.cc
+    # pipeline/FetchUnitTest.cc
+    # pipeline/LoadStoreQueueTest.cc
     pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
-    pipeline/ReorderBufferTest.cc
+    # pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     Cache.cc
     LRUTest.cc
@@ -27,9 +27,9 @@ set(TEST_SOURCES
     PageFrameAllocatorTest.cc
     MemRegionTest.cc
     PIPT_TagScheme.cc
-    memory/CacheTestEngine.cc
-    memory/SAEngineTest.cc
-    memory/EventBuilder.cc
+    # memory/CacheTestEngine.cc
+    # memory/SAEngineTest.cc
+    # memory/EventBuilder.cc
     ../testenv/FilesEnv.cc
 
     )

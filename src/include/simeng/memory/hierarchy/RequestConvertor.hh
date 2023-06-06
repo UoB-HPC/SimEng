@@ -2,7 +2,9 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 
+#include "simeng/Port.hh"
 #include "simeng/memory/MemPacket.hh"
 #include "simeng/util/Math.hh"
 
@@ -44,7 +46,9 @@ class RequestConvertor {
 
  private:
   uint16_t clw_ = 0;
-  std::map<uint32_t, CPUMemoryPacket> reqMap;
+  std::map<uint32_t, CPUMemoryPacket> reqMap_;
+  std::shared_ptr<simeng::Port<CPUMemoryPacket>> cpuPort_;
+  std::shared_ptr<simeng::Port<MemoryHierarchyPacket>> hierarchyPort_;
 };
 
 }  // namespace hierarchy

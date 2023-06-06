@@ -6,11 +6,15 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/Port.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
+#include "simeng/memory/hierarchy/SetAssosciativeCache.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
+
+using namespace simeng::memory::hierarchy;
 
 RegressionTest::~RegressionTest() { delete[] code_; }
 
@@ -54,13 +58,33 @@ void RegressionTest::run(const char* source, const char* triple,
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(OS.getVAddrTranslator());
   mmu->setTid(procTID);
+  uint8_t assosciativity = 4;
+  uint16_t clw = 4;
+  uint32_t cacheSize = 4 * 1024;
+  uint16_t hitLatency = 2;
+  uint16_t accessLatency = 1;
+  uint16_t missPenalty = 4;
+
+  SetAssosciativeCache<CacheLevel::L1> cache =
+      SetAssosciativeCache<CacheLevel::L1>(
+          clw, assosciativity, cacheSize,
+          {hitLatency, accessLatency, missPenalty},
+          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
 
   // Set up MMU->Memory connection
-  auto connection =
-      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = mmu->initPort();
+  auto cpuConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
+  auto memoryConn =
+      simeng::PortMediator<simeng::memory::MemoryHierarchyPacket>();
+
+  auto port1 = mmu->initDataPort();
+
+  auto cpuPort = cache.initCpuPort();
+  auto bottomPort = cache.initBottomPort();
+
   auto port2 = memory_->initPort();
-  connection.connect(port1, port2);
+
+  cpuConn.connect(port1, cpuPort);
+  memoryConn.connect(port2, bottomPort);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),

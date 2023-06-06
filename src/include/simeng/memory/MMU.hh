@@ -56,7 +56,15 @@ class MMU {
   bool hasPendingRequests() const;
 
   /** Method used to buffer data requests to memory. */
-  void bufferRequest(std::unique_ptr<MemPacket> request);
+  void bufferRequest(const MemoryAccessTarget& target,
+                     const uint64_t requestId);
+
+  void bufferRequest(const MemoryAccessTarget& target, const uint64_t requestId,
+                     const RegisterValue& data);
+
+  void handleTranslationFaultForDataReqs(uint64_t faultCode,
+                                         const MemoryAccessTarget& target,
+                                         const uint64_t requestId);
 
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
@@ -99,6 +107,8 @@ class MMU {
   bool unsignedOverflow(uint64_t a, uint64_t b) const {
     return (a + b) < a || (a + b) < b;
   }
+  /***/
+  uint64_t translateVaddr(uint64_t vaddr);
 };
 
 }  // namespace memory

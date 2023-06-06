@@ -12,7 +12,10 @@
 #include "simeng/OS/SimOS.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
+#include "simeng/memory/hierarchy/SetAssosciativeCache.hh"
 #include "simeng/version.hh"
+
+using namespace simeng::memory::hierarchy;
 
 /** Create a SimOS object depending on whether a binary file was specified. */
 simeng::OS::SimOS simOsFactory(std::shared_ptr<simeng::memory::Mem> memory,
@@ -104,13 +107,33 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(fn);
 
-  auto connection = std::make_shared<
-      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
+  uint8_t assosciativity = 4;
+  uint16_t clw = 4;
+  uint32_t cacheSize = 4 * 1024;
+  uint16_t hitLatency = 2;
+  uint16_t accessLatency = 1;
+  uint16_t missPenalty = 4;
 
-  auto port1 = mmu->initPort();
+  SetAssosciativeCache<CacheLevel::L1> cache =
+      SetAssosciativeCache<CacheLevel::L1>(
+          clw, assosciativity, cacheSize,
+          {hitLatency, accessLatency, missPenalty},
+          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
+
+  // Set up MMU->Memory connection
+  auto cpuConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
+  auto memoryConn =
+      simeng::PortMediator<simeng::memory::MemoryHierarchyPacket>();
+
+  auto port1 = mmu->initDataPort();
+
+  auto cpuPort = cache.initCpuPort();
+  auto bottomPort = cache.initBottomPort();
+
   auto port2 = memory->initPort();
 
-  connection->connect(port1, port2);
+  cpuConn.connect(port1, cpuPort);
+  memoryConn.connect(port2, bottomPort);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =

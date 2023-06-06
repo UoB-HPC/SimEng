@@ -13,7 +13,6 @@
 #include "simeng/memory/hierarchy/Mshr.hh"
 #include "simeng/memory/hierarchy/Replacement.hh"
 #include "simeng/memory/hierarchy/RequestBuffer.hh"
-#include "simeng/memory/hierarchy/RequestConvertor.hh"
 #include "simeng/memory/hierarchy/TagSchemes.hh"
 
 namespace simeng {

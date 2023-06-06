@@ -52,8 +52,8 @@ SetAssosciativeCache<CacheLevel::L1>::initCpuPort() {
   cpuPort_ = std::make_shared<Port<CPUMemoryPacket>>();
   auto fn = [this](CPUMemoryPacket cpuPkt) {
     reqMap_.insert({cpuPkt.id_, cpuPkt});
-    MemoryHierarchyPacket mpkt(cpuPkt.type_, cpuPkt.vaddr_, cpuPkt.paddr_,
-                               cpuPkt.size_, 0, cpuPkt.id_);
+    MemoryHierarchyPacket mpkt(cpuPkt.type_, cpuPkt.vaddr_, cpuPkt.paddr_, clw_,
+                               0, cpuPkt.id_);
     mpkt.payload_ = cpuPkt.payload_;
     waitQueue_.push({mpkt, ticks_ + latencyInfo_.hitLatency});
   };
@@ -130,7 +130,6 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
     auto& clatpkt = waitQueue_.front();
     auto& req = clatpkt.payload;
     AccessInfo info = checkHit(req);
-
     if (info.hit && info.valid) {
       uint64_t latency = ticks_ + latencyInfo_.accessLatency;
       processBuffer_.push_back({req, latency, info.lineIdx});
@@ -167,15 +166,11 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
       if (cline.isDirty()) {
         req.payload_ = std::vector<char>(cline.begin(), cline.end());
       }
-      // BufferIndex is -1 because this is a primary miss and we will have send
-      // the MemPacket to a lower memory level. This memory packet will be
-      // removed from the L1 request buffer in the while loop which deals with
-      // the queueToLowerMem_ queue.
       clatpkt.endLatency = ticks_ + latencyInfo_.missPenalty;
       // Put request into outgoing queue towards lower memory hierarchy
       queueToLowerLevel_.push(clatpkt);
     }
-    mshr_.allocateMshr(clatpkt.payload, basePaddr, clw_, info, false);
+    mshr_.allocateMshr(req, basePaddr, clw_, info, false);
     waitQueue_.pop();
   }
 
@@ -188,11 +183,12 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
 
 CPUMemoryPacket SetAssosciativeCache<CacheLevel::L1>::doRead(
     MemoryHierarchyPacket& memPkt, uint16_t clineIdx) {
-  auto itr = reqMap_.find(memPkt.id_);
-  auto& cpuPkt = itr->second;
+  auto itr = reqMap_.find(memPkt.cpuPktId_);
+  auto cpuPkt = itr->second;
 
   auto& cline = cacheLines_[clineIdx];
   uint16_t byteOffset = tagScheme_->calcByteOffset(memPkt);
+
   uint16_t setNum = tagScheme_->calcSetIndex(memPkt);
   cpuPkt.payload_ = std::vector<char>(
       cline.begin() + byteOffset, cline.begin() + byteOffset + cpuPkt.size_);
@@ -204,8 +200,8 @@ CPUMemoryPacket SetAssosciativeCache<CacheLevel::L1>::doRead(
 
 CPUMemoryPacket SetAssosciativeCache<CacheLevel::L1>::doWrite(
     MemoryHierarchyPacket& memPkt, uint16_t clineIdx) {
-  auto itr = reqMap_.find(memPkt.id_);
-  auto& cpuPkt = itr->second;
+  auto itr = reqMap_.find(memPkt.cpuPktId_);
+  auto cpuPkt = itr->second;
 
   auto& cline = cacheLines_[clineIdx];
   uint16_t byteOffset = tagScheme_->calcByteOffset(memPkt);
