@@ -146,12 +146,12 @@ class MMU {
 
   // We model "weak" LL/SC support (as is the case in the majority of hardware)
   // and so only one monitor can be usable. Atomics are processed when at the
-  // head of ROB so no speculation, and are assumed to be correctly aligned.
+  // head of ROB so no speculation.
   /** The cache line monitor represented as a pair. Containes a set of cache
    * line addresses within monitor, and whether the monitor is valid. */
   std::pair<std::set<uint64_t>, bool> cacheLineMonitor_;
 
-  /** Width of a cache line. */
+  /** Size of a single cache line in bytes. */
   const uint64_t cacheLineWidth_;
 
   /** Fixed array containing vectors for all loads and store requests.
