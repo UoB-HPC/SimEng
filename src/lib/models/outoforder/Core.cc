@@ -286,7 +286,6 @@ void Core::processException() {
   if (mmu_->hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
-    loadStoreQueue_.tick();  // Manually tick LSQ to clear outstanding stores
     return;
   }
 
