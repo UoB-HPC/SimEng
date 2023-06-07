@@ -4,7 +4,7 @@
 namespace {
 
 // Test that we can create an SimOS object
-TEST(OSTest, CreateSimOS) {
+TEST(SimOSTest, CreateSimOS) {
   // Set a config file with only the options required by the aarch64
   // architecture class to function
   Config::set(

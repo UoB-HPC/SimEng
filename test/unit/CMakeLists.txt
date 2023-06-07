@@ -1,4 +1,14 @@
 set(TEST_SOURCES
+    memory/FixedLatencyMemoryTest.cc
+    memory/LLSCMonitorTest.cc
+    memory/MemRegionTest.cc
+    memory/SimpleMem.cc
+    memory/VmaTest.cc
+    OS/FileDescArrayTest.cc
+    OS/HostBackedFileMMapsTest.cc
+    OS/PageFrameAllocatorTest.cc
+    OS/PageTableTest.cc
+    OS/SimOSTest.cc
     pipeline/A64FXPortAllocatorTest.cc
     pipeline/BalancedPortAllocatorTest.cc
     pipeline/ExecuteUnitTest.cc
@@ -10,21 +20,11 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
-    FileDescArrayTest.cc
     GenericPredictorTest.cc
     ISATest.cc
-    LLSCMonitorTest.cc
-    OSTest.cc
-    RegisterValueTest.cc
     PoolTest.cc
+    RegisterValueTest.cc
     ShiftValueTest.cc
-    FixedLatencyMemoryTest.cc
-    SimpleMem.cc
-    PageTableTest.cc
-    VmaTest.cc
-    HostBackedFileMMapsTest.cc
-    PageFrameAllocatorTest.cc
-    MemRegionTest.cc
     ../testenv/FilesEnv.cc
     )
 
