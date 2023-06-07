@@ -75,9 +75,6 @@ class DispatchIssueUnit {
   void forwardOperands(const span<Register>& destinations,
                        const span<RegisterValue>& values);
 
-  /** Set the scoreboard entry for the provided register as ready. */
-  void setRegisterReady(Register reg);
-
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
 
