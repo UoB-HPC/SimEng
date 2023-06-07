@@ -65,7 +65,7 @@ void ModelConfig::validate() {
                "Micro-Operations",
                "Vector-Length",
                "Streaming-Vector-Length",
-               "Checkpoint-File"};
+               "checkpointOutput"};
   validISA = nodeChecker<std::string>(
       configFile_[root][subFields[0]], subFields[0],
       std::vector<std::string>({"AArch64", "rv64"}), ExpectedValue::String);
@@ -90,6 +90,8 @@ void ModelConfig::validate() {
   nodeChecker<std::string>(configFile_[root][subFields[7]], subFields[7],
                            std::vector<std::string>{}, ExpectedValue::String,
                            "checkpointFile.txt");
+  // Assume the passed source file is not a checkpoint file
+  configFile_["checkpointSource"] = "";
   subFields.clear();
 
   // First check that the ISA config option is valid, this protects reads from

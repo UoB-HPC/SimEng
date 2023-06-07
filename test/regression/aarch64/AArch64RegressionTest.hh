@@ -21,7 +21,8 @@
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
    "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
    "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
-   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}}")
+   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, "                \
+   "checkpointSource: False}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */

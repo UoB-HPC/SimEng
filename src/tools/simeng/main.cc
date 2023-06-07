@@ -10,8 +10,8 @@
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
-             simeng::MemoryInterface& instructionMemory) {
+void simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
+              simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
@@ -25,8 +25,6 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
 
     iterations++;
   }
-
-  return iterations;
 }
 
 int main(int argc, char** argv) {
@@ -91,9 +89,9 @@ int main(int argc, char** argv) {
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
-  int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(*core, *dataMemory, *instructionMemory);
+  simulate(*core, *dataMemory, *instructionMemory);
+  int iterations = core->getElapsedTicks();
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

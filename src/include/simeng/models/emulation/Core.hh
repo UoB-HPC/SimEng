@@ -41,6 +41,9 @@ class Core : public simeng::Core {
   /** Retrieve the simulated nanoseconds elapsed since the core started. */
   uint64_t getSystemTimer() const override;
 
+  /** Retrieve the number of ticks elapsed since the core started. */
+  uint64_t getElapsedTicks() const override;
+
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 

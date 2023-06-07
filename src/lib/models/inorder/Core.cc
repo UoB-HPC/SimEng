@@ -37,10 +37,36 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
-  if (config["checkpointSource"].as<bool>()) {
+  // If the source program to simulate is a checkpoint file, read in relevant
+  // checkpoint data
+  if (config["checkpointSource"].as<std::string>() != "") {
     std::ifstream readChk;
-    readChk.open("checkpointFile.txt", std::ios::binary);
-    readChk.seekg(4);
+    readChk.open(config["checkpointSource"].as<std::string>(),
+                 std::ios::binary);
+    // Skip magic numbers
+    readChk.seekg(4, std::ios::cur);
+
+    // Read in number of sections
+    uint8_t numSections;
+    readChk.read(reinterpret_cast<char*>(&numSections), sizeof(numSections));
+    uint64_t reg_offset;
+    uint64_t stats_offset;
+    // Read in offset for register fileset and core statistic checkpoint data
+    for (uint8_t section = 0; section < numSections; section++) {
+      uint8_t sectionID;
+      readChk.read(reinterpret_cast<char*>(&sectionID), sizeof(sectionID));
+      if (sectionID == '\0') {
+        readChk.read(reinterpret_cast<char*>(&reg_offset), sizeof(reg_offset));
+      } else if (sectionID == '\3') {
+        readChk.read(reinterpret_cast<char*>(&stats_offset),
+                     sizeof(stats_offset));
+      } else {
+        // Skip offset value associated with unused section
+        readChk.seekg(8, std::ios::cur);
+      }
+    }
+    // Naviagate to register file offset
+    readChk.seekg(reg_offset);
     std::vector<RegisterFileStructure> regFileStructs =
         isa_.getRegisterFileStructures();
     for (uint8_t type = 0; type < regFileStructs.size(); type++) {
@@ -51,6 +77,10 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         architecturalRegisterFileSet_.set({type, tag}, regVal);
       }
     }
+
+    // Naviagate to core statistics offset
+    readChk.seekg(stats_offset);
+    readChk.read(reinterpret_cast<char*>(&ticks_), sizeof(ticks_));
     readChk.close();
   } else {
     // Query and apply initial state
@@ -168,6 +198,8 @@ uint64_t Core::getSystemTimer() const {
   return ticks_ / (clockFrequency / 1e9);
 }
 
+uint64_t Core::getElapsedTicks() const { return ticks_; }
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
@@ -233,6 +265,10 @@ void Core::processExceptionHandler() {
   if (exceptionResult_.fatal) {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
+  } else if (exceptionResult_.shouldCheckpoint) {
+    applyStateChange(exceptionResult_.stateChange);
+    hasHalted_ = true;
+    std::cout << "[SimEng:Core] Halting due to checkpoint" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(exceptionResult_.instructionAddress);

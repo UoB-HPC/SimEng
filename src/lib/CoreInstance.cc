@@ -1,5 +1,7 @@
 #include "simeng/CoreInstance.hh"
 
+#include <unistd.h>
+
 namespace simeng {
 
 CoreInstance::CoreInstance(std::string executablePath,
@@ -75,6 +77,64 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Create the core if neither memory interfaces are externally constructed
   if (!(setDataMemory_ || setInstructionMemory_)) createCore();
+
+  // If the source program to simulate is a checkpoint file, read in relevant
+  // checkpoint data
+  if (config_["checkpointSource"].as<std::string>() != "") {
+    std::ifstream readChk;
+    readChk.open(config_["checkpointSource"].as<std::string>(),
+                 std::ios::binary);
+    // Skip magic numbers
+    readChk.seekg(4, std::ios::cur);
+    // Read in the number of sections
+    uint8_t numSections;
+    readChk.read(reinterpret_cast<char*>(&numSections), sizeof(numSections));
+
+    // Search for section holding open FD checkpoint data
+    bool foundSection = false;
+    for (uint8_t section = 0; section < numSections; section++) {
+      uint8_t sectionID;
+      readChk.read(reinterpret_cast<char*>(&sectionID), sizeof(sectionID));
+      if (sectionID == '\1') {
+        foundSection = true;
+        break;
+      }
+      // Skip offset value associated with unused section
+      readChk.seekg(8, std::ios::cur);
+    }
+
+    if (foundSection) {
+      // Read in and navigate to offset
+      uint64_t offset;
+      readChk.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+      readChk.seekg(offset);
+
+      // Get the number of open FDs
+      size_t numFDs;
+      readChk.read(reinterpret_cast<char*>(&numFDs), sizeof(numFDs));
+
+      for (size_t fd = 0; fd < numFDs; fd++) {
+        // Read in FD information to parameterise `openat` call
+        int64_t dirfd;
+        readChk.read(reinterpret_cast<char*>(&dirfd), sizeof(dirfd));
+        uint64_t fpOff;
+        readChk.read(reinterpret_cast<char*>(&fpOff), sizeof(fpOff));
+        size_t pathnameSize;
+        readChk.read(reinterpret_cast<char*>(&pathnameSize),
+                     sizeof(pathnameSize));
+        std::string pathname(pathnameSize, '\0');
+        readChk.read(&pathname[0], pathnameSize);
+        int64_t flags;
+        readChk.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+        uint16_t mode;
+        readChk.read(reinterpret_cast<char*>(&mode), sizeof(mode));
+        int64_t vfd = kernel_.openat(dirfd, pathname, flags, mode);
+        // Set file pointer to that held in the checkpoint
+        kernel_.lseek(vfd, fpOff, SEEK_SET);
+      }
+    }
+    readChk.close();
+  }
 
   return;
 }
@@ -342,69 +402,137 @@ const uint64_t CoreInstance::getHeapStart() const {
   return process_->getHeapStart();
 };
 
+template <typename T>
+void CoreInstance::writeToCheckpoint(T value) {
+  if (!chkPnt_.is_open()) {
+    std::cerr << "[SimEng:CoreInstance] Tried to write to the checkpoint file "
+                 "which is not open."
+              << std::endl;
+    exit(1);
+  }
+  // Write to the checkpoint file byte-by-byte to ensure value can be read back
+  // correctly
+  for (int byte = 0; byte < sizeof(value); byte++) {
+    chkPnt_ << static_cast<char>((value & (0xffull << (byte * 8))) >>
+                                 (byte * 8));
+  }
+}
+
 void CoreInstance::checkpoint() {
-  std::ofstream chkPnt;
-  chkPnt.open("checkpointFile.txt");
+  chkPnt_.open(config_["Core"]["checkpointOutput"].as<std::string>());
+
   // Write magic numbers ('S'im'E'ng 'C'heck'P'oint) to checkpoint file for
-  // later identification
-  chkPnt << "SECP";
+  // later identification of file type
+  chkPnt_ << "SECP";
+
+  // Calculate size of register fileset
+  std::vector<RegisterFileStructure> regFileStructs =
+      arch_->getRegisterFileStructures();
+  uint64_t regFileSetBytes = 0;
+  for (uint8_t type = 0; type < regFileStructs.size(); type++) {
+    regFileSetBytes +=
+        regFileStructs[type].bytes * regFileStructs[type].quantity;
+  }
+  // Calculate size of open FDs information
+  std::vector<kernel::openFDParams> fileDescriptorTable = kernel_.getOpenFDs();
+  uint64_t openFDsBytes = 0;
+  size_t numOpenFDs = 0;
+  for (const auto& fd : fileDescriptorTable) {
+    if (fd.hfd == STDIN_FILENO || fd.hfd == STDOUT_FILENO ||
+        fd.hfd == STDERR_FILENO || fd.hfd == -1)
+      continue;
+    openFDsBytes += 3 * sizeof(int64_t) + sizeof(uint16_t) + sizeof(size_t) +
+                    fd.pathname.size();
+    numOpenFDs++;
+  }
+
+  // Write checkpoint file section offsets. Each offset is comprised of a
+  // uint8_t id and a uin64_t offset. With the 4 magic numbers and uint8_t value
+  // denoting the number of section, the first section content is written at an
+  // offset of (9 * numSections) + 5 bytes
+  uint8_t numSections = 3 + (openFDsBytes == 0 ? 0 : 1);
+  uint64_t sectionStart = (9 * numSections) + 5;
+  // Write number of sections in file
+  writeToCheckpoint(numSections);
+
+  // Register file set
+  chkPnt_ << '\0';
+  writeToCheckpoint(sectionStart);
+  sectionStart += regFileSetBytes;
+
+  // Open FDs
+  if (openFDsBytes != 0) {
+    chkPnt_ << '\1';
+    writeToCheckpoint(sectionStart);
+    sectionStart += openFDsBytes;
+    sectionStart += sizeof(size_t);
+  }
+
+  // Process Image
+  chkPnt_ << '\2';
+  writeToCheckpoint(sectionStart);
+  uint64_t imageSize = process_->getProcessImageSize();
+  sectionStart += 6 * sizeof(uint64_t) + imageSize;
+
+  // Core statistics
+  chkPnt_ << '\3';
+  writeToCheckpoint(sectionStart);
+
   // Write registers
   std::cout << std::endl;
   std::cout << "[SimEng:CoreInstance] Generating Checkpoint..." << std::endl;
   std::cout << "[SimEng:CoreInstance] Checkpointing registers..." << std::endl;
-  std::vector<RegisterFileStructure> regFileStructs =
-      arch_->getRegisterFileStructures();
   for (uint8_t type = 0; type < regFileStructs.size(); type++) {
     for (uint16_t tag = 0; tag < regFileStructs[type].quantity; tag++) {
       const uint8_t* regVal = core_->getArchitecturalRegisterFileSet()
                                   .get({type, tag})
                                   .getAsVector<uint8_t>();
       for (int byte = 0; byte < regFileStructs[type].bytes; byte++) {
-        chkPnt << regVal[byte];
+        chkPnt_ << regVal[byte];
       }
     }
   }
 
-  std::cout << "[SimEng:CoreInstance] Checkpointing ProcessImage..."
-            << std::endl;
-  // Write process image structure variables
-  uint64_t heapStart = process_->getHeapStart();
-  for (int byte = 0; byte < sizeof(heapStart); byte++) {
-    chkPnt << static_cast<char>((heapStart & (0xffull << (byte * 8))) >>
-                                (byte * 8));
-  }
-  uint64_t mmapStart = process_->getMmapStart();
-  for (int byte = 0; byte < sizeof(mmapStart); byte++) {
-    chkPnt << static_cast<char>((mmapStart & (0xffull << (byte * 8))) >>
-                                (byte * 8));
-  }
-  uint64_t entryPoint = core_->getExecPC();
-  for (int byte = 0; byte < sizeof(entryPoint); byte++) {
-    chkPnt << static_cast<char>((entryPoint & (0xffull << (byte * 8))) >>
-                                (byte * 8));
-  }
-  uint64_t initStackPtr = process_->getStackPointer();
-  for (int byte = 0; byte < sizeof(initStackPtr); byte++) {
-    chkPnt << static_cast<char>((initStackPtr & (0xffull << (byte * 8))) >>
-                                (byte * 8));
-  }
-  uint64_t currentBrk = kernel_.brk(0);
-  for (int byte = 0; byte < sizeof(currentBrk); byte++) {
-    chkPnt << static_cast<char>((currentBrk & (0xffull << (byte * 8))) >>
-                                (byte * 8));
-  }
-  uint64_t imageSize = process_->getProcessImageSize();
-  for (int byte = 0; byte < sizeof(imageSize); byte++) {
-    chkPnt << static_cast<char>((imageSize & (0xffull << (byte * 8))) >>
-                                (byte * 8));
+  // Write information for open FDs
+  std::cout << "[SimEng:CoreInstance] Checkpointing open FDs..." << std::endl;
+  writeToCheckpoint(numOpenFDs);
+  for (const auto& fd : fileDescriptorTable) {
+    // If the FD is for STDIN, STDOUT or STDERR, don't write to the checkpoint
+    // file as we implicitly open these FDs when starting the simulation
+    if (fd.hfd == STDIN_FILENO || fd.hfd == STDOUT_FILENO ||
+        fd.hfd == STDERR_FILENO || fd.hfd == -1)
+      continue;
+    writeToCheckpoint(fd.dfd);
+    // Get the current file pointer offset so we can correctly restore the state
+    // of the open FD
+    FILE* openFD = fdopen(fd.hfd, "rb");
+    uint64_t fPntrOff = ftell(openFD);
+    writeToCheckpoint(fPntrOff);
+    writeToCheckpoint(fd.pathname.size());
+    for (int byte = 0; byte < fd.pathname.size(); byte++) {
+      chkPnt_ << fd.pathname.c_str()[byte];
+    }
+    writeToCheckpoint(fd.flags);
+    writeToCheckpoint(fd.mode);
   }
 
-  // Write memory content
+  // Write process image structure variables
+  std::cout << "[SimEng:CoreInstance] Checkpointing ProcessImage..."
+            << std::endl;
+  writeToCheckpoint(process_->getHeapStart());
+  writeToCheckpoint(process_->getMmapStart());
+  writeToCheckpoint(core_->getExecPC());
+  writeToCheckpoint(process_->getStackPointer());
+  writeToCheckpoint(kernel_.brk(0));
+  writeToCheckpoint(imageSize);
+
+  // Write process image memory content
   float progress = 0.01;
   double printThreshold = 0;
   char* memory = process_->getProcessImage().get();
   for (uint64_t byte = 0; byte < imageSize; byte++) {
-    chkPnt << memory[byte];
+    chkPnt_ << memory[byte];
+    // Write a progress bar to the STDOUT
     if (double(byte) > printThreshold) {
       printThreshold += double(imageSize) * 0.01;
       progress += 0.01;
@@ -424,6 +552,12 @@ void CoreInstance::checkpoint() {
   }
   std::cout << std::endl;
 
-  chkPnt.close();
+  // Write core statistics
+  std::cout << "[SimEng:CoreInstance] Checkpointing Core "
+               "statistics..."
+            << std::endl;
+  writeToCheckpoint(core_->getElapsedTicks());
+
+  chkPnt_.close();
 }
 }  // namespace simeng

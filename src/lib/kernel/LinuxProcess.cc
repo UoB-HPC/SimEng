@@ -26,18 +26,36 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   assert(commandLine.size() > 0);
   char* unwrappedProcImgPtr;
   Elf elf(commandLine[0], &unwrappedProcImgPtr);
-  // If the passed file is a checkpoint file, extract values and create process
-  // from it
+  // If the passed file is a checkpoint file, extract values and create a
+  // process from it
   if (elf.isCheckPoint()) {
     std::cout
         << "[SimEng:LinuxProcess] Reading in checkpointed process image..."
         << std::endl;
-    config["checkpointSource"] = true;
     std::ifstream readChk;
     readChk.open(commandLine[0], std::ios::binary);
-    // Navigate to correct region of checkpoint that hold process related
-    // information
-    readChk.seekg(25437, std::ios::cur);
+    // Set config options for identified checkpoint file
+    config["checkpointSource"] = commandLine[0];
+
+    // Skip magic numbers
+    readChk.seekg(4, std::ios::cur);
+
+    // Read in the number of sections
+    uint8_t numSections;
+    readChk.read(reinterpret_cast<char*>(&numSections), sizeof(numSections));
+    // Read in the offset for Process Image checkpoint data
+    for (uint8_t section = 0; section < numSections; section++) {
+      uint8_t sectionID;
+      readChk.read(reinterpret_cast<char*>(&sectionID), sizeof(sectionID));
+      if (sectionID == '\2') break;
+      // Skip offset value associated with unused section
+      readChk.seekg(8, std::ios::cur);
+    }
+    // Read in and navigate to offset
+    uint64_t offset;
+    readChk.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+    readChk.seekg(offset);
+
     // Read in process image structure information
     readChk.read(reinterpret_cast<char*>(&heapStart_), sizeof(heapStart_));
     readChk.read(reinterpret_cast<char*>(&mmapStart_), sizeof(mmapStart_));
@@ -48,7 +66,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     readChk.read(reinterpret_cast<char*>(&size_), sizeof(size_));
     isValid_ = true;
 
-    // Read in process image contents
+    // Read in process image memory contents
     char* temp = (char*)calloc(size_, sizeof(char));
     if (temp == NULL) {
       free(unwrappedProcImgPtr);
@@ -63,7 +81,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     double printThreshold = 0;
     for (int i = 0; i < size_; i++) {
       readChk.read(unwrappedProcImgPtr + i, sizeof(char));
-
+      // Write a progress bar to the STDOUT
       if (double(i) > printThreshold) {
         printThreshold += double(size_) * 0.01;
         progress += 0.01;
@@ -83,7 +101,6 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     }
     std::cout << std::endl << std::endl;
   } else {
-    config["checkpointSource"] = false;
     if (!elf.isValid()) {
       return;
     }

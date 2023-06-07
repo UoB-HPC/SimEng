@@ -63,6 +63,21 @@ struct vm_area_struct {
   std::shared_ptr<struct vm_area_struct> vm_next = NULL;
 };
 
+/** Struct to hold information about open file descriptors. */
+struct openFDParams {
+  /** Hardware file descriptor which the associated virtual file descriptor
+   * links to. */
+  int64_t hfd;
+  /** Directory file descriptor used to resolve a relative pathname. */
+  int64_t dfd;
+  /** The relative pathname. */
+  std::string pathname;
+  /** Flags used when opening the file descriptor. */
+  int64_t flags;
+  /** Mode used when opening the file descriptor. */
+  uint16_t mode;
+};
+
 /** A state container for a Linux process. */
 struct LinuxProcessState {
   /** The process ID. */
@@ -90,7 +105,7 @@ struct LinuxProcessState {
   uint64_t clearChildTid = 0;
 
   /** The virtual file descriptor mapping table. */
-  std::vector<int64_t> fileDescriptorTable;
+  std::vector<openFDParams> fileDescriptorTable;
   /** Set of deallocated virtual file descriptors available for reuse. */
   std::set<int64_t> freeFileDescriptors;
 };
@@ -135,6 +150,9 @@ class Linux {
 
   /** Retrieve the initial stack pointer. */
   uint64_t getInitialStackPointer() const;
+
+  /** Retrieve the open file descriptors. */
+  std::vector<openFDParams> getOpenFDs() const;
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */

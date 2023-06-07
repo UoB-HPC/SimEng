@@ -124,6 +124,11 @@ class CoreInstance {
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
 
+  /** Utility function to write a value of type T to the opened checkpoint file.
+   */
+  template <typename T>
+  void writeToCheckpoint(T value);
+
   /** Whether or not the source has been assembled by LLVM. */
   bool assembledSource_ = false;
 
@@ -178,6 +183,8 @@ class CoreInstance {
 
   /** Reference to the SimEng instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
+
+  std::ofstream chkPnt_;
 };
 
 }  // namespace simeng
