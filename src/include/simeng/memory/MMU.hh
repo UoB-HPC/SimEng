@@ -69,9 +69,6 @@ class MMU {
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
 
-  /** Method to handle ignored memory requests. */
-  void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt);
-
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
   std::shared_ptr<Port<CPUMemoryPacket>> initDataPort();

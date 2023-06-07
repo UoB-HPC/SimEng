@@ -88,7 +88,7 @@ class SetAssosciativeCacheTest : public testing::Test {
     freePort->registerReceiver(
         [&](CPUMemoryPacket pkt) { responses.push_back(pkt); });
 
-    auto memPort = memory.initPort();
+    auto memPort = memory.initDataPort();
     auto cacheTopPort = cache.initCpuPort();
     auto cacheBottomPort = cache.initBottomPort();
 
@@ -428,6 +428,10 @@ TEST_F(SetAssosciativeCacheTest, MshrPrimaryEviction) {
 
 TEST_F(SetAssosciativeCacheTest, ReplacementOnCacheLineBeingFetched) {
   // Write to invalid cache line causing a cache line fetch.
+  // 00 00000000 00 - 0
+  // 01 00000000 00 - 1024
+  // 10 00000000 00 - 2048
+  // 11 00000000 00 - 3072
   std::array<uint64_t, 4> addrs = {0, 1024, 2048, 3072};
   int ctr = 0;
 

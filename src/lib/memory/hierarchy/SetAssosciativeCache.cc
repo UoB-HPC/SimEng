@@ -9,7 +9,6 @@
 #include <vector>
 
 #include "simeng/memory/MemPacket.hh"
-#include "simeng/memory/hierarchy/RequestBuffer.hh"
 #include "simeng/util/Math.hh"
 
 namespace simeng {
@@ -51,10 +50,10 @@ std::shared_ptr<Port<CPUMemoryPacket>>
 SetAssosciativeCache<CacheLevel::L1>::initCpuPort() {
   cpuPort_ = std::make_shared<Port<CPUMemoryPacket>>();
   auto fn = [this](CPUMemoryPacket cpuPkt) {
-    reqMap_.insert({cpuPkt.id_, cpuPkt});
     MemoryHierarchyPacket mpkt(cpuPkt.type_, cpuPkt.vaddr_, cpuPkt.paddr_, clw_,
                                0, cpuPkt.id_);
-    mpkt.payload_ = cpuPkt.payload_;
+    // mpkt.payload_ = cpuPkt.payload_;
+    reqMap_.insert({cpuPkt.id_, cpuPkt});
     waitQueue_.push({mpkt, ticks_ + latencyInfo_.hitLatency});
   };
   cpuPort_->registerReceiver(fn);
@@ -102,7 +101,7 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
 
   auto itr = mshrPrimaryReqs_.begin();
   while (mshrPrimaryReqs_.size() && itr != mshrPrimaryReqs_.end()) {
-    auto& clatpkt = *itr;
+    auto clatpkt = *itr;
     auto& req = clatpkt.payload;
     auto& cline = cacheLines_[clatpkt.clineIdx];
 
@@ -114,12 +113,14 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
       req.clineAddr_ = cline.getPaddr();
 
       if (cline.isDirty()) {
+        req.isDirty = true;
         req.payload_ = std::vector<char>(cline.begin(), cline.end());
       }
 
       cline.setBusy();
-      itr = mshrPrimaryReqs_.erase(itr);
       queueToLowerLevel_.push(clatpkt);
+
+      itr = mshrPrimaryReqs_.erase(itr);
     } else {
       itr++;
     }
@@ -127,7 +128,7 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
 
   // while () processPendingReqs
   while (waitQueue_.size() && ticks_ >= waitQueue_.front().endLatency) {
-    auto& clatpkt = waitQueue_.front();
+    auto clatpkt = waitQueue_.front();
     auto& req = clatpkt.payload;
     AccessInfo info = checkHit(req);
     if (info.hit && info.valid) {
@@ -158,12 +159,13 @@ void SetAssosciativeCache<CacheLevel::L1>::tick() {
         mshrPrimaryReqs_.push_back(clatpkt);
         waitQueue_.pop();
         continue;
-      };
+      }
 
       cline.setBusy();
 
       // If replacement is dirty, copy the cache line into CacheInfo struct
       if (cline.isDirty()) {
+        req.isDirty = 1;
         req.payload_ = std::vector<char>(cline.begin(), cline.end());
       }
       clatpkt.endLatency = ticks_ + latencyInfo_.missPenalty;
@@ -207,6 +209,7 @@ CPUMemoryPacket SetAssosciativeCache<CacheLevel::L1>::doWrite(
   uint16_t byteOffset = tagScheme_->calcByteOffset(memPkt);
   uint16_t setNum = tagScheme_->calcSetIndex(memPkt);
   cline.supplyData(cpuPkt.payload_, byteOffset);
+  cline.setDirty();
 
   replacementPolicy_.updateUsage(setNum, clineIdx);
   reqMap_.erase(itr);

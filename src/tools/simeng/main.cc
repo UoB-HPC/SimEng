@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, latency);
+      simeng::memory::FixedLatencyMemory::build(false, memorySize, latency);
 
   // Create the instance of the lightweight Operating system
   simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs);
@@ -107,33 +107,14 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(fn);
 
-  uint8_t assosciativity = 4;
-  uint16_t clw = 4;
-  uint32_t cacheSize = 4 * 1024;
-  uint16_t hitLatency = 2;
-  uint16_t accessLatency = 1;
-  uint16_t missPenalty = 4;
-
-  SetAssosciativeCache<CacheLevel::L1> cache =
-      SetAssosciativeCache<CacheLevel::L1>(
-          clw, assosciativity, cacheSize,
-          {hitLatency, accessLatency, missPenalty},
-          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
-
   // Set up MMU->Memory connection
-  auto cpuConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
-  auto memoryConn =
-      simeng::PortMediator<simeng::memory::MemoryHierarchyPacket>();
+  auto cpuToMemoryConn =
+      simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
 
   auto port1 = mmu->initDataPort();
+  auto port2 = memory->initDirectAccessDataPort();
 
-  auto cpuPort = cache.initCpuPort();
-  auto bottomPort = cache.initBottomPort();
-
-  auto port2 = memory->initPort();
-
-  cpuConn.connect(port1, cpuPort);
-  memoryConn.connect(port2, bottomPort);
+  cpuToMemoryConn.connect(port1, port2);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =

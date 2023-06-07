@@ -40,7 +40,7 @@ void RegressionTest::run(const char* source, const char* triple,
       Config::get()["Memory-Hierarchy"]["DRAM"]["Size"].as<size_t>();
 
   // Initialise the simulation memory
-  memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);
+  memory_ = simeng::memory::FixedLatencyMemory::build(false, memorySize, 4);
 
   // Initialise a SimOS object & create initial process from test assembly code.
   simeng::OS::SimOS OS = simeng::OS::SimOS(
@@ -58,33 +58,16 @@ void RegressionTest::run(const char* source, const char* triple,
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(OS.getVAddrTranslator());
   mmu->setTid(procTID);
-  uint8_t assosciativity = 4;
-  uint16_t clw = 4;
-  uint32_t cacheSize = 4 * 1024;
-  uint16_t hitLatency = 2;
-  uint16_t accessLatency = 1;
-  uint16_t missPenalty = 4;
-
-  SetAssosciativeCache<CacheLevel::L1> cache =
-      SetAssosciativeCache<CacheLevel::L1>(
-          clw, assosciativity, cacheSize,
-          {hitLatency, accessLatency, missPenalty},
-          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
 
   // Set up MMU->Memory connection
   auto cpuConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
-  auto memoryConn =
-      simeng::PortMediator<simeng::memory::MemoryHierarchyPacket>();
+  auto cpuToMemoryConn =
+      simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
 
   auto port1 = mmu->initDataPort();
+  auto port2 = memory_->initDirectAccessDataPort();
 
-  auto cpuPort = cache.initCpuPort();
-  auto bottomPort = cache.initBottomPort();
-
-  auto port2 = memory_->initPort();
-
-  cpuConn.connect(port1, cpuPort);
-  memoryConn.connect(port2, bottomPort);
+  cpuToMemoryConn.connect(port1, port2);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),

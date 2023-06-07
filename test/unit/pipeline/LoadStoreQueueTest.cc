@@ -41,12 +41,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         loadUopPtr2(loadUop2),
         storeUopPtr(storeUop),
         storeUopPtr2(storeUop2),
-        memory(std::make_shared<memory::FixedLatencyMemory>(1024, latency)),
+        memory(simeng::memory::FixedLatencyMemory::build(false, 1024, latency)),
         mmu(std::make_shared<memory::MMU>(fn)),
         connection() {
     // Set up MMU->Memory connection
-    port1 = mmu->initPort();
-    port2 = memory->initPort();
+    auto port1 = mmu->initDataPort();
+    auto port2 = memory->initDirectAccessDataPort();
     connection.connect(port1, port2);
     // Initialise memory to 1s
     memory->sendUntimedData(std::vector<char>(1024, 1), 0, 1024);
@@ -142,11 +142,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::shared_ptr<memory::Mem> memory;
   std::shared_ptr<memory::MMU> mmu;
 
-  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port1;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port2;
+  simeng::PortMediator<memory::CPUMemoryPacket> connection;
 };
 
 // Test that a split queue can be constructed correctly

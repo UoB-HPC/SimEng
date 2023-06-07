@@ -19,7 +19,10 @@ class SimpleMem : public Mem {
   virtual ~SimpleMem() override {}
 
   /** This method requests access to memory for both read and write requests. */
-  void requestAccess(MemoryHierarchyPacket& pkt) override;
+  void requestAccess(MemoryHierarchyPacket& pkt);
+
+  /***/
+  void requestAccess(CPUMemoryPacket& pkt);
 
   /** This method returns the size of memory. */
   size_t getMemorySize() override;
@@ -31,8 +34,11 @@ class SimpleMem : public Mem {
   /** This method reads data from memory without incurring any latency. */
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
+  /***/
+  std::shared_ptr<Port<CPUMemoryPacket>> initDirectAccessDataPort() override;
+
   /** Function used to initialise a Port used for bidirection communication. */
-  std::shared_ptr<Port<MemoryHierarchyPacket>> initPort() override;
+  std::shared_ptr<Port<MemoryHierarchyPacket>> initDataPort() override;
 
   /** Function used to initialise Port used for untimed memory access. */
   std::shared_ptr<Port<CPUMemoryPacket>> initUntimedInstrReadPort() override;
@@ -53,14 +59,20 @@ class SimpleMem : public Mem {
   /** This method handles DataPackets of type WRITE_REQUEST. */
   void handleWriteRequest(MemoryHierarchyPacket& req);
 
-  /** This method handles untimed memory access. */
-  void doUntimedAccess(MemoryHierarchyPacket& req);
+  /***/
+  void handleReadRequest(CPUMemoryPacket& req);
+
+  /***/
+  void handleWriteRequest(CPUMemoryPacket& req);
 
   /** Port used for communication with other classes. */
   std::shared_ptr<Port<MemoryHierarchyPacket>> timedPort_ = nullptr;
 
   /** Port used for recieving untimed memory requests. */
   std::shared_ptr<Port<CPUMemoryPacket>> untimedInstrReadPort_ = nullptr;
+
+  /***/
+  std::shared_ptr<Port<CPUMemoryPacket>> directAccessDataPort_ = nullptr;
 };
 
 }  // namespace memory

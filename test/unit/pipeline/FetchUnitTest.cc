@@ -27,7 +27,8 @@ class PipelineFetchUnitTest : public testing::Test {
         completedReads(&fetchBuffer, 1),
         memory(std::make_shared<memory::SimpleMem>(1024)),
         mmu(std::make_shared<memory::MMU>(fn)),
-        connection(),
+        insConn(),
+        dataConn(),
         fetchUnit(output, mmu, 16, isa, predictor),
         uop(new MockInstruction),
         uopPtr(uop) {
@@ -36,9 +37,13 @@ class PipelineFetchUnitTest : public testing::Test {
     fetchUnit.updatePC(0);
 
     // Set up MMU->Memory connection
-    port1 = mmu->initPort();
-    port2 = memory->initPort();
-    connection.connect(port1, port2);
+    auto mmuInsPort = mmu->initUntimedInstrReadPort();
+    auto memoryInsPort = memory->initUntimedInstrReadPort();
+    insConn.connect(mmuInsPort, memoryInsPort);
+
+    auto mmuDataPort = mmu->initDataPort();
+    auto memoryDirectAccessDataPort = memory->initDirectAccessDataPort();
+    dataConn.connect(mmuInsPort, memoryInsPort);
   }
 
  protected:
@@ -56,11 +61,8 @@ class PipelineFetchUnitTest : public testing::Test {
   std::shared_ptr<memory::SimpleMem> memory;
   std::shared_ptr<memory::MMU> mmu;
 
-  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port1;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port2;
+  simeng::PortMediator<simeng::memory::CPUMemoryPacket> insConn;
+  simeng::PortMediator<simeng::memory::CPUMemoryPacket> dataConn;
 
   FetchUnit fetchUnit;
 

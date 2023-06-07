@@ -23,7 +23,6 @@ set(SIMENG_SOURCES
     OS/PageFrameAllocator.cc
     OS/PageTable.cc
     memory/SimpleMem.cc
-    memory/MemPacket.cc
     memory/MMU.cc
     memory/FixedLatencyMemory.cc
     memory/hierarchy/LRU.cc

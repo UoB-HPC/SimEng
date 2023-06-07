@@ -9,7 +9,6 @@
 #include "simeng/Port.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MemPacket.hh"
-#include "simeng/memory/hierarchy/RequestBuffer.hh"
 #include "simeng/util/Math.hh"
 
 namespace simeng::memory::hierarchy {

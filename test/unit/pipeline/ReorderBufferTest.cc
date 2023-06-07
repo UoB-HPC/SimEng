@@ -40,8 +40,8 @@ class ReorderBufferTest : public testing::Test {
             [this](auto insn) { exceptionHandler.raiseException(insn); },
             [](auto branchAddress) {}, predictor, 0, 0) {
     // Set up MMU->Memory connection
-    port1 = mmu->initPort();
-    port2 = memory->initPort();
+    auto port1 = mmu->initDataPort();
+    auto port2 = memory->initDirectAccessDataPort();
     connection.connect(port1, port2);
   }
 
@@ -57,11 +57,7 @@ class ReorderBufferTest : public testing::Test {
   std::shared_ptr<memory::SimpleMem> memory;
   std::shared_ptr<memory::MMU> mmu;
 
-  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>> connection;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port1;
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      port2;
+  simeng::PortMediator<memory::CPUMemoryPacket> connection;
 
   RegisterAliasTable rat;
   LoadStoreQueue lsq;

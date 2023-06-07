@@ -49,15 +49,6 @@ void MMU::handleTranslationFaultForDataReqs(uint64_t faultCode,
                                             const MemoryAccessTarget& target,
                                             const uint64_t requestId) {}
 
-void MMU::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
-  if (pkt->isRead()) {
-    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
-  } else {
-    pkt->payload().clear();
-    pkt->turnIntoWriteResponse();
-  }
-}
-
 const span<MemoryReadResult> MMU::getCompletedReads() const {
   return {const_cast<MemoryReadResult*>(completedReads_.data()),
           completedReads_.size()};
@@ -122,6 +113,7 @@ void MMU::setTid(uint64_t tid) { tid_ = tid; }
 std::shared_ptr<Port<CPUMemoryPacket>> MMU::initDataPort() {
   port_ = std::make_shared<Port<CPUMemoryPacket>>();
   auto fn = [this](CPUMemoryPacket packet) -> void {
+    pendingDataRequests_--;
     if (packet.type_ == MemoryAccessType::READ) {
       completedReads_.push_back(
           {{packet.vaddr_, packet.size_},
@@ -142,8 +134,8 @@ std::shared_ptr<Port<CPUMemoryPacket>> MMU::initUntimedInstrReadPort() {
          RegisterValue(packet.payload_.data(), packet.size_),
          packet.id_});
   };
-  port_->registerReceiver(fn);
-  return port_;
+  untimedInstrReadPort_->registerReceiver(fn);
+  return untimedInstrReadPort_;
 }
 
 }  // namespace memory

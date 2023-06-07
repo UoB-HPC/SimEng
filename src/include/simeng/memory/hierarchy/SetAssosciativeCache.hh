@@ -12,7 +12,6 @@
 #include "simeng/memory/hierarchy/CacheLines.hh"
 #include "simeng/memory/hierarchy/Mshr.hh"
 #include "simeng/memory/hierarchy/Replacement.hh"
-#include "simeng/memory/hierarchy/RequestBuffer.hh"
 #include "simeng/memory/hierarchy/TagSchemes.hh"
 
 namespace simeng {
@@ -60,9 +59,6 @@ class BaseSetAssosciativeCache : public Cache {
 
   /** This variable store the number of ticks. */
   uint64_t ticks_ = 0;
-
-  /** Instantiation of the RequestBuffer. */
-  RequestBuffer requestBuffer_;
 
   /** Queue used to apply hit latency to all incoming memory requests. */
   std::queue<CacheLatencyPacket<MemoryHierarchyPacket>> waitQueue_;
