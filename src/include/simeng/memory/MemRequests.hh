@@ -42,13 +42,5 @@ struct MemoryReadResult {
   uint64_t requestId;
 };
 
-/** A structure used for the result of conditional store operations. */
-struct CondStoreResult {
-  /** The request identifier provided by the requester. */
-  uint64_t requestId;
-  /** Indicates whether the store was successful or not. */
-  bool successful;
-};
-
 }  // namespace memory
 }  // namespace simeng
