@@ -1,4 +1,4 @@
-#include "MockInstruction.hh"
+#include "../MockInstruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/memory/FixedLatencyMemory.hh"
