@@ -104,7 +104,8 @@ void MMU::bufferRequest(const MemoryAccessTarget& target,
 
   auto cpuPkt = CPUMemoryPacket(MemoryAccessType::WRITE, target.vaddr, paddr,
                                 target.size, requestId, 0, 0);
-  cpuPkt.payload_ = std::vector<char>(payload.begin(), payload.end());
+  cpuPkt.payload_ =
+      std::vector<char>(payload.begin(), payload.begin() + target.size);
   port_->send(cpuPkt);
 }
 
