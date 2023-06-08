@@ -99,16 +99,21 @@ class MMU {
   bool isAligned(const MemoryAccessTarget& target) const;
 
   /** Splits a read memory access target into multiple MemPackets such that each
-   * MemPacket is aligned w.r.t the cache line width.*/
-  std::vector<std::unique_ptr<MemPacket>> splitReadMemTarget(
-      const MemoryAccessTarget& target, uint64_t insnSeqId,
-      uint16_t pktOrderId) const;
+   * MemPacket is aligned w.r.t the cache line width and adds it to the output
+   * vector.*/
+  void createReadMemPackets(const MemoryAccessTarget& target,
+                            std::vector<std::unique_ptr<MemPacket>>& outputVec,
+                            const uint64_t insnSeqId,
+                            const uint16_t pktOrderId);
 
   /** Splits a write memory access target into multiple MemPackets such that
-   * each MemPacket is aligned w.r.t the cache line width.*/
-  std::vector<std::unique_ptr<MemPacket>> splitWriteMemTarget(
-      const MemoryAccessTarget& target, const std::vector<char>& data,
-      uint64_t insnSeqId, uint16_t pktOrderId) const;
+   * each MemPacket is aligned w.r.t the cache line width and adds it to the
+   * output vector.*/
+  void createWriteMemPackets(const MemoryAccessTarget& target,
+                             std::vector<std::unique_ptr<MemPacket>>& outputVec,
+                             const std::vector<char>& data,
+                             const uint64_t insnSeqId,
+                             const uint16_t pktOrderId);
 
   /** For a given instruction, supply all data from packets in readResponses_.
    */
