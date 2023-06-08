@@ -72,12 +72,14 @@ void MMU::bufferRequest(const MemoryAccessTarget& target,
   uint64_t paddr = translate_(target.vaddr, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    completedInstrReads_.push_back(
+    pendingDataRequests_--;
+    completedReads_.push_back(
         {{target.vaddr, target.size}, RegisterValue(), requestId});
     return;
   }
 
   if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    pendingDataRequests_--;
     std::vector<char> data(target.size, '\0');
     completedReads_.push_back({{target.vaddr, target.size},
                                RegisterValue(data.data(), target.size),
@@ -100,7 +102,10 @@ void MMU::bufferRequest(const MemoryAccessTarget& target,
   // Write requests in SimEng cannot result in a DATA_ABORT because SimEng
   // doesn't do writes speculatively. As far ignored write requests are
   // concerned we ignore them by returning early.
-  if (faultCode) return;
+  if (faultCode) {
+    pendingDataRequests_--;
+    return;
+  };
 
   auto cpuPkt = CPUMemoryPacket(MemoryAccessType::WRITE, target.vaddr, paddr,
                                 target.size, requestId, 0, 0);

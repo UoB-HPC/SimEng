@@ -66,13 +66,12 @@ struct UntimedWriteEvent : public Event {
 };
 
 struct MemoryRequestEvent : public Event {
-  std::unique_ptr<simeng::memory::MemPacket> request;
+  CPUMemoryPacket request;
   Expectation* expectation = nullptr;
 
-  MemoryRequestEvent(std::unique_ptr<simeng::memory::MemPacket> packet,
-                     Expectation* expec)
+  MemoryRequestEvent(CPUMemoryPacket packet, Expectation* expec)
       : request(std::move(packet)), expectation(expec) {
-    request->id_ = id;
+    request.id_ = id;
   }
 
   void doEvent(CacheTestEngine* engine, uint16_t index) override;
@@ -146,28 +145,30 @@ class CacheTestEngine : public testing::Test {
 
   CacheTestEngine();
 
-  std::unique_ptr<Mem> memory = std::make_unique<SimpleMem>(memorySize);
-  SetAssosciativeCache cache = SetAssosciativeCache(
-      clw, assosciativity, cacheSize, {hitLatency, accessLatency, missPenalty},
-      std::make_unique<PIPT>(cacheSize, clw, assosciativity));
+  std::shared_ptr<Mem> memory = std::make_unique<SimpleMem>(memorySize);
+  SetAssosciativeCache<CacheLevel::L1> cache =
+      SetAssosciativeCache<CacheLevel::L1>(
+          clw, assosciativity, cacheSize,
+          {hitLatency, accessLatency, missPenalty},
+          std::make_unique<PIPT>(cacheSize, clw, assosciativity));
 
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> freePort =
-      std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  std::shared_ptr<Port<CPUMemoryPacket>> freePort =
+      std::make_shared<Port<CPUMemoryPacket>>();
 
-  std::vector<std::unique_ptr<MemPacket>> responses;
-  PortMediator<std::unique_ptr<MemPacket>> cpuToCache;
-  PortMediator<std::unique_ptr<MemPacket>> cacheToMem;
+  std::vector<CPUMemoryPacket> responses;
+  PortMediator<CPUMemoryPacket> cpuToCache;
+  PortMediator<MemoryHierarchyPacket> cacheToMem;
 
   uint64_t ticks = 0;
   std::vector<std::shared_ptr<Event>> events;
 
   void rebuildWithSimpleMem() {
-    memory = std::make_unique<SimpleMem>(memorySize);
+    memory = std::make_shared<SimpleMem>(memorySize);
     rebuild();
   }
 
   void rebuildWithFixedLatencyMemory(uint16_t latency) {
-    memory = std::make_unique<FixedLatencyMemory>(memorySize, latency);
+    memory = FixedLatencyMemory::build(true, memorySize, latency);
     rebuild();
   }
 
@@ -211,31 +212,32 @@ class CacheTestEngine : public testing::Test {
   std::map<uint64_t, ExpectationResult> expectationResults;
 
   void setup() {
-    freePort->registerReceiver([&](std::unique_ptr<MemPacket> pkt) {
+    MemoryHierarchyPacket::clw = clw;
+    freePort->registerReceiver([&](CPUMemoryPacket pkt) {
       ExpectationResult res;
       res.endTick = ticks + 1;
-      if (pkt->isRead()) {
-        res.resultPayload = pkt->payload();
+      if (pkt.type_ == MemoryAccessType::READ) {
+        res.resultPayload = pkt.payload_;
       }
-      expectationResults.insert({pkt->id_, res});
+      expectationResults.insert({pkt.id_, res});
     });
 
-    auto memPort = memory->initPort();
-    auto cacheTopPort = cache.initTopPort();
+    auto memPort = memory->initDataPort();
+    auto cacheCpuPort = cache.initCpuPort();
     auto cacheBottomPort = cache.initBottomPort();
 
-    cpuToCache.connect(freePort, cacheTopPort);
+    cpuToCache.connect(freePort, cacheCpuPort);
     cacheToMem.connect(cacheBottomPort, memPort);
   }
 
   void rebuild() {
-    cache = SetAssosciativeCache(
+    cache = SetAssosciativeCache<CacheLevel::L1>(
         clw, assosciativity, cacheSize,
         {hitLatency, accessLatency, missPenalty},
         std::make_unique<PIPT>(cacheSize, clw, assosciativity));
-    cpuToCache = PortMediator<std::unique_ptr<MemPacket>>();
-    cacheToMem = PortMediator<std::unique_ptr<MemPacket>>();
-    freePort = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+    cpuToCache = PortMediator<CPUMemoryPacket>();
+    cacheToMem = PortMediator<MemoryHierarchyPacket>();
+    freePort = std::make_shared<Port<CPUMemoryPacket>>();
     responses.clear();
     setup();
   }

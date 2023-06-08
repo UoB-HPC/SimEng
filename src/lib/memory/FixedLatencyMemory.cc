@@ -114,6 +114,11 @@ std::shared_ptr<Port<CPUMemoryPacket>> DerivedFixedLatencyMemory<
 
 std::shared_ptr<Port<MemoryHierarchyPacket>>
 DerivedFixedLatencyMemory<FixedLatencyMemoryType::NoHierarchy>::initDataPort() {
+  std::cerr
+      << "[SimEng:FixedLatencyMemory] Cannot initiate timed data access "
+         "data port on FixedLatencyMemory which only supports direct access "
+         "to memory without a cache hierarchy."
+      << std::endl;
   std::exit(1);
 }
 
@@ -168,6 +173,10 @@ std::shared_ptr<Port<MemoryHierarchyPacket>> DerivedFixedLatencyMemory<
 
 std::shared_ptr<Port<CPUMemoryPacket>> DerivedFixedLatencyMemory<
     FixedLatencyMemoryType::WithHierarchy>::initDirectAccessDataPort() {
+  std::cerr << "[SimEng:FixedLatencyMemory] Cannot initiate direct access "
+               "data port on FixedLatencyMemory which only supports access "
+               "through cache hierarchy."
+            << std::endl;
   std::exit(1);
 }
 

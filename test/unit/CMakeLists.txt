@@ -27,9 +27,9 @@ set(TEST_SOURCES
     PageFrameAllocatorTest.cc
     MemRegionTest.cc
     PIPT_TagScheme.cc
-    # memory/CacheTestEngine.cc
-    # memory/SAEngineTest.cc
-    # memory/EventBuilder.cc
+    memory/CacheTestEngine.cc
+    memory/SAEngineTest.cc
+    memory/EventBuilder.cc
     ../testenv/FilesEnv.cc
 
     )

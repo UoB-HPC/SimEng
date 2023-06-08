@@ -48,26 +48,27 @@ class EventBuilder<EventType::Read> : public EventBuilderBase {
   };
 
   EventBuilder<EventType::Read>& target(uint64_t paddr, uint16_t size) {
-    request_ = MemPacket::createReadRequest(paddr, size, 0);
-    request_->paddr_ = paddr;
+    request_ =
+        CPUMemoryPacket(MemoryAccessType::READ, paddr, paddr, size, 0, 0, 0);
     return *this;
   }
 
   void add();
 
  private:
-  std::unique_ptr<MemPacket> request_ = nullptr;
+  CPUMemoryPacket request_;
   uint64_t expectedElapsedTicks_ = UINT64_MAX;
   std::vector<char> expectedResponse_;
 
   void reset() override {
-    request_ = nullptr;
+    request_ = CPUMemoryPacket();
+    request_.size_ = 0;
     expectedElapsedTicks_ = UINT64_MAX;
     expectedResponse_.clear();
   }
   void verify() {
     bool correct = true;
-    correct = correct && (request_ != nullptr);
+    correct = correct && (request_.size_ != 0);
     correct = correct && (expectedElapsedTicks_ != UINT64_MAX);
     correct = correct && expectedResponse_.size();
     EXPECT_TRUE(correct)
@@ -89,24 +90,26 @@ class EventBuilder<EventType::Write> : public EventBuilderBase {
 
   EventBuilder<EventType::Write>& target(uint64_t paddr, uint16_t size,
                                          std::vector<char> data) {
-    request_ = MemPacket::createWriteRequest(paddr, size, 0, data);
-    request_->paddr_ = paddr;
+    request_ =
+        CPUMemoryPacket(MemoryAccessType::WRITE, paddr, paddr, size, 0, 0, 0);
+    request_.payload_ = data;
     return *this;
   }
 
   void add();
 
  private:
-  std::unique_ptr<MemPacket> request_ = nullptr;
+  CPUMemoryPacket request_;
   uint64_t expectedElapsedTicks_ = UINT64_MAX;
 
   void reset() override {
-    request_ = nullptr;
+    request_ = CPUMemoryPacket();
+    request_.size_ = 0;
     expectedElapsedTicks_ = UINT64_MAX;
   }
   void verify() {
     bool correct = true;
-    correct = correct && (request_ != nullptr);
+    correct = correct && (request_.size_ != 0);
     correct = correct && (expectedElapsedTicks_ != UINT64_MAX);
     EXPECT_TRUE(correct)
         << "Specify all parameters for WriteMemoryEvent to event builder"

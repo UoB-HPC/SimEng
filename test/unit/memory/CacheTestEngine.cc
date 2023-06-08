@@ -108,15 +108,15 @@ std::string TickEvent::serialise(uint16_t index) {
 
 std::string MemoryRequestEvent::serialise(uint16_t index) {
   std::stringstream ss;
-  if (request->isRead()) {
+  if (request.type_ == MemoryAccessType::READ) {
     ss << "Memory Read Event at index: " << index
-       << " with paddr: " << request->paddr_ << " and size: " << request->size_;
+       << " with paddr: " << request.paddr_ << " and size: " << request.size_;
 
   } else {
     ss << "Memory Write Event at index: " << index
-       << " with paddr: " << request->paddr_ << ", size: " << request->size_
+       << " with paddr: " << request.paddr_ << ", size: " << request.size_
        << " and data: { ";
-    for (auto ch : request->payload()) {
+    for (auto ch : request.payload_) {
       ss << ch << " ";
     }
     ss << "}";
