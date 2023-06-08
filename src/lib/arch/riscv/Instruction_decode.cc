@@ -350,7 +350,7 @@ void Instruction::decode() {
   if ((Opcode::RISCV_MUL <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_MULW)) {
     // Multiply instructions
-    isMultiply_ = true;
+    insnTypeMetadata |= isMultiplyMask;
   }
 
   if (((Opcode::RISCV_REM <= metadata.opcode &&
@@ -358,7 +358,7 @@ void Instruction::decode() {
        (Opcode::RISCV_DIV <= metadata.opcode &&
         metadata.opcode <= Opcode::RISCV_DIVW))) {
     // Divide instructions
-    isDivide_ = true;
+    insnTypeMetadata |= isDivideMask;
   }
 
   // Set branch type
