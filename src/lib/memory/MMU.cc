@@ -450,14 +450,15 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     auto& pktVec = packets[i];
     assert(pktVec.size() > 0 &&
            "[SimEng:MMU] Empty read response packet vector.");
+
+    uint64_t addr = pktVec[0]->vaddr_;
     // Do early check on first packet for data abort
     if (pktVec[0]->isFaulty()) {
       // If faulty, return no data. This signals a data abort.
-      insn->supplyData(pktVec[0]->vaddr_, RegisterValue());
+      insn->supplyData(addr, RegisterValue());
       continue;
     }
     // Initialise values with first package
-    uint64_t addr = pktVec[0]->vaddr_;
     std::vector<char> mergedData = pktVec[0]->payload();
     uint16_t mergedSize = pktVec[0]->size_;
     bool isFaulty = false;
@@ -465,7 +466,7 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     for (int j = 1; j < pktVec.size(); j++) {
       if (pktVec[j]->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
-        insn->supplyData(pktVec[0]->vaddr_, RegisterValue());
+        insn->supplyData(addr, RegisterValue());
         isFaulty = true;
         break;
       }
@@ -479,8 +480,8 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     if (!isFaulty) insn->supplyData(addr, {mergedData.data(), mergedSize});
   }
   assert(insn->hasAllData() &&
-         "[SimEng:MMU] Load instruction was supplied memory data but is "
-         "still waiting on further data to be supplied.");
+         "[SimEng:MMU] Load instruction was supplied memory data but is still "
+         "waiting on further data to be supplied.");
   // Instruction now has all data, remove entries from maps
   requestedLoads_.erase(insnSeqId);
   readResponses_.erase(insnSeqId);
