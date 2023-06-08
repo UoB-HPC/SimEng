@@ -59,10 +59,14 @@ void RegressionTest::run(const char* source, const char* triple,
       std::make_shared<simeng::memory::MMU>(OS.getVAddrTranslator());
   mmu->setTid(procTID);
 
-  // Set up MMU->Memory connection
-  auto cpuConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
+  // Set up MMU->Memory data connection
   auto cpuToMemoryConn =
       simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
+
+  auto instrConn = simeng::PortMediator<simeng::memory::CPUMemoryPacket>();
+  auto iPort1 = mmu->initUntimedInstrReadPort();
+  auto iPort2 = memory_->initUntimedInstrReadPort();
+  instrConn.connect(iPort1, iPort2);
 
   auto port1 = mmu->initDataPort();
   auto port2 = memory_->initDirectAccessDataPort();

@@ -23,7 +23,7 @@ void MMU::requestRead(const MemoryAccessTarget& target,
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data, const uint64_t requestId) {
   pendingDataRequests_++;
-  bufferRequest(target, requestId);
+  bufferRequest(target, requestId, data);
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
@@ -118,7 +118,7 @@ std::shared_ptr<Port<CPUMemoryPacket>> MMU::initDataPort() {
       completedReads_.push_back(
           {{packet.vaddr_, packet.size_},
            RegisterValue(packet.payload_.data(), packet.size_),
-           packet.id_});
+           packet.insnReqId_});
     }
     // Currently, we ignore write responses.
   };
@@ -132,7 +132,7 @@ std::shared_ptr<Port<CPUMemoryPacket>> MMU::initUntimedInstrReadPort() {
     completedInstrReads_.push_back(
         {{packet.vaddr_, packet.size_},
          RegisterValue(packet.payload_.data(), packet.size_),
-         packet.id_});
+         packet.insnReqId_});
   };
   untimedInstrReadPort_->registerReceiver(fn);
   return untimedInstrReadPort_;
