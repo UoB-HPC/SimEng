@@ -113,8 +113,6 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   // Check space left for a load
   if (loadsStores_[LD].size() >= loadRequestLimit_) return false;
 
-  uint64_t seqId = uop->getSequenceId();
-
   // Check if new cacheLineMonitor needs to be opened
   if (uop->isLoadReserved()) {
     openLLSCMonitor(uop);
@@ -122,28 +120,16 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
 
   // Initialise space in loads
   loadsStores_[LD].push_back({});
-  uint16_t totalPktsSent = 0;
+  uint64_t seqId = uop->getSequenceId();
   // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
   for (int i = 0; i < targets.size(); i++) {
-    const auto& target = targets[i];
-    if (isAligned(target)) {
-      std::unique_ptr<memory::MemPacket> req =
-          MemPacket::createReadRequest(target.vaddr, target.size, seqId, i);
-      loadsStores_[LD].back().push_back(std::move(req));
-      pendingDataRequests_++;
-      totalPktsSent++;
-    } else {
-      auto packets = splitReadMemTarget(target, seqId, i);
-      pendingDataRequests_ += packets.size();
-      totalPktsSent += packets.size();
-      for (int j = 0; j < packets.size(); j++) {
-        loadsStores_[LD].back().push_back(std::move(packets[j]));
-      }
-    }
+    createReadMemPackets(targets[i], loadsStores_[LD].back(), seqId, i);
   }
   // Register load in map
-  requestedLoads_[seqId] = {uop, totalPktsSent};
+  uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[LD].back().size());
+  pendingDataRequests_ += totalReqs;
+  requestedLoads_[seqId] = {uop, totalReqs};
   return true;
 }
 
@@ -159,6 +145,7 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   // Check space left for a store
   if (loadsStores_[STR].size() >= storeRequestLimit_) return false;
 
+  // Check if conditional store can proceed
   bool isConditional = uop->isStoreCond();
   if (isConditional) {
     if (checkLLSCMonitor(uop) == false) {
@@ -183,43 +170,35 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
          "elements to write.");
   for (int i = 0; i < targets.size(); i++) {
     const auto& target = targets[i];
+    if (!isConditional) updateLLSCMonitor(target);
+    // Format data
     const char* wdata = data[i].getAsVector<char>();
     std::vector<char> dt(wdata, wdata + target.size);
-    if (!isConditional) updateLLSCMonitor(target);
-    if (isAligned(target)) {
-      std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
-          target.vaddr, target.size, seqId, i, dt);
-      loadsStores_[STR].back().push_back(std::move(req));
-      pendingDataRequests_++;
-    } else {
-      auto packets = splitWriteMemTarget(target, dt, seqId, i);
-      pendingDataRequests_ += packets.size();
-      for (int j = 0; j < packets.size(); j++) {
-        loadsStores_[STR].back().push_back(std::move(packets[j]));
-      }
-    }
+    // Create requests
+    createWriteMemPackets(target, loadsStores_[STR].back(), dt, seqId, i);
   }
+  pendingDataRequests_ += loadsStores_[STR].back().size();
   return true;
 }
 
 void MMU::requestWrite(const MemoryAccessTarget& target,
                        const RegisterValue& data) {
-  // Create and fire off request
+  // Format data
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
+
   updateLLSCMonitor(target);
-  if (isAligned(target)) {
-    std::unique_ptr<MemPacket> req =
-        MemPacket::createWriteRequest(target.vaddr, target.size, 0, 0, dt);
-    issueRequest(std::move(req));
-    pendingDataRequests_++;
-  } else {
-    auto packets = splitWriteMemTarget(target, dt, 0, 0);
-    pendingDataRequests_ += packets.size();
-    for (int i = 0; i < packets.size(); i++) {
-      issueRequest(std::move(packets[i]));
-    }
+
+  // Create requests
+  std::vector<std::unique_ptr<MemPacket>> pktVec = {};
+  createWriteMemPackets(target, pktVec, dt, 0, 0);
+
+  // Fire off requests
+  uint16_t pktVecSize = static_cast<uint16_t>(pktVec.size());
+  for (uint16_t i = 0; i < pktVecSize; i++) {
+    issueRequest(std::move(pktVec[i]));
   }
+  pendingDataRequests_ += pktVecSize;
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
@@ -391,57 +370,70 @@ bool MMU::isAligned(const MemoryAccessTarget& target) const {
           downAlign(endAddr, cacheLineWidth_));
 }
 
-std::vector<std::unique_ptr<MemPacket>> MMU::splitReadMemTarget(
-    const MemoryAccessTarget& target, uint64_t insnSeqId,
-    uint16_t pktOrderId) const {
-  std::vector<std::unique_ptr<MemPacket>> packets = {};
-  uint64_t nextAddr = target.vaddr;
-  uint64_t remSize = static_cast<uint64_t>(target.size);
-  uint16_t nextSplitId = 0;
-  while (remSize != 0) {
-    // Get size of next target region
-    uint16_t regSize = std::min(
-        (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
-        remSize);
-    auto req =
-        MemPacket::createReadRequest(nextAddr, regSize, insnSeqId, pktOrderId);
-    req->packetSplitId_ = nextSplitId;
-    packets.push_back(std::move(req));
-    // Update vars
-    nextAddr += regSize;
-    remSize -= regSize;
-    nextSplitId++;
+void MMU::createReadMemPackets(
+    const MemoryAccessTarget& target,
+    std::vector<std::unique_ptr<MemPacket>>& outputVec,
+    const uint64_t insnSeqId, const uint16_t pktOrderId) {
+  if (isAligned(target)) {
+    std::unique_ptr<memory::MemPacket> req = MemPacket::createReadRequest(
+        target.vaddr, target.size, insnSeqId, pktOrderId);
+    outputVec.push_back(std::move(req));
+  } else {
+    uint64_t nextAddr = target.vaddr;
+    uint64_t remSize = static_cast<uint64_t>(target.size);
+    uint16_t nextSplitId = 0;
+    while (remSize != 0) {
+      // Get size of next target region
+      uint16_t regSize = std::min(
+          (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
+          remSize);
+      // Create MemPacket
+      auto req = MemPacket::createReadRequest(nextAddr, regSize, insnSeqId,
+                                              pktOrderId);
+      req->packetSplitId_ = nextSplitId;
+      outputVec.push_back(std::move(req));
+      // Update vars
+      nextAddr += regSize;
+      remSize -= regSize;
+      nextSplitId++;
+    }
   }
-  return packets;
 }
 
-std::vector<std::unique_ptr<MemPacket>> MMU::splitWriteMemTarget(
-    const MemoryAccessTarget& target, const std::vector<char>& data,
-    uint64_t insnSeqId, uint16_t pktOrderId) const {
-  std::vector<std::unique_ptr<MemPacket>> packets = {};
-  uint64_t nextAddr = target.vaddr;
-  uint64_t remSize = static_cast<uint64_t>(target.size);
-  uint16_t nextSplitId = 0;
-  std::vector<char> remData = data;
-  while (remSize != 0) {
-    // Get size of next target region
-    uint16_t regSize = std::min(
-        (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
-        remSize);
-    // Get data for this region
-    auto regData =
-        std::vector<char>(remData.begin(), remData.begin() + regSize);
-    auto req = MemPacket::createWriteRequest(nextAddr, regSize, insnSeqId,
-                                             pktOrderId, regData);
-    req->packetSplitId_ = nextSplitId;
-    packets.push_back(std::move(req));
-    // Update vars
-    nextAddr += regSize;
-    remSize -= regSize;
-    nextSplitId++;
-    remData = std::vector<char>(remData.begin() + regSize, remData.end());
+void MMU::createWriteMemPackets(
+    const MemoryAccessTarget& target,
+    std::vector<std::unique_ptr<MemPacket>>& outputVec,
+    const std::vector<char>& data, const uint64_t insnSeqId,
+    const uint16_t pktOrderId) {
+  if (isAligned(target)) {
+    std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
+        target.vaddr, target.size, insnSeqId, pktOrderId, data);
+    outputVec.push_back(std::move(req));
+  } else {
+    uint64_t nextAddr = target.vaddr;
+    uint64_t remSize = static_cast<uint64_t>(target.size);
+    uint16_t nextSplitId = 0;
+    std::vector<char> remData = data;
+    while (remSize != 0) {
+      // Get size of next target region
+      uint16_t regSize = std::min(
+          (downAlign(nextAddr, cacheLineWidth_) + cacheLineWidth_) - nextAddr,
+          remSize);
+      // Get data for this region
+      auto regData =
+          std::vector<char>(remData.begin(), remData.begin() + regSize);
+      // Create MemPacket
+      auto req = MemPacket::createWriteRequest(nextAddr, regSize, insnSeqId,
+                                               pktOrderId, regData);
+      req->packetSplitId_ = nextSplitId;
+      outputVec.push_back(std::move(req));
+      // Update vars
+      nextAddr += regSize;
+      remSize -= regSize;
+      nextSplitId++;
+      remData = std::vector<char>(remData.begin() + regSize, remData.end());
+    }
   }
-  return packets;
 }
 
 void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
