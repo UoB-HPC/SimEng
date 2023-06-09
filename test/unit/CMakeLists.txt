@@ -2,6 +2,7 @@ set(TEST_SOURCES
     memory/FixedLatencyMemoryTest.cc
     memory/LLSCMonitorTest.cc
     memory/MemRegionTest.cc
+    memory/MMUTest.cc
     memory/SimpleMem.cc
     memory/VmaTest.cc
     OS/FileDescArrayTest.cc
