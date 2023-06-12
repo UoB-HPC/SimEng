@@ -129,10 +129,10 @@ class MMU {
    * Key = Instruction sequenceID
    * Value = map containing all responses for a specific instruction
    *            Key = packetOrderID
-   *            Value = Vector of 1 or more packets, depending on if the request
+   *            Value = Map of 1 or more packets, depending on if the request
    *                    was split */
   std::map<uint64_t,
-           std::map<uint16_t, std::vector<std::unique_ptr<MemPacket>>>>
+           std::map<uint16_t, std::map<uint16_t, std::unique_ptr<MemPacket>>>>
       readResponses_;
 
   /** A map containing all store instructions waiting for their results.

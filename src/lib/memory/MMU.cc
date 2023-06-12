@@ -251,8 +251,8 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       assert(requestedLoads_.find(seqId) != requestedLoads_.end() &&
              "[SimEng:MMU] Read response packet recieved for instruction that "
              "does not exist.");
-      readResponses_[seqId][packet->packetOrderId_].push_back(
-          std::move(packet));
+      readResponses_[seqId][packet->packetOrderId_][packet->packetSplitId_] =
+          std::move(packet);
       requestedLoads_.find(seqId)->second.totalPacketsRemaining--;
       if (requestedLoads_.find(seqId)->second.totalPacketsRemaining == 0) {
         // All packets have come back, supply load instruction all data
@@ -447,33 +447,33 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
   auto& packets = readResponses_.find(insnSeqId)->second;
   for (int i = 0; i < packets.size(); i++) {
     // Get vector containing all packets associated to a single target
-    auto& pktVec = packets[i];
-    assert(pktVec.size() > 0 &&
+    auto& pktMap = packets[i];
+    assert(pktMap.size() > 0 &&
            "[SimEng:MMU] Empty read response packet vector.");
 
-    uint64_t addr = pktVec[0]->vaddr_;
+    uint64_t addr = pktMap[0]->vaddr_;
     // Do early check on first packet for data abort
-    if (pktVec[0]->isFaulty()) {
+    if (pktMap[0]->isFaulty()) {
       // If faulty, return no data. This signals a data abort.
       insn->supplyData(addr, RegisterValue());
       continue;
     }
     // Initialise values with first package
-    std::vector<char> mergedData = pktVec[0]->payload();
-    uint16_t mergedSize = pktVec[0]->size_;
+    std::vector<char> mergedData = pktMap[0]->payload();
+    uint16_t mergedSize = pktMap[0]->size_;
     bool isFaulty = false;
     // Loop over any remaining packets due to a split
-    for (int j = 1; j < pktVec.size(); j++) {
-      if (pktVec[j]->isFaulty()) {
+    for (int j = 1; j < pktMap.size(); j++) {
+      if (pktMap[j]->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
         insn->supplyData(addr, RegisterValue());
         isFaulty = true;
         break;
       }
       // Increase merged size
-      mergedSize += pktVec[j]->size_;
+      mergedSize += pktMap[j]->size_;
       // Concatonate the payload data
-      auto& tempData = pktVec[j]->payload();
+      auto& tempData = pktMap[j]->payload();
       mergedData.insert(mergedData.end(), tempData.begin(), tempData.end());
     }
     // Supply data to instruction
