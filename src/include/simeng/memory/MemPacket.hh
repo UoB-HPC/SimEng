@@ -50,7 +50,7 @@ class MemPacket {
 
   /** Indicates the ordering of a memory target which had to be split due to
    * being unaligned. Value of `-1` indicates no split occurred.*/
-  uint16_t packetSplitId_ = -1;
+  uint16_t packetSplitId_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
