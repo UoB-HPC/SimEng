@@ -378,6 +378,7 @@ void MMU::createReadMemPackets(
     std::unique_ptr<memory::MemPacket> req = MemPacket::createReadRequest(
         target.vaddr, target.size, insnSeqId, pktOrderId);
     outputVec.push_back(std::move(req));
+    readResponses_[insnSeqId][pktOrderId].resize(1);
   } else {
     uint64_t nextAddr = target.vaddr;
     uint64_t remSize = static_cast<uint64_t>(target.size);
@@ -397,6 +398,8 @@ void MMU::createReadMemPackets(
       remSize -= regSize;
       nextSplitId++;
     }
+    // Resize response data structure to equal the number of packets created
+    readResponses_[insnSeqId][pktOrderId].resize(nextSplitId);
   }
 }
 
