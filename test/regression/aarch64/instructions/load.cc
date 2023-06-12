@@ -1172,12 +1172,13 @@ TEST_P(InstLoad, ldrsh) {
 }
 
 TEST_P(InstLoad, ldrsw) {
-  initialHeapData_.resize(16);
+  initialHeapData_.resize(20);
   int32_t* heap = reinterpret_cast<int32_t*>(initialHeapData_.data());
   heap[0] = -2;
   heap[1] = INT32_MAX;
   heap[2] = -5;
   heap[3] = 256;
+  heap[4] = 333;
 
   // ldrsw
   RUN_AARCH64(R"(
@@ -1185,17 +1186,20 @@ TEST_P(InstLoad, ldrsw) {
     mov x0, 0
     mov x8, 214
     svc #0
-    mov x5, 1
+    mov x6, 1
+    mov w7, 2
     # Load 32-bit values from heap and sign-extend to 64-bits
     ldrsw x1, [x0, #4]
     ldrsw x2, [x0], #4
-    ldrsw x3, [x0]
-    ldrsw x4, [x0, x5, lsl #2]
+    ldrsw x3, [x0, #4]!
+    ldrsw x4, [x0, x6, lsl #2]
+    ldrsw x5, [x0, w7, uxtw #2]
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(1), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
-  EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
-  EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 256);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 333);
 
   // ldursw
   RUN_AARCH64(R"(

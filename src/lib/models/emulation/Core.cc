@@ -1,6 +1,7 @@
 #include "simeng/models/emulation/Core.hh"
 
 #include <cstring>
+#include <iostream>
 
 #include "simeng/Core.hh"
 

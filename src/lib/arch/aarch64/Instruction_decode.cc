@@ -456,8 +456,12 @@ void Instruction::decode() {
     }
 
     // The following are considered to be both a load and a store
-    if (metadata.opcode == Opcode::AArch64_CASALW ||
+    if (metadata.opcode == Opcode::AArch64_CASALB ||
+        metadata.opcode == Opcode::AArch64_CASALH ||
+        metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
+        metadata.opcode == Opcode::AArch64_CASW ||
+        metadata.opcode == Opcode::AArch64_CASX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
         metadata.opcode == Opcode::AArch64_LDADDLW ||

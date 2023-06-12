@@ -1545,6 +1545,88 @@ TEST_P(InstSve, cpy) {
              fillNeon<int64_t>({static_cast<int16_t>(-2048)}, VL / 16));
 }
 
+TEST_P(InstSve, fabd) {
+  // float
+  initialHeapData_.resize(VL / 4);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 16);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    mov x4, #4
+    addvl x2, x2, #1
+    mov x5, x2
+    sdiv x2, x2, x3
+    sdiv x5, x5, x4
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z1.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z2.s}, p1/z, [x0, x5, lsl #2]
+
+    ld1w {z3.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z4.s}, p1/z, [x0, x5, lsl #2]
+
+    fabd z1.s, p1/m, z1.s, z2.s
+    fabd z3.s, p0/m, z3.s, z4.s
+  )");
+
+  std::vector<float> results = {35.71f,  41.843f, 0.125f,  80.72f,
+                                165.93f, 684.71f, 702.05f, 100.86f};
+  CHECK_NEON(1, float, fillNeon<float>(results, VL / 8));
+  std::rotate(fsrcA.begin(), fsrcA.begin() + ((VL / 64) % 8), fsrcA.end());
+  CHECK_NEON(3, float, fillNeonCombined<float>(results, fsrcA, VL / 8));
+}
+
+TEST_P(InstSve, faddv) {
+  // float
+  RUN_AARCH64(R"(
+    fmov z0.s, #1.5
+
+    mov x0, #0
+    mov x1, #8
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    faddv s1, p0, z0.s
+    faddv s2, p1, z0.s
+  )");
+  CHECK_NEON(1, float, {1.5f * (VL / 32), 0, 0, 0});
+  CHECK_NEON(2, float, {1.5f * (VL / 64), 0, 0, 0});
+
+  // double
+  RUN_AARCH64(R"(
+    fmov z0.d, #1.5
+
+    mov x0, #0
+    mov x1, #16
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    faddv d1, p0, z0.d
+    faddv d2, p1, z0.d
+  )");
+  CHECK_NEON(1, double, {1.5 * (VL / 64), 0, 0, 0});
+  CHECK_NEON(2, double, {1.5 * (VL / 128), 0, 0, 0});
+}
+
 TEST_P(InstSve, fcpy) {
   // Immediate
   // 32-bit

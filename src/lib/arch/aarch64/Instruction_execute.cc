@@ -547,6 +547,22 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_CASALB: {  // casalb ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint8_t s = operands[0].get<uint8_t>();
+        const uint8_t t = operands[1].get<uint8_t>();
+        const uint8_t n = memoryData[0].get<uint8_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
+      case Opcode::AArch64_CASALH: {  // casalh ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint16_t s = operands[0].get<uint16_t>();
+        const uint16_t t = operands[1].get<uint16_t>();
+        const uint16_t n = memoryData[0].get<uint16_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         // TODO: Load and Store must occur atomically
         // LOAD / STORE
@@ -558,6 +574,22 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
         // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        const uint64_t s = operands[0].get<uint64_t>();
+        const uint64_t t = operands[1].get<uint64_t>();
+        const uint64_t n = memoryData[0].get<uint64_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
+      case Opcode::AArch64_CASW: {  // cas ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint32_t s = operands[0].get<uint32_t>();
+        const uint32_t t = operands[1].get<uint32_t>();
+        const uint32_t n = memoryData[0].get<uint32_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
+      case Opcode::AArch64_CASX: {  // cas xs, xt, [xn|sp]
         // LOAD / STORE
         const uint64_t s = operands[0].get<uint64_t>();
         const uint64_t t = operands[1].get<uint64_t>();
@@ -1203,6 +1235,14 @@ void Instruction::execute() {
         results[0] = floatHelp::fabd_3ops<double>(operands);
         break;
       }
+      case Opcode::AArch64_FABD_ZPmZ_D: {  // fabd zdn.d, pg/m, zdn.d, zm.d
+        results[0] = sveHelp::sveFabd<double>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FABD_ZPmZ_S: {  // fabd zdn.s, pg/m, zdn.s, zm.s
+        results[0] = sveHelp::sveFabd<float>(operands, VL_bits);
+        break;
+      }
       case Opcode::AArch64_FABSDr: {  // fabs dd, dn
         results[0] = floatHelp::fabs_2ops<double>(operands);
         break;
@@ -1261,6 +1301,16 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
         results[0] = {arithmeticHelp::add_3ops<float>(operands), 256};
+        break;
+      }
+      case Opcode::AArch64_FADDV_VPZ_D: {  // faddv dd, pg, zn.d
+        results[0] =
+            sveHelp::sveAddvPredicated<double, double>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FADDV_VPZ_S: {  // faddv sd, pg, zn.s
+        results[0] =
+            sveHelp::sveAddvPredicated<float, float>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FADD_ZPmI_D: {  // fadd zdn.d, pg/m, zdn.d, const
@@ -3320,6 +3370,18 @@ void Instruction::execute() {
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
+      case Opcode::AArch64_LDRSWpre: {  // ldrsw xt, [xn, #simm]!
+        // LOAD
+        results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        results[1] =
+            operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+        break;
+      }
+      case Opcode::AArch64_LDRSWroW: {  // ldrsw xt, [xn, wm{, extend
+                                        // {#amount}}]
+        results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        break;
+      }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
                                         // {#amount}}]
         // LOAD
@@ -5073,19 +5135,23 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_B: {  // uaddv dd, pg, zn.b
-        results[0] = sveHelp::sveAddvPredicated<uint8_t>(operands, VL_bits);
+        results[0] =
+            sveHelp::sveAddvPredicated<uint8_t, uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_D: {  // uaddv dd, pg, zn.d
-        results[0] = sveHelp::sveAddvPredicated<uint64_t>(operands, VL_bits);
+        results[0] =
+            sveHelp::sveAddvPredicated<uint64_t, uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_H: {  // uaddv dd, pg, zn.h
-        results[0] = sveHelp::sveAddvPredicated<uint16_t>(operands, VL_bits);
+        results[0] =
+            sveHelp::sveAddvPredicated<uint16_t, uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_S: {  // uaddv dd, pg, zn.s
-        results[0] = sveHelp::sveAddvPredicated<uint32_t>(operands, VL_bits);
+        results[0] =
+            sveHelp::sveAddvPredicated<uint32_t, uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms

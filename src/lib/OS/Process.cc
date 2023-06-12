@@ -63,6 +63,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   // Check if the process image can fit inside the simulation memory.
   size_t totalProcLayoutSize =
       maxInitDataAddr + heapSize + stackSize + mmapSize;
+  std::cerr << totalProcLayoutSize << std::endl;
+  std::cerr << simulationMemSize << std::endl;
   if (totalProcLayoutSize > simulationMemSize) {
     std::cerr
         << "[SimEng:Process] Size of the simulation memory is less than the "

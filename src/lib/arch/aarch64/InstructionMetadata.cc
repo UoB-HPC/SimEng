@@ -73,6 +73,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_AND_ZPmZ_H:
       [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FABD_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FABD_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_FABD_ZPmZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -95,9 +101,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_CASALB:
+      [[fallthrough]];
+    case Opcode::AArch64_CASALH:
+      [[fallthrough]];
     case Opcode::AArch64_CASALW:
       [[fallthrough]];
     case Opcode::AArch64_CASALX:
+      [[fallthrough]];
+    case Opcode::AArch64_CASW:
+      [[fallthrough]];
+    case Opcode::AArch64_CASX:
       operandCount = 3;
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
@@ -364,6 +378,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_ADD_ZZZ_H:
       [[fallthrough]];
     case Opcode::AArch64_ADD_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FADDV_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FADDV_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_FADDV_VPZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_D:
       [[fallthrough]];

@@ -7,6 +7,30 @@ namespace arch {
 namespace aarch64 {
 class sveHelp {
  public:
+  /** Helper function for SVE instructions with the format `fabd zdn, pg/m,
+   * zdn, zm`.
+   * T represents the type of values in the Z vector operands (e.g. for
+   * zn.s, T = float).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFabd(std::vector<RegisterValue>& operands,
+                               const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = std::fabs(m[i] - n[i]);
+      else
+        out[i] = n[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `add zd, zn, zm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
@@ -73,22 +97,25 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `addv dd, pg, zn`.
-   * T represents the type of operands (e.g. for zn.s, T = uint32_t).
+  /** Helper function for SVE instructions with the format `[f|s|u]addv vd, pg,
+   * zn`.
+   * T represents the type of values in the Z vector operand (e.g. for
+   * zn.s, T = uint32_t|float).
+   * D represents the type of the destination operand (e.g. for dd, T =
+   * uint64_t|double).
    * Returns correctly formatted RegisterValue. */
-  template <typename T>
+  template <typename T, typename D>
   static RegisterValue sveAddvPredicated(std::vector<RegisterValue>& operands,
                                          const uint16_t VL_bits) {
     const uint64_t* p = operands[0].getAsVector<uint64_t>();
     const T* n = operands[1].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    uint64_t out = 0;
+    D out = 0;
 
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
-      if (p[i / (64 / sizeof(T))] & shifted_active)
-        out += static_cast<uint64_t>(n[i]);
+      if (p[i / (64 / sizeof(T))] & shifted_active) out += static_cast<D>(n[i]);
     }
     return {out, 256};
   }
