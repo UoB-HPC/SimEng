@@ -49,7 +49,7 @@ class MemPacket {
   uint16_t packetOrderId_ = 0;
 
   /** Indicates the ordering of a memory target which had to be split due to
-   * being unaligned. Value of `-1` indicates no split occurred.*/
+   * being unaligned. */
   uint16_t packetSplitId_ = 0;
 
   /** Function which indicates whether a MemPacket is a request. */
