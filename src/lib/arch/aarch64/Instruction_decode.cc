@@ -457,7 +457,9 @@ void Instruction::decode() {
     }
 
     // The following are considered to be both a load and a store
-    if (metadata.opcode == Opcode::AArch64_CASALW ||
+    if (metadata.opcode == Opcode::AArch64_CASALB ||
+        metadata.opcode == Opcode::AArch64_CASALH ||
+        metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
@@ -475,7 +477,9 @@ void Instruction::decode() {
     // The following instructions are considered to be atomic
     // (i.e. load from memory, perform an operation, and then store to
     // memory atomically)
-    if (metadata.opcode == Opcode::AArch64_CASALW ||
+    if (metadata.opcode == Opcode::AArch64_CASALB ||
+        metadata.opcode == Opcode::AArch64_CASALH ||
+        metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
@@ -514,7 +518,9 @@ void Instruction::decode() {
     // (i.e. No memory operations on this thread which come after this
     // instruction in program order can take place before the acquire memory
     // operation)
-    if (metadata.opcode == Opcode::AArch64_CASALW ||
+    if (metadata.opcode == Opcode::AArch64_CASALB ||
+        metadata.opcode == Opcode::AArch64_CASALH ||
+        metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
@@ -533,7 +539,9 @@ void Instruction::decode() {
     // The following instructions enforce release memory semantics
     // (i.e. All memory operations on this thread which precede this instruction
     // in program order must complete before this release memory operation)
-    if (metadata.opcode == Opcode::AArch64_CASALW ||
+    if (metadata.opcode == Opcode::AArch64_CASALB ||
+        metadata.opcode == Opcode::AArch64_CASALH ||
+        metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||

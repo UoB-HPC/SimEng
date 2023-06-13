@@ -1434,12 +1434,37 @@ TEST_P(InstNeon, fcvtl2) {
 }
 
 TEST_P(InstNeon, fdiv) {
+  // float
   initialHeapData_.resize(32);
-  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
-  heap[0] = 1.0;
-  heap[1] = -42.5;
-  heap[2] = -0.125;
-  heap[3] = 16.0;
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -33.5;
+  fheap[2] = -0.255;
+  fheap[3] = 555.3;
+  fheap[4] = 998.2;
+  fheap[5] = -369.0;
+  fheap[6] = -0.00155;
+  fheap[7] = 9986.2;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fdiv v2.4s, v0.4s, v1.4s
+  )");
+  CHECK_NEON(2, float, {0.0010018f, 0.0907859f, 164.516f, 0.0556067f});
+
+  // double
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.5;
+  dheap[2] = -0.125;
+  dheap[3] = 16.0;
 
   RUN_AARCH64(R"(
     # Get heap address
