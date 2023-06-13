@@ -378,6 +378,7 @@ void MMU::createReadMemPackets(
     std::unique_ptr<memory::MemPacket> req = MemPacket::createReadRequest(
         target.vaddr, target.size, insnSeqId, pktOrderId);
     outputVec.push_back(std::move(req));
+    // Resize response data structure to equal the number of packets created
     readResponses_[insnSeqId][pktOrderId].resize(1);
   } else {
     uint64_t nextAddr = target.vaddr;
@@ -450,33 +451,33 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
   auto& packets = readResponses_.find(insnSeqId)->second;
   for (int i = 0; i < packets.size(); i++) {
     // Get vector containing all packets associated to a single target
-    auto& pktMap = packets[i];
-    assert(pktMap.size() > 0 &&
+    auto& pktVec = packets[i];
+    assert(pktVec.size() > 0 &&
            "[SimEng:MMU] Empty read response packet vector.");
 
-    uint64_t addr = pktMap[0]->vaddr_;
+    uint64_t addr = pktVec[0]->vaddr_;
     // Do early check on first packet for data abort
-    if (pktMap[0]->isFaulty()) {
+    if (pktVec[0]->isFaulty()) {
       // If faulty, return no data. This signals a data abort.
       insn->supplyData(addr, RegisterValue());
       continue;
     }
     // Initialise values with first package
-    std::vector<char> mergedData = pktMap[0]->payload();
-    uint16_t mergedSize = pktMap[0]->size_;
+    std::vector<char> mergedData = pktVec[0]->payload();
+    uint16_t mergedSize = pktVec[0]->size_;
     bool isFaulty = false;
     // Loop over any remaining packets due to a split
-    for (int j = 1; j < pktMap.size(); j++) {
-      if (pktMap[j]->isFaulty()) {
+    for (int j = 1; j < pktVec.size(); j++) {
+      if (pktVec[j]->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
         insn->supplyData(addr, RegisterValue());
         isFaulty = true;
         break;
       }
       // Increase merged size
-      mergedSize += pktMap[j]->size_;
+      mergedSize += pktVec[j]->size_;
       // Concatonate the payload data
-      auto& tempData = pktMap[j]->payload();
+      auto& tempData = pktVec[j]->payload();
       mergedData.insert(mergedData.end(), tempData.begin(), tempData.end());
     }
     // Supply data to instruction
