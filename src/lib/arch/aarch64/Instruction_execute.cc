@@ -550,6 +550,32 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_CASALB: {  // casalb ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint8_t s = operands[0].get<uint8_t>();
+        const uint8_t t = operands[1].get<uint8_t>();
+        const uint8_t n = memoryData_[0].get<uint8_t>();
+        if (n == s) {
+          memoryData_[0] = t;
+        } else {
+          // If comparison fails, don't perform store
+          setMemoryAddresses({});
+        }
+        break;
+      }
+      case Opcode::AArch64_CASALH: {  // casalh ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint16_t s = operands[0].get<uint16_t>();
+        const uint16_t t = operands[1].get<uint16_t>();
+        const uint16_t n = memoryData_[0].get<uint16_t>();
+        if (n == s) {
+          memoryData_[0] = t;
+        } else {
+          // If comparison fails, don't perform store
+          setMemoryAddresses({});
+        }
+        break;
+      }
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         // TODO: Load and Store must occur atomically
         // LOAD / STORE
@@ -1669,6 +1695,11 @@ void Instruction::execute() {
         results[0] = sveHelp::sveLogicOpPredicated_3vecs<double>(
             operands, VL_bits,
             [](double x, double y) -> double { return (x / y); });
+        break;
+      }
+      case Opcode::AArch64_FDIVv4f32: {  // fdiv vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecLogicOp_3vecs<float, 4>(
+            operands, [](float x, float y) -> float { return x / y; });
         break;
       }
       case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
@@ -3349,6 +3380,18 @@ void Instruction::execute() {
         // LOAD
         results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
+        break;
+      }
+      case Opcode::AArch64_LDRSWpre: {  // ldrsw xt, [xn, #simm]!
+        // LOAD
+        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+        results[1] =
+            operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+        break;
+      }
+      case Opcode::AArch64_LDRSWroW: {  // ldrsw xt, [xn, wm{, extend
+                                        // {#amount}}]
+        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         break;
       }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
