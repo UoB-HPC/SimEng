@@ -264,8 +264,8 @@ TEST_P(LoadStoreQueueTest, Load) {
   // Check that a read request is made to the memory interface
   EXPECT_EQ(mmu->hasPendingRequests(), true);
   // Check that the MMU supplies the right data to the instruction
-  EXPECT_CALL(*loadUop,
-              supplyData(0, Property(&RegisterValue::get<uint8_t>, data[0])))
+  EXPECT_CALL(*loadUop, supplyData(0, Property(&RegisterValue::get<uint8_t>,
+                                               data[0].get<uint8_t>())))
       .Times(1);
   // Tick MMU and Memory to process load request
   mmu->tick();
