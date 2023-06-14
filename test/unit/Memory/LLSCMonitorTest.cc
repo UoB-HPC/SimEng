@@ -546,7 +546,6 @@ TEST(LLSCTest, successfulMultiLLSC) {
   std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}, {16, 8}};
   uop->setInstructionId(0);
   uop->setSequenceId(0);
-  uop->setDataPending(2);
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
@@ -596,7 +595,6 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
   std::vector<simeng::memory::MemoryAccessTarget> target = {{248, 8}, {256, 8}};
   uop->setInstructionId(0);
   uop->setSequenceId(0);
-  uop->setDataPending(2);
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
@@ -646,7 +644,6 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
   std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}, {250, 8}};
   uop->setInstructionId(0);
   uop->setSequenceId(0);
-  uop->setDataPending(2);
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
@@ -698,7 +695,6 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
   std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
   uop->setInstructionId(0);
   uop->setSequenceId(0);
-  uop->setDataPending(1);
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
@@ -751,7 +747,6 @@ TEST(LLSCTest, failUnalignedStoreLLSC) {
   std::vector<simeng::memory::MemoryAccessTarget> target = {{8, 8}};
   uop->setInstructionId(0);
   uop->setSequenceId(0);
-  uop->setDataPending(1);
   ON_CALL(*uop, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(ReturnRef(target));
   mmu.requestRead(uop);
