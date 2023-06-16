@@ -1,5 +1,9 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
+#include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -24,10 +28,14 @@ const char Format64 = 2;
 // program header is described by the type Elf32_Phdr or Elf64_Phdr depending on
 // the architecture
 
+typedef uint64_t Elf64_Addr;
+typedef uint64_t Elf64_Offset;
+
 struct Elf64_Phdr {
   // Indicates what kind of segment this array element describes or
   // how to interpret the array element's information
   uint32_t p_type = 0;
+  uint32_t p_flags = 0;
   // Holds the offset from the beginning of the file at
   // which the first byte of the segment resides
   uint64_t p_offset = 0;
@@ -43,9 +51,40 @@ struct Elf64_Phdr {
   // Holds the number of bytes in the memory image
   // of the segment.  It may be zero
   uint64_t p_memsz = 0;
+  uint64_t p_align = 0;
   // Holds the header's data.
-  std::vector<char> headerData = {};
+  std::vector<char> data = {};
 };
+
+#define EI_NIDENT 16
+
+#define EI_CLASS 4
+
+struct Elf64_Ehdr {
+  std::array<char, EI_NIDENT> e_ident;
+  uint16_t e_type;
+  uint16_t e_machine;
+  uint32_t e_version;
+  Elf64_Addr e_entry;
+  Elf64_Offset e_phoff;
+  Elf64_Offset e_shoff;
+  uint32_t e_flags;
+  uint16_t e_ehsize;
+  uint16_t e_phentsize;
+  uint16_t e_phnum;
+  uint16_t e_shentsize;
+  uint16_t e_shnum;
+  uint16_t e_shstrndx;
+};
+
+struct Elf_Binary {
+  Elf64_Ehdr elf_header;
+  std::vector<Elf64_Phdr> loadable_phdrs;
+};
+
+#define PT_LOAD 1
+#define PT_DYNAMIC 2
+#define PT_INTERP 3
 
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
@@ -54,49 +93,43 @@ class Elf {
 
   ~Elf() {}
 
-  /** Method to return ELF process image size. */
-  uint64_t getElfImageSize() const;
-
   /** Method to return the validity of the ELF parsing process. */
   bool isValid() const;
 
-  /** Method which returns the entry point. */
-  uint64_t getEntryPoint() const;
+  /***/
+  bool isDynamic() const;
 
-  /** Method which returns all processed ELF Headers. */
-  const std::vector<Elf64_Phdr>& getProcessedHeaders() const;
+  /***/
+  std::shared_ptr<Elf_Binary> getExecutable() const;
 
-  /** Returns the virtual address of the program header table */
-  uint64_t getPhdrTableAddress() const;
-
-  /** Returns the size of a program header entry */
-  uint64_t getPhdrEntrySize() const;
-
-  /** Returns the number of program headers */
-  uint64_t getNumPhdr() const;
+  /***/
+  std::shared_ptr<Elf_Binary> getInterpreter() const;
 
  private:
-  /** Entry point of the ELF. */
-  uint64_t entryPoint_;
-
   /** Bool which holds if the ELF parsing was done correctly. */
   bool isValid_ = false;
 
-  /** Size of the ELF image. */
-  uint64_t elfImageSize_ = 0;
+  /***/
+  std::string interpreterPath_;
 
-  /** A vector holding each of the program headers extracted from the ELF */
-  std::vector<Elf64_Phdr> pheaders_;
+  /***/
+  bool isDynamic_ = 0;
 
-  /** The program header entry size stored in the ELF header */
-  uint16_t e_phentsize_;
+  /***/
+  std::shared_ptr<Elf_Binary> executable_ = nullptr;
 
-  /** The number of entries in the program header table stored in the ELF header
-   */
-  uint16_t e_phnum_;
+  /***/
+  std::shared_ptr<Elf_Binary> interpreter_ = nullptr;
 
-  /** Virtual address of the program header table */
-  uint64_t phdrTableAddress_ = 0;
+  /***/
+  Elf64_Ehdr parseElfEhdr(std::ifstream& elf_file);
+
+  /***/
+  std::vector<Elf64_Phdr> parseElfPhdrs(
+      std::ifstream& elf_file, Elf64_Ehdr& Ehdr);
+
+  /***/
+  std::shared_ptr<Elf_Binary> parseElfBinary(std::string fpath);
 };
 
 }  // namespace simeng

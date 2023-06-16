@@ -3,3 +3,4 @@ BasedOnStyle: Google
 DerivePointerAlignment: false
 PointerAlignment: true
 Standard: C++11
+AlignAfterOpenBracket: AlwaysBreak

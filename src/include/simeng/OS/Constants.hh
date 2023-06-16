@@ -50,8 +50,36 @@ static constexpr int SIMENG_MAP_SHARED = 0x01;
 /** MMAP changes are private. */
 static constexpr int SIMENG_MAP_PRIVATE = 0x02;
 
+static constexpr int SIMENG_MAP_SHARED_VALIDATE = 0x03;
+
 /** Interpret addr directly */
 static constexpr int SIMENG_MAP_FIXED = 0x10;
+
+static constexpr int SIMENG_MAP_ANONYMOUS = 0x20;
+
+static constexpr int SIMENG_MAP_POPULATE = 0x008000;
+
+static constexpr int SIMENG_MAP_NONBLOCK = 0x010000;
+
+static constexpr int SIMENG_MAP_STACK = 0x020000;
+
+static constexpr int SIMENG_MAP_HUGETLB = 0x040000;
+
+static constexpr int SIMENG_MAP_SYNC = 0x080000;
+
+static constexpr int SIMENG_MAP_FIXED_NOREPLACE = 0x100000;
+
+static constexpr int SIMENG_MAP_UNINITIALIZED = 0x4000000;
+
+static constexpr int SIMENG_MAP_GROWSDOWN = 0x0100;
+
+static constexpr int SIMENG_MAP_DENYWRITE = 0x0800;
+
+static constexpr int SIMENG_MAP_EXECUTABLE = 0x1000;
+
+static constexpr int SIMENG_MAP_LOCKED = 0x2000;
+
+static constexpr int SIMENG_MAP_NORESERVE = 0x4000;
 
 }  // namespace flags
 }  // namespace mmap

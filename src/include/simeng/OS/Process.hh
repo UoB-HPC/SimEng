@@ -2,6 +2,7 @@
 
 #include <sys/resource.h>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 
@@ -67,6 +68,12 @@ struct cpuContext {
   std::vector<std::vector<RegisterValue>> regFile;
 };
 
+struct InitStackData {
+  std::vector<uint64_t> stackFrameData;
+  uint64_t stackPointer;
+  uint64_t stackFrameDataSize;
+};
+
 /** Align `value` to the `boundary`-byte by rounding up to the nearest
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
@@ -117,16 +124,18 @@ class Process {
    * first argument is a path to an executable ELF file. Size of the simulation
    * memory is also passed to check if the process image can fit inside the
    * simulation memory. */
-  Process(const std::vector<std::string>& commandLine, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  Process(
+      const std::vector<std::string>& commandLine, SimOS* OS,
+      std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+      uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. Size of the simulation memory is also passed to
    * check if the process image can fit inside the simulation memory.*/
-  Process(span<char> instructions, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  Process(
+      span<char> instructions, SimOS* OS,
+      std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+      uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Default copy constructor for Process class. */
   Process(const Process& proc) = default;
@@ -210,8 +219,8 @@ class Process {
 
   /** The rlimit struct for RLIMIT_STACK. RLIM_INF used to represent
    * RLIM_INFINITY in Linux. */
-  rlimit stackRlim_ = {syscalls::prlimit::RLIM_INF,
-                       syscalls::prlimit::RLIM_INF};
+  rlimit stackRlim_ = {
+      syscalls::prlimit::RLIM_INF, syscalls::prlimit::RLIM_INF};
 
  private:
   /** Create and populate the initial process stack and returns the stack
@@ -219,8 +228,9 @@ class Process {
   uint64_t createStack(uint64_t stackStart);
 
   /** Initialises the Process' context_ arguments to the appropriate values. */
-  void initContext(const uint64_t stackPtr,
-                   const std::vector<RegisterFileStructure>& regFileStructure);
+  void initContext(
+      const uint64_t stackPtr,
+      const std::vector<RegisterFileStructure>& regFileStructure);
 
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
