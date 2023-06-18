@@ -1520,6 +1520,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_LD1_MXIPXX_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_V_D:
+      [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_S:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_S: {
