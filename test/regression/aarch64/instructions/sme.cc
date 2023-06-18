@@ -38,6 +38,88 @@ TEST_P(InstSme, fmopa) {
   }
 }
 
+TEST_P(InstSme, ld1d) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64, src, SVL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov x1, #1
+    ptrue p0.d
+    mov w12, #0
+    # Load and broadcast values from heap
+    ld1d {za0h.d[w12, 0]}, p0/z, [x0, x1, lsl #3]
+    ld1d {za0h.d[w12, 1]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #16
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.d, xzr, x1
+    ld1d {za1h.d[w12, 1]}, p1/z, [x0, x2, lsl #3]
+  )");
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAD0, 0, uint64_t,
+      fillNeon<uint64_t>({0x98765432ABCDEF01, 0xDEADBEEF12345678}, SVL / 8));
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAD0, 1, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAD1, 1, uint64_t,
+                fillNeonCombined<uint64_t>(
+                    {0xDEADBEEF12345678, 0x98765432ABCDEF01}, {0}, SVL / 8));
+
+  // Vertical
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64_vert = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src_vert = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64_vert, src_vert, SVL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov x1, #1
+    ptrue p0.d
+    mov w12, #0
+    # Load and broadcast values from heap
+    ld1d {za0v.d[w12, 0]}, p0/z, [x0, x1, lsl #3]
+    ld1d {za0v.d[w12, 1]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #16
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.d, xzr, x1
+    ld1d {za1v.d[w12, 1]}, p1/z, [x0, x2, lsl #3]
+  )");
+  CHECK_MAT_COL(
+      ARM64_REG_ZAD0, 0, uint64_t,
+      fillNeon<uint64_t>({0x98765432ABCDEF01, 0xDEADBEEF12345678}, SVL / 8));
+  CHECK_MAT_COL(
+      ARM64_REG_ZAD0, 1, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_MAT_COL(ARM64_REG_ZAD1, 1, uint64_t,
+                fillNeonCombined<uint64_t>(
+                    {0xDEADBEEF12345678, 0x98765432ABCDEF01}, {0}, SVL / 8));
+}
+
 TEST_P(InstSme, ld1w) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);

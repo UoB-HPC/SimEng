@@ -289,8 +289,6 @@ Latencies:
     Instruction-Groups: 
     - LOAD_SVE
     - STORE_ADDRESS_SVE
-    - LOAD_SME
-    - STORE_ADDRESS_SME
     Execution-Latency: 6
     Execution-Throughput: 1
   11:
