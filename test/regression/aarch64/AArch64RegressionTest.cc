@@ -15,7 +15,7 @@ void AArch64RegressionTest::run(const char* source) {
 #if SIMENG_LLVM_VERSION < 14
   subtargetFeatures = "+sve,+lse";
 #else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme";
+  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
 #endif
 
   RegressionTest::run(source, "aarch64", subtargetFeatures);

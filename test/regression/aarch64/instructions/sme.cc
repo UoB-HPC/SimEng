@@ -36,6 +36,34 @@ TEST_P(InstSme, fmopa) {
     CHECK_MAT_ROW(ARM64_REG_ZAS2, i, float,
                   fillNeon<float>({24.0f}, (SVL / 16)));
   }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    fdup z1.d, #2.0
+    fdup z2.d, #5.0
+    ptrue p0.d
+    ptrue p1.d
+
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+
+    fdup z3.d, #3.0
+    fdup z4.d, #8.0
+    mov x0, #0
+    mov x1, #16
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.d, xzr, x0
+
+    fmopa za2.d, p0/m, p2/m, z3.d, z4.d
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, double,
+                  fillNeon<double>({10.0}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, double,
+                  fillNeon<double>({24.0}, (SVL / 16)));
+  }
 }
 
 TEST_P(InstSme, ld1d) {

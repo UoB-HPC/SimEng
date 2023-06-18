@@ -1543,6 +1543,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FMOPA_MPPZZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMOPA_MPPZZ_S: {
       // Need to add access specifiers
       // although operands[0] should be READ | WRITE, due to the implemented
