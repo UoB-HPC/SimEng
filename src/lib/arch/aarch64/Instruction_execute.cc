@@ -4169,7 +4169,57 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg/z,
+      case Opcode::AArch64_ST1_MXIPXX_H_D: {  // st1d {zath.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, STORE
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        const uint64_t* tileSlice = operands[sliceNum].getAsVector<uint64_t>();
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            memoryData[index] = tileSlice[i];
+            index++;
+          }
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, STORE
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            memoryData[index] = operands[i].getAsVector<uint64_t>()[sliceNum];
+            index++;
+          }
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
         if (!ZAenabled) {
@@ -4190,7 +4240,7 @@ void Instruction::execute() {
 
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
+      case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
         if (!ZAenabled) {
