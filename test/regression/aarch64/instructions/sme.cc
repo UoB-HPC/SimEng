@@ -204,6 +204,130 @@ TEST_P(InstSme, ld1w) {
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
 }
 
+TEST_P(InstSme, st1d) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64, src, SVL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    sub sp, sp, #4095
+    mov x1, #0
+    mov x4, #0
+    addvl x4, x4, #1
+    ptrue p0.d
+
+    mov w12, #0
+    ld1d {za0h.d[w12, 0]}, p0/z, [x0, x1, lsl #3]
+    ld1d {za1h.d[w12, 1]}, p0/z, [x0, x1, lsl #3]
+    st1d {za0h.d[w12, 0]}, p0, [sp, x1, lsl #3]
+    st1d {za1h.d[w12, 1]}, p0, [x4]
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        src[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src[i % 2]);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov x2, #0
+    mov x4, #16
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    mov x3, #2
+    whilelo p1.d, xzr, x2
+    mov x5, #800
+
+    mov w12, #0
+    mov w13, #1
+    ld1d {za3h.d[w12, 0]}, p1/z, [x0, x3, lsl #3]
+    st1d {za3h.d[w12, 0]}, p1, [x5]
+    ld1d {za1h.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
+    st1d {za1h.d[w13, 1]}, p1, [x5, x3, lsl #3]
+  )");
+  for (int i = 0; i < (SVL / 128); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src[i % 2]);
+  }
+
+  // Vertical
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64_vert = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src_vert = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64_vert, src_vert, SVL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    sub sp, sp, #4095
+    mov x1, #0
+    mov x4, #0
+    addvl x4, x4, #1
+    ptrue p0.d
+
+    mov w12, #0
+    ld1d {za0v.d[w12, 0]}, p0/z, [x0, x1, lsl #3]
+    ld1d {za1v.d[w12, 1]}, p0/z, [x0, x1, lsl #3]
+    st1d {za0v.d[w12, 0]}, p0, [sp, x1, lsl #3]
+    st1d {za1v.d[w12, 1]}, p0, [x4]
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        src_vert[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src_vert[i % 2]);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov x2, #0
+    mov x4, #16
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    mov x3, #2
+    whilelo p1.d, xzr, x2
+    mov x5, #800
+
+    mov w12, #0
+    mov w13, #1
+    ld1d {za3v.d[w12, 0]}, p1/z, [x0, x3, lsl #3]
+    st1d {za3v.d[w12, 0]}, p1, [x5]
+    ld1d {za1v.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
+    st1d {za1v.d[w13, 1]}, p1, [x5, x3, lsl #3]
+  )");
+  for (int i = 0; i < (SVL / 128); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src_vert[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src_vert[i % 2]);
+  }
+}
+
 TEST_P(InstSme, st1w) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);

@@ -891,6 +891,31 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST1_MXIPXX_H_D:    // st1d {zath.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+      case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME
+        const uint16_t partition_num = VL_bits / 64;
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = operands[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata.operands[2].mem.index)
+          m = operands[partition_num + 3].get<uint64_t>() << 3;
+
+        std::vector<MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            addresses.push_back({(n + m) + (i * 8), 8});
+          }
+        }
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_ST1_MXIPXX_H_S:    // st1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
       case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
