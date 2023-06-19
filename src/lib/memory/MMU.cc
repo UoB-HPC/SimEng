@@ -7,8 +7,8 @@ namespace memory {
 MMU::MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid)
     : memory_(memory), translate_(fn), tid_(tid) {}
 
-void MMU::bufferRequest(DataPacket request,
-                        sendResponseToMemInterface sendResponse) {
+void MMU::bufferRequest(
+    DataPacket request, sendResponseToMemInterface sendResponse) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
   uint64_t paddr = translate_(request.address_, tid_);
@@ -16,6 +16,8 @@ void MMU::bufferRequest(DataPacket request,
   DataPacket pkt;
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+    std::cout << "DATA_ABORT addr: " << request.address_ << " - 0x" << std::hex
+              << request.address_ << std::dec << std::endl;
     pkt = DataPacket(true);
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     pkt = memory_->handleIgnoredRequest(request);

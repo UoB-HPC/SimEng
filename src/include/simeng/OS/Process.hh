@@ -235,8 +235,14 @@ class Process {
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 
+  /***/
+  bool isDynamic_ = false;
+
   /** The entry point of the process. */
-  uint64_t entryPoint_ = 0;
+  uint64_t elfEntryPoint_ = 0;
+
+  /***/
+  uint64_t interpEntryPoint_ = 0;
 
   /** Program header table virtual address */
   uint64_t progHeaderTableAddress_ = 0;

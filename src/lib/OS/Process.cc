@@ -1,9 +1,11 @@
 #include "simeng/OS/Process.hh"
 
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <iomanip>
@@ -96,7 +98,7 @@ Process::Process(
     std::cout << std::endl;
     */
   }
-  // std::cout << "End" << std::endl;
+  pageTable_->ignoreAddrRange(0, min_addr);
 
   // UpAlign both bss and brk just do we can check if brk > bss
   // if brk > bss then this means some program header in the elf has
@@ -169,37 +171,61 @@ Process::Process(
   */
 
   // Populate 1 page for the heap
-  uint64_t retAddr = memRegion_.mmapRegion(
+  memRegion_.mmapRegion(
       brk, PAGE_SIZE, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
       HostFileMMap());
   paddr = OS_->requestPageFrames(PAGE_SIZE);
   pageTable_->createMapping(brk, paddr, PAGE_SIZE);
 
-  uint64_t stackPtr = createStack(stack_top);
-  updateStack(stackPtr);
-
-  memRegion_.printVmaList();
-  std::cout << "\n StackPtr: " << stackPtr << std::endl;
-  /**
   auto interpreter = elf.getInterpreter();
   if (interpreter) {
+    auto& interp_ehdr = interpreter->elf_header;
+    interpEntryPoint_ = interp_ehdr.e_entry;
+    bool entry_not_set = false;
+    bool addr_not_set = false;
+    std::cout << "interp_e_entry: " << interp_ehdr.e_entry << std::endl;
+    isDynamic_ = true;
     for (auto& phdr : interpreter->loadable_phdrs) {
-      uint64_t a = phdr.p_vaddr;
-      a = -a;
-      a += phdr.p_vaddr;
+      uint64_t vaddr = downAlign(phdr.p_vaddr, PAGE_SIZE);
+      uint64_t size = upAlign(phdr.p_memsz, PAGE_SIZE);
+      std::cout << "vaddr: " << phdr.p_vaddr << std::endl;
+      std::cout << "dvaddr: " << vaddr << std::endl;
+      std::cout << "size: " << phdr.p_memsz << std::endl;
+      std::cout << "usize: " << size << std::endl;
+      uint64_t map_addr = memRegion_.mmapRegion(
+          vaddr, size, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
+          HostFileMMap());
+      // We need to add an offset to the address returned by mmap call to find
+      // the virtual address corresponding the entry point of the interpreter.
+
+      /**
+      if (!entry_not_set && (vaddr <= interpEntryPoint_) &&
+          ((vaddr + size) >= interpEntryPoint_)) {
+        uint64_t interp_e_offset = interpEntryPoint_ - vaddr;
+        interpEntryPoint_ = map_addr + interp_e_offset;
+        std::cout << "offset: " << interp_e_offset << std::endl;
+        std::cout << "interp_entry_point: " << interpEntryPoint_ << std::endl;
+        entry_not_set = true;
+      }
+      */
+
+      uint64_t paddr = OS_->requestPageFrames(size);
+      pageTable_->createMapping(vaddr, paddr, size);
+      uint64_t taddr = pageTable_->translate(phdr.p_vaddr);
+      sendToMem_(phdr.data, taddr, phdr.p_filesz);
     }
   }
-  */
+
   auto& ehdr = executable->elf_header;
   progHeaderTableAddress_ = phtAddr;
   progHeaderEntSize_ = ehdr.e_phentsize;
   numProgHeaders_ = ehdr.e_phnum;
-  entryPoint_ = ehdr.e_entry;
+  elfEntryPoint_ = ehdr.e_entry;
 
-  std::cout << "phdrtable: " << progHeaderTableAddress_ << std::endl;
-  std::cout << "phentsz: " << progHeaderEntSize_ << std::endl;
-  std::cout << "numhdrs: " << numProgHeaders_ << std::endl;
-  std::cout << "entry: " << entryPoint_ << std::endl;
+  uint64_t stackPtr = createStack(stack_top);
+  updateStack(stackPtr);
+
+  memRegion_.printVmaList();
 
   fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
@@ -338,7 +364,9 @@ uint64_t Process::getProcessImageSize() const {
   return memRegion_.getProcImgSize();
 }
 
-uint64_t Process::getEntryPoint() const { return entryPoint_; }
+uint64_t Process::getEntryPoint() const {
+  return isDynamic_ ? interpEntryPoint_ : elfEntryPoint_;
+}
 
 uint64_t Process::getStackPointer() const {
   return memRegion_.getInitialStackPtr();
@@ -370,6 +398,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
   for (size_t i = 0; i < Config::get()["Environment-Variables"].size(); i++) {
     std::string envVar =
         Config::get()["Environment-Variables"][i].as<std::string>();
+    std::cout << envVar << std::endl;
     for (int i = 0; i < envVar.size(); i++) {
       stringBytes.push_back(envVar.c_str()[i]);
     }
@@ -401,6 +430,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
   // TODO: populate remaining auxillary vector entries
+  initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
+  initialStackFrame.push_back(PAGE_SIZE);
+
   initialStackFrame.push_back(auxVec::AT_PHDR);  // AT_PHDR
   initialStackFrame.push_back(progHeaderTableAddress_);
 
@@ -410,11 +442,11 @@ uint64_t Process::createStack(uint64_t stackStart) {
   initialStackFrame.push_back(auxVec::AT_PHNUM);  // AT_PHNUM
   initialStackFrame.push_back(numProgHeaders_);
 
-  initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
-  initialStackFrame.push_back(PAGE_SIZE);
+  initialStackFrame.push_back(auxVec::AT_BASE);  // AT_BASE
+  initialStackFrame.push_back(interpEntryPoint_);
 
   initialStackFrame.push_back(auxVec::AT_ENTRY);  // AT_ENTRY
-  initialStackFrame.push_back(entryPoint_);
+  initialStackFrame.push_back(elfEntryPoint_);
 
   initialStackFrame.push_back(auxVec::AT_NULL);  // null terminator
   initialStackFrame.push_back(0);
@@ -480,7 +512,7 @@ void Process::initContext(
     const uint64_t stackPtr,
     const std::vector<RegisterFileStructure>& regFileStructure) {
   context_.TID = TID_;
-  context_.pc = entryPoint_;
+  context_.pc = getEntryPoint();
   context_.sp = stackPtr;
   context_.progByteLen = getProcessImageSize();
   // Initialise all registers to 0

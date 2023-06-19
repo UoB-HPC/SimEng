@@ -136,6 +136,13 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
 
   auto itr = VMAlist_->begin();
   if (VMAlist_->size() > 0) {
+    // Since the MMap list now contains now contains all process layout regions
+    // i.e .bss, .data, .code, heap and stack. We have to make sure that when
+    // any normal mmap call is made the alogrithm which scans for memory regions
+    // between allocated VMAs starts looking only at/after mmap start.
+    while (itr->vmStart_ < mmapRegion_->start) {
+      itr++;
+    }
     // Check if the new VMA can be allocated between mmapStart and the first
     // VMA in the VMA list.
     uint64_t effectiveMmapStart = startAddr ? startAddr : mmapRegion_->start;
@@ -146,6 +153,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
       VMAlist_->insert(itr, vma);
       return vma.vmStart_;
     }
+
     // As per the mmap specification, if the VMA list has multiple VMAs then
     // starting from the beginning of the VMA list check if the new VMA can
     // be allocated between two existing ones. If startAddr is 0 check all
@@ -317,10 +325,10 @@ int64_t MemRegion::mmapRegion(
   }
 
   // mmap_min_addr
-  if (startAddr < PAGE_SIZE) {
+  if (startAddr && startAddr < PAGE_SIZE) {
     std::cerr << "[SimEng::MemRegion] Start address given to mmapRegion is "
-                 "less than mmap_min_addr."
-              << std::endl;
+                 "less than mmap_min_addr: "
+              << startAddr << std::endl;
     return -1;
   }
   uint64_t size = upAlign(length, PAGE_SIZE);

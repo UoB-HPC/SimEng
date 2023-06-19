@@ -72,9 +72,9 @@ class neonHelp {
       std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T* d = operands[0].getAsVector<T>();
-    T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
-                        metadata.operands[1].shift.type,
-                        metadata.operands[1].shift.value);
+    T imm = ~shiftValue(
+        static_cast<T>(metadata.operands[1].imm),
+        metadata.operands[1].shift.type, metadata.operands[1].shift.value);
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = d[i] & imm;
@@ -88,8 +88,8 @@ class neonHelp {
    * (e.g. for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <int I>
-  static RegisterValue vecBitwiseInsert(std::vector<RegisterValue>& operands,
-                                        bool isBif) {
+  static RegisterValue vecBitwiseInsert(
+      std::vector<RegisterValue>& operands, bool isBif) {
     const uint64_t* d = operands[0].getAsVector<uint64_t>();
     const uint64_t* n = operands[1].getAsVector<uint64_t>();
     const uint64_t* m = operands[2].getAsVector<uint64_t>();
@@ -125,9 +125,9 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecCompare(std::vector<RegisterValue>& operands,
-                                  bool cmpToZero,
-                                  std::function<bool(T, T)> func) {
+  static RegisterValue vecCompare(
+      std::vector<RegisterValue>& operands, bool cmpToZero,
+      std::function<bool(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
     const T* m;
     if (!cmpToZero) m = operands[1].getAsVector<T>();
@@ -224,9 +224,9 @@ class neonHelp {
    * updated (e.g. for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, typename C, int I>
-  static RegisterValue vecFCompare(std::vector<RegisterValue>& operands,
-                                   bool cmpToZero,
-                                   std::function<bool(T, T)> func) {
+  static RegisterValue vecFCompare(
+      std::vector<RegisterValue>& operands, bool cmpToZero,
+      std::function<bool(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
     const T* m;
     if (!cmpToZero) m = operands[1].getAsVector<T>();
@@ -246,8 +246,8 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
-  static RegisterValue vecFcvtl(std::vector<RegisterValue>& operands,
-                                bool isFcvtl2) {
+  static RegisterValue vecFcvtl(
+      std::vector<RegisterValue>& operands, bool isFcvtl2) {
     const N* n = operands[0].getAsVector<N>();
     D out[16 / sizeof(D)] = {0};
     for (int i = (isFcvtl2 ? I : 0); i < (isFcvtl2 ? (I * 2) : I); i++) {
@@ -263,8 +263,8 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
-  static RegisterValue vecFcvtn(std::vector<RegisterValue>& operands,
-                                bool isFcvtn2) {
+  static RegisterValue vecFcvtn(
+      std::vector<RegisterValue>& operands, bool isFcvtn2) {
     const N* n = operands[0].getAsVector<N>();
     D out[16 / sizeof(D)] = {0};
     for (int i = (isFcvtn2 ? (I / 2) : 0); i < I; i++) {
@@ -501,8 +501,8 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecLogicOp_2vecs(std::vector<RegisterValue>& operands,
-                                        std::function<T(T)> func) {
+  static RegisterValue vecLogicOp_2vecs(
+      std::vector<RegisterValue>& operands, std::function<T(T)> func) {
     const T* n = operands[0].getAsVector<T>();
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
@@ -518,8 +518,8 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecLogicOp_3vecs(std::vector<RegisterValue>& operands,
-                                        std::function<T(T, T)> func) {
+  static RegisterValue vecLogicOp_3vecs(
+      std::vector<RegisterValue>& operands, std::function<T(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
     T out[16 / sizeof(T)] = {0};
@@ -622,9 +622,9 @@ class neonHelp {
   template <typename T, int I>
   static RegisterValue vecMoviShift_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata, bool negate) {
-    const T bits = shiftValue(static_cast<T>(metadata.operands[1].imm),
-                              metadata.operands[1].shift.type,
-                              metadata.operands[1].shift.value);
+    const T bits = shiftValue(
+        static_cast<T>(metadata.operands[1].imm),
+        metadata.operands[1].shift.type, metadata.operands[1].shift.value);
     T out[16 / sizeof(T)] = {0};
     std::fill_n(std::begin(out), I, negate ? ~bits : bits);
     return {out, 256};
@@ -639,8 +639,8 @@ class neonHelp {
    * updated (e.g. for vd.8b I = 8).
    * Returns correctly formated RegisterValue. */
   template <typename D, typename N, int I>
-  static RegisterValue vecScvtf_2vecs(std::vector<RegisterValue>& operands,
-                                      std::function<D(N)> func) {
+  static RegisterValue vecScvtf_2vecs(
+      std::vector<RegisterValue>& operands, std::function<D(N)> func) {
     const N* n = operands[0].getAsVector<N>();
     D out[16 / sizeof(D)] = {0};
     for (int i = 0; i < I; i++) {
@@ -730,8 +730,8 @@ class neonHelp {
    * updated (i.e. for vd.4s I = 4).
    * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
-  static RegisterValue vecXtn(std::vector<RegisterValue>& operands,
-                              bool isXtn2) {
+  static RegisterValue vecXtn(
+      std::vector<RegisterValue>& operands, bool isXtn2) {
     const D* d;
     if (isXtn2) d = operands[0].getAsVector<D>();
     const N* n = operands[isXtn2 ? 1 : 0].getAsVector<N>();
@@ -875,8 +875,8 @@ class neonHelp {
    * I represents the number of operands (e.g. for Vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
-  static RegisterValue vecUzp(std::vector<RegisterValue>& operands,
-                              bool isUzp1) {
+  static RegisterValue vecUzp(
+      std::vector<RegisterValue>& operands, bool isUzp1) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 

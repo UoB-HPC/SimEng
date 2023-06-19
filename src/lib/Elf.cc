@@ -174,9 +174,7 @@ Elf::Elf(std::string path) {
     // Override path of binary supplied interpreter by one specified by user.
     // Because host interpreter can be different from interpreter the binary
     // specifies
-    interpreterPath_ =
-        "/home/rahat/local/aarch64-linux-gnu-8/aarch64-linux-gnu/libc/lib/"
-        "ld-linux-aarch64.so.1";
+    interpreterPath_ = "/home/rahat/work/ssh-dir/dll/ld-linux-aarch64.so.1";
     interpreter_ = parseElfBinary(interpreterPath_);
   }
 }

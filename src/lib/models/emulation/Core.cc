@@ -6,9 +6,10 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
-           arch::sendSyscallToHandler handleSyscall)
+Core::Core(
+    MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+    const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
+    arch::sendSyscallToHandler handleSyscall)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       mmu_(mmu),
@@ -96,8 +97,8 @@ void Core::tick() {
     }
 
     const auto& instructionBytes = fetched[fetchIndex].data;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
-                                    FETCH_SIZE, pc_, macroOp_);
+    auto bytesRead = isa_.predecode(
+        instructionBytes.getAsVector<char>(), FETCH_SIZE, pc_, macroOp_);
 
     // Clear the fetched data
     instructionMemory_.clearCompletedReads();
@@ -217,9 +218,10 @@ void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::processException() {
-  assert(exceptionGenerated_ != false &&
-         "[SimEng:Core] Attempted to process an exception handler that wasn't "
-         "active");
+  assert(
+      exceptionGenerated_ != false &&
+      "[SimEng:Core] Attempted to process an exception handler that wasn't "
+      "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -276,8 +278,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
     default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(change.modifiedRegisters[i],
-                             change.modifiedRegisterValues[i]);
+        registerFileSet_.set(
+            change.modifiedRegisters[i], change.modifiedRegisterValues[i]);
       }
       break;
     }
@@ -287,8 +289,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
+    dataMemory_.requestWrite(
+        change.memoryAddresses[i], change.memoryAddressValues[i]);
   }
 }
 
@@ -318,10 +320,11 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"instructions", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)},
-          {"idle.ticks", std::to_string(idle_ticks_)},
-          {"context.switches", std::to_string(contextSwitches_)}};
+  return {
+      {"instructions", std::to_string(instructionsExecuted_)},
+      {"branch.executed", std::to_string(branchesExecuted_)},
+      {"idle.ticks", std::to_string(idle_ticks_)},
+      {"context.switches", std::to_string(contextSwitches_)}};
 }
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
@@ -330,8 +333,8 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   pc_ = newContext.pc;
   for (size_t type = 0; type < newContext.regFile.size(); type++) {
     for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
-      registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
-                           newContext.regFile[type][tag]);
+      registerFileSet_.set(
+          {(uint8_t)type, (uint16_t)tag}, newContext.regFile[type][tag]);
     }
   }
   status_ = CoreStatus::executing;

@@ -35,7 +35,6 @@ void SyscallHandler::handleSyscall() {
   // Update currentInfo_
   currentInfo_ = syscallQueue_.front();
   ProcessStateChange stateChange = {};
-  std::cout << "Syscall ID: " << currentInfo_.syscallId << std::endl;
   switch (currentInfo_.syscallId) {
     case 29: {  // ioctl
       int64_t fd = currentInfo_.registerArguments[0].get<int64_t>();

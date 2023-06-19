@@ -54,8 +54,8 @@ uint64_t PageTable::calculateOffset(uint64_t vaddr) {
   return vaddr & translationMask_;
 }
 
-uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
-                                  size_t size) {
+uint64_t PageTable::createMapping(
+    uint64_t vaddr, uint64_t basePhyAddr, size_t size) {
   // Round the address down to pageSize aligned value so we can map base
   // vaddr to base paddr.
   vaddr = downAlign(vaddr, PAGE_SIZE);
@@ -118,11 +118,14 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
 }
 
 uint64_t PageTable::translate(uint64_t vaddr) {
-  if (vaddr >= ignoredAddrRange_.first && vaddr < ignoredAddrRange_.second) {
-    return masks::faults::pagetable::FAULT | masks::faults::pagetable::IGNORED;
-  }
   TableItr entry = find(vaddr);
   if (entry == table_.end()) {
+    if (vaddr >= ignoredAddrRange_.first && vaddr < ignoredAddrRange_.second) {
+      std::cout << "Ignored addr: " << vaddr << " - 0x" << std::hex << vaddr
+                << std::dec << std::endl;
+      return masks::faults::pagetable::FAULT |
+             masks::faults::pagetable::IGNORED;
+    }
     return masks::faults::pagetable::FAULT |
            masks::faults::pagetable::TRANSLATE;
   }

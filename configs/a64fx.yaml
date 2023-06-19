@@ -274,3 +274,8 @@ CPU-Info:
   Package-Count: 1
 Environment-Variables:
   - "OMP_NUM_THREADS=1"
+  - "LD_LIBRARY_PATH=/home/rahat/work/ssh-dir/dll"
+  - "LD_DEBUG=all"
+  - "LD_SHOW_AUXV=1"
+  - "LD_VERBOSE=1"
+  - "LD_TRACE_LOADED_OBJECTS"
