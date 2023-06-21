@@ -299,6 +299,7 @@ int64_t MemRegion::mmapRegion(
     uint64_t startAddr, uint64_t length, int prot, int flags,
     HostFileMMap hfmmap) {
   // Check if flag contains MAP_FIXED, as it is not supported yet.
+  /*
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_FIXED);
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_SYNC);
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_STACK);
@@ -316,7 +317,7 @@ int64_t MemRegion::mmapRegion(
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_UNINITIALIZED);
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_FIXED_NOREPLACE);
   PRINT_MMAP_FLAGS(flags, SIMENG_MAP_SHARED_VALIDATE);
-
+*/
   if (startAddr + length > stackRegion_.end) {
     std::cerr << "[SimEng:MemRegion] Address range given to mmapRegion is "
                  "greater than virtual address space"
@@ -331,6 +332,7 @@ int64_t MemRegion::mmapRegion(
               << startAddr << std::endl;
     return -1;
   }
+
   uint64_t size = upAlign(length, PAGE_SIZE);
 
   uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
@@ -346,14 +348,16 @@ int64_t MemRegion::mmapRegion(
       // unmap
     }
     VMA vma = VMA(prot, flags, size, hfmmap);
-    return addVmaExactlyAtAddr(vma, startAddr);
+    uint64_t retAddr = addVmaExactlyAtAddr(vma, startAddr);
+    return retAddr;
   }
 
   startAddr = downAlign(startAddr, PAGE_SIZE);
   VMA vma = VMA(prot, flags, size, hfmmap);
   // TODO: Check if offset should be contained in HostBackedFileMMap,
   // because hfmmaps are shared during unmaps.
-  return addVma(vma, startAddr);
+  uint64_t retAddr = addVma(vma, startAddr);
+  return retAddr;
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {

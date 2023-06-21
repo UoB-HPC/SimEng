@@ -85,18 +85,6 @@ Process::Process(
 
     temp = phdr.p_vaddr + phdr.p_memsz;
     brk = std::max(brk, temp);
-
-    /**
-    std::cout << "header" << std::endl;
-    std::cout << "start: " << phdr.p_vaddr << std::endl;
-    std::cout << "da-start: " << downAlign(phdr.p_vaddr, 4096) << std::endl;
-    std::cout << "end: "
-              << downAlign(phdr.p_vaddr, 4096) + upAlign(phdr.p_memsz, 4096)
-              << std::endl;
-    std::cout << "mem-size: " << upAlign(phdr.p_memsz, 4096) << std::endl;
-    std::cout << "file-size: " << upAlign(phdr.p_filesz, 4096) << std::endl;
-    std::cout << std::endl;
-    */
   }
   pageTable_->ignoreAddrRange(0, min_addr);
 
@@ -155,21 +143,6 @@ Process::Process(
   paddr = OS_->requestPageFrames(stack_size);
   pageTable_->createMapping(stack_top - stack_size, paddr, stack_size);
 
-  /* Populate the padding between bss and brk;
-  if (brk - bss > 0) {
-    std::cout << "bss: " << bss << std::endl;
-    std::cout << "brk: " << brk << std::endl;
-    uint64_t brk_pad_sz = upAlign(brk - bss, 4096);
-    uint64_t retAddr = memRegion_.mmapRegion(
-        bss, brk_pad_sz, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
-        HostFileMMap());
-    paddr = OS_->requestPageFrames(brk_pad_sz);
-    pageTable_->createMapping(retAddr, paddr, brk_pad_sz);
-    taddr = pageTable_->translate(bss);
-    sendToMem_(std::vector<char>(brk_pad_sz, '\0'), taddr, brk_pad_sz);
-  }
-  */
-
   // Populate 1 page for the heap
   memRegion_.mmapRegion(
       brk, PAGE_SIZE, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
@@ -180,40 +153,57 @@ Process::Process(
   auto interpreter = elf.getInterpreter();
   if (interpreter) {
     auto& interp_ehdr = interpreter->elf_header;
-    interpEntryPoint_ = interp_ehdr.e_entry;
-    bool entry_not_set = false;
-    bool addr_not_set = false;
-    std::cout << "interp_e_entry: " << interp_ehdr.e_entry << std::endl;
+    bool addr_not_set = true;
+
+    uint64_t load_addr = 0;
+    uint64_t bss = 0;
+    uint64_t brk = 0;
+
     isDynamic_ = true;
+    interpEntryPoint_ = 0;
+
     for (auto& phdr : interpreter->loadable_phdrs) {
-      uint64_t vaddr = downAlign(phdr.p_vaddr, PAGE_SIZE);
-      uint64_t size = upAlign(phdr.p_memsz, PAGE_SIZE);
-      std::cout << "vaddr: " << phdr.p_vaddr << std::endl;
-      std::cout << "dvaddr: " << vaddr << std::endl;
-      std::cout << "size: " << phdr.p_memsz << std::endl;
-      std::cout << "usize: " << size << std::endl;
-      uint64_t map_addr = memRegion_.mmapRegion(
-          vaddr, size, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
-          HostFileMMap());
-      // We need to add an offset to the address returned by mmap call to find
-      // the virtual address corresponding the entry point of the interpreter.
+      uint64_t vaddr = phdr.p_vaddr;
+      int flags = 0;
 
-      /**
-      if (!entry_not_set && (vaddr <= interpEntryPoint_) &&
-          ((vaddr + size) >= interpEntryPoint_)) {
-        uint64_t interp_e_offset = interpEntryPoint_ - vaddr;
-        interpEntryPoint_ = map_addr + interp_e_offset;
-        std::cout << "offset: " << interp_e_offset << std::endl;
-        std::cout << "interp_entry_point: " << interpEntryPoint_ << std::endl;
-        entry_not_set = true;
+      if (addr_not_set) {
+        load_addr = -vaddr;
+      } else {
+        flags |= syscalls::mmap::flags::SIMENG_MAP_FIXED;
       }
-      */
 
+      vaddr = load_addr + vaddr;
+      vaddr = downAlign(vaddr, PAGE_SIZE);
+
+      uint64_t size = phdr.p_filesz + pageOffset(phdr.p_vaddr, PAGE_SIZE);
+      size = upAlign(size, PAGE_SIZE);
+
+      uint64_t map_addr =
+          memRegion_.mmapRegion(vaddr, size, 0, flags, HostFileMMap());
+
+      if (addr_not_set) {
+        load_addr = map_addr - downAlign(vaddr, PAGE_SIZE);
+        addr_not_set = false;
+      }
+
+      bss = std::max(bss, load_addr + phdr.p_vaddr + phdr.p_filesz);
+      brk = std::max(brk, load_addr + phdr.p_vaddr + phdr.p_memsz);
+
+      // We need to add an offset to the address returned by mmap
+      // call to find the virtual address corresponding the entry
+      // point of the interpreter.
       uint64_t paddr = OS_->requestPageFrames(size);
-      pageTable_->createMapping(vaddr, paddr, size);
-      uint64_t taddr = pageTable_->translate(phdr.p_vaddr);
+      pageTable_->createMapping(map_addr, paddr, size);
+
+      uint64_t offset = phdr.p_vaddr - downAlign(phdr.p_vaddr, PAGE_SIZE);
+      uint64_t taddr = pageTable_->translate(map_addr + offset);
       sendToMem_(phdr.data, taddr, phdr.p_filesz);
     }
+
+    interpEntryPoint_ = load_addr + interp_ehdr.e_entry;
+
+    brk = upAlign(brk, PAGE_SIZE);
+    bss = upAlign(bss, PAGE_SIZE);
   }
 
   auto& ehdr = executable->elf_header;
@@ -315,8 +305,8 @@ Process::Process(
 
   createStack(stackStart);
 
-  // Create the callback function which will be used by MemRegion to unmap page
-  // table mappings upon VMA deletes.
+  // Create the callback function which will be used by MemRegion to unmap
+  // page table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [this](uint64_t vaddr, size_t size) -> uint64_t {
     uint64_t value = pageTable_->deleteMapping(vaddr, size);
@@ -376,13 +366,13 @@ uint64_t Process::createStack(uint64_t stackStart) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
   // The argv and env strings are added to the top of the stack first and the
-  // lower section of the initial stack is populated from the initialStackFrame
-  // vector
+  // lower section of the initial stack is populated from the
+  // initialStackFrame vector
 
   uint64_t stackPointer = stackStart;
   std::vector<uint64_t> initialStackFrame;
-  // Stack strings are split into bytes to easily support the injection of null
-  // bytes dictating the end of a string
+  // Stack strings are split into bytes to easily support the injection of
+  // null bytes dictating the end of a string
   std::vector<char> stringBytes;
 
   // Program arguments (argc, argv[])
@@ -398,7 +388,6 @@ uint64_t Process::createStack(uint64_t stackStart) {
   for (size_t i = 0; i < Config::get()["Environment-Variables"].size(); i++) {
     std::string envVar =
         Config::get()["Environment-Variables"][i].as<std::string>();
-    std::cout << envVar << std::endl;
     for (int i = 0; i < envVar.size(); i++) {
       stringBytes.push_back(envVar.c_str()[i]);
     }
@@ -491,9 +480,9 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   void* filebuf = vm.getFileBuf();
 
   // Since page fault only allocates a single page it could be possible that a
-  // part of the file assosciate with a vma has already been sent to memory. To
-  // handle this situation we calculate the offset from VMA start address as
-  // this address is also page size aligned.
+  // part of the file assosciate with a vma has already been sent to memory.
+  // To handle this situation we calculate the offset from VMA start address
+  // as this address is also page size aligned.
   uint64_t offset = alignedVAddr - vm.vmStart_;
   size_t writeLen = vm.getFileSize() - (offset);
   writeLen = writeLen > PAGE_SIZE ? PAGE_SIZE : writeLen;

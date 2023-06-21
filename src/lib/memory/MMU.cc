@@ -1,6 +1,7 @@
 #include "simeng/memory/MMU.hh"
 
 #include "simeng/OS/Constants.hh"
+#include "simeng/util/Math.hh"
 namespace simeng {
 namespace memory {
 
@@ -11,6 +12,10 @@ void MMU::bufferRequest(
     DataPacket request, sendResponseToMemInterface sendResponse) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
+  if (downAlign(request.address_, OS::defaults::PAGE_SIZE) !=
+      downAlign(request.address_ + request.size_, OS::defaults::PAGE_SIZE)) {
+    // std::exit(1);
+  }
   uint64_t paddr = translate_(request.address_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
   DataPacket pkt;
