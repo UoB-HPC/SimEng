@@ -8,12 +8,12 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
-                                             (uint16_t)-1};
+const Register Instruction::ZERO_REGISTER = {
+    RegisterType::GENERAL, (uint16_t)-1};
 
-Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata,
-                         MicroOpInfo microOpInfo)
+Instruction::Instruction(
+    const Architecture& architecture, const InstructionMetadata& metadata,
+    MicroOpInfo microOpInfo)
     : architecture_(architecture), metadata(metadata) {
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
@@ -23,12 +23,16 @@ Instruction::Instruction(const Architecture& architecture,
   decode();
 }
 
-Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata,
-                         InstructionException exception)
+Instruction::Instruction(
+    const Architecture& architecture, const InstructionMetadata& metadata,
+    InstructionException exception)
     : architecture_(architecture), metadata(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
+}
+
+void Instruction::print() const {
+  std::cout << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 }
 
 InstructionException Instruction::getException() const { return exception_; }
@@ -37,8 +41,9 @@ const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
 const span<Register> Instruction::getDestinationRegisters() const {
-  return {const_cast<Register*>(destinationRegisters.data()),
-          destinationRegisterCount};
+  return {
+      const_cast<Register*>(destinationRegisters.data()),
+      destinationRegisterCount};
 }
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
@@ -52,10 +57,12 @@ void Instruction::renameDestination(uint8_t i, Register renamed) {
 }
 
 void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
-  assert(!canExecute() &&
-         "Attempted to provide an operand to a ready-to-execute instruction");
-  assert(value.size() > 0 &&
-         "Attempted to provide an uninitialised RegisterValue");
+  assert(
+      !canExecute() &&
+      "Attempted to provide an operand to a ready-to-execute instruction");
+  assert(
+      value.size() > 0 &&
+      "Attempted to provide an uninitialised RegisterValue");
 
   operands[i] = value;
   operandsPending--;
@@ -187,8 +194,8 @@ const Architecture& Instruction::getArchitecture() const {
 
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift` */
-uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
-                                  uint8_t shift) const {
+uint64_t Instruction::extendValue(
+    uint64_t value, uint8_t extendType, uint8_t shift) const {
   if (extendType == ARM64_EXT_INVALID && shift == 0) {
     // Special case: an invalid shift type with a shift amount of 0 implies an
     // identity operation
@@ -230,8 +237,8 @@ uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
 }
 
 /** Extend `value` using extension/shifting rules defined in `op`. */
-uint64_t Instruction::extendOffset(uint64_t value,
-                                   const cs_arm64_op& op) const {
+uint64_t Instruction::extendOffset(
+    uint64_t value, const cs_arm64_op& op) const {
   if (op.ext == 0) {
     if (op.shift.value == 0) {
       return value;

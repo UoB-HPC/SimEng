@@ -344,9 +344,11 @@ int64_t MemRegion::mmapRegion(
                 << std::endl;
       return -1;
     }
-    if (isVmMapped(startAddr, size)) {
-      // unmap
+
+    if (isVmMapped(startAddr, length)) {
+      unmapRegion(startAddr, length);
     }
+
     VMA vma = VMA(prot, flags, size, hfmmap);
     uint64_t retAddr = addVmaExactlyAtAddr(vma, startAddr);
     return retAddr;

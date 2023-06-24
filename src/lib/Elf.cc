@@ -181,26 +181,9 @@ Elf::Elf(std::string path) {
     // Because host interpreter can be different from interpreter the binary
     // specifies
     interpreterPath_ =
-        "/home/rahat/local/aarch64-linux-gnu-8/aarch64-linux-gnu/libc/lib/"
-        "ld-linux-aarch64.so.1";
+        "/home/rahat/work/ssh-dir/dll/aarch64/ld-linux-aarch64.so.1";
     interpreter_ = parseElfBinary(interpreterPath_);
   }
-  int fd = open(path.c_str(), O_RDONLY);
-  if (fd < 0) {
-    std::cerr << "Elf err1" << std::endl;
-    std::exit(1);
-  }
-  off_t off = lseek(fd, 0, SEEK_END);
-  size_t sz = static_cast<size_t>(off);
-
-  char* file = (char*)mmap(NULL, sz, PROT_READ, MAP_SHARED, fd, 0);
-  ::Elf* e = elf_memory(file, sz);
-  if (e == NULL) {
-    std::cerr << "Elf err2" << std::endl;
-    std::exit(1);
-  }
-  elf_end(e);
-  munmap(file, sz);
 }
 
 bool Elf::isValid() const { return isValid_; }

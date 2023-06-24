@@ -48,9 +48,12 @@ void Core::tick() {
 
   // Increase tick count for current process execution
   procTicks_++;
-
   if (pc_ >= programByteLength_) {
     status_ = CoreStatus::idle;
+    std::cout << "PC: " << pc_ << std::endl;
+    std::cout << "proglen: " << programByteLength_ << std::endl;
+    std::cout << "ending here6" << std::endl;
+    std::exit(1);
     return;
   }
 
@@ -166,7 +169,6 @@ void Core::tick() {
     } else {
       microOps_.pop();
     }
-
     return;
   }
 

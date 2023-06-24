@@ -9,7 +9,7 @@ Core:
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
-  Micro-Operations: True
+  Micro-Operations: False
   Vector-Length: 512
 Fetch:
   Fetch-Block-Size: 32
@@ -274,8 +274,9 @@ CPU-Info:
   Package-Count: 1
 Environment-Variables:
   - "OMP_NUM_THREADS=1"
-  - "LD_LIBRARY_PATH=/home/rahat/work/ssh-dir/dll"
+  - "LD_LIBRARY_PATH=/home/rahat/work/ssh-dir/dll/aarch64"
   - "LD_DEBUG=all"
   - "LD_SHOW_AUXV=1"
   - "LD_VERBOSE=1"
-  - "LD_TRACE_LOADED_OBJECTS"
+  - "LD_BIND_NOW=1"
+  # - "LD_TRACE_LOADED_OBJECTS"

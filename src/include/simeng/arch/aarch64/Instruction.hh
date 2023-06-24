@@ -232,14 +232,14 @@ class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata,
-              MicroOpInfo microOpInfo = MicroOpInfo());
+  Instruction(
+      const Architecture& architecture, const InstructionMetadata& metadata,
+      MicroOpInfo microOpInfo = MicroOpInfo());
 
   /** Construct an instruction instance that raises an exception. */
-  Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata,
-              InstructionException exception);
+  Instruction(
+      const Architecture& architecture, const InstructionMetadata& metadata,
+      InstructionException exception);
 
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
@@ -329,6 +329,8 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
+
+  void print() const override;
 
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be

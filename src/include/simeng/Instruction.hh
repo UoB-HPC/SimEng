@@ -178,6 +178,8 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
 
+  void virtual print() const {};
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;

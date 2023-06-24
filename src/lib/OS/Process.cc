@@ -202,8 +202,12 @@ Process::Process(
 
     interpEntryPoint_ = load_addr + interp_ehdr.e_entry;
 
-    brk = upAlign(brk, PAGE_SIZE);
-    bss = upAlign(bss, PAGE_SIZE);
+    if (upAlign(brk, PAGE_SIZE) > upAlign(bss, PAGE_SIZE)) {
+      bss = downAlign(bss, PAGE_SIZE);
+      memRegion_.mmapRegion(
+          bss, brk - bss, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
+          HostFileMMap());
+    }
   }
 
   auto& ehdr = executable->elf_header;
@@ -215,12 +219,12 @@ Process::Process(
   uint64_t stackPtr = createStack(stack_top);
   updateStack(stackPtr);
 
-  memRegion_.printVmaList();
-
   fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
+
+  memRegion_.printVmaList();
 
   // Create `proc/tgid/maps`
   const std::string procTgid_dir =
