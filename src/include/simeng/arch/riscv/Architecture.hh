@@ -63,6 +63,9 @@ class Architecture : public arch::Architecture {
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const override;
 
+  /** Relays the new count of the defined performance event to the kernel. */
+  void forwardPMUInc(uint16_t event, uint64_t value) const override;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
