@@ -243,6 +243,10 @@ ProcessStateChange Architecture::getInitialState() const {
   return changes;
 }
 
+void Architecture::forwardPMUInc(uint16_t event, uint64_t value) const {
+  linux_.pmuIncrement(event, value);
+}
+
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
