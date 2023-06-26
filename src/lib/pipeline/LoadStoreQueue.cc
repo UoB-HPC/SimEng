@@ -21,11 +21,13 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
+      raiseException_(raiseException),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       mmu_(mmu),
@@ -41,11 +43,13 @@ LoadStoreQueue::LoadStoreQueue(
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
+      raiseException_(raiseException),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
@@ -101,6 +105,13 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   if (ld_addresses.size() == 0) {
     // Early execution if not addresses need to be accessed
     insn->execute();
+
+    if (insn->exceptionEncountered()) {
+      // Exception; don't pass insn to completedLoads_
+      raiseException_(insn);
+      return;
+    }
+
     completedLoads_.push(insn);
   } else {
     // Create a speculative entry for the load
@@ -508,6 +519,13 @@ void LoadStoreQueue::tick() {
     if (load->hasAllData()) {
       // This load has completed
       load->execute();
+
+      if (load->exceptionEncountered()) {
+        // Exception; don't pass load to completedLoads_
+        raiseException_(load);
+        continue;
+      }
+
       if (load->isStoreData()) {
         supplyStoreData(load);
       }

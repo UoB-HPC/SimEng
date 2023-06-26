@@ -29,8 +29,9 @@ class ReorderBufferTest : public testing::Test {
         mmu(std::make_shared<memory::MMU>(fn)),
         connection(),
         rat({{8, 32}}, {64}),
-        lsq(maxLSQLoads, maxLSQStores, mmu, {nullptr, 0},
-            [](auto registers, auto values) {}),
+        lsq(
+            maxLSQLoads, maxLSQStores, mmu, {nullptr, 0},
+            [](auto registers, auto values) {}, [](auto uop) {}),
         uop(new MockInstruction),
         uop2(new MockInstruction),
         uopPtr(uop),

@@ -71,15 +71,17 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
           MAX_COMBINED, mmu, {completionSlots.data(), completionSlots.size()},
           [this](auto registers, auto values) {
             forwardOperandsHandler.forwardOperands(registers, values);
-          });
+          },
+          [](auto uop) {});
     } else {
       // Split queue
-      return LoadStoreQueue(MAX_LOADS, MAX_STORES, mmu,
-                            {completionSlots.data(), completionSlots.size()},
-                            [this](auto registers, auto values) {
-                              forwardOperandsHandler.forwardOperands(registers,
-                                                                     values);
-                            });
+      return LoadStoreQueue(
+          MAX_LOADS, MAX_STORES, mmu,
+          {completionSlots.data(), completionSlots.size()},
+          [this](auto registers, auto values) {
+            forwardOperandsHandler.forwardOperands(registers, values);
+          },
+          [](auto uop) {});
     }
   }
 
@@ -151,9 +153,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
 
 // Test that a split queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, SplitQueue) {
-  LoadStoreQueue queue =
-      LoadStoreQueue(MAX_LOADS, MAX_STORES, mmu, {nullptr, 0},
-                     [](auto registers, auto values) {});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_LOADS, MAX_STORES, mmu, {nullptr, 0},
+      [](auto registers, auto values) {}, [](auto uop) {});
 
   EXPECT_EQ(queue.isCombined(), false);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_LOADS);
@@ -163,8 +165,9 @@ TEST_F(LoadStoreQueueTest, SplitQueue) {
 
 // Test that a combined queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, CombinedQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, mmu, {nullptr, 0},
-                                        [](auto registers, auto values) {});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_COMBINED, mmu, {nullptr, 0}, [](auto registers, auto values) {},
+      [](auto uop) {});
 
   EXPECT_EQ(queue.isCombined(), true);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_COMBINED);
