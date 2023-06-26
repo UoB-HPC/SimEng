@@ -1179,13 +1179,16 @@ class sveHelp {
   template <typename T>
   static std::array<uint64_t, 4> svePsel(
       std::vector<RegisterValue>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
     const uint64_t* pn = operands[0].getAsVector<uint64_t>();
     const uint64_t* pm = operands[1].getAsVector<uint64_t>();
     const uint32_t wa = operands[2].get<uint32_t>();
     const uint32_t imm = metadata.operands[2].sme_index.disp;
 
-    uint32_t index = wa + imm;
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+
+    uint32_t index = (wa + imm) % partition_num;
     uint64_t shifted_active = 1ull << ((index % (64 / sizeof(T))) * sizeof(T));
 
     std::array<uint64_t, 4> out = {0, 0, 0, 0};
