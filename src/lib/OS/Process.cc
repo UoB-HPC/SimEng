@@ -3,12 +3,21 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <vector>
 
+#include "simeng/Config.hh"
 #include "simeng/Elf.hh"
+#include "simeng/OS/Constants.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/arch/Architecture.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/memory/Mem.hh"
 
 namespace simeng {
@@ -27,149 +36,13 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
                  uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
                  size_t simulationMemSize)
-    : commandLine_(commandLine),
+    : fdArray_(std::make_shared<FileDescArray>()),
+      commandLine_(commandLine),
       TGID_(TGID),
       TID_(TID),
+      pageTable_(std::make_shared<PageTable>()),
       OS_(OS),
-      sendToMem_(sendToMem) {
-  // Parse ELF file
-  YAML::Node& config = Config::get();
-  uint64_t heapSize =
-      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
-  uint64_t stackSize =
-      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
-  uint64_t mmapSize =
-      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
-
-  pageTable_ = std::make_shared<PageTable>();
-
-  // Parse the Elf file.
-  assert(commandLine.size() > 0);
-  Elf elf(commandLine[0]);
-  if (!elf.isValid()) {
-    return;
-  }
-  entryPoint_ = elf.getEntryPoint();
-
-  progHeaderTableAddress_ = elf.getPhdrTableAddress();
-  progHeaderEntSize_ = elf.getPhdrEntrySize();
-  numProgHeaders_ = elf.getNumPhdr();
-
-  auto headers = elf.getProcessedHeaders();
-
-  uint64_t maxInitDataAddr = upAlign(elf.getElfImageSize(), PAGE_SIZE);
-  uint64_t minHeaderAddr = ~0;
-
-  // Check if the process image can fit inside the simulation memory.
-  size_t totalProcLayoutSize =
-      maxInitDataAddr + heapSize + stackSize + mmapSize;
-  if (totalProcLayoutSize > simulationMemSize) {
-    std::cerr
-        << "[SimEng:Process] Size of the simulation memory is less than the "
-           "size of a single process image. Please increase the "
-           "{Memory-Hierarchy:{DRAM:{Size}}} parameter in the YAML model "
-           "config file used to run the simulation."
-        << std::endl;
-    std::exit(1);
-  }
-
-  for (auto header : headers) {
-    // Round size up to page aligned value.
-    size_t size = upAlign(header.p_memsz, PAGE_SIZE);
-    uint64_t vaddr = header.p_vaddr;
-    // Round vaddr down to page aligned value.
-    uint64_t avaddr = downAlign(vaddr, PAGE_SIZE);
-    // Request a page frame from the OS.
-    uint64_t paddr = OS_->requestPageFrames(size);
-    // Create a virtual memory mapping.
-    pageTable_->createMapping(vaddr, paddr, size);
-    // Translate the address of the header virtual address.
-    uint64_t translatedAddr = pageTable_->translate(vaddr);
-    // If the translated address + size of data to be allocated is less than
-    // base paddr + size, allocate extra memory.
-    if (((paddr + size) - translatedAddr) < header.p_memsz) {
-      paddr = OS_->requestPageFrames(PAGE_SIZE);
-      pageTable_->createMapping(avaddr + size, paddr, PAGE_SIZE);
-      translatedAddr = pageTable_->translate(vaddr);
-    }
-    // Send header data to memory
-    sendToMem_(header.headerData, translatedAddr, header.p_memsz);
-
-    // Determine minimum header address, address in the range [0, minAddr) will
-    // be ignored during translation and all memory requests corresponding to
-    // these address will be handled naively. This is because libc startup
-    // routine makes load requests to address range below minimum header address
-    // leading to data abort exceptions.
-    minHeaderAddr = std::min(minHeaderAddr, avaddr);
-  }
-
-  pageTable_->ignoreAddrRange(0, minHeaderAddr);
-  // Add Page Size padding
-  maxInitDataAddr += PAGE_SIZE;
-  // Heap grows upwards towards higher addresses.
-  uint64_t heapStart = maxInitDataAddr;
-  uint64_t heapEnd = heapStart + heapSize;
-
-  // Mmap grows upwards towards higher addresses.
-  uint64_t mmapStart = heapEnd + PAGE_SIZE;
-  uint64_t mmapEnd = mmapStart + mmapSize;
-
-  // Stack grows downwards towards lower addresses.
-  uint64_t stackEnd = mmapEnd + PAGE_SIZE;
-  uint64_t stackStart = stackEnd + stackSize;
-  uint64_t size = stackStart;
-
-  // Request Page frames for heap and stack memory.
-  uint64_t heapPhyAddr = OS_->requestPageFrames(heapEnd - heapStart);
-  uint64_t stackPhyAddr = OS_->requestPageFrames(stackStart - stackEnd);
-
-  // Create page table mappings for stack and heap virtual address ranges.
-  pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
-  pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
-  uint64_t stackPtr = createStack(stackStart);
-
-  // Create the callback function which will be used by MemRegion to unmap page
-  // table mappings upon VMA deletes.
-  std::function<uint64_t(uint64_t, size_t)> unmapFn =
-      [this](uint64_t vaddr, size_t size) -> uint64_t {
-    uint64_t value = pageTable_->deleteMapping(vaddr, size);
-    if (value ==
-        (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
-      std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: " << vaddr
-                << " and length: " << size << std::endl;
-    }
-    return value;
-  };
-
-  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
-                         heapStart, mmapStart, stackPtr, unmapFn);
-
-  fdArray_ = std::make_shared<FileDescArray>();
-  // Initialise context
-  initContext(stackPtr, regFileStructure);
-  isValid_ = true;
-
-  // Create `proc/tgid/maps`
-  const std::string procTgid_dir =
-      specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
-  mkdir(procTgid_dir.c_str(), 0777);
-
-  std::ofstream tgidMaps_File(procTgid_dir + "maps");
-  // Create string for each of the base mappings
-  std::stringstream stackStream;
-  stackStream << std::setfill('0') << std::hex << std::setw(12) << stackEnd
-              << "-" << std::setfill('0') << std::hex << std::setw(12)
-              << stackStart
-              << " rw-p 00000000 00:00 0                          [stack]\n";
-  tgidMaps_File << stackStream.str();
-
-  std::stringstream heapStream;
-  heapStream << std::setfill('0') << std::hex << std::setw(12) << heapStart
-             << "-" << std::setfill('0') << std::hex << std::setw(12) << heapEnd
-             << " rw-p 00000000 00:00 0                          [heap]\n";
-  tgidMaps_File << heapStream.str();
-  tgidMaps_File.close();
-}
+      sendToMem_(sendToMem) {}
 
 Process::Process(span<char> instructions, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
@@ -215,7 +88,6 @@ Process::Process(span<char> instructions, SimOS* OS,
   // Stack grows downwards towards lower addresses.
   uint64_t stackEnd = mmapEnd + PAGE_SIZE;
   uint64_t stackStart = stackEnd + stackSize;
-  uint64_t size = stackStart;
 
   // Request Page frames for heap and stack memory.
   uint64_t instrPhyAddr = OS_->requestPageFrames(instrSize);
@@ -241,8 +113,8 @@ Process::Process(span<char> instructions, SimOS* OS,
     return value;
   };
 
-  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
-                         heapStart, mmapStart, stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackStart, stackEnd, instructions.size(), heapStart,
+                         heapEnd, mmapStart, mmapEnd, stackPtr, unmapFn);
 
   uint64_t taddr = pageTable_->translate(0);
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
@@ -272,7 +144,9 @@ uint64_t Process::getProcessImageSize() const {
   return memRegion_.getProcImgSize();
 }
 
-uint64_t Process::getEntryPoint() const { return entryPoint_; }
+uint64_t Process::getEntryPoint() const {
+  return isDynamic_ ? interpEntryPoint_ : elfEntryPoint_;
+}
 
 uint64_t Process::getStackPointer() const {
   return memRegion_.getInitialStackPtr();
@@ -300,15 +174,58 @@ uint64_t Process::createStack(uint64_t stackStart) {
     }
     stringBytes.push_back(0);
   }
+
+  const auto& env_node = Config::get()["Environment-Variables"];
+
   // Environment strings
-  for (size_t i = 0; i < Config::get()["Environment-Variables"].size(); i++) {
-    std::string envVar =
-        Config::get()["Environment-Variables"][i].as<std::string>();
-    for (int i = 0; i < envVar.size(); i++) {
-      stringBytes.push_back(envVar.c_str()[i]);
+  for (size_t i = 0; i < env_node.size(); i++) {
+    std::string envVar = env_node[i].as<std::string>();
+    for (auto& ch : envVar) {
+      stringBytes.push_back(ch);
     }
     // Null entry to seperate strings
     stringBytes.push_back(0);
+  }
+
+  // Add loader specific environemnt variables.
+  if (isDynamic_) {
+    std::vector<std::string> ld_env_vars;
+    const auto& ld_lib_path_node =
+        Config::get()["Interpreter"]["LD_LIBRARY_PATH"];
+    const auto& ld_extra_env_vars_node =
+        Config::get()["Interpreter"]["Extra-Env-Vars"];
+
+    // Build LD_LIBRARY_PATH
+    std::string ld_lib_path = "LD_LIBRARY_PATH=";
+    for (size_t x = 0; x < ld_lib_path_node.size(); x++) {
+      ld_lib_path += ld_lib_path_node[x].as<std::string>();
+      ld_lib_path += ":";
+    }
+    // Remove semicolon at the end of the string
+    ld_lib_path.pop_back();
+    ld_env_vars.push_back(ld_lib_path);
+
+    // Add any extra specified environment variables
+    for (size_t x = 0; x < ld_extra_env_vars_node.size(); x++) {
+      ld_env_vars.push_back(ld_extra_env_vars_node[x].as<std::string>());
+    }
+
+    // Add debug environment variables for the interpreter, if specified.
+    bool interp_debug_mode = Config::get()["Interpreter"]["Debug"].as<bool>();
+    if (interp_debug_mode) {
+      ld_env_vars.push_back("LD_DEBUG=all");
+      ld_env_vars.push_back("LD_VERBOSE=1");
+      ld_env_vars.push_back("LD_SHOW_AUXV=1");
+    }
+
+    // Add interpreter environment variables to the environment variables list.
+    for (auto& ld_env_var : ld_env_vars) {
+      for (auto& ch : ld_env_var) {
+        stringBytes.push_back(ch);
+      }
+      // Null entry to seperate strings
+      stringBytes.push_back(0);
+    }
   }
 
   // Store strings and record both argv and environment pointers
@@ -334,6 +251,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
   // TODO: populate remaining auxillary vector entries
+  initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
+  initialStackFrame.push_back(PAGE_SIZE);
+
   initialStackFrame.push_back(auxVec::AT_PHDR);  // AT_PHDR
   initialStackFrame.push_back(progHeaderTableAddress_);
 
@@ -343,11 +263,11 @@ uint64_t Process::createStack(uint64_t stackStart) {
   initialStackFrame.push_back(auxVec::AT_PHNUM);  // AT_PHNUM
   initialStackFrame.push_back(numProgHeaders_);
 
-  initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
-  initialStackFrame.push_back(PAGE_SIZE);
+  initialStackFrame.push_back(auxVec::AT_BASE);  // AT_BASE
+  initialStackFrame.push_back(interpEntryPoint_);
 
   initialStackFrame.push_back(auxVec::AT_ENTRY);  // AT_ENTRY
-  initialStackFrame.push_back(entryPoint_);
+  initialStackFrame.push_back(elfEntryPoint_);
 
   initialStackFrame.push_back(auxVec::AT_NULL);  // null terminator
   initialStackFrame.push_back(0);
@@ -413,7 +333,7 @@ void Process::initContext(
     const uint64_t stackPtr,
     const std::vector<RegisterFileStructure>& regFileStructure) {
   context_.TID = TID_;
-  context_.pc = entryPoint_;
+  context_.pc = getEntryPoint();
   context_.sp = stackPtr;
   context_.progByteLen = getProcessImageSize();
   // Initialise all registers to 0
@@ -425,6 +345,292 @@ void Process::initContext(
     context_.regFile.push_back(
         std::vector<RegisterValue>(numTags, {0, regBytes}));
   }
+}
+
+template <>
+void Process::setupMemRegion<arch::aarch64::Architecture>() {
+  uint64_t stack_top = 1;
+  stack_top = stack_top << 48;
+  uint64_t stack_size = 8 * 1024 * 1024;
+  uint64_t stack_end = stack_top - stack_size;
+  uint64_t stack_guard_gap = (256 << 12);
+
+  uint64_t mmap_end = stack_end - stack_guard_gap;
+  uint64_t mmap_start = PAGE_SIZE;
+
+  memRegion_.setStackRegion(stack_top, stack_end);
+  memRegion_.setMmapRegion(mmap_start, mmap_end);
+}
+
+template <>
+void Process::setupMemRegion<arch::riscv::Architecture>() {
+  // The comment below has been referenced from:
+  // https://elixir.bootlin.com/linux/v6.3.9/source/arch/riscv/include/asm/pgtable.h#L793
+
+  /*
+   * Task size is 0x4000000000 for RV64 or 0x9fc00000 for RV32.
+   * Note that PGDIR_SIZE must evenly divide TASK_SIZE.
+   * Task size is:
+   * -     0x9fc00000 (~2.5GB) for RV32.
+   * -   0x4000000000 ( 256GB) for RV64 using SV39 mmu
+   * - 0x800000000000 ( 128TB) for RV64 using SV48 mmu
+   *
+   * Note that PGDIR_SIZE must evenly divide TASK_SIZE since "RISC-V
+   * Instruction Set Manual Volume II: Privileged Architecture" states that
+   * "load and store effective addresses, which are 64bits, must have bits
+   * 63–48 all equal to bit 47, or else a page-fault exception will occur."
+   */
+
+  uint64_t stack_top = 0x00007fffffffffff;
+  uint64_t stack_size = 8 * 1024 * 1024;
+  uint64_t stack_end = stack_top - stack_size;
+  uint64_t stack_guard_gap = (256 << 12);
+
+  uint64_t mmap_end = stack_end - stack_guard_gap;
+  uint64_t mmap_start = PAGE_SIZE;
+
+  memRegion_.setStackRegion(stack_top, stack_end);
+  memRegion_.setMmapRegion(mmap_start, mmap_end);
+}
+
+template <class T>
+void Process::init(const std::vector<std::string>& commandLine, SimOS* OS,
+                   std::vector<RegisterFileStructure> regFileStructure,
+                   uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
+                   size_t simulationMemSize) {
+  // Parse the Elf file.
+  assert(commandLine.size() > 0);
+  Elf elf(commandLine[0]);
+
+  std::function<uint64_t(uint64_t, size_t)> unmapFn =
+      [this](uint64_t vaddr, size_t size) -> uint64_t {
+    uint64_t value = pageTable_->deleteMapping(vaddr, size);
+    if (value ==
+        (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
+      std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: " << vaddr
+                << " and length: " << size << std::endl;
+    }
+    return value;
+  };
+
+  memRegion_ = MemRegion(unmapFn);
+  setupMemRegion<T>();
+  loadElf(elf);
+
+  uint64_t stack_top = memRegion_.stackRegion_.end;
+  uint64_t stack_end = memRegion_.stackRegion_.start;
+  uint64_t brk = memRegion_.getBrk();
+  uint64_t bss = memRegion_.bss_;
+
+  uint64_t stackPtr = createStack(stack_top);
+  updateStack(stackPtr);
+
+  // Initialise context
+  initContext(stackPtr, regFileStructure);
+
+  archSetup<T>();
+  isValid_ = true;
+
+  const std::string procTgid_dir =
+      specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
+  mkdir(procTgid_dir.c_str(), 0777);
+
+  std::ofstream tgidMaps_File(procTgid_dir + "maps");
+  // Create string for each of the base mappings
+  std::stringstream stackStream;
+  stackStream << std::setfill('0') << std::hex << std::setw(12) << stack_end
+              << "-" << std::setfill('0') << std::hex << std::setw(12)
+              << stack_top
+              << " rw-p 00000000 00:00 0                          [stack]\n";
+  tgidMaps_File << stackStream.str();
+
+  std::stringstream heapStream;
+  heapStream << std::setfill('0') << std::hex << std::setw(12) << brk << "-"
+             << std::setfill('0') << std::hex << std::setw(12)
+             << brk + upAlign(bss - brk, PAGE_SIZE)
+             << " rw-p 00000000 00:00 0                          [heap]\n";
+  tgidMaps_File << heapStream.str();
+  tgidMaps_File.close();
+}
+
+void Process::loadElf(Elf& elf) {
+  auto executable = elf.getExecutable();
+  auto& elf_ehdr = executable->elf_header;
+  auto& elf_phdrs = executable->loadable_phdrs;
+
+  uint64_t min_addr = -1;
+  uint64_t max_addr = 0;
+  uint64_t phtAddr = 0;
+
+  uint32_t bss = 0;
+  uint32_t brk = 0;
+
+  for (auto phdr : elf_phdrs) {
+    if ((phdr.p_offset <= elf_ehdr.e_phoff) &&
+        (elf_ehdr.e_phoff < phdr.p_offset + phdr.p_filesz)) {
+      phtAddr = phdr.p_vaddr + (elf_ehdr.e_phoff - phdr.p_offset);
+    }
+
+    min_addr = std::min(min_addr, downAlign(phdr.p_vaddr, 4096));
+    max_addr = std::max(max_addr, phdr.p_vaddr + phdr.p_filesz);
+
+    uint32_t temp = phdr.p_vaddr + phdr.p_filesz;
+    bss = std::max(bss, temp);
+
+    temp = phdr.p_vaddr + phdr.p_memsz;
+    brk = std::max(brk, temp);
+  }
+  pageTable_->ignoreAddrRange(0, min_addr);
+
+  // UpAlign both bss and brk just do we can check if brk > bss
+  // if brk > bss then this means some program header in the elf has
+  // (p_filesz < p_memsz). This means the remaining portion of (brk - bss) has
+  // to be mapped and zeroed out. This behavior is defined in the linux kernel
+  // in the load_elf_binary function
+  bss = upAlign(bss, 4096);
+  brk = upAlign(brk, 4096);
+
+  memRegion_.setHeapRegion(brk, memRegion_.mmapRegion_->end);
+  memRegion_.bss_ = bss;
+
+  uint64_t paddr = 0;
+  uint64_t taddr = 0;
+
+  for (auto phdr : elf_phdrs) {
+    uint64_t startAddr = downAlign(phdr.p_vaddr, 4096);
+    uint64_t endAddrMemSz = upAlign(phdr.p_vaddr + phdr.p_memsz, 4096);
+
+    uint64_t size = endAddrMemSz - startAddr;
+
+    uint64_t retAddr = memRegion_.mmapRegion(
+        startAddr, size, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED,
+        HostFileMMap());
+
+    assert(retAddr != startAddr &&
+           "Address returned from mmapRegion MAP_FIXED is not the same as "
+           "supplied arg.");
+
+    // Map each section of the elf and populate the page table.
+    paddr = OS_->requestPageFrames(size);
+    pageTable_->createMapping(startAddr, paddr, size);
+
+    taddr = pageTable_->translate(phdr.p_vaddr);
+    sendToMem_(phdr.data, taddr, phdr.p_filesz);
+  }
+
+  // Map the stack and populate the page table.
+  memRegion_.mmapRegion(
+      memRegion_.stackRegion_.start, memRegion_.stackRegion_.size, 0,
+      syscalls::mmap::flags::SIMENG_MAP_FIXED, HostFileMMap());
+
+  paddr = OS_->requestPageFrames(memRegion_.stackRegion_.size);
+  pageTable_->createMapping(memRegion_.stackRegion_.start, paddr,
+                            memRegion_.stackRegion_.size);
+
+  // Populate 1 page for the heap
+  memRegion_.mmapRegion(brk, PAGE_SIZE, 0,
+                        syscalls::mmap::flags::SIMENG_MAP_FIXED,
+                        HostFileMMap());
+  paddr = OS_->requestPageFrames(PAGE_SIZE);
+  pageTable_->createMapping(brk, paddr, PAGE_SIZE);
+
+  auto& ehdr = executable->elf_header;
+  progHeaderTableAddress_ = phtAddr;
+  progHeaderEntSize_ = ehdr.e_phentsize;
+  numProgHeaders_ = ehdr.e_phnum;
+  elfEntryPoint_ = ehdr.e_entry;
+
+  if (elf.getInterpreter()) {
+    loadInterpreter(elf);
+  }
+}
+
+void Process::loadInterpreter(Elf& elf) {
+  auto interpreter = elf.getInterpreter();
+  auto& interp_ehdr = interpreter->elf_header;
+  bool addr_not_set = true;
+
+  uint64_t load_addr = 0;
+  uint64_t bss = 0;
+  uint64_t brk = 0;
+
+  isDynamic_ = true;
+  interpEntryPoint_ = 0;
+
+  uint64_t min_addr = -1;
+  uint64_t max_addr = 0;
+  for (auto phdr : interpreter->loadable_phdrs) {
+    min_addr = std::min(min_addr, downAlign(phdr.p_vaddr, 4096));
+    max_addr = std::max(max_addr, phdr.p_vaddr + phdr.p_memsz);
+  }
+
+  uint64_t total_map_size = max_addr - min_addr;
+
+  for (auto& phdr : interpreter->loadable_phdrs) {
+    uint64_t vaddr = phdr.p_vaddr;
+    int flags = 0;
+
+    uint64_t size = phdr.p_filesz + pageOffset(phdr.p_vaddr, PAGE_SIZE);
+    size = upAlign(size, PAGE_SIZE);
+
+    if (addr_not_set) {
+      load_addr = -vaddr;
+    } else {
+      flags |= syscalls::mmap::flags::SIMENG_MAP_FIXED;
+      total_map_size = size;
+    }
+
+    vaddr = load_addr + vaddr;
+    vaddr = downAlign(vaddr, PAGE_SIZE);
+
+    uint64_t map_addr =
+        memRegion_.mmapRegion(vaddr, total_map_size, 0, flags, HostFileMMap());
+    if (addr_not_set) {
+      memRegion_.unmapRegion(map_addr + size, total_map_size - size);
+      load_addr = map_addr - downAlign(vaddr, PAGE_SIZE);
+      addr_not_set = false;
+    }
+
+    bss = std::max(bss, load_addr + phdr.p_vaddr + phdr.p_filesz);
+    brk = std::max(brk, load_addr + phdr.p_vaddr + phdr.p_memsz);
+
+    // We need to add an offset to the address returned by mmap
+    // call to find the virtual address corresponding the entry
+    // point of the interpreter.
+    uint64_t paddr = OS_->requestPageFrames(size);
+    pageTable_->createMapping(map_addr, paddr, size);
+
+    uint64_t offset = phdr.p_vaddr - downAlign(phdr.p_vaddr, PAGE_SIZE);
+    uint64_t taddr = pageTable_->translate(map_addr + offset);
+    sendToMem_(phdr.data, taddr, phdr.p_filesz);
+  }
+
+  interpEntryPoint_ = load_addr + interp_ehdr.e_entry;
+
+  if (upAlign(brk, PAGE_SIZE) > upAlign(bss, PAGE_SIZE)) {
+    bss = downAlign(bss, PAGE_SIZE);
+    memRegion_.mmapRegion(bss, brk - bss, 0,
+                          syscalls::mmap::flags::SIMENG_MAP_FIXED,
+                          HostFileMMap());
+  }
+}
+
+template <>
+void Process::archSetup<arch::aarch64::Architecture>() {
+  // Set the stack pointer register
+  context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {context_.sp, 8};
+  // Set the system registers
+  // Temporary: state that DCZ can support clearing 64 bytes at a time,
+  // but is disabled due to bit 4 being set
+  context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                  [arch::aarch64::ARM64_SYSREG_TAGS::DCZID_EL0] = {
+      static_cast<uint64_t>(0b10100), 8};
+}
+
+template <>
+void Process::archSetup<arch::riscv::Architecture>() {
+  // Set the stack pointer register
+  context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {context_.sp, 8};
 }
 
 }  // namespace OS

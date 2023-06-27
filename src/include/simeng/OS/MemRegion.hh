@@ -32,11 +32,11 @@ struct ProcessStackRegion : public Range<uint64_t> {
 
   /** Constructor which initialises the ProcessStackRegion with specific values.
    */
-  ProcessStackRegion(uint64_t stackStartAddr, uint64_t size,
+  ProcessStackRegion(uint64_t stackStart, uint64_t stackEnd,
                      uint64_t initStackPtr)
-      : Range(stackStartAddr - size, stackStartAddr, size),
+      : Range(stackEnd, stackStart),
         initialStackPtr(initStackPtr),
-        stackStart(stackStartAddr) {}
+        stackStart(stackStart) {}
 };
 
 /** The ProcessHeapRegion struct holds the address bounds of the process heap.
@@ -47,28 +47,27 @@ struct ProcessHeapRegion : public Range<uint64_t> {
    * currently in use. */
   uint64_t brk;
 
+  /***/
+  uint64_t startBrk;
+
   /** Empty constructor for the Heap ProcessRegion. */
-  ProcessHeapRegion() : Range(), brk(0) {}
+  ProcessHeapRegion() : Range(), brk(0), startBrk(brk) {}
 
   /** Constructor which initialises the ProcessHeapRegion with specific
    * values. */
-  ProcessHeapRegion(uint64_t start, uint64_t size)
-      : Range(start, start + size, size), brk(start) {}
+  ProcessHeapRegion(uint64_t start, uint64_t end)
+      : Range(start, end), brk(start), startBrk(brk) {}
 };
 
 /** The ProcessMmapRegion struct holds the address bounds of the process mmap
  * region. */
 struct ProcessMmapRegion : public Range<uint64_t> {
-  /** Current end address of process mmap region. */
-  uint64_t mmapPtr;
-
   /** Empty constructor for the ProcessMmapRegion. */
-  ProcessMmapRegion() : Range(), mmapPtr(0) {}
+  ProcessMmapRegion() : Range() {}
 
   /** Constructor which initialises the ProcessMmapRegion with specific
    * values. */
-  ProcessMmapRegion(uint64_t start, uint64_t size)
-      : Range(start, start + size, size), mmapPtr(start) {}
+  ProcessMmapRegion(uint64_t start, uint64_t end) : Range(start, end) {}
 };
 
 /** The MemoryRegion class is associated with the Process class and holds
@@ -78,10 +77,12 @@ class MemRegion {
  public:
   /** This constructor creates a MemRegion with values specified by the owning
    * process. */
-  MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-            uint64_t procImgSize, uint64_t stackStart, uint64_t heapStart,
-            uint64_t mmapStart, uint64_t initStackPtr,
+  MemRegion(uint64_t stackStart, uint64_t stackEnd, uint64_t bss,
+            uint64_t heapStart, uint64_t heapEnd, uint64_t mmapStart,
+            uint64_t mmapEnd, uint64_t initStackPtr,
             std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
+  /***/
+  MemRegion(std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
 
   /** This constructor creates an empty MemRegion.*/
   MemRegion(){};
@@ -142,6 +143,10 @@ class MemRegion {
    * size 'size' overlaps with stack region. */
   bool overlapsStack(uint64_t addr, size_t size);
 
+  /***/
+  std::list<VirtualMemoryArea>::iterator findVmaNext(uint64_t startAddr,
+                                                     size_t size);
+
   /** This method retrieves the VMA containing addr. */
   VirtualMemoryArea getVMAFromAddr(uint64_t addr);
 
@@ -162,7 +167,18 @@ class MemRegion {
   /** Updates the stack related member variables on the given stackPtr. */
   void updateStack(const uint64_t stackPtr);
 
- private:
+  /***/
+  void setStackRegion(uint64_t stack_top, uint64_t stack_end);
+
+  /***/
+  void setHeapRegion(uint64_t heap_start, uint64_t heap_end);
+
+  /***/
+  void setMmapRegion(uint64_t mmap_start, uint64_t mmap_end);
+
+  /***/
+  void printVmaList();
+
   /** The ProcessStackRegion struct. */
   ProcessStackRegion stackRegion_;
 
@@ -174,6 +190,10 @@ class MemRegion {
    * threads belonging to the same thread group. */
   std::shared_ptr<ProcessMmapRegion> mmapRegion_ = nullptr;
 
+  /***/
+  uint64_t bss_ = 0;
+
+ private:
   /** Size of the process image. */
   uint64_t procImgSize_;
 
@@ -192,6 +212,9 @@ class MemRegion {
    * address range capable to accomodating the new VMA and return its start
    * address. */
   uint64_t addVma(VMA vma, uint64_t startAddr = 0);
+
+  /***/
+  uint64_t addVmaExactlyAtAddr(VMA vma, uint64_t startAddr);
 
   /** Method to remove VMAs. This method returns the combined size of all VMAs
    * that were removed. A return value of 0 does not signify an error.*/

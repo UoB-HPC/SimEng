@@ -1,6 +1,10 @@
 #include "simeng/OS/MemRegion.hh"
 
+#include <sys/mman.h>
+
+#include <cassert>
 #include <cstdint>
+#include <forward_list>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -8,21 +12,28 @@
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Vma.hh"
+#include "simeng/util/Math.hh"
+#include "simeng/util/Optimisations.hh"
 
 namespace simeng {
 namespace OS {
 
-MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-                     uint64_t procImgSize, uint64_t stackStart,
-                     uint64_t heapStart, uint64_t mmapStart,
-                     uint64_t initStackPtr,
-                     std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
+using namespace syscalls::mmap::flags;
 
-    : stackRegion_(ProcessStackRegion(stackStart, stackSize, initStackPtr)),
-      heapRegion_(std::make_shared<ProcessHeapRegion>(heapStart, heapSize)),
-      mmapRegion_(std::make_shared<ProcessMmapRegion>(mmapStart, mmapSize)),
-      procImgSize_(procImgSize),
+MemRegion::MemRegion(uint64_t stackStart, uint64_t stackEnd, uint64_t bss,
+                     uint64_t heapStart, uint64_t heapEnd, uint64_t mmapStart,
+                     uint64_t mmapEnd, uint64_t initStackPtr,
+                     std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
+    : stackRegion_(ProcessStackRegion(stackStart, stackEnd, initStackPtr)),
+      heapRegion_(std::make_shared<ProcessHeapRegion>(heapStart, heapEnd)),
+      mmapRegion_(std::make_shared<ProcessMmapRegion>(mmapStart, mmapEnd)),
+      bss_(bss),
+      procImgSize_(stackStart),
       unmapPageTable_(unmapPageTable),
+      VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>()) {}
+
+MemRegion::MemRegion(std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
+    : unmapPageTable_(unmapPageTable),
       VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>()) {}
 
 MemRegion::~MemRegion() {}
@@ -55,115 +66,220 @@ uint64_t MemRegion::getMmapStart() const { return mmapRegion_->start; }
 
 uint64_t MemRegion::getProcImgSize() const { return procImgSize_; }
 
-uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  if (newBrk == 0 || newBrk == heapRegion_->brk) {
-    return heapRegion_->brk;
-  }
+uint64_t MemRegion::updateBrkRegion(uint64_t brk) {
   // We have to make sure that the binary under simulation isn't trying to
   // deallocate more memory than is present in the process heap region.
-  if (newBrk < heapRegion_->start) {
-    std::cerr << "[SimEng:MemRegion] Attemped to deallocate more memory than "
-                 "is available to the process heap region."
+  if (brk < heapRegion_->startBrk) {
+    if (brk != 0) {
+      std::cerr << "[SimEng:MemRegion] Attemped to deallocate more memory than "
+                   "is available to the process heap region."
+                << std::endl;
+    }
+    return heapRegion_->brk;
+  }
+
+  uint64_t newBrk = upAlign(brk, PAGE_SIZE);
+  uint64_t oldBrk = upAlign(heapRegion_->brk, PAGE_SIZE);
+
+  if (oldBrk == newBrk) {
+    heapRegion_->brk = brk;
+    return brk;
+  }
+
+  if (brk < heapRegion_->brk) {
+    uint64_t origBrk = heapRegion_->brk;
+    heapRegion_->brk = brk;
+    if (unmapRegion(brk, heapRegion_->brk - brk) < 0) {
+      heapRegion_->brk = origBrk;
+      return origBrk;
+    }
+    return heapRegion_->brk;
+  }
+
+  if (newBrk > heapRegion_->end) {
+    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory on the "
+                 "heap than is available to the process. Please increase the "
+                 "{Process-Image:{Heap-Size: <size>}} parameter in the YAML "
+                 "model config file used to run this simulation."
               << std::endl;
     std::exit(1);
   }
-  // For simplicity we update only the brk point when the binary under
-  // simulation is giving memory back to the system. We do not delete any page
-  // table mappings or page frames assosciated with the deallocated memory
-  // region.
-  if (newBrk < heapRegion_->brk) {
-    heapRegion_->brk = newBrk;
-    return heapRegion_->brk;
-  }
-  if (newBrk > heapRegion_->end) {
-    // TODO: This needs to fixed such that more extra memory allocation is
-    // mmapd.
-    std::cerr
-        << "[SimEng:MemRegion] Attemped to allocate more memory on the "
-           "heap than is available to the process. Please increase the "
-           "{Process-Image:{Heap-Size: <size>}} parameter in the YAML model "
-           "config file used to run this simulation."
-        << std::endl;
-    std::exit(1);
-  }
 
-  if (newBrk > heapRegion_->brk) {
-    heapRegion_->brk = newBrk;
-  }
-  return heapRegion_->brk;
+  uint64_t retAddr =
+      mmapRegion(newBrk, newBrk - oldBrk, 0, SIMENG_MAP_FIXED, HostFileMMap());
+  assert(retAddr == newBrk &&
+         "[SimEng:MemRegion] Address returned by mmapRegion with MAP_FIXED flag"
+         "returned different address - updateBrk.");
+  heapRegion_->brk = brk;
+
+  return brk;
 }
 
 void MemRegion::updateStack(const uint64_t stackPtr) {
   VirtualMemoryArea vma = getVMAFromAddr(stackPtr);
-  // stackStart is vmEnd as stack grows down.
-  stackRegion_ = ProcessStackRegion(vma.vmEnd_, vma.vmSize_, stackPtr);
+  stackRegion_ = ProcessStackRegion(vma.vmStart_, vma.vmEnd_, stackPtr);
 }
 
-uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
-  bool isStartAddrValid = (startAddr >= mmapRegion_->start) &&
-                          (startAddr + vma.vmSize_ < mmapRegion_->end);
-  if (startAddr != 0 && !isStartAddrValid) {
-    std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
-                 "the mmap range: "
-              << startAddr << " - " << startAddr + vma.vmSize_ << std::endl;
-    return -1;
-  }
-  size_t size = vma.vmSize_;
-  auto last = std::prev(VMAlist_->end(), 1);
-  bool allocated = false;
+void MemRegion::setStackRegion(uint64_t stack_top, uint64_t stack_end) {
+  stackRegion_ = ProcessStackRegion(stack_end, stack_top, 0);
+};
 
-  auto itr = VMAlist_->begin();
-  if (VMAlist_->size() > 0) {
-    // Check if the new VMA can be allocated between mmapStart and the first VMA
-    // in the VMA list.
-    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapRegion_->start;
-    uint64_t space = itr->vmStart_ - effectiveMmapStart;
-    if (effectiveMmapStart < itr->vmStart_ && space >= size) {
-      vma.vmStart_ = effectiveMmapStart;
-      vma.vmEnd_ = effectiveMmapStart + size;
-      VMAlist_->insert(itr, vma);
-      return vma.vmStart_;
-    }
-    // As per the mmap specification, if the VMA list has multiple VMAs then
-    // starting from the beginning of the VMA list check if the new VMA can be
-    // allocated between two existing ones. If startAddr is 0 check all address
-    // ranges between existing VMAs. However, if startAddr is non-zero then only
-    // search for an available address range which either contains startAddr or
-    // has a starting address greater than startAddr. If no address range is
-    // found, then the new VMA is allocated at the end of VMA list.
-    while (itr != last) {
-      auto next = std::next(itr, 1);
-      bool rangeSucceedsOrContainsSAddr = next->vmStart_ > startAddr;
-      uint64_t vmaStart = itr->vmEnd_ <= startAddr ? startAddr : itr->vmEnd_;
-      uint64_t rangeSpace = next->vmStart_ - vmaStart;
-      if (rangeSucceedsOrContainsSAddr && rangeSpace >= size) {
-        vma.vmStart_ = vmaStart;
-        vma.vmEnd_ = vmaStart + size;
-        // std::list::insert inserts elements before the position specified by
-        // the iterator, hence why next is used instead of itr.
-        VMAlist_->insert(next, vma);
-        allocated = true;
-        break;
-      }
+void MemRegion::setHeapRegion(uint64_t heap_start, uint64_t heap_end) {
+  if (!heapRegion_) {
+    heapRegion_ = std::make_shared<ProcessHeapRegion>(heap_start, heap_end);
+  } else {
+    heapRegion_->start = heap_start;
+    heapRegion_->end = heap_end;
+    heapRegion_->size = heap_end - heap_start;
+    heapRegion_->startBrk = heap_start;
+    heapRegion_->brk = heap_start;
+  }
+};
+
+void MemRegion::setMmapRegion(uint64_t mmap_start, uint64_t mmap_end) {
+  if (!mmapRegion_) {
+    mmapRegion_ = std::make_shared<ProcessMmapRegion>(mmap_start, mmap_end);
+  } else {
+    mmapRegion_->start = mmap_start;
+    mmapRegion_->end = mmap_end;
+    mmapRegion_->size = mmap_end - mmap_start;
+  }
+};
+
+uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
+  size_t size = vma.vmSize_;
+  auto first = --VMAlist_->rend();
+  auto itr = VMAlist_->rbegin();
+
+  if (likely(VMAlist_->size() > 0)) {
+    /*
+     The VMAlist_ contains all VMAs, including the stack VMA, which resides
+     beyond the mmap region. The stack is located at the top of the address
+     range. In SimEng, the entire stack is currently mapped as a single VMA.
+     Since the VMAList_ is always sorted, the first reverse iterator always
+     points to the stack VMA. This iterator should be skipped in the mmap
+     algorithm to ensure that no mmap allocations occur between the highest
+     address of the mmap region and the lowest address of the stack. However,
+     if the MAP_FIXED flag is specified, the allocation can be made anywhere
+     within the entire address range: [0, 2^48); So we have make sure
+     that we skip all VMA allocations beyond mmap region.
+     */
+    while (itr != VMAlist_->rend() && itr->vmStart_ >= mmapRegion_->end) {
       itr++;
     }
-  }
-  // If the new VMA has not been allocated it means that it couldn't fit between
-  // two existing VMAs or the VMA list is empty. This means that either we are
-  // the tail of the VMA list or we are now allocating the head. If the
-  // startAddr is less than mmap pointer its value will be set to the mmap
-  // pointer. However if it is greater than the mmap pointer it remains the
-  // same. Here startAddr is either mmap pointer or an address greater than mmap
-  // pointer.
-  if (!allocated) {
-    startAddr =
-        startAddr >= mmapRegion_->mmapPtr ? startAddr : mmapRegion_->mmapPtr;
+
+    uint64_t effStartAddr = startAddr;
+    if (!startAddr) {
+      effStartAddr = mmapRegion_->end - size;
+      startAddr = mmapRegion_->end;
+    }
+    uint64_t space = mmapRegion_->end - effStartAddr;
+    if (effStartAddr >= itr->vmEnd_ && space >= size) {
+      vma.vmStart_ = effStartAddr;
+      vma.vmEnd_ = effStartAddr + size;
+      VMAlist_->insert(itr.base(), vma);
+      return vma.vmStart_;
+    }
+
+    while (itr != first) {
+      auto next = std::next(itr, 1);
+      uint64_t oldStart = startAddr;
+      startAddr = startAddr && startAddr < itr->vmStart_ ? startAddr
+                                                         : itr->vmStart_ - size;
+      space = itr->vmStart_ - startAddr;
+      if (startAddr >= next->vmEnd_ && space >= size) {
+        vma.vmStart_ = startAddr;
+        vma.vmEnd_ = startAddr + size;
+        VMAlist_->insert(next.base(), vma);
+        return vma.vmStart_;
+      }
+      itr = next;
+      startAddr = oldStart;
+    }
+
+    /*
+    It is highly unlikely for us to enter this region of the algorithm
+    because during the execution of SimEng, whether it's a binary or regression
+    test, there will always be at least three mappings prior to the simulation
+    starting. These mappings include PT_LOAD sections from the binary or
+    instructions from regression tests, as well as the heap and stack.
+
+    Although it is improbable, there are three scenarios in which we may enter
+    this region of the algorithm:
+
+    1) The entire mmap region is heavily congested, and we are compelled to
+       search for space in the lower part of the mmap address space.
+
+    2) The user specifies a valid but extremely small startAddr, and we make an
+       effort to accommodate the user's request.
+
+    3) During the execution of unit/integration tests, when the process memory
+       layout is not defined. In order to ensure functional correctness, we need
+       to handle cases where the algorithm cannot find space between
+       pre-existing VMAs, even though there is still ample space available in
+       the mmap address region.
+    */
+    startAddr = itr->vmEnd_ - size;
+    space = startAddr - mmapRegion_->start;
+    if (startAddr < mmapRegion_->start) {
+      // We can't find any space for the new VMA, the entire VMA space is
+      // congested and mapped.
+      return 0;
+    }
     vma.vmStart_ = startAddr;
-    mmapRegion_->mmapPtr = startAddr + size;
-    vma.vmEnd_ = mmapRegion_->mmapPtr;
-    VMAlist_->push_back(vma);
+    vma.vmEnd_ = startAddr + size;
+    VMAlist_->push_front(vma);
+    return vma.vmStart_;
   }
+  // This is the first allocation ever.
+  uint64_t space = mmapRegion_->end - startAddr;
+  startAddr =
+      (startAddr) && space >= size ? startAddr : mmapRegion_->end - size;
+  vma.vmEnd_ = startAddr + size;
+  vma.vmStart_ = startAddr;
+  VMAlist_->push_front(vma);
   return vma.vmStart_;
+}
+
+uint64_t MemRegion::addVmaExactlyAtAddr(VMA vma, uint64_t startAddr) {
+  size_t size = vma.vmSize_;
+  auto last = std::prev(VMAlist_->end(), 1);
+
+  vma.vmStart_ = startAddr;
+  vma.vmEnd_ = startAddr + size;
+
+  auto itr = VMAlist_->begin();
+  if (VMAlist_->size() && startAddr < itr->vmStart_) {
+    VMAlist_->push_front(vma);
+    return startAddr;
+  }
+
+  while (itr != last && itr->vmEnd_ <= startAddr) {
+    auto next = std::next(itr);
+    if (next->vmStart_ < startAddr) {
+      itr = next;
+      continue;
+    }
+    if (itr->contains(startAddr, size) || itr->overlaps(startAddr, size)) {
+      // error MAP_FIXED can't succed cause region is still mapped.
+      return -1;
+    }
+
+    if (next->vmStart_ - itr->vmEnd_ < size) {
+      // error not enough space, this should've been detected before and
+      // unmapped
+      return -1;
+    }
+    VMAlist_->insert(next, vma);
+    return startAddr;
+  }
+
+  if (last->contains(startAddr, size) || last->overlaps(startAddr, size)) {
+    // error MAP_FIXED can't succed cause region is still mapped.
+    return -1;
+  }
+  VMAlist_->push_back(vma);
+  return startAddr;
 }
 
 int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
@@ -180,8 +296,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       delsize += itr->vmSize_;
       itr = VMAlist_->erase(itr);
     }
-    // If the address range is within the bounds of the current VMA, split the
-    // VMA into two smaller VMAs and increase the VMA list size by 1
+    // If the address range is within the bounds of the current VMA, split
+    // the VMA into two smaller VMAs and increase the VMA list size by 1
     //      [---Addr---]
     // [--------VMA --------)
     else if (itr->contains(addr, length)) {
@@ -193,9 +309,9 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
         VMA newVma = VMA(*itr);
         itr->trimRangeEnd(addr);
         newVma.trimRangeStart(endAddr);
-        // std::list::insert inserts element before the position specified by
-        // the iterator. Hence std::next is used to advance the iterator so that
-        // the new VMA can be inserted at the correct place.
+        // std::list::insert inserts element before the position specified
+        // by the iterator. Hence std::next is used to advance the iterator
+        // so that the new VMA can be inserted at the correct place.
         VMAlist_->insert(std::next(itr, 1), newVma);
       }
       delsize += length;
@@ -225,50 +341,59 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
 
 int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
                               int flags, HostFileMMap hfmmap) {
-  // Check if flag contains MAP_FIXED, as it is not supported yet.
-  uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
-  if (fixed) {
-    std::cerr << "[SimEng:MemRegion] MAP_FIXED flag to MMAP calls is not "
-                 "supported yet."
+  if (startAddr + length > stackRegion_.end) {
+    std::cerr << "[SimEng:MemRegion] Address range given to mmapRegion is "
+                 "greater than virtual address space"
               << std::endl;
-    std::exit(1);
+    return -1;
   }
-  // Always use pageSize aligned sizes.
-  uint64_t size = upAlign(length, PAGE_SIZE);
 
-  VMA vma = VMA(prot, flags, size, hfmmap);
-  // Check if provided hint address exists in VMA region or overlaps with heap
-  // or stack regions.
-  if (startAddr) {
-    startAddr = upAlign(startAddr, PAGE_SIZE);
-    if (overlapsStack(startAddr, size)) {
-      std::cerr
-          << "[SimEng:MemRegion] Provided hint overlaps with the Stack region"
-          << std::endl;
-      return -1;
-    }
-    if (overlapsHeap(startAddr, size)) {
-      std::cerr
-          << "[SimEng:MemRegion] Provided hint overlaps with the Heap region"
-          << std::endl;
-      return -1;
-    }
-  }
-  // TODO: Check if offset should be contained in HostBackedFileMMap,
-  // because hfmmaps are shared during unmaps.
-  return addVma(vma, startAddr);
-}
-
-int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
-  if (!((addr >= mmapRegion_->start) && (addr + length < mmapRegion_->end))) {
-    std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
-                 "the mmap range: "
-              << addr << " - " << addr + length << std::endl;
+  // mmap_min_addr
+  if (startAddr && startAddr < PAGE_SIZE) {
+    std::cerr << "[SimEng::MemRegion] Start address given to mmapRegion is "
+                 "less than mmap_min_addr: "
+              << startAddr << std::endl;
     return -1;
   }
 
   uint64_t size = upAlign(length, PAGE_SIZE);
-  addr = downAlign(addr, PAGE_SIZE);
+
+  uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
+
+  if (fixed) {
+    if (downAlign(startAddr, PAGE_SIZE) != startAddr) {
+      std::cerr << "Addr argument specified with MAP_FIXED flag to the mmap "
+                   "call is not page aligned."
+                << std::endl;
+      return -1;
+    }
+
+    if (isVmMapped(startAddr, length)) {
+      unmapRegion(startAddr, length);
+    }
+
+    VMA vma = VMA(prot, flags, size, hfmmap);
+    uint64_t retAddr = addVmaExactlyAtAddr(vma, startAddr);
+    return retAddr;
+  }
+
+  startAddr = downAlign(startAddr, PAGE_SIZE);
+  VMA vma = VMA(prot, flags, size, hfmmap);
+  // TODO: Check if offset should be contained in HostBackedFileMMap,
+  // because hfmmaps are shared during unmaps.
+  uint64_t retAddr = addVma(vma, startAddr);
+  return retAddr;
+}
+
+int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
+  if (downAlign(addr, 4096) != addr) {
+    std::cerr << "[SimEng:MemRegion] Addr provided to unmapRegion not page "
+                 "size aligned."
+              << std::endl;
+    return -1;
+  }
+
+  uint64_t size = upAlign(length, PAGE_SIZE);
   uint64_t value = removeVma(addr, size);
 
   unmapPageTable_(addr, size);
@@ -303,6 +428,24 @@ bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {
 
 bool MemRegion::overlapsStack(uint64_t addr, size_t size) {
   return stackRegion_.overlaps(addr, size);
+}
+
+void MemRegion::printVmaList() {
+  auto itr = VMAlist_->begin();
+  std::cout << "Vma-list" << std::endl;
+  uint16_t count = 1;
+  while (itr != VMAlist_->end()) {
+    std::cout << "Vma: " << count << std::endl;
+    std::cout << "Start: " << std::hex << "0x" << itr->vmStart_ << std::dec
+              << " ( " << itr->vmStart_ << " )" << std::endl;
+    std::cout << "End: " << std::hex << "0x" << itr->vmEnd_ << std::dec << " ( "
+              << itr->vmEnd_ << " )" << std::endl;
+    std::cout << "Size: " << std::hex << "0x" << itr->vmSize_ << std::dec
+              << " ( " << itr->vmSize_ << " )" << std::endl;
+    std::cout << std::endl;
+    itr++;
+    count++;
+  }
 }
 
 }  // namespace OS

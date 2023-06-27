@@ -637,6 +637,12 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         break;
       }
+      case Opcode::AArch64_CMEQv1i64rz: {  // cmeq d1, d2, #0
+        results[0] = neonHelp::vecCompare<uint64_t, 1>(
+            operands, true,
+            [](int64_t x, int64_t y) -> bool { return (x == y); });
+        break;
+      }
       case Opcode::AArch64_CMEQv4i32: {  // cmeq vd.4s, vn.4s, vm.4s
         results[0] = neonHelp::vecCompare<uint32_t, 4>(
             operands, false,

@@ -1,10 +1,22 @@
 #include "simeng/Elf.hh"
 
+#include <elf.h>
+#include <fcntl.h>
+#include <libelf.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
 #include <algorithm>
+#include <array>
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <memory>
+#include <string>
 
+#include "simeng/Config.hh"
 #include "simeng/util/Math.hh"
 #include "simeng/version.hh"
 
@@ -16,42 +28,25 @@ namespace simeng {
  * presented as documentation has been referenced from:
  * https://man7.org/linux/man-pages/man5/elf.5.html */
 
-Elf::Elf(std::string path) {
-  std::ifstream file(path, std::ios::binary);
-  if (!file.is_open()) {
-    return;
-  }
-
+Elf64_Ehdr Elf::parseElfEhdr(std::ifstream& elf_file) {
+  Elf64_Ehdr ehdr;
   /** In the Linux source tree the ELF header
    * is defined by the elf64_hdr struct for 64-bit systems.
-   * `elf64_hdr->e_ident` is an array of bytes which specifies
+   * `elf64_hdr->e_ident` is an array of 16 bytes which specifies
    * how to interpret the ELF file, independent of the
    * processor or the file's remaining contents. All ELF
    * files start with the ELF header. */
+  elf_file.seekg(0);
 
-  /** First four bytes of the ELF header represent the ELF Magic Number. */
-  char elfMagic[4] = {0x7f, 'E', 'L', 'F'};
-  char fileMagic[4];
-  file.read(fileMagic, 4);
-  if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    std::cerr << "[SimEng:Elf] Elf magic does not match" << std::endl;
-    return;
-  }
+  std::array<char, EI_NIDENT> eident;
+  elf_file.read(eident.data(), EI_NIDENT);
+  ehdr.e_ident = eident;
 
-  /** The fifth byte of the ELF Header identifies the architecture
-   * of the ELF binary i.e 32-bit or 64-bit. */
-
-  // Check whether this is a 32 or 64-bit executable
-  char bitFormat;
-  file.read(&bitFormat, sizeof(bitFormat));
-  if (bitFormat != ElfBitFormat::Format64) {
-    std::cerr << "[SimEng:Elf] Unsupported architecture detected in Elf"
-              << std::endl;
-    return;
-  }
-
-  isValid_ = true;
-
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_type), sizeof(ehdr.e_type));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_machine),
+                sizeof(ehdr.e_machine));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_version),
+                sizeof(ehdr.e_version));
   /** Starting from the 24th byte of the ELF header a 64-bit value
    * represents the virtual address to which the system first transfers
    * control, thus starting the process.
@@ -59,9 +54,7 @@ Elf::Elf(std::string path) {
 
   // Seek to the entry point of the file.
   // The information in between is discarded
-  file.seekg(0x18);
-  file.read(reinterpret_cast<char*>(&entryPoint_), sizeof(entryPoint_));
-
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_entry), sizeof(ehdr.e_entry));
   /** Starting from the 32nd byte of the ELF Header a 64-bit value
    * represents the offset of the ELF Program header or
    * Program header table in the ELF file.
@@ -70,9 +63,10 @@ Elf::Elf(std::string path) {
   // Seek to the byte representing the start of the header offset table.
   // Holds the program header table's file offset in bytes.  If the file has no
   // program header table, this member holds zero
-  uint64_t e_phoff = 0;
-  file.read(reinterpret_cast<char*>(&e_phoff), sizeof(e_phoff));
-
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_phoff), sizeof(ehdr.e_phoff));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_shoff), sizeof(ehdr.e_shoff));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_flags), sizeof(ehdr.e_flags));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_ehsize), sizeof(ehdr.e_ehsize));
   /** Starting 54th byte of the ELF Header a 16-bit value indicates
    * the size of each entry in the ELF Program header. In the `elf64_hdr`
    * struct this value maps to the member `Elf64_Half e_phentsize`. All
@@ -82,26 +76,25 @@ Elf::Elf(std::string path) {
    * struct this value maps to `Elf64_Half e_phnum`. */
 
   // Seek to the byte representing header entry size.
-  file.seekg(0x36);
-  file.read(reinterpret_cast<char*>(&e_phentsize_), sizeof(e_phentsize_));
-
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_phentsize),
+                sizeof(ehdr.e_phentsize));
   /** Starting from the 56th byte a 16-bit value represents the number
    * of program header entries in the ELF Program header table. In the
    * `elf64_hdr` struct this value maps to `Elf64_Half e_phnum`.
    */
-  file.read(reinterpret_cast<char*>(&e_phnum_), sizeof(e_phnum_));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_phnum), sizeof(ehdr.e_phnum));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_shentsize),
+                sizeof(ehdr.e_shentsize));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_shnum), sizeof(ehdr.e_shnum));
+  elf_file.read(reinterpret_cast<char*>(&ehdr.e_shstrndx),
+                sizeof(ehdr.e_shstrndx));
+  return ehdr;
+}
 
-  // Reserve enough space for all headers
-  pheaders_.reserve(e_phnum_);
-
-  // Loop over all headers and extract them.
-  for (size_t i = 0; i < e_phnum_; i++) {
-    // Since all headers entries have the same size.
-    // We can extract the nth header using the header offset
-    // and header entry size.
-    file.seekg(e_phoff + (i * e_phentsize_));
-    auto header = Elf64_Phdr();
-
+std::vector<Elf64_Phdr> Elf::parseElfPhdrs(std::ifstream& elf_file,
+                                           Elf64_Ehdr& ehdr) {
+  std::vector<Elf64_Phdr> hdrs;
+  for (uint16_t x = 0; x < ehdr.e_phnum; x++) {
     /** Like the ELF Header, the ELF Program header is also defined
      * using a struct:
      * typedef struct {
@@ -127,65 +120,105 @@ Elf::Elf(std::string path) {
      * beginning of the file at which the first byte of the segment resides. */
 
     // Each address-related field is 8 bytes in a 64-bit ELF file
-    const int fieldBytes = 8;
-    file.read(reinterpret_cast<char*>(&(header.p_type)), sizeof(header.p_type));
-    file.seekg(4, std::ios::cur);  // Skip flags
-    file.read(reinterpret_cast<char*>(&(header.p_offset)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.p_vaddr)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.p_paddr)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.p_filesz)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.p_memsz)), fieldBytes);
-    // Skip p_align
-
-    // Look for the largest virtual address by adding size of the header to its
-    // starting virtual address. This will be used to determine ELF image size.
-    uint64_t addr = header.p_vaddr + header.p_memsz;
-    elfImageSize_ = std::max(elfImageSize_, addr);
-
-    // Determine the virtual address of the header table in memory from
-    // individual program headers. Used to populate the auxvec
-    if (header.p_offset <= e_phoff &&
-        e_phoff < header.p_offset + header.p_filesz) {
-      phdrTableAddress_ = header.p_vaddr + (e_phoff - header.p_offset);
-    }
-
+    uint32_t offset = ehdr.e_phoff + (x * ehdr.e_phentsize);
+    uint8_t fieldBytes = 8;
+    Elf64_Phdr phdr;
+    // Since all headers entries have the same size.
+    // We can extract the nth header using the header offset
+    // and header entry size.
+    elf_file.seekg(offset);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_type)), sizeof(phdr.p_type));
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_flags)),
+                  sizeof(phdr.p_flags));
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_offset)), fieldBytes);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_vaddr)), fieldBytes);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_paddr)), fieldBytes);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_filesz)), fieldBytes);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_memsz)), fieldBytes);
+    elf_file.read(reinterpret_cast<char*>(&(phdr.p_align)), fieldBytes);
     /** The ELF Program header has a member called `p_type`, which represents
      * the kind of data or memory segments described by the program header.
      * The value PT_LOAD=1 represents a loadable segment. In other words,
      * it contains initialized data that contributes to the program's
      * memory image. */
 
-    // Process headers; only observe LOAD sections for this basic implementation
-    if (header.p_type == 1) {  // LOAD
-      // Initialise the header data vector to size of memorySize as memory size
-      // can be bigger than fileSize, due to padding.
-      header.headerData.resize(header.p_memsz);
-
-      // Read `p_filesz` bytes from `file` into the appropriate place in process
-      // memory
-      file.seekg(header.p_offset);
-      file.read(header.headerData.data(), header.p_filesz);
-      pheaders_.push_back(header);
+    if (phdr.p_type == PT_LOAD || phdr.p_type == PT_INTERP) {
+      phdr.data.resize(phdr.p_filesz);
+      elf_file.seekg(phdr.p_offset);
+      elf_file.read(phdr.data.data(), phdr.p_filesz);
+    }
+    if (phdr.p_type == PT_LOAD)
+      hdrs.push_back(phdr);
+    else if (phdr.p_type == PT_INTERP) {
+      interpreterPath_ = std::string(phdr.data.begin(), phdr.data.end());
+      isDynamic_ = true;
     }
   }
+  return hdrs;
+}
 
+std::shared_ptr<Elf_Binary> Elf::parseElfBinary(std::string fpath) {
+  std::ifstream file(fpath, std::ios::binary);
+  if (!file.is_open()) {
+    std::cerr << "[SimEng:Elf] Could not open file at pathname: " << fpath
+              << std::endl;
+    std::exit(1);
+  }
+  char elfMagic[4] = {0x7f, 'E', 'L', 'F'};
+  auto ehdr = parseElfEhdr(file);
+
+  auto itr = supported_archs.find(ehdr.e_machine);
+  if (itr == supported_archs.end()) {
+    std::cerr << "[SimEng:Elf] Architecture of Elf file at path: " << fpath
+              << " not supported." << std::endl;
+  }
+
+  if (std::memcmp(elfMagic, ehdr.e_ident.data(), sizeof(elfMagic))) {
+    std::cerr << "[SimEng:Elf] Elf magic does not match" << std::endl;
+    std::exit(1);
+  }
+  if (ehdr.e_ident[EI_CLASS] != static_cast<char>(ElfBitFormat::Format64)) {
+    std::cerr << "[SimEng:Elf] Unsupported architecture detected in Elf"
+              << std::endl;
+    std::exit(1);
+  }
+
+  auto phdrs = parseElfPhdrs(file, ehdr);
   file.close();
-  return;
+  return std::shared_ptr<Elf_Binary>(new Elf_Binary{ehdr, phdrs});
 }
 
-uint64_t Elf::getElfImageSize() const { return elfImageSize_; }
+Elf::Elf(std::string path) {
+  executable_ = parseElfBinary(path);
 
-uint64_t Elf::getEntryPoint() const { return entryPoint_; }
-
-bool Elf::isValid() const { return isValid_; }
-
-uint64_t Elf::getPhdrTableAddress() const { return phdrTableAddress_; }
-
-uint64_t Elf::getPhdrEntrySize() const { return e_phentsize_; }
-
-uint64_t Elf::getNumPhdr() const { return e_phnum_; }
-
-const std::vector<Elf64_Phdr>& Elf::getProcessedHeaders() const {
-  return pheaders_;
+  if (isDynamic_) {
+    // Override the interpreter path provided by the Elf executable's PT_INTERP
+    // program header. This is necessary because the ISA of the machine running
+    // SimEng may differ from the ISA of the executable. For instance, the user
+    // might be running an AArch64 simulation on an x86 system.
+    std::string cfgInterpPath =
+        Config::get()["Interpreter"]["Path"].as<std::string>();
+    if (cfgInterpPath.size()) {
+      std::cout << "[SimEng:Elf] Overriding Elf interpreter path from: "
+                << interpreterPath_ << " to: " << cfgInterpPath << std::endl;
+      interpreterPath_ = cfgInterpPath;
+    }
+    interpreter_ = parseElfBinary(interpreterPath_);
+    // Check similarity in architecture of Elf executable and the interpreter
+    if (interpreter_->elf_header.e_machine !=
+        executable_->elf_header.e_machine) {
+      std::cout << "[SimEng:Elf] Architecture of Elf executable at pathname: "
+                << path << " and interpreter at path: " << interpreterPath_
+                << "don't match." << std::endl;
+      std::exit(1);
+    }
+  }
 }
+
+bool Elf::isDynamic() const { return isDynamic_; }
+
+std::shared_ptr<Elf_Binary> Elf::getExecutable() const { return executable_; }
+
+std::shared_ptr<Elf_Binary> Elf::getInterpreter() const { return interpreter_; }
+
 }  // namespace simeng

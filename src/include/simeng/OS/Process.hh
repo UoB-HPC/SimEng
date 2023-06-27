@@ -2,6 +2,7 @@
 
 #include <sys/resource.h>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 
@@ -134,6 +135,16 @@ class Process {
 
   ~Process();
 
+  template <class T>
+  void init(const std::vector<std::string>& commandLine, SimOS* OS,
+            std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+            uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+
+  template <class T>
+  void init(span<char> instructions, SimOS* OS,
+            std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+            uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
 
@@ -223,11 +234,31 @@ class Process {
   void initContext(const uint64_t stackPtr,
                    const std::vector<RegisterFileStructure>& regFileStructure);
 
+  /***/
+  template <class T>
+  void setupMemRegion();
+
+  /***/
+  void loadInterpreter(Elf& elf);
+
+  /***/
+  void loadElf(Elf& elf);
+
+  /***/
+  template <class T>
+  void archSetup();
+
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 
+  /***/
+  bool isDynamic_ = false;
+
   /** The entry point of the process. */
-  uint64_t entryPoint_ = 0;
+  uint64_t elfEntryPoint_ = 0;
+
+  /***/
+  uint64_t interpEntryPoint_ = 0;
 
   /** Program header table virtual address */
   uint64_t progHeaderTableAddress_ = 0;
