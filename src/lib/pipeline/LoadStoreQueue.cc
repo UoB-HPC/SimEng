@@ -277,8 +277,8 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& insn) {
     conflictionMap_.erase(itSt);
   }
 
-  if (uop->isStoreCond()) {
-    requestedCondStores_.emplace(uop->getSequenceId(), uop);
+  if (insn->isStoreCond()) {
+    requestedCondStores_.emplace(insn->getSequenceId(), insn);
   }
   storeQueue_.pop_front();
 
