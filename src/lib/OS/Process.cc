@@ -32,18 +32,15 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
-                 std::vector<RegisterFileStructure> regFileStructure,
-                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
-                 size_t simulationMemSize)
+Process::Process(SimOS* OS, uint64_t TGID, uint64_t TID, sendToMemory sendToMem)
     : fdArray_(std::make_shared<FileDescArray>()),
-      commandLine_(commandLine),
       TGID_(TGID),
       TID_(TID),
       pageTable_(std::make_shared<PageTable>()),
       OS_(OS),
       sendToMem_(sendToMem) {}
 
+/**
 Process::Process(span<char> instructions, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
                  uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
@@ -113,8 +110,8 @@ Process::Process(span<char> instructions, SimOS* OS,
     return value;
   };
 
-  memRegion_ = MemRegion(stackStart, stackEnd, instructions.size(), heapStart,
-                         heapEnd, mmapStart, mmapEnd, stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackStart, stackEnd, heapStart, heapEnd, mmapStart,
+                         mmapEnd, stackPtr, unmapFn);
 
   uint64_t taddr = pageTable_->translate(0);
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
@@ -125,6 +122,7 @@ Process::Process(span<char> instructions, SimOS* OS,
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
 }
+*/
 
 Process::~Process() {}
 
@@ -393,15 +391,44 @@ void Process::setupMemRegion<arch::riscv::Architecture>() {
   memRegion_.setMmapRegion(mmap_start, mmap_end);
 }
 
-template <class T>
-void Process::init(const std::vector<std::string>& commandLine, SimOS* OS,
-                   std::vector<RegisterFileStructure> regFileStructure,
-                   uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
-                   size_t simulationMemSize) {
-  // Parse the Elf file.
-  assert(commandLine.size() > 0);
-  Elf elf(commandLine[0]);
+void Process::loadInstructions(span<char>& instructions, size_t simMemSize) {
+  YAML::Node& config = Config::get();
+  uint64_t heapSize =
+      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t stackSize =
+      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t mmapSize =
+      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
 
+  uint64_t instrSize = upAlign(instructions.size(), PAGE_SIZE);
+  uint64_t instrEnd = instrSize;
+
+  // Check if the process image can fit inside the simulation memory.
+  size_t totalProcLayoutSize = instrSize + heapSize + stackSize + mmapSize;
+  if (totalProcLayoutSize > simMemSize) {
+    std::cerr
+        << "[SimEng:Process] Size of the simulation memory is less than the "
+           "size of a single process image. Please increase the "
+           "{Memory-Hierarchy:{DRAM:{Size}}} parameter in the YAML model "
+           "config file used to run the simulation."
+        << std::endl;
+    std::exit(1);
+  }
+
+  // Heap grows upwards towards higher addresses.
+  uint64_t heapStart = instrEnd;
+  uint64_t heapEnd = heapSize + mmapSize;
+
+  // Mmap grows upwards towards higher addresses.
+  uint64_t mmapStart = PAGE_SIZE;
+  uint64_t mmapEnd = heapSize + mmapSize;
+
+  // Stack grows downwards towards lower addresses.
+  uint64_t stackTop = mmapEnd + 4096 + stackSize;
+  uint64_t stackStart = stackTop - stackSize;
+
+  // Create the callback function which will be used by MemRegion to unmap
+  // page table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [this](uint64_t vaddr, size_t size) -> uint64_t {
     uint64_t value = pageTable_->deleteMapping(vaddr, size);
@@ -413,44 +440,31 @@ void Process::init(const std::vector<std::string>& commandLine, SimOS* OS,
     return value;
   };
 
-  memRegion_ = MemRegion(unmapFn);
-  setupMemRegion<T>();
-  loadElf(elf);
+  memRegion_ = MemRegion(stackStart, stackTop, heapStart, heapEnd, mmapStart,
+                         mmapEnd, 0, unmapFn);
+  // Map instructions
+  uint64_t retAddr = memRegion_.mmapRegion(
+      0, instrSize, 0, syscalls::mmap::flags::SIMENG_MAP_FIXED, HostFileMMap());
+  uint64_t instrPhyAddr = OS_->requestPageFrames(instrSize);
+  pageTable_->createMapping(retAddr, instrPhyAddr, instrSize);
 
-  uint64_t stack_top = memRegion_.stackRegion_.end;
-  uint64_t stack_end = memRegion_.stackRegion_.start;
-  uint64_t brk = memRegion_.getBrk();
-  uint64_t bss = memRegion_.bss_;
+  // Map the heap
+  retAddr = memRegion_.mmapRegion(heapStart, heapSize, 0,
+                                  syscalls::mmap::flags::SIMENG_MAP_FIXED,
+                                  HostFileMMap());
+  uint64_t heapPhyAddr = OS_->requestPageFrames(heapSize);
+  pageTable_->createMapping(retAddr, heapPhyAddr, heapSize);
 
-  uint64_t stackPtr = createStack(stack_top);
-  updateStack(stackPtr);
+  // Map the stack
+  retAddr = memRegion_.mmapRegion(stackStart, stackSize, 0,
+                                  syscalls::mmap::flags::SIMENG_MAP_FIXED,
+                                  HostFileMMap());
+  uint64_t stackPhyAddr = OS_->requestPageFrames(stackSize);
+  pageTable_->createMapping(retAddr, stackPhyAddr, stackSize);
 
-  // Initialise context
-  initContext(stackPtr, regFileStructure);
-
-  archSetup<T>();
-  isValid_ = true;
-
-  const std::string procTgid_dir =
-      specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
-  mkdir(procTgid_dir.c_str(), 0777);
-
-  std::ofstream tgidMaps_File(procTgid_dir + "maps");
-  // Create string for each of the base mappings
-  std::stringstream stackStream;
-  stackStream << std::setfill('0') << std::hex << std::setw(12) << stack_end
-              << "-" << std::setfill('0') << std::hex << std::setw(12)
-              << stack_top
-              << " rw-p 00000000 00:00 0                          [stack]\n";
-  tgidMaps_File << stackStream.str();
-
-  std::stringstream heapStream;
-  heapStream << std::setfill('0') << std::hex << std::setw(12) << brk << "-"
-             << std::setfill('0') << std::hex << std::setw(12)
-             << brk + upAlign(bss - brk, PAGE_SIZE)
-             << " rw-p 00000000 00:00 0                          [heap]\n";
-  tgidMaps_File << heapStream.str();
-  tgidMaps_File.close();
+  uint64_t taddr = pageTable_->translate(0);
+  sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
+             instructions.size());
 }
 
 void Process::loadElf(Elf& elf) {
@@ -491,7 +505,6 @@ void Process::loadElf(Elf& elf) {
   brk = upAlign(brk, 4096);
 
   memRegion_.setHeapRegion(brk, memRegion_.mmapRegion_->end);
-  memRegion_.bss_ = bss;
 
   uint64_t paddr = 0;
   uint64_t taddr = 0;
@@ -539,7 +552,6 @@ void Process::loadElf(Elf& elf) {
   progHeaderEntSize_ = ehdr.e_phentsize;
   numProgHeaders_ = ehdr.e_phnum;
   elfEntryPoint_ = ehdr.e_entry;
-
   if (elf.getInterpreter()) {
     loadInterpreter(elf);
   }

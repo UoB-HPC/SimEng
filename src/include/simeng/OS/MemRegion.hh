@@ -34,7 +34,7 @@ struct ProcessStackRegion : public Range<uint64_t> {
    */
   ProcessStackRegion(uint64_t stackStart, uint64_t stackEnd,
                      uint64_t initStackPtr)
-      : Range(stackEnd, stackStart),
+      : Range(stackStart, stackEnd),
         initialStackPtr(initStackPtr),
         stackStart(stackStart) {}
 };
@@ -77,9 +77,9 @@ class MemRegion {
  public:
   /** This constructor creates a MemRegion with values specified by the owning
    * process. */
-  MemRegion(uint64_t stackStart, uint64_t stackEnd, uint64_t bss,
-            uint64_t heapStart, uint64_t heapEnd, uint64_t mmapStart,
-            uint64_t mmapEnd, uint64_t initStackPtr,
+  MemRegion(uint64_t stackStart, uint64_t stackEnd, uint64_t heapStart,
+            uint64_t heapEnd, uint64_t mmapStart, uint64_t mmapEnd,
+            uint64_t initStackPtr,
             std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
   /***/
   MemRegion(std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
@@ -189,9 +189,6 @@ class MemRegion {
   /** Shared pointer to the ProcessMmapRegion, so that it can be shared with
    * threads belonging to the same thread group. */
   std::shared_ptr<ProcessMmapRegion> mmapRegion_ = nullptr;
-
-  /***/
-  uint64_t bss_ = 0;
 
  private:
   /** Size of the process image. */

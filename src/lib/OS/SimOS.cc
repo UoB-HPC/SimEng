@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <iomanip>
+#include <memory>
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/RegisterFileSet.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
@@ -202,14 +204,21 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   uint64_t tid = nextFreeTID_;
   nextFreeTID_++;
 
+  auto process = std::make_shared<Process>(this, tid, tid, sendToMem);
+  process->status_ = procStatus::waiting;
   if (!instructionBytes.empty()) {
     // Construct Process from `instructionBytes`. As this is a new process, the
     // TID = TGID.
-    processes_.emplace(tid, std::make_shared<Process>(
-                                instructionBytes, this, regFileStructure, tid,
-                                tid, sendToMem, memory_->getMemorySize()));
+    if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+      process->init<arch::riscv::Architecture>(
+          instructionBytes, regFileStructure, memory_->getMemorySize());
+    } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+      process->init<arch::aarch64::Architecture>(
+          instructionBytes, regFileStructure, memory_->getMemorySize());
+    }
+
     // Raise error if created process is not valid
-    if (!processes_[tid]->isValid()) {
+    if (!process->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create process based on "
                    "supplied instruction span"
                 << std::endl;
@@ -226,39 +235,25 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    // Create new Process. As this is a new process, the TID = TGID.
-    processes_.emplace(tid, std::make_shared<Process>(
-                                commandLine, this, regFileStructure, tid, tid,
-                                sendToMem, memory_->getMemorySize()));
+    if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+      process->init<arch::riscv::Architecture>(commandLine, regFileStructure,
+                                               memory_->getMemorySize());
+    } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+      process->init<arch::aarch64::Architecture>(commandLine, regFileStructure,
+                                                 memory_->getMemorySize());
+    }
 
     // Raise error if created process is not valid
-    if (!processes_[tid]->isValid()) {
+    if (!process->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not read/parse " << commandLine[0]
                 << std::endl;
       exit(1);
     }
   }
 
-  // Set Initial state of registers
-  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-    // Set the stack pointer register
-    processes_[tid]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
-        processes_[tid]->context_.sp, 8};
-  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
-    // Set the stack pointer register
-    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
-                                     [31] = {processes_[tid]->context_.sp, 8};
-    // Set the system registers
-    // Temporary: state that DCZ can support clearing 64 bytes at a time,
-    // but is disabled due to bit 4 being set
-    processes_[tid]
-        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                          [arch::aarch64::ARM64_SYSREG_TAGS::DCZID_EL0] = {
-        static_cast<uint64_t>(0b10100), 8};
-  }
-
-  processes_[tid]->status_ = procStatus::waiting;
-  waitingProcs_.push(processes_[tid]);
+  process->status_ = procStatus::waiting;
+  processes_.insert({tid, process});
+  waitingProcs_.push(process);
 
   return tid;
 }

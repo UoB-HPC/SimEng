@@ -20,15 +20,14 @@ namespace OS {
 
 using namespace syscalls::mmap::flags;
 
-MemRegion::MemRegion(uint64_t stackStart, uint64_t stackEnd, uint64_t bss,
-                     uint64_t heapStart, uint64_t heapEnd, uint64_t mmapStart,
-                     uint64_t mmapEnd, uint64_t initStackPtr,
+MemRegion::MemRegion(uint64_t stackEnd, uint64_t stackTop, uint64_t heapStart,
+                     uint64_t heapEnd, uint64_t mmapStart, uint64_t mmapEnd,
+                     uint64_t initStackPtr,
                      std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
-    : stackRegion_(ProcessStackRegion(stackStart, stackEnd, initStackPtr)),
+    : stackRegion_(ProcessStackRegion(stackEnd, stackTop, initStackPtr)),
       heapRegion_(std::make_shared<ProcessHeapRegion>(heapStart, heapEnd)),
       mmapRegion_(std::make_shared<ProcessMmapRegion>(mmapStart, mmapEnd)),
-      bss_(bss),
-      procImgSize_(stackStart),
+      procImgSize_(stackTop),
       unmapPageTable_(unmapPageTable),
       VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>()) {}
 
@@ -122,6 +121,7 @@ void MemRegion::updateStack(const uint64_t stackPtr) {
 
 void MemRegion::setStackRegion(uint64_t stack_top, uint64_t stack_end) {
   stackRegion_ = ProcessStackRegion(stack_end, stack_top, 0);
+  procImgSize_ = stack_top;
 };
 
 void MemRegion::setHeapRegion(uint64_t heap_start, uint64_t heap_end) {

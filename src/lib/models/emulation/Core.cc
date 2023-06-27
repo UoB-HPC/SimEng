@@ -22,7 +22,6 @@ Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
 void Core::tick() {
   ticks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
-
   switch (status_) {
     case CoreStatus::idle:
       idle_ticks_++;
@@ -46,9 +45,9 @@ void Core::tick() {
 
   // Increase tick count for current process execution
   procTicks_++;
-
   if (pc_ >= programByteLength_) {
     status_ = CoreStatus::idle;
+    std::exit(1);
     return;
   }
 

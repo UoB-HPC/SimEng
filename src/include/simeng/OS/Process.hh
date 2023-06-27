@@ -2,6 +2,7 @@
 
 #include <sys/resource.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -115,35 +116,72 @@ class Process {
   friend class SimOS;
 
  public:
-  /** Construct a SimOS Process from a vector of command-line arguments. The
-   * first argument is a path to an executable ELF file. Size of the simulation
-   * memory is also passed to check if the process image can fit inside the
-   * simulation memory. */
-  Process(const std::vector<std::string>& commandLine, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
-
-  /** Construct a SimOS Process from region of instruction memory, with the
-   * entry point fixed at 0. Size of the simulation memory is also passed to
-   * check if the process image can fit inside the simulation memory.*/
-  Process(span<char> instructions, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  Process(SimOS* OS, uint64_t TGID, uint64_t TID, sendToMemory sendToMem);
 
   /** Default copy constructor for Process class. */
   Process(const Process& proc) = default;
 
   ~Process();
 
+  /** Construct a SimOS Process from a vector of command-line arguments. The
+   * first argument is a path to an executable ELF file. Size of the simulation
+   * memory is also passed to check if the process image can fit inside the
+   * simulation memory. */
   template <class T>
-  void init(const std::vector<std::string>& commandLine, SimOS* OS,
-            std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-            uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  void init(const std::vector<std::string>& commandLine,
+            std::vector<RegisterFileStructure> regFileStructure,
+            size_t simMemSize) {
+    commandLine_ = commandLine;
+    // Parse the Elf file.
+    assert(commandLine.size() > 0);
+    Elf elf(commandLine[0]);
 
+    std::function<uint64_t(uint64_t, size_t)> unmapFn =
+        [this](uint64_t vaddr, size_t size) -> uint64_t {
+      uint64_t value = pageTable_->deleteMapping(vaddr, size);
+      if (value ==
+          (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
+        std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: "
+                  << vaddr << " and length: " << size << std::endl;
+      }
+      return value;
+    };
+
+    memRegion_ = MemRegion(unmapFn);
+    setupMemRegion<T>();
+    uint64_t stack_top = memRegion_.stackRegion_.end;
+
+    loadElf(elf);
+    uint64_t stackPtr = createStack(stack_top);
+    updateStack(stackPtr);
+
+    // Initialise context
+    initContext(stackPtr, regFileStructure);
+
+    // Setup architecture stuff
+    archSetup<T>();
+    isValid_ = true;
+  }
+
+  /** Construct a SimOS Process from region of instruction memory, with the
+   * entry point fixed at 0. Size of the simulation memory is also passed to
+   * check if the process image can fit inside the simulation memory.*/
   template <class T>
-  void init(span<char> instructions, SimOS* OS,
-            std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-            uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  void init(span<char> instructions,
+            std::vector<RegisterFileStructure> regFileStructure,
+            size_t simMemSize) {
+    // Parse the Elf file.
+    commandLine_.push_back("\0");
+
+    loadInstructions(instructions, simMemSize);
+    uint64_t stack_top = memRegion_.stackRegion_.end;
+    uint64_t stackPtr = createStack(stack_top);
+    memRegion_.updateStack(stackPtr);
+
+    initContext(stackPtr, regFileStructure);
+    archSetup<T>();
+    isValid_ = true;
+  }
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
@@ -243,6 +281,9 @@ class Process {
 
   /***/
   void loadElf(Elf& elf);
+
+  /***/
+  void loadInstructions(span<char>& instructions, size_t simMemSize);
 
   /***/
   template <class T>
