@@ -79,8 +79,6 @@ void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
   loadQueue_.push_back(insn);
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
-  // std::cerr << "ADDED STORE " << std::hex << insn->getInstructionAddress()
-  //           << std::dec << ":" << insn->getSequenceId() << std::endl;
   storeQueue_.push_back({insn, {}});
 }
 
@@ -128,9 +126,6 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   if (!insn->isStoreData()) return;
-  std::cerr << "SUPPLIED STORE DATA " << std::hex
-            << insn->getInstructionAddress() << std::dec << ":"
-            << insn->getSequenceId() << std::endl;
   // Get identifier values
   const uint64_t macroOpNum = insn->getInstructionId();
   const int microOpNum = insn->getMicroOpIndex();

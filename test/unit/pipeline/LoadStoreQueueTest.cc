@@ -252,6 +252,9 @@ TEST_P(LoadStoreQueueTest, Load) {
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
+  loadUop->delegateExecute();
+  loadUop->delegateSupplyData();
+
   loadUop->setDataPending(addresses.size());
 
   queue.addLoad(loadUopPtr);
@@ -272,10 +275,6 @@ TEST_P(LoadStoreQueueTest, Load) {
   memory->tick();
   // Expect a check against finished reads and return the result
   EXPECT_EQ(mmu->hasPendingRequests(), false);
-  if (!mmu->hasPendingRequests()) {
-    // If no pending requests then know uop has all data
-    loadUop->setDataPending(0);
-  }
 
   // Check LSQ detects load has all data and begins execution to assign values
   // to registers
