@@ -228,6 +228,22 @@ void Instruction::execute() {
         results[0] = result;
         break;
       }
+      case Opcode::AArch64_ADD_ZI_B: {  // add zdn.b, zdn.b, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint8_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_D: {  // add zdn.d, zdn.d, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint64_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_H: {  // add zdn.h zdn.h, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint16_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_S: {  // add zdn.s, zdn.s, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint32_t>(operands, metadata, VL_bits);
+        break;
+      }
       case Opcode::AArch64_ADD_ZPmZ_B: {  // add zdn.b, pg/m, zdn.b, zm.b
         results[0] = sveHelp::sveAddPredicated_vecs<uint8_t>(operands, VL_bits);
         break;
@@ -1196,6 +1212,12 @@ void Instruction::execute() {
         results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint32_t>(
             operands, VL_bits,
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+        break;
+      }
+      case Opcode::AArch64_EOR_ZZZ: {  // eor zd.d, zn.d, zm.d
+        results[0] = sveHelp::sveLogicOpUnPredicated_3vecs<uint64_t>(
+            operands, VL_bits,
+            [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         break;
       }
       case Opcode::AArch64_EORv16i8: {  // eor vd.16b, vn.16b, vm.16b
@@ -2323,6 +2345,24 @@ void Instruction::execute() {
         results[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_GLD1W_SXTW_REAL: {  // ld1w {zd.s}, pg/z,
+                                               // [<xn|sp>, zm.s, sxtw]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 32;
+        uint32_t out[64] = {0};
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            out[i] = memoryData[index].get<uint32_t>();
+            index++;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // TODO: Observe hints
         break;
@@ -2550,6 +2590,26 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 8;
+        uint16_t index = 0;
+        uint8_t out[256] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (p[i / 64] & shifted_active) {
+            out[i] = memoryData[index].get<uint8_t>();
+            index++;
+          } else {
+            out[i] = 0;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LD1B_IMM_REAL: {  // ld1b {zt.b}, pg/z, [xn{, #imm,
+                                             // mul vl}]
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
@@ -4343,6 +4403,22 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
+        // STORE
+        const uint8_t* d = operands[0].getAsVector<uint8_t>();
+        const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 8;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (p[i / 64] & shifted_active) {
+            memoryData[index] = d[i];
+            index++;
+          }
+        }
+        break;
+      }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
@@ -5490,6 +5566,34 @@ void Instruction::execute() {
         results[0] = sveHelp::sveZip_vecs<uint32_t>(operands, VL_bits, false);
         break;
       }
+      case Opcode::AArch64_ZIP1v16i8: {  // zip1 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecZip<uint8_t, 16>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v2i32: {  // zip1 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecZip<uint32_t, 2>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v2i64: {  // zip1 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecZip<uint64_t, 2>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v4i16: {  // zip1 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecZip<uint16_t, 4>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v4i32: {  // zip1 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecZip<uint32_t, 4>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v8i16: {  // zip1 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecZip<uint16_t, 8>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v8i8: {  // zip1 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecZip<uint8_t, 8>(operands, false);
+        break;
+      }
       case Opcode::AArch64_ZIP2_PPP_B: {  // zip2 pd.b, pn.b, pm.b
         results[0] = sveHelp::sveZip_preds<uint8_t>(operands, VL_bits, true);
         break;
@@ -5512,6 +5616,34 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ZIP2_ZZZ_S: {  // zip2 zd.s, zn.s, zm.s
         results[0] = sveHelp::sveZip_vecs<uint32_t>(operands, VL_bits, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v16i8: {  // zip2 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecZip<uint8_t, 16>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v2i32: {  // zip2 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecZip<uint32_t, 2>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v2i64: {  // zip2 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecZip<uint64_t, 2>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v4i16: {  // zip2 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecZip<uint16_t, 4>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v4i32: {  // zip2 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecZip<uint32_t, 4>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v8i16: {  // zip2 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecZip<uint16_t, 8>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v8i8: {  // zip2 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecZip<uint8_t, 8>(operands, true);
         break;
       }
       case Opcode::AArch64_ZERO_M: {  // zero {mask}
