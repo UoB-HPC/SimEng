@@ -432,7 +432,11 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())},
+          {"rob.svesCommitted",
+           std::to_string(reorderBuffer_.getSVEsCommittedCount())},
+          {"rob.smesCommitted",
+           std::to_string(reorderBuffer_.getSMEsCommittedCount())}};
 }
 
 }  // namespace outoforder

@@ -27,6 +27,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `add zd, zn, #imm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveAdd_imm(
+      std::vector<RegisterValue>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T imm = static_cast<T>(metadata.operands[2].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] + imm;
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
    * const`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
@@ -907,6 +926,25 @@ class sveHelp {
         out[i] = func(dn[i], m[i]);
       else
         out[i] = dn[i];
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `<AND, EOR, ...>
+   * zd, zn, zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveLogicOpUnPredicated_3vecs(
+      std::vector<RegisterValue>& operands, const uint16_t VL_bits,
+      std::function<T(T, T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = func(n[i], m[i]);
     }
     return {out, 256};
   }

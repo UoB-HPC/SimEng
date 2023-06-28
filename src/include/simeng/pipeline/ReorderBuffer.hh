@@ -82,6 +82,12 @@ class ReorderBuffer {
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;
 
+  /** Get the number of SVE instructions the ROB has committed. */
+  uint64_t getSVEsCommittedCount() const;
+
+  /** Get the number of SME instructions the ROB has committed. */
+  uint64_t getSMEsCommittedCount() const;
+
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
 
@@ -141,6 +147,11 @@ class ReorderBuffer {
 
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
+
+  /** The number of instructions committed. */
+  uint64_t svesCommitted_ = 0;
+
+  uint64_t smesCommitted_ = 0;
 
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
