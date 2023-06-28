@@ -173,6 +173,11 @@ memory_backend.addParams({
 })
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
+sst.setStatisticLoadLevel(7)
+sst.setStatisticOutput("sst.statOutputConsole")
+# sst.enableStatisticsForComponentName("a64fx.l1cache", ["CacheHits", "CacheMisses"])
+sst.enableStatisticsForComponentName("a64fx.l1cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
+sst.enableStatisticsForComponentName("a64fx.l2cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
 
 
 # ---------------------------------------------- Links ------------------------------------------------
