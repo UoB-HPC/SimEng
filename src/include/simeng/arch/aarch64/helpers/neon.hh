@@ -889,6 +889,28 @@ class neonHelp {
 
     return {out, 256};
   }
+
+  /** Helper function for NEON instructions with the format `zip<1,2> Vd.T,
+   * Vn.T, Vm.T`.
+   * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
+   * I represents the number of operands (e.g. for Vn.8b, I = 8).
+   * Returns formatted Register Value. */
+  template <typename T, int I>
+  static RegisterValue vecZip(std::vector<RegisterValue>& operands,
+                              bool isZip2) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    T out[16 / sizeof(T)] = {0};
+    int index = isZip2 ? (I / 2) : 0;
+    for (int i = 0; i < I / 2; i++) {
+      out[2 * i] = n[index];
+      out[(2 * i) + 1] = m[index];
+      index++;
+    }
+
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

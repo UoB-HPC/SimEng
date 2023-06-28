@@ -189,11 +189,54 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_ADD_ZI_B:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_S: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[2].type = ARM64_OP_IMM;
+      operandCount = 3;
+
+      size_t start = operandStr.find("#");
+      if (start != std::string::npos) {
+        start++;
+        bool hex = false;
+        if (operandStr[start + 1] == 'x') {
+          hex = true;
+          start += 2;
+        }
+
+        uint8_t end = operandStr.size();
+        size_t shifted = operandStr.find("LSL");
+        if (shifted != std::string::npos) {
+          std::cerr << "[SimEng:arch] SVE add with immediate has shift vlaue "
+                       "in operandStr which is unsupported."
+                    << std::endl;
+          exit(1);
+        }
+
+        std::string sub = operandStr.substr(start, end);
+        if (hex) {
+          operands[2].imm = std::stoul(sub, 0, 16);
+        } else {
+          operands[2].imm = stoi(sub);
+        }
+      } else {
+        operands[2].imm = 0;
+      }
+      break;
+    }
     case Opcode::AArch64_AND_ZI: {
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       operands[2].type = ARM64_OP_IMM;
+      operandCount = 3;
 
       char specifier = operandStr[operandStr.find(".") + 1];
       switch (specifier) {
@@ -230,6 +273,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_CNTP_XPP_H:
       [[fallthrough]];
     case Opcode::AArch64_CNTP_XPP_S:
+      [[fallthrough]];
+    case Opcode::AArch64_EOR_ZZZ:
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
@@ -663,10 +708,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
-    case Opcode::AArch64_GLD1W_D_SCALED_REAL: {
+    case Opcode::AArch64_GLD1W_D_SCALED_REAL:
+      [[fallthrough]];
+    case Opcode::AArch64_GLD1W_SXTW_REAL: {
       // Access types are not set correctly
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_GLD1D_SCALED_REAL:
@@ -769,6 +817,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1B:
       [[fallthrough]];
     case Opcode::AArch64_LD1D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1B_IMM_REAL:
       [[fallthrough]];
     case Opcode::AArch64_LD1D_IMM_REAL:
       [[fallthrough]];
@@ -1193,6 +1243,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_ST1B:
       [[fallthrough]];
     case Opcode::AArch64_ST1D:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1B_IMM:
       [[fallthrough]];
     case Opcode::AArch64_ST1D_IMM:
       [[fallthrough]];

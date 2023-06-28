@@ -82,7 +82,11 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
+    if (uop->isLastMicroOp()) {
+      instructionsCommitted_++;
+      if (uop->getGroup() >= 52U && uop->getGroup() <= 66U) svesCommitted_++;
+      if (uop->getGroup() >= 72U && uop->getGroup() <= 85U) smesCommitted_++;
+    }
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -197,6 +201,10 @@ uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;
 }
+
+uint64_t ReorderBuffer::getSVEsCommittedCount() const { return svesCommitted_; }
+
+uint64_t ReorderBuffer::getSMEsCommittedCount() const { return smesCommitted_; }
 
 uint64_t ReorderBuffer::getViolatingLoadsCount() const {
   return loadViolations_;
