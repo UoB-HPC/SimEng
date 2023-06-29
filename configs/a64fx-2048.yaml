@@ -10,7 +10,7 @@ Core:
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
   Micro-Operations: True
-  Vector-Length: 512
+  Vector-Length: 2048
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 48
