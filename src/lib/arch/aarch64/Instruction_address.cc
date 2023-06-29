@@ -935,6 +935,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
+      case Opcode::AArch64_PRFUMi:  // prfum op, [xm{, #imm}]
+        [[fallthrough]];
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend {#amount}}]
         // TODO: Implement prefetching
         break;

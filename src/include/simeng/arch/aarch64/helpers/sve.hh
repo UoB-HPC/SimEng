@@ -312,14 +312,18 @@ class sveHelp {
       const uint16_t VL_bits, bool useImm) {
     bool isFP = std::is_floating_point<T>::value;
     T imm;
-    if (useImm)
-      imm = isFP ? metadata.operands[1].fp
-                 : static_cast<int8_t>(metadata.operands[1].imm);
-    else
+    if (useImm) {
+      if ((metadata.operands[1].imm & 0xFF00) == 0) {
+        imm = isFP ? metadata.operands[1].fp
+                   : static_cast<int8_t>(metadata.operands[1].imm);
+      } else {
+        imm = isFP ? metadata.operands[1].fp
+                   : static_cast<int16_t>(metadata.operands[1].imm);
+      }
+    } else
       imm = operands[0].get<T>();
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     T out[256 / sizeof(T)] = {0};
-
     for (int i = 0; i < partition_num; i++) {
       out[i] = imm;
     }
@@ -629,12 +633,12 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `fmls zd, pg/m, zn,
+  /** Helper function for SVE instructions with the format `(f)mls zd, pg/m, zn,
    * zm`.
    * T represents the type of operands (e.g. for zn.d, T = double).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue sveFmlsPredicated_vecs(
+  static RegisterValue sveMlsPredicated_vecs(
       std::vector<RegisterValue>& operands, const uint16_t VL_bits) {
     const T* d = operands[0].getAsVector<T>();
     const uint64_t* p = operands[1].getAsVector<uint64_t>();
@@ -993,6 +997,26 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `lsr zd, zn, #imm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveLsr_imm(
+      std::vector<RegisterValue>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T imm = static_cast<T>(metadata.operands[2].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = (n[i] >> imm);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `max zdn, zdn,
    * #imm`.
    * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
@@ -1174,8 +1198,8 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `mulh zdn, pg/m, zdn,
-   * zm`.
+  /** Helper function for SVE instructions with the format `[u|s]mulh zdn, pg/m,
+   * zdn, zm`.
    * T represents the type of operands (e.g. for zn.s, T = int32_t).
    * TT represents the type twice the length of T (e.g. for T = int8_t, TT =
    * int16_T).
@@ -1194,21 +1218,25 @@ class sveHelp {
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       if (p[i / (64 / sizeof(T))] & shifted_active) {
-        bool isNeg = false;
-        T a = n[i];
-        T b = m[i];
-        if (a < 0) {
-          isNeg = !isNeg;
-          a = 0 - a;
-        }
-        if (b < 0) {
-          isNeg = !isNeg;
-          b = 0 - b;
-        }
-        TT tmp = (static_cast<TT>(a) * static_cast<TT>(b));
-        if (isNeg) tmp = 0 - tmp;
+        if (sizeof(T) == 8) {
+          out[i] = AuxFunc::mulhi((uint64_t)n[i], (uint64_t)m[i]);
+        } else {
+          bool isNeg = false;
+          T a = n[i];
+          T b = m[i];
+          if (a < 0) {
+            isNeg = !isNeg;
+            a = 0 - a;
+          }
+          if (b < 0) {
+            isNeg = !isNeg;
+            b = 0 - b;
+          }
+          TT tmp = (static_cast<TT>(a) * static_cast<TT>(b));
+          if (isNeg) tmp = 0 - tmp;
 
-        out[i] = static_cast<T>(tmp >> (sizeof(T) * 8));
+          out[i] = static_cast<T>(tmp >> (sizeof(T) * 8));
+        }
       } else
         out[i] = n[i];
     }

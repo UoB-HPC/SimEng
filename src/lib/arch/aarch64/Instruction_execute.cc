@@ -1082,7 +1082,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_DUP_ZZI_D: {  // dup zd.d, zn.d[#imm]
         results[0] =
-            sveHelp::sveDup_vecIndexed<uint64_t>(operands, metadata, VL_bits);
+            sveHelp::sveDup_vecIndexed<int64_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_DUP_ZZI_Q: {  // dup zd.q, zn.q[#imm]
@@ -1263,6 +1263,18 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FABD_ZPmZ_S: {  // fabd zdn.s, pg/m, zdn.s, zm.s
         results[0] = sveHelp::sveFabd<float>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FABDv2f32: {  // fabd vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecFabd<float, 2>(operands);
+        break;
+      }
+      case Opcode::AArch64_FABDv2f64: {  // fabd vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecFabd<double, 2>(operands);
+        break;
+      }
+      case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecFabd<float, 4>(operands);
         break;
       }
       case Opcode::AArch64_FABSDr: {  // fabs dd, dn
@@ -1846,11 +1858,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FMLS_ZPmZZ_D: {  // fmls zd.d, pg/m, zn.d, zm.d
-        results[0] = sveHelp::sveFmlsPredicated_vecs<double>(operands, VL_bits);
+        results[0] = sveHelp::sveMlsPredicated_vecs<double>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FMLS_ZPmZZ_S: {  // fmls zd.s, pg/m, zn.s, zm.s
-        results[0] = sveHelp::sveFmlsPredicated_vecs<float>(operands, VL_bits);
+        results[0] = sveHelp::sveMlsPredicated_vecs<float>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FMLSv2f64: {  // fmls vd.2d, vn.2d, vm.2d
@@ -3595,6 +3607,18 @@ void Instruction::execute() {
         results[0] = logicalHelp::logicalShiftLR_3ops<uint64_t>(operands, true);
         break;
       }
+      case Opcode::AArch64_LSL_ZZI_B: {  // lsl zd.b, zn.b, #imm
+        results[0] = sveHelp::sveLsl_imm<uint8_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LSL_ZZI_D: {  // lsl zd.d, zn.d, #imm
+        results[0] = sveHelp::sveLsl_imm<uint64_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LSL_ZZI_H: {  // lsl zd.h, zn.h, #imm
+        results[0] = sveHelp::sveLsl_imm<uint16_t>(operands, metadata, VL_bits);
+        break;
+      }
       case Opcode::AArch64_LSL_ZZI_S: {  // lsl zd.s, zn.s, #imm
         results[0] = sveHelp::sveLsl_imm<uint32_t>(operands, metadata, VL_bits);
         break;
@@ -3607,6 +3631,22 @@ void Instruction::execute() {
       case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
         results[0] =
             logicalHelp::logicalShiftLR_3ops<uint64_t>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_LSR_ZZI_B: {  // lsr zd.b, zn.b, #imm
+        results[0] = sveHelp::sveLsr_imm<uint8_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LSR_ZZI_D: {  // lsr zd.d, zn.d, #imm
+        results[0] = sveHelp::sveLsr_imm<uint64_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LSR_ZZI_H: {  // lsr zd.h, zn.h, #imm
+        results[0] = sveHelp::sveLsr_imm<uint16_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LSR_ZZI_S: {  // lsr zd.s, zn.s, #imm
+        results[0] = sveHelp::sveLsr_imm<uint32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
@@ -3634,6 +3674,25 @@ void Instruction::execute() {
       case Opcode::AArch64_MLA_ZPmZZ_S: {  // mla zda.s, pg/m, zn.s, zm.s
         results[0] =
             sveHelp::sveMlaPredicated_vecs<uint32_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_MLS_ZPmZZ_B: {  // mls zda.b, pg/m, zn.b, zm.b
+        results[0] = sveHelp::sveMlsPredicated_vecs<uint8_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_MLS_ZPmZZ_D: {  // mls zda.d, pg/m, zn.d, zm.d
+        results[0] =
+            sveHelp::sveMlsPredicated_vecs<uint64_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_MLS_ZPmZZ_H: {  // mls zda.h, pg/m, zn.h, zm.h
+        results[0] =
+            sveHelp::sveMlsPredicated_vecs<uint16_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_MLS_ZPmZZ_S: {  // mls zda.s, pg/m, zn.s, zm.s
+        results[0] =
+            sveHelp::sveMlsPredicated_vecs<uint32_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_MOVID: {  // movi dd, #imm
@@ -3878,6 +3937,8 @@ void Instruction::execute() {
         results[0] = out;
         break;
       }
+      case Opcode::AArch64_PRFUMi:  // prfum op, [xm{, #imm}]
+        [[fallthrough]];
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
         break;
       }
@@ -5305,6 +5366,26 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
         results[0] = arithmeticHelp::msubl_4ops<uint64_t, uint32_t>(operands);
+        break;
+      }
+      case Opcode::AArch64_UMULH_ZPmZ_B: {  // umulh zdn.b, pg/m, zdn.b, zm.b
+        results[0] =
+            sveHelp::sveMulhPredicated<uint8_t, uint16_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_UMULH_ZPmZ_D: {  // umulh zdn.d, pg/m, zdn.d, zm.d
+        results[0] =
+            sveHelp::sveMulhPredicated<uint64_t, uint64_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_UMULH_ZPmZ_H: {  // umulh zdn.h, pg/m, zdn.h, zm.h
+        results[0] =
+            sveHelp::sveMulhPredicated<uint16_t, uint32_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_UMULH_ZPmZ_S: {  // umulh zdn.s, pg/m, zdn.s, zm.s
+        results[0] =
+            sveHelp::sveMulhPredicated<uint32_t, uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm

@@ -200,6 +200,22 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `fabd vd, vn, vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = std::fabs(m[i] - n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `fabs vd, vn`.
    * T represents the type of operands (e.g. for vn.2d, T = double).
    * I represents the number of elements in the output array to be updated (e.g.

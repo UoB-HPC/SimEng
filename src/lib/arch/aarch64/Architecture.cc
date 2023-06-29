@@ -200,179 +200,159 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
     // Cache the instruction
     iter = decodeCache.insert({insn, newInsn}).first;
+    if (instructionAddress >= -1) {
+      int i;
+      uint8_t access;
+      std::cerr << "====== 0x" << std::hex << instructionAddress << std::dec
+                << " === 0x" << std::hex << unsigned(metadata.encoding[3])
+                << unsigned(metadata.encoding[2])
+                << unsigned(metadata.encoding[1])
+                << unsigned(metadata.encoding[0]) << std::dec
+                << " === " << metadata.mnemonic << " " << metadata.operandStr
+                << " === " << metadata.id << " === " << metadata.opcode
+                << " ======" << std::endl;
+      std::cerr << "Other cs_insn details:" << std::endl;
+      std::cerr << "\taddress = " << rawInsn.address << std::endl;
+      std::cerr << "\tsize = " << rawInsn.size << std::endl;
+      std::cerr << "Other InstructionMetadata details:" << std::endl;
+      std::cerr << "\tgroupCount = " << unsigned(metadata.groupCount)
+                << std::endl;
+      std::cerr << "Operands:" << std::endl;
+      if ((&rawInsn)->detail != NULL) {
+        if (metadata.operandCount)
+          fprintf(stderr, "\top_count: %u\n", metadata.operandCount);
 
-    //     if (instructionAddress >= 0) {
-    //       int i;
-    //       uint8_t access;
-    //       std::cerr << "====== 0x" << std::hex << instructionAddress <<
-    //       std::dec
-    //                 << " === 0x" << std::hex <<
-    //                 unsigned(metadata.encoding[3])
-    //                 << unsigned(metadata.encoding[2])
-    //                 << unsigned(metadata.encoding[1])
-    //                 << unsigned(metadata.encoding[0]) << std::dec
-    //                 << " === " << metadata.mnemonic << " " <<
-    //                 metadata.operandStr
-    //                 << " === " << metadata.id << " === " << metadata.opcode
-    //                 << " ======" << std::endl;
-    //       std::cerr << "Other cs_insn details:" << std::endl;
-    //       std::cerr << "\taddress = " << rawInsn.address << std::endl;
-    //       std::cerr << "\tsize = " << rawInsn.size << std::endl;
-    //       std::cerr << "Other InstructionMetadata details:" << std::endl;
-    //       std::cerr << "\tgroupCount = " << unsigned(metadata.groupCount)
-    //                 << std::endl;
-    //       std::cerr << "Operands:" << std::endl;
-    //       if ((&rawInsn)->detail != NULL) {
-    //         if (metadata.operandCount)
-    //           fprintf(stderr, "\top_count: %u\n", metadata.operandCount);
+        for (i = 0; i < metadata.operandCount; i++) {
+          cs_arm64_op op = metadata.operands[i];
+          switch (op.type) {
+            default:
+              break;
+            case ARM64_OP_REG:
+              fprintf(stderr, "\t\toperands[%u].type: REG = %s\n", i,
+                      cs_reg_name(capstoneHandle, op.reg));
+              break;
+            case ARM64_OP_IMM:
+              fprintf(stderr, "\t\toperands[%u].type: IMM = 0x%" PRIx64 "\n", i,
+                      op.imm);
+              break;
+            case ARM64_OP_FP:
+#if defined(_KERNEL_MODE)
+              // Issue #681: Windows kernel does not support formatting float
+              // point
+              fprintf(stderr,
+                      "\t\toperands[%u].type: FP = <float_point_unsupported>\n",
+                      i);
+#else
+              fprintf(stderr, "\t\toperands[%u].type: FP = %f\n", i, op.fp);
+#endif
+              break;
+            case ARM64_OP_MEM:
+              fprintf(stderr, "\t\toperands[%u].type: MEM\n", i);
+              if (op.mem.base != ARM64_REG_INVALID)
+                fprintf(stderr, "\t\t\toperands[%u].mem.base: REG = %s\n", i,
+                        cs_reg_name(capstoneHandle, op.mem.base));
+              if (op.mem.index != ARM64_REG_INVALID)
+                fprintf(stderr, "\t\t\toperands[%u].mem.index: REG = %s\n", i,
+                        cs_reg_name(capstoneHandle, op.mem.index));
+              if (op.mem.disp != 0)
+                fprintf(stderr, "\t\t\toperands[%u].mem.disp: 0x%x\n", i,
+                        op.mem.disp);
 
-    //         for (i = 0; i < metadata.operandCount; i++) {
-    //           cs_arm64_op op = metadata.operands[i];
-    //           switch (op.type) {
-    //             default:
-    //               break;
-    //             case ARM64_OP_REG:
-    //               fprintf(stderr, "\t\toperands[%u].type: REG = %s\n", i,
-    //                       cs_reg_name(capstoneHandle, op.reg));
-    //               break;
-    //             case ARM64_OP_IMM:
-    //               fprintf(stderr, "\t\toperands[%u].type: IMM = 0x%" PRIx64
-    //               "\n", i,
-    //                       op.imm);
-    //               break;
-    //             case ARM64_OP_FP:
-    // #if defined(_KERNEL_MODE)
-    //               // Issue #681: Windows kernel does not support formatting
-    //               float
-    //               // point
-    //               fprintf(stderr,
-    //                       "\t\toperands[%u].type: FP =
-    //                       <float_point_unsupported>\n", i);
-    // #else
-    //               fprintf(stderr, "\t\toperands[%u].type: FP = %f\n", i,
-    //               op.fp);
-    // #endif
-    //               break;
-    //             case ARM64_OP_MEM:
-    //               fprintf(stderr, "\t\toperands[%u].type: MEM\n", i);
-    //               if (op.mem.base != ARM64_REG_INVALID)
-    //                 fprintf(stderr, "\t\t\toperands[%u].mem.base: REG =
-    //                 %s\n", i,
-    //                         cs_reg_name(capstoneHandle, op.mem.base));
-    //               if (op.mem.index != ARM64_REG_INVALID)
-    //                 fprintf(stderr, "\t\t\toperands[%u].mem.index: REG =
-    //                 %s\n", i,
-    //                         cs_reg_name(capstoneHandle, op.mem.index));
-    //               if (op.mem.disp != 0)
-    //                 fprintf(stderr, "\t\t\toperands[%u].mem.disp: 0x%x\n", i,
-    //                         op.mem.disp);
+              break;
+            case ARM64_OP_CIMM:
+              fprintf(stderr, "\t\toperands[%u].type: C-IMM = %u\n", i,
+                      (int)op.imm);
+              break;
+            case ARM64_OP_REG_MRS:
+              fprintf(stderr, "\t\toperands[%u].type: REG_MRS = 0x%x\n", i,
+                      op.reg);
+              break;
+            case ARM64_OP_REG_MSR:
+              fprintf(stderr, "\t\toperands[%u].type: REG_MSR = 0x%x\n", i,
+                      op.reg);
+              break;
+            case ARM64_OP_PSTATE:
+              fprintf(stderr, "\t\toperands[%u].type: PSTATE = 0x%x\n", i,
+                      op.pstate);
+              break;
+            case ARM64_OP_SYS:
+              fprintf(stderr, "\t\toperands[%u].type: SYS = 0x%x\n", i, op.sys);
+              break;
+            case ARM64_OP_PREFETCH:
+              fprintf(stderr, "\t\toperands[%u].type: PREFETCH = 0x%x\n", i,
+                      op.prefetch);
+              break;
+            case ARM64_OP_BARRIER:
+              fprintf(stderr, "\t\toperands[%u].type: BARRIER = 0x%x\n", i,
+                      op.barrier);
+              break;
+          }
 
-    //               break;
-    //             case ARM64_OP_CIMM:
-    //               fprintf(stderr, "\t\toperands[%u].type: C-IMM = %u\n", i,
-    //                       (int)op.imm);
-    //               break;
-    //             case ARM64_OP_REG_MRS:
-    //               fprintf(stderr, "\t\toperands[%u].type: REG_MRS = 0x%x\n",
-    //               i,
-    //                       op.reg);
-    //               break;
-    //             case ARM64_OP_REG_MSR:
-    //               fprintf(stderr, "\t\toperands[%u].type: REG_MSR = 0x%x\n",
-    //               i,
-    //                       op.reg);
-    //               break;
-    //             case ARM64_OP_PSTATE:
-    //               fprintf(stderr, "\t\toperands[%u].type: PSTATE = 0x%x\n",
-    //               i,
-    //                       op.pstate);
-    //               break;
-    //             case ARM64_OP_SYS:
-    //               fprintf(stderr, "\t\toperands[%u].type: SYS = 0x%x\n", i,
-    //               op.sys); break;
-    //             case ARM64_OP_PREFETCH:
-    //               fprintf(stderr, "\t\toperands[%u].type: PREFETCH = 0x%x\n",
-    //               i,
-    //                       op.prefetch);
-    //               break;
-    //             case ARM64_OP_BARRIER:
-    //               fprintf(stderr, "\t\toperands[%u].type: BARRIER = 0x%x\n",
-    //               i,
-    //                       op.barrier);
-    //               break;
-    //           }
+          access = op.access;
+          switch (access) {
+            default:
+              break;
+            case CS_AC_READ:
+              fprintf(stderr, "\t\toperands[%u].access: READ\n", i);
+              break;
+            case CS_AC_WRITE:
+              fprintf(stderr, "\t\toperands[%u].access: WRITE\n", i);
+              break;
+            case CS_AC_READ | CS_AC_WRITE:
+              fprintf(stderr, "\t\toperands[%u].access: READ | WRITE\n", i);
+              break;
+          }
 
-    //           access = op.access;
-    //           switch (access) {
-    //             default:
-    //               break;
-    //             case CS_AC_READ:
-    //               fprintf(stderr, "\t\toperands[%u].access: READ\n", i);
-    //               break;
-    //             case CS_AC_WRITE:
-    //               fprintf(stderr, "\t\toperands[%u].access: WRITE\n", i);
-    //               break;
-    //             case CS_AC_READ | CS_AC_WRITE:
-    //               fprintf(stderr, "\t\toperands[%u].access: READ | WRITE\n",
-    //               i); break;
-    //           }
+          if (op.shift.type != ARM64_SFT_INVALID && op.shift.value)
+            fprintf(stderr, "\t\t\tShift: type = %u, value = %u\n",
+                    op.shift.type, op.shift.value);
 
-    //           if (op.shift.type != ARM64_SFT_INVALID && op.shift.value)
-    //             fprintf(stderr, "\t\t\tShift: type = %u, value = %u\n",
-    //                     op.shift.type, op.shift.value);
+          if (op.ext != ARM64_EXT_INVALID)
+            fprintf(stderr, "\t\t\tExt: %u\n", op.ext);
 
-    //           if (op.ext != ARM64_EXT_INVALID)
-    //             fprintf(stderr, "\t\t\tExt: %u\n", op.ext);
+          if (op.vas != ARM64_VAS_INVALID)
+            fprintf(stderr, "\t\t\tVector Arrangement Specifier: 0x%x\n",
+                    op.vas);
 
-    //           if (op.vas != ARM64_VAS_INVALID)
-    //             fprintf(stderr, "\t\t\tVector Arrangement Specifier: 0x%x\n",
-    //                     op.vas);
+          if (op.vector_index != -1)
+            fprintf(stderr, "\t\t\tVector Index: %u\n", op.vector_index);
+        }
 
-    //           if (op.vector_index != -1)
-    //             fprintf(stderr, "\t\t\tVector Index: %u\n", op.vector_index);
-    //         }
+        if (metadata.setsFlags) fprintf(stderr, "\tUpdate-flags: True\n");
 
-    //         if (metadata.setsFlags) fprintf(stderr, "\tUpdate-flags:
-    //         True\n");
+        if (metadata.writeback) fprintf(stderr, "\tWrite-back: True\n");
 
-    //         if (metadata.writeback) fprintf(stderr, "\tWrite-back: True\n");
+        if (metadata.cc) fprintf(stderr, "\tCode-condition: %u\n", metadata.cc);
 
-    //         if (metadata.cc) fprintf(stderr, "\tCode-condition: %u\n",
-    //         metadata.cc);
-
-    //         // Print out all registers read by this instruction
-    //         fprintf(stderr, "\tRegisters read:");
-    //         for (i = 0; i < metadata.implicitSourceCount; i++) {
-    //           fprintf(stderr, " %s",
-    //                   cs_reg_name(capstoneHandle,
-    //                   metadata.implicitSources[i]));
-    //         }
-    //         for (i = 0; i < metadata.operandCount; i++) {
-    //           if (metadata.operands[i].type == ARM64_OP_REG &&
-    //               metadata.operands[i].access & CS_AC_READ)
-    //             fprintf(stderr, " %s",
-    //                     cs_reg_name(capstoneHandle,
-    //                     metadata.operands[i].reg));
-    //         }
-    //         fprintf(stderr, "\n");
-    //         // Print out all registers written to this instruction
-    //         fprintf(stderr, "\tRegisters modified:");
-    //         for (i = 0; i < metadata.implicitDestinationCount; i++) {
-    //           fprintf(
-    //               stderr, " %s",
-    //               cs_reg_name(capstoneHandle,
-    //               metadata.implicitDestinations[i]));
-    //         }
-    //         for (i = 0; i < metadata.operandCount; i++) {
-    //           if (metadata.operands[i].type == ARM64_OP_REG &&
-    //               metadata.operands[i].access & CS_AC_WRITE)
-    //             fprintf(stderr, " %s",
-    //                     cs_reg_name(capstoneHandle,
-    //                     metadata.operands[i].reg));
-    //         }
-    //         fprintf(stderr, "\n");
-    //       }
-    //     }
+        // Print out all registers read by this instruction
+        fprintf(stderr, "\tRegisters read:");
+        for (i = 0; i < metadata.implicitSourceCount; i++) {
+          fprintf(stderr, " %s",
+                  cs_reg_name(capstoneHandle, metadata.implicitSources[i]));
+        }
+        for (i = 0; i < metadata.operandCount; i++) {
+          if (metadata.operands[i].type == ARM64_OP_REG &&
+              metadata.operands[i].access & CS_AC_READ)
+            fprintf(stderr, " %s",
+                    cs_reg_name(capstoneHandle, metadata.operands[i].reg));
+        }
+        fprintf(stderr, "\n");
+        // Print out all registers written to this instruction
+        fprintf(stderr, "\tRegisters modified:");
+        for (i = 0; i < metadata.implicitDestinationCount; i++) {
+          fprintf(
+              stderr, " %s",
+              cs_reg_name(capstoneHandle, metadata.implicitDestinations[i]));
+        }
+        for (i = 0; i < metadata.operandCount; i++) {
+          if (metadata.operands[i].type == ARM64_OP_REG &&
+              metadata.operands[i].access & CS_AC_WRITE)
+            fprintf(stderr, " %s",
+                    cs_reg_name(capstoneHandle, metadata.operands[i].reg));
+        }
+        fprintf(stderr, "\n");
+      }
+    }
   }
 
   // Split instruction into 1 or more defined micro-ops
