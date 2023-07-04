@@ -12,6 +12,7 @@ PageFrameAllocator::PageFrameAllocator(uint64_t maxSize)
 
 uint64_t PageFrameAllocator::allocate(size_t size) {
   size = upAlign(size, PAGE_SIZE);
+
   if (size > sizeLeft_) {
     std::cerr
         << "[SimEng:PageFrameAllocator] Cannot allocate more page frames! "

@@ -31,7 +31,7 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
                  "file mmap with offset and size greater "
                  "than file size."
               << std::endl;
-    std::exit(1);
+    // std::exit(1);
   }
   if (len <= 0) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Cannot create host backed file "

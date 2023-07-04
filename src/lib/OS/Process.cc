@@ -555,6 +555,7 @@ void Process::loadElf(Elf& elf) {
   if (elf.getInterpreter()) {
     loadInterpreter(elf);
   }
+  memRegion_.printVmaList();
 }
 
 void Process::loadInterpreter(Elf& elf) {

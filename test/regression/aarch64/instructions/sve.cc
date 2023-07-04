@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdint>
 #include <limits>
 
 #include "AArch64RegressionTest.hh"
@@ -6125,6 +6126,19 @@ TEST_P(InstSve, st1b) {
   for (int i = 0; i < (VL / 16); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>((VL / 16) + i), src[i % 16]);
   }
+}
+
+TEST_P(InstSve, st1b_h) {
+  RUN_AARCH64(R"(
+    ptrue p0.h, all
+
+    # mov x2, #5
+    # mov x1, #6
+
+    # st1b {z2.h}, p0, [x2, x1]
+    # st1b {z2.h}, p0, [x0, x1]
+
+  )");
 }
 
 TEST_P(InstSve, st1b_scatter) {

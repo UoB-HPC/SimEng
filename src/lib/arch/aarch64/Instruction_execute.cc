@@ -1,4 +1,5 @@
 // Temporary; until execute has been verified to work correctly.
+#include <cstdint>
 #ifndef NDEBUG
 #include <iostream>
 #endif
@@ -4287,6 +4288,24 @@ void Instruction::execute() {
         }
         break;
       }
+
+      case Opcode::AArch64_ST1B_H: {  // st1b {zt.h}, pg, [xn, xm]
+                                      // STORE
+        const uint16_t* d = operands[0].getAsVector<uint16_t>();
+        const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 16;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (p[i / 32] & shifted_active) {
+            memoryData[index] = static_cast<uint8_t>(d[i]);
+            index++;
+          }
+        }
+        break;
+      }
+
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
