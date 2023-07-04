@@ -273,10 +273,10 @@ CPU-Info:
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 Interpreter:
-  Path: "/home/rahat/work/jack-riken/fjcomp/ld-linux-aarch64.so.1"
-  Debug: True
+  Path: "/home/rahat/work/jack-riken/llvm/ld-linux-aarch64.so.1"
+  Debug: False
   LD_LIBRARY_PATH:
-    - "/home/rahat/work/jack-riken/fjcomp"
-  Extra-Env-Vars:
+    - "/home/rahat/work/jack-riken/llvm"
+  Extra-Env-Vars: "LD_BIND_NOW=1"
 Environment-Variables:
   - "OMP_NUM_THREADS=1"

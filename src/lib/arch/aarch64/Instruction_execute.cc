@@ -4328,7 +4328,6 @@ void Instruction::execute() {
       }
 
       case Opcode::AArch64_ST1B_H: {  // st1b {zt.h}, pg, [xn, xm]
-        // STORE
         const uint16_t* d = operands[0].getAsVector<uint16_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 

@@ -313,15 +313,11 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
 
   if (fixed) {
     /**
-  std::cout << "MAP_FIXED Start: " << startAddr << std::endl;
-  std::cout << "MAP_FIXED Size: " << size << std::endl;
-  std::cout << "HAS_NO_FILE: " << hfmmap.isEmpty() << std::endl;
-*/
     if (startAddr == 6791168) {
       startAddr = 6729384;
       startAddr = downAlign(startAddr, PAGE_SIZE);
     }
-
+    */
     if (downAlign(startAddr, PAGE_SIZE) != startAddr) {
       std::cerr << "[SimEng:MemRegion] Addr argument specified with MAP_FIXED "
                    "flag to the mmap call is not page aligned."
