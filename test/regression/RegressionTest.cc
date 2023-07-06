@@ -22,7 +22,7 @@ void RegressionTest::TearDown() {
 
 void RegressionTest::run(const char* source, const char* triple,
                          const char* extensions) {
-  // testing::internal::CaptureStdout();
+  testing::internal::CaptureStdout();
 
   // Assemble the source to a flat binary
   assemble(source, triple, extensions);

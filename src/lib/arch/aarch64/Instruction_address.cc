@@ -933,12 +933,14 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (p[i / 32] & shifted_active) {
-            uint64_t address = base + (offset + i);
+            uint64_t address = (base + (offset + i)) * 1;
+            //  std::cout << "Generated addresses: " << address << std::endl;
             addresses.push_back({address, 1});
           }
         }
 
         setMemoryAddresses(std::move(addresses));
+
         break;
       }
 

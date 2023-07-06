@@ -67,13 +67,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
     std::cout << "Is_Untimed: " << request->isUntimed() << std::endl;
     std::cout << "Is-Read: " << request->isRead() << std::endl;
     request->markAsFaulty();
-    if (request->isRead()) {
-      request->turnIntoReadResponse(std::vector<char>('\0', request->size_));
-    }
-    std::cout << "Data-Abort Addr: " << request->vaddr_ << std::endl;
-    std::cout << "Is_Instr_Read: " << request->isInstrRead() << std::endl;
     port_->recieve(std::move(request));
-    std::cout << "Yooooooooo" << std::endl;
     return;
   }
 
