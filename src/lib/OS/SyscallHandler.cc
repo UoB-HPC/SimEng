@@ -54,6 +54,10 @@ void SyscallHandler::handleSyscall() {
           RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
       break;
     }
+    case 43: {
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1}};
+      break;
+    }
     case 46: {  // ftruncate
       uint64_t fd = currentInfo_.registerArguments[0].get<uint64_t>();
       uint64_t length = currentInfo_.registerArguments[1].get<uint64_t>();
@@ -677,6 +681,8 @@ void SyscallHandler::handleSyscall() {
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       size_t length = currentInfo_.registerArguments[1].get<size_t>();
 
+      std::cout << "munmap at addr and length: " << addr << " - " << length
+                << std::endl;
       int64_t result = munmap(addr, length);
       // If successful, munmap returns the total number of bytes
       // unmapped. If the value is greater than 0, 0 is returned as specified

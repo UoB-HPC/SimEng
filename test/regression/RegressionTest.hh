@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
 #include "simeng/OS/SyscallHandler.hh"
@@ -89,6 +91,13 @@ class RegressionTest
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
     uint64_t addr = process_->translate(address);
+    if (simeng::OS::masks::faults::hasFault(addr)) {
+      std::cout << stdout_ << std::endl;
+      std::cout << "[SimEng:RegressionTest] Translation fault in "
+                   "getMemoryValue for address: "
+                << address << std::endl;
+      std::exit(1);
+    }
     std::vector<char> mem = memory_->getUntimedData(addr, sizeof(T));
     T dest{};
     std::memcpy(&dest, mem.data(), sizeof(T));

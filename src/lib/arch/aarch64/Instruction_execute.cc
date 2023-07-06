@@ -4282,7 +4282,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
           if (p[i / 64] & shifted_active) {
-            memoryData[index] = d[i];
+            memoryData[index] = 0;
             index++;
           }
         }
@@ -4290,7 +4290,7 @@ void Instruction::execute() {
       }
 
       case Opcode::AArch64_ST1B_H: {  // st1b {zt.h}, pg, [xn, xm]
-                                      // STORE
+        // STORE
         const uint16_t* d = operands[0].getAsVector<uint16_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 

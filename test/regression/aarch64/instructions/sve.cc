@@ -1,8 +1,13 @@
+#include <gtest/gtest.h>
+#include <gtest/gtest_pred_impl.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <limits>
 
 #include "AArch64RegressionTest.hh"
+#include "simeng/OS/SimOS.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace {
 
@@ -6130,15 +6135,26 @@ TEST_P(InstSve, st1b) {
 
 TEST_P(InstSve, st1b_h) {
   RUN_AARCH64(R"(
-    ptrue p0.h, all
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+   
+    ptrue p0.h
+    cpy z0.h, p0/z, #35
 
-    # mov x2, #5
-    # mov x1, #6
+    mov x2, 0
+    mov x1, 0
+    add x2, x0, 0
 
-    # st1b {z2.h}, p0, [x2, x1]
-    # st1b {z2.h}, p0, [x0, x1]
+    st1b {z0.h}, p0, [x2, x1]
 
   )");
+  uint64_t reg_0 =
+      getRegister<uint64_t>({simeng::arch::aarch64::RegisterType::GENERAL, 0});
+  for (int x = 0; x < 128; x++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + x), 35);
+  }
 }
 
 TEST_P(InstSve, st1b_scatter) {

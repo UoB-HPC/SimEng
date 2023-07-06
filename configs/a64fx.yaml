@@ -277,6 +277,6 @@ Interpreter:
   Debug: False
   LD_LIBRARY_PATH:
     - "/home/rahat/work/jack-riken/llvm"
-  Extra-Env-Vars: "LD_BIND_NOW=1"
+  Extra-Env-Vars:
 Environment-Variables:
-  - "OMP_NUM_THREADS=1"
+  - "OMP_NUM_THREADS=2"

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -59,14 +60,12 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request) {
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    request->markAsFaulty();
-    if (request->isRead()) {
-      request->turnIntoReadResponse(std::vector<char>('\0', request->size_));
-    }
     std::cout << "Data-Abort Addr: " << request->vaddr_ << std::endl;
     std::cout << "Is_Instr_Read: " << request->isInstrRead() << std::endl;
+    std::cout << "Is_Untimed: " << request->isUntimed() << std::endl;
+    std::cout << "Is-Read: " << request->isRead() << std::endl;
+    request->markAsFaulty();
     port_->recieve(std::move(request));
-    std::cout << "Yooooooooo" << std::endl;
     return;
   }
 

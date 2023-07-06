@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 
 #include <cstddef>
+#include <cstdint>
 
 namespace simeng {
 namespace OS {
@@ -26,9 +27,9 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   }
   off_t fstatFileSize = statbuf->st_size;
   free(statbuf);
-  if (offset + len > fstatFileSize) {
+  if (offset > fstatFileSize) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Tried to create host backed "
-                 "file mmap with offset and size greater "
+                 "file mmap with offset greater "
                  "than file size."
               << std::endl;
     // std::exit(1);
@@ -42,13 +43,13 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   }
   // Always pass offset 0 as it must be aligned to host page size, which can
   // differ (i.e. MacOS has page size of 16KiB).
-  void* filemmap =
-      mmap(NULL, fstatFileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  uint64_t effFileMapLen = fstatFileSize > len ? len : fstatFileSize;
+  void* filemmap = mmap(NULL, fstatFileSize, PROT_READ, MAP_PRIVATE, fd, 0);
   // Add offset to pointer manually
   char* offsettedPtr = (char*)filemmap + offset;
   void* newPtr = (void*)offsettedPtr;
   HostFileMMap hfmm =
-      HostFileMMap(fd, filemmap, newPtr, fstatFileSize, len, offset);
+      HostFileMMap(fd, filemmap, newPtr, fstatFileSize, effFileMapLen, offset);
   hostVec_.push_back(hfmm);
   return hfmm;
 }

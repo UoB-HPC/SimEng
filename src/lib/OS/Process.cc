@@ -308,14 +308,19 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   if (!hasFile) return taddr;
 
   void* filebuf = vm.getFileBuf();
-
   // Since page fault only allocates a single page it could be possible that a
   // part of the file assosciate with a vma has already been sent to memory. To
   // handle this situation we calculate the offset from VMA start address as
   // this address is also page size aligned.
   uint64_t offset = alignedVAddr - vm.vmStart_;
-  size_t writeLen = vm.getFileSize() - (offset);
-  writeLen = writeLen > PAGE_SIZE ? PAGE_SIZE : writeLen;
+  uint64_t fileBufSize = vm.getFileSize();
+  if (offset > fileBufSize) {
+    sendToMem_(std::vector<char>(PAGE_SIZE, '\0'), paddr, PAGE_SIZE);
+    return taddr;
+  }
+
+  uint64_t writeLen =
+      (fileBufSize - offset) > PAGE_SIZE ? PAGE_SIZE : (fileBufSize - offset);
 
   char* castedFileBuf = static_cast<char*>(filebuf);
   std::vector<char> data(castedFileBuf + offset,
@@ -323,6 +328,10 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   // send file to memory;
   if (writeLen > 0) {
     sendToMem_(data, paddr, writeLen);
+  }
+  if (writeLen < PAGE_SIZE) {
+    sendToMem_(std::vector<char>(PAGE_SIZE - writeLen, '\0'), paddr + writeLen,
+               PAGE_SIZE - writeLen);
   }
   return taddr;
 }
@@ -419,7 +428,6 @@ void Process::loadInstructions(span<char>& instructions, size_t simMemSize) {
   uint64_t heapStart = instrEnd;
   uint64_t heapEnd = heapSize + mmapSize;
 
-  // Mmap grows upwards towards higher addresses.
   uint64_t mmapStart = PAGE_SIZE;
   uint64_t mmapEnd = heapSize + mmapSize;
 

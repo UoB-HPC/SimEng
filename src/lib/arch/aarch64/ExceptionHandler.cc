@@ -56,6 +56,7 @@ bool ExceptionHandler::handleException() {
     simeng::OS::ProcessStateChange stateChange = {};
     switch (syscallId) {
       case 29:     // ioctl
+      case 43:     // [deprecated] statfs
       case 46:     // ftruncate
       case 48:     // faccessat
       case 56:     // openat

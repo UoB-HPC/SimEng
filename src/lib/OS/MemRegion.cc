@@ -365,12 +365,11 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
     std::cout << "MAP_FIXED Size: " << size << std::endl;
     std::cout << "HAS_NO_FILE: " << hfmmap.isEmpty() << std::endl;
 
-    /**
     if (startAddr == 6791168) {
       startAddr = 6729384;
       startAddr = downAlign(startAddr, PAGE_SIZE);
     }
-    */
+
     if (downAlign(startAddr, PAGE_SIZE) != startAddr) {
       std::cerr << "Addr argument specified with MAP_FIXED flag to the mmap "
                    "call is not page aligned."
@@ -384,6 +383,9 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
 
     VMA vma = VMA(prot, flags, size, hfmmap);
     uint64_t retAddr = addVmaExactlyAtAddr(vma, startAddr);
+    /**std::cout << "------------------------------" << std::endl;
+    printVmaList();
+    std::cout << "------------------------------" << std::endl;*/
     return retAddr;
   }
 
@@ -392,6 +394,10 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
   // TODO: Check if offset should be contained in HostBackedFileMMap,
   // because hfmmaps are shared during unmaps.
   uint64_t retAddr = addVma(vma, startAddr);
+  /*
+  std::cout << "------------------------------" << std::endl;
+  printVmaList();
+  std::cout << "------------------------------" << std::endl;*/
   return retAddr;
 }
 
