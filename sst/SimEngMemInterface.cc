@@ -7,74 +7,211 @@
 
 #include <iostream>
 
+#include "simeng/memory/MemPacket.hh"
+
 using namespace SST::SSTSimEng;
 
-SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
+SimEngMemInterface::SimEngMemInterface(StandardMem* dataMem,
+                                       StandardMem* instrMem, uint64_t cl,
                                        uint64_t max_addr, bool debug)
-    : simeng::MemoryInterface() {
-  this->sstMem_ = mem;
+    : simeng::memory::Mem() {
+  this->dataMem_ = dataMem;
+  this->instrMem_ = instrMem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
   this->debug_ = debug;
 };
 
-void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
-  std::vector<uint8_t> data;
-  data.reserve(size);
+size_t SimEngMemInterface::getMemorySize() { return maxAddrMemory_ + 1; }
 
-  for (uint64_t i = 0; i < size; i++) {
-    data.push_back((uint8_t)image[i]);
+void SimEngMemInterface::requestAccess(
+    std::unique_ptr<simeng::memory::MemPacket>& pkt) {
+  if (pkt->ignore()) {
+    // std::cerr << "IGNORE: " << pkt->vaddr_ << ":" << pkt->paddr_ <<
+    // std::endl;
+    handleIgnoredRequest(pkt);
+    if (pkt->isFromSystem())
+      sysPort_->send(std::move(pkt));
+    else
+      memPort_->send(std::move(pkt));
+  } else if (pkt->isRequest() && pkt->isRead()) {
+    // std::cerr << "READ: " << pkt->vaddr_ << ":" << pkt->paddr_ << std::endl;
+    handleReadRequest(pkt);
+    return;
+  } else if (pkt->isRequest() && pkt->isWrite()) {
+    // std::cerr << "WRITE: " << pkt->vaddr_ << ":" << pkt->paddr_ << std::endl;
+    handleWriteRequest(pkt);
+    return;
+  } else {
+    std::cerr << "[SimEng:SimEngMemInterface] Invalid MemPacket type for "
+                 "requesting access to memory. Requests to memory should "
+                 "either be of "
+                 "type READ_REQUEST or WRITE_REQUEST."
+              << std::endl;
+    pkt->markAsFaulty();
+    if (pkt->isFromSystem())
+      sysPort_->send(std::move(pkt));
+    else
+      memPort_->send(std::move(pkt));
+  }
+}
+
+void SimEngMemInterface::sendUntimedData(std::vector<char> data, uint64_t addr,
+                                         size_t size) {
+  std::cerr << "[SimEng:SimEngMemInterface] Attempted to send untimed data "
+               "which is unsupported outside of the init() and complete() "
+               "stages of an SST simulation. Exiting..."
+            << std::endl;
+  exit(1);
+}
+
+std::vector<char> SimEngMemInterface::getUntimedData(uint64_t paddr,
+                                                     size_t size) {
+  std::cerr << "[SimEng:SimEngMemInterface] Attempted to get untimed data "
+               "which is unsupported outside of the init() and complete() "
+               "stages of an SST simulation. Exiting..."
+            << std::endl;
+  exit(1);
+}
+
+void SimEngMemInterface::handleIgnoredRequest(
+    std::unique_ptr<simeng::memory::MemPacket>& pkt) {
+  if (pkt->isRead()) {
+    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
+  } else {
+    pkt->turnIntoWriteResponse();
+  }
+}
+
+void SimEngMemInterface::handleReadRequest(
+    std::unique_ptr<simeng::memory::MemPacket>& pkt) {
+  uint64_t pAddrStart = pkt->paddr_;
+  uint64_t vAddrStart = pkt->vaddr_;
+  uint64_t size = pkt->size_;
+  uint64_t pAddrEnd = pAddrStart + size - 1;
+
+  AggregateReadRequest* aggrReq = new AggregateReadRequest(pkt);
+  std::vector<StandardMem::Request*> requests =
+      makeSSTRequests<AggregateReadRequest>(aggrReq, pAddrStart, pAddrEnd,
+                                            vAddrStart, size);
+  // SST output data parsed by the testing framework.
+  // Format:
+  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
+  // -cycle-<cycle count>-split-<number of requests>
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemRead"
+              << "-read-request-" << aggrReq->id_ << "-cycle-" << tickCounter_
+              << "-split-" << requests.size() << std::endl;
+  }
+  if (aggrReq->pkt_->isInstrRead()) {
+    for (StandardMem::Request* req : requests) {
+      // std::cerr << req->getString() << std::endl;
+      instrMem_->send(req);
+    }
+  } else {
+    for (StandardMem::Request* req : requests) {
+      // std::cerr << req->getString() << std::endl;
+      dataMem_->send(req);
+    }
+  }
+}
+
+void SimEngMemInterface::handleWriteRequest(
+    std::unique_ptr<simeng::memory::MemPacket>& pkt) {
+  uint64_t pAddrStart = pkt->paddr_;
+  uint64_t vAddrStart = pkt->vaddr_;
+  uint64_t size = pkt->size_;
+  uint64_t pAddrEnd = pAddrStart + size - 1;
+
+  // std::cerr << "Writing " << std::hex << vAddrStart << std::dec << " sized "
+  //           << size << std::endl;
+
+  AggregateWriteRequest* aggrReq = new AggregateWriteRequest(pkt);
+  std::vector<StandardMem::Request*> requests =
+      makeSSTRequests<AggregateWriteRequest>(aggrReq, pAddrStart, pAddrEnd,
+                                             vAddrStart, size);
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemWrite"
+              << "-write-request-" << aggrReq->id_ << "-cycle-" << tickCounter_
+              << "-split-" << requests.size() << std::endl;
   }
 
-  StandardMem::Request* req = new StandardMem::Write(0, data.size(), data);
-  sstMem_->sendUntimedData(req);
-  return;
-};
+  for (StandardMem::Request* req : requests) {
+    // std::cerr << req->getString() << std::endl;
+    dataMem_->send(req);
+  }
+}
+
+std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+SimEngMemInterface::initMemPort() {
+  memPort_ =
+      std::make_shared<Port<std::unique_ptr<simeng::memory::MemPacket>>>();
+  auto fn = [this](std::unique_ptr<simeng::memory::MemPacket> packet) -> void {
+    this->requestAccess(packet);
+  };
+  memPort_->registerReceiver(fn);
+  return memPort_;
+}
+
+std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+SimEngMemInterface::initSystemPort() {
+  sysPort_ =
+      std::make_shared<Port<std::unique_ptr<simeng::memory::MemPacket>>>();
+  auto fn = [this](std::unique_ptr<simeng::memory::MemPacket> packet) -> void {
+    packet->markAsFromSystem();
+    this->requestAccess(packet);
+  };
+  sysPort_->registerReceiver(fn);
+  return sysPort_;
+}
 
 template <typename T,
           typename std::enable_if<std::is_base_of<
               SimEngMemInterface::SimEngMemoryRequest, T>::value>::type*>
 std::vector<StandardMem::Request*> SimEngMemInterface::makeSSTRequests(
-    T* aggrReq, uint64_t addrStart, uint64_t addrEnd, uint64_t size) {
+    T* aggrReq, uint64_t pAddrStart, uint64_t pAddrEnd, uint64_t vAddrStart,
+    uint64_t size) {
   /*
       Here we check if the memory request spans multiple cache lines.
       i.e from the start address to the end of the cache line there isn't
       enough space to store data or the data to read continues to succeeding
       cache lines. To handle this case the request addresses are divided as
       follows:
-          1) addrStart to end of first cache-line.
+          1) pAddrStart to end of first cache-line.
           2) Start of second cache-line to addrEnd.
-      Note: addrEnd can be multiple cache-lines ahead of addrStart
+      Note: addrEnd can be multiple cache-lines ahead of pAddrStart
 
       |   cache-line 1   |   cache-line 2   |
       |         |        |        |         |
       |         |        |        |         |
       |         |        |        |         |
       |         V        |        V         |
-      |     addrStart    |     addrEnd      |
+      |     pAddrStart    |     pAddrEnd      |
       |          <--------------->          |
       |             Request size            |
       |------------------|------------------|
   */
-  if (requestSpansMultipleCacheLines(addrStart, addrEnd)) {
+  if (requestSpansMultipleCacheLines(pAddrStart, pAddrEnd)) {
     std::vector<StandardMem::Request*> reqs;
     uint64_t cacheLineEndAddr =
-        nearestCacheLineEnd(addrStart) * cacheLineWidth_;
-    uint64_t firstFragmentSize = cacheLineEndAddr - addrStart;
+        nearestCacheLineEnd(pAddrStart) * cacheLineWidth_;
+    uint64_t firstFragmentSize = cacheLineEndAddr - pAddrStart;
     uint64_t secondFragmentSize = size - firstFragmentSize;
-    std::vector<StandardMem::Request*> rvec1 =
-        splitAggregatedRequest(aggrReq, addrStart, firstFragmentSize);
-    std::vector<StandardMem::Request*> rvec2 =
-        splitAggregatedRequest(aggrReq, cacheLineEndAddr, secondFragmentSize);
+    std::vector<StandardMem::Request*> rvec1 = splitAggregatedRequest(
+        aggrReq, pAddrStart, vAddrStart, firstFragmentSize);
+    std::vector<StandardMem::Request*> rvec2 = splitAggregatedRequest(
+        aggrReq, cacheLineEndAddr,
+        (vAddrStart + (cacheLineEndAddr - pAddrStart)), secondFragmentSize);
     reqs.insert(reqs.end(), rvec1.begin(), rvec1.end());
     reqs.insert(reqs.end(), rvec2.begin(), rvec2.end());
     return reqs;
   }
-  return splitAggregatedRequest(aggrReq, addrStart, size);
+  return splitAggregatedRequest(aggrReq, pAddrStart, vAddrStart, size);
 }
 
 std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
-    AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size) {
+    AggregateWriteRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
+    uint64_t size) {
   std::vector<StandardMem::Request*> requests;
   uint64_t dataIndex = 0;
   // Determine the number of cache-lines needed to store the data in the write
@@ -86,8 +223,8 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
      spans multiple cache-lines. In reference to the diagram above, this check
      will succeed only for cache-line 2.
   */
-  if (addrStart > aggrReq->target.address) {
-    dataIndex += addrStart - aggrReq->target.address;
+  if (pAddrStart > aggrReq->pkt_->paddr_) {
+    dataIndex += pAddrStart - aggrReq->pkt_->paddr_;
   }
   // Loop used to divide a write request from SimEng based on cache-line size.
   for (int x = 0; x < numCacheLinesNeeded; x++) {
@@ -102,23 +239,31 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
 
     // Fill the payload vector currReqSize number of bytes starting
     // and inclusive of the dataIndex.
-    const char* data = aggrReq->data.getAsVector<char>();
+    const char* data = aggrReq->data_.getAsVector<char>();
     memcpy((void*)&payload[0], &(data[dataIndex]), currReqSize);
+    uint32_t flags = 0;
+    if (aggrReq->pkt_->isUntimed()) {
+      flags = 2;
+    }
     StandardMem::Request* writeReq =
-        new StandardMem::Write(addrStart, currReqSize, payload);
+        new StandardMem::Write(pAddrStart, currReqSize, payload, false, flags);
 
+    aggrReq->aggregateCount_++;
     dataIndex += currReqSize;
-    addrStart += currReqSize;
+    pAddrStart += currReqSize;
+    vAddrStart += currReqSize;
     requests.push_back(writeReq);
+    aggregationMap_.insert({writeReq->getID(), aggrReq});
   }
   return requests;
 }
 
 std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
-    AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size) {
+    AggregateReadRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
+    uint64_t size) {
   std::vector<StandardMem::Request*> requests;
-  // Get the number of cache-lines needed to read the data requested by the read
-  // request.
+  // Get the number of cache-lines needed to read the data requested by the
+  // read request.
   int numCacheLinesNeeded = getNumCacheLinesNeeded(size);
 
   // Loop used to divide a read request from SimEng based on cache-line size.
@@ -130,17 +275,18 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     }
 
     StandardMem::Request* readReq =
-        new StandardMem::Read(addrStart, currReqSize);
+        new StandardMem::Read(pAddrStart, currReqSize);
 
     // Increase the aggregate count to denote the number SST requests a read
     // request from SimEng was split into.
     aggrReq->aggregateCount_++;
-    addrStart += currReqSize;
+    pAddrStart += currReqSize;
+    vAddrStart += currReqSize;
     requests.push_back(readReq);
     /*
     Insert a key-value pair of SST request id and AggregatedReadRequest
     reference in the aggregation map. These key-value pairs will later be
-    used to store read response data recieved from SST. This models a
+    used to store read response data received from SST. This models a
     many-to-one relation between multiple SST requests and a SimEng read
     request.
     */
@@ -149,77 +295,15 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
   return requests;
 }
 
-void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
-                                     uint64_t requestId) {
-  uint64_t addrStart = target.address;
-  uint64_t size = unsigned(target.size);
-  uint64_t addrEnd = addrStart + size - 1;
-  /*
-      Check if address is greater than max memory address or overflows.
-      This often happens on wrongly speculated branches leading to
-      large values. In this case we queue an empty register value
-      which signals an exception. However, wrongly speculated branches
-      lead to a pipeline flush after which execution continues.
-  */
-  if (addrEnd > maxAddrMemory_ || unsignedOverflow_(addrStart, size)) {
-    completedReadRequests_.push_back({target, RegisterValue(), requestId});
-    return;
-  }
-
-  AggregateReadRequest* aggrReq = new AggregateReadRequest(target, requestId);
-  std::vector<StandardMem::Request*> requests =
-      makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
-  // SST output data parsed by the testing framework.
-  // Format:
-  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
-  // -cycle-<cycle count>-split-<number of requests>
-  if (debug_) {
-    std::cout << "[SSTSimEng:SSTDebug] MemRead"
-              << "-read-request-" << requestId << "-cycle-" << tickCounter_
-              << "-split-" << requests.size() << std::endl;
-  }
-  for (StandardMem::Request* req : requests) {
-    sstMem_->send(req);
-  }
-}
-
-void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
-                                      const RegisterValue& data) {
-  uint64_t addrStart = target.address;
-  uint64_t size = unsigned(target.size);
-  uint64_t addrEnd = addrStart + size - 1;
-
-  AggregateWriteRequest* aggrReq = new AggregateWriteRequest(target, data);
-  std::vector<StandardMem::Request*> requests =
-      makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
-
-  for (StandardMem::Request* req : requests) {
-    sstMem_->send(req);
-  }
-}
-
 void SimEngMemInterface::tick() { tickCounter_++; }
-
-void SimEngMemInterface::clearCompletedReads() {
-  completedReadRequests_.clear();
-}
-
-bool SimEngMemInterface::hasPendingRequests() const {
-  return aggregationMap_.size() > 0;
-};
-
-const span<MemoryReadResult> SimEngMemInterface::getCompletedReads() const {
-  return {const_cast<MemoryReadResult*>(completedReadRequests_.data()),
-          completedReadRequests_.size()};
-};
 
 void SimEngMemInterface::aggregatedReadResponses(
     AggregateReadRequest* aggrReq) {
   if (aggrReq->aggregateCount_ != 0) return;
-  std::vector<uint8_t> mergedData;
+  std::vector<char> mergedData;
   // Loop through the ordered map and merge the data in order inside the
-  // mergedData vector. Also remove entries from the aggregation_map as we loop
-  // through each SST Request id.
+  // mergedData vector. Also remove entries from the aggregation_map as we
+  // loop through each SST Request id.
   for (auto itr = aggrReq->responseMap_.begin();
        itr != aggrReq->responseMap_.end(); itr++) {
     mergedData.insert(mergedData.end(), itr->second.begin(), itr->second.end());
@@ -229,7 +313,7 @@ void SimEngMemInterface::aggregatedReadResponses(
   // completed_read_requests queue.
   uint64_t resp = 0;
   for (int x = mergedData.size() - 1; x >= 0; x--) {
-    resp = (resp << 8) | mergedData[x];
+    resp = (resp << 8) | static_cast<uint8_t>(mergedData[x]);
   }
   // SST output data parsed by the testing framework.
   // Format:
@@ -242,20 +326,41 @@ void SimEngMemInterface::aggregatedReadResponses(
               << "-data-" << resp << std::endl;
   }
 
-  const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
-  completedReadRequests_.push_back(
-      {aggrReq->target,
-       RegisterValue(char_data, uint16_t(unsigned(aggrReq->target.size))),
-       aggrReq->id_});
+  aggrReq->pkt_->turnIntoReadResponse(mergedData);
+  if (aggrReq->pkt_->isFromSystem())
+    sysPort_->send(std::move(aggrReq->pkt_));
+  else
+    memPort_->send(std::move(aggrReq->pkt_));
+
+  // const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
+
+  // completedReadRequests_.push_back(
+  //     {aggrReq->target,
+  //      RegisterValue(char_data, uint16_t(unsigned(aggrReq->target.size))),
+  //      aggrReq->id_});
 
   // Cleanup
   aggrReq->responseMap_.clear();
   delete aggrReq;
 }
 
-void SimEngMemInterface::SimEngMemHandlers::handle(
-    StandardMem::WriteResp* rsp) {
-  delete rsp;
+void SimEngMemInterface::aggregatedWriteResponses(
+    AggregateWriteRequest* aggrReq) {
+  if (aggrReq->aggregateCount_ != 0) return;
+  uint64_t id = aggrReq->id_;
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemWrite"
+              << "-read-response-" << id << "-cycle-" << tickCounter_
+              << std::endl;
+  }
+  aggrReq->pkt_->turnIntoWriteResponse();
+  if (aggrReq->pkt_->isFromSystem())
+    sysPort_->send(std::move(aggrReq->pkt_));
+  else
+    memPort_->send(std::move(aggrReq->pkt_));
+
+  // Cleanup
+  delete aggrReq;
 }
 
 void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
@@ -263,28 +368,46 @@ void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
   auto data = rsp->data;
   delete rsp;
 
-  // Upon recieving a response from SST the aggregation_map is used to retrieve
-  // the AggregatedReadRequest the recieved SST response is a part of.
+  // Upon receiving a response from SST the aggregation_map is used to
+  // retrieve the AggregatedReadRequest the received SST response is a part
+  // of.
   auto itr = memInterface_.aggregationMap_.find(id);
   if (itr == memInterface_.aggregationMap_.end()) return;
   /*
       After succesful retrieval of AggregatedReadRequest from aggregation_map
-     the response data is stored inside the AggregatedReadRequest in an ordered
-     map. It is neccesary to maintain order in which the orginal read request
-     from SimEng was split into otherwise garbage values will be obtained upon
-     merging. An ordered map is used here because SST::StandardMem::Request ids
-     are generated using an atomic incrementing couter. Reference -
-     "interfaces/stdMem.(hh/cc)" (SST-Core)
+     the response data is stored inside the AggregatedReadRequest in an
+     ordered map. It is neccesary to maintain order in which the orginal read
+     request from SimEng was split into otherwise garbage values will be
+     obtained upon merging. An ordered map is used here because
+     SST::StandardMem::Request ids are generated using an atomic incrementing
+     couter. Reference - "interfaces/stdMem.(hh/cc)" (SST-Core)
   */
-  SimEngMemInterface::AggregateReadRequest* aggrReq = itr->second;
+  SimEngMemInterface::AggregateReadRequest* aggrReq =
+      reinterpret_cast<SimEngMemInterface::AggregateReadRequest*>(itr->second);
   aggrReq->responseMap_.insert({id, data});
   /*
-      Decrement aggregateCount as we keep on recieving responses from SST.
-      If all responses have been recieved aggregate all responses and send
+      Decrement aggregateCount as we keep on receiving responses from SST.
+      If all responses have been received aggregate all responses and send
       data back to SimEng.
   */
   if (--aggrReq->aggregateCount_ <= 0) {
     memInterface_.aggregatedReadResponses(aggrReq);
+  }
+}
+
+void SimEngMemInterface::SimEngMemHandlers::handle(
+    StandardMem::WriteResp* rsp) {
+  uint64_t id = rsp->getID();
+  delete rsp;
+
+  auto itr = memInterface_.aggregationMap_.find(id);
+  if (itr == memInterface_.aggregationMap_.end()) return;
+
+  SimEngMemInterface::AggregateWriteRequest* aggrReq =
+      reinterpret_cast<SimEngMemInterface::AggregateWriteRequest*>(itr->second);
+
+  if (--aggrReq->aggregateCount_ <= 0) {
+    memInterface_.aggregatedWriteResponses(aggrReq);
   }
 }
 

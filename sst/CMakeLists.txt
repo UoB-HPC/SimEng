@@ -1,4 +1,4 @@
-set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc)
+set(SIMENG_SST_SOURCES SimOSWrapper.cc SimEngMemInterface.cc Assemble.cc)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
 # Including SimEng include files and SST include files
