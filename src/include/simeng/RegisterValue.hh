@@ -26,7 +26,7 @@ class RegisterValue {
    * number of bytes (defaulting to the size of the template type). */
   template <class T,
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
-  RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
+  RegisterValue(T value, uint32_t bytes = sizeof(T)) : bytes(bytes) {
     if (isLocal()) {
       T* view = reinterpret_cast<T*>(this->value);
       view[0] = value;
@@ -52,7 +52,7 @@ class RegisterValue {
   /** Create a new RegisterValue of size `capacity`, copying `bytes`
    * from `ptr`.
    */
-  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
+  RegisterValue(const char* ptr, uint32_t bytes, uint32_t capacity)
       : bytes(capacity) {
     assert(capacity >= bytes && "Capacity is less then requested bytes");
     char* dest;
@@ -69,7 +69,7 @@ class RegisterValue {
   }
 
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
-  RegisterValue(const char* ptr, uint16_t bytes)
+  RegisterValue(const char* ptr, uint32_t bytes)
       : RegisterValue(ptr, bytes, bytes) {}
 
   /** Create a new RegisterValue by copying bytes from a fixed-size array. The
@@ -111,17 +111,17 @@ class RegisterValue {
   /** Create a new RegisterValue of size `toBytes`, copying the first
    * `fromBytes` bytes of this one. The remaining bytes of the new
    * RegisterValue are zeroed. */
-  RegisterValue zeroExtend(uint16_t fromBytes, uint16_t toBytes) const;
+  RegisterValue zeroExtend(uint32_t fromBytes, uint32_t toBytes) const;
 
  private:
   /** Check whether the value is held locally or behind a pointer. */
   constexpr bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }
 
   /** The maximum number of bytes that can be held locally. */
-  static constexpr uint16_t MAX_LOCAL_BYTES = 16;
+  static constexpr uint32_t MAX_LOCAL_BYTES = 16;
 
   /** The number of bytes held. */
-  uint16_t bytes = 0;
+  uint32_t bytes = 0;
 
   /** The underlying pointer each instance references. */
   std::shared_ptr<char> ptr;

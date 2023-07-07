@@ -12,10 +12,10 @@ struct MemoryAccessTarget {
   /** The address to access. */
   uint64_t vaddr = 0;
   /** The number of bytes to access at `address`. */
-  uint16_t size = 0;
+  uint32_t size = 0;
 
   /** Constructor to create MemoryAccessTarget with addr and size values. */
-  MemoryAccessTarget(uint64_t taddr, uint16_t tsize)
+  MemoryAccessTarget(uint64_t taddr, uint32_t tsize)
       : vaddr(taddr), size(tsize) {}
 
   /** Default empty constructor for MemoryAccessTarget. */
