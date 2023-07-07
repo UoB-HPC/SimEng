@@ -47,6 +47,7 @@ set(SIMENG_SOURCES
     pipeline/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
+    backward.cc
     CoreInstance.cc
     Elf.cc
     GenericPredictor.cc

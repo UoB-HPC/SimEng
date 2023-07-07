@@ -44,7 +44,7 @@ Memory-Hierarchy:
     Size: 65536 # 64 KiB
   DRAM:
     Access-Latency: 5
-    Size: 2684354560 # 2.5 GiB
+    Size: 3221225472 # 2.5 GiB
 LSQ-Memory-Interface:
   Exclusive: True
   Load-Bandwidth: 128
