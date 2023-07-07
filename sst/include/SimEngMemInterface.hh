@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/span.hh"
 
 using namespace simeng;
@@ -27,42 +27,38 @@ namespace SST {
 namespace SSTSimEng {
 
 /** A memory interface used by SimEng to communicate with SST's memory model. */
-class SimEngMemInterface : public MemoryInterface {
+class SimEngMemInterface : public simeng::memory::Mem {
  public:
-  SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
-                     bool debug);
-  /** Send SimEng's processImage to SST memory backend during `init` lifecycle
-   * phase of SST. */
-  void sendProcessImageToSST(char* image, uint64_t size);
+  SimEngMemInterface(StandardMem* dataMem, StandardMem* instrMem, uint64_t cl,
+                     uint64_t max_addr, bool debug);
+
+  /** This method requests access to memory for both read and write requests. */
+  void requestAccess(std::unique_ptr<simeng::memory::MemPacket>& pkt) override;
+
+  /** This method returns the size of memory. */
+  size_t getMemorySize() override;
+
+  /** This method writes data to memory without incurring any latency.  */
+  void sendUntimedData(std::vector<char> data, uint64_t addr,
+                       size_t size) override;
+
+  /** This method reads data from memory without incurring any latency. */
+  std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
+
+  void handleIgnoredRequest(
+      std::unique_ptr<simeng::memory::MemPacket>& pkt) override;
+
+  /** Function used to initialise a Port used for bidirection communication. */
+  std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+  initMemPort() override;
+
+  std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+  initSystemPort() override;
 
   /**
-   * Construct an AggregatedReadRequest and use it to generate
-   * SST::StandardMem::Read request(s). These request(s) are then sent to SST.
+   * Tick the memory interface to process SimEng related tasks.
    */
-  void requestRead(const MemoryAccessTarget& target, uint64_t requestId = 0);
-
-  /**
-   * Construct an AggregatedWriteRequest and use it to generate
-   * SST::StandardMem::Write request(s). These request(s) are then sent to SST.
-   */
-  void requestWrite(const MemoryAccessTarget& target,
-                    const RegisterValue& data);
-
-  /** Retrieve all completed read requests. */
-  const span<MemoryReadResult> getCompletedReads() const;
-
-  /** Clear the completed reads. */
-  void clearCompletedReads();
-
-  /** Returns true if there are any oustanding memory requests. */
-  bool hasPendingRequests() const;
-
-  /**
-   * Tick the memory interface to process SimEng related tasks. Since all memory
-   * operations are handled by SST this method is only used increment
-   * `tickCounter`.
-   */
-  void tick();
+  void tick() override;
 
   /**
    * An instance of `SimEngMemHandlers` is registered to an instance of
@@ -103,11 +99,14 @@ class SimEngMemInterface : public MemoryInterface {
    * struct for AggregateWriteRequest and AggregateReadRequest.
    */
   struct SimEngMemoryRequest {
-    /** MemoryAccessTarget from SimEng memory instruction. */
-    const MemoryAccessTarget target;
+    const uint64_t id_;
+    std::unique_ptr<simeng::memory::MemPacket> pkt_;
+    /** Total number of SST request the SimEng memory request was split into. */
+    int aggregateCount_ = 0;
 
-    SimEngMemoryRequest() : target(MemoryAccessTarget()){};
-    SimEngMemoryRequest(const MemoryAccessTarget& target) : target(target){};
+    SimEngMemoryRequest() : id_(0){};
+    SimEngMemoryRequest(std::unique_ptr<simeng::memory::MemPacket>& pkt)
+        : id_(pkt->id_), pkt_(std::move(pkt)){};
   };
 
   /**
@@ -119,12 +118,12 @@ class SimEngMemInterface : public MemoryInterface {
    */
   struct AggregateWriteRequest : public SimEngMemoryRequest {
     /** RegisterValue (write data) from SimEng memory instruction. */
-    const RegisterValue data;
+    const simeng::RegisterValue data_;
 
-    AggregateWriteRequest() : SimEngMemoryRequest(), data(RegisterValue()){};
-    AggregateWriteRequest(const MemoryAccessTarget& target,
-                          const RegisterValue& data)
-        : SimEngMemoryRequest(target), data(data){};
+    AggregateWriteRequest() : SimEngMemoryRequest(), data_(RegisterValue()){};
+    AggregateWriteRequest(std::unique_ptr<simeng::memory::MemPacket>& pkt)
+        : SimEngMemoryRequest(pkt),
+          data_(RegisterValue(pkt_->payload().data(), pkt_->size_)){};
   };
 
   /**
@@ -135,83 +134,60 @@ class SimEngMemInterface : public MemoryInterface {
    * aren't split for ease of implementation.
    */
   struct AggregateReadRequest : public SimEngMemoryRequest {
-    /** Unique identifier of each AggregatedReadRequest copied from SimEng read
-     * request. */
-    const uint64_t id_;
     /**
      * This response map is used to store all responses of SST read request,
      * this aggregated read request was split into. An ordered map is used to
      * record and maintain the order to split responses.
      */
     std::map<uint64_t, std::vector<uint8_t>> responseMap_;
-    /** Total number of SST request the SimEng memory request was split into. */
-    int aggregateCount_ = 0;
 
-    AggregateReadRequest() : SimEngMemoryRequest(), id_(0){};
-    AggregateReadRequest(const MemoryAccessTarget& target, const uint64_t id)
-        : SimEngMemoryRequest(target), id_(id) {}
+    AggregateReadRequest() : SimEngMemoryRequest(){};
+    AggregateReadRequest(std::unique_ptr<simeng::memory::MemPacket>& pkt)
+        : SimEngMemoryRequest(pkt) {}
   };
 
  private:
   /**
-   * SST::Interfaces::StandardMem interface responsible for converting
-   * SST::StandardMem::Request(s) into SST memory events to be passed
-   * down the memory heirarchy.
+   * Construct an AggregatedReadRequest and use it to generate
+   * SST::StandardMem::Read request(s). These request(s) are then sent to SST.
    */
-  StandardMem* sstMem_;
-
-  /** Counter for clock ticks. */
-  uint64_t tickCounter_ = 0;
-
-  /** The cache line width specified by SST config.py. */
-  uint64_t cacheLineWidth_;
-
-  /** Maximum address available for memory purposes. */
-  uint64_t maxAddrMemory_;
-
-  /** A vector containing all completed read requests. */
-  std::vector<MemoryReadResult> completedReadRequests_;
+  void handleReadRequest(std::unique_ptr<simeng::memory::MemPacket>& req);
 
   /**
-   * This map is used to store unique ids of SST::StandardMem::Read requests and
-   * their corresponding AggregateReadRequest as key-value pairs (In some cases
-   * SimEngMemoryRequest has to be divided into multiple
-   * SST::StandardMem::Request(s) if the SimEngMemoryRequest size > cache line
-   * width). That is, the unique ids of multiple read requests and their
-   * corresponding aggregatedReadRequest are stored in a many-to-one fashion.
-   * An entry from this map is removed when a response for
-   * SST::StandardMem::Read request is recieved and recorded. The response holds
-   * the same unique id as the request. No such key-value pairs are maintained
-   * for AggregatedWriteRequest(s) even if they are split into multiple
-   * SST::StandardMem::Write requests as their responses do not need to be
-   * aggregated.
+   * Construct an AggregatedWriteRequest and use it to generate
+   * SST::StandardMem::Write request(s). These request(s) are then sent to SST.
    */
-  std::unordered_map<uint64_t, AggregateReadRequest*> aggregationMap_;
+  void handleWriteRequest(std::unique_ptr<simeng::memory::MemPacket>& req);
 
   /** This method only accepts structs derived from the SimEngMemoryRequest
    * struct as the value for aggrReq. */
   template <typename T, typename std::enable_if<std::is_base_of<
                             SimEngMemoryRequest, T>::value>::type* = nullptr>
   std::vector<StandardMem::Request*> makeSSTRequests(T* aggrReq,
-                                                     uint64_t addrStart,
-                                                     uint64_t addrEnd,
+                                                     uint64_t pAddrStart,
+                                                     uint64_t pAddrEnd,
+                                                     uint64_t vAddrStart,
                                                      uint64_t size);
 
   /** The overloaded instance of splitAggregatedRequest is used to split an
    * AggregatedWriteRequest into multiple SST write requests.
    */
   std::vector<StandardMem::Request*> splitAggregatedRequest(
-      AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size);
+      AggregateWriteRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
+      uint64_t size);
 
   /** The overloaded instance of splitAggregatedRequest is used to split an
    * AggregatedReadRequest into multiple SST read requests.
    */
   std::vector<StandardMem::Request*> splitAggregatedRequest(
-      AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size);
+      AggregateReadRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
+      uint64_t size);
 
   /** This method is used to aggregate responses from multiple read request into
    * one response. */
   void aggregatedReadResponses(AggregateReadRequest* aggrReq);
+
+  void aggregatedWriteResponses(AggregateWriteRequest* aggrReq);
 
   /** Get the number of cache lines needed incase the size of a memory request
    * is larger than cache line width.
@@ -234,6 +210,52 @@ class SimEngMemInterface : public MemoryInterface {
    * request spans multiple cache lines.
    */
   uint64_t nearestCacheLineEnd(uint64_t addrStart) const;
+
+  /**
+   * SST::Interfaces::StandardMem interface responsible for converting
+   * SST::StandardMem::Request(s) into SST memory events to be passed
+   * down the memory heirarchy.
+   */
+  StandardMem* dataMem_;
+
+  /**
+   * SST::Interfaces::StandardMem interface responsible for converting
+   * SST::StandardMem::Request(s) into SST memory events to be passed
+   * down the memory heirarchy.
+   */
+  StandardMem* instrMem_;
+
+  /** Port used for communication with other classes. */
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+      memPort_ = nullptr;
+
+  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
+      sysPort_ = nullptr;
+
+  /** Counter for clock ticks. */
+  uint64_t tickCounter_ = 0;
+
+  /** The cache line width specified by SST config.py. */
+  uint64_t cacheLineWidth_;
+
+  /** Maximum address available for memory purposes. */
+  uint64_t maxAddrMemory_;
+
+  /**
+   * This map is used to store unique ids of SST::StandardMem::Read requests and
+   * their corresponding AggregateReadRequest as key-value pairs (In some cases
+   * SimEngMemoryRequest has to be divided into multiple
+   * SST::StandardMem::Request(s) if the SimEngMemoryRequest size > cache line
+   * width). That is, the unique ids of multiple read requests and their
+   * corresponding aggregatedReadRequest are stored in a many-to-one fashion.
+   * An entry from this map is removed when a response for
+   * SST::StandardMem::Read request is received and recorded. The response holds
+   * the same unique id as the request. No such key-value pairs are maintained
+   * for AggregatedWriteRequest(s) even if they are split into multiple
+   * SST::StandardMem::Write requests as their responses do not need to be
+   * aggregated.
+   */
+  std::unordered_map<uint64_t, SimEngMemoryRequest*> aggregationMap_;
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
