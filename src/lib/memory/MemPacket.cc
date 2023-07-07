@@ -6,11 +6,11 @@
 namespace simeng {
 namespace memory {
 
-MemPacket::MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type,
+MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
                      uint64_t reqId)
     : vaddr_(vaddr), size_(size), id_(reqId), metadata_(type) {}
 
-MemPacket::MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type,
+MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
                      uint64_t reqId, std::vector<char> payload)
     : vaddr_(vaddr),
       size_(size),
@@ -19,14 +19,14 @@ MemPacket::MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type,
       payload_(payload) {}
 
 std::unique_ptr<MemPacket> MemPacket::createReadRequest(uint64_t vaddr,
-                                                        uint16_t size,
+                                                        uint32_t size,
                                                         uint64_t reqId) {
   return std::unique_ptr<MemPacket>(
       new MemPacket(vaddr, size, READ_REQUEST, reqId));
 }
 
 std::unique_ptr<MemPacket> MemPacket::createWriteRequest(
-    uint64_t vaddr, uint16_t size, uint64_t reqId, std::vector<char> payload) {
+    uint64_t vaddr, uint32_t size, uint64_t reqId, std::vector<char> payload) {
   return std::unique_ptr<MemPacket>(
       new MemPacket(vaddr, size, WRITE_REQUEST, reqId, payload));
 }

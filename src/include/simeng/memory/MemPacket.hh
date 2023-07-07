@@ -27,6 +27,7 @@ static constexpr uint8_t IgnoreMask = 0b00010000;
 static constexpr uint8_t PayloadMask = 0b00001000;
 static constexpr uint8_t InstrReadMask = 0b00000100;
 static constexpr uint8_t UntimedMemAccessMask = 0b00000010;
+static constexpr uint8_t FromSystem = 0b00000001;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -39,7 +40,7 @@ class MemPacket {
   uint64_t paddr_ = 0;
 
   /** The size of the memory operation to be performed. */
-  uint16_t size_ = 0;
+  uint32_t size_ = 0;
 
   /* Uniquely identifies a memory packet and is set by the MMU. Instruction-read
    * and data-write requests can have an ID of 0. */
@@ -73,6 +74,10 @@ class MemPacket {
   /** Function which indicates whether a MemPacket should be ignored or not. */
   inline bool ignore() const { return metadata_ & IgnoreMask; }
 
+  /** Function which indicates whether a MemPacket has been sent from a system
+   * class. */
+  inline bool isFromSystem() const { return metadata_ & FromSystem; }
+
   /** Function which indicates whether a MemPacket contains a payload.  */
   inline bool hasPayload() const { return metadata_ & PayloadMask; }
 
@@ -88,6 +93,9 @@ class MemPacket {
   /** Function used to mark a MemPacket to do untimed memory access. */
   inline void markAsUntimed() { metadata_ = metadata_ | UntimedMemAccessMask; }
 
+  /** Function used to mark a MemPacket as being from a system class. */
+  inline void markAsFromSystem() { metadata_ = metadata_ | FromSystem; }
+
   /** Function to return the data assosciated with a MemPacket. */
   std::vector<char>& payload() { return payload_; }
 
@@ -99,12 +107,12 @@ class MemPacket {
 
   /** Static function used to create a read request. */
   static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
-                                                      uint16_t size,
+                                                      uint32_t size,
                                                       uint64_t reqId);
 
   /** Static function used to create a write request. */
   static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
-                                                       uint16_t size,
+                                                       uint32_t size,
                                                        uint64_t reqId,
                                                        std::vector<char> data);
 
@@ -137,10 +145,10 @@ class MemPacket {
   MemPacket() {}
 
   /** Constructor for MemPackets which do not hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId);
+  MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type, uint64_t reqId);
 
   /** Constructor for MemPackets which hold any data. */
-  MemPacket(uint64_t vaddr, uint16_t size, MemPacketType type, uint64_t reqId,
+  MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type, uint64_t reqId,
             std::vector<char> data);
 };
 

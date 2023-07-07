@@ -162,7 +162,7 @@ class LoadStoreQueue {
       uint64_t,
       std::unordered_map<
           uint64_t,
-          std::vector<std::pair<std::shared_ptr<Instruction>, uint16_t>>>>
+          std::vector<std::pair<std::shared_ptr<Instruction>, uint32_t>>>>
       conflictionMap_;
 
   /** A map between LSQ cycles and load requests ready on that cycle. */
