@@ -151,13 +151,12 @@ void Core::tick() {
     buffer.tick();
   }
 
-  if (exceptionGenerated_ && handleException()) {
-    fetchUnit_.requestFromPC();
+  if (exceptionGenerated_) {
+    handleException();
     return;
   }
 
   flushIfNeeded();
-  fetchUnit_.requestFromPC();
 }
 
 void Core::flushIfNeeded() {
@@ -264,7 +263,7 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
 
-  auto branchStalls = fetchUnit_.getBranchStalls();
+  auto branchStalls = fetchUnit_.getFetchStalls();
 
   auto earlyFlushes = decodeUnit_.getEarlyFlushes();
 

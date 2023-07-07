@@ -92,10 +92,16 @@ void Core::tick() {
   // Determine if new uops are needed to be fetched
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
-    memory::MemoryAccessTarget target = {pc_, FETCH_SIZE};
-    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     // Find fetched memory that matches the current PC
     const auto& fetched = mmu_->getCompletedInstrReads();
+    // If no instruction has been fetched, fetch it
+    if (fetched.size() == 0) {
+      if (!waitingOnRead_) {
+        mmu_->requestInstrRead({pc_, FETCH_SIZE});
+        waitingOnRead_ = true;
+      }
+      return;
+    }
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
       if (fetched[fetchIndex].target.vaddr == pc_) {
@@ -104,6 +110,8 @@ void Core::tick() {
     }
     if (fetchIndex == fetched.size()) {
       // Need to wait for fetched instructions
+      mmu_->clearCompletedIntrReads();
+      waitingOnRead_ = false;
       return;
     }
 
@@ -113,6 +121,7 @@ void Core::tick() {
 
     // Clear the fetched data
     mmu_->clearCompletedIntrReads();
+    waitingOnRead_ = false;
 
     pc_ += bytesRead;
 
@@ -255,6 +264,7 @@ void Core::processException() {
       status_ = CoreStatus::idle;
       contextSwitches_++;
     }
+    waitingOnRead_ = false;
   }
 
   exceptionGenerated_ = false;
@@ -349,6 +359,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
   mmu_->setTid(currentTID_);
+  waitingOnRead_ = false;
 }
 
 bool Core::interrupt() {

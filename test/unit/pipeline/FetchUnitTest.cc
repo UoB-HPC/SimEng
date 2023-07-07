@@ -37,7 +37,7 @@ class PipelineFetchUnitTest : public testing::Test {
 
     // Set up MMU->Memory connection
     port1 = mmu->initPort();
-    port2 = memory->initPort();
+    port2 = memory->initMemPort();
     connection.connect(port1, port2);
   }
 
@@ -116,7 +116,6 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.setProgramLength(1024);
   fetchUnit.updatePC(14);
-  fetchUnit.requestFromPC();
   fetchUnit.tick();
   // Fetch ocurred on block 0->16, with bytes 14-16 being buffered. Hence, no
   // decode
@@ -125,7 +124,6 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   EXPECT_EQ(mmu->getCompletedInstrReads()[0].data.size(), 16);
 
   // Expect a block starting at address 16 to be requested when we fetch again
-  fetchUnit.requestFromPC();
   // Ensure that a block starting at address 16, of size 16-bytes, was fetched
   EXPECT_EQ(mmu->getCompletedInstrReads()[1].target.vaddr, 16);
   EXPECT_EQ(mmu->getCompletedInstrReads()[1].data.size(), 16);

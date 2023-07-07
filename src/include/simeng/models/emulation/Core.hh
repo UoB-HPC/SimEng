@@ -122,6 +122,9 @@ class Core : public simeng::Core {
   /** The current program counter. */
   uint64_t pc_ = 0;
 
+  /** Whether or not a request for an instruction fetch is active. */
+  bool waitingOnRead_ = false;
+
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
 

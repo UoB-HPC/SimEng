@@ -103,6 +103,10 @@ class DispatchIssueUnit {
   /** Retrieve the current sizes and capacities of the reservation stations*/
   void getRSSizes(std::vector<uint64_t>&) const;
 
+  const std::vector<uint64_t> getPossibleIssues() const;
+
+  const std::vector<uint64_t> getActualIssues() const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
@@ -151,6 +155,10 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  std::vector<uint64_t> possibleIssues_;
+
+  std::vector<uint64_t> actualIssues_;
 };
 
 }  // namespace pipeline

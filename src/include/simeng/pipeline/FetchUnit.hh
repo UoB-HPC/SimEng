@@ -32,6 +32,16 @@ struct loopBufferEntry {
   const BranchPrediction prediction;
 };
 
+/** Struct to hold data for a fecthed instruction block. */
+struct fetchBlock {
+  /** The data fetched from memory. */
+  std::vector<uint8_t> data = {};
+
+  /** The number of cycles s=since the fetch block's use. Used to facilitate a
+   * replacement policy. */
+  uint64_t cyclesSinceUse = 0;
+};
+
 /** A fetch and pre-decode unit for a pipelined processor. Responsible for
  * reading instruction memory and maintaining the program counter. */
 class FetchUnit {
@@ -65,12 +75,9 @@ class FetchUnit {
    */
   void setProgramLength(uint64_t size);
 
-  /** Request instructions at the current program counter for a future cycle. */
-  void requestFromPC();
-
-  /** Retrieve the number of cycles fetch terminated early due to a predicted
-   * branch. */
-  uint64_t getBranchStalls() const;
+  /** Retrieve the number of cycles fetch terminated due to a lack of predecoded
+   * instructions. */
+  uint64_t getFetchStalls() const;
 
   /** Clear the loop buffer. */
   void flushLoopBuffer();
@@ -83,10 +90,7 @@ class FetchUnit {
   };
 
   /** Unpause the fetch unit. */
-  void unpause() {
-    paused_ = false;
-    requestFromPC();
-  };
+  void unpause() { paused_ = false; };
 
   /** Get the current PC value. */
   uint64_t getPC() const { return pc_; };
@@ -107,6 +111,12 @@ class FetchUnit {
   /** Reference to the currently used ISA. */
   const arch::Architecture& isa_;
 
+  /** A queue to store an in-program order instruction stream. */
+  std::deque<simeng::MacroOp> mOpBuffer_;
+
+  /** A map of instruction blocks fetched from memory. */
+  std::map<uint64_t, fetchBlock> requestedBlocks_;
+
   /** Reference to the current branch predictor. */
   BranchPredictor& branchPredictor_;
 
@@ -124,8 +134,9 @@ class FetchUnit {
    * the instruction region. */
   bool hasHalted_ = false;
 
-  /** The number of cycles fetch terminated early due to a predicted branch. */
-  uint64_t branchStalls_ = 0;
+  /** The number of cycles fetch terminated early due to a lack of predecoded
+   * instructions. */
+  uint64_t fetchStalls_ = 0;
 
   /** The size of a fetch block, in bytes. */
   uint8_t blockSize_;
@@ -133,12 +144,6 @@ class FetchUnit {
   /** A mask of the bits of the program counter to use for obtaining the block
    * address to fetch. */
   uint64_t blockMask_;
-
-  /** The buffer used to hold fetched instruction data. */
-  uint8_t* fetchBuffer_;
-
-  /** The amount of data currently in the fetch buffer. */
-  uint8_t bufferedBytes_ = 0;
 
   /** The Fetch Unit's paused state - when an interupt has been signalled, the
    * Fetch Unit must not fetch / increment the PC until a new process has been
