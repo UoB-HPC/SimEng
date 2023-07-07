@@ -196,12 +196,10 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
-    fetchUnit_.requestFromPC();
     return;
   }
 
   flushIfNeeded();
-  fetchUnit_.requestFromPC();
 }
 
 void Core::flushIfNeeded() {
@@ -405,7 +403,7 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
 
-  auto branchStalls = fetchUnit_.getBranchStalls();
+  auto fetchStalls = fetchUnit_.getFetchStalls();
 
   auto earlyFlushes = decodeUnit_.getEarlyFlushes();
 
@@ -432,27 +430,44 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())},
-          {"idle.ticks", std::to_string(idle_ticks_)},
-          {"context.switches", std::to_string(contextSwitches_)}};
+  std::map<std::string, std::string> stats = {
+      {"cycles", std::to_string(ticks_)},
+      {"retired", std::to_string(retired)},
+      {"ipc", ipcStr.str()},
+      {"flushes", std::to_string(flushes_)},
+      {"fetch.fetchStalls", std::to_string(fetchStalls)},
+      {"decode.earlyFlushes", std::to_string(earlyFlushes)},
+      {"rename.allocationStalls", std::to_string(allocationStalls)},
+      {"rename.robStalls", std::to_string(robStalls)},
+      {"rename.lqStalls", std::to_string(lqStalls)},
+      {"rename.sqStalls", std::to_string(sqStalls)},
+      {"dispatch.rsStalls", std::to_string(rsStalls)},
+      {"issue.frontendStalls", std::to_string(frontendStalls)},
+      {"issue.backendStalls", std::to_string(backendStalls)},
+      {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+      {"branch.executed", std::to_string(totalBranchesExecuted)},
+      {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+      {"branch.missrate", branchMissRateStr.str()},
+      {"lsq.loadViolations",
+       std::to_string(reorderBuffer_.getViolatingLoadsCount())},
+      {"idle.ticks", std::to_string(idle_ticks_)},
+      {"context.switches", std::to_string(contextSwitches_)}};
+
+  const std::vector<uint64_t> possibleIssues =
+      dispatchIssueUnit_.getPossibleIssues();
+  const std::vector<uint64_t> actualIssues =
+      dispatchIssueUnit_.getActualIssues();
+  for (int i = 0; i < possibleIssues.size(); i++) {
+    std::ostringstream key;
+    key << "issue.Port" << i << ".balance";
+    std::ostringstream val;
+    val << std::to_string(actualIssues[i]) << "/"
+        << std::to_string(possibleIssues[i]) << "(" << std::setprecision(3)
+        << (float(actualIssues[i]) / float(possibleIssues[i])) * 100 << "%)";
+    stats[key.str()] = val.str();
+  }
+
+  return stats;
 }
 
 void Core::schedule(simeng::OS::cpuContext newContext) {

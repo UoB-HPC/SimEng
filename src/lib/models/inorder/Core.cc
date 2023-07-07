@@ -103,7 +103,6 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
-    fetchUnit_.requestFromPC();
     return;
   }
 
@@ -131,8 +130,6 @@ void Core::tick() {
 
     flushes_++;
   }
-
-  fetchUnit_.requestFromPC();
 }
 
 CoreStatus Core::getStatus() { return status_; }

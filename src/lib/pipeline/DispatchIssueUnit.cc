@@ -55,6 +55,8 @@ DispatchIssueUnit::DispatchIssueUnit(
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 
   dispatches_ = std::make_unique<uint16_t[]>(reservationStations_.size());
+  possibleIssues_.resize(issuePorts_.size());
+  actualIssues_.resize(issuePorts_.size());
 }
 
 void DispatchIssueUnit::tick() {
@@ -151,6 +153,11 @@ void DispatchIssueUnit::issue() {
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
+
+      const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
+      for (const auto& pt : supportedPorts) possibleIssues_[pt]++;
+      actualIssues_[i]++;
+
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
 
@@ -281,6 +288,13 @@ void DispatchIssueUnit::flush() {
       dependencyMatrix_[i][j].clear();
     }
   }
+}
+
+const std::vector<uint64_t> DispatchIssueUnit::getPossibleIssues() const {
+  return possibleIssues_;
+}
+const std::vector<uint64_t> DispatchIssueUnit::getActualIssues() const {
+  return actualIssues_;
 }
 
 }  // namespace pipeline
