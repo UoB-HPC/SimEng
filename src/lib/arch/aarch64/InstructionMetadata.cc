@@ -95,6 +95,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_CASALB:
+      [[fallthrough]];
     case Opcode::AArch64_CASALW:
       [[fallthrough]];
     case Opcode::AArch64_CASALX:

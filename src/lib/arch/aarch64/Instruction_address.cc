@@ -53,6 +53,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
                                  ? architecture_.getStreamingVectorLength()
                                  : architecture_.getVectorLength();
     switch (metadata.opcode) {
+      case Opcode::AArch64_CASALB: {
+        setMemoryAddresses({{operands[2].get<uint64_t>(), 1}});
+        break;
+      }
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         setMemoryAddresses({{operands[2].get<uint64_t>(), 4}});
         break;
@@ -820,6 +824,12 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LDRSWpost: {  // ldrsw xt, [xn], #simm
         setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+        break;
+      }
+      case Opcode::AArch64_LDRSWroW: {
+        uint64_t offset =
+            extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+        setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
         break;
       }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend

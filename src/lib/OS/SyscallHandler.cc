@@ -1,6 +1,8 @@
 #include "simeng/OS/SyscallHandler.hh"
 
 #include <signal.h>
+#include <sys/statfs.h>
+#include <sys/vfs.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -55,7 +57,25 @@ void SyscallHandler::handleSyscall() {
       break;
     }
     case 43: {
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1}};
+      uint64_t filenamePtr = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t statFsBufPtr = currentInfo_.registerArguments[1].get<uint64_t>();
+
+      std::array<char, PATH_MAX_LEN> filename;
+      filename.fill('\0');
+      return readStringThen(
+          filename, filenamePtr, PATH_MAX_LEN, [&](auto length) {
+            // Invoke the kernel
+            struct statfs statFsOut;
+            uint64_t retval =
+                ::statfs(std::string(filename.begin(), filename.end()).c_str(),
+                         &statFsOut);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
+            stateChange.memoryAddresses.push_back(
+                {statFsBufPtr, sizeof(statFsOut)});
+            stateChange.memoryAddressValues.push_back(statFsOut);
+            concludeSyscall(stateChange);
+          });
       break;
     }
     case 46: {  // ftruncate
@@ -864,7 +884,7 @@ void SyscallHandler::readStringThen(std::array<char, PATH_MAX_LEN>& buffer,
     for (int i = 0; i < data.size(); i++) {
       buffer[i] = data[i];
       // End of string; call onwards
-      if (buffer[i] == '\0') return then(i + 1);
+      if (data[i] == '\0') return then(i + 1);
     }
 
     // Reached max length; call onwards
@@ -979,6 +999,9 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
 }
 
 std::string SyscallHandler::getSpecialFile(const std::string filename) {
+  if (filename.find("/dev/shm") != std::string::npos) {
+    return specialFilesDir_ + filename;
+  }
   for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
@@ -1334,14 +1357,18 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
                                int64_t flags, uint16_t mode) {
-  std::string new_pathname;
+  std::string new_pathname = "";
 
+  if (filename.find("/dev/shm/__KMP_REGISTERED_LIB_1_0") != std::string::npos) {
+    std::cout << "This happens" << std::endl;
+  }
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
   // Need to re-create flag input to correct values for host OS
-  int64_t newFlags = 0;
+  int64_t newFlags = flags;
+  /**
   if (flags & 0x0) newFlags |= O_RDONLY;
   if (flags & 0x1) newFlags |= O_WRONLY;
   if (flags & 0x2) newFlags |= O_RDWR;
@@ -1371,12 +1398,13 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   if (flags & 0x200000) newFlags |= O_PATH;
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
+*/
 
   // If Special File (or Special File Directory) is being opened then need to
   // set flags to O_RDONLY and O_CLOEXEC only.
-  if (new_pathname != filename) {
+  /** if (new_pathname != filename) {
     newFlags = O_RDONLY | O_CLOEXEC;
-  }
+  } */
 
   // Get correct dirfd
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);

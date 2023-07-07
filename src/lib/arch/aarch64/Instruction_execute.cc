@@ -548,6 +548,15 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_CASALB: {
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        const uint32_t s = operands[0].get<uint32_t>();
+        const uint32_t t = operands[1].get<uint32_t>();
+        const uint32_t n = memoryData[0].get<uint32_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         // TODO: Load and Store must occur atomically
         // LOAD / STORE
@@ -3327,6 +3336,7 @@ void Instruction::execute() {
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
+      case Opcode::AArch64_LDRSWroW:
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
                                         // {#amount}}]
         // LOAD
