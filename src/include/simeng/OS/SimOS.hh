@@ -57,6 +57,8 @@ class SimOS {
   SimOS(std::shared_ptr<simeng::memory::Mem> mem, std::string executablePath,
         std::vector<std::string> executableArgs);
 
+  ~SimOS(){};
+
   /** Tick SimOS. */
   void tick();
 
@@ -96,7 +98,7 @@ class SimOS {
   /** This method returns a callback function that is passed to the MMU.
    * The callback function will be used by the MMU to handle TLB misses. The
    * callback invokes SimOS for virtual address translations. */
-  virtual VAddrTranslator getVAddrTranslator();
+  VAddrTranslator getVAddrTranslator();
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
@@ -176,6 +178,15 @@ class SimOS {
 
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
+
+  /** Port used for communication with the memory hierarchy. */
+  std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>> memPort_ =
+      nullptr;
+
+  /** Port mediator used to connect the system classes to a memory hierarchy. */
+  std::unique_ptr<
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>
+      connection_ = nullptr;
 
   /** Indicates if all processes have completed or a core has halted due to an
    * exception. */

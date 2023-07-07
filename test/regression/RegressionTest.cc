@@ -62,7 +62,7 @@ void RegressionTest::run(const char* source, const char* triple,
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
   auto port1 = mmu->initPort();
-  auto port2 = memory_->initPort();
+  auto port2 = memory_->initMemPort();
   connection.connect(port1, port2);
 
   // Populate the heap with initial data (specified by the test being run).

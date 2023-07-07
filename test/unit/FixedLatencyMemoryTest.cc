@@ -20,7 +20,7 @@ TEST(FixedLatencyMemoryTest, WriteData) {
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
   auto port1 = mmu->initPort();
-  auto port2 = mem->initPort();
+  auto port2 = mem->initMemPort();
   connection.connect(port1, port2);
 
   EXPECT_FALSE(mmu->hasPendingRequests());
@@ -77,7 +77,7 @@ TEST(FixedLatencyMemoryTest, ReadData) {
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
   auto port1 = mmu->initPort();
-  auto port2 = mem->initPort();
+  auto port2 = mem->initMemPort();
   connection.connect(port1, port2);
 
   EXPECT_FALSE(mmu->hasPendingRequests());
@@ -122,7 +122,7 @@ TEST(FixedLatencyMemoryTest, UnMappedAddrRead) {
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
   auto port1 = mmu->initPort();
-  auto port2 = mem->initPort();
+  auto port2 = mem->initMemPort();
   connection.connect(port1, port2);
 
   // Create a target such that address + size will overflow

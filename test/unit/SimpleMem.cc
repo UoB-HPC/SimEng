@@ -40,7 +40,7 @@ TEST(SimpleMemTest, Read) {
   testRecv respRecv = testRecv();
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = respRecv.initPort();
   connection.connect(port1, port2);
 
@@ -50,7 +50,7 @@ TEST(SimpleMemTest, Read) {
   sMem.sendUntimedData(data, addr, dataSize);
   auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0);
   req->paddr_ = addr;
-  sMem.requestAccess(req);
+  port2->send(std::move(req));
   auto res = respRecv.resp->payload();
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(res[i], data[i]);
@@ -60,7 +60,7 @@ TEST(SimpleMemTest, Read) {
   dataSize = 2;
   auto req2 = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1);
   req2->paddr_ = addr;
-  sMem.requestAccess(req2);
+  port2->send(std::move(req2));
   auto res2 = respRecv.resp->payload();
   EXPECT_EQ(res2[0], '8');
   EXPECT_EQ(res2[1], '9');
@@ -82,7 +82,7 @@ TEST(SimpleMemTest, Write) {
   testRecv respRecv = testRecv();
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = respRecv.initPort();
   connection.connect(port1, port2);
 
@@ -92,7 +92,7 @@ TEST(SimpleMemTest, Write) {
   auto req =
       simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, data);
   req->paddr_ = addr;
-  sMem.requestAccess(req);
+  port2->send(std::move(req));
   auto mem = sMem.getUntimedData(0, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
@@ -102,7 +102,7 @@ TEST(SimpleMemTest, Write) {
   auto req2 =
       simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, data);
   req2->paddr_ = addr;
-  sMem.requestAccess(req2);
+  port2->send(std::move(req2));
   mem = sMem.getUntimedData(addr, dataSize);
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);

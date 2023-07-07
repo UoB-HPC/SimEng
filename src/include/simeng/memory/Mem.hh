@@ -40,9 +40,14 @@ class Mem {
   /** This method handles a memory request to an ignored address range. */
   virtual void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) = 0;
 
-  /** This method is initialises a Port for establishing bidirectional
-   * communication with other classes. */
-  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() = 0;
+  /** Function used to initialise a Port used for bidirection communication
+   * between this class and the memory hierarchy. */
+  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initMemPort() = 0;
+
+  /** Function used to initialise a Port used for bidirection communication
+   * between this class and system classes. */
+  virtual std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+  initSystemPort() = 0;
 
   /** Method to tick the memory. */
   virtual void tick() = 0;

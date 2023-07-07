@@ -46,7 +46,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         connection() {
     // Set up MMU->Memory connection
     port1 = mmu->initPort();
-    port2 = memory->initPort();
+    port2 = memory->initMemPort();
     connection.connect(port1, port2);
     // Initialise memory to 1s
     memory->sendUntimedData(std::vector<char>(1024, 1), 0, 1024);

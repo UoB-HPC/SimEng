@@ -20,13 +20,13 @@ size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
 void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
   if (pkt->ignore()) {
     handleIgnoredRequest(pkt);
-    port_->send(std::move(pkt));
+    memPort_->send(std::move(pkt));
     return;
   }
 
   if (pkt->isUntimed()) {
     handleRequest(pkt);
-    port_->send(std::move(pkt));
+    memPort_->send(std::move(pkt));
     return;
   }
 
@@ -53,7 +53,7 @@ void FixedLatencyMemory::tick() {
   while (reqQueue_.size() && reqQueue_.front().endLat <= ticks_) {
     std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
     handleRequest(pkt);
-    port_->send(std::move(pkt));
+    memPort_->send(std::move(pkt));
     reqQueue_.pop();
   }
 };
@@ -78,15 +78,32 @@ void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
 }
 
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
-FixedLatencyMemory::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+FixedLatencyMemory::initMemPort() {
+  memPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     this->requestAccess(packet);
     return;
   };
-  port_->registerReceiver(fn);
-  return port_;
+  memPort_->registerReceiver(fn);
+  return memPort_;
 }
+
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initSystemPort() {
+  sysPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  // If the request comes from a system calls, instantly respond
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    if (packet->ignore()) {
+      this->handleIgnoredRequest(packet);
+    } else {
+      this->handleRequest(packet);
+    }
+    sysPort_->send(std::move(packet));
+  };
+  sysPort_->registerReceiver(fn);
+  return sysPort_;
+}
+
 void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
   if (req->isRequest() && req->isRead()) {
     handleReadRequest(req);

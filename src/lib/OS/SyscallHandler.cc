@@ -21,6 +21,24 @@ SyscallHandler::SyscallHandler(SimOS* OS,
       {"/proc/cpuinfo", "proc/stat", "proc/self/maps", "maps",
        "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
        "physical_package_id"});
+
+  resumeHandling_ = [this]() { return handleSyscall(); };
+}
+
+std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+SyscallHandler::initMemPort() {
+  memPort_ =
+      std::make_shared<Port<std::unique_ptr<simeng::memory::MemPacket>>>();
+  auto fn = [this](std::unique_ptr<simeng::memory::MemPacket> packet) -> void {
+    if (packet->isRead()) {
+      memRead_ = {{packet->vaddr_, packet->size_},
+                  RegisterValue(packet->payload().data(), packet->size_),
+                  packet->id_};
+    }
+    reqMemAccess_ = false;
+  };
+  memPort_->registerReceiver(fn);
+  return memPort_;
 }
 
 void SyscallHandler::receiveSyscall(SyscallInfo info) {
@@ -28,10 +46,12 @@ void SyscallHandler::receiveSyscall(SyscallInfo info) {
 }
 
 void SyscallHandler::tick() {
-  if (!syscallQueue_.empty()) handleSyscall();
+  if (reqMemAccess_) return;
+  resumeHandling_();
 }
 
 void SyscallHandler::handleSyscall() {
+  if (syscallQueue_.empty()) return;
   // Update currentInfo_
   currentInfo_ = syscallQueue_.front();
   ProcessStateChange stateChange = {};
@@ -68,15 +88,16 @@ void SyscallHandler::handleSyscall() {
       // flag component not used, although function definition includes it
       int64_t flag = 0;
 
-      std::array<char, PATH_MAX_LEN> filename;
+      char* filename = (char*)malloc(PATH_MAX_LEN * sizeof(char));
       return readStringThen(
-          filename, filenamePtr, PATH_MAX_LEN, [&](auto length) {
+          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
-            int64_t retval = faccessat(
-                dfd, std::string(filename.begin(), filename.end()), mode, flag);
+            int64_t retval =
+                faccessat(dfd, std::string(filename, length), mode, flag);
             ProcessStateChange stateChange = {
                 ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
             concludeSyscall(stateChange);
+            free(filename);
           });
       break;
     }
@@ -86,16 +107,16 @@ void SyscallHandler::handleSyscall() {
       int64_t flags = currentInfo_.registerArguments[2].get<int64_t>();
       uint16_t mode = currentInfo_.registerArguments[3].get<uint16_t>();
 
-      std::array<char, PATH_MAX_LEN> pathname;
+      char* pathname = (char*)malloc(PATH_MAX_LEN * sizeof(char));
       return readStringThen(
-          pathname, pathnamePtr, PATH_MAX_LEN, [&](auto length) {
+          pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             uint64_t retval =
-                openat(dirfd, std::string(pathname.begin(), pathname.end()),
-                       flags, mode);
+                openat(dirfd, std::string(pathname, length), flags, mode);
             ProcessStateChange stateChange = {
                 ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
             concludeSyscall(stateChange);
+            free(pathname);
           });
       break;
     }
@@ -332,14 +353,15 @@ void SyscallHandler::handleSyscall() {
           currentInfo_.registerArguments[1].get<uint64_t>();
 
       // Copy string at `pathnameAddress`
-      std::array<char, PATH_MAX_LEN> pathname;
-      return readStringThen(
-          pathname, pathnameAddress, PATH_MAX_LEN, [&](auto length) {
-            // Pass the string `readLinkAt`, then destroy
-            // the buffer and resolve the handler.
-            readLinkAt(std::string(pathname.begin(), pathname.end()), length);
-            return;
-          });
+      char* pathname = (char*)malloc(PATH_MAX_LEN * sizeof(char));
+      return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
+                            [=](auto length) {
+                              // Pass the string `readLinkAt`, then destroy
+                              // the buffer and resolve the handler.
+                              readLinkAt(std::string(pathname, length), length);
+                              free(pathname);
+                              return;
+                            });
       break;
     }
     case 79: {  // newfstatat AKA fstatat
@@ -348,20 +370,20 @@ void SyscallHandler::handleSyscall() {
       uint64_t statbufPtr = currentInfo_.registerArguments[2].get<uint64_t>();
       int64_t flag = currentInfo_.registerArguments[3].get<int64_t>();
 
-      std::array<char, PATH_MAX_LEN> filename;
+      char* filename = (char*)malloc(PATH_MAX_LEN * sizeof(char));
       return readStringThen(
-          filename, filenamePtr, PATH_MAX_LEN, [&](auto length) {
+          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             OS::stat statOut;
             uint64_t retval =
-                newfstatat(dfd, std::string(filename.begin(), filename.end()),
-                           statOut, flag);
+                newfstatat(dfd, std::string(filename, length), statOut, flag);
             ProcessStateChange stateChange = {
                 ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
             stateChange.memoryAddresses.push_back(
                 {statbufPtr, sizeof(statOut)});
             stateChange.memoryAddressValues.push_back(statOut);
             concludeSyscall(stateChange);
+            free(filename);
           });
       break;
     }
@@ -448,6 +470,9 @@ void SyscallHandler::handleSyscall() {
       }
       auto [putCoreToIdle, futexReturnValue] =
           futex(paddr, op, val, currentInfo_.threadId);
+      // If the futex still relies on a memory access, do not conclude the
+      // syscall until it has returned
+      if (reqMemAccess_) return;
       return concludeSyscall(
           {ChangeType::REPLACEMENT, {currentInfo_.ret}, {futexReturnValue}},
           false, putCoreToIdle);
@@ -770,9 +795,21 @@ void SyscallHandler::handleSyscall() {
               retVal = -EFAULT;
             } else {
               rlimit newRlim;
-              std::vector<char> vec =
-                  memory_->getUntimedData(physAddr, sizeof(rlimit));
-              std::memcpy(&newRlim, vec.data(), sizeof(rlimit));
+              // If the read memory target does not equal the data required,
+              // request it
+              if (memRead_.target.vaddr != newLimit) {
+                std::unique_ptr<simeng::memory::MemPacket> request =
+                    simeng::memory::MemPacket::createReadRequest(
+                        newLimit, sizeof(rlimit), currentInfo_.threadId);
+                request->paddr_ = physAddr;
+                reqMemAccess_ = true;
+                memPort_->send(std::move(request));
+                if (reqMemAccess_) return;
+                return;
+              }
+
+              std::memcpy(&newRlim, memRead_.data.getAsVector<char>(),
+                          sizeof(rlimit));
               OS_->getProcess(currentInfo_.threadId)->stackRlim_ = newRlim;
             }
           }
@@ -786,7 +823,12 @@ void SyscallHandler::handleSyscall() {
               rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
               std::vector<char> vec(sizeof(rlimit), '\0');
               std::memcpy(vec.data(), &rlim, sizeof(rlimit));
-              memory_->sendUntimedData(vec, physAddr, sizeof(rlimit));
+              // Write the new rlimit struct to memory
+              std::unique_ptr<simeng::memory::MemPacket> request =
+                  simeng::memory::MemPacket::createWriteRequest(
+                      oldLimit, sizeof(rlimit), currentInfo_.threadId, vec);
+              request->paddr_ = physAddr;
+              memPort_->send(std::move(request));
             }
           }
         }
@@ -830,17 +872,16 @@ void SyscallHandler::handleSyscall() {
   concludeSyscall(stateChange);
 }
 
-void SyscallHandler::readStringThen(std::array<char, PATH_MAX_LEN>& buffer,
-                                    uint64_t address, int maxLength,
-                                    std::function<void(size_t length)> then,
-                                    int offset) {
+void SyscallHandler::readStringThen(char* buffer, uint64_t address,
+                                    int maxLength,
+                                    std::function<void(size_t length)> then) {
   if (maxLength <= 0) {
-    return then(offset);
+    return then(0);
   }
 
   // Translate the passed virtual address, `address + offset`
   uint64_t translatedAddr =
-      OS_->handleVAddrTranslation(address + offset, currentInfo_.threadId);
+      OS_->handleVAddrTranslation(address, currentInfo_.threadId);
 
   // Don't process the syscall if the virtual address translation comes back
   // wih a DATA_ABORT or IGNORED fault. Given we read in a filename from
@@ -853,9 +894,26 @@ void SyscallHandler::readStringThen(std::array<char, PATH_MAX_LEN>& buffer,
     return concludeSyscall({}, true);
   } else {
     // Get a string from the simulation memory and within the passed buffer
-    std::vector<char> data = memory_->getUntimedData(translatedAddr, maxLength);
+    // If the read memory target does not equal the data required,
+    // request it and resume the `readStringThen` call after its return
+    if (memRead_.target.vaddr != address) {
+      std::unique_ptr<simeng::memory::MemPacket> request =
+          simeng::memory::MemPacket::createReadRequest(address, maxLength,
+                                                       currentInfo_.threadId);
+      request->paddr_ = translatedAddr;
+      reqMemAccess_ = true;
+      memPort_->send(std::move(request));
+      if (reqMemAccess_) {
+        resumeHandling_ = [=]() {
+          readStringThen(buffer, address, maxLength, then);
+        };
+        return;
+      }
+    }
 
-    for (int i = 0; i < data.size(); i++) {
+    const char* data = memRead_.data.getAsVector<char>();
+
+    for (int i = 0; i < memRead_.data.size(); i++) {
       buffer[i] = data[i];
       // End of string; call onwards
       if (buffer[i] == '\0') return then(i + 1);
@@ -874,10 +932,6 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
     return then();
   }
 
-  // Vector to hold data read from memory, will be inserted at the end of
-  // dataBuffer_
-  std::vector<char> data;
-
   // Translate the passed virtual address, `ptr`
   uint64_t translatedAddr =
       OS_->handleVAddrTranslation(ptr, currentInfo_.threadId);
@@ -891,13 +945,27 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     // If the translated address lies within the ignored region, read in
     // zero'ed out data of the correct length.
-    data.resize(length);
-    std::fill(data.begin(), data.end(), 0);
+    dataBuffer_ = std::vector<char>(length, '\0');
   } else {
     // Get data from the simulation memory and read into dataBuffer_
-    data = memory_->getUntimedData(translatedAddr, length);
+    // If the read memory target does not equal the data required,
+    // request it and resume the `readBufferThen` call after its return
+    if (memRead_.target.vaddr != ptr) {
+      std::unique_ptr<simeng::memory::MemPacket> request =
+          simeng::memory::MemPacket::createReadRequest(ptr, length,
+                                                       currentInfo_.threadId);
+      request->paddr_ = translatedAddr;
+      reqMemAccess_ = true;
+      memPort_->send(std::move(request));
+      if (reqMemAccess_) {
+        resumeHandling_ = [=]() { readBufferThen(ptr, length, then); };
+        return;
+      }
+    }
+
+    const char* data = memRead_.data.getAsVector<char>();
+    dataBuffer_ = std::vector<char>(data, data + memRead_.data.size());
   }
-  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + length);
 
   // Read in data, call onwards
   return then();
@@ -910,6 +978,8 @@ void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
+  memRead_ = {{0, 0}, RegisterValue(), (uint64_t)-1};
+  resumeHandling_ = [this]() { return handleSyscall(); };
 }
 
 void SyscallHandler::readLinkAt(std::string path, size_t length) {
@@ -1546,9 +1616,22 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
 
   if (wait) {
     // Atomically get the value at the address specified by the futex.
-    std::vector<char> data = memory_->getUntimedData(uaddr, sizeof(uint32_t));
+    // If the read memory target does not equal the data required,
+    // request it and recall the `futex` call after its return
+    if (memRead_.target.vaddr !=
+        currentInfo_.registerArguments[0].get<uint64_t>()) {
+      std::unique_ptr<simeng::memory::MemPacket> request =
+          simeng::memory::MemPacket::createReadRequest(
+              currentInfo_.registerArguments[0].get<uint64_t>(),
+              sizeof(uint32_t), currentInfo_.threadId);
+      request->paddr_ = uaddr;
+      reqMemAccess_ = true;
+      memPort_->send(std::move(request));
+      if (reqMemAccess_) return {false, -1};
+    }
     uint32_t futexWord{};
-    std::memcpy(&futexWord, data.data(), sizeof(uint32_t));
+    std::memcpy(&futexWord, memRead_.data.getAsVector<char>(),
+                sizeof(uint32_t));
     // As per the linux futex specification, if the value of the futex word is
     // not equal to the value specified in the arguments, the syscall should
     // exit with a failure value (-1).

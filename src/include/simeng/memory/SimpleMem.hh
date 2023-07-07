@@ -33,8 +33,13 @@ class SimpleMem : public Mem {
 
   void handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) override;
 
-  /** Function used to initialise a Port used for bidirection communication. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort() override;
+  /** Function used to initialise a Port used for bidirection communication
+   * between this class and the memory hierarchy. */
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initMemPort() override;
+
+  /** Function used to initialise a Port used for bidirection communication
+   * between this class and system classes. */
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initSystemPort() override;
 
   /** Method to tick the memory. */
   void tick() override{};
@@ -52,8 +57,11 @@ class SimpleMem : public Mem {
   /** This method handles DataPackets of type WRITE_REQUEST. */
   void handleWriteRequest(std::unique_ptr<MemPacket>& req);
 
-  /** Port used for communication with other classes. */
-  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
+  /** Port used for communication with the memory hierarchy. */
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> memPort_ = nullptr;
+
+  /** Port used for communication with system classes. */
+  std::shared_ptr<Port<std::unique_ptr<MemPacket>>> sysPort_ = nullptr;
 };
 
 }  // namespace memory

@@ -36,6 +36,12 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
   // Create the syscall handler
   syscallHandler_ = std::make_shared<SyscallHandler>(this, mem);
 
+  // Establish port connection with memory
+  memPort_ = syscallHandler_->initMemPort();
+  connection_ = std::make_unique<
+      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
+  connection_->connect(memPort_, memory_->initSystemPort());
+
   // Create the Special Files directory if indicated to do so in Config file
   if (config::SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
 }
@@ -181,8 +187,13 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   // Callback function used to write data to the simulation memory without
   // incurring any latency. This function will be used to write data to the
   // simulation memory during process creation and while handling page faults.
-  auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
-    memory_->sendUntimedData(data, addr, size);
+  auto sendToMem = [this](std::vector<char> data, uint64_t pAddr,
+                          uint64_t vAddr, size_t size) {
+    std::unique_ptr<simeng::memory::MemPacket> request =
+        simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, data);
+    request->paddr_ = pAddr;
+    request->markAsUntimed();
+    memPort_->send(std::move(request));
   };
 
   // Get the tid for new Process
@@ -291,7 +302,12 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   if (flags & syscalls::clone::flags::f_CLONE_PARENT_SETTID) {
     std::vector<char> dataVec(sizeof(newChildTid), '\0');
     std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
-    memory_->sendUntimedData(dataVec, paddr, sizeof(newChildTid));
+
+    std::unique_ptr<simeng::memory::MemPacket> request =
+        simeng::memory::MemPacket::createWriteRequest(
+            paddr, sizeof(newChildTid), 0, dataVec);
+    request->paddr_ = paddr;
+    memPort_->send(std::move(request));
   }
 
   // Update context of new child process to match parent process's current state
@@ -357,7 +373,11 @@ void SimOS::terminateThread(uint64_t tid) {
   // If clear_chilt_tid is non-zero then write 0 to this address
   uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
   if (!masks::faults::hasFault(addr)) {
-    memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
+    std::unique_ptr<simeng::memory::MemPacket> request =
+        simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, {0, 0, 0, 0});
+    request->paddr_ = addr;
+    memPort_->send(std::move(request));
+
     // TODO: When `futex` has been implemented, perform
     syscallHandler_->futex(
         addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1, tid);
@@ -379,7 +399,12 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_,
                                              proc->second->getTID());
       if (!masks::faults::hasFault(addr)) {
-        memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
+        std::unique_ptr<simeng::memory::MemPacket> request =
+            simeng::memory::MemPacket::createWriteRequest(addr, 4, 0,
+                                                          {0, 0, 0, 0});
+        request->paddr_ = addr;
+        memPort_->send(std::move(request));
+
         syscallHandler_->futex(
             addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1,
             proc->second->getTID());
