@@ -95,7 +95,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
-    sendToMem_(header.headerData, translatedAddr, header.p_memsz);
+    sendToMem_(header.headerData, translatedAddr, vaddr, header.memorySize);
 
     // Determine minimum header address, address in the range [0, minAddr) will
     // be ignored during translation and all memory requests corresponding to
@@ -249,7 +249,7 @@ Process::Process(span<char> instructions, SimOS* OS, uint64_t TGID,
 
   uint64_t taddr = pageTable_->translate(0);
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
-             instructions.size());
+             0, instructions.size());
 
   fdArray_ = std::make_shared<FileDescArray>();
 
@@ -332,7 +332,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
     }
   }
   uint64_t paddr = pageTable_->translate(stackPointer);
-  sendToMem_(stringBytes, paddr, stringBytes.size());
+  sendToMem_(stringBytes, paddr, stackPointer, stringBytes.size());
 
   initialStackFrame.push_back(0);  // null terminator
 
@@ -368,7 +368,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::vector<char> data(stackFrameBytes, stackFrameBytes + stackFrameSize);
   paddr = pageTable_->translate(stackPointer);
-  sendToMem_(data, paddr, stackFrameSize);
+  sendToMem_(data, paddr, stackPointer, stackFrameSize);
   return stackPointer;
 }
 
@@ -408,7 +408,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
                          castedFileBuf + offset + writeLen);
   // send file to memory;
   if (writeLen > 0) {
-    sendToMem_(data, paddr, writeLen);
+    sendToMem_(data, paddr, vaddr, writeLen);
   }
   return taddr;
 }

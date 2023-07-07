@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
 
   auto port1 = mmu->initPort();
-  auto port2 = memory->initPort();
+  auto port2 = memory->initMemPort();
 
   connection->connect(port1, port2);
 

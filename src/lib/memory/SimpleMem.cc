@@ -30,7 +30,6 @@ void SimpleMem::requestAccess(std::unique_ptr<MemPacket>& pkt) {
               << std::endl;
     pkt->markAsFaulty();
   }
-  port_->send(std::move(pkt));
 }
 
 void SimpleMem::handleReadRequest(std::unique_ptr<MemPacket>& req) {
@@ -65,14 +64,24 @@ void SimpleMem::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
   }
 }
 
-std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initPort() {
-  port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initMemPort() {
+  memPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
     this->requestAccess(packet);
-    return;
+    memPort_->send(std::move(packet));
   };
-  port_->registerReceiver(fn);
-  return port_;
+  memPort_->registerReceiver(fn);
+  return memPort_;
+}
+
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>> SimpleMem::initSystemPort() {
+  sysPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    this->requestAccess(packet);
+    sysPort_->send(std::move(packet));
+  };
+  sysPort_->registerReceiver(fn);
+  return sysPort_;
 }
 
 }  // namespace memory

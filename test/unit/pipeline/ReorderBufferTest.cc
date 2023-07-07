@@ -42,7 +42,7 @@ class ReorderBufferTest : public testing::Test {
             [](auto branchAddress) {}, predictor, 0, 0) {
     // Set up MMU->Memory connection
     port1 = mmu->initPort();
-    port2 = memory->initPort();
+    port2 = memory->initMemPort();
     connection.connect(port1, port2);
   }
 

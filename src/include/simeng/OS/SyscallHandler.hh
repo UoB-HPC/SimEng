@@ -263,6 +263,11 @@ class SyscallHandler {
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
 
+  /** Function used to initialise a Port used for bidirection communication
+   * between this class and the memory hierarchy. */
+  std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>>
+  initMemPort();
+
   /** Function used to process the syscall at the front of the syscallQueue_
    * queue. */
   void handleSyscall();
@@ -278,10 +283,9 @@ class SyscallHandler {
                        bool idleAftersycall = false);
 
   /** Attempt to read a string of max length `maxLength` from address `address`
-   * into the supplied buffer, starting from character `offset`. */
-  void readStringThen(std::array<char, PATH_MAX_LEN>& buffer, uint64_t address,
-                      int maxLength, std::function<void(size_t length)> then,
-                      int offset = 0);
+   * into the supplied buffer. */
+  void readStringThen(char* buffer, uint64_t address, int maxLength,
+                      std::function<void(size_t length)> then);
 
   /** Read `length` bytes of data from `ptr`, and then call `then`. */
   void readBufferThen(uint64_t ptr, uint64_t length,
@@ -423,11 +427,25 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
+  /** A function to call to resume handling an exception. */
+  std::function<void()> resumeHandling_;
+
   /** Pointer reference to SimOS object. */
   SimOS* OS_ = nullptr;
 
   /** A shared pointer to the simulation memory. */
   std::shared_ptr<simeng::memory::Mem> memory_;
+
+  /** Port used for communication with the memory hierarchy. */
+  std::shared_ptr<Port<std::unique_ptr<simeng::memory::MemPacket>>> memPort_ =
+      nullptr;
+
+  /** The result of a memory read through the memPort_. */
+  simeng::memory::MemoryReadResult memRead_;
+
+  /** Whether a memory access has been requested which the handling of an
+   * exception relies on. */
+  bool reqMemAccess_ = false;
 
   /** A queue to hold all outstanding syscalls. */
   std::queue<SyscallInfo> syscallQueue_;
