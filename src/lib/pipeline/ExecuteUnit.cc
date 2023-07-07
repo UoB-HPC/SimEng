@@ -14,7 +14,7 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     BranchPredictor& predictor, bool pipelined,
-    const std::vector<uint16_t>& blockingGroups)
+    const std::vector<uint16_t>& blockingGroups, bool enableLLSC)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
@@ -23,7 +23,8 @@ ExecuteUnit::ExecuteUnit(
       raiseException_(raiseException),
       predictor_(predictor),
       pipelined_(pipelined),
-      blockingGroups_(blockingGroups) {}
+      blockingGroups_(blockingGroups),
+      enableLLSC_(enableLLSC) {}
 
 void ExecuteUnit::tick() {
   tickCounter_++;
@@ -125,7 +126,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       return;
     }
     // For Load-Reserved and Atomics, don't start load until at head of ROB
-    if (!(uop->isLoadReserved() || uop->isAtomic())) handleLoad_(uop);
+    if (!(enableLLSC_ && (uop->isLoadReserved() || uop->isAtomic())))
+      handleLoad_(uop);
     return;
   } else if (uop->isStoreAddress() || uop->isStoreData()) {
     if (uop->isStoreAddress()) {
@@ -141,11 +143,15 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     }
     handleStore_(uop);
     if (uop->isStoreCond()) {
-      // If the store is marked Exclusive then it isn't sent to writeback
-      // straight away.
-      // Set commit ready and return early.
-      uop->setCommitReady();
-      return;
+      if (enableLLSC_) {
+        // If the store is marked Exclusive then it isn't sent to writeback
+        // straight away.
+        // Set commit ready and return early.
+        uop->setCommitReady();
+        return;
+      } else {
+        uop->updateCondStoreResult(true);
+      }
     }
   } else {
     uop->execute();

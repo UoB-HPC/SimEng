@@ -66,7 +66,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         [this](auto insn) { loadStoreQueue_.startLoad(insn); },
         [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },
         [this](auto insn) { raiseException(insn); }, branchPredictor,
-        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
+        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups,
+        false);
   }
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
