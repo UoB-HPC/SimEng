@@ -29,6 +29,23 @@ TEST_P(InstSve, addvl) {
   EXPECT_EQ(getGeneralRegister<int64_t>(5), (1024 + ((VL / 8) * -32)));
 }
 
+TEST_P(InstSve, fmaxnm) {
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    fmov z1.s, p0/M, #1.5 
+    fmov z2.s, p0/M, #3.5
+
+    fmaxnm z1.s, p0/M, z1.s, z2.s
+  )");
+
+  const float* reg_1 = getVectorRegister<float>(
+      {simeng::arch::aarch64::RegisterType::VECTOR, 1});
+
+  for (int x = 0; x < VL / 32; x++) {
+    ASSERT_EQ(reg_1[x], 3.5f);
+  }
+}
+
 TEST_P(InstSve, adr) {
   // Packed Offsets
   RUN_AARCH64(R"(

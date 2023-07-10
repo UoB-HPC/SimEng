@@ -361,10 +361,11 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
   uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
 
   if (fixed) {
-    std::cout << "MAP_FIXED Start: " << startAddr << std::endl;
-    std::cout << "MAP_FIXED Size: " << size << std::endl;
-    std::cout << "HAS_NO_FILE: " << hfmmap.isEmpty() << std::endl;
-
+    /**
+  std::cout << "MAP_FIXED Start: " << startAddr << std::endl;
+  std::cout << "MAP_FIXED Size: " << size << std::endl;
+  std::cout << "HAS_NO_FILE: " << hfmmap.isEmpty() << std::endl;
+*/
     if (startAddr == 6791168) {
       startAddr = 6729384;
       startAddr = downAlign(startAddr, PAGE_SIZE);

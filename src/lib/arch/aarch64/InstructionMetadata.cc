@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cstring>
 
+#include "capstone/capstone.h"
+
 namespace simeng {
 namespace arch {
 namespace aarch64 {
@@ -255,6 +257,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_EOR_PPzPP: {
       operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_FMAXNM_ZPmZ_S: {
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;

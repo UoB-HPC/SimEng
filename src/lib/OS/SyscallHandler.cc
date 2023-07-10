@@ -701,8 +701,6 @@ void SyscallHandler::handleSyscall() {
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       size_t length = currentInfo_.registerArguments[1].get<size_t>();
 
-      std::cout << "munmap at addr and length: " << addr << " - " << length
-                << std::endl;
       int64_t result = munmap(addr, length);
       // If successful, munmap returns the total number of bytes
       // unmapped. If the value is greater than 0, 0 is returned as specified
@@ -1359,9 +1357,6 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
                                int64_t flags, uint16_t mode) {
   std::string new_pathname = "";
 
-  if (filename.find("/dev/shm/__KMP_REGISTERED_LIB_1_0") != std::string::npos) {
-    std::cout << "This happens" << std::endl;
-  }
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);

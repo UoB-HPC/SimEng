@@ -1,5 +1,8 @@
 // Temporary; until execute has been verified to work correctly.
+#include <algorithm>
 #include <cstdint>
+
+#include "capstone/arm64.h"
 #ifndef NDEBUG
 #include <iostream>
 #endif
@@ -1711,6 +1714,31 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd, vd.2d
         results[0] = neonHelp::vecMaxnmp_2ops<double, 2>(operands);
+        break;
+      }
+      case Opcode::AArch64_FMAXNM_ZPmZ_S: {
+        const uint8_t* p = operands[1].getAsVector<uint8_t>();
+        const float* zdn = operands[2].getAsVector<float>();
+        const float* zm = operands[3].getAsVector<float>();
+
+        uint16_t num_active_elms = (VL_bits / (sizeof(float) * 8));
+
+        uint8_t p_index = 0;
+        float res[256 / sizeof(float)];
+
+        for (uint16_t x = 0; x < num_active_elms; x++) {
+          uint8_t shift = ((x % 2) * sizeof(float));
+          uint8_t prd_mask = 1ull << shift;
+          uint8_t active_prd = p[p_index];
+          uint8_t is_elm_active = (active_prd) && (active_prd & prd_mask);
+          if (is_elm_active) {
+            res[x] = std::max(zdn[x], zm[x]);
+          } else {
+            res[x] = zdn[x];
+          }
+          p_index += (1 * (x % 2));
+        }
+        results[0] = res;
         break;
       }
       case Opcode::AArch64_FMAXNMSrr: {  // fmaxnm sd, sn, sm
