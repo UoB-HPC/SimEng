@@ -702,8 +702,6 @@ void SyscallHandler::handleSyscall() {
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       size_t length = currentInfo_.registerArguments[1].get<size_t>();
 
-      std::cout << "munmap at addr and length: " << addr << " - " << length
-                << std::endl;
       int64_t result = munmap(addr, length);
       // If successful, munmap returns the total number of bytes
       // unmapped. If the value is greater than 0, 0 is returned as specified
