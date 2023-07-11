@@ -176,7 +176,7 @@ void LoadStoreQueue::startStore(const std::shared_ptr<Instruction>& uop) {
   requestStoreQueue_[tickCounter_].push_back(uop);
 
   // If this instruction is a store conditional operation, track it
-  if (uop->isStoreCond()) {
+  if (uop->isStoreCond() && !uop->isCondResultReady()) {
     assert(requestedCondStore_ == nullptr &&
            "[SimEng:LoadStoreQueue] Tried to issue a second conditional store "
            "whilst one is already in flight.");
@@ -420,6 +420,7 @@ void LoadStoreQueue::tick() {
     // completedRequests_ for result forwarding and passing to writeback
     if (requestedCondStore_->isCondResultReady()) {
       completedRequests_.push(requestedCondStore_);
+      requestedCondStore_ = nullptr;
     }
   }
 

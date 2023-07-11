@@ -99,9 +99,15 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     // If the uop is a store address operation, begin the processing of its
     // memory accesses
     if (uop->isStoreAddress() && !startedStore_) {
-      lsq_.startStore(uop);
-      startedStore_ = true;
-      return n;
+      // Only try to start the store if there are addresses to be stored at
+      if (uop->getGeneratedAddresses().size() != 0) {
+        lsq_.startStore(uop);
+        startedStore_ = true;
+        // Reset store's commit ready status as we need to determine any
+        // post-memory-request values to be committed
+        uop->setCommitReady(false);
+        return n;
+      }
     }
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;

@@ -412,10 +412,8 @@ void Core::retireInstruction(const std::shared_ptr<Instruction>& insn) {
     // Start the store and flag an ongoing/active store if it can't instantly
     // commit
     loadStoreQueue_.startStore(completedStoreAddrUops_.front());
-    if (!completedStoreAddrUops_.front()->canCommit()) {
-      activeStore_ = true;
-    } else
-      completedStoreAddrUops_.pop();
+    loadStoreQueue_.commitStore(completedStoreAddrUops_.front());
+    completedStoreAddrUops_.pop();
   }
 
   staging_.recordRetired(insn->getSequenceId());

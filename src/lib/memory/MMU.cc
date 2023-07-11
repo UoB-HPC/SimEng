@@ -150,7 +150,7 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
 
   // Check if conditional store can proceed
   bool isConditional = uop->isStoreCond();
-  if (isConditional) {
+  if (isConditional && !uop->isCondResultReady()) {
     if (checkLLSCMonitor(uop) == false) {
       // No valid monitor, fail store
       uop->updateCondStoreResult(false);
