@@ -37,6 +37,8 @@ class SimInfo {
     // Replace the validated config with new instance with the supplied
     // additional values
     getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
+    // Update previously extracted values from the config file
+    getInstance()->extractValues();
   }
 
   /** A function to generate a default config file based on a passed ISA. */

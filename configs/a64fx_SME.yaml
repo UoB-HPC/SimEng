@@ -4,7 +4,6 @@
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
-  ISA: AArch64
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
