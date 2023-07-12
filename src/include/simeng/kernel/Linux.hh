@@ -247,7 +247,7 @@ class Linux {
    * occupies in the `pmu_` unordered_map. Return values are a -1 in the case
    * of an error or the file descriptor representation in the case of a success.
    */
-  int64_t perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu, int64_t group_fd,
+  int64_t perfEventOpen(void* attr, pid_t pid, int64_t cpu, int64_t group_fd,
                         uint64_t flags);
 
   /** Increment the value of the performance event held within the pmu_ map, if

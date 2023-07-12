@@ -573,7 +573,7 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
   return vfd;
 }
 
-int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
+int64_t Linux::perfEventOpen(void* attr, pid_t pid, int64_t cpu,
                              int64_t group_fd, uint64_t flags) {
   if (flags != 0) {
     // flags in perf_event_open syscall unsupported
@@ -585,13 +585,12 @@ int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
   }
 
   // Construct perfEventAttr struct from values at `attr` offset in memory_
-  const char* base = memory_ + attr;
   perfEventAttr newEvent = {
-      .type = *reinterpret_cast<const uint32_t*>(base),
-      .size = *reinterpret_cast<const uint32_t*>(base + 4),
-      .config = *reinterpret_cast<const uint64_t*>(base + 8),
-      .readFormat = *reinterpret_cast<const uint64_t*>(base + 32),
-      .eventConfig = *reinterpret_cast<const uint64_t*>(base + 40)};
+      .type = *reinterpret_cast<const uint32_t*>((char*)attr),
+      .size = *reinterpret_cast<const uint32_t*>((char*)attr + 4),
+      .config = *reinterpret_cast<const uint64_t*>((char*)attr + 8),
+      .readFormat = *reinterpret_cast<const uint64_t*>((char*)attr + 32),
+      .eventConfig = *reinterpret_cast<const uint64_t*>((char*)attr + 40)};
 
   // Extract exclude _{kernel,hv} bits in eventConfig as thye must be set
   if ((newEvent.eventConfig & 96) != 96) {

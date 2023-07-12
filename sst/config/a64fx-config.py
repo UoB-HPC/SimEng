@@ -84,9 +84,10 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY>",
-    "executable_args": "",
+    "simeng_config_path": "/home/rahat/work/src/SimEng/configs/sst-cores/a64fx-sst.yaml",
+    "executable_path": "/home/rahat/work/modsim/Binaries/gemm_fp64_neon",
+    "executable_args": 
+    "/home/rahat/work/modsim/Binaries/Input_files/fp64_input_64_64_64.dat /home/rahat/work/modsim/Binaries/Ref_output/fp64_ref_output_64_64_64.dat 10",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,

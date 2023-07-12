@@ -8,6 +8,7 @@
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/arch/Architecture.hh"
 
 namespace simeng {
 namespace arch {
@@ -657,10 +658,13 @@ bool ExceptionHandler::init() {
         int64_t group_fd = signed(registerFileSet.get(R3).get<int64_t>());
         uint64_t flags = registerFileSet.get(R4).get<uint64_t>();
 
-        int64_t result = linux_.perfEventOpen(attr, pid, cpu, group_fd, flags);
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
-        break;
+        return readBufferThen(attr, 48, [=]() {
+          int64_t result = linux_.perfEventOpen(dataBuffer.data(), pid, cpu,
+                                                group_fd, flags);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
+          return concludeSyscall(stateChange);
+        });
       }
       default:
         printException(instruction_);
