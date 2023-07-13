@@ -222,6 +222,9 @@ void FetchUnit::updatePC(uint64_t address) {
 }
 
 void FetchUnit::requestFromPC() {
+  // Do nothing if supplying fetch stream from loop buffer
+  if (loopBufferState_ == LoopBufferState::SUPPLYING) return;
+
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
 
