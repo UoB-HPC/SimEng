@@ -2442,13 +2442,13 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
-        uint16_t index = 0;
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
-            out[i] = memoryData[index].get<uint32_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2479,14 +2479,14 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
-        uint16_t index = 0;
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+
         for (int i = 0; i < partition_num; i++) {
           uint32_t* row =
               const_cast<uint32_t*>(operands[i].getAsVector<uint32_t>());
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
-            row[sliceNum] = memoryData[index].get<uint32_t>();
-            index++;
+            row[sliceNum] = data[i];
           } else {
             row[sliceNum] = 0;
           }
@@ -2499,13 +2499,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        uint16_t index = 0;
+        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
+
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
           if (p[i / 64] & shifted_active) {
-            out[i] = memoryData[index].get<uint8_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2518,13 +2518,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = memoryData[index].get<uint64_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2538,13 +2538,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = memoryData[index].get<uint64_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2557,13 +2557,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 16;
-        uint16_t index = 0;
+        const uint16_t* data = memoryData[0].getAsVector<uint16_t>();
+
         uint16_t out[128] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (p[i / 32] & shifted_active) {
-            out[i] = memoryData[index].get<uint16_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2612,15 +2612,14 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
-        uint16_t index = 0;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
 
         // Get mini-vector (quadword)
         uint64_t mini[2] = {0};
         for (int i = 0; i < 2; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            mini[i] = memoryData[index].get<uint64_t>();
-            index++;
+            mini[i] = data[i];
           }
         }
 
@@ -2637,15 +2636,15 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        uint16_t index = 0;
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
 
         // Get mini-vector (quadword)
         uint32_t mini[4] = {0};
         for (int i = 0; i < 4; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active)
-            mini[i] = memoryData[index].get<uint32_t>();
-          index++;
+          if (p[i / 16] & shifted_active) {
+            mini[i] = data[i];
+          }
         }
 
         // Duplicate mini-vector into output vector
@@ -2662,7 +2661,7 @@ void Instruction::execute() {
         // LOAD
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        uint16_t index = 0;
+
         // Check if any lanes are active, otherwise set all to 0 and break early
         bool active = false;
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
@@ -2675,10 +2674,8 @@ void Instruction::execute() {
         if (active) {
           uint32_t data = memoryData[0].get<uint32_t>();
           for (int i = 0; i < partition_num; i++) {
-            uint64_t shifted_active = p[index / 16] & 1ull
-                                                          << ((index % 16) * 4);
+            uint64_t shifted_active = p[i / 16] & 1ull << ((i % 16) * 4);
             out[i] = shifted_active ? data : 0;
-            index++;
           }
         }
         results[0] = {out, 256};
@@ -2827,13 +2824,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        uint16_t index = 0;
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            out[i] = memoryData[index].get<uint32_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2847,13 +2844,13 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        uint16_t index = 0;
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            out[i] = memoryData[index].get<uint32_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -3331,10 +3328,11 @@ void Instruction::execute() {
         // LOAD
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
+        const uint8_t* memData = memoryData[0].getAsVector<uint8_t>();
 
         uint64_t out[4] = {0};
         for (int i = 0; i < partition_num; i++) {
-          uint8_t data = memoryData[i].get<uint8_t>();
+          uint8_t data = memData[i];
           for (int j = 0; j < 8; j++) {
             out[i / 8] |= (data & (1 << j)) ? 1ull << ((j + (i * 8)) % 64) : 0;
           }
@@ -3346,9 +3344,10 @@ void Instruction::execute() {
         // LOAD
         const uint16_t partition_num = VL_bits / 8;
         uint8_t out[256] = {0};
+        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          out[i] = memoryData[i].get<uint8_t>();
+          out[i] = data[i];
         }
         results[0] = {out, 256};
         break;
