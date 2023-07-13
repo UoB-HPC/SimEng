@@ -241,8 +241,8 @@ void FetchUnit::updatePC(uint64_t address) {
 void FetchUnit::setProgramLength(uint64_t size) { programByteLength_ = size; }
 
 void FetchUnit::requestFromPC() {
-  // Do nothing if paused
-  if (paused_) return;
+  // Do nothing if paused or supply from loop buffer
+  if (paused_ || loopBufferState_ == LoopBufferState::SUPPLYING) return;
 
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
