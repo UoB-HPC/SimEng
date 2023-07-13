@@ -210,6 +210,8 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   // Early exit if there's no addresses to process
   if (addresses.size() == 0) {
+    uop->setStoreFired();
+    uop->setCommitReady();
     storeQueue_.pop_front();
     return false;
   }
@@ -481,6 +483,10 @@ void LoadStoreQueue::tick() {
           // Remove entry from vector iff all of its requests have been
           // scheduled
           if (addressQueue.size() == 0) {
+            if (isStore) {
+              itInsn->insn->setStoreFired();
+              itInsn->insn->setCommitReady();
+            }
             itInsn = itReq->second.erase(itInsn);
           }
         }

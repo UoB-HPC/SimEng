@@ -43,8 +43,11 @@ bool Instruction::isFlushed() const { return flushed_; }
 
 bool Instruction::hasExecuted() const { return executed_; }
 
-void Instruction::setCommitReady() { canCommit_ = true; }
+void Instruction::setCommitReady(bool ready) { canCommit_ = ready; }
 bool Instruction::canCommit() const { return canCommit_; }
+
+void Instruction::setStoreFired() { storeFired_ = true; }
+bool Instruction::hasStoreFired() const { return storeFired_; }
 
 bool Instruction::hasAllData() const { return (dataPending_ == 0); }
 

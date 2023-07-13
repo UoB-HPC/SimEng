@@ -78,6 +78,20 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
+    if (uop->isStoreAddress() && !uop->hasStoreFired()) {
+      uop->setCommitReady(false);
+
+      bool violationFound = lsq_.commitStore(uop);
+      if (violationFound) {
+        loadViolations_++;
+        // Memory order violation found; aborting commits and flushing
+        auto load = lsq_.getViolatingLoad();
+        shouldFlush_ = true;
+        flushAfter_ = load->getInstructionId() - 1;
+        pc_ = load->getInstructionAddress();
+      }
+      return n;
+    }
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
@@ -94,20 +108,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
-    }
-    if (uop->isStoreAddress()) {
-      bool violationFound = lsq_.commitStore(uop);
-      if (violationFound) {
-        loadViolations_++;
-        // Memory order violation found; aborting commits and flushing
-        auto load = lsq_.getViolatingLoad();
-        shouldFlush_ = true;
-        flushAfter_ = load->getInstructionId() - 1;
-        pc_ = load->getInstructionAddress();
-
-        buffer_.pop_front();
-        return n + 1;
-      }
     }
 
     // Increment or swap out branch counter for loop detection

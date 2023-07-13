@@ -57,11 +57,17 @@ class Instruction {
   bool hasExecuted() const;
 
   /** Mark the instruction as ready to commit. */
-  void setCommitReady();
+  void setCommitReady(bool ready = true);
 
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
   bool canCommit() const;
+
+  /** Mark the store instruction as sent to memory. */
+  void setStoreFired();
+
+  /** Check whether the store instruction has been sent to memory. */
+  bool hasStoreFired() const;
 
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
@@ -191,6 +197,9 @@ class Instruction {
 
   /** Whether or not this instruction is ready to commit. */
   bool canCommit_ = false;
+
+  /** Whether or not this store instruction has been sent to memory. */
+  bool storeFired_ = false;
 
   // Memory
   /** The number of data items that still need to be supplied. */
