@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
-  int iterations = 0;
+  uint64_t iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
   iterations = simulate(OS, *core, *mmu, *memory);
 
