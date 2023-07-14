@@ -2899,24 +2899,24 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>()};
+        uint64_t out[2][32] = {{0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
+          for (int j = 0; j < 2; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(2 * i + j) / partition_num]
+                              [(2 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
+
+        for (int i = 0; i < 2; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s} [xn]
@@ -2951,29 +2951,25 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
-        uint64_t out3[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>(),
+            memoryData[2].getAsVector<uint64_t>()};
+        uint64_t out[3][32] = {{0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out3[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
-            out3[i] = 0;
+          for (int j = 0; j < 3; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(3 * i + j) / partition_num]
+                              [(3 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
-        results[2] = {out3, 256};
+
+        for (int i = 0; i < 3; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LD4D_IMM: {  // ld4d {zt1.d, zt2.d, zt3.d, zt4.d},
@@ -2981,35 +2977,26 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
-        uint64_t out3[32] = {0};
-        uint64_t out4[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>(),
+            memoryData[2].getAsVector<uint64_t>(),
+            memoryData[3].getAsVector<uint64_t>()};
+        uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out3[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out4[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
-            out3[i] = 0;
-            out4[i] = 0;
+          for (int j = 0; j < 4; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(4 * i + j) / partition_num]
+                              [(4 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
 
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
-        results[2] = {out3, 256};
-        results[3] = {out4, 256};
+        for (int i = 0; i < 4; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
