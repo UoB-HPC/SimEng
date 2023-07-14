@@ -66,23 +66,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME
         const uint16_t partition_num = VL_bits / 32;
-        const uint64_t* pg =
-            operands[partition_num + 1].getAsVector<uint64_t>();
         const uint64_t n = operands[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;
         if (metadata.operands[2].mem.index)
           m = operands[partition_num + 3].get<uint64_t>() << 2;
-
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (pg[i / 16] & shifted_active) {
-            addresses.push_back({(n + m) + (i * 4), 4});
-          }
-        }
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
@@ -110,41 +98,15 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-
         uint64_t addr =
             operands[1].get<uint64_t>() + metadata.operands[2].mem.disp;
-
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(2);
-
-        for (int i = 0; i < 2; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            addresses.push_back({addr, 8});
-          }
-          addr += 8;
-        }
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(16)});
         break;
       }
       case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-
         uint64_t addr =
             operands[1].get<uint64_t>() + metadata.operands[2].mem.disp;
-
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(4);
-
-        for (int i = 0; i < 4; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            addresses.push_back({addr, 4});
-          }
-          addr += 4;
-        }
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(16)});
         break;
       }
       case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
@@ -243,133 +205,58 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD1B: {  // ld1b {zt.b}, pg/z, [xn, xm]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-        const uint16_t partition_num = VL_bits / 8;
-
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << (i % 64);
-          if (p[i / 64] & shifted_active) {
-            addresses.push_back({base + (offset + i), 1});
-          }
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({base + offset, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1D: {  // ld1d {zt.d}, pg/z, [xn, xm, lsl #3]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-        const uint16_t partition_num = VL_bits / 64;
-
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
+        const uint64_t addr = base + (offset * 8);
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            addresses.push_back({base + ((offset + i) * 8), 8});
-          }
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1D_IMM_REAL: {  // ld1d {zt.d}, pg/z, [xn{, #imm,
                                              // mul vl}]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
 
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset =
             static_cast<uint64_t>(metadata.operands[2].mem.disp);
+        const uint64_t addr = base + (offset * partition_num * 8);
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        uint64_t addr = base + (offset * partition_num * 8);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            addresses.push_back({addr, 8});
-          }
-          addr += 8;
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1H: {  // ld1h {zt.h}, pg/z, [xn, xm, lsl #1]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-        const uint16_t partition_num = VL_bits / 16;
-
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
+        const uint64_t addr = base + (offset * 2);
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 32) * 2);
-          if (p[i / 32] & shifted_active) {
-            addresses.push_back({base + ((offset + i) * 2), 2});
-          }
-        }
-
-        setMemoryAddresses(addresses);
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w {zt.s}, pg/z, [xn, xm, lsl #2]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
-        const uint16_t partition_num = VL_bits / 32;
-
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
+        const uint64_t addr = base + (offset * 4);
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            addresses.push_back({base + ((offset + i) * 4), 4});
-          }
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD1W_IMM_REAL: {  // ld1w {zt.s}, pg/z, [xn{, #imm,
                                              // mul vl}]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
 
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset =
             static_cast<uint64_t>(metadata.operands[2].mem.disp);
+        const uint64_t addr = base + (offset * partition_num * 4);
 
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
-
-        uint64_t addr = base + (offset * partition_num * 4);
-
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            addresses.push_back({addr, 4});
-          }
-          addr += 4;
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
       case Opcode::AArch64_LD2D: {  // ld2d {zt1.d, zt2.d}, pg/z, [xn|sp, xm,
@@ -668,34 +555,20 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t offset =
             static_cast<uint64_t>(metadata.operands[1].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses(partition_num);
-
         uint64_t addr = base + (offset * partition_num);
 
-        for (int i = 0; i < partition_num; i++) {
-          addresses[i] = {addr, 1};
-          addr += 1;
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, partition_num});
         break;
       }
       case Opcode::AArch64_LDR_ZXI: {  // ldr zt, [xn{, #imm, mul vl}]
         const uint16_t partition_num = VL_bits / 8;
 
         const uint64_t base = operands[0].get<uint64_t>();
-        const uint64_t offset =
-            static_cast<uint64_t>(metadata.operands[1].mem.disp);
+        const int64_t offset =
+            static_cast<int64_t>(metadata.operands[1].mem.disp);
+        const uint64_t addr = base + (offset * partition_num);
 
-        std::vector<MemoryAccessTarget> addresses(partition_num);
-
-        uint64_t addr = base + (offset * partition_num);
-        for (int i = 0; i < partition_num; i++) {
-          addresses[i] = {addr, 1};
-          addr += 1;
-        }
-
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, partition_num});
         break;
       }
       case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]

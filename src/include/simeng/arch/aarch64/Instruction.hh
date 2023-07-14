@@ -453,6 +453,8 @@ class Instruction : public simeng::Instruction {
 
   void setMemoryAddresses(std::vector<MemoryAccessTarget>&& addresses);
 
+  void setMemoryAddresses(MemoryAccessTarget address);
+
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
   std::vector<MemoryAccessTarget> memoryAddresses;
