@@ -109,6 +109,12 @@ void Instruction::setMemoryAddresses(
   memoryAddresses = std::move(addresses);
 }
 
+void Instruction::setMemoryAddresses(MemoryAccessTarget address) {
+  dataPending_ = 1;
+  memoryData.resize(1);
+  memoryAddresses.push_back(address);
+}
+
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
   return {memoryAddresses.data(), memoryAddresses.size()};
 }
