@@ -111,6 +111,11 @@ class Instruction : public simeng::Instruction {
   /** Retrieve previously generated memory addresses. */
   span<const MemoryAccessTarget> getGeneratedAddresses() const override;
 
+  /** Retrieve the number of store requests associated with this instruction.
+   * Some store instructions may have multiple addresses but are fired off to
+   * memory in single or multiple requests. */
+  uint16_t getNumStoreRequests() const override;
+
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
 

@@ -75,6 +75,11 @@ class Instruction {
   /** Retrieve previously generated memory addresses. */
   virtual span<const MemoryAccessTarget> getGeneratedAddresses() const = 0;
 
+  /** Retrieve the number of store requests associated with this instruction.
+   * Some store instructions may have multiple addresses but are fired off to
+   * memory in single or multiple requests. */
+  virtual uint16_t getNumStoreRequests() const = 0;
+
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;
 

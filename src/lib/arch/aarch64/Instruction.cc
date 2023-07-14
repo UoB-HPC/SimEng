@@ -119,6 +119,8 @@ span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
   return {memoryAddresses.data(), memoryAddresses.size()};
 }
 
+uint16_t Instruction::getNumStoreRequests() const { return numStoreReqs_; }
+
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   assert(
       !executed_ &&

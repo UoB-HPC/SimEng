@@ -207,11 +207,14 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
     memory_.requestWrite(addresses[i], data[i]);
-    // Still add addresses to requestQueue_ to ensure contention of resources is
-    // correctly simulated
+  }
+
+  // Add address placeholders in the requestStoreQueue_ to ensure the contention
+  // of resources against loads are correctly captured
+  for (size_t i = 0; i < uop->getNumStoreRequests(); i++) {
     requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]
         .back()
-        .reqAddresses.push(addresses[i]);
+        .reqAddresses.push({0, 0});
   }
 
   // Check all loads that have requested memory

@@ -21,6 +21,7 @@ class MockInstruction : public Instruction {
   MOCK_METHOD0(generateAddresses, span<const MemoryAccessTarget>());
   MOCK_METHOD2(supplyData, void(uint64_t address, const RegisterValue& data));
   MOCK_CONST_METHOD0(getGeneratedAddresses, span<const MemoryAccessTarget>());
+  MOCK_CONST_METHOD0(getNumStoreRequests, uint16_t());
   MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,

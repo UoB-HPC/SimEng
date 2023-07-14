@@ -283,6 +283,11 @@ class Instruction : public simeng::Instruction {
   /** Retrieve previously generated memory addresses. */
   span<const MemoryAccessTarget> getGeneratedAddresses() const override;
 
+  /** Retrieve the number of store requests associated with this instruction.
+   * Some store instructions may have multiple addresses but are fired off to
+   * memory in single or multiple requests. */
+  uint16_t getNumStoreRequests() const override;
+
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
 
@@ -463,6 +468,10 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
+
+  /** The number of store requests associated with this instruction. Default to
+   * 1 as it is the most common amoungst AArch64 store instructions. */
+  uint16_t numStoreReqs_ = 1;
 
   // Execution helpers
   /** Extend `value` according to `extendType`, and left-shift the result by

@@ -494,6 +494,15 @@ void Instruction::decode() {
     // marked as loads manually
     isLoad_ = true;
   }
+  // Alter the number of store requests based on opcode
+  if (metadata.opcode == Opcode::AArch64_ST2D_IMM ||
+      metadata.opcode == Opcode::AArch64_ST1Twov16b ||
+      metadata.opcode == Opcode::AArch64_ST1Twov4s ||
+      metadata.opcode == Opcode::AArch64_ST2Twov4s_POST)
+    numStoreReqs_ = 2;
+  if (metadata.opcode == Opcode::AArch64_ST1Fourv2s_POST ||
+      metadata.opcode == Opcode::AArch64_ST1Fourv4s_POST)
+    numStoreReqs_ = 4;
 
   if ((264 <= metadata.opcode && metadata.opcode <= 267) ||    // AND
       (1063 <= metadata.opcode && metadata.opcode <= 1084) ||  // AND (pt.2)
