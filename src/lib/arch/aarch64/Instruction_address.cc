@@ -8,31 +8,31 @@ namespace arch {
 namespace aarch64 {
 
 void generateContiguousAddresses(
-    uint64_t base, uint16_t num, uint8_t size,
+    uint64_t baseAddr, uint16_t numVecElems, uint8_t size,
     std::vector<simeng::MemoryAccessTarget>& addresses) {
-  for (uint16_t addr = 0; addr < num; addr++) {
-    addresses.push_back({base + (addr * size), size});
+  for (uint16_t i = 0; i < numVecElems; i++) {
+    addresses.push_back({baseAddr + (i * size), size});
   }
 }
 
 void generatePredicatedContiguousAddressBlocks(
-    uint64_t base, uint16_t num, uint8_t elem_size, uint8_t pred_size,
+    uint64_t baseAddr, uint16_t numVecElems, uint8_t elemSize, uint8_t predSize,
     const uint64_t* pred, std::vector<simeng::MemoryAccessTarget>& addresses) {
   bool recordingBlock = false;
   uint64_t currAddr = 0;
   uint16_t currSize = 0;
-  uint64_t numPreds = (64 / pred_size);
-  for (uint64_t i = 0; i < num; i++) {
-    uint64_t shifted_active = 1ull << ((i % numPreds) * pred_size);
+  uint64_t numPreds = (64 / predSize);  // Number of predicates per uint64_t
+  for (uint64_t i = 0; i < numVecElems; i++) {
+    uint64_t shifted_active = 1ull << ((i % numPreds) * predSize);
     if (pred[i / numPreds] & shifted_active) {
       // If the lane is active and no address block is being recorded,
       // start
       if (!recordingBlock) {
-        currAddr = base + (i * elem_size);
+        currAddr = baseAddr + (i * elemSize);
         currSize = 0;
         recordingBlock = true;
       }
-      currSize += elem_size;
+      currSize += elemSize;
     } else if (recordingBlock) {
       // Record the currently recorded address block
       addresses.push_back({currAddr, currSize});

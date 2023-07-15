@@ -1643,38 +1643,34 @@ class sveHelp {
   static std::vector<RegisterValue> sve_merge_store_data(const T* d,
                                                          const uint64_t* p,
                                                          uint16_t vl_bits) {
-    std::vector<RegisterValue> memory_data;
+    std::vector<RegisterValue> outputData;
 
-    uint16_t num_vec_elems = (vl_bits / (8 * sizeof(T)));
-    // Determine how many predication are stored per uint64_t predicate entry.
-    uint16_t prdcns_per_preg = (64 / sizeof(T));
+    uint16_t numVecElems = (vl_bits / (8 * sizeof(T)));
+    // Determine how many predicate elements are present per uint64_t.
+    uint16_t predsPer64 = (64 / sizeof(T));
 
     // Determine size of array based on the size of the stored element (This is
     // the T specifier in sve instructions)
-    std::array<T, 256 / sizeof(T)> mdata;
-    uint16_t md_size = 0;
+    std::array<T, 256 / sizeof(T)> mData;
+    uint16_t mdSize = 0;
 
-    for (uint16_t x = 0; x < num_vec_elems; x++) {
-      // Determine the predicate to use.
-      uint64_t predicate = p[x / prdcns_per_preg];
-
+    for (uint16_t x = 0; x < numVecElems; x++) {
       // Determine mask to get predication for active element.
-      uint64_t bit_mask = 1ull << ((x % prdcns_per_preg) * sizeof(T));
-      uint64_t is_elem_active = predicate & bit_mask;
-      if (is_elem_active) {
-        mdata[md_size] = d[x];
-        md_size++;
-      } else if (md_size && !is_elem_active) {
-        const char* data = (char*)mdata.data();
-        memory_data.push_back(RegisterValue(data, md_size * sizeof(T)));
-        md_size = 0;
+      uint64_t shiftedActive = 1ull << ((x % predsPer64) * sizeof(T));
+      if (p[x / predsPer64] & shiftedActive) {
+        mData[mdSize] = d[x];
+        mdSize++;
+      } else if (mdSize) {
+        outputData.push_back(
+            RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
+        mdSize = 0;
       }
     }
-    if (md_size) {
-      const char* data = (char*)mdata.data();
-      memory_data.push_back(RegisterValue(data, md_size * sizeof(T)));
+    if (mdSize) {
+      outputData.push_back(
+          RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
     }
-    return memory_data;
+    return outputData;
   }
 };
 }  // namespace aarch64
