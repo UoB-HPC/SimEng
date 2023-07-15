@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
+
 #include "auxiliaryFunctions.hh"
 
 namespace simeng {
@@ -1630,6 +1633,48 @@ class sveHelp {
       interleave = !interleave;
     }
     return {out, 256};
+  }
+
+  /** Helper function for SVE instructions store instructions.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * This function merges store data for contiguous active elements, and return
+   * a vector containing all merged contiguous active elements.  */
+  template <typename T>
+  static std::vector<RegisterValue> sve_merge_store_data(const T* d,
+                                                         const uint64_t* p,
+                                                         uint16_t vl_bits) {
+    std::vector<RegisterValue> memory_data;
+
+    uint16_t num_vec_elems = (vl_bits / (8 * sizeof(T)));
+    // Determine how many predication are stored per uint64_t predicate entry.
+    uint16_t prdcns_per_preg = (64 / sizeof(T));
+
+    // Determine size of array based on the size of the stored element (This is
+    // the T specifier in sve instructions)
+    std::array<T, 256 / sizeof(T)> mdata;
+    uint16_t md_size = 0;
+
+    for (uint16_t x = 0; x < num_vec_elems; x++) {
+      // Determine the predicate to use.
+      uint64_t predicate = p[x / prdcns_per_preg];
+
+      // Determine mask to get predication for active element.
+      uint64_t bit_mask = 1ull << ((x % prdcns_per_preg) * sizeof(T));
+      uint64_t is_elem_active = predicate & bit_mask;
+      if (is_elem_active) {
+        mdata[md_size] = d[x];
+        md_size++;
+      } else if (md_size && !is_elem_active) {
+        const char* data = (char*)mdata.data();
+        memory_data.push_back(RegisterValue(data, md_size * sizeof(T)));
+        md_size = 0;
+      }
+    }
+    if (md_size) {
+      const char* data = (char*)mdata.data();
+      memory_data.push_back(RegisterValue(data, md_size * sizeof(T)));
+    }
+    return memory_data;
   }
 };
 }  // namespace aarch64
