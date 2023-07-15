@@ -861,10 +861,8 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
         uint64_t addr = base + (offset * partition_num * 8);
 
-        generatePredicatedContiguousAddressBlocks(addr, partition_num, 8, 8, p,
+        generatePredicatedContiguousAddressBlocks(addr, partition_num, 16, 8, p,
                                                   addresses);
-        generatePredicatedContiguousAddressBlocks(
-            addr + (partition_num * 8), partition_num, 8, 8, p, addresses);
         setMemoryAddresses(std::move(addresses));
         break;
       }
@@ -1106,7 +1104,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.42, vt2.2s, vt3.2s,
+      case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], #imm
         const uint64_t base = operands[4].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;

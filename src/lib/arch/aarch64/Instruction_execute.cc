@@ -4228,15 +4228,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
-        const uint32_t* t = operands[0].getAsVector<uint32_t>();
-        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
-        const uint32_t* t3 = operands[2].getAsVector<uint32_t>();
-        const uint32_t* t4 = operands[3].getAsVector<uint32_t>();
-        for (int i = 0; i < 2; i++) {
-          memoryData[i] = t[i];
-          memoryData[i + 2] = t2[i];
-          memoryData[i + 4] = t3[i];
-          memoryData[i + 6] = t4[i];
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint32_t>(), 2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -4376,10 +4370,32 @@ void Instruction::execute() {
         const uint64_t* d2 = operands[1].getAsVector<uint64_t>();
         const uint64_t* p = operands[2].getAsVector<uint64_t>();
 
-        auto vec_data = sveHelp::sve_merge_store_data(d1, p, VL_bits);
-        memoryData.insert(memoryData.end(), vec_data.begin(), vec_data.end());
-        vec_data = sveHelp::sve_merge_store_data(d2, p, VL_bits);
-        memoryData.insert(memoryData.end(), vec_data.begin(), vec_data.end());
+        std::vector<uint64_t> memData;
+        bool inActiveBlock = false;
+
+        const uint16_t partition_num = VL_bits / 64;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            // If active and not in active block, initialise
+            if (!inActiveBlock) {
+              memData.clear();
+              inActiveBlock = true;
+            }
+            memData.push_back(d1[i]);
+            memData.push_back(d2[i]);
+          } else if (inActiveBlock) {
+            inActiveBlock = false;
+            memoryData[index] = RegisterValue(
+                (char*)memData.data(), sizeof(uint64_t) * memData.size());
+            index++;
+          }
+        }
+        // Add final block if needed
+        if (inActiveBlock)
+          memoryData[index] = RegisterValue((char*)memData.data(),
+                                            sizeof(uint64_t) * memData.size());
 
         break;
       }
@@ -4388,8 +4404,10 @@ void Instruction::execute() {
         // STORE
         const float* t1 = operands[0].getAsVector<float>();
         const float* t2 = operands[1].getAsVector<float>();
-        memoryData[0] = RegisterValue((char*)t1, 4 * sizeof(float));
-        memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(float));
+        std::vector<float> m1 = {t1[0], t2[0], t1[1], t2[1]};
+        std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
+        memoryData[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
+        memoryData[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
 
         uint64_t offset = 32;
         if (metadata.operandCount == 4) {
