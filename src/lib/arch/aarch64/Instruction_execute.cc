@@ -2512,13 +2512,13 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
-        uint16_t index = 0;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) {
-            out[i] = memoryData[index].get<uint64_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -2549,14 +2549,14 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
-        uint16_t index = 0;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
         for (int i = 0; i < partition_num; i++) {
           uint64_t* row =
               const_cast<uint64_t*>(operands[i].getAsVector<uint64_t>());
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) {
-            row[sliceNum] = memoryData[index].get<uint64_t>();
-            index++;
+            row[sliceNum] = data[i];
           } else {
             row[sliceNum] = 0;
           }
@@ -2655,13 +2655,12 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        uint16_t index = 0;
+        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
           if (p[i / 64] & shifted_active) {
-            out[i] = memoryData[index].get<uint8_t>();
-            index++;
+            out[i] = data[i];
           } else {
             out[i] = 0;
           }
@@ -4275,14 +4274,9 @@ void Instruction::execute() {
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
 
         const uint64_t* tileSlice = operands[sliceNum].getAsVector<uint64_t>();
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (pg[i / 8] & shifted_active) {
-            memoryData[index] = tileSlice[i];
-            index++;
-          }
-        }
+        memoryData =
+            sveHelp::sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
+
         break;
       }
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
@@ -4299,13 +4293,24 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        std::array<uint64_t, 32> mdata;
+        uint16_t md_size = 0;
         uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (pg[i / 8] & shifted_active) {
-            memoryData[index] = operands[i].getAsVector<uint64_t>()[sliceNum];
-            index++;
+
+        for (uint16_t x = 0; x < partition_num; x++) {
+          uint64_t shifted_active = 1ull << ((x % 8) * 8);
+          if (pg[x / 8] & shifted_active) {
+            mdata[md_size] = operands[x].getAsVector<uint64_t>()[sliceNum];
+            md_size++;
+          } else if (md_size) {
+            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+            md_size = 0;
           }
+        }
+
+        if (md_size) {
+          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
         }
         break;
       }
@@ -4345,30 +4350,23 @@ void Instruction::execute() {
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
 
-        uint16_t num_vec_elems = (VL_bits / 32);
-        uint16_t prdcns_per_preg = (64 / 4);
-
-        std::array<uint32_t, 256 / 4> mdata;
+        std::array<uint32_t, 64> mdata;
         uint16_t md_size = 0;
         uint16_t index = 0;
 
-        for (uint16_t x = 0; x < num_vec_elems; x++) {
-          uint64_t predicate = pg[x / prdcns_per_preg];
-          uint64_t bit_mask = 1ull << ((x % prdcns_per_preg) * 4);
-          uint64_t is_elem_active = predicate & bit_mask;
-          if (is_elem_active) {
+        for (uint16_t x = 0; x < partition_num; x++) {
+          uint64_t shifted_active = 1ull << ((x % 16) * 4);
+          if (pg[x / 16] & shifted_active) {
             mdata[md_size] = operands[x].getAsVector<uint32_t>()[sliceNum];
             md_size++;
-          } else if (md_size && !is_elem_active) {
-            const char* data = (char*)mdata.data();
-            memoryData[index] = RegisterValue(data, md_size * 4);
+          } else if (md_size) {
+            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
             md_size = 0;
           }
         }
 
         if (md_size) {
-          const char* data = (char*)mdata.data();
-          memoryData[index] = RegisterValue(data, md_size * 4);
+          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
         }
 
         break;
@@ -4418,15 +4416,7 @@ void Instruction::execute() {
         const uint8_t* d = operands[0].getAsVector<uint8_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 8;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << (i % 64);
-          if (p[i / 64] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
