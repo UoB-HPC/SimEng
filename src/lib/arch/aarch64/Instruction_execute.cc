@@ -2899,24 +2899,24 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>()};
+        uint64_t out[2][32] = {{0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
+          for (int j = 0; j < 2; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(2 * i + j) / partition_num]
+                              [(2 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
+
+        for (int i = 0; i < 2; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s} [xn]
@@ -2951,29 +2951,25 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
-        uint64_t out3[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>(),
+            memoryData[2].getAsVector<uint64_t>()};
+        uint64_t out[3][32] = {{0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out3[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
-            out3[i] = 0;
+          for (int j = 0; j < 3; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(3 * i + j) / partition_num]
+                              [(3 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
-        results[2] = {out3, 256};
+
+        for (int i = 0; i < 3; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LD4D_IMM: {  // ld4d {zt1.d, zt2.d, zt3.d, zt4.d},
@@ -2981,35 +2977,26 @@ void Instruction::execute() {
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        uint64_t out1[32] = {0};
-        uint64_t out2[32] = {0};
-        uint64_t out3[32] = {0};
-        uint64_t out4[32] = {0};
+        std::vector<const uint64_t*> data = {
+            memoryData[0].getAsVector<uint64_t>(),
+            memoryData[1].getAsVector<uint64_t>(),
+            memoryData[2].getAsVector<uint64_t>(),
+            memoryData[3].getAsVector<uint64_t>()};
+        uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            out1[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out2[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out3[i] = memoryData[index].get<uint64_t>();
-            index++;
-            out4[i] = memoryData[index].get<uint64_t>();
-            index++;
-          } else {
-            out1[i] = 0;
-            out2[i] = 0;
-            out3[i] = 0;
-            out4[i] = 0;
+          for (int j = 0; j < 4; j++) {
+            if (p[i / 8] & shifted_active) {
+              out[j][i] = data[(4 * i + j) / partition_num]
+                              [(4 * i + j) % partition_num];
+            } else {
+              out[j][i] = 0;
+            }
           }
         }
 
-        results[0] = {out1, 256};
-        results[1] = {out2, 256};
-        results[2] = {out3, 256};
-        results[3] = {out4, 256};
+        for (int i = 0; i < 4; i++) results[i] = {out[i], 256};
         break;
       }
       case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
@@ -4132,14 +4119,9 @@ void Instruction::execute() {
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
 
         const uint32_t* tileSlice = operands[sliceNum].getAsVector<uint32_t>();
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (pg[i / 16] & shifted_active) {
-            memoryData[index] = tileSlice[i];
-            index++;
-          }
-        }
+        memoryData =
+            sveHelp::sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
+
         break;
       }
       case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
@@ -4156,13 +4138,31 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        uint16_t num_vec_elems = (VL_bits / 32);
+        uint16_t prdcns_per_preg = (64 / 4);
+
+        std::array<uint32_t, 256 / 4> mdata;
+        uint16_t md_size = 0;
         uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (pg[i / 16] & shifted_active) {
-            memoryData[index] = operands[i].getAsVector<uint32_t>()[sliceNum];
-            index++;
+
+        for (uint16_t x = 0; x < num_vec_elems; x++) {
+          uint64_t predicate = pg[x / prdcns_per_preg];
+          uint64_t bit_mask = 1ull << ((x % prdcns_per_preg) * 4);
+          uint64_t is_elem_active = predicate & bit_mask;
+          if (is_elem_active) {
+            mdata[md_size] = operands[x].getAsVector<uint32_t>()[sliceNum];
+            md_size++;
+          } else if (md_size && !is_elem_active) {
+            const char* data = (char*)mdata.data();
+            memoryData[index] = RegisterValue(data, md_size * 4);
+            md_size = 0;
           }
+        }
+
+        if (md_size) {
+          const char* data = (char*)mdata.data();
+          memoryData[index] = RegisterValue(data, md_size * 4);
         }
 
         break;
@@ -4204,15 +4204,7 @@ void Instruction::execute() {
         const uint8_t* d = operands[0].getAsVector<uint8_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 8;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << (i % 64);
-          if (p[i / 64] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
@@ -4220,15 +4212,7 @@ void Instruction::execute() {
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
@@ -4236,29 +4220,15 @@ void Instruction::execute() {
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
-        const uint32_t* t = operands[0].getAsVector<uint32_t>();
-        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
-        const uint32_t* t3 = operands[2].getAsVector<uint32_t>();
-        const uint32_t* t4 = operands[3].getAsVector<uint32_t>();
-        for (int i = 0; i < 2; i++) {
-          memoryData[i] = t[i];
-          memoryData[i + 2] = t2[i];
-          memoryData[i + 4] = t3[i];
-          memoryData[i + 6] = t4[i];
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint32_t>(), 2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -4269,15 +4239,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Fourv4s_POST: {  // st1 {vt.4s, vt2.4s, vt3.4s,
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
-        const uint32_t* t = operands[0].getAsVector<uint32_t>();
-        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
-        const uint32_t* t3 = operands[2].getAsVector<uint32_t>();
-        const uint32_t* t4 = operands[3].getAsVector<uint32_t>();
         for (int i = 0; i < 4; i++) {
-          memoryData[i] = t[i];
-          memoryData[i + 4] = t2[i];
-          memoryData[i + 8] = t3[i];
-          memoryData[i + 12] = t4[i];
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint32_t>(), 4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -4289,20 +4253,16 @@ void Instruction::execute() {
         // STORE
         const uint8_t* t = operands[0].getAsVector<uint8_t>();
         const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
-        for (int i = 0; i < 16; i++) {
-          memoryData[i] = t[i];
-          memoryData[i + 16] = t2[i];
-        }
+        memoryData[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
+        memoryData[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
         break;
       }
       case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
         // STORE
         const uint32_t* t = operands[0].getAsVector<uint32_t>();
         const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
-        for (int i = 0; i < 4; i++) {
-          memoryData[i] = t[i];
-          memoryData[i + 4] = t2[i];
-        }
+        memoryData[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
+        memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
         break;
       }
       case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
@@ -4310,15 +4270,7 @@ void Instruction::execute() {
         const uint32_t* d = operands[0].getAsVector<uint32_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 32;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
@@ -4326,15 +4278,7 @@ void Instruction::execute() {
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 64;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active) {
-            memoryData[index] = static_cast<uint32_t>(d[i]);
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
@@ -4342,15 +4286,7 @@ void Instruction::execute() {
         const uint32_t* d = operands[0].getAsVector<uint32_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        const uint16_t partition_num = VL_bits / 32;
-        uint16_t index = 0;
-        for (int i = 0; i < partition_num; i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            memoryData[index] = d[i];
-            index++;
-          }
-        }
+        memoryData = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
@@ -4432,17 +4368,33 @@ void Instruction::execute() {
         const uint64_t* d2 = operands[1].getAsVector<uint64_t>();
         const uint64_t* p = operands[2].getAsVector<uint64_t>();
 
+        std::vector<uint64_t> memData;
+        bool inActiveBlock = false;
+
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = d1[i];
-            index++;
-            memoryData[index] = d2[i];
+            // If active and not in active block, initialise
+            if (!inActiveBlock) {
+              memData.clear();
+              inActiveBlock = true;
+            }
+            memData.push_back(d1[i]);
+            memData.push_back(d2[i]);
+          } else if (inActiveBlock) {
+            inActiveBlock = false;
+            memoryData[index] = RegisterValue(
+                (char*)memData.data(), sizeof(uint64_t) * memData.size());
             index++;
           }
         }
+        // Add final block if needed
+        if (inActiveBlock)
+          memoryData[index] = RegisterValue((char*)memData.data(),
+                                            sizeof(uint64_t) * memData.size());
+
         break;
       }
       case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
@@ -4450,10 +4402,11 @@ void Instruction::execute() {
         // STORE
         const float* t1 = operands[0].getAsVector<float>();
         const float* t2 = operands[1].getAsVector<float>();
-        for (int i = 0; i < 4; i++) {
-          memoryData[2 * i] = t1[i];
-          memoryData[2 * i + 1] = t2[i];
-        }
+        std::vector<float> m1 = {t1[0], t2[0], t1[1], t2[1]};
+        std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
+        memoryData[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
+        memoryData[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
+
         uint64_t offset = 32;
         if (metadata.operandCount == 4) {
           offset = operands[3].get<uint64_t>();
@@ -4653,18 +4606,14 @@ void Instruction::execute() {
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
         const uint8_t* p = operands[0].getAsVector<uint8_t>();
-        for (int i = 0; i < partition_num; i++) {
-          memoryData[i] = p[i];
-        }
+        memoryData[0] = RegisterValue((char*)p, partition_num);
         break;
       }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;
         const uint8_t* z = operands[0].getAsVector<uint8_t>();
-        for (int i = 0; i < partition_num; i++) {
-          memoryData[i] = z[i];
-        }
+        memoryData[0] = RegisterValue((char*)z, partition_num);
         break;
       }
       case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]

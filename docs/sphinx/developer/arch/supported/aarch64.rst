@@ -211,9 +211,15 @@ Loads and stores
 
 In addition to an execution behaviour, memory instructions also require a new entry in the address generation behaviour table found in ``src/lib/arch/aarch64/Instruction_address.cc``. These entries are responsible for describing the method used to generate the addresses that these instructions will read from or write to.
 
-Address generation is expected to generate one or more instances of ``MemoryAddressTarget``, containing an address and the number of bytes to access. The same variables described above (``operands``, ``metadata``) are available to use to generate these addresses.
+Address generation is expected to generate one or more instances of ``MemoryAccessTarget``, containing an address and the number of bytes to access. The same variables described above (``operands``, ``metadata``) are available to use to generate these addresses.
 
-Once the addresses have been generated, they should be supplied in a vector to the ``setMemoryAddresses`` helper function.
+Once the addresses have been generated, they should be supplied in a vector to the ``setMemoryAddresses`` helper function. 
+
+For loads, data can be read from the ``memoryData`` vector in ``Instruction_execute.cc``, with each index holding a ``RegisterValue`` for a corresponding ``MemoryAccessTarget``. For stores, a ``RegisterValue`` must be placed in each index of the ``memoryData`` vector, again one per ``MemoryAccessTarget`` generated.
+
+To best match modelled hardware, contiguous Load and Store instructions use one ``MemoryAccessTarget`` per destination/source register. For NEON instructions this should always be the case, including interleaved multi-structure loads / stores.
+
+Concerning SVE & SME loads and stores, an effort should be made to merge contiguous active elements into as few ``MemoryAccessTarget``'s as possible by evaluating the predicate information (if applicable). Helper functions ``sve_merge_store_data`` and ``generatePredicatedContiguousAddressBlocks`` can be used to support this.
 
 
 Instruction aliases
