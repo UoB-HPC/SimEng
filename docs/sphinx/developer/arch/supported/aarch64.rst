@@ -217,7 +217,9 @@ Once the addresses have been generated, they should be supplied in a vector to t
 
 For loads, data can be read from the ``memoryData`` vector in ``Instruction_execute.cc``, with each index holding a ``RegisterValue`` for a corresponding ``MemoryAccessTarget``. For stores, a ``RegisterValue`` must be placed in each index of the ``memoryData`` vector, again one per ``MemoryAccessTarget`` generated.
 
-Concerning vector loads and stores (i.e. NEON, SVE, or SME), an effort should be made to create as few ``MemoryAccessTarget``'s as possible, with the exception of gather/scatter instructions where one ``MemoryAccessTarget`` should be created per vector element.
+To best match modelled hardware, contiguous Load and Store instructions use one ``MemoryAccessTarget`` per destination/source register. For NEON instructions this should always be the case, including interleaved multi-structure loads / stores.
+
+Concerning SVE & SME loads and stores, an effort should be made to merge contiguous active elements into as few ``MemoryAccessTarget``'s as possible by evaluating the predicate information (if applicable). Helper functions ``sve_merge_store_data`` and ``generatePredicatedContiguousAddressBlocks`` can be used to support this.
 
 
 Instruction aliases

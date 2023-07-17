@@ -1635,10 +1635,10 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions store instructions.
+  /** Helper function for SVE instructions store instructions to merge
+   * consecutive active elements into blocks to be written.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
-   * This function merges store data for contiguous active elements, and return
-   * a vector containing all merged contiguous active elements.  */
+   * Return a vector of RegisterValues.  */
   template <typename T>
   static std::vector<RegisterValue> sve_merge_store_data(const T* d,
                                                          const uint64_t* p,
