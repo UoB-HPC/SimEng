@@ -49,9 +49,9 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 5
+A64FX_HL_L1 = 4
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 56
+A64FX_HL_L2 = 45
 # Cohenrence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
@@ -67,7 +67,7 @@ A64FX_L2TOL1_PC_TPUT = "64B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
 A64FX_MEMTOL2_PCMG_TPUT = 128
 # A64FX Memory access time.
-A64FX_MEM_ACCESS = "144.5ns"
+A64FX_MEM_ACCESS = "135.5ns"
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -114,13 +114,20 @@ l1cache.addParams({
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT
+      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+      "mshr_latency_cycles": 1,
+      "tag_access_latency": 2,
 })
 # Set MESI L1 coherence controller to the "coherence" slot
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_l1 = l1cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_l1.addParams({
+ "cache_line_size": A64FX_CLW
+})
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
@@ -142,12 +149,19 @@ l2cache.addParams({
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
+      "mshr_latency_cycles": 1,
+      "tag_access_latency": 2,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_l2 = l2cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_l2.addParams({
+ "cache_line_size": A64FX_CLW
+})
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
