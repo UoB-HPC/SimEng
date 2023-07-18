@@ -297,8 +297,8 @@ class Instruction : public simeng::Instruction {
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
 
-  /** Retrieve a branch target from the instruction's metadata if known. */
-  uint64_t getKnownTarget() const override;
+  /** Retrieve a branch offset from the instruction's metadata if known. */
+  int64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
@@ -452,6 +452,8 @@ class Instruction : public simeng::Instruction {
   void setMemoryAddresses(const std::vector<MemoryAccessTarget>& addresses);
 
   void setMemoryAddresses(std::vector<MemoryAccessTarget>&& addresses);
+
+  void setMemoryAddresses(MemoryAccessTarget address);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */

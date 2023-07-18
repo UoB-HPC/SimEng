@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <cstdint>
+
 #include "auxiliaryFunctions.hh"
 
 namespace simeng {
@@ -1630,6 +1633,44 @@ class sveHelp {
       interleave = !interleave;
     }
     return {out, 256};
+  }
+
+  /** Helper function for SVE instructions store instructions to merge
+   * consecutive active elements into blocks to be written.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Return a vector of RegisterValues.  */
+  template <typename T>
+  static std::vector<RegisterValue> sve_merge_store_data(const T* d,
+                                                         const uint64_t* p,
+                                                         uint16_t vl_bits) {
+    std::vector<RegisterValue> outputData;
+
+    uint16_t numVecElems = (vl_bits / (8 * sizeof(T)));
+    // Determine how many predicate elements are present per uint64_t.
+    uint16_t predsPer64 = (64 / sizeof(T));
+
+    // Determine size of array based on the size of the stored element (This is
+    // the T specifier in sve instructions)
+    std::array<T, 256 / sizeof(T)> mData;
+    uint16_t mdSize = 0;
+
+    for (uint16_t x = 0; x < numVecElems; x++) {
+      // Determine mask to get predication for active element.
+      uint64_t shiftedActive = 1ull << ((x % predsPer64) * sizeof(T));
+      if (p[x / predsPer64] & shiftedActive) {
+        mData[mdSize] = d[x];
+        mdSize++;
+      } else if (mdSize) {
+        outputData.push_back(
+            RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
+        mdSize = 0;
+      }
+    }
+    if (mdSize) {
+      outputData.push_back(
+          RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
+    }
+    return outputData;
   }
 };
 }  // namespace aarch64

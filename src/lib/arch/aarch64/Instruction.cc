@@ -109,6 +109,12 @@ void Instruction::setMemoryAddresses(
   memoryAddresses = std::move(addresses);
 }
 
+void Instruction::setMemoryAddresses(MemoryAccessTarget address) {
+  dataPending_ = 1;
+  memoryData.resize(1);
+  memoryAddresses.push_back(address);
+}
+
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
   return {memoryAddresses.data(), memoryAddresses.size()};
 }
@@ -130,7 +136,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 BranchType Instruction::getBranchType() const { return branchType_; }
 
-uint64_t Instruction::getKnownTarget() const { return knownOffset_; }
+int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
