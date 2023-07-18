@@ -169,16 +169,20 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
     }
 
     uint64_t effStartAddr = startAddr;
+    uint64_t space = 0;
+
     if (!startAddr) {
       effStartAddr = mmapRegion_->end - size;
-      startAddr = mmapRegion_->end;
-    }
-    uint64_t space = mmapRegion_->end - effStartAddr;
-    if (effStartAddr >= itr->vmEnd_ && space >= size) {
-      vma.vmStart_ = effStartAddr;
-      vma.vmEnd_ = effStartAddr + size;
-      VMAlist_->insert(itr.base(), vma);
-      return vma.vmStart_;
+      space = mmapRegion_->end - itr->vmEnd_;
+
+      if (effStartAddr >= itr->vmEnd_ && space >= size) {
+        vma.vmStart_ = effStartAddr;
+        vma.vmEnd_ = effStartAddr + size;
+        VMAlist_->insert(itr.base(), vma);
+        return vma.vmStart_;
+      }
+
+      startAddr = itr->vmStart_;
     }
 
     while (itr != first) {
@@ -219,7 +223,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
        pre-existing VMAs, even though there is still ample space available in
        the mmap address region.
     */
-    startAddr = itr->vmEnd_ - size;
+    startAddr = itr->vmStart_ - size;
     space = startAddr - mmapRegion_->start;
     if (startAddr < mmapRegion_->start) {
       // We can't find any space for the new VMA, the entire VMA space is
