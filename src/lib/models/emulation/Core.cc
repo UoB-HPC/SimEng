@@ -86,6 +86,16 @@ void Core::tick() {
     auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
                                     FETCH_SIZE, pc_, macroOp_);
 
+    int numSysRegs = isa_.getNumSystemRegisters();
+
+    uint32_t bytes = instructionBytes.get<uint32_t>();
+    if ((numSysRegs == 7 && bytes == 0x8b1f013f) ||
+        (numSysRegs == 6 && bytes == 0x00900013)) {
+      //      std::cerr << "NEXT KERNEL" << std::endl;
+      n++;
+      instructionsPerKenel.push_back(0);
+    }
+
     // Clear the fetched data
     instructionMemory_.clearCompletedReads();
 
@@ -116,7 +126,7 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
+    previousAddresses_.clear();  // TODO this seems redundant
     if (uop->exceptionEncountered()) {
       handleException(uop);
       return;
@@ -197,7 +207,10 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     }
   }
 
-  if (uop->isLastMicroOp()) instructionsExecuted_++;
+  if (uop->isLastMicroOp()) {
+    instructionsExecuted_++;
+    instructionsPerKenel[n]++;
+  }
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
@@ -299,8 +312,14 @@ uint64_t Core::getSystemTimer() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
+  std::string s;
+  for (uint64_t k : instructionsPerKenel) {
+    s += std::to_string(k);
+    s += ",";
+  }
   return {{"instructions", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
+          {"branch.executed", std::to_string(branchesExecuted_)},
+          {"instructions.per.kernel", s}};
 };
 
 }  // namespace emulation
