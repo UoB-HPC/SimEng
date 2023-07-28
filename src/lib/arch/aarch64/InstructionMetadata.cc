@@ -915,6 +915,31 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
+    case Opcode::AArch64_LD1Fourv16b:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv4s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv2d:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_WRITE;
+      operands[3].access = CS_AC_WRITE;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1Fourv16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv4s_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_WRITE;
+      operands[3].access = CS_AC_WRITE;
+      operands[4].access = CS_AC_READ | CS_AC_WRITE;
+      operands[5].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_LD1Onev16b:
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -925,10 +950,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_LD1Twov16b:
       [[fallthrough]];
-    case Opcode::AArch64_LD1Twov16b_POST:
+    case Opcode::AArch64_LD1Twov4s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov2d:
       // Fix incorrect access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1Twov16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov4s_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      operands[3].access = CS_AC_READ;
       break;
     case Opcode::AArch64_LDADDLW:
       [[fallthrough]];
@@ -1325,18 +1364,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
-    case Opcode::AArch64_ST1Fourv2s_POST:
-      [[fallthrough]];
-    case Opcode::AArch64_ST1Fourv4s_POST: {
-      // ST1 four vectors doesn't set access rights correctly
-      operands[0].access = CS_AC_READ;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
-      operands[3].access = CS_AC_READ;
-      // operands[4] is memory + write-back enabled already
-      if (operandCount == 6) operands[5].access = CS_AC_READ;
-      break;
-    }
     case Opcode::AArch64_ST1i8_POST:
       [[fallthrough]];
     case Opcode::AArch64_ST1i16_POST:
@@ -1349,11 +1376,52 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[2].access = CS_AC_READ;
       }
       break;
-    case Opcode::AArch64_ST1Twov4s:
+    case Opcode::AArch64_ST1Fourv16b:
       [[fallthrough]];
-    case Opcode::AArch64_ST1Twov16b:
+    case Opcode::AArch64_ST1Fourv2d:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv4s:
       // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Fourv16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv2s_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv4s_POST:
+      // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ | CS_AC_WRITE;
+      operands[5].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Twov16b:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov2d:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov4s:
+      // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Twov16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov4s_POST:
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      operands[3].access = CS_AC_READ;
       break;
     case Opcode::AArch64_ST2Twov4s_POST:
       // ST2 post incorrectly flags read and write

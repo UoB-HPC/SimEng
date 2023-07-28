@@ -235,13 +235,42 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
-      case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
+      case Opcode::AArch64_LD1Fourv16b:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
+                                         // vt4.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv16b_POST:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
+                                              // vt4.16b}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv2d:  // ld1 {vt1.2d, vt2.2d, vt3.2d, vt4.2d},
+                                        // [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv2d_POST:  // ld1 {vt1.2d, vt2.2d, vt3.2d,
+                                             // vt4.2d}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv4s:  // ld1 {vt1.4s, vt2.4s, vt3.4s, vt4.4s},
+                                        // [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv4s_POST: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
+                                               // vt4.4s}, [xn], <#imm|xm>
         uint64_t base = operands[0].get<uint64_t>();
-        setMemoryAddresses({{base, 16}, {base + 16, 16}});
+        setMemoryAddresses(
+            {{base, 16}, {base + 16, 16}, {base + 32, 16}, {base + 48, 16}});
         break;
       }
-      case Opcode::AArch64_LD1Twov16b_POST: {  // ld1 {vt1.16b, vt2.16b}, [xn],
-                                               //   #imm
+      case Opcode::AArch64_LD1Twov16b:  // ld1 {vt1.16b, vt2.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov16b_POST:  // ld1 {vt1.16b, vt2.16b}, [xn],
+                                             // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov2d:  // ld1 {vt1.2d, vt2.2d}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov2d_POST:  // ld1 {vt1.2d, vt2.2d}, [xn],
+                                            // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov4s:  // ld1 {vt1.4s, vt2.4s}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov4s_POST: {  // ld1 {vt1.4s, vt2.4s}, [xn],
+                                              // <#imm|xm>
         uint64_t base = operands[0].get<uint64_t>();
         setMemoryAddresses({{base, 16}, {base + 16, 16}});
         break;
@@ -1187,7 +1216,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
-                                               // vt4.2s}, [xn|sp], #imm
+                                               // vt4.2s}, [xn], <#imm|xm>
         const uint64_t base = operands[4].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
         addresses.reserve(4);
@@ -1198,8 +1227,23 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST1Fourv16b:  // st1 {vt.16b, vt2.16b, vt3.16b,
+                                         // v42.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Fourv16b_POST:  // st1 {vt.16b, vt3.16b, v42.16b,
+                                              // vt2.16b}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Fourv2d:  // st1 {vt.2d, vt2.2d, vt3.2d, vt4.2d},
+                                        // [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Fourv2d_POST:  // st1 {vt.2d, vt3.2d, vt4.2d,
+                                             // vt2.2d}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Fourv4s:  // st1 {vt.4s, vt2.4s, vt3.4s, vt4.4s},
+                                        // [xn]
+        [[fallthrough]];
       case Opcode::AArch64_ST1Fourv4s_POST: {  // st1 {vt.4s, vt2.4s, vt3.4s,
-                                               // vt4.4s}, [xn|sp], #imm
+                                               // vt4.4s}, [xn], <#imm|xm>
         const uint64_t base = operands[4].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
         addresses.reserve(4);
@@ -1210,18 +1254,20 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn]
-        const uint64_t base = operands[2].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
-        addresses.reserve(2);
-
-        for (int i = 0; i < 2; i++) {
-          addresses.push_back({base + (i * 16), 16});
-        }
-        setMemoryAddresses(std::move(addresses));
-        break;
-      }
-      case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn]
+      case Opcode::AArch64_ST1Twov16b:  // st1 {vt.16b, vt2.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Twov16b_POST:  // st1 {vt.16b, vt2.16b}, [xn],
+                                             // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Twov2d:  // st1 {vt.2d, vt2.2d}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Twov2d_POST:  // st1 {vt.2d, vt2.2d}, [xn],
+                                            // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Twov4s:  // st1 {vt.4s, vt2.4s}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s}, [xn],
+                                              // <#imm|xm>
         const uint64_t base = operands[2].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
         addresses.reserve(2);
