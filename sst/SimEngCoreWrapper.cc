@@ -6,7 +6,9 @@
 #include "SimEngCoreWrapper.hh"
 
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
+#include <string>
 
 #include "Assemble.hh"
 
@@ -31,6 +33,8 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   assembleWithSource_ = params.find<bool>("assemble_with_source", false);
   heapStr_ = params.find<std::string>("heap", "");
   debug_ = params.find<bool>("debug", false);
+  statCsvPath_ = params.find<std::string>("stat_csv_path", "");
+  outputCsvStats_ = statCsvPath_ != "";
 
   if (executablePath_.length() == 0 && !assembleWithSource_) {
     output_.verbose(CALL_INFO, 10, 0,
@@ -95,6 +99,20 @@ void SimEngCoreWrapper::finish() {
     std::cout << "[SimEng] " << key << ": " << value << "\n";
   }
 
+  if (outputCsvStats_) {
+    std::ofstream ofs(statCsvPath_, std::ios::out | std::ios::trunc);
+    std::string header = "";
+    std::string values = "";
+    for (const auto& [key, value] : stats) {
+      header += (key + ",");
+      values += (value + ",");
+    }
+    header += "mips";
+    values += std::to_string(mips);
+    ofs << header << std::endl;
+    ofs << values << std::endl;
+    ofs.close();
+  }
   std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;

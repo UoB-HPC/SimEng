@@ -8,27 +8,24 @@ DEBUG_LEVEL = 0
 
 # ------------------------------------------------ Utility -------------------------------------------
 
+
 def getMemoryProps(memory_size: int, si: str):
-      props = {
-            "start_addr": 0,
-            "end_addr": 0,
-            "size": ""
-      }
-      props["size"] = "%s%s" % (memory_size , si)
-      if si == "GiB":
-            props["end_addr"] = memory_size * 1024 * 1024 * 1024 - 1
-      elif si == "MiB":
-            props["end_addr"] = memory_size * 1024 * 1024 - 1
-      elif si == "KiB":
-            props["end_addr"] = memory_size * 1024 - 1
-      elif si == "B":
-            props["end_addr"] = memory_size - 1
-      else:
-            raise Exception("Unknown SI units provided to getMemoryProps")
-      return props
+    props = {"start_addr": 0, "end_addr": 0, "size": ""}
+    props["size"] = "%s%s" % (memory_size, si)
+    if si == "GiB":
+        props["end_addr"] = memory_size * 1024 * 1024 * 1024 - 1
+    elif si == "MiB":
+        props["end_addr"] = memory_size * 1024 * 1024 - 1
+    elif si == "KiB":
+        props["end_addr"] = memory_size * 1024 - 1
+    elif si == "B":
+        props["end_addr"] = memory_size - 1
+    else:
+        raise Exception("Unknown SI units provided to getMemoryProps")
+    return props
+
 
 # ------------------------------------------------ Utility -------------------------------------------
-
 
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
@@ -83,14 +80,17 @@ memprops = getMemoryProps(8, "GiB")
 
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
-cpu.addParams({
-    "simeng_config_path": "",
-    "executable_path": "",
-    "executable_args": "",
-    "clock" : A64FX_CLOCK,
-    "max_addr_memory": memprops["end_addr"],
-    "cache_line_width": A64FX_CLW,
-})
+cpu.addParams(
+    {
+        "simeng_config_path": "",
+        "executable_path": "",
+        "executable_args": "",
+        "clock": A64FX_CLOCK,
+        "max_addr_memory": memprops["end_addr"],
+        "cache_line_width": A64FX_CLW,
+        "stat_csv_path": "",
+    }
+)
 
 # Instantiating the StandardInterface which communicates with the SST memory model.
 interface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
@@ -102,32 +102,36 @@ interface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
 l1cache = sst.Component("a64fx.l1cache", "memHierarchy.Cache")
-l1cache.addParams({
-      "L1" : 1,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L1,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L1,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L1_SIZE,
-      "debug" : DEBUG_L1,
-      "debug_level" : DEBUG_LEVEL,
-      "coherence_protocol": A64FX_COHP,
-      "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
-      "mshr_latency_cycles": 1,
-      "tag_access_latency": 2,
-})
+l1cache.addParams(
+    {
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+    }
+)
 # Set MESI L1 coherence controller to the "coherence" slot
-coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+coherence_controller_l1 = l1cache.setSubComponent(
+    "coherence", "memHierarchy.coherence.mesi_l1"
+)
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l1 = l1cache.setSubComponent(
+    "replacement", "memHierarchy.replacement.lru", 0
+)
 
 prefetcher_l1 = l1cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-prefetcher_l1.addParams({
- "cache_line_size": A64FX_CLW
-})
+prefetcher_l1.addParams({"cache_line_size": A64FX_CLW})
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
@@ -136,71 +140,133 @@ prefetcher_l1.addParams({
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
 l2cache = sst.Component("a64fx.l2cache", "memHierarchy.Cache")
-l2cache.addParams({
-      "L1" : 0,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L2,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L2,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L2_SIZE,
-      "debug" : DEBUG_L2,
-      "debug_level" : DEBUG_LEVEL,
-      "coherence_protocol": A64FX_COHP,
-      "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
-      "response_link_width": A64FX_L2TOL1_PC_TPUT,
-      "mshr_latency_cycles": 1,
-      "tag_access_latency": 2,
-})
+l2cache.addParams(
+    {
+        "L1": 0,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L2,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L2,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L2_SIZE,
+        "debug": DEBUG_L2,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
+        "response_link_width": A64FX_L2TOL1_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+    }
+)
 # Set MESI L2 coherence controller to the "coherence" slot
-coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
+coherence_controller_l2 = l2cache.setSubComponent(
+    "coherence", "memHierarchy.coherence.mesi_inclusive"
+)
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l2 = l2cache.setSubComponent(
+    "replacement", "memHierarchy.replacement.lru", 0
+)
 
 prefetcher_l2 = l2cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-prefetcher_l2.addParams({
- "cache_line_size": A64FX_CLW
-})
+prefetcher_l2.addParams({"cache_line_size": A64FX_CLW})
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
-memory_controller = sst.Component("a64fx.memorycontroller", "memHierarchy.MemController")
-memory_controller.addParams({
-      "clock": A64FX_CLOCK,
-      "backend.access_time": A64FX_MEM_ACCESS,
-      "request_width": A64FX_MEMTOL2_PCMG_TPUT,
-      "debug": DEBUG_MEM,
-      "debug_level": DEBUG_LEVEL,
-      "addr_range_start": memprops["start_addr"],
-      "addr_range_end": memprops["end_addr"]
-})
+memory_controller = sst.Component(
+    "a64fx.memorycontroller", "memHierarchy.MemController"
+)
+memory_controller.addParams(
+    {
+        "clock": A64FX_CLOCK,
+        "backend.access_time": A64FX_MEM_ACCESS,
+        "request_width": A64FX_MEMTOL2_PCMG_TPUT,
+        "debug": DEBUG_MEM,
+        "debug_level": DEBUG_LEVEL,
+        "addr_range_start": memprops["start_addr"],
+        "addr_range_end": memprops["end_addr"],
+    }
+)
 
 memory_backend = memory_controller.setSubComponent("backend", "memHierarchy.simpleMem")
-memory_backend.addParams({
-      "access_time": A64FX_MEM_ACCESS,
-      "mem_size": memprops["size"],
-      "request_width": 128,
-})
+memory_backend.addParams(
+    {
+        "access_time": A64FX_MEM_ACCESS,
+        "mem_size": memprops["size"],
+        "request_width": 128,
+    }
+)
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 sst.setStatisticLoadLevel(7)
 sst.setStatisticOutput("sst.statOutputConsole")
 # sst.enableStatisticsForComponentName("a64fx.l1cache", ["CacheHits", "CacheMisses"])
-sst.enableStatisticsForComponentName("a64fx.l1cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
-sst.enableStatisticsForComponentName("a64fx.l2cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
+sst.enableStatisticsForComponentName(
+    "a64fx.l1cache",
+    [
+        "GetS_recv",
+        "GetX_recv",
+        "Write_recv",
+        "GetSX_recv",
+        "PutM_recv",
+        "PutX_recv",
+        "PutS_recv",
+        "PutE_recv",
+        "TotalEventsReceived",
+        "CacheHits",
+        "CacheMisses",
+        "eventSent_GetS",
+        "eventSent_GetX",
+        "eventSent_GetSX",
+        "eventSent_Write",
+        "eventSent_PutS",
+        "eventSent_PutM",
+        "eventSent_PutE",
+        "eventSent_Put",
+        "eventSent_Get",
+    ],
+)
+sst.enableStatisticsForComponentName(
+    "a64fx.l2cache",
+    [
+        "GetS_recv",
+        "GetX_recv",
+        "Write_recv",
+        "GetSX_recv",
+        "PutM_recv",
+        "PutX_recv",
+        "PutS_recv",
+        "PutE_recv",
+        "TotalEventsReceived",
+        "CacheHits",
+        "CacheMisses",
+        "eventSent_GetS",
+        "eventSent_GetX",
+        "eventSent_GetSX",
+        "eventSent_Write",
+        "eventSent_PutS",
+        "eventSent_PutM",
+        "eventSent_PutE",
+        "eventSent_Put",
+        "eventSent_Get",
+    ],
+)
 
 
 # ---------------------------------------------- Links ------------------------------------------------
 
 link_cpu_l1cache = sst.Link("link_cpu_l1cache_link")
-link_cpu_l1cache.connect( (interface, "port", "0ps"), (l1cache, "high_network_0", "0ps") )
+link_cpu_l1cache.connect((interface, "port", "0ps"), (l1cache, "high_network_0", "0ps"))
 link_l1cache_l2cache = sst.Link("link_l1cache_l2cache_link")
-link_l1cache_l2cache.connect( (l1cache, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps") )
+link_l1cache_l2cache.connect(
+    (l1cache, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps")
+)
 link_mem_bus = sst.Link("link_mem_bus_link")
-link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
+link_mem_bus.connect(
+    (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps")
+)
 
 # ---------------------------------------------- Links ------------------------------------------------

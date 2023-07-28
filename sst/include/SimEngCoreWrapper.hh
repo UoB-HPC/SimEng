@@ -132,6 +132,8 @@ class SimEngCoreWrapper : public SST::Component {
        "the heap. This parameter will only be used if "
        "assemble_with_source=true. (string)",
        ""},
+      {"stat_csv_path",
+       "Path to the CSV file which will be used to store statistics", ""},
       {"debug",
        "Value which enables output statistics that can be parsed by the "
        "testing framework. (boolean)",
@@ -230,6 +232,12 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  /** Path to CSV stat file. */
+  std::string statCsvPath_;
+
+  /** Whether to output stats in a csv. */
+  bool outputCsvStats_;
 
   /** Path to A64fx model config. */
   const std::string a64fxConfigPath_ =
