@@ -81,29 +81,17 @@ Ports:
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support:
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE    
-    - STORE_INT
-    - STORE_SCALAR
-    - STORE_VECTOR
-    - STORE_SVE
+    Instruction-Support: 
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
     Instruction-Support:
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE    
-    - STORE_INT
-    - STORE_SCALAR
-    - STORE_VECTOR
-    - STORE_SVE
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
@@ -115,11 +103,6 @@ Ports:
     Portname: SME
     Instruction-Support:
     - SME
-  9:
-    Portname: SME_LD_STR
-    Instruction-Support:
-    - LOAD_SME
-    - STORE_SME
 Reservation-Stations:
   0:
     Size: 20
@@ -154,11 +137,6 @@ Reservation-Stations:
     Dispatch-Rate: 2
     Ports:
     - SME
-  6:
-    Size: 10
-    Dispatch-Rate: 2
-    Ports:
-    - SME_LD_STR
 Execution-Units:
   0:
     Pipelined: True
@@ -209,12 +187,6 @@ Execution-Units:
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT
   8:
-    Pipelined: True
-    Blocking-Groups:
-    - INT_DIV_OR_SQRT
-    - FP_DIV_OR_SQRT
-    - SVE_DIV_OR_SQRT
-  9:
     Pipelined: True
     Blocking-Groups:
     - INT_DIV_OR_SQRT
@@ -309,13 +281,6 @@ Latencies:
     # Same as SVE. No SME DIV or SQRT so classification to this group should be impossible. 
     # Kept to catch edge cases.
     Execution-Latency: 9
-    Execution-Throughput: 1
-  13:
-    Instruction-Groups:
-    - LOAD_SME
-    - STORE_ADDRESS_SME
-    # Same as SVE LD/STR
-    Execution-Latency: 6
     Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
