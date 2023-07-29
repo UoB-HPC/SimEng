@@ -145,6 +145,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({addr, static_cast<uint16_t>(16)});
         break;
       }
+      case Opcode::AArch64_LD1RQ_W: {  // ld1rqw {zd.s}, pg/z, [xn, xm, lsl #2]
+        uint64_t addr =
+            operands[1].get<uint64_t>() + (operands[2].get<uint64_t>() * 4);
+        setMemoryAddresses({addr, static_cast<uint16_t>(16)});
+        break;
+      }
       case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
         uint64_t addr =
             operands[1].get<uint64_t>() + metadata.operands[2].mem.disp;
