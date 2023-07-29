@@ -4679,8 +4679,9 @@ TEST_P(InstSve, ld1rqw) {
     # Load and broadcast values from heap
     ptrue p0.s
     add x1, x0, #-8
+    mov x3, #4
     ld1rqw {z0.s}, p0/z, [x0]
-    ld1rqw {z1.s}, p0/z, [x1, #16]
+    ld1rqw {z1.s}, p0/z, [x1, x3, lsl #2]
 
     # Test for inactive lanes
     ptrue p1.s, vl1
