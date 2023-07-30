@@ -52,10 +52,28 @@ uint16_t Instruction::getLatency() const { return latency_; }
 uint16_t Instruction::getLSQLatency() const { return lsqExecutionLatency_; }
 uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
+void Instruction::setMicroOpInfo(bool isMicroOp, uint8_t microOpcode,
+                                 uint8_t dataSize, bool isLastMicroOp,
+                                 int microOpIndex) {
+  isMicroOp_ = isMicroOp;
+  microOpcode_ = microOpcode;
+  dataSize_ = dataSize;
+  isLastMicroOp_ = isLastMicroOp;
+  microOpIndex_ = microOpIndex;
+}
 bool Instruction::isMicroOp() const { return isMicroOp_; }
 bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
 bool Instruction::isWaitingCommit() const { return waitingCommit_; }
 int Instruction::getMicroOpIndex() const { return microOpIndex_; }
+
+void Instruction::setSequentialDecode() { sequentialDecode_ = true; }
+bool Instruction::shouldSequentialDecode() {
+  if (sequentialDecode_) {
+    sequentialDecode_ = false;
+    return true;
+  }
+  return false;
+}
 
 }  // namespace simeng

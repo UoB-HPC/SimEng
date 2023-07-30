@@ -77,7 +77,9 @@ void Instruction::execute() {
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
                                      : architecture_.getVectorLength();
   executed_ = true;
+  bool executeMacroOp = true;
   if (isMicroOp_) {
+    executeMacroOp = false;
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {
         uint16_t regSize =
@@ -96,10 +98,19 @@ void Instruction::execute() {
         memoryData[0] = operands[0];
         break;
       }
+      case MicroOpcode::FMLA_MOV: {
+        results[0] = operands[0];
+        break;
+      }
+      case MicroOpcode::FMLA_COMP: {
+        executeMacroOp = true;
+        break;
+      }
       default:
         return executionNYI();
     }
-  } else {
+  }
+  if (executeMacroOp) {
     switch (metadata.opcode) {
       case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
         auto [result, nzcv] = arithmeticHelp::addCarry_3ops<uint64_t>(operands);

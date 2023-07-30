@@ -46,21 +46,21 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 4
+A64FX_HL_L1 = 3
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 45
+A64FX_HL_L2 = 37
 # Cohenrence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
 A64FX_CACHE_TYPE = "inclusive"
 # Throughput of L1 to L2 per core in A64FX. (bytes per cycle)
-A64FX_L1TOL2_PC_TPUT = "32B"
+A64FX_L1TOL2_PC_TPUT = "256B"
 # Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
 A64FX_L1TOCPU_PC_TPUT = "128B"
 # Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
 A64FX_L2TOMEM_PCMG_TPUT = "64B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
-A64FX_L2TOL1_PC_TPUT = "64B"
+A64FX_L2TOL1_PC_TPUT = "512B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
 A64FX_MEMTOL2_PCMG_TPUT = 128
 # A64FX Memory access time.
@@ -155,7 +155,7 @@ l2cache.addParams(
         "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
         "response_link_width": A64FX_L2TOL1_PC_TPUT,
         "mshr_latency_cycles": 1,
-        "tag_access_latency": 2,
+        "tag_access_latency": 37,
     }
 )
 # Set MESI L2 coherence controller to the "coherence" slot
@@ -168,7 +168,7 @@ replacement_policy_l2 = l2cache.setSubComponent(
     "replacement", "memHierarchy.replacement.lru", 0
 )
 
-prefetcher_l2 = l2cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_l2 = l2cache.setSubComponent("prefetcher", "cassini.StridePrefetcher")
 prefetcher_l2.addParams({"cache_line_size": A64FX_CLW})
 
 # --------------------------------------------- L2 Cache ---------------------------------------------

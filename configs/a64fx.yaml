@@ -217,8 +217,6 @@ Latencies:
     - VECTOR_SIMPLE
     - SVE_SIMPLE
     - SCALAR_SIMPLE_CVT
-    - FP_MUL
-    - SVE_MUL
     Execution-Latency: 9
     Execution-Throughput: 1
   7:
@@ -244,6 +242,12 @@ Latencies:
     - LOAD_SVE
     - STORE_ADDRESS_SVE
     Execution-Latency: 6
+    Execution-Throughput: 1
+  11:
+    Instruction-Groups:
+    - FP_MUL
+    - SVE_MUL
+    Execution-Latency: 15
     Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure

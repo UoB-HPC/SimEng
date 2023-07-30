@@ -214,6 +214,8 @@ const uint8_t OFFSET_REG = 1;
 const uint8_t LDR_ADDR = 2;
 const uint8_t STR_ADDR = 3;
 const uint8_t STR_DATA = 4;
+const uint8_t FMLA_MOV = 5;
+const uint8_t FMLA_COMP = 6;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode
@@ -441,10 +443,6 @@ class Instruction : public simeng::Instruction {
   bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t microOpcode_ = MicroOpcode::INVALID;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t dataSize_ = 0;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

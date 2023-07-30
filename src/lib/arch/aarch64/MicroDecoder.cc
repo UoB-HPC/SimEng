@@ -78,7 +78,7 @@ bool MicroDecoder::detectOverlap(arm64_reg registerA, arm64_reg registerB) {
 }
 
 uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
-                             const Instruction& macroOp, MacroOp& output,
+                             Instruction& macroOp, MacroOp& output,
                              csh capstoneHandle) {
   uint8_t num_ops = 1;
   if (!instructionSplit_) {
@@ -405,6 +405,62 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
+
+          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_FMLAv1i16_indexed:
+        case Opcode::AArch64_FMLAv1i32_indexed:
+        case Opcode::AArch64_FMLAv1i64_indexed:
+        case Opcode::AArch64_FMLAv2i32_indexed:
+        case Opcode::AArch64_FMLAv2i64_indexed:
+        case Opcode::AArch64_FMLAv4i16_indexed:
+        case Opcode::AArch64_FMLAv4i32_indexed:
+        case Opcode::AArch64_FMLAv8i16_indexed: {
+          cs_detail detail =
+              createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_REG}});
+          detail.arm64.operands[0] = metadata.operands[2];
+          detail.arm64.operands[1] = metadata.operands[2];
+
+          cs_insn csInsn = {
+              arm64_insn::ARM64_INS_ADD, 0x0, 4,       "",
+              "micro_fmla_mov",          "",  &detail, MicroOpcode::FMLA_MOV};
+
+          InstructionMetadata uopMetadata(csInsn);
+          microMetadataCache.emplace_front(uopMetadata);
+          cacheVector.push_back(Instruction(
+              architecture, microMetadataCache.front(),
+              MicroOpInfo({true, MicroOpcode::FMLA_MOV, 0, false, 1})));
+          cacheVector.back().setSequentialDecode();
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
+          macroOp.setMicroOpInfo(true, MicroOpcode::FMLA_COMP, 0, true, 1);
+          macroOp.setSequentialDecode();
+          cacheVector.push_back(macroOp);
+
+          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_FMLA_ZZZI_D:
+        case Opcode::AArch64_FMLA_ZZZI_H:
+        case Opcode::AArch64_FMLA_ZZZI_S: {
+          cs_detail detail =
+              createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_REG}});
+          detail.arm64.operands[0] = metadata.operands[3];
+          detail.arm64.operands[1] = metadata.operands[3];
+
+          cs_insn csInsn = {
+              arm64_insn::ARM64_INS_ADD, 0x0, 4,       "",
+              "micro_fmla_mov",          "",  &detail, MicroOpcode::FMLA_MOV};
+
+          InstructionMetadata uopMetadata(csInsn);
+          microMetadataCache.emplace_front(uopMetadata);
+          cacheVector.push_back(Instruction(
+              architecture, microMetadataCache.front(),
+              MicroOpInfo({true, MicroOpcode::FMLA_MOV, 0, false, 1})));
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
+          macroOp.setMicroOpInfo(true, MicroOpcode::FMLA_COMP, 0, true, 1);
+          macroOp.setExecutionInfo({9, 1, {3}});
+          cacheVector.push_back(macroOp);
 
           iter = microDecodeCache.try_emplace(word, cacheVector).first;
           break;

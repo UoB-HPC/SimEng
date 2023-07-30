@@ -86,6 +86,8 @@ void DecodeUnit::tick() {
       // Skip processing remaining uops, as they need to be flushed
       break;
     }
+
+    if (uop->shouldSequentialDecode()) break;
   }
 }
 

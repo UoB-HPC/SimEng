@@ -163,6 +163,9 @@ class Instruction {
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
 
+  void setMicroOpInfo(bool isMicroOp, uint8_t microOpcode, uint8_t dataSize,
+                      bool isLastMicroOp, int microOpIndex);
+
   /** Is this a micro-operation? */
   bool isMicroOp() const;
 
@@ -177,6 +180,10 @@ class Instruction {
 
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
+
+  void setSequentialDecode();
+
+  bool shouldSequentialDecode();
 
  protected:
   /** Whether an exception has been encountered. */
@@ -242,6 +249,11 @@ class Instruction {
    * of decoded uops. Default case is that it is. */
   bool isLastMicroOp_ = true;
 
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t microOpcode_ = -1;
+
+  uint8_t dataSize_ = 0;
+
   /** This instruction's instruction ID used to group micro-operations together
    * by macro-op; a higher ID represents a chronologically newer instruction. */
   uint64_t instructionId_;
@@ -253,6 +265,8 @@ class Instruction {
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
   int microOpIndex_;
+
+  bool sequentialDecode_ = false;
 };
 
 }  // namespace simeng
