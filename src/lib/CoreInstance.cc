@@ -11,9 +11,10 @@ CoreInstance::CoreInstance(std::string executablePath,
 CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
                            std::vector<std::string> executableArgs) {
   config_ = simeng::ModelConfig(configPath).getConfigFile();
-  std::cout << configPath << std::endl;
-  csv_stats_path = config_["CSV-Stats-Path"].as<std::string>();
-  gen_csv_stats = (csv_stats_path.length() != 0);
+  if (config_["CSV-Stats-Path"]) {
+    csv_stats_path = config_["CSV-Stats-Path"].as<std::string>();
+    gen_csv_stats = (csv_stats_path.length() != 0);
+  }
   generateCoreModel(executablePath, executableArgs);
 }
 

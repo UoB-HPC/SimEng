@@ -10,25 +10,25 @@ Fetch:
   Loop-Buffer-Size: 48
   Loop-Detection-Threshold: 4
 Process-Image:
-  Heap-Size: 1073741824 
-  Stack-Size: 1048576 
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 394
   FloatingPoint/SVE-Count: 432
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 16
-  FrontEnd: 8 
-  LSQ-Completion: 4 
+  FrontEnd: 8
+  LSQ-Completion: 4
 Queue-Sizes:
   ROB: 630
   Load: 130
   Store: 60
 Branch-Predictor:
-  BTB-Tag-Bits: 11 
-  Saturating-Count-Bits: 2  
-  Global-History-Length: 11 
-  RAS-entries: 8 
+  BTB-Tag-Bits: 11
+  Saturating-Count-Bits: 2
+  Global-History-Length: 11
+  RAS-entries: 8
   Fallback-Static-Predictor: "Always-Taken"
 L1-Data-Memory:
   Interface-Type: Fixed
@@ -295,7 +295,7 @@ Latencies:
       - SCALAR
     Execution-Latency: 3
     Execution-Throughput: 1
-# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:
   # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
@@ -315,7 +315,7 @@ CPU-Info:
   CPU-Variant: "0x1"
   CPU-Part: "0x001"
   CPU-Revision: 0
-  # Package-Count is used to generate 
+  # Package-Count is used to generate
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
-
+CSV-Stats-Path: ""
