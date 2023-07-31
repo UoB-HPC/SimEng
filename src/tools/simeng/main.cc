@@ -50,6 +50,7 @@ int main(int argc, char** argv) {
   // Determine if a config file has been supplied.
   if (argc > 1) {
     configFilePath = std::string(argv[1]);
+    std::cout << configFilePath << std::endl;
     // Determine if an executable has been supplied
     if (argc > 2) {
       executablePath = std::string(argv[2]);
@@ -110,6 +111,22 @@ int main(int argc, char** argv) {
   for (const auto& [key, value] : stats) {
     std::cout << "[SimEng] " << key << ": " << value << std::endl;
   }
+  if (coreInstance->gen_csv_stats) {
+    std::ofstream ofs(coreInstance->csv_stats_path,
+                      std::ios::out | std::ios::trunc);
+    std::string header = "";
+    std::string values = "";
+    for (const auto& [key, value] : stats) {
+      header += (key + ",");
+      values += (value + ",");
+    }
+    header += "mips";
+    values += std::to_string(mips);
+    ofs << header << std::endl;
+    ofs << values << std::endl;
+    ofs.close();
+  }
+
   std::cout << std::endl;
   std::cout << "[SimEng] Finished " << iterations << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)

@@ -93,6 +93,10 @@ class CoreInstance {
   /* Getter for heap start. */
   const uint64_t getHeapStart() const;
 
+  bool gen_csv_stats = false;
+
+  std::string csv_stats_path = "";
+
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
