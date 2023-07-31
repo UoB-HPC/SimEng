@@ -93,6 +93,10 @@ void Instruction::execute() {
         results[0] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
+      case MicroOpcode::OFFSET_REG: {
+        results[0] = operands[0].get<uint64_t>() + operands[1].get<uint64_t>();
+        break;
+      }
       case MicroOpcode::STR_DATA: {
         setMemoryAddresses({{0, 0}});
         memoryData[0] = operands[0];
