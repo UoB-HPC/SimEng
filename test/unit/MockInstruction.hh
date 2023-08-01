@@ -11,9 +11,9 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(getException, InstructionException());
   MOCK_CONST_METHOD0(getOperandRegisters, const span<Register>());
   MOCK_CONST_METHOD0(getDestinationRegisters, const span<Register>());
-  MOCK_METHOD2(renameSource, void(uint8_t i, Register renamed));
-  MOCK_METHOD2(renameDestination, void(uint8_t i, Register renamed));
-  MOCK_METHOD2(supplyOperand, void(uint8_t i, const RegisterValue& value));
+  MOCK_METHOD2(renameSource, void(uint16_t i, Register renamed));
+  MOCK_METHOD2(renameDestination, void(uint16_t i, Register renamed));
+  MOCK_METHOD2(supplyOperand, void(uint16_t i, const RegisterValue& value));
   MOCK_CONST_METHOD1(isOperandReady, bool(int i));
   MOCK_CONST_METHOD0(canExecute, bool());
   MOCK_METHOD0(execute, void());

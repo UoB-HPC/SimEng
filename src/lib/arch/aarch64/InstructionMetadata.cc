@@ -1680,6 +1680,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[5].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
+      operandCount = 4;
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].reg = operands[2].sme_index.base;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr
@@ -2145,6 +2154,10 @@ void InstructionMetadata::revertAliasing() {
         operands[2] = operands[1];
         operands[1].access = CS_AC_READ;
         operands[2].access = CS_AC_READ;
+        return;
+      }
+      if (opcode >= Opcode::AArch64_EXTRACT_ZPMXI_H_B &&
+          opcode <= Opcode::AArch64_EXTRACT_ZPMXI_V_S) {
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||

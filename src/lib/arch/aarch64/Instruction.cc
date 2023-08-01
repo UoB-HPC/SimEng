@@ -44,14 +44,14 @@ bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
 
-void Instruction::renameSource(uint8_t i, Register renamed) {
+void Instruction::renameSource(uint16_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
-void Instruction::renameDestination(uint8_t i, Register renamed) {
+void Instruction::renameDestination(uint16_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
 
-void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
+void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
   assert(!canExecute() &&
          "Attempted to provide an operand to a ready-to-execute instruction");
   assert(value.size() > 0 &&
