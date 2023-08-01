@@ -8,6 +8,46 @@ namespace {
 using InstSme = AArch64RegressionTest;
 
 #if SIMENG_LLVM_VERSION >= 14
+TEST_P(InstSme, mova) {
+  // 8-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    ptrue p0.s
+    ptrue p1.s
+
+    fdup z1.s, #1.0
+    mov w0, #1
+    index z2.s, #1, w0
+    scvtf z2.s, p0/m, z2.s
+
+    fdup z4.s, #5.0
+    fdup z5.s, #10.0
+    fdup z6.s, #5.0
+    fdup z7.s, #10.0
+    fmopa za0.s, p0/m, p1/m, z2.s, z1.s
+
+    ptrue p2.b
+    mov x2, #0
+    mov x3, #2
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p3.b, xzr, x2
+
+    mov w12, #0
+    mov w15, #2
+
+    mova z4.b, p2/m, za0h.b[w12, #0]
+    mova z5.b, p2/m, za0h.b[w12, #4]
+    mova z6.b, p3/m, za0h.b[w15, #6]
+    mova z7.b, p3/m, za0h.b[w15, #10]
+  )");
+  CHECK_NEON(4, float, fillNeon<float>({1}, SVL / 8));
+  CHECK_NEON(5, float, fillNeon<float>({2}, SVL / 8));
+  CHECK_NEON(6, float, fillNeonCombined<float>({3}, {5}, SVL / 8));
+  CHECK_NEON(7, float, fillNeonCombined<float>({4}, {10}, SVL / 8));
+}
+
 TEST_P(InstSme, fmopa) {
   // 32-bit
   RUN_AARCH64(R"(

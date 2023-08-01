@@ -1209,6 +1209,34 @@ void Instruction::execute() {
             operands, [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
         break;
       }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {  // MOVA zd.b, pg/m, zanh.b[ws,
+                                                 // #imm]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 8;
+        const uint8_t* zd = operands[0].getAsVector<uint8_t>();
+        const uint64_t* pg = operands[1].getAsVector<uint64_t>();
+        const uint64_t sliceNum =
+            (operands[2 + rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata.operands[2].sme_index.disp)) %
+            rowCount;
+        const uint8_t* zanRow = operands[2 + sliceNum].getAsVector<uint8_t>();
+        uint8_t out[256] = {0};
+
+        for (int elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 64));
+          if (pg[elem / 64] & shifted_active)
+            out[elem] = zanRow[elem];
+          else
+            out[elem] = zd[elem];
+        }
+
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
         results[0] = {
             bitmanipHelp::extrLSB_registers<uint32_t>(operands, metadata), 8};
