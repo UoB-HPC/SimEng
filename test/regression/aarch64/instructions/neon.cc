@@ -1002,6 +1002,33 @@ TEST_P(InstNeon, ext) {
               0, 0, 0, 0, 0});
 }
 
+TEST_P(InstNeon, fabd) {
+  initialHeapData_.resize(32);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -42.75;
+  fheap[2] = -2.5;
+  fheap[3] = 32768;
+  fheap[4] = -0.125;
+  fheap[5] = 321.0;
+  fheap[6] = -0.0;
+  fheap[7] = std::nanf("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fabd v2.4s, v0.4s, v1.4s
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), 1.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 363.75);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 2.5);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(2)));
+}
+
 TEST_P(InstNeon, fabs) {
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
