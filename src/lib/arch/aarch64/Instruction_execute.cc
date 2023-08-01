@@ -1256,6 +1256,10 @@ void Instruction::execute() {
         results[0] = neonHelp::vecExtVecs_index<uint8_t, 8>(operands, metadata);
         break;
       }
+      case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecFabd_2ops<float, 4>(operands);
+        break;
+      }
       case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
         results[0] = floatHelp::fabd_3ops<float>(operands);
         break;
