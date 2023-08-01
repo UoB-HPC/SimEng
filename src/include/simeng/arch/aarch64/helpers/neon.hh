@@ -706,6 +706,31 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `shrn vd, vn, #imm`.
+   * Ta represents the type of source operand (e.g. for vn.2d, Ta = uint64_t).
+   * Tb represents the type of destination operand (e.g. for vn.2s, Tb =
+   * uint32_t).
+   * I represents the number of elements in the output array to be
+   * updated (e.g. for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue.
+   */
+  template <typename Ta, typename Tb, int I>
+  static RegisterValue vecShrnShift_imm(
+      std::vector<RegisterValue>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool shrn2 = false) {
+    const Ta* n = operands[0].getAsVector<Ta>();
+
+    uint64_t shift = metadata.operands[2].imm;
+
+    Tb out[16 / sizeof(Tb)] = {0};
+    int index = shrn2 ? I : 0;
+    for (int i = 0; i < I; i++) {
+      out[index + i] = static_cast<Tb>(std::trunc(n[i] >> shift));
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `sshr vd, vn, #imm`.
    * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
    * I represents the number of elements in the output array to be updated (e.g.

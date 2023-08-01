@@ -189,6 +189,10 @@ void Instruction::execute() {
         results[0] = x + (VL * y);
         break;
       }
+      case Opcode::AArch64_ADDVv4i32v: {  // addv sd, vn.4s
+        results[0] = neonHelp::vecSumElems_2ops<uint32_t, 4>(operands);
+        break;
+      }
       case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
         results[0] = neonHelp::vecSumElems_2ops<uint8_t, 8>(operands);
         break;
@@ -4303,6 +4307,11 @@ void Instruction::execute() {
       case Opcode::AArch64_SSHLLv4i32_shift: {  // sshll2 vd.2d, vn.4s, #imm
         results[0] = neonHelp::vecShllShift_vecImm<int64_t, int32_t, 2>(
             operands, metadata, true);
+        break;
+      }
+      case Opcode::AArch64_SHRNv8i8_shift: {  // shrn vd.8b, vn.8h, #imm
+        results[0] = neonHelp::vecShrnShift_imm<uint16_t, uint8_t, 8>(operands,
+                                                                      metadata);
         break;
       }
       case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
