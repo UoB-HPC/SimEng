@@ -208,6 +208,10 @@ void Instruction::execute() {
         results[0] = x + (VL * y);
         break;
       }
+      case Opcode::AArch64_ADDVv4i16v: {  // addv hd, vn.4h
+        results[0] = neonHelp::vecSumElems_2ops<uint16_t, 4>(operands);
+        break;
+      }
       case Opcode::AArch64_ADDVv4i32v: {  // addv sd, vn.4s
         results[0] = neonHelp::vecSumElems_2ops<uint32_t, 4>(operands);
         break;
@@ -1272,6 +1276,10 @@ void Instruction::execute() {
         results[0] = neonHelp::vecExtVecs_index<uint8_t, 8>(operands, metadata);
         break;
       }
+      case Opcode::AArch64_FABDv2f64: {  // fabd vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecFabd_2ops<double, 2>(operands);
+        break;
+      }
       case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
         results[0] = neonHelp::vecFabd_2ops<float, 4>(operands);
         break;
@@ -1492,6 +1500,11 @@ void Instruction::execute() {
       case Opcode::AArch64_FCMGTv2i64rz: {  // fcmgt vd.2d, vn.2d, #0.0
         results[0] = neonHelp::vecFCompare<double, uint64_t, 2>(
             operands, true, [](double x, double y) -> bool { return x > y; });
+        break;
+      }
+      case Opcode::AArch64_FCMGTv2f64: {  // fcmgt vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecFCompare<double, uint64_t, 2>(
+            operands, false, [](double x, double y) -> bool { return x > y; });
         break;
       }
       case Opcode::AArch64_FCMGTv4f32: {  // fcmgt vd.4s, vn.4s, vm.4s
