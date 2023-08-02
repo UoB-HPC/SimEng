@@ -488,7 +488,8 @@ void Instruction::decode() {
     // Edge case for identifying store data micro-operation
     isStoreData_ = true;
   }
-  if (metadata.opcode == Opcode::AArch64_LDRXl ||
+  if (metadata.opcode == Opcode::AArch64_LDRWl ||
+      metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually

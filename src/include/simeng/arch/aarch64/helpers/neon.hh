@@ -45,6 +45,22 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `addlv vd, vn.T`.
+   * Ts represents the type of source operand (e.g. for vn.2d, T = uint64_t).
+   * Td represents the type of destiantion operand (e.g. for sd, T = uint32_t).
+   * I represents the number of elements in the input array (e.g. for vd.8b I =
+   * 8). Returns correctly formatted Register Value. */
+  template <typename Ts, typename Td, int I>
+  static RegisterValue vecAddlv(std::vector<RegisterValue>& operands) {
+    const Ts* n = operands[0].getAsVector<Ts>();
+    Td out = 0;
+
+    for (int i = 0; i < I; i++) {
+      out += static_cast<Td>(n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `bic vd, vn, vm`.
    * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
    * I represents the number of elements in the output array to be updated (e.g.

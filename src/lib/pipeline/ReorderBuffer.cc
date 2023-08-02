@@ -88,7 +88,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       if (uop->getGroup() >= 72U && uop->getGroup() <= 85U) smesCommitted_++;
     }
 
-    if (uop->exceptionEncountered()) {
+    if (uop->exceptionEncountered() ||
+        uop->getInstructionAddress() == 0x81601340) {
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;

@@ -33,6 +33,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_MSRpstateImm1:
+      [[fallthrough]];
+    case Opcode::AArch64_MSRpstateImm4: {
+      operandCount = 0;
+      implicitDestinationCount = 0;
+      implicitSourceCount = 0;
+      break;
+    }
     case Opcode::AArch64_ADR_LSL_ZZZ_D_0:
       [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
@@ -2476,6 +2484,14 @@ void InstructionMetadata::revertAliasing() {
           operands[2].imm = ARM64_SYSREG_DCZID_EL0;
           return;
         }
+      } else if (std::string(mnemonic) == "ic") {
+        id = ARM64_INS_IC;
+        operandCount = 0;
+        return;
+      } else if (std::string(mnemonic) == "tlbi") {
+        id = ARM64_INS_TLBI;
+        operandCount = 0;
+        return;
       }
       return aliasNYI();
     }

@@ -884,6 +884,7 @@ const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 
 void ExceptionHandler::printException(const Instruction& insn) const {
   auto exception = insn.getException();
+  auto& metadata = insn.getMetadata();
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
@@ -911,9 +912,18 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
       break;
-    case InstructionException::UnmappedSysReg:
+    case InstructionException::UnmappedSysReg: {
       std::cout << "unmapped system register";
+      if (metadata.opcode == Opcode::AArch64_MSR)
+        std::cout << " with id 0x" << std::hex
+                  << static_cast<uint16_t>(metadata.operands[0].reg)
+                  << std::dec;
+      else if (metadata.opcode == Opcode::AArch64_MRS)
+        std::cout << " with id 0x" << std::hex
+                  << static_cast<uint16_t>(metadata.operands[1].reg)
+                  << std::dec;
       break;
+    }
     case InstructionException::StreamingModeUpdate:
       std::cout << "streaming mode update";
       break;
@@ -941,7 +951,6 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << std::setfill('0') << std::setw(16)
             << insn.getInstructionAddress() << ": ";
 
-  auto& metadata = insn.getMetadata();
   for (uint8_t byte : metadata.encoding) {
     std::cout << std::setfill('0') << std::setw(2)
               << static_cast<unsigned int>(byte) << " ";

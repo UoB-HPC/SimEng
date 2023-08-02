@@ -592,6 +592,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
         break;
       }
+      case Opcode::AArch64_LDRWl: {  // ldr wt, #imm
+        setMemoryAddresses(
+            {{metadata.operands[1].imm + instructionAddress_, 4}});
+        break;
+      }
       case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
         setMemoryAddresses(
             {{metadata.operands[1].imm + instructionAddress_, 8}});

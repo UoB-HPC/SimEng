@@ -1014,6 +1014,10 @@ void Instruction::execute() {
         // TODO: Respect memory barriers
         break;
       }
+      case Opcode::AArch64_DSB: {  // dsb option|#imm
+        // TODO: Implement sync barriers
+        break;
+      }
       case Opcode::AArch64_DUPM_ZI: {  // dupm zd.t, #imm
         const uint64_t imm = static_cast<uint64_t>(metadata.operands[1].imm);
         uint64_t out[32] = {0};
@@ -2393,6 +2397,10 @@ void Instruction::execute() {
         // TODO: Observe hints
         break;
       }
+      case Opcode::AArch64_HLT: {  // hlt #imm
+        // TODO: Observe halt
+        break;
+      }
       case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
         results[0] =
             sveHelp::sveInc_gprImm<int8_t>(operands, metadata, VL_bits);
@@ -2547,6 +2555,10 @@ void Instruction::execute() {
       case Opcode::AArch64_INSvi8gpr: {  // ins vd.b[index], wn
         results[0] = neonHelp::vecInsIndex_gpr<uint8_t, uint32_t, 16>(operands,
                                                                       metadata);
+        break;
+      }
+      case Opcode::AArch64_ISB: {  // isb {<option>|#<imm>}
+        // TODO: Instruction Sync barrier support
         break;
       }
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
@@ -3583,6 +3595,11 @@ void Instruction::execute() {
         results[0] = memoryData[0].zeroExtend(4, 8);
         break;
       }
+      case Opcode::AArch64_LDRWl: {  // ldr wt, #imm
+        // LOAD
+        results[0] = memoryData[0].zeroExtend(4, 8);
+        break;
+      }
       case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
         // LOAD
         results[0] = memoryData[0];
@@ -3822,6 +3839,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
         results[0] = multiplyHelp::msub_4ops<uint64_t>(operands);
+        break;
+      }
+      case Opcode::AArch64_MSRpstateImm1: {  // msr <pstatefield>, #imm
+        // TODO: support setting individual pstate fields
+        break;
+      }
+      case Opcode::AArch64_MSRpstateImm4: {  // msr <pstatefield>, #imm
+        // TODO: support setting individual pstate fields
         break;
       }
       case Opcode::AArch64_MSRpstatesvcrImm1: {  // msr svcr<sm|za|smza>, #imm
@@ -5415,6 +5440,10 @@ void Instruction::execute() {
         results[0] = neonHelp::vecTrn2<uint8_t, 8>(operands);
         break;
       }
+      case Opcode::AArch64_UADDLVv8i8v: {  // uaddlv hd, vn.8b
+        results[0] = neonHelp::vecAddlv<uint16_t, uint8_t, 8>(operands);
+        break;
+      }
       case Opcode::AArch64_UADDV_VPZ_B: {  // uaddv dd, pg, zn.b
         results[0] = sveHelp::sveAddvPredicated<uint8_t>(operands, VL_bits);
         break;
@@ -5870,7 +5899,8 @@ void Instruction::execute() {
   for (int i = 0; i < destinationRegisterCount; i++) {
     if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVEData_) {
       if (results[i].size() != 256)
-        std::cerr << "[SimEng:Instruction_execute] " << metadata.mnemonic
+        std::cerr << "[SimEng:Instruction_execute] " << std::hex
+                  << instructionAddress_ << std::dec << " " << metadata.mnemonic
                   << " opcode: " << metadata.opcode
                   << " has not been zero extended correctly\n";
     }
