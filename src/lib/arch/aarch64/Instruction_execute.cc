@@ -193,10 +193,18 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
+        uint64_t t;
+        memcpy(&t, metadata.encoding, 4);
+        const uint64_t v = t;
+
         auto x = operands[0].get<uint64_t>();
         auto y = static_cast<int64_t>(metadata.operands[2].imm);
         // convert VL from LEN (number of 128-bits) to bytes
-        const uint64_t VL = VL_bits / 8;
+        uint64_t VL = VL_bits / 8;
+        if (v == 0x04295029) {
+          x = 0;
+          VL = architecture_.getStreamingVectorLength() / 8;
+        }
         results[0] = x + (VL * y);
         break;
       }

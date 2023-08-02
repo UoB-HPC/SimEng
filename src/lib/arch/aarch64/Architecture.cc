@@ -1200,6 +1200,15 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uint32_t insn;
   memcpy(&insn, ptr, 4);
 
+  if (insn == 0xc0480001 || insn == 0xe13f82c0 || insn == 0xe11f82c0 ||
+      insn == 0xe13f8120) {
+    insn = 0xd503201f;
+    ptr = &insn;
+  } else if (insn == 0x04bf5829) {
+    insn = 0x04295029;
+    ptr = &insn;
+  }
+
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
