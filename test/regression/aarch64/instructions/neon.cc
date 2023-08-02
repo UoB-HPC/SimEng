@@ -316,8 +316,25 @@ TEST_P(InstNeon, addv) {
     ldr q0, [x0]
     addv b1, v0.8b
   )");
-
   CHECK_NEON(1, uint8_t, {36});
+
+  // 16-bit
+  initialHeapData_.resize(16);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  for (int i = 0; i < 8; i++) {
+    heap16[i] = 2 * (i + 1);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    addv h1, v0.4h
+  )");
+  CHECK_NEON(1, uint16_t, {20});
 
   // 32-bit
   initialHeapData_.resize(16);
@@ -335,7 +352,6 @@ TEST_P(InstNeon, addv) {
     ldr q0, [x0]
     addv s1, v0.4s
   )");
-
   CHECK_NEON(1, uint8_t, {40});
 }
 
@@ -1022,6 +1038,7 @@ TEST_P(InstNeon, ext) {
 }
 
 TEST_P(InstNeon, fabd) {
+  // 32-bit v.4s
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
@@ -1046,6 +1063,36 @@ TEST_P(InstNeon, fabd) {
   EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 363.75);
   EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 2.5);
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(2)));
+
+  // 64-bit v.2s
+  initialHeapData_.resize(64);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.75;
+  dheap[2] = -2.5;
+  dheap[3] = 32768;
+  dheap[4] = -0.125;
+  dheap[5] = 321.0;
+  dheap[6] = -0.0;
+  dheap[7] = std::nanf("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #32]
+    ldr q2, [x0, #16]
+    ldr q3, [x0, #48]
+
+    fabd v4.2d, v0.2d, v1.2d
+    fabd v5.2d, v2.2d, v3.2d
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 363.75);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 2.5);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 1>(5)));
 }
 
 TEST_P(InstNeon, fabs) {
@@ -1327,12 +1374,14 @@ TEST_P(InstNeon, fcmgt) {
 
     ldr q0, [x0]
     ldr q1, [x0, #16]
+    fcmgt v2.2d, v0.2d, v1.2d
     
-    fcmgt v2.2d, v0.2d, #0.0
-    fcmgt v3.2d, v1.2d, #0.0
+    fcmgt v3.2d, v0.2d, #0.0
+    fcmgt v4.2d, v1.2d, #0.0
   )");
   CHECK_NEON(2, uint64_t, {UINT64_MAX, 0});
-  CHECK_NEON(3, uint64_t, {0, 0});
+  CHECK_NEON(3, uint64_t, {UINT64_MAX, 0});
+  CHECK_NEON(4, uint64_t, {0, 0});
 }
 TEST_P(InstNeon, fcmlt) {
   // Float
