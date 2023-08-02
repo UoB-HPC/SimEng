@@ -1,11 +1,22 @@
 #include "simeng/Elf.hh"
 
+#include <elf.h>
+#include <fcntl.h>
+#include <gelf.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 
+#include "libelf.h"
+
 namespace simeng {
 
+std::map<uint64_t, std::string>* Elf::symbol_table_ =
+    new std::map<uint64_t, std::string>();
 /**
  * Extract information from an ELF binary.
  * 32-bit and 64-bit architectures have variance in the structs
@@ -184,8 +195,60 @@ Elf::Elf(std::string path, char** imagePointer) {
     }
   }
 
+  loadElfSymbols(path);
+
   file.close();
   return;
+}
+
+void Elf::loadElfSymbols(std::string path) {
+  int fd = open(path.c_str(), O_RDONLY);
+  if (fd < 0) {
+    std::exit(1);
+  }
+  off_t off = lseek(fd, 0, SEEK_END);
+  if (off < 0) {
+    std::exit(1);
+  }
+  char* data_ = (char*)mmap(0, off, PROT_READ, MAP_SHARED, fd, 0);
+  ::Elf* elf_m = elf_memory(data_, off);
+
+  int sec_idx = 1;  // there is a 0 but it is nothing, go figure
+  Elf_Scn* section = elf_getscn(elf_m, sec_idx);
+  while (section) {
+    Elf64_Shdr* shdr = elf64_getshdr(section);
+
+    if (shdr->sh_type == SHT_SYMTAB) {
+      Elf_Data* data = elf_getdata(section, nullptr);
+      int count = shdr->sh_size / shdr->sh_entsize;
+
+      // Loop through all the symbols.
+      for (int i = 0; i < count; ++i) {
+        GElf_Sym sym;
+        gelf_getsym(data, i, &sym);
+        char* sym_name = elf_strptr(elf_m, shdr->sh_link, sym.st_name);
+        if (!sym_name || sym_name[0] == '$') continue;
+        std::string symbol_name(sym_name);
+        uint64_t address = sym.st_value;
+
+        if (symbol_name == "exit") {
+          std::cout << "<exit> symbol found at address: 0x" << std::hex
+                    << address << std::dec << std::endl;
+        }
+
+        auto sym_table = get_symbol_table();
+        sym_table->insert({address, symbol_name});
+        // std::cout << sym_name << " addr " << std::hex << address <<
+        // std::endl;
+      }
+    }
+    ++sec_idx;
+    section = elf_getscn(elf_m, sec_idx);
+  }
+
+  elf_end(elf_m);
+  close(fd);
+  munmap(data_, off);
 }
 
 Elf::~Elf() {}

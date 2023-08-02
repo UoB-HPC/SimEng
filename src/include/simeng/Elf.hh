@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -69,6 +72,18 @@ class Elf {
 
   /** Returns the number of program headers */
   uint64_t getNumPhdr() const;
+
+  /***/
+  void loadElfSymbols(std::string path);
+
+  static std::map<uint64_t, std::string>* symbol_table_;
+
+  static std::map<uint64_t, std::string>* get_symbol_table() {
+    if (!Elf::symbol_table_) {
+      Elf::symbol_table_ = new std::map<uint64_t, std::string>();
+    }
+    return Elf::symbol_table_;
+  }
 
  private:
   /** The entry point of the program */

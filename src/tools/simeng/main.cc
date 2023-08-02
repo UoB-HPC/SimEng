@@ -6,6 +6,7 @@
 
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
+#include "simeng/Elf.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/version.hh"
 
@@ -13,6 +14,8 @@
 int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
              simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
+  std::cout << "Symbol Table Size: " << simeng::Elf::get_symbol_table()->size()
+            << std::endl;
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {

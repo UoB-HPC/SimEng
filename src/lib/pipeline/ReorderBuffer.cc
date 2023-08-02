@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "simeng/Elf.hh"
+
 namespace simeng {
 namespace pipeline {
 
@@ -89,8 +91,15 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       if (uop->getGroup() >= 72U && uop->getGroup() <= 85U) smesCommitted_++;
     }
 
-    if (uop->exceptionEncountered() ||
-        uop->getInstructionAddress() == manualHaltAddress_) {
+    auto map = Elf::get_symbol_table();
+    auto itr = map->find(uop->getInstructionAddress());
+    bool is_exit = false;
+    if (itr != map->end()) {
+      if (itr->second == "exit") {
+        is_exit = true;
+      }
+    }
+    if (uop->exceptionEncountered() || is_exit) {
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
