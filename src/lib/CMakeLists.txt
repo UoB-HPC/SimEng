@@ -55,6 +55,8 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(libsimeng PRIVATE ${LIBELF_PATH}/include)
+target_link_directories(libsimeng PRIVATE ${LIBELF_PATH}/lib)
 target_link_libraries(libsimeng capstone yaml-cpp elf)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})

@@ -227,6 +227,10 @@ endif()
 add_subdirectory(src)
 add_subdirectory(docs)
 
+if (NOT LIBELF_PATH)
+   message(FATAL_ERROR "libelf path not given to cmake command")
+endif()
+
 if (SIMENG_ENABLE_SST)
   if (SST_INSTALL_DIR)
     add_subdirectory(sst)

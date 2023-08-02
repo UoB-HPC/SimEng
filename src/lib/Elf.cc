@@ -1,6 +1,5 @@
 #include "simeng/Elf.hh"
 
-#include <elf.h>
 #include <fcntl.h>
 #include <gelf.h>
 #include <sys/mman.h>
