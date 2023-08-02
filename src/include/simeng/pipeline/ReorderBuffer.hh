@@ -48,7 +48,7 @@ class ReorderBuffer {
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       std::function<void(uint64_t branchAddress)> sendLoopBoundary,
       BranchPredictor& predictor, uint16_t loopBufSize,
-      uint16_t loopDetectionThreshold);
+      uint16_t loopDetectionThreshold, uint64_t manualHaltAddress = 0);
 
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
@@ -155,6 +155,8 @@ class ReorderBuffer {
 
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  uint64_t manualHaltAddress_ = 0;
 };
 
 }  // namespace pipeline
