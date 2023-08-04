@@ -16,6 +16,8 @@
 #include <memory>
 #include <string>
 
+#include "elf.h"
+#include "gelf.h"
 #include "simeng/Config.hh"
 #include "simeng/util/Math.hh"
 #include "simeng/version.hh"
