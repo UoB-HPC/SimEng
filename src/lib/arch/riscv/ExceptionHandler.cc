@@ -552,12 +552,16 @@ bool ExceptionHandler::init() {
         break;
       }
       case 214: {  // brk
+        std::cout << "[SimEng] brk call" << std::endl;
+
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
       case 215: {  // munmap
+        std::cout << "[SimEng] munmap call" << std::endl;
+
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
 
@@ -566,6 +570,8 @@ bool ExceptionHandler::init() {
         break;
       }
       case 222: {  // mmap
+        std::cout << "[SimEng] mmap call" << std::endl;
+
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
         int prot = registerFileSet.get(R2).get<int>();

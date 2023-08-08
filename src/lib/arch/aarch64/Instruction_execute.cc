@@ -5413,6 +5413,9 @@ void Instruction::execute() {
   }
 #endif
 }
+void Instruction::printMetadata() const {
+  std::cerr << metadata.mnemonic << " " << metadata.operandStr;
+}
 
 }  // namespace aarch64
 }  // namespace arch

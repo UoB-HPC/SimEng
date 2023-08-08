@@ -19,6 +19,8 @@ class Instruction {
  public:
   virtual ~Instruction(){};
 
+  virtual void printMetadata() const = 0;
+
   /** Check whether an exception has been encountered while processing this
    * instruction. */
   bool exceptionEncountered() const;

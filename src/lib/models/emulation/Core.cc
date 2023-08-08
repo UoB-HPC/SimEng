@@ -27,6 +27,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+  CPuptoReg.assign(64, 0);
 }
 
 void Core::tick() {
@@ -126,7 +127,7 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();  // TODO this seems redundant
+    previousAddresses_.clear();
     if (uop->exceptionEncountered()) {
       handleException(uop);
       return;
@@ -172,8 +173,101 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_, ticks_);
 }
 
+int regToIndex(Register& reg) { return (reg.type) * 32 + reg.tag; }
+
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
+
+  /*------------------PRINT-------------------*/
+
+  //  std::cerr << longestCP << std::endl;
+  //
+  //  for (int i : CPuptoReg) {
+  //    std::cerr << i << ",";
+  //  }
+  //
+  //  std::cerr << "" << std::endl;
+  //
+  //  for (auto it = CPmemory.cbegin(); it != CPmemory.cend(); it++) {
+  //    std::cerr << it->first << "|" << it->second << ",";
+  //  }
+  //
+  //  std::cerr << "" << std::endl;
+  //
+  //  uop->printMetadata();
+  //  std::cerr << " : ";
+  //  for (auto& opReg : uop->getOperandRegisters()) {
+  //    std::cerr << (int)opReg.type << "|" << opReg.tag << "|" <<
+  //    regToIndex(opReg)
+  //              << " ";
+  //  }
+  //  std::cerr << " : ";
+  //
+  //  for (auto& opReg : uop->getDestinationRegisters()) {
+  //    std::cerr << (int)opReg.type << "|" << opReg.tag << "|" <<
+  //    regToIndex(opReg)
+  //              << " ";
+  //  }
+  //
+  //  std::cerr << ":";
+  //
+  //  for (size_t i = 0; i < previousAddresses_.size(); i++) {
+  //    std::cerr << previousAddresses_[i].address << ",";
+  //  }
+  //
+  //  std::cerr << std::endl;
+
+  /*--------------END-PRINT-------------------*/
+
+  /*-----------FIND-CP-TO-THIS-INSN-----------*/
+  uint64_t maxPathOfSources = 0;
+
+  if (uop->isLoad()) {
+    //    std::cerr << "isLoad" << std::endl;
+    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+      if (CPmemory.find(previousAddresses_[i].address) != CPmemory.end()) {
+        uint64_t tempCP = CPmemory[previousAddresses_[i].address];
+        if (tempCP > maxPathOfSources) {
+          maxPathOfSources = tempCP;
+        }
+      }
+    }
+  } else {
+    for (auto& opReg : uop->getOperandRegisters()) {
+      uint64_t index = regToIndex(opReg);
+      uint64_t tempCP = CPuptoReg[index];
+      if (tempCP > maxPathOfSources) {
+        maxPathOfSources = tempCP;
+      }
+    }
+  }
+
+  uint64_t maxPathThisInstruction = maxPathOfSources + 1;
+  //  std::cerr << "pathThisInsn" << maxPathThisInstruction << std::endl;
+
+  // Set global CP to this if larger
+  if (maxPathThisInstruction > longestCP) longestCP = maxPathThisInstruction;
+
+  /*-------END-FIND-CP-TO-THIS-INSN-----------*/
+
+  // If store, update CP's of memory addresses
+  if (uop->isStoreData()) {
+    //    std::cerr << "isStore" << std::endl;
+    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+      CPmemory[previousAddresses_[i].address] = maxPathThisInstruction;
+    }
+  }
+
+  // Update CP's of destinations
+  for (auto& opReg : uop->getDestinationRegisters()) {
+    uint64_t index = regToIndex(opReg);
+    CPuptoReg[index] = maxPathThisInstruction;
+  }
+
+  // Keep zero register at 0
+  CPuptoReg[0] = 0;
+
+  /*---------------------------------------------------*/
 
   if (uop->exceptionEncountered()) {
     handleException(uop);
@@ -319,7 +413,8 @@ std::map<std::string, std::string> Core::getStats() const {
   }
   return {{"instructions", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)},
-          {"instructions.per.kernel", s}};
+          {"instructions.per.kernel", s},
+          {"critical.path.length", std::to_string(longestCP)}};
 };
 
 }  // namespace emulation

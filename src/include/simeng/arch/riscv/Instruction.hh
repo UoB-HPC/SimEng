@@ -69,6 +69,8 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
+  void printMetadata() const override;
+
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
   virtual InstructionException getException() const;
@@ -182,11 +184,13 @@ class Instruction : public simeng::Instruction {
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
+
   /** The number of source registers this instruction reads from. */
   uint8_t sourceRegisterCount = 0;
 
   /** An array of destination registers. */
   std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
+
   /** The number of destination registers this instruction writes to. */
   uint8_t destinationRegisterCount = 0;
 

@@ -1481,6 +1481,9 @@ void Instruction::execute() {
       return executionNYI();
   }
 }
+void Instruction::printMetadata() const {
+  std::cerr << metadata.mnemonic << " " << metadata.operandStr;
+}
 
 }  // namespace riscv
 }  // namespace arch
