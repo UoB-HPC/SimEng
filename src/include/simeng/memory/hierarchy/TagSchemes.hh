@@ -66,6 +66,7 @@ class PIPT : public TagScheme {
       : TagScheme(cacheSize, clw, assosciativity) {
     calcMasks(cacheSize, clw, assosciativity);
   }
+
   /** Function which calculates the byte offset from the physical address of a
    * MemPacket. */
   inline uint16_t calcByteOffset(MemoryHierarchyPacket& pkt) override {

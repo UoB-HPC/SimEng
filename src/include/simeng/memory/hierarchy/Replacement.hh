@@ -31,6 +31,7 @@ class LRU : public ReplacementPolicy {
   struct LRUInfo {
     /** This variable stores the index of the cache line in a set. */
     uint16_t lineIndexInSet = 0;
+
     /** This variable stores the validity of a cache line. */
     bool valid = 0;
   };

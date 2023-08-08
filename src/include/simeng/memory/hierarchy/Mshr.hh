@@ -58,6 +58,7 @@ struct MshrEntry {
   /** The RequestBufferIndex of the memory request corresponding to this
    * MshrEntry. */
   MemoryHierarchyPacket memPacket;
+
   /** The type of the MshrEntry. */
   MshrEntry::Type type_ = MshrEntry::Type::Secondary;
 };
@@ -69,14 +70,18 @@ struct MshrEntry {
 struct MshrReg {
   /** All MshrEntries related to this MshrReg. */
   std::vector<MshrEntry> entries;
+
   /** Indicates if the cache line on which the primary request missed is dirty
    * or not. */
   bool dirty = false;
+
   /** Indicates if the cache line on which the primary request missed is valid
    * or not. */
   bool valid = false;
+
   /** The index of cache line in the cache. */
   uint16_t clineIdx = 0;
+
   /** Function which return the first request (primary) which missed on the
    * cache line under consideration. */
   MshrEntry& getPrimaryEntry() { return entries[0]; }
@@ -96,6 +101,7 @@ class Mshr {
   bool inMshr(uint64_t basePaddr) {
     return mshrRegs_.find(basePaddr) != mshrRegs_.end();
   }
+
   /** Function which is used to allocate a MshrEntry or MshrReg. If an MshrReg
    * is already present for a cache line, then a MshrEntry is added to
    * corresponding MshrReg. If an MshrReg is not present then a new MshrReg is

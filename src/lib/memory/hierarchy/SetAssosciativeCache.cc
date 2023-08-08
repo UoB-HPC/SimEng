@@ -52,7 +52,6 @@ SetAssosciativeCache<CacheLevel::L1>::initCpuPort() {
   auto fn = [this](CPUMemoryPacket cpuPkt) {
     MemoryHierarchyPacket mpkt(cpuPkt.type_, cpuPkt.vaddr_, cpuPkt.paddr_, clw_,
                                0, cpuPkt.id_);
-    // mpkt.payload_ = cpuPkt.payload_;
     reqMap_.insert({cpuPkt.id_, cpuPkt});
     waitQueue_.push({mpkt, ticks_ + latencyInfo_.hitLatency});
   };

@@ -184,21 +184,6 @@ class SetAssosciativeCache<CacheLevel::LL> : public BaseSetAssosciativeCache {
   std::shared_ptr<Port<MemoryHierarchyPacket>> initBottomPort() override;
 };
 
-/**
-SetAssosciativeCache(uint16_t clw, uint8_t assosciativity, uint32_t cacheSize,
-                     CacheLatencyInfo latencyInfo,
-                     std::unique_ptr<TagScheme> tagScheme)
-    : Cache(clw, assosciativity, cacheSize, latencyInfo),
-      tagScheme_(std::move(tagScheme)) {
-  uint16_t numCacheLines = cacheSize / clw;
-  cacheLines_.reserve(numCacheLines);
-  for (int x = 0; x < numCacheLines; x++) {
-    cacheLines_.push_back(UnSectoredCacheLine(clw));
-  }
-  replacementPolicy_ = LRU(numCacheLines, assosciativity);
-}
-*/
-
 }  // namespace hierarchy
 }  // namespace memory
 }  // namespace simeng

@@ -144,6 +144,7 @@ struct UnSectoredCacheLine : public CacheLine {
   void supplyData(std::vector<char> data, uint16_t offset) override {
     std::memcpy(lineData_.get() + offset, data.data(), data.size());
   };
+
   /** Function which checks if the cache line is busy. If a cache line is busy
    * it is used to indicate that the cache line is either being fetched from
    * memory or being evicted to memory. The information is important because it
