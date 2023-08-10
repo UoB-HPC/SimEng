@@ -151,6 +151,7 @@ uint16_t Instruction::getGroup() const {
 }
 
 void Instruction::setExecutionInfo(const executionInfo& info) {
+  latency_ = info.latency;
   if (isLoad_ || isStore_) {
     lsqExecutionLatency_ = info.latency;
   } else {
