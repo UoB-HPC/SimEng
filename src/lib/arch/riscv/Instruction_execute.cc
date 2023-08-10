@@ -1482,7 +1482,8 @@ void Instruction::execute() {
   }
 }
 void Instruction::printMetadata() const {
-  std::cerr << metadata.mnemonic << " " << metadata.operandStr;
+  std::cerr << metadata.mnemonic << " " << metadata.operandStr
+            << " lat=" << latency_;
 }
 
 }  // namespace riscv

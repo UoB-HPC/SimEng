@@ -136,6 +136,12 @@ Latencies:
       - FLOAT_DIV_OR_SQRT
     Execution-Latency: 16
     Execution-Throughput: 16
+  7:
+    Instruction-Groups:
+      - LOAD
+      - STORE
+    Execution-Latency: 4
+    Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:
