@@ -49,16 +49,28 @@ int main(int argc, char** argv) {
   std::string configFilePath = "";
   std::vector<std::string> executableArgs = {};
 
+  uint64_t windowSize = -1;
+  float offsetPercentage = 0.0;
+
   // Determine if a config file has been supplied.
   if (argc > 1) {
     configFilePath = std::string(argv[1]);
     // Determine if an executable has been supplied
     if (argc > 2) {
       executablePath = std::string(argv[2]);
+
+      // extract window and offset sizes
+
+      windowSize = std::stoi(std::string(argv[3]));
+      offsetPercentage = std::stof(std::string(argv[4]));
+
+      std::cerr << "win " << windowSize << " offset " << offsetPercentage
+                << std::endl;
+
       // Create a vector of any potential executable arguments from their
       // relative position within the argv variable
-      char** startOfArgs = argv + 3;
-      int numberofArgs = argc - 3;
+      char** startOfArgs = argv + 5;
+      int numberofArgs = argc - 5;
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
@@ -82,6 +94,12 @@ int main(int argc, char** argv) {
       coreInstance->getDataMemory();
   std::shared_ptr<simeng::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
+
+  core->offsetPercentage = offsetPercentage;
+  core->windowSize = windowSize;
+  core->cyclesThroughWindow = windowSize * offsetPercentage;
+
+  std::cerr << "cycThroughWin" << core->cyclesThroughWindow << std::endl;
 
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()

@@ -33,6 +33,11 @@ class Core {
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+
+  int windowSize = 0;
+  float offsetPercentage = 0;
+  int cyclesThroughWindow = windowSize * offsetPercentage;
+  std::vector<uint64_t> longestCPinWindow = {};
 };
 
 }  // namespace simeng
