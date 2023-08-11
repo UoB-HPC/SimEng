@@ -70,6 +70,7 @@ SimEng was first presented by `Professor Simon McIntosh-Smith <http://uob-hpc.gi
 
 Additionally, other works concerning SimEng and its use can be found below:
 
+- ModSim 2023 - :download:`Leveraging Arm's Scalable Matrix Extension to Accelerate Matrix Multiplication Kernels <assets/modsim23_poster.pdf>`
 - ModSim 2022 - :download:`A design space exploration for optimal vector unit composition <assets/modsim22_poster.pdf>`
 - :download:`Modelling Advanced Arm-based CPUs with SimEng <assets/simeng_arm_cpus.pdf>`
 
