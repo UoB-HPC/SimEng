@@ -423,12 +423,13 @@ std::map<std::string, std::string> Core::getStats() const {
     s += std::to_string(k);
     s += ",";
   }
-  std::string w = std::to_string(windowSize) + " + " +
-                  std::to_string(offsetPercentage) + "=";
+  std::string w = "\nwindowStart\n" + std::to_string(windowSize) + " + " +
+                  std::to_string(offsetPercentage) + "\n";
   for (uint64_t k : longestCPinWindow) {
     w += std::to_string(k);
     w += ",";
   }
+  w += "\nwindowEnd\n";
   return {{"instructions", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"instructions.per.kernel", s},
