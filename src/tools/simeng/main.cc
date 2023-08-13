@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
   core->offsetPercentage = offsetPercentage;
   core->windowSize = windowSize;
   core->cyclesThroughWindow = windowSize * offsetPercentage;
+  core->longestCPinWindow.assign(windowSize, 0);
 
   std::cerr << "cycThroughWin" << core->cyclesThroughWindow << std::endl;
 

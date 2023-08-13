@@ -214,7 +214,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     cyclesThroughWindow += 1;
     if (cyclesThroughWindow >= windowSize) {
       // Reset counters and save critical path of this window size
-      longestCPinWindow.push_back(longestCP);
+      longestCPinWindow[longestCP - 1] += 1;
       longestCP = 0;
       CPuptoReg.assign(64, 0);
       CPmemory = {};

@@ -37,7 +37,7 @@ class Core {
   int windowSize = 0;
   float offsetPercentage = 0;
   int cyclesThroughWindow = windowSize * offsetPercentage;
-  std::vector<uint64_t> longestCPinWindow = {};
+  std::vector<uint64_t> longestCPinWindow;
 };
 
 }  // namespace simeng
