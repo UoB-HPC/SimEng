@@ -1254,11 +1254,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FABDv2f64: {  // fabd vd.2d, vn.2d, vm.2d
-        results[0] = neonHelp::vecFabd_2ops<double, 2>(operands);
+        results[0] = neonHelp::vecFabd<double, 2>(operands);
         break;
       }
       case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
-        results[0] = neonHelp::vecFabd_2ops<float, 4>(operands);
+        results[0] = neonHelp::vecFabd<float, 4>(operands);
         break;
       }
       case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm

@@ -43,7 +43,7 @@ class MicroDecoder {
                                  csh capstoneHandle, bool lastMicroOp = false,
                                  int microOpIndex = 0);
 
-  /** Create an address offset uop from a base register and an register. */
+  /** Create an address offset uop from a base register and a register. */
   Instruction createRegOffsetUop(const Architecture& architecture,
                                  arm64_reg base, arm64_reg offset,
                                  csh capstoneHandle, bool lastMicroOp = false,
