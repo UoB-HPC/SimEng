@@ -294,8 +294,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
     //  std::cerr << uop->getLatency() << std::endl;
 
-    uint64_t maxPathThisInstruction =
-        maxPathOfSources + 1;  // uop->getLatency();
+    uint64_t maxPathThisInstruction = maxPathOfSources + uop->getLatency();
     //    std::cerr << "pathThisInsn" << maxPathThisInstruction << std::endl;
 
     // Set global CP to this if larger
