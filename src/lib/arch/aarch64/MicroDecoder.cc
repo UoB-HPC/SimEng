@@ -158,7 +158,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
                 metadata.operands[5].reg, capstoneHandle, true));
           } else {
             cacheVector.push_back(
-                createImmOffsetUop(architecture, metadata.operands[2].mem.base,
+                createImmOffsetUop(architecture, metadata.operands[4].mem.base,
                                    64, capstoneHandle, true));
           }
 
@@ -197,7 +197,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
                 metadata.operands[5].reg, capstoneHandle, true));
           } else {
             cacheVector.push_back(
-                createImmOffsetUop(architecture, metadata.operands[2].mem.base,
+                createImmOffsetUop(architecture, metadata.operands[4].mem.base,
                                    32, capstoneHandle, true));
           }
 
