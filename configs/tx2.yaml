@@ -161,6 +161,12 @@ Latencies:
       - VECTOR_SIMPLE_LOGICAL_NOSHIFT
     Execution-Latency: 1
     Execution-Throughput: 1
+  10:
+    Instruction-Groups:
+      - LOAD
+      - STORE
+    Execution-Latency: 1
+    Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:

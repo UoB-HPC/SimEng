@@ -27,7 +27,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-  CPuptoReg.assign(64, 0);
+  CPuptoReg.assign(32 * 6, 0);
 }
 
 void Core::tick() {
@@ -173,7 +173,15 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_, ticks_);
 }
 
-int regToIndex(Register& reg) { return (reg.type) * 32 + reg.tag; }
+int regToIndex(Register& reg) {
+  //  std::cerr << "\ntype = " << reg.type << std::endl;
+  if (reg.tag == (uint16_t)-1) {
+    //    std::cerr << "ZERO" << std::endl;
+    return 0;
+  }
+
+  return (reg.type * 32) + reg.tag + 1;
+}
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
@@ -211,53 +219,53 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isLastMicroOp()) {
-    cyclesThroughWindow += 1;
-    if (cyclesThroughWindow >= windowSize) {
-      // Reset counters and save critical path of this window size
-      longestCPinWindow[longestCP - 1] += 1;
-      longestCP = 0;
-      CPuptoReg.assign(64, 0);
-      CPmemory = {};
-      cyclesThroughWindow = 0;
-    }
+    //    cyclesThroughWindow += 1;
+    //    if (cyclesThroughWindow >= windowSize) {
+    //      // Reset counters and save critical path of this window size
+    //      longestCPinWindow[longestCP - 1] += 1;
+    //    longestCP = 0;
+    //      CPuptoReg.assign(64, 0);
+    //      CPmemory = {};
+    //      cyclesThroughWindow = 0;
+    //    }
     /*------------------PRINT-------------------*/
 
-    //  std::cerr << longestCP << std::endl;
+    //    std::cerr << "longestCP = " << longestCP << std::endl;
     //
-    //  for (int i : CPuptoReg) {
-    //    std::cerr << i << ",";
-    //  }
+    //    std::cerr << "CPuptoReg ";
     //
-    //  std::cerr << "" << std::endl;
+    //    for (int i : CPuptoReg) {
+    //      std::cerr << i << ",";
+    //    }
     //
-    //  for (auto it = CPmemory.cbegin(); it != CPmemory.cend(); it++) {
-    //    std::cerr << it->first << "|" << it->second << ",";
-    //  }
+    //    std::cerr << "" << std::endl << "CPmem ";
     //
-    //  std::cerr << "" << std::endl;
+    //    for (auto it = CPmemory.cbegin(); it != CPmemory.cend(); it++) {
+    //      std::cerr << it->first << "|" << it->second << ",";
+    //    }
     //
-    //  uop->printMetadata();
-    //  std::cerr << " : ";
-    //  for (auto& opReg : uop->getOperandRegisters()) {
-    //    std::cerr << (int)opReg.type << "|" << opReg.tag << "|" <<
-    //    regToIndex(opReg)
-    //              << " ";
-    //  }
-    //  std::cerr << " : ";
+    //    std::cerr << "" << std::endl;
     //
-    //  for (auto& opReg : uop->getDestinationRegisters()) {
-    //    std::cerr << (int)opReg.type << "|" << opReg.tag << "|" <<
-    //    regToIndex(opReg)
-    //              << " ";
-    //  }
+    //    uop->printMetadata();
+    //    std::cerr << " : ";
+    //    for (auto& opReg : uop->getOperandRegisters()) {
+    //      std::cerr << (int)opReg.type << "|" << opReg.tag << "|"
+    //                << regToIndex(opReg) << " ";
+    //    }
+    //    std::cerr << " : ";
     //
-    //  std::cerr << ":";
+    //    for (auto& opReg : uop->getDestinationRegisters()) {
+    //      std::cerr << (int)opReg.type << "|" << opReg.tag << "|"
+    //                << regToIndex(opReg) << " ";
+    //    }
     //
-    //  for (size_t i = 0; i < previousAddresses_.size(); i++) {
-    //    std::cerr << previousAddresses_[i].address << ",";
-    //  }
+    //    std::cerr << ":";
     //
-    //  std::cerr << std::endl;
+    //    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+    //      std::cerr << previousAddresses_[i].address << ",";
+    //    }
+    //
+    //    std::cerr << std::endl;
 
     /*--------------END-PRINT-------------------*/
 
@@ -286,9 +294,9 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
     //  std::cerr << uop->getLatency() << std::endl;
 
-    uint64_t maxPathThisInstruction = maxPathOfSources + 1;
-    //                                      + uop->getLatency();
-    //  std::cerr << "pathThisInsn" << maxPathThisInstruction << std::endl;
+    uint64_t maxPathThisInstruction =
+        maxPathOfSources + 1;  // uop->getLatency();
+    //    std::cerr << "pathThisInsn" << maxPathThisInstruction << std::endl;
 
     // Set global CP to this if larger
     if (maxPathThisInstruction > longestCP) longestCP = maxPathThisInstruction;
@@ -434,7 +442,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"instructions.per.kernel", s},
           {"critical.path.length", std::to_string(longestCP)},
-          {"critical.path.per.window", w}};
+          {"critical.path.per.window", ""}};
 }
 
 }  // namespace emulation

@@ -163,6 +163,9 @@ uint16_t Instruction::getGroup() const {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
+  // TODO remove for no load store latency
+  latency_ = info.latency;
+
   if (isLoad_ || isStoreAddress_) {
     lsqExecutionLatency_ = info.latency;
   } else {
