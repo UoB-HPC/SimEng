@@ -61,16 +61,17 @@ int main(int argc, char** argv) {
 
       // extract window and offset sizes
 
-      windowSize = std::stoi(std::string(argv[3]));
-      offsetPercentage = std::stof(std::string(argv[4]));
+      //      windowSize = std::stoi(std::string(argv[3]));
+      //      offsetPercentage = std::stof(std::string(argv[4]));
 
-      std::cerr << "win " << windowSize << " offset " << offsetPercentage
-                << std::endl;
+      //      std::cerr << "win " << windowSize << " offset " <<
+      //      offsetPercentage
+      //                << std::endl;
 
       // Create a vector of any potential executable arguments from their
       // relative position within the argv variable
-      char** startOfArgs = argv + 5;
-      int numberofArgs = argc - 5;
+      char** startOfArgs = argv + 3;
+      int numberofArgs = argc - 3;
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
@@ -95,12 +96,12 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
 
-  core->offsetPercentage = offsetPercentage;
-  core->windowSize = windowSize;
-  core->cyclesThroughWindow = windowSize * offsetPercentage;
-  core->longestCPinWindow.assign(windowSize, 0);
+  //  core->offsetPercentage = offsetPercentage;
+  //  core->windowSize = windowSize;
+  //  core->cyclesThroughWindow = windowSize * offsetPercentage;
+  //  core->longestCPinWindow.assign(windowSize, 0);
 
-  std::cerr << "cycThroughWin" << core->cyclesThroughWindow << std::endl;
+  //  std::cerr << "cycThroughWin" << core->cyclesThroughWindow << std::endl;
 
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
