@@ -122,7 +122,7 @@ void FetchUnit::tick() {
       // If the decode failed, remove entry in macro op buffer and retry
       if (bytesRead == 0) {
         mOpBuffer_.pop_back();
-        continue;
+        break;
       }
 
       // Create branch prediction after identifing instruction type
@@ -131,7 +131,7 @@ void FetchUnit::tick() {
       if (mOpBuffer_.back()[0]->isBranch()) {
         prediction =
             branchPredictor_.predict(pc_, mOpBuffer_.back()[0]->getBranchType(),
-                                     mOpBuffer_.back()[0]->getKnownTarget());
+                                     mOpBuffer_.back()[0]->getKnownOffset());
         mOpBuffer_.back()[0]->setBranchPrediction(prediction);
       }
 
