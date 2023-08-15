@@ -932,6 +932,10 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
     return then();
   }
 
+  // Vector to hold data read from memory, will be inserted at the end of
+  // dataBuffer_
+  std::vector<char> data;
+
   // Translate the passed virtual address, `ptr`
   uint64_t translatedAddr =
       OS_->handleVAddrTranslation(ptr, currentInfo_.threadId);
@@ -945,7 +949,8 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     // If the translated address lies within the ignored region, read in
     // zero'ed out data of the correct length.
-    dataBuffer_ = std::vector<char>(length, '\0');
+    data.resize(length);
+    std::fill(data.begin(), data.end(), 0);
   } else {
     // Get data from the simulation memory and read into dataBuffer_
     // If the read memory target does not equal the data required,
@@ -963,9 +968,10 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
       }
     }
 
-    const char* data = memRead_.data.getAsVector<char>();
-    dataBuffer_ = std::vector<char>(data, data + memRead_.data.size());
+    const char* readData = memRead_.data.getAsVector<char>();
+    data = std::vector<char>(readData, readData + memRead_.data.size());
   }
+  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + length);
 
   // Read in data, call onwards
   return then();

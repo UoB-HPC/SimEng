@@ -122,7 +122,7 @@ void FetchUnit::tick() {
       // If the decode failed, remove entry in macro op buffer and retry
       if (bytesRead == 0) {
         mOpBuffer_.pop_back();
-        continue;
+        break;
       }
 
       // Create branch prediction after identifing instruction type
