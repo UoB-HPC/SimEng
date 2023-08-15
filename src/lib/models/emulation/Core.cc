@@ -99,7 +99,6 @@ void Core::tick() {
     if (fetchIndex == fetched.size()) {
       // Need to wait for fetched instructions
       mmu_->clearCompletedIntrReads();
-      waitingOnRead_ = false;
       return;
     }
 
@@ -109,9 +108,11 @@ void Core::tick() {
 
     // Clear the fetched data
     mmu_->clearCompletedIntrReads();
-    waitingOnRead_ = false;
 
     pc_ += bytesRead;
+
+    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    waitingOnRead_ = true;
 
     // Decode
     for (size_t index = 0; index < macroOp_.size(); index++) {
@@ -197,6 +198,12 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
     branchesExecuted_++;
+
+    // Clear the fetched data
+    mmu_->clearCompletedIntrReads();
+
+    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    waitingOnRead_ = true;
   }
 
   // Writeback
@@ -242,12 +249,18 @@ void Core::processException() {
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
+
+    // Clear the fetched data
+    mmu_->clearCompletedIntrReads();
+
+    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    waitingOnRead_ = true;
+
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
       status_ = CoreStatus::idle;
       contextSwitches_++;
     }
-    waitingOnRead_ = false;
   }
 
   exceptionGenerated_ = false;
@@ -342,7 +355,12 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
   mmu_->setTid(currentTID_);
-  waitingOnRead_ = false;
+
+  // Clear the fetched data
+  mmu_->clearCompletedIntrReads();
+
+  mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+  waitingOnRead_ = true;
 }
 
 bool Core::interrupt() {
