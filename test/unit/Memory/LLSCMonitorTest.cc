@@ -23,8 +23,13 @@ VAddrTranslator fn = [](uint64_t vaddr, uint64_t pid) -> uint64_t {
 // Const size of 2 full cache lines
 const uint16_t dataSize = 512;
 
+/** NOTE: The modelled core is A64FX thus the cacheline width is set to reflect
+ * this in each test case. */
+
 // A simple LL/SC case.
 TEST(LLSCTest, successfulLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -71,6 +76,8 @@ TEST(LLSCTest, successfulLLSC) {
 
 // A simple failing LL/SC case.
 TEST(LLSCTest, failingLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -118,6 +125,8 @@ TEST(LLSCTest, failingLLSC) {
 
 // Pass the LL/SC with an interleaved write to another address.
 TEST(LLSCTest, nonAffectingWrite) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -174,6 +183,8 @@ TEST(LLSCTest, nonAffectingWrite) {
 
 // Fail the LL/SC due to an aligned write closing the monitor.
 TEST(LLSCTest, alignedWriteMonitorClose) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -230,6 +241,8 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
 
 // Fail the LL/SC due to an unaligned write closing the monitor.
 TEST(LLSCTest, unalignedWriteMonitorClose) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -287,6 +300,8 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
 
 // Pass the LL/SC with the second of 2 valid monitors being the target monitor.
 TEST(LLSCTest, replacedMonitorSuccess) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -321,6 +336,7 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   ON_CALL(*uop2, isLoadReserved()).WillByDefault(Return(true));
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(ReturnRef(target2));
   mmu.requestRead(uop2);
+  mmu.tick();
 
   // Send packet to close 2nd monitor
   std::vector<simeng::RegisterValue> regVal = {{0x12345678DEADBEEF, 8}};
@@ -344,6 +360,8 @@ TEST(LLSCTest, replacedMonitorSuccess) {
 
 // Fail the LL/SC with the first of 2 valid monitors being the target monitor.
 TEST(LLSCTest, replacedMonitorFailure) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -402,6 +420,8 @@ TEST(LLSCTest, replacedMonitorFailure) {
 // Fail the LL/SC due to a context switch being performed between the load and
 // store.
 TEST(LLSCTest, contextSwitchFailure) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -452,6 +472,8 @@ TEST(LLSCTest, contextSwitchFailure) {
 
 // Pass an initial LL/SC pair, and then fail a second SC
 TEST(LLSCTest, secondWriteFailure) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -516,6 +538,8 @@ TEST(LLSCTest, secondWriteFailure) {
 
 // Pass an LL/SC pair, with both instructions having multiple aligned targets
 TEST(LLSCTest, successfulMultiLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -564,6 +588,8 @@ TEST(LLSCTest, successfulMultiLLSC) {
 // Pass an LL/SC pair, with both instructions having multiple aligned targets
 // but crossing a cache line boundary between targets
 TEST(LLSCTest, successfulMultiCachelineLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -612,6 +638,8 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
 // Pass an LL/SC pair, with both instructions having multiple targets, one of
 // which is unaligned
 TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -662,6 +690,8 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
 // Fail an LL/SC pair, with the SC having multiple targets; one in a valid cache
 // line, one not
 TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {
@@ -713,6 +743,8 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
 // Fail an LL/SC pair, with the SC having multiple targets; one of which is
 // unaligned
 TEST(LLSCTest, failUnalignedStoreLLSC) {
+  simeng::config::SimInfo::addToConfig(
+      "{Memory-Hierarchy: {Cache-Line-Width: 256}}");
   // Set-up the memory environment.
   std::vector<char> data;
   for (uint16_t i = 0; i < dataSize; i++) {

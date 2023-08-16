@@ -12,7 +12,7 @@ namespace inorder {
 Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
-           arch::sendSyscallToHandler handleSyscall, ryml::Tree config)
+           arch::sendSyscallToHandler handleSyscall, ryml::ConstNodeRef config)
     : mmu_(mmu),
       isa_(isa),
       registerFileSet_(config::SimInfo::getArchRegStruct()),
@@ -56,7 +56,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
-    for (ryml::NodeRef grp :
+    for (ryml::ConstNodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
       blockingGroups.push_back(config::SimInfo::getValue<uint16_t>(grp));
     }

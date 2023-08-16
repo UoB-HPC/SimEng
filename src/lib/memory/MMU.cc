@@ -14,7 +14,7 @@ MMU::MMU(VAddrTranslator fn)
       translate_(fn) {
   // Initialise Memory bandwidth and request limits
   // TODO: replace with cleaner solution in the ModelConfig itself
-  ryml::Tree config = config::SimInfo::getConfig();
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   if (config::SimInfo::getValue<std::string>(
           config["Core"]["Simulation-Mode"]) != "emulation") {
     loadBandwidth_ = config::SimInfo::getValue<uint64_t>(
@@ -337,7 +337,6 @@ bool MMU::checkLLSCMonitor(const std::shared_ptr<Instruction>& strCond) {
 
 void MMU::updateLLSCMonitor(const MemoryAccessTarget& storeTarget) {
   if (cacheLineMonitor_.second == true) {
-    std::cerr << "MONIOTRED" << std::endl;
     // Assume unaligned access, need to check both possible cache lines
     if (cacheLineMonitor_.first.count(
             downAlign(storeTarget.vaddr, cacheLineWidth_)) == 1) {
