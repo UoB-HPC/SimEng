@@ -39,7 +39,7 @@ TEST(LLSCTest, successfulLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -87,7 +87,7 @@ TEST(LLSCTest, failingLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -136,7 +136,7 @@ TEST(LLSCTest, nonAffectingWrite) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -194,7 +194,7 @@ TEST(LLSCTest, alignedWriteMonitorClose) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -252,7 +252,7 @@ TEST(LLSCTest, unalignedWriteMonitorClose) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -311,7 +311,7 @@ TEST(LLSCTest, replacedMonitorSuccess) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -371,7 +371,7 @@ TEST(LLSCTest, replacedMonitorFailure) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -431,7 +431,7 @@ TEST(LLSCTest, contextSwitchFailure) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -483,7 +483,7 @@ TEST(LLSCTest, secondWriteFailure) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -549,7 +549,7 @@ TEST(LLSCTest, successfulMultiLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -599,7 +599,7 @@ TEST(LLSCTest, successfulMultiCachelineLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -649,7 +649,7 @@ TEST(LLSCTest, successfulMultiCachelineUnalignedLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -701,7 +701,7 @@ TEST(LLSCTest, failMultiCacheLineStoreLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);
@@ -754,7 +754,7 @@ TEST(LLSCTest, failUnalignedStoreLLSC) {
   simeng::memory::MMU mmu = simeng::memory::MMU(fn);
   auto connection =
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
-  auto port1 = sMem.initPort();
+  auto port1 = sMem.initMemPort();
   auto port2 = mmu.initPort();
   connection.connect(port1, port2);
   sMem.sendUntimedData(data, 0, dataSize);

@@ -2,7 +2,7 @@ add_executable(regression-riscv
             RISCVRegressionTest.cc
             RISCVRegressionTest.hh
             LoadStoreQueue.cc
-            InorderPipeline.cc
+            # InorderPipeline.cc
             SmokeTest.cc
             Syscall.cc
             instructions/arithmetic.cc

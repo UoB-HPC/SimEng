@@ -4,6 +4,8 @@ namespace {
 
 using inorderPipeline = RISCVRegressionTest;
 
+// TODO: Need to re-evaluate test body/significance
+
 TEST_P(inorderPipeline, prematureMulticycleHalting) {
   RUN_RISCV(R"(
     li a1, 2

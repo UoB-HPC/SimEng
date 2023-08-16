@@ -33,7 +33,7 @@ SyscallHandler::initMemPort() {
     if (packet->isRead()) {
       memRead_ = {{packet->vaddr_, packet->size_},
                   RegisterValue(packet->payload().data(), packet->size_),
-                  packet->id_};
+                  packet->insnSeqId_};
     }
     reqMemAccess_ = false;
   };
@@ -800,7 +800,7 @@ void SyscallHandler::handleSyscall() {
               if (memRead_.target.vaddr != newLimit) {
                 std::unique_ptr<simeng::memory::MemPacket> request =
                     simeng::memory::MemPacket::createReadRequest(
-                        newLimit, sizeof(rlimit), currentInfo_.threadId);
+                        newLimit, sizeof(rlimit), currentInfo_.threadId, 0);
                 request->paddr_ = physAddr;
                 reqMemAccess_ = true;
                 memPort_->send(std::move(request));
@@ -826,7 +826,7 @@ void SyscallHandler::handleSyscall() {
               // Write the new rlimit struct to memory
               std::unique_ptr<simeng::memory::MemPacket> request =
                   simeng::memory::MemPacket::createWriteRequest(
-                      oldLimit, sizeof(rlimit), currentInfo_.threadId, vec);
+                      oldLimit, sizeof(rlimit), currentInfo_.threadId, 0, vec);
               request->paddr_ = physAddr;
               memPort_->send(std::move(request));
             }
@@ -898,8 +898,8 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
     // request it and resume the `readStringThen` call after its return
     if (memRead_.target.vaddr != address) {
       std::unique_ptr<simeng::memory::MemPacket> request =
-          simeng::memory::MemPacket::createReadRequest(address, maxLength,
-                                                       currentInfo_.threadId);
+          simeng::memory::MemPacket::createReadRequest(
+              address, maxLength, currentInfo_.threadId, 0);
       request->paddr_ = translatedAddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));
@@ -957,8 +957,8 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
     // request it and resume the `readBufferThen` call after its return
     if (memRead_.target.vaddr != ptr) {
       std::unique_ptr<simeng::memory::MemPacket> request =
-          simeng::memory::MemPacket::createReadRequest(ptr, length,
-                                                       currentInfo_.threadId);
+          simeng::memory::MemPacket::createReadRequest(
+              ptr, length, currentInfo_.threadId, 0);
       request->paddr_ = translatedAddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));
@@ -1629,7 +1629,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
       std::unique_ptr<simeng::memory::MemPacket> request =
           simeng::memory::MemPacket::createReadRequest(
               currentInfo_.registerArguments[0].get<uint64_t>(),
-              sizeof(uint32_t), currentInfo_.threadId);
+              sizeof(uint32_t), currentInfo_.threadId, 0);
       request->paddr_ = uaddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));

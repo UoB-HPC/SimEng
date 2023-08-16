@@ -123,7 +123,7 @@ void Core::tick() {
 
     pc_ += bytesRead;
 
-    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     waitingOnRead_ = true;
 
     // Decode
@@ -219,7 +219,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     // Clear the fetched data
     mmu_->clearCompletedIntrReads();
 
-    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     waitingOnRead_ = true;
   }
 
@@ -270,7 +270,7 @@ void Core::processException() {
     // Clear the fetched data
     mmu_->clearCompletedIntrReads();
 
-    mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     waitingOnRead_ = true;
 
     applyStateChange(result.stateChange);
@@ -376,7 +376,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   // Clear the fetched data
   mmu_->clearCompletedIntrReads();
 
-  mmu_->requestInstrRead({pc_, FETCH_SIZE}, 0);
+  mmu_->requestInstrRead({pc_, FETCH_SIZE});
   waitingOnRead_ = true;
 }
 

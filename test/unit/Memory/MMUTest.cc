@@ -43,7 +43,7 @@ class MMUTest : public testing::Test {
     uopPtr4->setInstructionId(3);
 
     // Setup port in memory
-    port2 = memory->initPort();
+    port2 = memory->initMemPort();
 
     // Populate memory with data to read
     memory->sendUntimedData(

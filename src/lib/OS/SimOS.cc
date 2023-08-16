@@ -190,7 +190,7 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   auto sendToMem = [this](std::vector<char> data, uint64_t pAddr,
                           uint64_t vAddr, size_t size) {
     std::unique_ptr<simeng::memory::MemPacket> request =
-        simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, data);
+        simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, 0, data);
     request->paddr_ = pAddr;
     request->markAsUntimed();
     memPort_->send(std::move(request));
@@ -305,7 +305,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
 
     std::unique_ptr<simeng::memory::MemPacket> request =
         simeng::memory::MemPacket::createWriteRequest(
-            paddr, sizeof(newChildTid), 0, dataVec);
+            paddr, sizeof(newChildTid), 0, 0, dataVec);
     request->paddr_ = paddr;
     memPort_->send(std::move(request));
   }
@@ -374,7 +374,8 @@ void SimOS::terminateThread(uint64_t tid) {
   uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
   if (!masks::faults::hasFault(addr)) {
     std::unique_ptr<simeng::memory::MemPacket> request =
-        simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, {0, 0, 0, 0});
+        simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0,
+                                                      {0, 0, 0, 0});
     request->paddr_ = addr;
     memPort_->send(std::move(request));
 
@@ -400,7 +401,7 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
                                              proc->second->getTID());
       if (!masks::faults::hasFault(addr)) {
         std::unique_ptr<simeng::memory::MemPacket> request =
-            simeng::memory::MemPacket::createWriteRequest(addr, 4, 0,
+            simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0,
                                                           {0, 0, 0, 0});
         request->paddr_ = addr;
         memPort_->send(std::move(request));
