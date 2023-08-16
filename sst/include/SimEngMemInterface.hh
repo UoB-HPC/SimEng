@@ -106,7 +106,7 @@ class SimEngMemInterface : public simeng::memory::Mem {
 
     SimEngMemoryRequest() : id_(0){};
     SimEngMemoryRequest(std::unique_ptr<simeng::memory::MemPacket>& pkt)
-        : id_(pkt->id_), pkt_(std::move(pkt)){};
+        : id_(pkt->insnSeqId_), pkt_(std::move(pkt)){};
   };
 
   /**
