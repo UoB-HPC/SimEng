@@ -104,7 +104,7 @@ class SimOSWrapper : public SST::Component {
   /** This handle event method is registered as a callback function with the NOC
    * subcomponent. This method is called everytime the NOC receives a request
    * from the network. */
-  void handleNetworkEvent(SST::Event* netEvent);
+  //   void handleNetworkEvent(SST::Event* netEvent);
 
   /**
    * SST supplied MACRO used to register custom SST:Components with
@@ -169,8 +169,8 @@ class SimOSWrapper : public SST::Component {
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 
-  /** Receive a network packet from the network. */
-  void receiveFromNOC(simengNetEv pckt);
+  //   /** Receive a network packet from the network. */
+  //   void receiveFromNOC(simengNetEv pckt);
 
   /** This method trims any leading or trailing spaces in a string. */
   std::string trimSpaces(std::string argsStr);

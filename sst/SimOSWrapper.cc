@@ -231,10 +231,10 @@ void SimOSWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
   memEvent->handle(handlers_);
 }
 
-void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
-  simengNetEv* event = static_cast<simengNetEv*>(netEvent);
-  delete event;
-}
+// void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
+//   simengNetEv* event = static_cast<simengNetEv*>(netEvent);
+//   delete event;
+// }
 
 std::string SimOSWrapper::trimSpaces(std::string strArgs) {
   int trailingEnd = -1;
