@@ -219,15 +219,15 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isLastMicroOp()) {
-    //    cyclesThroughWindow += 1;
-    //    if (cyclesThroughWindow >= windowSize) {
-    //      // Reset counters and save critical path of this window size
-    //      longestCPinWindow[longestCP - 1] += 1;
-    //    longestCP = 0;
-    //      CPuptoReg.assign(64, 0);
-    //      CPmemory = {};
-    //      cyclesThroughWindow = 0;
-    //    }
+    cyclesThroughWindow += 1;
+    if (cyclesThroughWindow >= windowSize) {
+      // Reset counters and save critical path of this window size
+      longestCPinWindow[longestCP - 1] += 1;
+      longestCP = 0;
+      CPuptoReg.assign(64, 0);
+      CPmemory = {};
+      cyclesThroughWindow = 0;
+    }
     /*------------------PRINT-------------------*/
 
     //    std::cerr << "longestCP = " << longestCP << std::endl;
@@ -294,7 +294,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
     //  std::cerr << uop->getLatency() << std::endl;
 
-    uint64_t maxPathThisInstruction = maxPathOfSources + uop->getLatency();
+    uint64_t maxPathThisInstruction =
+        maxPathOfSources + 1;  // uop->getLatency();
     //    std::cerr << "pathThisInsn" << maxPathThisInstruction << std::endl;
 
     // Set global CP to this if larger
@@ -441,7 +442,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"instructions.per.kernel", s},
           {"critical.path.length", std::to_string(longestCP)},
-          {"critical.path.per.window", ""}};
+          {"critical.path.per.window", w}};
 }
 
 }  // namespace emulation

@@ -124,6 +124,7 @@ Latencies:
   4:
     Instruction-Groups:
       - FLOAT_MUL
+      - FLOAT_SIMPLE
     Execution-Latency: 6
     Execution-Throughput: 1
   5:
