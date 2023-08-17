@@ -85,7 +85,6 @@ class FetchUnit {
   /** Temporarily pause the FetchUnit. */
   void pause() {
     paused_ = true;
-    mmu_->clearCompletedIntrReads();
     flushLoopBuffer();
   };
 
