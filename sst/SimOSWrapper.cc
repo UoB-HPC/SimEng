@@ -147,6 +147,9 @@ bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
     // Tick the core
     core_->tick();
 
+    // Tick MMU
+    mmu_->tick();
+
     // Tick Memory
     memInterface_->tick();
 
