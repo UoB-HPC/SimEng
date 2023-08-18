@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
@@ -31,6 +33,7 @@ class Core : public simeng::Core {
   Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
+       std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS,
        YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -229,6 +232,8 @@ class Core : public simeng::Core {
 
   /** TID of the process currently executing on the core. */
   uint64_t currentTID_ = -1;
+
+  std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS_;
 };
 
 }  // namespace outoforder

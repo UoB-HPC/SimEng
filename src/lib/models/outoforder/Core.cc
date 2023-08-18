@@ -16,7 +16,9 @@ namespace outoforder {
 Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
-           arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
+           arch::sendSyscallToHandler handleSyscall,
+           std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS,
+           YAML::Node& config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
@@ -70,7 +72,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto insn) { microOpWriteback(insn); }),
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
-      handleSyscall_(handleSyscall) {
+      handleSyscall_(handleSyscall),
+      haltCoreDescInOS_(haltCoreDescInOS) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -103,9 +106,11 @@ void Core::tick() {
 
   switch (status_) {
     case CoreStatus::idle:
+      std::cout << "idle" << std::endl;
       idle_ticks_++;
       return;
     case CoreStatus::switching: {
+      std::cout << "switching tid: " << currentTID_ << std::endl;
       // Ensure that all pipeline buffers and ROB are empty, no data requests
       // are pending, and no exception is being handled before context switching
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
@@ -123,8 +128,10 @@ void Core::tick() {
       break;
     }
     case CoreStatus::halted:
+      // std::cout << "halted" << std::endl;
       return;
     case CoreStatus::executing:
+      std::cout << "executing: " << currentTID_ << std::endl;
       break;
   }
 
@@ -303,6 +310,7 @@ void Core::processException() {
 
   if (result.fatal) {
     status_ = CoreStatus::halted;
+    haltCoreDescInOS_(getCurrentContext(), getCoreId());
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.updatePC(result.instructionAddress);

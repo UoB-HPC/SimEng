@@ -40,6 +40,8 @@ namespace OS {
  * syscall. */
 enum class FutexStatus : uint8_t { FUTEX_SLEEPING, FUTEX_AWAKE };
 
+enum class PollStatus : uint8_t { POLLING, TRUE, FALSE, ERROR };
+
 /** This struct stores all information required to perform the futex syscall.*/
 struct FutexInfo {
   /** This is the address in memory where the futex word is stored. */
@@ -238,6 +240,9 @@ struct SyscallInfo {
    * syscall. */
   Register ret = {0, 0};
 
+  /***/
+  bool started = false;
+
   /** Default copy constructor for SyscallInfo. */
   SyscallInfo(const SyscallInfo& info) = default;
 
@@ -258,7 +263,9 @@ struct SyscallInfo {
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
-  SyscallHandler(SimOS* OS, std::shared_ptr<simeng::memory::Mem> memory);
+  SyscallHandler(
+      SimOS* OS, std::shared_ptr<simeng::memory::Mem> memory,
+      std::function<void(const SyscallResult)> sendSyscallResultToCore);
 
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
@@ -286,6 +293,8 @@ class SyscallHandler {
   /** Read `length` bytes of data from `ptr`, and then call `then`. */
   void readBufferThen(uint64_t ptr, uint64_t length,
                       std::function<void()> then);
+
+  /***/
 
   /** Performs a readlinkat syscall using the path supplied. The length of the
    * supplied path is held in the `length` parameter. */
@@ -414,6 +423,8 @@ class SyscallHandler {
    * and TGID = 'tgid' */
   void removeFutexInfo(uint64_t tgid, uint64_t tid);
 
+  void resumeClone(int64_t tid);
+
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to
    * syscall. */
@@ -443,6 +454,8 @@ class SyscallHandler {
 
   /** Unordered map used to keep track of all processes sleeping on a futex. */
   std::unordered_map<uint64_t, std::list<FutexInfo>> futexTable_;
+
+  std::function<void(const SyscallResult)> sendSyscallResultToCore_;
 };
 
 }  // namespace OS

@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -15,17 +16,20 @@
 #include "simeng/version.hh"
 
 /** Create a SimOS object depending on whether a binary file was specified. */
-simeng::OS::SimOS simOsFactory(std::shared_ptr<simeng::memory::Mem> memory,
-                               std::string executablePath,
-                               std::vector<std::string> executableArgs) {
+simeng::OS::SimOS simOsFactory(
+    std::shared_ptr<simeng::memory::Mem> memory, std::string executablePath,
+    std::vector<std::string> executableArgs,
+    std::function<void(const simeng::OS::SyscallResult)>
+        sendSyscallResultToCore) {
   if (executablePath == DEFAULT_STR) {
     // Use default program
     simeng::span<char> defaultPrg = simeng::span<char>(
         reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-    return simeng::OS::SimOS(memory, defaultPrg);
+    return simeng::OS::SimOS(memory, defaultPrg, sendSyscallResultToCore);
   }
   // Try to use binary specified in runtime args
-  return simeng::OS::SimOS(memory, executablePath, executableArgs);
+  return simeng::OS::SimOS(memory, executablePath, executableArgs,
+                           sendSyscallResultToCore);
 }
 
 /** Tick the provided core model until it halts. */
@@ -92,12 +96,22 @@ int main(int argc, char** argv) {
       Config::get()["Memory-Hierarchy"]["DRAM"]["Access-Latency"]
           .as<uint16_t>();
 
+  // Get simulation objects needed to forward simulation
+  std::shared_ptr<simeng::Core> core;
+
+  auto sendSyscallResultToCore =
+      [&core](const simeng::OS::SyscallResult result) {
+        core->receiveSyscallResult(result);
+        return;
+      };
+
   // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, latency);
 
   // Create the instance of the lightweight Operating system
-  simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs);
+  simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs,
+                                      sendSyscallResultToCore);
 
   // Retrieve the virtual address translation function from SimOS and pass it to
   // the MMU. This function will be used to handle all virtual address
@@ -115,15 +129,44 @@ int main(int argc, char** argv) {
 
   connection->connect(port1, port2);
 
+  std::function<void(simeng::OS::cpuContext, uint16_t)> haltCoreDescInOS =
+      [&](simeng::OS::cpuContext ctx, uint16_t coreId) {
+        OS.haltCore(ctx, coreId);
+        return;
+      };
+
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(mmu, OS.getSyscallReceiver());
+      std::make_unique<simeng::CoreInstance>(mmu, OS.getSyscallReceiver(),
+                                             haltCoreDescInOS);
 
   // Get simulation objects needed to forward simulation
-  std::shared_ptr<simeng::Core> core = coreInstance->getCore();
+  core = coreInstance->getCore();
 
-  // Register core with SimOS
-  OS.registerCore(core);
+  simeng::OS::CoreProxy proxy;
+  proxy.getCoreInfo = [&](uint16_t coreId, bool forClone) {
+    uint64_t ticks = core->getCurrentProcTicks();
+    simeng::OS::cpuContext ctx = core->getCurrentContext();
+    simeng::CoreStatus status = core->getStatus();
+    simeng::OS::CoreInfo info = {coreId, status, ctx, ticks};
+    OS.recieveCoreInfo(info, coreId, forClone);
+    return;
+  };
+
+  proxy.interrupt = [&](uint16_t coreId) {
+    OS.recieveInterruptResponse(core->interrupt(), coreId);
+    return;
+  };
+
+  proxy.schedule = [&](uint16_t coreId, simeng::OS::cpuContext ctx) {
+    core->schedule(ctx);
+    return;
+  };
+
+  OS.registerCore(core->getCoreId(), core->getStatus(),
+                  core->getCurrentContext(), true);
+
+  OS.registerCoreProxy(proxy);
 
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
