@@ -317,7 +317,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
   // Store strings and record both argv and environment pointers
   // Block out stack space for strings to be stored in
-  stackPointer -= alignToBoundary(stringBytes.size() + 1, 32);
+  stackPointer -= alignToBoundary(stringBytes.size() + 1, 16);
   uint16_t ptrCount = 1;
   initialStackFrame.push_back(stackPointer);  // argv[0] ptr
   for (int i = 0; i < stringBytes.size(); i++) {
@@ -358,9 +358,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 
-  // Round the stack offset up to the nearest multiple of 32, as the stack
-  // pointer must be aligned to a 32-byte interval on some architectures
-  uint64_t stackOffset = alignToBoundary(stackFrameSize, 32);
+  // Round the stack offset up to the nearest multiple of 16, as the stack
+  // pointer must be aligned to a 16-byte interval on some architectures
+  uint64_t stackOffset = alignToBoundary(stackFrameSize, 16);
 
   stackPointer -= stackOffset;
 
