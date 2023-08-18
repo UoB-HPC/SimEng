@@ -12,9 +12,12 @@
 namespace simeng {
 namespace OS {
 
-SyscallHandler::SyscallHandler(SimOS* OS,
-                               std::shared_ptr<simeng::memory::Mem> memory)
-    : OS_(OS), memory_(memory) {
+SyscallHandler::SyscallHandler(
+    SimOS* OS, std::shared_ptr<simeng::memory::Mem> memory,
+    std::function<void(const SyscallResult)> sendSyscallResultToCore)
+    : OS_(OS),
+      memory_(memory),
+      sendSyscallResultToCore_(sendSyscallResultToCore) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
@@ -53,7 +56,13 @@ void SyscallHandler::tick() {
 void SyscallHandler::handleSyscall() {
   if (syscallQueue_.empty()) return;
   // Update currentInfo_
+  if (currentInfo_.started) {
+    return;
+  }
+
+  syscallQueue_.front().started = true;
   currentInfo_ = syscallQueue_.front();
+
   ProcessStateChange stateChange = {};
 
   switch (currentInfo_.syscallId) {
@@ -721,19 +730,16 @@ void SyscallHandler::handleSyscall() {
       uint64_t tls = currentInfo_.registerArguments[3].get<uint64_t>();
       uint64_t childTidPtr = currentInfo_.registerArguments[4].get<uint64_t>();
 
-      int64_t result = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
-      if (result > 0) {
-        std::cout << "[SimEng:SyscallHandler] Clone syscall executed, new "
-                     "thread created : TGID "
-                  << OS_->getProcess(result)->getTGID() << ", TID " << result
-                  << std::endl;
-      } else {
+      int error = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
+      if (error < 0) {
         std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
                      "clone syscall."
                   << std::endl;
+        currentInfo_.started = false;
+        stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {error}};
+        break;
       }
-      break;
+      return;
     }
     case 222: {  // mmap
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
@@ -924,6 +930,24 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
   }
 }
 
+void SyscallHandler::resumeClone(int64_t tid) {
+  if (tid > 0) {
+    std::cout << "[SimEng:SyscallHandler] Clone syscall executed, new "
+                 "thread created : TGID "
+              << OS_->getProcess(tid)->getTGID() << ", TID " << tid
+              << std::endl;
+  } else {
+    std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
+                 "clone syscall."
+              << std::endl;
+  }
+
+  ProcessStateChange stateChange = {
+      ChangeType::REPLACEMENT, {currentInfo_.ret}, {tid}};
+  currentInfo_.started = false;
+  return concludeSyscall(stateChange);
+}
+
 void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
                                     std::function<void()> then) {
   // If there's nothing to read, consider the read to be complete and call
@@ -979,9 +1003,10 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
 void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
                                      bool fatal, bool idleAftersycall) {
-  OS_->sendSyscallResult({fatal, idleAftersycall, currentInfo_.syscallId,
-                          currentInfo_.coreId, change});
+  sendSyscallResultToCore_({fatal, idleAftersycall, currentInfo_.syscallId,
+                            currentInfo_.coreId, change});
   // Remove syscall from queue and reset handler to default state
+  currentInfo_.started = false;
   syscallQueue_.pop();
   dataBuffer_ = {};
   memRead_ = {{0, 0}, RegisterValue(), (uint64_t)-1};
@@ -1375,11 +1400,11 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
     return -1;
   }
 
-  int64_t newChildTid = OS_->cloneProcess(
-      flags, parentTidPtr, stackPtr, tls, childTidPtr, currentInfo_.threadId,
-      currentInfo_.coreId, currentInfo_.ret);
+  OS_->cloneProcess(flags, parentTidPtr, stackPtr, tls, childTidPtr,
+                    currentInfo_.threadId, currentInfo_.coreId,
+                    currentInfo_.ret);
 
-  return newChildTid;
+  return 0;
 }
 
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,

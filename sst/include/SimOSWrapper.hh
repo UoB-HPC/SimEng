@@ -272,6 +272,12 @@ class SimOSWrapper : public SST::Component {
 
   std::shared_ptr<simeng::Core> core_;
 
+  std::function<void(const simeng::OS::SyscallResult)> sendSyscallResultToCore_;
+
+  std::function<void(simeng::OS::cpuContext, uint16_t)> haltCoreDescInOS_;
+
+  simeng::OS::CoreProxy proxy_;
+
   /** Indicates if all processes have completed or a core has halted due to an
    * exception. */
   bool halted_ = false;

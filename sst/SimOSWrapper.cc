@@ -195,14 +195,21 @@ void SimOSWrapper::fabricateSimOS() {
   // Create the Special Files directory if indicated to do so in Config file
   if (config::SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
 
+  sendSyscallResultToCore_ = [&](const simeng::OS::SyscallResult result) {
+    core_->receiveSyscallResult(result);
+    return;
+  };
+
   if (executablePath_ == DEFAULT_STR) {
     // Use default program
     simeng::span<char> defaultPrg = simeng::span<char>(
         reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-    simOS_ = std::make_unique<simeng::OS::SimOS>(memInterface_, defaultPrg);
+    simOS_ = std::make_unique<simeng::OS::SimOS>(memInterface_, defaultPrg,
+                                                 sendSyscallResultToCore_);
   } else {
     simOS_ = std::make_unique<simeng::OS::SimOS>(memInterface_, executablePath_,
-                                                 executableArgs_);
+                                                 executableArgs_,
+                                                 sendSyscallResultToCore_);
   }
 
   VAddrTranslator fn = simOS_->getVAddrTranslator();
@@ -214,12 +221,39 @@ void SimOSWrapper::fabricateSimOS() {
 
   connection_->connect(mmuPort_, memPort_);
 
+  haltCoreDescInOS_ = [&](simeng::OS::cpuContext ctx, uint16_t coreId) {
+    simOS_->haltCore(ctx, coreId);
+    return;
+  };
+
   coreInstance_ = std::make_unique<simeng::CoreInstance>(
-      mmu_, simOS_->getSyscallReceiver());
+      mmu_, simOS_->getSyscallReceiver(), haltCoreDescInOS_);
 
   core_ = coreInstance_->getCore();
 
-  simOS_->registerCore(core_);
+  proxy_.getCoreInfo = [&](uint16_t coreId, bool forClone) {
+    uint64_t ticks = core_->getCurrentProcTicks();
+    simeng::OS::cpuContext ctx = core_->getCurrentContext();
+    simeng::CoreStatus status = core_->getStatus();
+    simeng::OS::CoreInfo info = {coreId, status, ctx, ticks};
+    simOS_->recieveCoreInfo(info, coreId, forClone);
+    return;
+  };
+
+  proxy_.interrupt = [&](uint16_t coreId) {
+    simOS_->recieveInterruptResponse(core_->interrupt(), coreId);
+    return;
+  };
+
+  proxy_.schedule = [&](uint16_t coreId, simeng::OS::cpuContext ctx) {
+    core_->schedule(ctx);
+    return;
+  };
+
+  simOS_->registerCore(core_->getCoreId(), core_->getStatus(),
+                       core_->getCurrentContext(), true);
+
+  simOS_->registerCoreProxy(proxy_);
 }
 
 void SimOSWrapper::createSpecialFileDirectory() const {

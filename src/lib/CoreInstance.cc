@@ -2,11 +2,13 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(std::shared_ptr<memory::MMU> mmu,
-                           arch::sendSyscallToHandler handleSyscall)
+CoreInstance::CoreInstance(
+    std::shared_ptr<memory::MMU> mmu, arch::sendSyscallToHandler handleSyscall,
+    std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS)
     : config_(config::SimInfo::getConfig()),
       mmu_(mmu),
-      handleSyscall_(handleSyscall) {
+      handleSyscall_(handleSyscall),
+      haltCoreDescInOS_(haltCoreDescInOS) {
   createCore();
 }
 
@@ -45,7 +47,8 @@ void CoreInstance::createCore() {
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
   } else if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-        *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
+        *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_,
+        haltCoreDescInOS_);
   }
   return;
 }
