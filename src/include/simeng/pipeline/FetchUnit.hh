@@ -92,7 +92,12 @@ class FetchUnit {
   void unpause() { paused_ = false; };
 
   /** Get the current PC value. */
-  uint64_t getPC() const { return pc_; };
+  uint64_t getPC() const {
+    if (mOpBuffer_.empty())
+      return pc_;
+    else
+      return mOpBuffer_.front()[0]->getInstructionAddress();
+  };
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
