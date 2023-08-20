@@ -84,13 +84,6 @@ void SimOS::tick() {
         }
 
         if (desc.info.ticks < execTicks) {
-          // std::cout << "Can't switch current ticks are less: "
-          //         << desc.info.ticks << " -  " << desc.info.ctx.TID
-          //       << std::endl;
-          continue;
-        } else {
-          // std::cout << "Ticks greater than execTicks: " << desc.info.ctx.TID
-          //       << std::endl;
         }
         if (waitingProcs_.empty()) {
           continue;
