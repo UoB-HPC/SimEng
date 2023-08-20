@@ -30,9 +30,11 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::shared_ptr<memory::MMU> mmu,
-               arch::sendSyscallToHandler handleSyscall,
-               std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS);
+  CoreInstance(
+      std::shared_ptr<memory::MMU> mmu,
+      arch::sendSyscallToHandler handleSyscall,
+      std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+          updateCoreDescInOS);
 
   ~CoreInstance(){};
 
@@ -70,7 +72,10 @@ class CoreInstance {
    * System's syscall handler. */
   arch::sendSyscallToHandler handleSyscall_;
 
-  std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS_;
+  /** Callback function passed to OoO core so that core updates can
+   * be sent to SimOS asynchronously. */
+  std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+      updateCoreDescInOS_;
 };
 
 }  // namespace simeng

@@ -1,14 +1,17 @@
 #include "simeng/CoreInstance.hh"
 
+#include <cstdint>
+
 namespace simeng {
 
 CoreInstance::CoreInstance(
     std::shared_ptr<memory::MMU> mmu, arch::sendSyscallToHandler handleSyscall,
-    std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS)
+    std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+        updateCoreDescInOS)
     : config_(config::SimInfo::getConfig()),
       mmu_(mmu),
       handleSyscall_(handleSyscall),
-      haltCoreDescInOS_(haltCoreDescInOS) {
+      updateCoreDescInOS_(updateCoreDescInOS) {
   createCore();
 }
 
@@ -48,7 +51,7 @@ void CoreInstance::createCore() {
   } else if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_,
-        haltCoreDescInOS_);
+        updateCoreDescInOS_);
   }
   return;
 }

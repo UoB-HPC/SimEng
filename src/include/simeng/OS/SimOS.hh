@@ -45,24 +45,51 @@ static uint32_t hex_[8] = {
     0xD4000001,  // svc #0
 };
 
+/** CoreInfo struct which holds information about the state of a simulation
+ * core.*/
 struct CoreInfo {
+  /** ID of a core. */
   uint16_t coreId;
+  /** Status of a core. */
   CoreStatus status;
+  /** Context of a core. */
   cpuContext ctx;
+  /** Number of times a core has been ticked. This is used for keeping track of
+   * ticks while the core in CoreStatus::executing state so that SimOS can
+   * schedule new threads on the core.*/
   uint64_t ticks;
 };
 
+/** CoreDesc object which is used to represent a simulation core in SimOS. */
 struct CoreDesc {
+  /** CoreInfo object representing a core's state. */
   CoreInfo info;
+  /** Value which indicates whether SimOS has send an async communication
+   * request to core.*/
   bool pendingResponseFromCore;
 };
 
+/** CoreProxy object which contain proxy functions used to establish
+ * communication with a simulation core. */
 struct CoreProxy {
+  /** Function used to retrieve a simulation core's CoreInfo object.
+   * @params
+   * uint16_t coreId: Id of the core.
+   * bool forClone: whether the CoreInfo is for a waiting clone call. */
   std::function<void(uint16_t, bool)> getCoreInfo;
+  /** Function used to interrupt a simulation core.
+   * @params
+   * uint16_t coreId: Id of the core. */
   std::function<void(uint16_t)> interrupt;
+  /** Function used to interrupt a simulation core.
+   * @params
+   * uint16_t coreId: Id of the core.
+   * cpuContext ctx: cpuContext associated with the process to be scheduled. */
   std::function<void(uint16_t, cpuContext)> schedule;
 };
 
+/** CloneArgs struct which stores the arguments given to a clone call waiting
+ * for async response from core. */
 struct CloneArgs {
   uint64_t flags;
   uint64_t stackPtr;
@@ -107,6 +134,8 @@ class SimOS {
                     uint64_t tls, uint64_t childTidPtr, uint64_t parentTid,
                     uint64_t coreID, Register retReg);
 
+  /** Method used to resume a suspending clone syscall waiting for CoreInfo
+   * response from core. */
   void resumeClone(uint16_t coreId, CoreInfo cinfo);
 
   /** Get a process with specified `tid`. */
@@ -167,13 +196,21 @@ class SimOS {
     waitingProcs_.push(procPtr);
   };
 
+  /** Method which is used to recieve a CoreInfo object from a simulation core
+   * corresponding to coreId. */
   void recieveCoreInfo(CoreInfo cinfo, uint16_t coreId, bool forClone);
 
+  /** Method used to recieve an interrupt response from a simulation core
+   * corresponding to coreId. */
   void recieveInterruptResponse(bool success, uint16_t coreId);
 
+  /** Method used to register a CoreProxy object. */
   void registerCoreProxy(CoreProxy proxy) { coreProxy_ = proxy; }
 
-  void haltCore(cpuContext ctx, uint16_t coreId);
+  /** Method used to update the CoreDesc object corresponding to a simulation
+   * core. */
+  void updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
+                      uint64_t ticks);
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
@@ -237,10 +274,10 @@ class SimOS {
   /** Reference to the PageFrameAllocator object.  */
   PageFrameAllocator pageFrameAllocator_;
 
-  uint16_t pendingResponseFromCore_;
-
+  /** Reference to the CoreProxy object. */
   CoreProxy coreProxy_;
 
+  /** Map used to store CloneArgs from different cores. */
   std::unordered_map<uint16_t, CloneArgs> cloneArgsMap_;
 };
 

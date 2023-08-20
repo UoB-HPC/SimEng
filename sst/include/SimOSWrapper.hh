@@ -274,7 +274,9 @@ class SimOSWrapper : public SST::Component {
 
   std::function<void(const simeng::OS::SyscallResult)> sendSyscallResultToCore_;
 
-  std::function<void(simeng::OS::cpuContext, uint16_t)> haltCoreDescInOS_;
+  std::function<void(simeng::OS::cpuContext, uint16_t, simeng::CoreStatus,
+                     uint64_t)>
+      updateCoreDescInOS_;
 
   simeng::OS::CoreProxy proxy_;
 

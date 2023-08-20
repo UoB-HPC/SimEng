@@ -221,8 +221,9 @@ void SimOSWrapper::fabricateSimOS() {
 
   connection_->connect(mmuPort_, memPort_);
 
-  haltCoreDescInOS_ = [&](simeng::OS::cpuContext ctx, uint16_t coreId) {
-    simOS_->haltCore(ctx, coreId);
+  updateCoreDescInOS_ = [&](simeng::OS::cpuContext ctx, uint16_t coreId,
+                            simeng::CoreStatus status, uint64_t ticks) {
+    simOS_->updateCoreDesc(ctx, coreId, status, ticks);
     return;
   };
 

@@ -1,6 +1,7 @@
 #include "simeng/models/outoforder/Core.hh"
 
 #include <algorithm>
+#include <cstdint>
 #include <iomanip>
 #include <ios>
 #include <sstream>
@@ -17,7 +18,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall,
-           std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS,
+           std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+               updateCoreDescInOS,
            ryml::ConstNodeRef config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
@@ -83,7 +85,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
       commitWidth_(
           config::SimInfo::getValue<int>(config["Pipeline-Widths"]["Commit"])),
       handleSyscall_(handleSyscall),
-      haltCoreDescInOS_(haltCoreDescInOS) {
+      updateCoreDescInOS_(updateCoreDescInOS) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -117,11 +119,9 @@ void Core::tick() {
 
   switch (status_) {
     case CoreStatus::idle:
-      std::cout << "idle" << std::endl;
       idle_ticks_++;
       return;
     case CoreStatus::switching: {
-      std::cout << "switching tid: " << currentTID_ << std::endl;
       // Ensure that all pipeline buffers and ROB are empty, no data requests
       // are pending, and no exception is being handled before context switching
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
@@ -134,15 +134,18 @@ void Core::tick() {
         dispatchIssueUnit_.flush();
         writebackUnit_.flush();
         status_ = CoreStatus::idle;
+        // Update status of corresponding CoreDesc in SimOS as there is no
+        // causal action originating from SimOS which caused this change in
+        // Core.
+        updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
+                            0);
         return;
       }
       break;
     }
     case CoreStatus::halted:
-      // std::cout << "halted" << std::endl;
       return;
     case CoreStatus::executing:
-      std::cout << "executing: " << currentTID_ << std::endl;
       break;
   }
 
@@ -319,12 +322,21 @@ void Core::processException() {
 
   if (result.fatal) {
     status_ = CoreStatus::halted;
-    haltCoreDescInOS_(getCurrentContext(), getCoreId());
+    // Update status of corresponding CoreDesc in SimOS as there is no
+    // causal action originating from SimOS which caused this change in
+    // Core.
+    updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
+                        0);
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
+      // Update status of corresponding CoreDesc in SimOS as there is no
+      // causal action originating from SimOS which caused this change in
+      // Core.
+      updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
+                          0);
       // Enusre all pipeline stages are flushed
       dispatchIssueUnit_.flush();
       writebackUnit_.flush();
