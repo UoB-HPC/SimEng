@@ -614,8 +614,7 @@ uint64_t SimOS::requestPageFrames(size_t size) {
 
 uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
   auto process = processes_.find(tid)->second;
-  git push-- set - upstream origin os - core - comms uint64_t translation =
-      process->pageTable_->translate(vaddr);
+  uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
 
   // Return the translation if faultCode is not translate, any other faults
