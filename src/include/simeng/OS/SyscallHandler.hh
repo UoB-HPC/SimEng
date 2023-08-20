@@ -240,7 +240,7 @@ struct SyscallInfo {
    * syscall. */
   Register ret = {0, 0};
 
-  /***/
+  /** Value used to signal if a syscall has started or not. */
   bool started = false;
 
   /** Default copy constructor for SyscallInfo. */
@@ -293,8 +293,6 @@ class SyscallHandler {
   /** Read `length` bytes of data from `ptr`, and then call `then`. */
   void readBufferThen(uint64_t ptr, uint64_t length,
                       std::function<void()> then);
-
-  /***/
 
   /** Performs a readlinkat syscall using the path supplied. The length of the
    * supplied path is held in the `length` parameter. */
@@ -423,6 +421,8 @@ class SyscallHandler {
    * and TGID = 'tgid' */
   void removeFutexInfo(uint64_t tgid, uint64_t tid);
 
+  /** Method used to resume a suspended clone syscall waiting for response from
+   * simulation core. */
   void resumeClone(int64_t tid);
 
  private:
@@ -455,6 +455,7 @@ class SyscallHandler {
   /** Unordered map used to keep track of all processes sleeping on a futex. */
   std::unordered_map<uint64_t, std::list<FutexInfo>> futexTable_;
 
+  /** Function used to send a syscall result back to simulation core. */
   std::function<void(const SyscallResult)> sendSyscallResultToCore_;
 };
 

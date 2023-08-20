@@ -33,7 +33,8 @@ class Core : public simeng::Core {
   Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
-       std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS,
+       std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+           updateCoreDescInOS,
        YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -233,7 +234,10 @@ class Core : public simeng::Core {
   /** TID of the process currently executing on the core. */
   uint64_t currentTID_ = -1;
 
-  std::function<void(OS::cpuContext, uint16_t)> haltCoreDescInOS_;
+  /** Callback function used to update the CoreDesc objects corresponding to
+   * CoreID held in SimOS. */
+  std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+      updateCoreDescInOS_;
 };
 
 }  // namespace outoforder

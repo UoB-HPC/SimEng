@@ -129,9 +129,11 @@ int main(int argc, char** argv) {
 
   connection->connect(port1, port2);
 
-  std::function<void(simeng::OS::cpuContext, uint16_t)> haltCoreDescInOS =
-      [&](simeng::OS::cpuContext ctx, uint16_t coreId) {
-        OS.haltCore(ctx, coreId);
+  std::function<void(simeng::OS::cpuContext, uint16_t, simeng::CoreStatus,
+                     uint64_t)>
+      haltCoreDescInOS = [&](simeng::OS::cpuContext ctx, uint16_t coreId,
+                             simeng::CoreStatus status, uint64_t ticks) {
+        OS.updateCoreDesc(ctx, coreId, status, ticks);
         return;
       };
 

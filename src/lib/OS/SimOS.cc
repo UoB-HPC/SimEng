@@ -83,7 +83,16 @@ void SimOS::tick() {
           waitingProcs_.pop();
         }
 
-        if (waitingProcs_.empty() || (desc.info.ticks < execTicks)) {
+        if (desc.info.ticks < execTicks) {
+          // std::cout << "Can't switch current ticks are less: "
+          //         << desc.info.ticks << " -  " << desc.info.ctx.TID
+          //       << std::endl;
+          continue;
+        } else {
+          // std::cout << "Ticks greater than execTicks: " << desc.info.ctx.TID
+          //       << std::endl;
+        }
+        if (waitingProcs_.empty()) {
           continue;
         }
 
@@ -243,13 +252,13 @@ void SimOS::tick() {
 */
 }
 
-void SimOS::haltCore(cpuContext ctx, uint16_t coreId) {
+void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
+                           uint64_t ticks) {
   auto& desc = coreDescs_[coreId];
   desc.info.ctx = ctx;
-  desc.info.status = CoreStatus::halted;
+  desc.info.status = status;
   desc.info.coreId = coreId;
-  desc.info.ticks = 0;
-  desc.pendingResponseFromCore = false;
+  desc.info.ticks = ticks;
 }
 
 void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
@@ -259,7 +268,7 @@ void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
   if (success) {
     // Interrupt signalled successfully, move waitingProc to
     // sheduledProcs queue
-    desc.info.status = simeng::idle;
+    desc.info.status = simeng::switching;
     desc.info.ticks = 0;
 
     waitingProcs_.front()->status_ = procStatus::scheduled;

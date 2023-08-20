@@ -929,10 +929,10 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
 void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
                                      bool fatal, bool idleAftersycall) {
+  currentInfo_.started = false;
   sendSyscallResultToCore_({fatal, idleAftersycall, currentInfo_.syscallId,
                             currentInfo_.coreId, change});
   // Remove syscall from queue and reset handler to default state
-  currentInfo_.started = false;
   syscallQueue_.pop();
   dataBuffer_ = {};
 }
