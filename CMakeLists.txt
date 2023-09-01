@@ -57,12 +57,6 @@ FetchContent_Declare(
   # GIT_TAG e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
 )
 
-FetchContent_Declare(
-  simeng-libelf
-  GIT_REPOSITORY https://github.com/UoB-HPC/simeng-libelf.git
-)
-
-
 cmake_policy(SET CMP0048 NEW)
 project(SimEng VERSION 0.9.4 LANGUAGES C CXX)
 
@@ -126,9 +120,6 @@ set(YAML_CPP_BUILD_TESTS OFF)
 set(YAML_CPP_INSTALL OFF)
 
 FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
-
-FetchContent_MakeAvailable_Args(simeng-libelf EXCLUDE_FROM_ALL)
-
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
