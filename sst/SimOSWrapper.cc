@@ -228,7 +228,7 @@ void SimOSWrapper::fabricateSimOS() {
   };
 
   coreInstance_ = std::make_unique<simeng::CoreInstance>(
-      mmu_, simOS_->getSyscallReceiver(), haltCoreDescInOS_);
+      mmu_, simOS_->getSyscallReceiver(), updateCoreDescInOS_);
 
   core_ = coreInstance_->getCore();
 
