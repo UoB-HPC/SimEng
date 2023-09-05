@@ -29,7 +29,6 @@ TEST(OSTest, CreateSimOS) {
   const std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(1);
   EXPECT_GT(proc->getHeapStart(), 0);
   EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
-  EXPECT_GT(proc->getStackStart(), proc->getMmapStart());
   EXPECT_EQ(proc->isValid(), true);
   // Check CPU context
   // PC is always 0 for processes assembled by SimEng

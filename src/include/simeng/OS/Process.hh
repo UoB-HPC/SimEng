@@ -147,16 +147,13 @@ class Process {
       return value;
     };
 
-    memRegion_ = MemRegion(unmapFn);
-    setupMemRegion<T>();
-    uint64_t stack_top = memRegion_.stackRegion_.end;
+    uint64_t stack_top = setupMemRegion<T>(getBrkFromElf(elf));
 
     loadElf(elf);
-    uint64_t stackPtr = createStack(stack_top);
-    updateStack(stackPtr);
+    initStackPtr_ = createStack(stack_top);
 
     // Initialise context
-    initContext(stackPtr, regFileStructure);
+    initContext(initStackPtr_, regFileStructure);
 
     // Setup architecture stuff
     archSetup<T>();
@@ -174,11 +171,7 @@ class Process {
     commandLine_.push_back("\0");
 
     loadInstructions(instructions, simMemSize);
-    uint64_t stack_top = memRegion_.stackRegion_.end;
-    uint64_t stackPtr = createStack(stack_top);
-    memRegion_.updateStack(stackPtr);
-
-    initContext(stackPtr, regFileStructure);
+    initContext(initStackPtr_, regFileStructure);
     archSetup<T>();
     isValid_ = true;
   }
@@ -208,7 +201,7 @@ class Process {
   std::string getPath() const;
 
   /** Get the memory region for this process. */
-  MemRegion& getMemRegion() { return memRegion_; }
+  std::shared_ptr<MemRegion> getMemRegion() { return memRegion_; }
 
   /** Check whether the process image was created successfully. */
   bool isValid() const;
@@ -229,9 +222,7 @@ class Process {
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
   /** Updates a Processes stack space. */
-  void updateStack(const uint64_t stackPtr) {
-    memRegion_.updateStack(stackPtr);
-  }
+  void updateStack(const uint64_t stackPtr) { initStackPtr_ = stackPtr; }
 
   /** Unique pointer to FileDescArray class.*/
   std::shared_ptr<FileDescArray> fdArray_;
@@ -268,13 +259,16 @@ class Process {
    * pointer. */
   uint64_t createStack(uint64_t stackStart);
 
+  /***/
+  void mapStack(uint64_t stack_top, uint64_t stack_size);
+
   /** Initialises the Process' context_ arguments to the appropriate values. */
   void initContext(const uint64_t stackPtr,
                    const std::vector<RegisterFileStructure>& regFileStructure);
 
   /***/
   template <class T>
-  void setupMemRegion();
+  uint64_t setupMemRegion(uint64_t brk);
 
   /***/
   void loadInterpreter(Elf& elf);
@@ -286,11 +280,14 @@ class Process {
   void loadInstructions(span<char>& instructions, size_t simMemSize);
 
   /***/
+  uint64_t getBrkFromElf(Elf& elf);
+
+  /***/
   template <class T>
   void archSetup();
 
   /** MemRegion of the Process Image. */
-  MemRegion memRegion_;
+  std::shared_ptr<MemRegion> memRegion_;
 
   /***/
   bool isDynamic_ = false;
@@ -336,6 +333,8 @@ class Process {
    * also used to write file data (if present) to the simulation memory after
    * handling a page fault */
   sendToMemory sendToMem_;
+
+  uint64_t initStackPtr_ = 0;
 };
 
 }  // namespace OS

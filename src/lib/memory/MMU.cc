@@ -6,6 +6,8 @@
 #include <memory>
 #include <vector>
 
+#include "simeng/OS/Constants.hh"
+
 namespace simeng {
 namespace memory {
 

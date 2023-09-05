@@ -343,6 +343,9 @@ void ExceptionHandler::printException() const {
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler]       opcode ID: " << metadata.opcode
             << std::endl;
+  for (auto addr : instruction_->getGeneratedAddresses()) {
+    std::cout << addr.vaddr << std::endl;
+  }
 }
 
 bool ExceptionHandler::fatal() {
