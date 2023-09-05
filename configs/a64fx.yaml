@@ -4,7 +4,7 @@
 
 Core:
   ISA: AArch64
-  Simulation-Mode: emulation
+  Simulation-Mode: outoforder
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
@@ -274,7 +274,7 @@ CPU-Info:
   Package-Count: 1
 Interpreter:
   Path: "/home/rahat/work/ssh-dir/dll/aarch64/ld-linux-aarch64.so.1"
-  Debug: False
+  Debug: True
   LD_LIBRARY_PATH:
     - "/home/rahat/work/ssh-dir/dll/aarch64"
   Extra-Env-Vars:

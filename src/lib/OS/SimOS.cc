@@ -284,7 +284,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // present
   newProc->clearChildTid_ = childTidPtr;
 
-  // Update stackPtr, stackSize and stackEnd
+  // Update stackPtr
   newProc->updateStack(stackPtr);
 
   // Store child tid at parentTidPtr if required
@@ -327,7 +327,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   waitingProcs_.push(newProc);
 
   // Add stack to `proc/tgid/maps`
-  VMA vma = newProc->getMemRegion().getVMAFromAddr(stackPtr);
+  VMA vma = newProc->getMemRegion()->getVMAFromAddr(stackPtr);
   const std::string procTgid_filename = specialFilesDir_ + "/proc/" +
                                         std::to_string(newProc->getTGID()) +
                                         "/maps";

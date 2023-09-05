@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "simeng/OS/Constants.hh"
+
 namespace simeng {
 namespace memory {
 
