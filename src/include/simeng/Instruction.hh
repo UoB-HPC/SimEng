@@ -24,7 +24,7 @@ class Instruction {
   bool exceptionEncountered() const;
 
   /** Binds an interrupt to this instruction  */
-  virtual void raiseInterrupt(int16_t& interruptId)                     {}
+  virtual void raiseInterrupt(int16_t& interruptId) {}
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
@@ -102,7 +102,8 @@ class Instruction {
   /** Retrieve branch type. */
   virtual BranchType getBranchType() const = 0;
 
-  /** Retrieve an offset of branch target from the instruction's metadata if known. */
+  /** Retrieve an offset of branch target from the instruction's metadata if
+   * known. */
   virtual uint64_t getKnownOffset() const = 0;
 
   /** Is this a store address operation (a subcategory of store operations which
@@ -217,7 +218,8 @@ class Instruction {
   /** What type of branch this instruction is. */
   BranchType branchType_ = BranchType::Unknown;
 
-  /** If the offset of branch target is known at the time of decode, store it. */
+  /** If the offset of branch target is known at the time of decode, store it.
+   */
   uint64_t knownOffset_ = 0;
 
   // Flushing

@@ -287,8 +287,8 @@ uint64_t Architecture::getVectorLength() const { return VL_; }
 
 uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
 
-int16_t Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                              const uint64_t iterations) const {
+int16_t Architecture::updateSystemTimerRegisters(
+    RegisterFileSet* regFile, const uint64_t iterations) const {
   // Update the Processor Cycle Counter to total cycles completed.
   regFile->set(PCCreg_, iterations);
   // Update Virtual Counter Timer at correct frequency.
@@ -329,9 +329,9 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_ = newVal;
 }
 
-void Architecture::updateInstrTrace(const std::shared_ptr<simeng::Instruction>& instruction,
-                                    simeng::RegisterFileSet* regFile, uint64_t tick) const {
-  }
+void Architecture::updateInstrTrace(
+    const std::shared_ptr<simeng::Instruction>& instruction,
+    simeng::RegisterFileSet* regFile, uint64_t tick) const {}
 
 }  // namespace aarch64
 }  // namespace arch

@@ -57,7 +57,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
    */
   bool readBufferThen(uint64_t ptr, uint64_t length, std::function<bool()> then,
                       bool firstCall = true);
-  
+
   /** generate system register changes associated with taking an exception **/
   void takeException(uint64_t causecode);
 

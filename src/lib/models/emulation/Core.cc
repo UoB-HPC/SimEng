@@ -150,15 +150,15 @@ void Core::tick() {
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
-
-  if (interruptId_>=0)
+  if (interruptId_ >= 0)
     uop->raiseInterrupt(interruptId_);
   else
     uop->execute();
 
   if (uop->exceptionEncountered()) {
     instructionsExecuted_++;
-    isa_.updateInstrTrace(uop, &registerFileSet_, ticks_); // Handle ECALL into trace here
+    isa_.updateInstrTrace(uop, &registerFileSet_,
+                          ticks_);  // Handle ECALL into trace here
     handleException(uop);
     return;
   }
@@ -192,14 +192,19 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isLastMicroOp()) {
     instructionsExecuted_++;
-    // TODO: This is architecture-specific. It's here for the reference and should(will) be refactored later
-    uint16_t sysreg_instrret = isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_INSTRRET);
-    uint16_t sysreg_cycle = isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_CYCLE);
+    // TODO: This is architecture-specific. It's here for the reference and
+    // should(will) be refactored later
+    uint16_t sysreg_instrret =
+        isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_INSTRRET);
+    uint16_t sysreg_cycle =
+        isa_.getSystemRegisterTag(arch::riscv::riscv_sysreg::SYSREG_CYCLE);
     // NOTE: 64-bit system registers are not implemented yet
-    //TODO: Maybe make use of byteLength and remove is32BitMode() function?
+    // TODO: Maybe make use of byteLength and remove is32BitMode() function?
     if (isa_.is32BitMode()) {
-      registerFileSet_.set(Register{0x2, sysreg_instrret}, RegisterValue(instructionsExecuted_, 4));
-      registerFileSet_.set(Register{0x2, sysreg_cycle}, RegisterValue(ticks_, 4));
+      registerFileSet_.set(Register{0x2, sysreg_instrret},
+                           RegisterValue(instructionsExecuted_, 4));
+      registerFileSet_.set(Register{0x2, sysreg_cycle},
+                           RegisterValue(ticks_, 4));
     }
     isa_.updateInstrTrace(uop, &registerFileSet_, ticks_);
   }

@@ -12,7 +12,8 @@ namespace pipeline_hi {
  */
 class StaticPredictor : public BranchPredictor {
  public:
-  StaticPredictor(uint8_t sType); //TODO: temp constructor, get rid of yaml, delete it later
+  StaticPredictor(uint8_t sType);  // TODO: temp constructor, get rid of yaml,
+                                   // delete it later
   StaticPredictor(YAML::Node config);
   ~StaticPredictor();
 

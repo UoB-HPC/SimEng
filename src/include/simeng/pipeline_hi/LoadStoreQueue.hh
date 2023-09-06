@@ -117,7 +117,7 @@ class LoadStoreQueue {
 
   bool isBusy() const;
 
-  float getAvgLdLat() const { return (totalLdLatency)/numLoads; };
+  float getAvgLdLat() const { return (totalLdLatency) / numLoads; };
 
   uint32_t getMaxLdLat() const { return maxLdLatency; };
   uint32_t getMinLdLat() const { return minLdLatency; };
@@ -138,7 +138,7 @@ class LoadStoreQueue {
   /** Map of loads that have requested their data, keyed by sequence ID. */
   std::unordered_map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
-    /** Map of loads that have requested their data, keyed by sequence ID. */
+  /** Map of loads that have requested their data, keyed by sequence ID. */
   std::unordered_map<uint64_t, uint64_t> latencyLoads_;
 
   /** A function handler to call to forward the results of a completed load. */
@@ -214,22 +214,22 @@ class LoadStoreQueue {
   /** The number of loads and stores permitted per cycle. */
   std::array<uint16_t, 2> reqLimits_;
 
-  /** A map between LSQ cycles and load or store requests ready on that cycle. */
+  /** A map between LSQ cycles and load or store requests ready on that cycle.
+   */
   std::deque<requestEntry1> requestQueue_;
 
   /* Identifier for request to memory*/
   uint8_t busReqId = 0;
 
-  //bool activeMisAlignedStore = false;
+  // bool activeMisAlignedStore = false;
 
-  //Stats
+  // Stats
   uint64_t numLoads = 0;
   double totalLdLatency = 0;
   uint32_t maxLdLatency = 0;
   uint32_t minLdLatency = 0xFFFF;
   float averageAccessLdLatency = 0.0;
 };
-
 
 }  // namespace pipeline_hi
 }  // namespace simeng

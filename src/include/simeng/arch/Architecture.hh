@@ -15,10 +15,7 @@ using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 namespace arch {
 
 /** Modes. Assume only has 32-bit and 64-bit. */
-enum arch_mode {
-  ARCH_32BIT=1,
-  ARCH_64BIT=0
-};
+enum arch_mode { ARCH_32BIT = 1, ARCH_64BIT = 0 };
 
 /** The types of changes that can be made to values within the process state. */
 enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
@@ -116,17 +113,16 @@ class Architecture {
       YAML::Node config) const = 0;
 
   /** Updates System registers of any system-based timers. */
-  virtual int16_t updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                          const uint64_t iterations) const = 0;
+  virtual int16_t updateSystemTimerRegisters(
+      RegisterFileSet* regFile, const uint64_t iterations) const = 0;
 
   /** Update trace file */
   virtual void updateInstrTrace(const std::shared_ptr<Instruction>& instruction,
-                                RegisterFileSet* regFile, uint64_t tick) const = 0;
+                                RegisterFileSet* regFile,
+                                uint64_t tick) const = 0;
 
   /** Return the mode (32-bit or 64-bit) */
-  arch_mode is32BitMode() const {
-    return is32Bit_;
-  }
+  arch_mode is32BitMode() const { return is32Bit_; }
 
  protected:
   /** Mode, either 32-bit or 64-bit */

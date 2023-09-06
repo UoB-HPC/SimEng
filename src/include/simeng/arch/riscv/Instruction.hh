@@ -89,12 +89,11 @@ class Instruction : public simeng::Instruction {
   virtual InstructionException getException() const;
 
   /** Raise an interrupt. */
-  void raiseInterrupt(int16_t& interruptId)
-  {
-    interruptId_          = interruptId;
+  void raiseInterrupt(int16_t& interruptId) {
+    interruptId_ = interruptId;
     exceptionEncountered_ = true;
-    exception_            = InstructionException::Interrupt;
-    interruptId           = -1;
+    exception_ = InstructionException::Interrupt;
+    interruptId = -1;
   }
 
   /** Get Id of this interrupr */
@@ -152,7 +151,8 @@ class Instruction : public simeng::Instruction {
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
 
-  /** Retrieve an offset of branch target from the instruction's metadata if known. */
+  /** Retrieve an offset of branch target from the instruction's metadata if
+   * known. */
   uint64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which
@@ -207,7 +207,8 @@ class Instruction : public simeng::Instruction {
   static const uint8_t MAX_SOURCE_REGISTERS = 2;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 2; //CSRs can be another destination apart from std RD
+  static const uint8_t MAX_DESTINATION_REGISTERS =
+      2;  // CSRs can be another destination apart from std RD
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -307,7 +308,7 @@ class Instruction : public simeng::Instruction {
   std::vector<RegisterValue> memoryData;
 
   /** Return integer register value, to support both 32-bit and 64-bit mode */
-  int64_t  getSignedInt(RegisterValue& value) const;
+  int64_t getSignedInt(RegisterValue& value) const;
 
   int16_t interruptId_;
 };

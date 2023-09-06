@@ -116,7 +116,7 @@ class LinuxProcess {
 
   /** Shared pointer to processImage. */
   std::shared_ptr<char> processImage_;
-  
+
   std::unordered_map<std::string, uint64_t> symbols_;
 };
 

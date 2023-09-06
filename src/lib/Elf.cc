@@ -14,8 +14,8 @@ namespace simeng {
  * https://man7.org/linux/man-pages/man5/elf.5.html
  */
 
-Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, uint64_t>& symbols)
-{
+Elf::Elf(std::string path, char** imagePointer,
+         std::unordered_map<std::string, uint64_t>& symbols) {
   std::ifstream file(path, std::ios::binary);
 
   if (!file.is_open()) {
@@ -49,7 +49,8 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
   // Check whether this is a 32 or 64-bit executable
   char bitFormat;
   file.read(&bitFormat, sizeof(bitFormat));
-  if (bitFormat != ElfBitFormat::Format32 && bitFormat != ElfBitFormat::Format64) {
+  if (bitFormat != ElfBitFormat::Format32 &&
+      bitFormat != ElfBitFormat::Format64) {
     return;
   }
 
@@ -94,7 +95,8 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
     // Seek to the byte representing header entry size.
     file.seekg(0x36);
     uint16_t headerEntrySize;
-    file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
+    file.read(reinterpret_cast<char*>(&headerEntrySize),
+              sizeof(headerEntrySize));
     uint16_t headerEntries;
     file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
 
@@ -170,8 +172,8 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
     for (const auto& header : headers_) {
       if (header.type == 1) {  // LOAD
         file.seekg(header.offset);
-        // Read `fileSize` bytes from `file` into the appropriate place in process
-        // memory
+        // Read `fileSize` bytes from `file` into the appropriate place in
+        // process memory
         file.read(*imagePointer + header.virtualAddress, header.fileSize);
       }
     }
@@ -182,29 +184,32 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
     file.read(reinterpret_cast<char*>(&eheader), sizeof(eheader));
 
     entryPoint32_ = eheader.e_entry;
-  
+
     processImageSize_ = 0;
 
     // Loop over pheaders and extract them.
     file.seekg(eheader.e_phoff);
     std::vector<Elf32_Phdr> pheaders(eheader.e_phnum);
-    for (auto &ph : pheaders) {
-        file.read(reinterpret_cast<char*>(&ph), sizeof(ph));
-        if ((ph.p_type == PT_LOAD) && (ph.p_vaddr+ph.p_memsz > processImageSize_))
-           processImageSize_ = ph.p_vaddr+ph.p_memsz;
+    for (auto& ph : pheaders) {
+      file.read(reinterpret_cast<char*>(&ph), sizeof(ph));
+      if ((ph.p_type == PT_LOAD) &&
+          (ph.p_vaddr + ph.p_memsz > processImageSize_))
+        processImageSize_ = ph.p_vaddr + ph.p_memsz;
     }
 
     *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
 
     for (const auto& ph : pheaders) {
-       if (ph.p_type == PT_LOAD) {
+      if (ph.p_type == PT_LOAD) {
         file.seekg(ph.p_offset);
-        // Read `fileSize` bytes from `file` into the appropriate place in process memory
-        file.read(*imagePointer+ph.p_vaddr, ph.p_filesz);
+        // Read `fileSize` bytes from `file` into the appropriate place in
+        // process memory
+        file.read(*imagePointer + ph.p_vaddr, ph.p_filesz);
 
-        if (ph.p_memsz>ph.p_filesz)
+        if (ph.p_memsz > ph.p_filesz)
           // Need to padd the rest of the section memory with zeros
-          memset(*imagePointer+ph.p_vaddr+ph.p_filesz, 0, ph.p_memsz-ph.p_filesz);
+          memset(*imagePointer + ph.p_vaddr + ph.p_filesz, 0,
+                 ph.p_memsz - ph.p_filesz);
       }
     }
 
@@ -214,13 +219,13 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
     file.seekg(eheader.e_shoff);
     std::vector<Elf32_Shdr> sheaders(eheader.e_shnum);
     unsigned int sh_idx = 0;
-    for (auto &sh : sheaders) {
+    for (auto& sh : sheaders) {
       file.read(reinterpret_cast<char*>(&sh), sizeof(sh));
 
       // find section header for strings to use for symbol table.
-      if (sh.sh_type==SHT_SYMTAB)
+      if (sh.sh_type == SHT_SYMTAB)
         sh_symtab = &sh;
-      else if (sh.sh_type==SHT_STRTAB && sh_idx!=eheader.e_shstrndx)
+      else if (sh.sh_type == SHT_STRTAB && sh_idx != eheader.e_shstrndx)
         sh_strtab = &sh;
       sh_idx++;
     };
@@ -232,9 +237,9 @@ Elf::Elf(std::string path, char** imagePointer, std::unordered_map<std::string, 
 
     // Read symbols tables
     file.seekg(sh_symtab->sh_offset);
-    unsigned num_symbols = sh_symtab->sh_size/sh_symtab->sh_entsize;
+    unsigned num_symbols = sh_symtab->sh_size / sh_symtab->sh_entsize;
     Elf32_Sym sym;
-    while(num_symbols--) {
+    while (num_symbols--) {
       file.read(reinterpret_cast<char*>(&sym), sizeof(sym));
       if (strtab[sym.st_name]) {
         std::string name(&strtab[sym.st_name]);

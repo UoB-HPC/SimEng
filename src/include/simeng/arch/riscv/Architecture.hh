@@ -1,19 +1,18 @@
 #pragma once
 
 #include <forward_list>
-#include <unordered_map>
 #include <fstream>
 #include <iomanip>
+#include <unordered_map>
 
 #include "simeng/arch/Architecture.hh"
-
 #include "simeng/arch/riscv/Instruction.hh"
 #include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
 
-#include "simeng/arch/riscv/SystemRegister.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
+#include "simeng/arch/riscv/SystemRegister.hh"
 
 namespace simeng {
 namespace arch {
@@ -30,13 +29,14 @@ struct constantsPool {
 struct archConstants {
   uint8_t alignMask;
   uint8_t bytesLimit; /* Minimum bytes the decoder needs to process */
-  uint8_t regWidth; /* Register width in bytes */
+  uint8_t regWidth;   /* Register width in bytes */
 };
 
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel, YAML::Node config, std::shared_ptr<simeng::MemoryInterface>& dataMemory);
+  Architecture(kernel::Linux& kernel, YAML::Node config,
+               std::shared_ptr<simeng::MemoryInterface>& dataMemory);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -74,9 +74,10 @@ class Architecture : public arch::Architecture {
   /** Returns the minimum size of a valid instruction in bytes. */
   uint8_t getMinInstructionSize() const override;
 
-  /** Updates System registers of any system-based timers. Return +ve id if interrupt occurs */
+  /** Updates System registers of any system-based timers. Return +ve id if
+   * interrupt occurs */
   int16_t updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                  const uint64_t iterations) const override;
+                                     const uint64_t iterations) const override;
 
   /** Returns the physical register structure as defined within the config file
    */
@@ -115,15 +116,18 @@ class Architecture : public arch::Architecture {
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
 
   /** Ordered map of memory mapped system regsiters banks **/
-  std::map<uint64_t, MemoryMappedSystemRegisterBlock*> memoryMappedSystemRegisterBlocks;
+  std::map<uint64_t, MemoryMappedSystemRegisterBlock*>
+      memoryMappedSystemRegisterBlocks;
 
-  /* Memory Interface through which memory mapped system registers are accessed */
+  /* Memory Interface through which memory mapped system registers are accessed
+   */
   std::shared_ptr<SystemRegisterMemoryInterface> systemRegisterMemoryInterface;
 
   /* Optional Clint block which replicates that functionality in spike */
   std::shared_ptr<Clint> clint;
 
-  /* Optional Host Target Interface block which replicates that functionality in spike */
+  /* Optional Host Target Interface block which replicates that functionality in
+   * spike */
   std::shared_ptr<HostTargetInterface> htif;
 
   /** A map to hold the relationship between aarch64 instruction groups and
@@ -141,7 +145,7 @@ class Architecture : public arch::Architecture {
   kernel::Linux& linux_;
 
   /** A pointer to the trace file */
-  std::ofstream *traceFile_;
+  std::ofstream* traceFile_;
 
   /** Switch for updateInstrTrace() */
   bool traceOn_ = false;

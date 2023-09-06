@@ -55,8 +55,9 @@ uint64_t WritebackUnit::getInstructionsWrittenCount() const {
 
 std::vector<std::shared_ptr<Instruction>> WritebackUnit::getInstsForTrace() {
   std::shared_ptr<Instruction> instr;
-  std::deque<std::shared_ptr<Instruction>>::iterator it =  committedInstsForTrace_.begin();
-  while(it != committedInstsForTrace_.end()) {
+  std::deque<std::shared_ptr<Instruction>>::iterator it =
+      committedInstsForTrace_.begin();
+  while (it != committedInstsForTrace_.end()) {
     instr = *it;
     if (removeInstrOrderQ_(instr)) {
       committedInstsForTrace_.erase(it);
@@ -64,10 +65,10 @@ std::vector<std::shared_ptr<Instruction>> WritebackUnit::getInstsForTrace() {
     }
     it++;
   }
-  return {}; //committedInstsForTrace_;
+  return {};  // committedInstsForTrace_;
 }
 void WritebackUnit::traceFinished() {
-  //committedInstsForTrace_.clear();
+  // committedInstsForTrace_.clear();
 }
 
 }  // namespace pipeline_hi

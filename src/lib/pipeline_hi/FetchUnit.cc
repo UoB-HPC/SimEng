@@ -109,12 +109,14 @@ void FetchUnit::tick() {
 
   // Check we have enough data to begin decoding
   if (bufferedBytes_ == isa_.getMinInstructionSize()) {
-    //Check if those bytes points to a instruction with minimum size or more data is required. If more data is required return
-    // TODO: this is not generic solution, just trying to make it work
+    // Check if those bytes points to a instruction with minimum size or more
+    // data is required. If more data is required return
+    //  TODO: this is not generic solution, just trying to make it work
     uint16_t rawBits;
     memcpy(&rawBits, buffer + bufferOffset, 2);
-    if((rawBits & 0x3) == 0x3) {
-      //std::cout << std::hex << "Only 2 bytes left in fetch buffer and not compresses instr type, current PC: 0x" << pc_ << std::endl;
+    if ((rawBits & 0x3) == 0x3) {
+      // std::cout << std::hex << "Only 2 bytes left in fetch buffer and not
+      // compresses instr type, current PC: 0x" << pc_ << std::endl;
       return;
     }
   }
@@ -151,7 +153,8 @@ void FetchUnit::tick() {
     //       {encoding, bytesRead, pc_, macroOp[0]->getBranchPrediction()});
 
     //   if (pc_ == loopBoundaryAddress_) {
-    //     // loopBoundaryAddress_ has been fetched whilst filling the loop buffer.
+    //     // loopBoundaryAddress_ has been fetched whilst filling the loop
+    //     buffer.
     //     // Stop filling as loop body has been recorded and begin to supply
     //     // decode unit with instructions from the loop buffer
     //     loopBufferState_ = LoopBufferState::SUPPLYING;
@@ -177,8 +180,10 @@ void FetchUnit::tick() {
       // Predicted as taken; set PC to predicted target address
       pc_ = prediction.target;
     }
-//    std::cout << std::hex << "PC: 0x" << pc_ << ", PBL: 0x" << programByteLength_ << std::endl;
-    if (pc_ == 0 && (macroOp[0]->getBranchType() == BranchType::SubroutineCall)) {
+    //    std::cout << std::hex << "PC: 0x" << pc_ << ", PBL: 0x" <<
+    //    programByteLength_ << std::endl;
+    if (pc_ == 0 &&
+        (macroOp[0]->getBranchType() == BranchType::SubroutineCall)) {
       waitSCEval_ = true;
       break;
     }
