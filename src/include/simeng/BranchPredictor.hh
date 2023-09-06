@@ -46,6 +46,11 @@ class BranchPredictor {
  public:
   virtual ~BranchPredictor(){};
 
+  /** Overload predict() with more information in parameters */
+  virtual BranchPrediction predict(uint64_t address, BranchType type,
+                                   uint64_t knownTarget,
+                                   uint8_t instByteLength) = 0;
+
   /** Generate a branch prediction for the specified instruction address with a
    * branch type and possible known target. */
   virtual BranchPrediction predict(uint64_t address, BranchType type,

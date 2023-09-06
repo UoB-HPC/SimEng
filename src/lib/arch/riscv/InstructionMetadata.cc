@@ -38,7 +38,8 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
       implicitDestinationCount(0),
-      operandCount(0), len(IL_INVALID) {
+      operandCount(0),
+      len(IL_INVALID) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
@@ -260,14 +261,17 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
     case Opcode::RISCV_CSRRWI:
     case Opcode::RISCV_CSRRSI:
     case Opcode::RISCV_CSRRCI: {
-      //Extract CSR info
+      // Extract CSR info
       csr = ((uint32_t)encoding[3] << 4) | ((uint32_t)encoding[2] >> 4);
-      //If there are less than 2 operands provided add necessary x0 operand
-      if(operandCount == 1) {
-        if(strcmp(mnemonic, "csrr") == 0) { //csrrs rd,csr,x0
+      // If there are less than 2 operands provided add necessary x0 operand
+      if (operandCount == 1) {
+        if ((strcmp(mnemonic, "rdinstret") == 0) ||
+            (strcmp(mnemonic, "rdcycle") == 0) ||
+            (strcmp(mnemonic, "rdtime") == 0) ||
+            (strcmp(mnemonic, "csrr") == 0)) {  // csrrs rd,csr,x0
           operands[1].type = RISCV_OP_REG;
           operands[1].reg = 1;
-        } else { //csrrxx x0,csr,rs/imm
+        } else {  // csrrxx x0,csr,rs/imm
           operands[1] = operands[0];
           operands[0].type = RISCV_OP_REG;
           operands[0].reg = 1;
@@ -302,13 +306,17 @@ void InstructionMetadata::includeZeroRegisterPosZero() {
   operandCount = 3;
 }
 
-
 void InstructionMetadata::setLength(uint8_t size) {
   lenBytes = size;
-    switch(size) {
-      case 2: len = IL_16B; break;
-      case 4: len = IL_32B; break;
-      default: len = IL_INVALID;
+  switch (size) {
+    case 2:
+      len = IL_16B;
+      break;
+    case 4:
+      len = IL_32B;
+      break;
+    default:
+      len = IL_INVALID;
   }
 }
 

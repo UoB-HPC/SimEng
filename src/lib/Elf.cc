@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 namespace simeng {
 
@@ -13,7 +14,8 @@ namespace simeng {
  * https://man7.org/linux/man-pages/man5/elf.5.html
  */
 
-Elf::Elf(std::string path, char** imagePointer) {
+Elf::Elf(std::string path, char** imagePointer,
+         std::unordered_map<std::string, uint64_t>& symbols) {
   std::ifstream file(path, std::ios::binary);
 
   if (!file.is_open()) {
@@ -176,121 +178,72 @@ Elf::Elf(std::string path, char** imagePointer) {
       }
     }
   } else {
-    /**
-     * Starting from the 24th byte of the ELF header a 32-bit value
-     * represents the virtual address to which the system first transfers
-     * control, thus starting the process.
-     * In `elf32_hdr` this value maps to the member `Elf32_Addr e_entry`.
-     */
+    file.seekg(0);
 
-    // Seek to the entry point of the file.
-    // The information in between is discarded
-    file.seekg(0x18);
-    file.read(reinterpret_cast<char*>(&entryPoint32_), sizeof(entryPoint32_));
+    Elf32_Ehdr eheader;
+    file.read(reinterpret_cast<char*>(&eheader), sizeof(eheader));
 
-    /**
-     * Starting from the 32nd byte of the ELF Header a 64-bit value
-     * represents the offset of the ELF Program header or
-     * Program header table in the ELF file.
-     * In `elf32_hdr` this value maps to the member `Elf32_Addr e_phoff`.
-     */
+    entryPoint32_ = eheader.e_entry;
 
-    // Seek to the byte representing the start of the header offset table.
-    uint32_t headerOffset;
-    file.read(reinterpret_cast<char*>(&headerOffset), sizeof(headerOffset));
-
-    /**
-     * Starting 42th byte of the ELF Header a 16-bit value indicates
-     * the size of each entry in the ELF Program header. In the `elf32_hdr`
-     * struct this value maps to the member `Elf32_Half e_phentsize`. All
-     * header entries have the same size.
-     * Starting from the 44th byte a 16-bit value represents the number
-     * of header entries in the ELF Program header. In the `elf32_hdr`
-     * struct this value maps to `Elf32_Half e_phnum`.
-     */
-
-    // Seek to the byte representing header entry size.
-    file.seekg(0x2a);
-    uint16_t headerEntrySize;
-    file.read(reinterpret_cast<char*>(&headerEntrySize),
-              sizeof(headerEntrySize));
-    uint16_t headerEntries;
-    file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
-
-    // Resize the header to equal the number of header entries.
-    headers32_.resize(headerEntries);
     processImageSize_ = 0;
 
-    // Loop over all headers and extract them.
-    for (size_t i = 0; i < headerEntries; i++) {
-      // Since all headers entries have the same size.
-      // We can extract the nth header using the header offset
-      // and header entry size.
-      file.seekg(headerOffset + (i * headerEntrySize));
-      auto& header = headers32_[i];
-
-      /**
-       * Like the ELF Header, the ELF Program header is also defined
-       * using a struct:
-       *  typedef struct {
-       *    uint32_t   p_type;
-       *    Elf32_Off  p_offset;
-       *    Elf32_Addr p_vaddr;
-       *    Elf32_Addr p_paddr;
-       *    uint32_t   p_filesz;
-       *    uint32_t   p_memsz;
-       *    uint32_t   p_flags;
-       *    uint32_t   p_align;
-       *  } Elf32_Phdr;
-       *
-       * The ELF Program header table is an array of structures,
-       * each describing a segment or other information the system
-       * needs to prepare the program for execution. A segment
-       * contains one or more sections (ELF Program Section).
-       *
-       * The `p_vaddr` field holds the virtual address at which the first
-       * byte of the segment resides in memory and the `p_memsz` field
-       * holds the number of bytes in the memory image of the segment.
-       * It may be zero. The `p_offset` member holds the offset from the
-       * beginning of the file at which the first byte of the segment resides.
-       */
-
-      // Each address-related field is 4 bytes in a 32-bit ELF file
-      const int fieldBytes = 4;
-      file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
-      file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
-      file.read(reinterpret_cast<char*>(&(header.virtualAddress)), fieldBytes);
-      file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
-      file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
-      file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
-
-      // To construct the process we look for the largest virtual address and
-      // add it to the memory size of the header. This way we obtain a very
-      // large array which can hold data at large virtual address.
-      // However, this way we end up creating a sparse array, in which most
-      // of the entries are unused. Also SimEng internally treats these
-      // virtual address as physical addresses to index into this large array.
-      if (header.virtualAddress + header.memorySize > processImageSize_) {
-        processImageSize_ = header.virtualAddress + header.memorySize;
-      }
+    // Loop over pheaders and extract them.
+    file.seekg(eheader.e_phoff);
+    std::vector<Elf32_Phdr> pheaders(eheader.e_phnum);
+    for (auto& ph : pheaders) {
+      file.read(reinterpret_cast<char*>(&ph), sizeof(ph));
+      if ((ph.p_type == PT_LOAD) &&
+          (ph.p_vaddr + ph.p_memsz > processImageSize_))
+        processImageSize_ = ph.p_vaddr + ph.p_memsz;
     }
 
     *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
-    /**
-     * The ELF Program header has a member called `p_type`, which represents
-     * the kind of data or memory segments described by the program header.
-     * The value PT_LOAD=1 represents a loadable segment. In other words,
-     * it contains initialized data that contributes to the program's
-     * memory image.
-     */
 
-    // Process headers; only observe LOAD sections for this basic implementation
-    for (const auto& header : headers32_) {
-      if (header.type == 1) {  // LOAD
-        file.seekg(header.offset);
+    for (const auto& ph : pheaders) {
+      if (ph.p_type == PT_LOAD) {
+        file.seekg(ph.p_offset);
         // Read `fileSize` bytes from `file` into the appropriate place in
         // process memory
-        file.read(*imagePointer + header.virtualAddress, header.fileSize);
+        file.read(*imagePointer + ph.p_vaddr, ph.p_filesz);
+
+        if (ph.p_memsz > ph.p_filesz)
+          // Need to padd the rest of the section memory with zeros
+          memset(*imagePointer + ph.p_vaddr + ph.p_filesz, 0,
+                 ph.p_memsz - ph.p_filesz);
+      }
+    }
+
+    // read section headers
+    Elf32_Shdr* sh_strtab = NULL;
+    Elf32_Shdr* sh_symtab = NULL;
+    file.seekg(eheader.e_shoff);
+    std::vector<Elf32_Shdr> sheaders(eheader.e_shnum);
+    unsigned int sh_idx = 0;
+    for (auto& sh : sheaders) {
+      file.read(reinterpret_cast<char*>(&sh), sizeof(sh));
+
+      // find section header for strings to use for symbol table.
+      if (sh.sh_type == SHT_SYMTAB)
+        sh_symtab = &sh;
+      else if (sh.sh_type == SHT_STRTAB && sh_idx != eheader.e_shstrndx)
+        sh_strtab = &sh;
+      sh_idx++;
+    };
+
+    // Read strings table
+    file.seekg(sh_strtab->sh_offset);
+    std::vector<char> strtab(sh_strtab->sh_size);
+    file.read(&strtab[0], sh_strtab->sh_size);
+
+    // Read symbols tables
+    file.seekg(sh_symtab->sh_offset);
+    unsigned num_symbols = sh_symtab->sh_size / sh_symtab->sh_entsize;
+    Elf32_Sym sym;
+    while (num_symbols--) {
+      file.read(reinterpret_cast<char*>(&sym), sizeof(sym));
+      if (strtab[sym.st_name]) {
+        std::string name(&strtab[sym.st_name]);
+        symbols[name] = sym.st_value;
       }
     }
   }

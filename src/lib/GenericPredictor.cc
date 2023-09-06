@@ -110,4 +110,10 @@ void GenericPredictor::flush(uint64_t address) {
   }
 }
 
+BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
+                                           uint64_t knownTarget,
+                                           uint8_t byteLength) {
+  return predict(address, type, knownTarget);
+}
+
 }  // namespace simeng

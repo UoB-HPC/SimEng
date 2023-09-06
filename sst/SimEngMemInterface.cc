@@ -18,7 +18,8 @@ SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
   this->debug_ = debug;
 };
 
-void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
+void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size,
+                                               uint64_t startAddr) {
   std::vector<uint8_t> data;
   data.reserve(size);
 
@@ -26,7 +27,12 @@ void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
     data.push_back((uint8_t)image[i]);
   }
 
-  StandardMem::Request* req = new StandardMem::Write(0, data.size(), data);
+  StandardMem::Request* req =
+      new StandardMem::Write(startAddr, data.size(), data);
+  std::cout << std::hex
+            << "[SSTSimEng:SimEngMemInterface] Sending image section to SST "
+               "Memory at address 0x"
+            << startAddr << ", size 0x" << data.size() << std::endl;
   sstMem_->sendUntimedData(req);
   return;
 };
@@ -176,7 +182,8 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
   if (debug_) {
     std::cout << "[SSTSimEng:SSTDebug] MemRead"
               << "-read-request-" << requestId << "-cycle-" << tickCounter_
-              << "-split-" << requests.size() << std::endl;
+              << "-split-" << requests.size() << "-addr-0x" << std::hex
+              << addrStart << std::endl;
   }
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
@@ -192,7 +199,12 @@ void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
   AggregateWriteRequest* aggrReq = new AggregateWriteRequest(target, data);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
-
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemWrite"
+              << "-write-request-xx"
+              << "-cycle-" << tickCounter_ << "-split-" << requests.size()
+              << "-addr-0x" << std::hex << addrStart << std::endl;
+  }
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }

@@ -9,6 +9,7 @@ set(SIMENG_SOURCES
     arch/aarch64/MicroDecoder.cc
     arch/riscv/Architecture.cc
     arch/riscv/ExceptionHandler.cc
+    arch/riscv/SystemRegister.cc
     arch/riscv/Instruction.cc
     arch/riscv/Instruction_address.cc
     arch/riscv/Instruction_decode.cc
@@ -18,6 +19,7 @@ set(SIMENG_SOURCES
     kernel/LinuxProcess.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
+    models/mcu/Core.cc
     models/outoforder/Core.cc
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
@@ -32,6 +34,16 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
+    pipeline_hi/DecodeUnit.cc
+    pipeline_hi/DispatchIssueUnit.cc
+    pipeline_hi/ExecuteUnit.cc
+    pipeline_hi/FetchUnit.cc
+    pipeline_hi/LoadStoreQueue.cc
+    pipeline_hi/RegDepMap.cc
+    pipeline_hi/RegisterAliasTable.cc
+    pipeline_hi/ReorderBuffer.cc
+    pipeline_hi/StaticPredictor.cc
+    pipeline_hi/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt

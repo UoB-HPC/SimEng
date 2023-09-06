@@ -301,7 +301,7 @@ class Instruction : public simeng::Instruction {
   BranchType getBranchType() const override;
 
   /** Retrieve a branch target from the instruction's metadata if known. */
-  uint64_t getKnownTarget() const override;
+  uint64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */

@@ -129,7 +129,7 @@ void FetchUnit::tick() {
     BranchPrediction prediction = {false, 0};
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
-                                            macroOp[0]->getKnownTarget());
+                                            macroOp[0]->getKnownOffset());
       macroOp[0]->setBranchPrediction(prediction);
     }
 

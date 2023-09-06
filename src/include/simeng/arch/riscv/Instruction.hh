@@ -48,7 +48,8 @@ enum class InstructionException {
   HypervisorCall,
   SecureMonitorCall,
   UnmappedSysReg,
-  NoAvailablePort
+  NoAvailablePort,
+  Interrupt
 };
 
 enum CInstructionFormat {
@@ -86,6 +87,17 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
   virtual InstructionException getException() const;
+
+  /** Raise an interrupt. */
+  void raiseInterrupt(int16_t& interruptId) {
+    interruptId_ = interruptId;
+    exceptionEncountered_ = true;
+    exception_ = InstructionException::Interrupt;
+    interruptId = -1;
+  }
+
+  /** Get Id of this interrupr */
+  int16_t getInterruptId() const { return interruptId_; }
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getOperandRegisters() const override;
@@ -139,8 +151,9 @@ class Instruction : public simeng::Instruction {
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
 
-  /** Retrieve a branch target from the instruction's metadata if known. */
-  uint64_t getKnownTarget() const override;
+  /** Retrieve an offset of branch target from the instruction's metadata if
+   * known. */
+  uint64_t getKnownOffset() const override;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
@@ -186,13 +199,16 @@ class Instruction : public simeng::Instruction {
   /** ONLY valid after decode. Return regByteWidth */
   uint8_t getArchRegWidth() const;
 
+  const Architecture& getArchitecture() const;
+
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 2;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 2; //CSRs can be another destination apart from std RD
+  static const uint8_t MAX_DESTINATION_REGISTERS =
+      2;  // CSRs can be another destination apart from std RD
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -293,6 +309,8 @@ class Instruction : public simeng::Instruction {
 
   /** Return integer register value, to support both 32-bit and 64-bit mode */
   int64_t getSignedInt(RegisterValue& value) const;
+
+  int16_t interruptId_;
 };
 
 }  // namespace riscv

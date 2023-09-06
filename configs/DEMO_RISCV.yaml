@@ -5,10 +5,10 @@
 
 Core:
   ISA: rv64
-  Simulation-Mode: outoforder
-  Trace: false
+  Simulation-Mode: emulation
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
+  Trace: True
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 0
@@ -37,7 +37,7 @@ Branch-Predictor:
   Branch-Predictor:
   BTB-bitlength: 16
 L1-Data-Memory:
-  Interface-Type: Fixed
+  Interface-Type: Flat
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:

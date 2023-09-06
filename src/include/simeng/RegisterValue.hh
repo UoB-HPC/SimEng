@@ -26,12 +26,13 @@ class RegisterValue {
    * number of bytes (defaulting to the size of the template type). */
   template <class T,
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
-  RegisterValue(T value, uint16_t bytes = sizeof(T), bool relaxFor32 = true) : bytes(bytes) {
+  RegisterValue(T value, uint16_t bytes = sizeof(T), bool relaxFor32 = true)
+      : bytes(bytes) {
     relaxedFor32bit_ = relaxFor32;
     std::memset(this->value, 0, MAX_LOCAL_BYTES);
     if (isLocal()) {
       T* view = reinterpret_cast<T*>(this->value);
-      if (sizeof(T) > bytes) { // e.g. when T is int64 and bytes is 4
+      if (sizeof(T) > bytes) {  // e.g. when T is int64 and bytes is 4
         std::memcpy(this->value, &value, bytes);
       } else {
         view[0] = value;
@@ -98,13 +99,15 @@ class RegisterValue {
   const T* getAsVector() const {
     static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guaranteed");
     assert(bytes > 0 && "Attempted to access an uninitialised RegisterValue");
-    assert((sizeof(T) <= bytes || (bytes == 4 && sizeof(T) == 8)) && "Attempted"
+    assert((sizeof(T) <= bytes || (bytes == 4 && sizeof(T) == 8)) &&
+           "Attempted"
            " to access a RegisterValue as a datatype larger than the "
-           "data held" );
-    if(!relaxedFor32bit_) { // maybe #ifdef if it makes slower?
-      assert(sizeof(T) <= bytes &&
-        "Attempted to access a RegisterValue as a datatype larger than the "
-        "data held");
+           "data held");
+    if (!relaxedFor32bit_) {  // maybe #ifdef if it makes slower?
+      assert(
+          sizeof(T) <= bytes &&
+          "Attempted to access a RegisterValue as a datatype larger than the "
+          "data held");
     }
     if (isLocal()) {
       return reinterpret_cast<const T*>(value);

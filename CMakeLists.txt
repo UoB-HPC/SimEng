@@ -50,8 +50,8 @@ FetchContent_Declare(
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG next
-  GIT_PROGRESS TRUE
+  GIT_TAG        next
+  GIT_PROGRESS   TRUE
 
   # Old Git tag pre-Armv9.2
   # GIT_TAG e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk

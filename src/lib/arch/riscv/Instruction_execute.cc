@@ -4,6 +4,7 @@
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+#include "simeng/arch/riscv/SystemRegister.hh"
 
 namespace simeng {
 namespace arch {
@@ -358,7 +359,9 @@ void Instruction::execute() {
     }
     case Opcode::RISCV_SLTIU: {  // SLTIU rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
-      const uint64_t imm = static_cast<int64_t>(metadata.operands[2].imm);
+      uint64_t       imm = metadata.operands[2].imm;
+      if (archRegWidth_==4)
+        imm = static_cast<uint32_t>(imm);
       if (rs1 < imm) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), archRegWidth_);
       } else {
@@ -460,11 +463,26 @@ void Instruction::execute() {
       results[0] = RegisterValue(instructionAddress_ + 4, archRegWidth_);
       break;
     }
-      // TODO EBREAK
+    case Opcode::RISCV_EBREAK: {  // EBREAK
       // used to return control to a debugging environment pg27 20191213
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::SecureMonitorCall;
+      break;
+    }
     case Opcode::RISCV_ECALL: {  // ECALL
       exceptionEncountered_ = true;
       exception_ = InstructionException::SupervisorCall;
+      break;
+    }
+    case Opcode::RISCV_MRET: {  // MRET
+      branchAddress_  = (operands[0].get<uint64_t>()) & ~1;  // Set LSB of result to 0
+      branchTaken_    = true;
+
+      auto mstatus    = operands[1].get<uint64_t>();
+      if (mstatus & MSTATUS_MPIE_MASK)
+        mstatus |= MSTATUS_MIE_MASK;
+
+      results[0]      = RegisterValue(mstatus, archRegWidth_);
       break;
     }
     case Opcode::RISCV_FENCE: {  // FENCE
@@ -709,28 +727,49 @@ void Instruction::execute() {
       results[0] = RegisterValue(static_cast<int64_t>(rs1 * rs2), archRegWidth_);
       break;
     }
-      //    case Opcode::RISCV_MULH: {//MULH rd,rs1,rs2
-      //      return executionNYI();
-      //
-      //      const int64_t rs1 = operands[0].get<int64_t>();
-      //      const int64_t rs2 = operands[1].get<int64_t>();
-      //      results[0] = RegisterValue(mulhiss(rs1, rs2);
-      //      break;
-      //    }
+    case Opcode::RISCV_MULH: {//MULH rd,rs1,rs2
+      int64_t result;
+      if (archRegWidth_==4)
+      {
+        const int64_t rs1 = operands[0].get<int32_t>();
+        const int64_t rs2 = operands[1].get<int32_t>();
+        result = (rs1*rs2)>>32;
+      } else {
+        const int64_t rs1 = operands[0].get<int64_t>();
+        const int64_t rs2 = operands[1].get<int64_t>();
+        //result = mulhiss(rs1, rs2);
+        return executionNYI();
+      }
+      results[0] = RegisterValue(result, archRegWidth_);
+      break;
+    }
     case Opcode::RISCV_MULHU: {  // MULHU rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
-      results[0] = RegisterValue(mulhiuu(rs1, rs2), archRegWidth_);
+      uint64_t result;
+      if (archRegWidth_==4)
+        result = (rs1*rs2)>>32;
+      else
+        result = mulhiuu(rs1, rs2);
+      results[0] = RegisterValue(result, archRegWidth_);
       break;
     }
-      //    case Opcode::RISCV_MULHSU: {//MULHSU rd,rs1,rs2
-      //      return executionNYI();
-      //
-      //      const int64_t rs1 = operands[0].get<int64_t>();
-      //      const uint64_t rs2 = operands[1].get<uint64_t>();
-      //      results[0] = RegisterValue(mulhisu(rs1, rs2);
-      //      break;
-      //    }
+    case Opcode::RISCV_MULHSU: {//MULHSU rd,rs1,rs2
+      int64_t result;
+      if (archRegWidth_==4)
+      {
+        const int64_t rs1  = operands[0].get<int32_t>();
+        const uint64_t rs2 = operands[1].get<uint32_t>();
+        result = (rs1*rs2)>>32;
+      } else {
+        const int64_t rs1 = operands[0].get<int64_t>();
+        const uint64_t rs2 = operands[1].get<uint64_t>();
+        //result = mulhisu(rs1, rs2);
+        return executionNYI();
+      }
+      results[0] = RegisterValue(result, archRegWidth_);
+      break;
+    }
     case Opcode::RISCV_MULW: {  // MULW rd,rs1,rs2
       const uint32_t rs1 = operands[0].get<uint32_t>();
       const uint32_t rs2 = operands[1].get<uint32_t>();
@@ -852,12 +891,14 @@ void Instruction::execute() {
       uint32_t new_csr_value = old_csr_value & ~(operands[1].get<uint32_t>());
       results[0] = RegisterValue(new_csr_value, 4);
       results[1] = RegisterValue(old_csr_value, 4);
+      break;
     }
     case Opcode::RISCV_CSRRCI: {
       uint32_t old_csr_value = operands[0].get<uint32_t>();
       uint32_t new_csr_value = old_csr_value & ~(c_imm);
       results[0] = RegisterValue(new_csr_value, 4);
       results[1] = RegisterValue(old_csr_value, 4);
+      break;
     }
     case Opcode::RISCV_CSRRS: {
       uint32_t old_csr_value = operands[0].get<uint32_t>();
@@ -938,8 +979,12 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_C_EBREAK:
+    case Opcode::RISCV_C_EBREAK: {
+      // used to return control to a debugging environment pg27 20191213
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::SecureMonitorCall;
       break;
+    }
     case Opcode::RISCV_C_FLD:
       break;
     case Opcode::RISCV_C_FLDSP:

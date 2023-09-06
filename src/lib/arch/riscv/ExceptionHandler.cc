@@ -1,5 +1,5 @@
+#include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
-
 #include <iomanip>
 #include <iostream>
 
@@ -647,6 +647,18 @@ bool ExceptionHandler::init() {
     }
 
     return concludeSyscall(stateChange);
+
+  } else if (exception == InstructionException::SecureMonitorCall) {
+    printException(instruction_);
+    takeException(CAUSE_BREAKPOINT);
+    return true;
+   } else if (exception == InstructionException::Interrupt) {
+    printException(instruction_);
+    if (instruction_.getInterruptId() == static_cast<uint16_t>(InterruptId::HALT))
+      return fatal();
+    uint64_t mcause_val = static_cast<uint64_t>(instruction_.getInterruptId()) | (1<<(8*instruction_.getArchRegWidth()-1));
+    takeException(mcause_val);
+    return true;
   }
 
   printException(instruction_);
@@ -746,6 +758,45 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   concludeSyscall(stateChange);
 }
 
+void ExceptionHandler::takeException(uint64_t causecode)
+{
+  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  auto& architecture    = instruction_.getArchitecture();
+  uint16_t mtvec_tag    = static_cast<uint16_t>(architecture.getSystemRegisterTag(SYSREG_MTVEC));
+  uint16_t mstatus_tag  = static_cast<uint16_t>(architecture.getSystemRegisterTag(SYSREG_MSTATUS));
+  uint16_t mepc_tag     = static_cast<uint16_t>(architecture.getSystemRegisterTag(SYSREG_MEPC));
+  uint16_t mcause_tag   = static_cast<uint16_t>(architecture.getSystemRegisterTag(SYSREG_MCAUSE));
+  uint64_t mcause_val   = static_cast<uint64_t>(causecode);
+
+  auto  mstatus_bits = registerFileSet.get( { RegisterType::SYSTEM, mstatus_tag } ).get<uint64_t>();
+
+  // mpie=mie, mie=0
+  mstatus_bits &= ~MSTATUS_MPIE_MASK;
+  if (mstatus_bits & MSTATUS_MIE_MASK)
+    mstatus_bits |= MSTATUS_MPIE_MASK;
+  mstatus_bits &= ~MSTATUS_MIE_MASK;
+
+  RegisterValue mstatus (mstatus_bits,                          architecture.getConstants().regWidth);
+  RegisterValue mepc    (instruction_.getInstructionAddress(),  architecture.getConstants().regWidth);
+  RegisterValue mcause  (mcause_val,                            architecture.getConstants().regWidth);
+
+  uint64_t      mtvec   = registerFileSet.get( { RegisterType::SYSTEM, mtvec_tag } ).get<uint64_t>();
+
+  ProcessStateChange changes = {
+    ChangeType::REPLACEMENT,
+    {
+      { RegisterType::SYSTEM, mstatus_tag },
+      { RegisterType::SYSTEM, mepc_tag },
+      { RegisterType::SYSTEM, mcause_tag }
+    },
+    {mstatus,  mepc,   mcause}
+  };
+
+  result_ = {false, mtvec, changes};
+  //result_ = {false, instruction_.getInstructionAddress(), changes};
+}
+
+
 bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
                                       std::function<bool()> then,
                                       bool firstCall) {
@@ -827,6 +878,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
+      break;
+    case InstructionException::Interrupt:
+      std::cout << "interrupt (id: " << insn.getInterruptId() << ")";
       break;
     case InstructionException::UnmappedSysReg:
       std::cout << "unmapped system register";
