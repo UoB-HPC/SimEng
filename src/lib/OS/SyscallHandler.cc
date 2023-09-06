@@ -10,6 +10,7 @@
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/SpecialFileDirGen.hh"
 
 namespace simeng {
 namespace OS {
@@ -38,6 +39,7 @@ void SyscallHandler::handleSyscall() {
   currentInfo_ = syscallQueue_.front();
   ProcessStateChange stateChange = {};
 
+  // `std::cout << "Syscall ID: " << currentInfo_.syscallId << std::endl;
   switch (currentInfo_.syscallId) {
     case 29: {  // ioctl
       int64_t fd = currentInfo_.registerArguments[0].get<int64_t>();
@@ -999,7 +1001,10 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
 
 std::string SyscallHandler::getSpecialFile(const std::string filename) {
   if (filename.find("/dev/shm") != std::string::npos) {
-    return specialFilesDir_ + filename;
+    std::string path = specialFilesDir_ + filename;
+    std::cout << "[SimEng:SyscallHandler] Using Special File: " << path.c_str()
+              << std::endl;
+    return path;
   }
   for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {

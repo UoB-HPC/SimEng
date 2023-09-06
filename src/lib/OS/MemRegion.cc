@@ -48,6 +48,7 @@ uint64_t MemRegion::getMmapBase() const { return mmapBase_; }
 
 uint64_t MemRegion::getProcessImgSize() const { return addressSpaceSize_; };
 uint64_t MemRegion::updateBrkRegion(uint64_t brk) {
+  std::cout << "brk happens" << std::endl;
   // We have to make sure that the binary under simulation isn't trying to
   // deallocate more memory than is present in the process heap region.
   if (brk < brkStart_) {
@@ -68,10 +69,10 @@ uint64_t MemRegion::updateBrkRegion(uint64_t brk) {
   }
 
   if (brk < brk_) {
-    std::cout << "brk-unmap" << std::endl;
-    if (unmapRegion(brk, brk_ - brk) < 0) {
+    /** if (unmapRegion(brk, brk_ - brk) < 0) {
       return brk_;
     }
+    */
     brk_ = brk;
     return brk_;
   }
@@ -86,7 +87,6 @@ uint64_t MemRegion::updateBrkRegion(uint64_t brk) {
   if (isVmMapped(oldBrk, newBrk - oldBrk)) {
     return brk_;
   }
-  std::cout << "brk-map" << std::endl;
   mmapRegion(oldBrk, newBrk - oldBrk, 0, SIMENG_MAP_FIXED, HostFileMMap());
   brk_ = brk;
 
@@ -297,7 +297,6 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
 
 int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
                               int flags, HostFileMMap hfmmap) {
-  std::cout << "ADDR: " << startAddr << std::endl;
   if (startAddr && startAddr < mmapEnd_) {
     std::cerr << "[SimEng::MemRegion] Start address given to mmapRegion is "
                  "less than mmap_min_addr: "
@@ -306,11 +305,8 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
   }
 
   uint64_t size = upAlign(length, PAGE_SIZE);
-  std::cout << "SIZE: " << size << std::endl;
 
   uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
-  std::cout << "FIXED: " << fixed << std::endl;
-
   if (fixed) {
     /**
     if (startAddr == 6791168) {
@@ -371,7 +367,6 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
   }
 
   uint64_t size = upAlign(length, PAGE_SIZE);
-  std::cout << "UNMAP: " << addr << " - " << addr + size << std::endl;
   uint64_t value = removeVma(addr, size);
 
   removePTMapping_(addr, size);
