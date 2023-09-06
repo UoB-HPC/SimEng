@@ -43,7 +43,7 @@ Instruction::Instruction(const Instruction& insn)
   branchAddress_ = insn.branchAddress_;
   branchTaken_ = insn.branchTaken_;
   branchType_ = insn.branchType_;
-  knownTarget_ = insn.knownTarget_;
+  knownOffset_ = insn.knownOffset_;
   sequenceId_ = insn.sequenceId_;
   flushed_ = insn.flushed_;
   latency_ = insn.latency_;
@@ -182,7 +182,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 BranchType Instruction::getBranchType() const { return branchType_; }
 
-uint64_t Instruction::getKnownTarget() const { return knownTarget_; }
+uint64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group

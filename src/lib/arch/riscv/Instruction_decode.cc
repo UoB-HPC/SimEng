@@ -143,6 +143,24 @@ void Instruction::decode() {
     case Opcode::RISCV_SD:
       isStore_ = true;
       break;
+      //identify MULs/DIVs
+    case Opcode::RISCV_MUL:
+    case Opcode::RISCV_MULH:
+    case Opcode::RISCV_MULHU:
+    case Opcode::RISCV_MULHSU:
+    case Opcode::RISCV_MULW:
+      isMultiply_ = true;
+      isMul_ = true; //this one is for simeng/Instruction.hh
+      break;
+    case Opcode::RISCV_DIV:
+    case Opcode::RISCV_DIVU:
+    case Opcode::RISCV_DIVUW:
+    case Opcode::RISCV_DIVW:
+      isDivide_ = true;
+      isDiv_ = true; //this one is for simeng/Instruction.hh
+      break;
+    case Opcode::RISCV_ECALL:
+      isSysCall_ = true;
   }
 
   if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
@@ -257,6 +275,16 @@ void Instruction::decode() {
     isCompare_ = true;
   }
 
+  if (Opcode::RISCV_MRET == metadata.opcode) {
+    uint16_t mepc_tag     = static_cast<uint16_t>(architecture_.getSystemRegisterTag(SYSREG_MEPC));
+    uint16_t mstatus_tag  = static_cast<uint16_t>(architecture_.getSystemRegisterTag(SYSREG_MSTATUS));
+    sourceRegisters[sourceRegisterCount++]            = { RegisterType::SYSTEM, mepc_tag };
+    sourceRegisters[sourceRegisterCount++]            = { RegisterType::SYSTEM, mstatus_tag };
+    destinationRegisters[destinationRegisterCount++]  = { RegisterType::SYSTEM, mstatus_tag };
+    operandsPending += 2;
+    isBranch_ = true;
+  }
+
   // Set branch type
   switch (metadata.opcode) {
     case Opcode::RISCV_BEQ:
@@ -266,12 +294,24 @@ void Instruction::decode() {
     case Opcode::RISCV_BGE:
     case Opcode::RISCV_BGEU:
       branchType_ = BranchType::Conditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[2].imm;
+      knownOffset_ = metadata.operands[2].imm;
       break;
     case Opcode::RISCV_JAL:
+      branchType_ = BranchType::SubroutineCall;
+      knownOffset_ = metadata.operands[1].imm;
+      break;
     case Opcode::RISCV_JALR:
-      branchType_ = BranchType::Unconditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
+    {
+      //jalr x0, 0(x1) == ret
+      if (metadata.operands[0].reg == RISCV_REG_X0 && metadata.operands[1].reg == RISCV_REG_X1 && metadata.operands[2].imm == 0) {
+        branchType_ = BranchType::Return;
+      } else {
+        branchType_ = BranchType::SubroutineCall;
+      }
+      break;
+    }
+    case Opcode::RISCV_MRET:
+      branchType_ = BranchType::Unknown; //TODO: think which type it fits / create new type
       break;
   }
 }
@@ -292,10 +332,14 @@ bool Instruction::decode16() {
              "Invalid operand for JR,JALR:- CR instructions");
       sourceRegisters[sourceRegisterCount++] = csRegToRegister(metadata.operands[0].reg);
       operandsPending++;
+      branchType_ = BranchType::SubroutineCall;
       if (metadata.opcode == Opcode::RISCV_C_JALR) {
         destinationRegisters[destinationRegisterCount++] = Instruction::RA_REGISTER;
+      } else { //case C_JR
+        if (metadata.operands[0].reg == RISCV_REG_X1 ) {
+          branchType_ = BranchType::Return;
+        }
       }
-      branchType_ = BranchType::Unconditional;
       break;
     case Opcode::RISCV_C_MV:
       instFormat_ = CIF_CR;
@@ -309,7 +353,7 @@ bool Instruction::decode16() {
       sourceRegisters[sourceRegisterCount++] = csRegToRegister(metadata.operands[1].reg);
       operandsPending++;
       break;
-    case Opcode::RISCV_C_EBREAK://TODO
+    case Opcode::RISCV_C_EBREAK:
       instFormat_ = CIF_CR;
       break;
     case Opcode::RISCV_C_ADD:
@@ -410,7 +454,7 @@ bool Instruction::decode16() {
       operandsPending++;
       c_imm = metadata.operands[1].imm;
       branchType_ = BranchType::Conditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
+      knownOffset_ = metadata.operands[1].imm;
       break;
     case Opcode::RISCV_C_FLD:
     case Opcode::RISCV_C_FLW:
@@ -503,9 +547,11 @@ bool Instruction::decode16() {
       c_imm = metadata.operands[0].imm;
       if (metadata.opcode == Opcode::RISCV_C_JAL) {
         destinationRegisters[destinationRegisterCount++] = Instruction::RA_REGISTER;
+        branchType_ = BranchType::SubroutineCall;
+      } else { // case C_J
+        branchType_ = BranchType::Unconditional;
       }
-      branchType_ = BranchType::Unconditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[0].imm;
+      knownOffset_ = metadata.operands[0].imm;
       break;
     case Opcode::RISCV_C_UNIMP:
       break;
@@ -523,7 +569,7 @@ bool Instruction::decodeCsr() {
   }
 
   isCsr_ = true;
-  uint32_t sysRegTag = architecture_.getSystemRegisterTag(metadata.csr);
+  int32_t sysRegTag = architecture_.getSystemRegisterTag(metadata.csr);
   if (sysRegTag == -1) {
     exceptionEncountered_ = true;
     exception_ = InstructionException::UnmappedSysReg;
@@ -539,16 +585,16 @@ bool Instruction::decodeCsr() {
   destinationRegisters[destinationRegisterCount++] = {
       RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
 
-  // First operand from metadata is rd, second operand from metadata is rs1
-  if (csRegToRegister(metadata.operands[1].reg) != Instruction::ZERO_REGISTER) {
+  // First operand (0) from metadata is rd, second operand (1) from metadata is rs1
+  if (csRegToRegister(metadata.operands[0].reg) != Instruction::ZERO_REGISTER) {
     destinationRegisters[destinationRegisterCount++] =
-        csRegToRegister(metadata.operands[1].reg);
+        csRegToRegister(metadata.operands[0].reg);
   }
 
-  if(metadata.operands[0].type == RISCV_OP_IMM) {
-    c_imm = metadata.operands[0].imm;
-  } else if (metadata.operands[0].type == RISCV_OP_REG) {
-    sourceRegisters[sourceRegisterCount] = csRegToRegister(metadata.operands[0].reg);
+  if(metadata.operands[1].type == RISCV_OP_IMM) {
+    c_imm = metadata.operands[1].imm;
+  } else if (metadata.operands[1].type == RISCV_OP_REG) {
+    sourceRegisters[sourceRegisterCount] = csRegToRegister(metadata.operands[1].reg);
     if (sourceRegisters[sourceRegisterCount] ==
         Instruction::ZERO_REGISTER) {
       // Catch zero register references and pre-complete those operands

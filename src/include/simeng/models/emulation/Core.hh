@@ -108,6 +108,9 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  /** Set to interruptId when interrupt occurs, otherwise -1 */
+  int16_t  interruptId_;
 };
 
 }  // namespace emulation

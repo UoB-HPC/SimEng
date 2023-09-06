@@ -141,6 +141,8 @@ class SimEngCoreWrapper : public SST::Component {
   /** Method used to assemble SimEng core. */
   void fabricateSimEngCore();
 
+  void processMemoryImage();
+
   /** Method to split the passed executable argument's string into a vector of
    * individual arguments. */
   std::vector<std::string> splitArgs(std::string argString);
@@ -210,7 +212,7 @@ class SimEngCoreWrapper : public SST::Component {
   std::shared_ptr<SimEngMemInterface> dataMemory_;
 
   /** Number of clock iterations. */
-  int iterations_;
+  uint64_t iterations_;
 
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;

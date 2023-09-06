@@ -23,6 +23,9 @@ class Instruction {
    * instruction. */
   bool exceptionEncountered() const;
 
+  /** Binds an interrupt to this instruction  */
+  virtual void raiseInterrupt(int16_t& interruptId)                     {}
+
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
 
@@ -99,8 +102,8 @@ class Instruction {
   /** Retrieve branch type. */
   virtual BranchType getBranchType() const = 0;
 
-  /** Retrieve a branch target from the instruction's metadata if known. */
-  virtual uint64_t getKnownTarget() const = 0;
+  /** Retrieve an offset of branch target from the instruction's metadata if known. */
+  virtual uint64_t getKnownOffset() const = 0;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
@@ -178,6 +181,12 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
 
+  bool isDiv() const;
+
+  bool isMul() const;
+
+  bool isSysCall() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -208,8 +217,8 @@ class Instruction {
   /** What type of branch this instruction is. */
   BranchType branchType_ = BranchType::Unknown;
 
-  /** If the branch target is known at the time of decode, store it. */
-  uint64_t knownTarget_ = 0;
+  /** If the offset of branch target is known at the time of decode, store it. */
+  uint64_t knownOffset_ = 0;
 
   // Flushing
   /** This instruction's sequence ID; a higher ID represents a chronologically
@@ -252,6 +261,12 @@ class Instruction {
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
   int microOpIndex_;
+
+  bool isMul_ = false;
+
+  bool isDiv_ = false;
+
+  bool isSysCall_ = false;
 };
 
 }  // namespace simeng

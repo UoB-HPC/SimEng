@@ -264,7 +264,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
       csr = ((uint32_t)encoding[3] << 4) | ((uint32_t)encoding[2] >> 4);
       //If there are less than 2 operands provided add necessary x0 operand
       if(operandCount == 1) {
-        if(strcmp(mnemonic, "csrr") == 0) { //csrrs rd,csr,x0
+        if((strcmp(mnemonic, "rdinstret") == 0) ||
+           (strcmp(mnemonic, "rdcycle") == 0) ||
+           (strcmp(mnemonic, "rdtime") == 0) ||
+           (strcmp(mnemonic, "csrr") == 0)) { //csrrs rd,csr,x0
           operands[1].type = RISCV_OP_REG;
           operands[1].reg = 1;
         } else { //csrrxx x0,csr,rs/imm

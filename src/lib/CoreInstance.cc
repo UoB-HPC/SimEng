@@ -90,6 +90,10 @@ void CoreInstance::setSimulationMode() {
              "outoforder") {
     mode_ = SimulationMode::OutOfOrder;
     modeString_ = "Out-of-Order";
+  } else if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
+             "mcu") {
+    mode_ = SimulationMode::MCU;
+    modeString_ = "MCU";
   }
 
   return;
@@ -236,7 +240,7 @@ void CoreInstance::createCore() {
   if (config_["Core"]["ISA"].as<std::string>() == "rv64" ||
       config_["Core"]["ISA"].as<std::string>() == "rv32") {
     arch_ =
-        std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_);
+        std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_,dataMemory_);
   } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
     arch_ =
         std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
@@ -244,6 +248,9 @@ void CoreInstance::createCore() {
 
   // Construct branch predictor object
   predictor_ = std::make_unique<simeng::GenericPredictor>(config_);
+  if (mode_ == SimulationMode::MCU) {
+    predictor_ = std::make_unique<simeng::pipeline_hi::StaticPredictor>(2); //config_
+  }
 
   // Extract port arrangement from config file
   auto config_ports = config_["Ports"];
@@ -268,6 +275,10 @@ void CoreInstance::createCore() {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_);
+  } else if (mode_ == SimulationMode::MCU) {
+    core_ = std::make_shared<simeng::models::mcu::Core>(
+        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
+        *arch_, *predictor_, config_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,

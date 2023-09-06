@@ -51,6 +51,9 @@ class Architecture : public arch::Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
+  /** Returns the minimum size of a valid instruction in bytes. */
+  uint8_t getMinInstructionSize() const override;
+
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
@@ -59,7 +62,7 @@ class Architecture : public arch::Architecture {
   uint64_t getStreamingVectorLength() const;
 
   /** Updates System registers of any system-based timers. */
-  void updateSystemTimerRegisters(RegisterFileSet* regFile,
+  int16_t updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
 
   /** Returns the physical register structure as defined within the config file

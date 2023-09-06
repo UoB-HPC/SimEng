@@ -29,10 +29,12 @@ void Linux::createProcess(const LinuxProcess& process) {
                             .currentBrk = process.getHeapStart(),
                             .initialStackPointer = process.getStackPointer(),
                             .mmapRegion = process.getMmapStart(),
-                            .pageSize = process.getPageSize()});
+                            .pageSize = process.getPageSize(),
+                            });
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
+  processStates_.back().process = &process;
 
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
@@ -647,6 +649,12 @@ int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
     return EBADF;
   }
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
+}
+
+/** Lookup symbol value from table in elf file. */
+bool Linux::lookupSymbolValue(const std::string symbol, uint64_t& value)
+{
+  processStates_[0].process->lookupSymbolValue(symbol,value);
 }
 
 }  // namespace kernel

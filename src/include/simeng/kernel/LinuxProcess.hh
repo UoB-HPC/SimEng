@@ -77,6 +77,9 @@ class LinuxProcess {
   /** Check whether the process image was created successfully. */
   bool isValid() const;
 
+  /** Lookup symbol value from table in elf file. */
+  bool lookupSymbolValue(const std::string symbol, uint64_t& value) const;
+
  private:
   /** The size of the stack, in bytes. */
   const uint64_t STACK_SIZE;
@@ -113,6 +116,8 @@ class LinuxProcess {
 
   /** Shared pointer to processImage. */
   std::shared_ptr<char> processImage_;
+  
+  std::unordered_map<std::string, uint64_t> symbols_;
 };
 
 }  // namespace kernel

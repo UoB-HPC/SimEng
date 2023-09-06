@@ -20,7 +20,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       isa_(isa),
       pc_(entryPoint),
       registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {
+      architecturalRegisterFileSet_(registerFileSet_),
+      interruptId_(-1) {
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
@@ -144,11 +145,16 @@ void Core::tick() {
   }
 
   execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+
+  interruptId_ = isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
-  uop->execute();
+
+  if (interruptId_>=0)
+    uop->raiseInterrupt(interruptId_);
+  else
+    uop->execute();
 
   if (uop->exceptionEncountered()) {
     instructionsExecuted_++;

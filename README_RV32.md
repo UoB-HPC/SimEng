@@ -11,3 +11,21 @@
 - Added an alternative implementation of pipeline buffer with variable latency support. 
   - Supports 0 delay that is benefitial for merging pipeline stages if required.
   - Supports more than 1 cycle delay between pipeline stages.
+
+# SimEng Update to share the sample implementation of the MicroController (MCU) class core model using 32-bit RISC-V ISA
+- Small MCU like three stage pipeline core model
+- Additonal fixed memory support for LSU in the mcu core
+- Some update to ELF loader and SST image loading to SST memory
+- Makefile to build and run
+- Added support for memory mapped system registers,
+- Used to add a HostTargetInterface for I/O and termination so that spike binaries can run on SimEng
+- Added interrupt support;
+- Fixed csrc handling;
+- Fixed 32-bit sltiu instruction;
+- Fixed 32-bit mulh, mulhu and mulhsu instructions
+- Add support for interrupt by flushing the pipe at execution stage when an interrupt is visible, fix iteration count being int in main.cc
+- Some bug fixes
+
+# Capstone change required for RV32 compresses instruction usage in file include/capstone/capstone.h
+CS_MODE_RISV32GC = CS_MODE_RISCV32 | CS_MODE_RISCVC, ///< RISCV RV32GC
+- 

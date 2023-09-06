@@ -57,5 +57,8 @@ bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
 bool Instruction::isWaitingCommit() const { return waitingCommit_; }
 int Instruction::getMicroOpIndex() const { return microOpIndex_; }
+bool Instruction::isDiv() const { return isDiv_; }
+bool Instruction::isMul() const { return isMul_; }
+bool Instruction::isSysCall() const { return isSysCall_; }
 
 }  // namespace simeng

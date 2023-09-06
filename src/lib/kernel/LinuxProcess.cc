@@ -24,7 +24,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   // Parse ELF file
   assert(commandLine.size() > 0);
   char* unwrappedProcImgPtr;
-  Elf elf(commandLine[0], &unwrappedProcImgPtr);
+  Elf elf(commandLine[0], &unwrappedProcImgPtr,symbols_);
   if (!elf.isValid()) {
     return;
   }
@@ -176,6 +176,18 @@ void LinuxProcess::createStack(char** processImage) {
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             (*processImage) + stackPointer_);
+}
+
+bool LinuxProcess::lookupSymbolValue(const std::string symbol, uint64_t& value) const
+{
+  auto lookup = symbols_.find(symbol);
+  if (lookup==symbols_.end())
+    return false;
+  else 
+  {
+    value = lookup->second;
+    return true;
+  }
 }
 
 }  // namespace kernel

@@ -10,8 +10,84 @@
 
 #include "Assemble.hh"
 
+#include <fstream>
+
 using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
+
+//For now just make sure that the code and data is loaded into memory
+// at the correct addresses instead of sending the entire process image
+void SimEngCoreWrapper::processMemoryImage() {
+  std::ifstream file(executablePath_, std::ios::binary);
+  if (!file.is_open()) {
+    return;
+  }
+
+  char elfMagic[4] = {0x7f, 'E', 'L', 'F'};
+  char fileMagic[4];
+  file.read(fileMagic, 4);
+  if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
+    return;
+  }
+
+  /**
+   * The fifth byte of the ELF Header identifies the architecture
+   * of the ELF binary i.e 32-bit or 64-bit.
+   */
+
+  // Check whether this is a 32-bit executable
+  char bitFormat;
+  file.read(&bitFormat, sizeof(bitFormat));
+  if (bitFormat != ElfBitFormat::Format32) {
+    return;
+  }
+  struct Elf32Header {
+    uint32_t type;
+    uint32_t offset;
+    uint32_t virtualAddress;
+    uint32_t physicalAddress;
+    uint32_t fileSize;
+    uint32_t memorySize;
+  };
+  uint32_t entryPoint32_;
+  std::vector<Elf32Header> headers32_;
+
+  file.seekg(0x18);
+  file.read(reinterpret_cast<char*>(&entryPoint32_), sizeof(entryPoint32_));
+  uint32_t headerOffset;
+  file.read(reinterpret_cast<char*>(&headerOffset), sizeof(headerOffset));
+  file.seekg(0x2a);
+  uint16_t headerEntrySize;
+  file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
+  uint16_t headerEntries;
+  file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));  
+  headers32_.resize(headerEntries);
+  // Loop over all headers and extract them.
+  for (size_t i = 0; i < headerEntries; i++) {
+    file.seekg(headerOffset + (i * headerEntrySize));
+    auto& header = headers32_[i];
+
+    const int fieldBytes = 4;
+    file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
+    file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.virtualAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
+  }
+  // Process headers; only observe LOAD sections for this basic implementation
+  for (const auto& header : headers32_) {
+    if (header.type == 1) {  // LOAD
+      char* imagePointer;
+      imagePointer = (char*)calloc(header.memorySize, sizeof(char));
+      file.seekg(header.offset);
+      file.read(imagePointer, header.fileSize);
+      dataMemory_->sendProcessImageToSST(imagePointer, header.memorySize, header.virtualAddress);
+    }
+  }
+  std::cout << "[SSTSimEng:SimEngCoreWrapper] Done exporting elf data into SST memory" << std::endl;
+  //assert(false && "Incomplete implementation");
+}
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
@@ -95,7 +171,7 @@ void SimEngCoreWrapper::finish() {
     std::cout << "[SimEng] " << key << ": " << value << "\n";
   }
 
-  std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
+  std::cout << "\n[SimEng] Finished " << std::dec << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
 }
@@ -284,13 +360,13 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
             : std::make_unique<simeng::CoreInstance>(
                   a64fxConfigPath_, executablePath_, executableArgs_);
   }
-  if (coreInstance_->getSimulationMode() !=
+  /*if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
     output_.verbose(CALL_INFO, 1, 0,
                     "SimEng currently only supports Out-of-Order "
                     "archetypes with SST.");
     std::exit(EXIT_FAILURE);
-  }
+  }*/
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
 
@@ -303,7 +379,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
 
   // This check ensures that SST has enough memory to store the entire
   // processImage constructed by SimEng.
-  if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
+  /*if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
     output_.verbose(
         CALL_INFO, 1, 0,
         "Error: SST backend memory is less than processImage size. "
@@ -312,7 +388,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
         "\'addr_range_end\'. \n");
     primaryComponentOKToEndSim();
     std::exit(EXIT_FAILURE);
-  }
+  }*/
 // If testing is enabled populate heap if heap values have been specified.
 #ifdef SIMENG_ENABLE_SST_TESTS
   if (heapStr_ != "") {
@@ -320,8 +396,10 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   }
 #endif
   // Send the process image data over to the SST memory
-  dataMemory_->sendProcessImageToSST(coreInstance_->getProcessImage().get(),
-                                     coreInstance_->getProcessImageSize());
+  //dataMemory_->sendProcessImageToSST(coreInstance_->getProcessImage().get(),
+  //                                   coreInstance_->getProcessImageSize());
+
+  processMemoryImage();
 
   output_.verbose(CALL_INFO, 1, 0, "SimEng core setup successfully.\n");
   // Print out build metadata

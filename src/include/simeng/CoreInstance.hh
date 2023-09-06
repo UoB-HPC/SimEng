@@ -16,6 +16,7 @@
 #include "simeng/kernel/Linux.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
+#include "simeng/models/mcu/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
@@ -37,7 +38,7 @@ uint32_t hex_[] = {
 namespace simeng {
 
 /** The available modes of simulation. */
-enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
+enum class SimulationMode { Emulation, InOrderPipelined, MCU, OutOfOrder };
 
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {

@@ -281,11 +281,13 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
+uint8_t Architecture::getMinInstructionSize() const { return 4; }
+
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
 uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
 
-void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
+int16_t Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   // Update the Processor Cycle Counter to total cycles completed.
   regFile->set(PCCreg_, iterations);
@@ -293,6 +295,8 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   if (iterations % (uint64_t)vctModulo_ == 0) {
     regFile->set(VCTreg_, regFile->get(VCTreg_).get<uint64_t>() + 1);
   }
+  // interrupts NYI
+  return -1;
 }
 
 std::vector<RegisterFileStructure>

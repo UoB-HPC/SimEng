@@ -69,7 +69,7 @@ void ModelConfig::validate() {
       configFile_[root][subFields[0]], subFields[0],
       std::vector<std::string>({"AArch64", "rv64", "rv32"}), ExpectedValue::String);
   nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
-                           {"emulation", "inorderpipelined", "outoforder"},
+                           {"emulation", "inorderpipelined", "mcu", "outoforder"},
                            ExpectedValue::String);
   nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
                      std::make_pair(0.f, 10.f), ExpectedValue::Float);

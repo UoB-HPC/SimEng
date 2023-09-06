@@ -93,6 +93,8 @@ struct LinuxProcessState {
   std::vector<int64_t> fileDescriptorTable;
   /** Set of deallocated virtual file descriptors available for reuse. */
   std::set<int64_t> freeFileDescriptors;
+  /** Pointer to LinuxProcess from which ProcessState derived*/
+  const LinuxProcess* process;
 };
 
 /** Fixed-width definition of 'rusage' (from <sys/resource.h>). */
@@ -235,6 +237,9 @@ class Linux {
 
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
+
+  /** Lookup symbol value from table in elf file. */
+  bool lookupSymbolValue(const std::string symbol, uint64_t& value);
 
  private:
   /** Resturn correct Dirfd depending on given pathname abd dirfd given to

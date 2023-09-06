@@ -101,6 +101,9 @@ class Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
+  /** Returns the minimum size of a valid instruction in bytes. */
+  virtual uint8_t getMinInstructionSize() const = 0;
+
   /** Returns the physical register structure as defined within the config
    * file
    */
@@ -113,7 +116,7 @@ class Architecture {
       YAML::Node config) const = 0;
 
   /** Updates System registers of any system-based timers. */
-  virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
+  virtual int16_t updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
 
   /** Update trace file */

@@ -33,7 +33,7 @@ class SimEngMemInterface : public MemoryInterface {
                      bool debug);
   /** Send SimEng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
-  void sendProcessImageToSST(char* image, uint64_t size);
+  void sendProcessImageToSST(char* image, uint64_t size, uint64_t startAddr=0);
 
   /**
    * Construct an AggregatedReadRequest and use it to generate

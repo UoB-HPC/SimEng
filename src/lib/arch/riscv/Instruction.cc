@@ -131,7 +131,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 BranchType Instruction::getBranchType() const { return branchType_; }
 
-uint64_t Instruction::getKnownTarget() const { return knownTarget_; }
+uint64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
@@ -170,6 +170,10 @@ const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 void Instruction::setArchRegWidth(uint8_t len) { archRegWidth_ = len; }
 
 uint8_t Instruction::getArchRegWidth() const { return archRegWidth_; }
+
+const Architecture& Instruction::getArchitecture() const {
+  return architecture_;
+}
 
 }  // namespace riscv
 }  // namespace arch
