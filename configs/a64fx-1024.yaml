@@ -16,9 +16,9 @@ Fetch:
   Loop-Buffer-Size: 48
   Loop-Detection-Threshold: 4
 Process-Image:
-  Mmap-Size: 13958643711
-  Heap-Size: 1073741823
-  Stack-Size: 1073741823
+  Mmap-Size: 4294967296
+  Heap-Size: 1073741824
+  Stack-Size: 1073741824
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
@@ -45,7 +45,7 @@ Memory-Hierarchy:
     Size: 65536 # 64 KiB
   DRAM:
     Access-Latency: 5
-    Size: 2684354560 # 2.5 GiB
+    Size: 6450839552 # ~6.5 GiB
 LSQ-Memory-Interface:
   Exclusive: True
   Load-Bandwidth: 128

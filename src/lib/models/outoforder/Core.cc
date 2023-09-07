@@ -419,27 +419,31 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())},
-          {"idle.ticks", std::to_string(idle_ticks_)},
-          {"context.switches", std::to_string(contextSwitches_)}};
+  return {
+      {"cycles", std::to_string(ticks_)},
+      {"retired", std::to_string(retired)},
+      {"ipc", ipcStr.str()},
+      {"flushes", std::to_string(flushes_)},
+      {"fetch.branchStalls", std::to_string(branchStalls)},
+      {"decode.earlyFlushes", std::to_string(earlyFlushes)},
+      {"rename.allocationStalls", std::to_string(allocationStalls)},
+      {"rename.robStalls", std::to_string(robStalls)},
+      {"rename.lqStalls", std::to_string(lqStalls)},
+      {"rename.sqStalls", std::to_string(sqStalls)},
+      {"dispatch.rsStalls", std::to_string(rsStalls)},
+      {"issue.frontendStalls", std::to_string(frontendStalls)},
+      {"issue.backendStalls", std::to_string(backendStalls)},
+      {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+      {"branch.executed", std::to_string(totalBranchesExecuted)},
+      {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+      {"branch.missrate", branchMissRateStr.str()},
+      {"lsq.loadViolations",
+       std::to_string(reorderBuffer_.getViolatingLoadsCount())},
+      {"idle.ticks", std::to_string(idle_ticks_)},
+      {"context.switches", std::to_string(contextSwitches_)},
+      // {"averageTicksPerSwitch",
+      // std::to_string(allProcTicks_ / (numSwitches_ - 1))}
+  };
 }
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
@@ -447,6 +451,14 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   registerAliasTable_.reset(isa_.getRegisterFileStructures(),
                             physicalRegisterQuantities_);
 
+  allProcTicks_ += procTicks_;
+  numSwitches_++;
+
+  /**
+  std::cout << "Switching from TID: " << currentTID_
+            << " to TID: " << newContext.TID << " after " << procTicks_
+            << " ticks." << std::endl;
+            */
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);

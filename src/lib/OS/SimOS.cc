@@ -152,6 +152,7 @@ void SimOS::tick() {
         break;
       }
       case CoreStatus::executing: {
+        /**
         // Core is executing, test if interrupt should be made
         // Remove all completed processes from waitingProcs_ queue
         while (!waitingProcs_.empty() &&
@@ -168,6 +169,7 @@ void SimOS::tick() {
           scheduledProcs_.push(waitingProcs_.front());
           waitingProcs_.pop();
         }
+        */
         break;
       }
       case CoreStatus::switching: {

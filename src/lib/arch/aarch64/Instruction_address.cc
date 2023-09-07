@@ -7,6 +7,8 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+using namespace simeng::memory;
+
 void generateContiguousAddresses(
     uint64_t base, uint16_t num, uint8_t size,
     std::vector<simeng::memory::MemoryAccessTarget>& addresses) {
@@ -969,7 +971,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         uint64_t addr = base + (offset * partition_num);
@@ -1338,7 +1340,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t n = operands[1].get<uint64_t>();
         const uint64_t* m = operands[2].getAsVector<uint64_t>();
 
-        std::vector<memory::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1359,7 +1361,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t n = operands[1].get<uint64_t>();
         const uint32_t* m = operands[2].getAsVector<uint32_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
