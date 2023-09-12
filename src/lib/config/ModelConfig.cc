@@ -844,6 +844,9 @@ void ModelConfig::postValidation() {
           << groupMapping_[groupStr];
     }
   }
+
+  // Read in each instruction group and place its corresponding group number
+  // into the new config option
   for (ryml::NodeRef node : configTree_["Execution-Units"]) {
     // Clear or create a new Blocking-Group-Nums config option
     if (node.has_child("Blocking-Group-Nums")) {
@@ -851,12 +854,35 @@ void ModelConfig::postValidation() {
     } else {
       node.append_child() << ryml::key("Blocking-Group-Nums") |= ryml::SEQ;
     }
-    // Read in each group and place its corresponding group number into the
-    // new config option
+    // Record all blocking groups in config
+    std::queue<uint16_t> blockingGroups;
     for (ryml::NodeRef chld : node["Blocking-Groups"]) {
       std::string groupStr;
       chld >> groupStr;
-      node["Blocking-Group-Nums"].append_child() << groupMapping_[groupStr];
+      uint16_t parentGroup = groupMapping_[groupStr];
+      blockingGroups.push(parentGroup);
+      node["Blocking-Group-Nums"].append_child() << parentGroup;
+    }
+    // Expand set of blocking groups to include those that inherit from the
+    // user defined set
+    std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance;
+    if (ISA_ == ISA::AArch64) {
+      groupInheritance = arch::aarch64::groupInheritance;
+    } else if (ISA_ == ISA::RV64) {
+      groupInheritance = arch::riscv::groupInheritance;
+    }
+    while (blockingGroups.size()) {
+      // Determine if there's any inheritance
+      if (groupInheritance.find(blockingGroups.front()) !=
+          groupInheritance.end()) {
+        std::vector<uint16_t> inheritedGroups =
+            groupInheritance.at(blockingGroups.front());
+        for (int k = 0; k < inheritedGroups.size(); k++) {
+          blockingGroups.push(inheritedGroups[k]);
+          node["Blocking-Group-Nums"].append_child() << inheritedGroups[k];
+        }
+      }
+      blockingGroups.pop();
     }
   }
   for (ryml::NodeRef node : configTree_["Latencies"]) {

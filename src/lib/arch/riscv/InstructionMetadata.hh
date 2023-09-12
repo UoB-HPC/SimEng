@@ -3,6 +3,7 @@
 #include <string>
 
 #include "capstone/capstone.h"
+#include "simeng/arch/riscv/Instruction.hh"
 
 namespace simeng {
 namespace arch {
