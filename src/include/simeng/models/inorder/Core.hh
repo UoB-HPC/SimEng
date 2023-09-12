@@ -43,7 +43,10 @@ class Core : public simeng::Core {
   uint64_t getCurrentTID() const override;
 
   /** Get the unqiue id of the core. */
-  uint64_t getCoreId() const override;
+  uint16_t getCoreId() const override;
+
+  /** Set the unqiue id of the core. */
+  void setCoreId(uint16_t id) override;
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -124,7 +127,7 @@ class Core : public simeng::Core {
   /** Unique identifier for the core. */
   // TODO: Unqiue IDs need to be assigned to the cores when we go
   // multicore
-  uint64_t coreId_ = 0;
+  uint16_t coreId_ = 0;
 
   /** The Core's Memory Management Unit. */
   std::shared_ptr<memory::MMU> mmu_;

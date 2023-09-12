@@ -36,7 +36,10 @@ class Core {
   virtual uint64_t getCurrentTID() const = 0;
 
   /** Get the unqiue id of the core. */
-  virtual uint64_t getCoreId() const = 0;
+  virtual uint16_t getCoreId() const = 0;
+
+  /** Set the unqiue id of the core. */
+  virtual void setCoreId(uint16_t id) = 0;
 
   /** Retrieve the architectural register file set. */
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()

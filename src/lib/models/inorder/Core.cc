@@ -238,7 +238,9 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
-uint64_t Core::getCoreId() const { return coreId_; }
+uint16_t Core::getCoreId() const { return coreId_; }
+
+void Core::setCoreId(uint16_t id) { coreId_ = id; }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
