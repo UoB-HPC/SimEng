@@ -38,6 +38,9 @@ SyscallHandler::initMemPort() {
                   RegisterValue(packet->payload().data(), packet->size_),
                   packet->insnSeqId_};
     }
+    if (packet->isWrite()) {
+      OS_->informWriteResponse(std::move(packet));
+    }
     reqMemAccess_ = false;
   };
   memPort_->registerReceiver(fn);

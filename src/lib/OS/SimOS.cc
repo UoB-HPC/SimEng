@@ -14,8 +14,9 @@ namespace OS {
 
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
              simeng::span<char> instrBytes,
-             std::function<void(const SyscallResult)> sendSyscallResultToCore)
-    : SimOS(mem, sendSyscallResultToCore) {
+             std::function<void(const SyscallResult)> sendSyscallResultToCore,
+             std::function<void()> informProcessImageSent)
+    : SimOS(mem, sendSyscallResultToCore, informProcessImageSent) {
   // Create the initial Process
   coreDescs_.reserve(1);
   createProcess(instrBytes);
@@ -24,8 +25,9 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
              std::string executablePath,
              std::vector<std::string> executableArgs,
-             std::function<void(const SyscallResult)> sendSyscallResultToCore)
-    : SimOS(mem, sendSyscallResultToCore) {
+             std::function<void(const SyscallResult)> sendSyscallResultToCore,
+             std::function<void()> informProcessImageSent)
+    : SimOS(mem, sendSyscallResultToCore, informProcessImageSent) {
   executablePath_ = executablePath;
   executableArgs_ = executableArgs;
   // Create the initial Process
@@ -35,9 +37,11 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
 
 // The Private constructor
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
-             std::function<void(const SyscallResult)> sendSyscallResultToCore)
+             std::function<void(const SyscallResult)> sendSyscallResultToCore,
+             std::function<void()> informProcessImageSent)
     : memory_(mem),
-      pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
+      pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())),
+      informProcessImageSent_(informProcessImageSent) {
   // Create the syscall handler
   syscallHandler_ =
       std::make_shared<SyscallHandler>(this, mem, sendSyscallResultToCore);
@@ -88,16 +92,16 @@ void SimOS::tick() {
           waitingProcs_.pop();
         }
 
-        if (desc.info.ticks < execTicks) {
-          continue;
-        }
-        if (waitingProcs_.empty()) {
-          continue;
-        }
+        // if (desc.info.ticks < execTicks) {
+        //   continue;
+        // }
+        // if (waitingProcs_.empty()) {
+        //   continue;
+        // }
 
-        desc.info.ticks = 0;
-        desc.pendingResponseFromCore = true;
-        coreProxy_.interrupt(desc.info.coreId);
+        // desc.info.ticks = 0;
+        // desc.pendingResponseFromCore = true;
+        // coreProxy_.interrupt(desc.info.coreId);
         break;
       }
 
@@ -253,7 +257,9 @@ void SimOS::tick() {
 
 void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
                            uint64_t ticks) {
-  auto& desc = coreDescs_[coreId];
+  // std::cerr << "Core" << coreId << " is now of status " << unsigned(status)
+  //           << std::endl;
+  auto& desc = coreDescs_[coreId - 1];
   desc.info.ctx = ctx;
   desc.info.status = status;
   desc.info.coreId = coreId;
@@ -261,7 +267,7 @@ void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
 }
 
 void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
-  CoreDesc& desc = coreDescs_[coreId];
+  CoreDesc& desc = coreDescs_[coreId - 1];
   desc.pendingResponseFromCore = false;
 
   if (success) {
@@ -276,12 +282,12 @@ void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
   }
 }
 
-void SimOS::resumeClone(uint16_t coreId, CoreInfo cinfo) {
-  auto itr = cloneArgsMap_.find(coreId);
+void SimOS::resumeClone(CoreInfo cinfo) {
+  auto itr = cloneArgsMap_.find(cinfo.coreId);
   if (itr == cloneArgsMap_.end()) {
     std::cout << "[SimEng::SyscallHandler] CloneArgsMap entry doesn't exist "
                  "for Core Id: "
-              << coreId << std::endl;
+              << cinfo.coreId << std::endl;
     std::exit(1);
   };
 
@@ -382,18 +388,20 @@ void SimOS::resumeClone(uint16_t coreId, CoreInfo cinfo) {
   tgidMaps_File << stackStream.str();
   tgidMaps_File.close();
 
-  cloneArgsMap_.erase(coreId);
+  cloneArgsMap_.erase(cinfo.coreId);
   syscallHandler_->resumeClone(static_cast<int64_t>(newChildTid));
   return;
 }
 
-void SimOS::recieveCoreInfo(CoreInfo cinfo, uint16_t coreId, bool forClone) {
+void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
+  // std::cerr << "recieveCoreInfo call from " << cinfo.coreId << std::endl;
   if (forClone) {
-    resumeClone(coreId, cinfo);
+    // std::cerr << "\tclone" << std::endl;
+    resumeClone(cinfo);
     return;
   };
 
-  CoreDesc& desc = coreDescs_[coreId];
+  CoreDesc& desc = coreDescs_[cinfo.coreId - 1];
   desc.info = cinfo;
   desc.pendingResponseFromCore = false;
 
@@ -420,7 +428,10 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, uint16_t coreId, bool forClone) {
     // Schedule new process on core
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    coreProxy_.schedule(coreId, scheduledProcs_.front()->context_);
+    // std::cerr << "schedule " << scheduledProcs_.front()->context_.TID << " to
+    // "
+    //           << cinfo.coreId << " from scheduledProcs_" << std::endl;
+    coreProxy_.schedule(cinfo.coreId, scheduledProcs_.front()->context_);
     // Update newly scheduled process' status
     scheduledProcs_.front()->status_ = procStatus::executing;
     // Remove process from waiting queue
@@ -431,7 +442,9 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, uint16_t coreId, bool forClone) {
     // processes inside waitingProcs which can jump ahead
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    coreProxy_.schedule(coreId, waitingProcs_.front()->context_);
+    // std::cerr << "schedule " << waitingProcs_.front()->context_.TID << " to "
+    //           << cinfo.coreId << " from waitingProcs_" << std::endl;
+    coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
     // Update newly scheduled process' status
     waitingProcs_.front()->status_ = procStatus::executing;
     // Remove process from waiting queue
@@ -449,6 +462,7 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
         simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, 0, data);
     request->paddr_ = pAddr;
     request->markAsUntimed();
+    processImageAddrs_.push_back(vAddr);
     memPort_->send(std::move(request));
   };
 
@@ -663,5 +677,16 @@ void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {
   syscallHandler_->receiveSyscall(syscallInfo);
 }
 
+void SimOS::informWriteResponse(
+    std::unique_ptr<simeng::memory::MemPacket> packet) {
+  auto it = processImageAddrs_.begin();
+  for (it; it < processImageAddrs_.end(); it++) {
+    // Remove record of memory packet if found
+    if (*it == packet->vaddr_) it = processImageAddrs_.erase(it);
+  }
+  // Once all process image memory packets have been complete, inform parent
+  // object
+  if (processImageAddrs_.size() == 0) informProcessImageSent_();
+}
 }  // namespace OS
 }  // namespace simeng

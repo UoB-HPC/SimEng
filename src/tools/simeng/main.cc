@@ -25,11 +25,12 @@ simeng::OS::SimOS simOsFactory(
     // Use default program
     simeng::span<char> defaultPrg = simeng::span<char>(
         reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-    return simeng::OS::SimOS(memory, defaultPrg, sendSyscallResultToCore);
+    return simeng::OS::SimOS(memory, defaultPrg, sendSyscallResultToCore,
+                             []() {});
   }
   // Try to use binary specified in runtime args
   return simeng::OS::SimOS(memory, executablePath, executableArgs,
-                           sendSyscallResultToCore);
+                           sendSyscallResultToCore, []() {});
 }
 
 /** Tick the provided core model until it halts. */
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
     simeng::OS::cpuContext ctx = core->getCurrentContext();
     simeng::CoreStatus status = core->getStatus();
     simeng::OS::CoreInfo info = {coreId, status, ctx, ticks};
-    OS.recieveCoreInfo(info, coreId, forClone);
+    OS.recieveCoreInfo(info, forClone);
     return;
   };
 

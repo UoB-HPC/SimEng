@@ -109,13 +109,15 @@ class SimOS {
   /** Construct a SimOS object which creates the initial Process from a byte
    * stream. */
   SimOS(std::shared_ptr<simeng::memory::Mem> mem, simeng::span<char> instrBytes,
-        std::function<void(const SyscallResult)> sendSyscallResultToCore);
+        std::function<void(const SyscallResult)> sendSyscallResultToCore,
+        std::function<void()> informProcessImageSent);
 
   /** Construct a SimOS object from a binary file specified via the runtime
    * arguments of SimEng. */
   SimOS(std::shared_ptr<simeng::memory::Mem> mem, std::string executablePath,
         std::vector<std::string> executableArgs,
-        std::function<void(const SyscallResult)> sendSyscallResultToCore);
+        std::function<void(const SyscallResult)> sendSyscallResultToCore,
+        std::function<void()> informProcessImageSent);
 
   ~SimOS(){};
 
@@ -136,7 +138,7 @@ class SimOS {
 
   /** Method used to resume a suspending clone syscall waiting for CoreInfo
    * response from core. */
-  void resumeClone(uint16_t coreId, CoreInfo cinfo);
+  void resumeClone(CoreInfo cinfo);
 
   /** Get a process with specified `tid`. */
   const std::shared_ptr<Process>& getProcess(uint64_t tid);
@@ -198,7 +200,7 @@ class SimOS {
 
   /** Method which is used to recieve a CoreInfo object from a simulation core
    * corresponding to coreId. */
-  void recieveCoreInfo(CoreInfo cinfo, uint16_t coreId, bool forClone);
+  void recieveCoreInfo(CoreInfo cinfo, bool forClone);
 
   /** Method used to recieve an interrupt response from a simulation core
    * corresponding to coreId. */
@@ -212,6 +214,9 @@ class SimOS {
   void updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
                       uint64_t ticks);
 
+  /** Method used to inform SimOS of the return of a requested write request. */
+  void informWriteResponse(std::unique_ptr<simeng::memory::MemPacket> packet);
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;
@@ -220,7 +225,8 @@ class SimOS {
   /** Private constructor, called by all public constructors to perform common
    * logic. */
   SimOS(std::shared_ptr<simeng::memory::Mem> mem,
-        std::function<void(const SyscallResult)> sendSyscallResultToCore);
+        std::function<void(const SyscallResult)> sendSyscallResultToCore,
+        std::function<void()> informProcessImageSent);
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
@@ -274,11 +280,19 @@ class SimOS {
   /** Reference to the PageFrameAllocator object.  */
   PageFrameAllocator pageFrameAllocator_;
 
+  /** Callback function for informing all memory packets containing a process
+   * image payload have been complete.  */
+  std::function<void()> informProcessImageSent_;
+
   /** Reference to the CoreProxy object. */
   CoreProxy coreProxy_;
 
   /** Map used to store CloneArgs from different cores. */
   std::unordered_map<uint16_t, CloneArgs> cloneArgsMap_;
+
+  /** A record of all memory packet starting virtual addresses which contain a
+   * process image payload.  */
+  std::vector<uint64_t> processImageAddrs_ = {};
 };
 
 }  // namespace OS
