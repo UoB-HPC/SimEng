@@ -441,8 +441,6 @@ std::map<std::string, std::string> Core::getStats() const {
        std::to_string(reorderBuffer_.getViolatingLoadsCount())},
       {"idle.ticks", std::to_string(idle_ticks_)},
       {"context.switches", std::to_string(contextSwitches_)},
-      // {"averageTicksPerSwitch",
-      // std::to_string(allProcTicks_ / (numSwitches_ - 1))}
   };
 }
 
@@ -451,14 +449,6 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   registerAliasTable_.reset(isa_.getRegisterFileStructures(),
                             physicalRegisterQuantities_);
 
-  allProcTicks_ += procTicks_;
-  numSwitches_++;
-
-  /**
-  std::cout << "Switching from TID: " << currentTID_
-            << " to TID: " << newContext.TID << " after " << procTicks_
-            << " ticks." << std::endl;
-            */
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);

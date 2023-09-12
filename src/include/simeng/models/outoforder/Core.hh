@@ -86,9 +86,6 @@ class Core : public simeng::Core {
   /** Retrieve the CPU context for the currently scheduled process. */
   simeng::OS::cpuContext getCurrentContext() const override;
 
-  uint64_t allProcTicks_ = 0;
-  uint64_t numSwitches_ = 0;
-
  private:
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(const std::shared_ptr<Instruction>& instruction);

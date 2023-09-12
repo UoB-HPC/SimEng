@@ -152,24 +152,28 @@ void SimOS::tick() {
         break;
       }
       case CoreStatus::executing: {
-        /**
         // Core is executing, test if interrupt should be made
         // Remove all completed processes from waitingProcs_ queue
-        while (!waitingProcs_.empty() &&
-               (waitingProcs_.front()->status_ == procStatus::completed)) {
-          waitingProcs_.pop();
-        }
-        bool canSched = !waitingProcs_.empty();
-        canSched = canSched && (core->getCurrentProcTicks() > execTicks);
-        canSched = canSched && core->interrupt();
-        if (canSched) {
-          // Interrupt signalled successfully, move waitingProc to sheduledProcs
-          // queue
-          waitingProcs_.front()->status_ = procStatus::scheduled;
-          scheduledProcs_.push(waitingProcs_.front());
-          waitingProcs_.pop();
-        }
-        */
+
+        // Logic commented out to force the scheduling to be handled by the OMP
+        // runtime only. This is done to temporarily combat the bug which causes
+        // a data abort at the end of a multi-threaded simulation.
+
+        /** while (!waitingProcs_.empty() &&
+                   (waitingProcs_.front()->status_ == procStatus::completed)) {
+              waitingProcs_.pop();
+            }
+            bool canSched = !waitingProcs_.empty();
+            canSched = canSched && (core->getCurrentProcTicks() > execTicks);
+            canSched = canSched && core->interrupt();
+            if (canSched) {
+              // Interrupt signalled successfully, move waitingProc to
+           sheduledProcs
+              // queue
+              waitingProcs_.front()->status_ = procStatus::scheduled;
+              scheduledProcs_.push(waitingProcs_.front());
+              waitingProcs_.pop();
+            } */
         break;
       }
       case CoreStatus::switching: {

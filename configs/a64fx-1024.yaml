@@ -48,8 +48,8 @@ Memory-Hierarchy:
     Size: 6450839552 # ~6.5 GiB
 LSQ-Memory-Interface:
   Exclusive: True
-  Load-Bandwidth: 128
-  Store-Bandwidth: 64
+  Load-Bandwidth: 256
+  Store-Bandwidth: 128
   Permitted-Requests-Per-Cycle: 2
   Permitted-Loads-Per-Cycle: 2
   Permitted-Stores-Per-Cycle: 1
