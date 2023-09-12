@@ -104,7 +104,7 @@ class SimOSWrapper : public SST::Component {
   /** This handle event method is registered as a callback function with the NOC
    * subcomponent. This method is called everytime the NOC receives a request
    * from the network. */
-  //   void handleNetworkEvent(SST::Event* netEvent);
+  void handleNetworkEvent(SST::Event* netEvent);
 
   /**
    * SST supplied MACRO used to register custom SST:Components with
@@ -169,9 +169,6 @@ class SimOSWrapper : public SST::Component {
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 
-  //   /** Receive a network packet from the network. */
-  //   void receiveFromNOC(simengNetEv pckt);
-
   /** This method trims any leading or trailing spaces in a string. */
   std::string trimSpaces(std::string argsStr);
 
@@ -220,7 +217,7 @@ class SimOSWrapper : public SST::Component {
    * SST::SSTSimEng::simengNetEv network events will be sent through the
    * SimEngNOC.
    */
-  //   nocAPI* sstNoc_;
+  nocAPI* sstNoc_;
 
   /** The cache line width for SST. */
   uint64_t cacheLineWidth_;
@@ -230,9 +227,6 @@ class SimOSWrapper : public SST::Component {
 
   /** Number of clock iterations. */
   int iterations_;
-
-  /** Start time of simulation. */
-  std::chrono::high_resolution_clock::time_point startTime_;
 
   /** The number of cores connect over the NOC. */
   uint16_t numCores_ = 0;
@@ -255,28 +249,9 @@ class SimOSWrapper : public SST::Component {
 
   std::unique_ptr<simeng::OS::SimOS> simOS_;
 
-  std::shared_ptr<simeng::memory::MMU> mmu_;
-
-  std::shared_ptr<
-      simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>
-      connection_ = std::make_shared<
-          simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>();
-
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      mmuPort_;
-
-  std::shared_ptr<simeng::Port<std::unique_ptr<simeng::memory::MemPacket>>>
-      memPort_;
-
-  std::unique_ptr<simeng::CoreInstance> coreInstance_;
-
-  std::shared_ptr<simeng::Core> core_;
-
   std::function<void(const simeng::OS::SyscallResult)> sendSyscallResultToCore_;
 
-  std::function<void(simeng::OS::cpuContext, uint16_t, simeng::CoreStatus,
-                     uint64_t)>
-      updateCoreDescInOS_;
+  std::function<void()> processImageSent_;
 
   simeng::OS::CoreProxy proxy_;
 
@@ -290,6 +265,8 @@ class SimOSWrapper : public SST::Component {
 
   /** Reference to the PageFrameAllocator object.  */
   simeng::OS::PageFrameAllocator pageFrameAllocator_;
+
+  bool initialProcessImageWritten_ = false;
 };
 
 }  // namespace SSTSimEng

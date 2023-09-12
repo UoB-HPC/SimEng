@@ -98,11 +98,12 @@ void SimEngMemInterface::handleReadRequest(
   // Format:
   // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-split-<number of requests>
-  if (debug_) {
-    std::cout << "[SSTSimEng:SSTDebug] MemRead"
-              << "-read-request-" << aggrReq->id_ << "-cycle-" << tickCounter_
-              << "-split-" << requests.size() << std::endl;
-  }
+  // if (debug_) {
+  //   std::cout << "[SSTSimEng:SSTDebug] MemRead"
+  //             << "-read-request-" << aggrReq->id_ << "-cycle-" <<
+  //             tickCounter_
+  //             << "-split-" << requests.size() << std::endl;
+  // }
   if (aggrReq->pkt_->isInstrRead()) {
     for (StandardMem::Request* req : requests) {
       // std::cerr << req->getString() << std::endl;
@@ -111,6 +112,8 @@ void SimEngMemInterface::handleReadRequest(
   } else {
     for (StandardMem::Request* req : requests) {
       // std::cerr << req->getString() << std::endl;
+      // std::cerr << "Sent MemPacket from insn " << aggrReq->pkt_->insnSeqId_
+      //           << ":" << req->getString() << std::endl;
       dataMem_->send(req);
     }
   }
@@ -130,11 +133,12 @@ void SimEngMemInterface::handleWriteRequest(
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, pAddrStart, pAddrEnd,
                                              vAddrStart, size);
-  if (debug_) {
-    std::cout << "[SSTSimEng:SSTDebug] MemWrite"
-              << "-write-request-" << aggrReq->id_ << "-cycle-" << tickCounter_
-              << "-split-" << requests.size() << std::endl;
-  }
+  // if (debug_) {
+  //   std::cout << "[SSTSimEng:SSTDebug] MemWrite"
+  //             << "-write-request-" << aggrReq->id_ << "-cycle-" <<
+  //             tickCounter_
+  //             << "-split-" << requests.size() << std::endl;
+  // }
 
   for (StandardMem::Request* req : requests) {
     // std::cerr << req->getString() << std::endl;
@@ -320,11 +324,11 @@ void SimEngMemInterface::aggregatedReadResponses(
   // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-data-<value>
   uint64_t id = aggrReq->id_;
-  if (debug_) {
-    std::cout << "[SSTSimEng:SSTDebug] MemRead"
-              << "-read-response-" << id << "-cycle-" << tickCounter_
-              << "-data-" << resp << std::endl;
-  }
+  // if (debug_) {
+  //   std::cout << "[SSTSimEng:SSTDebug] MemRead"
+  //             << "-read-response-" << id << "-cycle-" << tickCounter_
+  //             << "-data-" << resp << std::endl;
+  // }
 
   aggrReq->pkt_->turnIntoReadResponse(mergedData);
   if (aggrReq->pkt_->isFromSystem())
@@ -348,11 +352,11 @@ void SimEngMemInterface::aggregatedWriteResponses(
     AggregateWriteRequest* aggrReq) {
   if (aggrReq->aggregateCount_ != 0) return;
   uint64_t id = aggrReq->id_;
-  if (debug_) {
-    std::cout << "[SSTSimEng:SSTDebug] MemWrite"
-              << "-read-response-" << id << "-cycle-" << tickCounter_
-              << std::endl;
-  }
+  // if (debug_) {
+  //   std::cout << "[SSTSimEng:SSTDebug] MemWrite"
+  //             << "-read-response-" << id << "-cycle-" << tickCounter_
+  //             << std::endl;
+  // }
   aggrReq->pkt_->turnIntoWriteResponse();
   if (aggrReq->pkt_->isFromSystem())
     sysPort_->send(std::move(aggrReq->pkt_));
@@ -398,16 +402,22 @@ void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
 void SimEngMemInterface::SimEngMemHandlers::handle(
     StandardMem::WriteResp* rsp) {
   uint64_t id = rsp->getID();
+  // std::cout << "HANDLE " << id << std::endl;
   delete rsp;
 
   auto itr = memInterface_.aggregationMap_.find(id);
-  if (itr == memInterface_.aggregationMap_.end()) return;
+  if (itr == memInterface_.aggregationMap_.end()) {
+    // std::cerr << "\tNo aggr req" << std::endl;
+    return;
+  }
 
   SimEngMemInterface::AggregateWriteRequest* aggrReq =
       reinterpret_cast<SimEngMemInterface::AggregateWriteRequest*>(itr->second);
 
   if (--aggrReq->aggregateCount_ <= 0) {
     memInterface_.aggregatedWriteResponses(aggrReq);
+    // } else {
+    //   std::cerr << "\t" << aggrReq->aggregateCount_ << " left" << std::endl;
   }
 }
 

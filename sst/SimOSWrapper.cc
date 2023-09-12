@@ -60,9 +60,10 @@ SimOSWrapper::SimOSWrapper(SST::ComponentId_t id, SST::Params& params)
       new SimEngMemInterface::SimEngMemHandlers(*memInterface_, &output_);
 
   // Instantiate the NOC
-  // sstNoc_ = loadUserSubComponent<nocAPI>("noc");
-  // sstNoc_->setRecvNotifyHandler(new Event::Handler<SimOSWrapper>(
-  //     this, &SimOSWrapper::handleNetworkEvent));
+  output_.verbose(CALL_INFO, 1, 0, "Declare noc_\n");
+  sstNoc_ = loadUserSubComponent<nocAPI>("noc");
+  sstNoc_->setRecvNotifyHandler(new Event::Handler<SimOSWrapper>(
+      this, &SimOSWrapper::handleNetworkEvent));
 
   // Protected methods from SST::Component used to start simulation
   registerAsPrimaryComponent();
@@ -76,25 +77,25 @@ void SimOSWrapper::init(unsigned int phase) {
   dataInterface_->init(phase);
   instrInterface_->init(phase);
   output_.verbose(CALL_INFO, 1, 0, "Memory init complete phase %d\n", phase);
-  // sstNoc_->init(phase);
-  // output_.verbose(CALL_INFO, 1, 0, "NOC init complete phase %d\n", phase);
+  sstNoc_->init(phase);
+  output_.verbose(CALL_INFO, 1, 0, "NOC init complete phase %d\n", phase);
 }
 
 void SimOSWrapper::setup() {
   dataInterface_->setup();
   instrInterface_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
-  // sstNoc_->setup();
-  // output_.verbose(CALL_INFO, 1, 0, "NOC setup complete\n");
+  sstNoc_->setup();
+  output_.verbose(CALL_INFO, 1, 0, "NOC setup complete\n");
 
   // Ensure the number of devices connected to the NOC is equivalent to the
   // number of cores set to be used
-  // if (sstNoc_->getNumDevices() != numCores_) {
-  //   output_.verbose(CALL_INFO, 10, 0,
-  //                   "Number of cores connected to the NOC is not equal to
-  //                   the" "number defined in the passed config\n");
-  //   std::exit(EXIT_FAILURE);
-  // }
+  if (sstNoc_->getNumDevices() != numCores_) {
+    output_.verbose(CALL_INFO, 10, 0,
+                    "Number of cores connected to the NOC is not equal to the "
+                    "number defined in the passed config\n");
+    std::exit(EXIT_FAILURE);
+  }
 
   fabricateSimOS();
 
@@ -120,11 +121,18 @@ void SimOSWrapper::setup() {
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
-  startTime_ = std::chrono::high_resolution_clock::now();
 }
 
 bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
-  // sstNoc_->clockTick(current_cycle);
+  sstNoc_->clockTick(current_cycle);
+  if (!initialProcessImageWritten_) {
+    // Tick Memory
+    memInterface_->tick();
+
+    iterations_++;
+
+    return false;
+  }
   // for (int i = 0; i < numCores_; i++) {
   //   emptyEv* cntx = new emptyEv(getName());
   //   sstNoc_->send(cntx, i);
@@ -140,15 +148,9 @@ bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
   //   sstNoc_->send(cntx, i);
   // }
   // Tick the core and memory interfaces until the program has halted
-  if (!simOS_->hasHalted() || mmu_->hasPendingRequests()) {
+  if (!simOS_->hasHalted()) {
     // Tick SimOS
     simOS_->tick();
-
-    // Tick the core
-    core_->tick();
-
-    // Tick MMU
-    mmu_->tick();
 
     // Tick Memory
     memInterface_->tick();
@@ -166,27 +168,6 @@ bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
 void SimOSWrapper::finish() {
   output_.verbose(CALL_INFO, 1, 0,
                   "Simulation complete. Finalising stats....\n");
-
-  // Get timing information
-  auto endTime = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      endTime - startTime_)
-                      .count();
-  double khz =
-      (iterations_ / (static_cast<double>(duration) / 1000.0)) / 1000.0;
-  uint64_t retired = core_->getInstructionsRetiredCount();
-  double mips = (retired / (static_cast<double>(duration))) / 1000.0;
-
-  // Print stats
-  std::cout << std::endl;
-  auto stats = core_->getStats();
-  for (const auto& [key, value] : stats) {
-    std::cout << "[SimEng] " << key << ": " << value << std::endl;
-  }
-  std::cout << std::endl;
-  std::cout << "[SimEng] Finished " << iterations_ << " ticks in " << duration
-            << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
-            << mips << " MIPS)" << std::endl;
 }
 
 void SimOSWrapper::fabricateSimOS() {
@@ -195,64 +176,51 @@ void SimOSWrapper::fabricateSimOS() {
   // Create the Special Files directory if indicated to do so in Config file
   if (config::SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
 
-  sendSyscallResultToCore_ = [&](const simeng::OS::SyscallResult result) {
-    core_->receiveSyscallResult(result);
+  sendSyscallResultToCore_ = [&](simeng::OS::SyscallResult result) {
+    syscallEv* sysRes = new syscallEv(getName(), 0);
+    sysRes->setPayload(result);
+    sstNoc_->send(sysRes, result.coreId);
     return;
   };
+
+  processImageSent_ = [&]() { initialProcessImageWritten_ = true; };
 
   if (executablePath_ == DEFAULT_STR) {
     // Use default program
     simeng::span<char> defaultPrg = simeng::span<char>(
         reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-    simOS_ = std::make_unique<simeng::OS::SimOS>(memInterface_, defaultPrg,
-                                                 sendSyscallResultToCore_);
+    simOS_ = std::make_unique<simeng::OS::SimOS>(
+        memInterface_, defaultPrg, sendSyscallResultToCore_, processImageSent_);
   } else {
-    simOS_ = std::make_unique<simeng::OS::SimOS>(memInterface_, executablePath_,
-                                                 executableArgs_,
-                                                 sendSyscallResultToCore_);
+    simOS_ = std::make_unique<simeng::OS::SimOS>(
+        memInterface_, executablePath_, executableArgs_,
+        sendSyscallResultToCore_, processImageSent_);
   }
 
-  VAddrTranslator fn = simOS_->getVAddrTranslator();
-
-  mmu_ = std::make_shared<simeng::memory::MMU>(fn);
-
-  mmuPort_ = mmu_->initPort();
-  memPort_ = memInterface_->initMemPort();
-
-  connection_->connect(mmuPort_, memPort_);
-
-  updateCoreDescInOS_ = [&](simeng::OS::cpuContext ctx, uint16_t coreId,
-                            simeng::CoreStatus status, uint64_t ticks) {
-    simOS_->updateCoreDesc(ctx, coreId, status, ticks);
-    return;
-  };
-
-  coreInstance_ = std::make_unique<simeng::CoreInstance>(
-      mmu_, simOS_->getSyscallReceiver(), updateCoreDescInOS_);
-
-  core_ = coreInstance_->getCore();
-
   proxy_.getCoreInfo = [&](uint16_t coreId, bool forClone) {
-    uint64_t ticks = core_->getCurrentProcTicks();
-    simeng::OS::cpuContext ctx = core_->getCurrentContext();
-    simeng::CoreStatus status = core_->getStatus();
-    simeng::OS::CoreInfo info = {coreId, status, ctx, ticks};
-    simOS_->recieveCoreInfo(info, coreId, forClone);
+    coreInfoReqEv* cinfoReq = new coreInfoReqEv(getName(), 0, forClone);
+    // std::cerr << "CoreInfo packet to " << coreId << std::endl;
+    sstNoc_->send(cinfoReq, coreId);
     return;
   };
 
   proxy_.interrupt = [&](uint16_t coreId) {
-    simOS_->recieveInterruptResponse(core_->interrupt(), coreId);
+    interruptEv* intrpt = new interruptEv(getName(), 0);
+    // std::cerr << "Interupt packet to " << coreId << std::endl;
+    sstNoc_->send(intrpt, coreId);
     return;
   };
 
   proxy_.schedule = [&](uint16_t coreId, simeng::OS::cpuContext ctx) {
-    core_->schedule(ctx);
+    contextEv* cntxEv = new contextEv(getName(), 0);
+    // std::cerr << "Schedule packet to " << coreId << std::endl;
+    cntxEv->setPayload(ctx);
+    sstNoc_->send(cntxEv, coreId);
     return;
   };
 
-  simOS_->registerCore(core_->getCoreId(), core_->getStatus(),
-                       core_->getCurrentContext(), true);
+  registerEv* regReq = new registerEv(getName(), 0);
+  sstNoc_->send(regReq, 1);
 
   simOS_->registerCoreProxy(proxy_);
 }
@@ -269,10 +237,109 @@ void SimOSWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
   memEvent->handle(handlers_);
 }
 
-// void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
-//   simengNetEv* event = static_cast<simengNetEv*>(netEvent);
-//   delete event;
-// }
+void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
+  simengNetEv* event = static_cast<simengNetEv*>(netEvent);
+  switch (event->getType()) {
+    case PacketType::Empty: {
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::Empty from %s\n\t- CoreId: %u\n",
+                        event->getSource().c_str(), event->getSourceId());
+      }
+      break;
+    }
+    case PacketType::Context: {
+      contextEv* cntxEv = static_cast<contextEv*>(netEvent);
+      simeng::OS::cpuContext cntx = cntxEv->getPayload();
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::Context msg from %s\n\t- CoreId: "
+                        "%u\n\t- TID: %llu\n",
+                        cntxEv->getSource().c_str(), cntxEv->getSourceId(),
+                        cntxEv->getPayload().TID);
+      }
+      break;
+    }
+    case PacketType::Syscall: {
+      syscallInfoEv* sysInfo = static_cast<syscallInfoEv*>(netEvent);
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::Syscall msg from %s\n\t- CoreId: "
+                        "%u\n\t- SyscallId: %llu\n",
+                        sysInfo->getSource().c_str(), sysInfo->getSourceId(),
+                        sysInfo->getPayload().syscallId);
+      }
+      simOS_->receiveSyscall(sysInfo->getPayload());
+      break;
+    }
+    case PacketType::Translate: {
+      transEv* translationReq = static_cast<transEv*>(netEvent);
+      uint64_t paddr = simOS_->handleVAddrTranslation(
+          translationReq->getVirtualAddr(), translationReq->getPID());
+      // if (debug_) {
+      //   output_.verbose(
+      //       CALL_INFO, 1, 0,
+      //       "Received PacketType::Translate msg from %s\n\t- CoreId: "
+      //       "%u\n\t- VAddr: %llx\n\t- PID: %llu\n\t- PAddr: %llx\n",
+      //       translationReq->getSource().c_str(),
+      //       translationReq->getSourceId(), translationReq->getVirtualAddr(),
+      //       translationReq->getPID(), paddr);
+      // }
+      transEv* translationRes = static_cast<transEv*>(translationReq->clone());
+      translationRes->setPhysicalAddr(paddr);
+      sstNoc_->send(translationRes, translationReq->getSourceId());
+      break;
+    }
+    case PacketType::CoreInfo: {
+      coreInfoEv* cinfoEv = static_cast<coreInfoEv*>(netEvent);
+      simeng::OS::CoreInfo cinfo = cinfoEv->getPayload();
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::CoreInfo msg from %s\n\t- "
+                        "CoreId: %u\n\t- FromOS: %u\n\t- TID: %llu\n",
+                        cinfoEv->getSource().c_str(), cinfoEv->getSourceId(),
+                        cinfoEv->isReqFromOS(), cinfo.ctx.TID);
+      }
+      if (!cinfoEv->isReqFromOS()) {
+        simOS_->updateCoreDesc(cinfo.ctx, cinfo.coreId, cinfo.status,
+                               cinfo.ticks);
+      } else {
+        simOS_->recieveCoreInfo(cinfo, cinfoEv->isForClone());
+      }
+      break;
+    }
+    case PacketType::Interrupt: {
+      interruptEv* intrpt = static_cast<interruptEv*>(netEvent);
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::Interrupt msg from %s\n\t- "
+                        "CoreId: %u\n\t- WasSuccess: %u\n",
+                        intrpt->getSource().c_str(), intrpt->getSourceId(),
+                        intrpt->wasSuccess());
+      }
+      simOS_->recieveInterruptResponse(intrpt->wasSuccess(),
+                                       intrpt->getSourceId());
+      break;
+    }
+    case PacketType::Register: {
+      registerEv* regReq = static_cast<registerEv*>(netEvent);
+      if (debug_) {
+        output_.verbose(CALL_INFO, 1, 0,
+                        "Received PacketType::Register msg from %s\n\t- "
+                        "CoreId: %u\n\t- TID: %llu\n\t- Status: %u\n",
+                        regReq->getSource().c_str(), regReq->getSourceId(),
+                        regReq->getContext().TID,
+                        unsigned(regReq->getCoreStatus()));
+      }
+      simOS_->registerCore(regReq->getCoreId(), regReq->getCoreStatus(),
+                           regReq->getContext(), true);
+      break;
+    }
+    default:
+      break;
+  }
+  delete event;
+}
 
 std::string SimOSWrapper::trimSpaces(std::string strArgs) {
   int trailingEnd = -1;

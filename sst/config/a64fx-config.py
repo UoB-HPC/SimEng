@@ -84,9 +84,9 @@ memprops = getMemoryProps(3, "GiB")
 # Using sst-info sstsimeng.simos to get all cache parameters, ports and subcomponent slots.
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
-    "simeng_config_path": "/Users/jj16791/Documents/GitHub/SimEng/configs/a64fx.yaml",
-    "executable_path": "/Users/jj16791/Documents/GitHub/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4",
-    "executable_args": "-n 64 -i 1 --deck /Users/jj16791/Documents/GitHub/simeng-benchmarks/Data_Files/miniBUDE/bm1",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx.yaml",
+    "executable_path": "/Users/jj16791/workspace/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4",
+    "executable_args": "-n 64 -i 1 --deck /Users/jj16791/workspace/simeng-benchmarks/Data_Files/miniBUDE/bm1",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -94,92 +94,143 @@ simos.addParams({
 })
 
 # Instantiating the StandardInterface which communicates with the SST memory model.
-dataInterface = simos.setSubComponent("dataMemory", "memHierarchy.standardInterface")
-dataInterface.addParams({
+dataInterface0 = simos.setSubComponent("dataMemory", "memHierarchy.standardInterface")
+dataInterface0.addParams({
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-instrInterface = simos.setSubComponent("instrMemory", "memHierarchy.standardInterface")
-instrInterface.addParams({
+instrInterface0 = simos.setSubComponent("instrMemory", "memHierarchy.standardInterface")
+instrInterface0.addParams({
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
+
+os_l1Dcache = sst.Component("a64fx.l1Dcache0", "memHierarchy.Cache")
+os_l1Dcache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
+
+coherence_controller_os_l1D = os_l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_os_l1D = os_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_os_l1D = os_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_os_l1D.addParams({"cache_line_size": A64FX_CLW})
+
+os_l1Icache = sst.Component("a64fx.l1Icache0", "memHierarchy.Cache")
+os_l1Icache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
+
+coherence_controller_os_l1I = os_l1Icache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_os_l1I = os_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_os_l1I = os_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_os_l1I.addParams({"cache_line_size": A64FX_CLW})
+
 # --------------------------------------------- SSTSimEng OS ---------------------------------------
 
 
-# --------------------------------------------- L1 DCache ---------------------------------------------
+# --------------------------------------------- SSTSimEng Core ---------------------------------------
 
-# Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l1Dcache = sst.Component("a64fx.l1Dcache", "memHierarchy.Cache")
-l1Dcache.addParams({
-      "L1" : 1,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L1,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L1,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L1_SIZE,
+cpu0 = sst.Component("core0", "sstsimeng.simengcore")
+cpu0.addParams({
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx.yaml",
+    "clock" : A64FX_CLOCK,
+    "max_addr_memory": memprops["end_addr"],
+    "cache_line_width": A64FX_CLW,
+    "debug": False,
+})
+
+dataInterface1 = cpu0.setSubComponent("dataMemory", "memHierarchy.standardInterface")
+dataInterface1.addParams({
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
-      "verbose": 2,
+      "verbose": 2
 })
-# Set MESI L1 coherence controller to the "coherence" slot
-coherence_controller_l1D = l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
-# Set LRU replacement policy to the "replacement" slot.
-# index=0 indicates replacement policy is for cache.
-replacement_policy_l1D = l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
-
-prefD = l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-prefD.addParams({
-    'cache_line_size': A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
-#     'history': 16,                                #Number of entries to keep for historical comparison
-#     'reach': 2,                                   #Reach (how far forward the prefetcher should fetch lines)
-#     'detect_range': 4,                            #Range to detect addresses over in request counts
-#     'address_count': 64,                          #Number of addresses to keep in prefetch table
-#     'page_size': 4096,                            #Page size for this controller
-#     'overrun_page_boundaries': 0,                 #Allow prefetcher to run over page boundaries, 0 is no, 1 is yes
-})
-
-# --------------------------------------------- L1 DCache ---------------------------------------------
-
-
-# --------------------------------------------- L1 ICache ---------------------------------------------
-
-# Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l1Icache = sst.Component("a64fx.l1Icache", "memHierarchy.Cache")
-l1Icache.addParams({
-      "L1" : 1,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L1,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L1,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L1_SIZE,
+instrInterface1 = cpu0.setSubComponent("instrMemory", "memHierarchy.standardInterface")
+instrInterface1.addParams({
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
-      "verbose": 2,
-})
-# Set MESI L1 coherence controller to the "coherence" slot
-coherence_controller_l1I = l1Icache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
-# Set LRU replacement policy to the "replacement" slot.
-# index=0 indicates replacement policy is for cache.
-replacement_policy_l1I = l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
-
-prefI = l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-prefI.addParams({
-    'cache_line_size': A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
-#     'history': 16,                                #Number of entries to keep for historical comparison
-#     'reach': 2,                                   #Reach (how far forward the prefetcher should fetch lines)
-#     'detect_range': 4,                            #Range to detect addresses over in request counts
-#     'address_count': 64,                          #Number of addresses to keep in prefetch table
-#     'page_size': 4096,                            #Page size for this controller
-#     'overrun_page_boundaries': 0,                 #Allow prefetcher to run over page boundaries, 0 is no, 1 is yes
+      "verbose": 2
 })
 
-# --------------------------------------------- L1 ICache ---------------------------------------------
+c0_l1Dcache = sst.Component("a64fx.l1Dcache1", "memHierarchy.Cache")
+c0_l1Dcache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
 
+coherence_controller_c0_l1 = c0_l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_c0_l1 = c0_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_c0_l1 = c0_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_c0_l1.addParams({"cache_line_size": A64FX_CLW})
+
+c0_l1Icache = sst.Component("a64fx.l1Icache1", "memHierarchy.Cache")
+c0_l1Icache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
+
+coherence_controller_c0_l1I = c0_l1Icache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_c0_l1I = c0_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_c0_l1I = c0_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_c0_l1I.addParams({"cache_line_size": A64FX_CLW})
+
+# --------------------------------------------- SSTSimEng Core ---------------------------------------
 
 
 # --------------------------------------------- L1-L2 BUS ---------------------------------------------
@@ -197,17 +248,20 @@ bus.addParams({
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
 l2cache = sst.Component("a64fx.l2cache", "memHierarchy.Cache")
 l2cache.addParams({
-      "L1" : 0,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L2,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L2,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L2_SIZE,
-      "debug" : DEBUG_L2,
-      "debug_level" : DEBUG_LEVEL,
-      "verbose": 2,
-      "coherence_protocol": A64FX_COHP,
+        "L1": 0,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L2,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L2,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L2_SIZE,
+        "debug": DEBUG_L2,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
+        "response_link_width": A64FX_L2TOL1_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 37,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
@@ -227,6 +281,38 @@ l2cachePre.addParams({
 })
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
+
+
+# ---------------------------------------------- NETWORK ----------------------------------------------
+
+verb_params = { "verbose" : 6 }
+net_params = {
+  "input_buf_size" : "512B",
+  "output_buf_size" : "512B",
+  "link_bw" : "1GB/s"
+}
+
+noc0 = simos.setSubComponent("noc", "sstsimeng.SimEngNOC")
+noc0.addParams(verb_params)
+netInterface0 = noc0.setSubComponent("interface", "merlin.linkcontrol")
+netInterface0.addParams(net_params)
+
+noc1 = cpu0.setSubComponent("noc", "sstsimeng.SimEngNOC")
+noc1.addParams(verb_params)
+netInterface1 = noc1.setSubComponent("interface", "merlin.linkcontrol")
+netInterface1.addParams(net_params)
+
+router = sst.Component("router", "merlin.hr_router")
+router.setSubComponent("topology", "merlin.singlerouter")
+router.addParams(net_params)
+router.addParams({
+    "xbar_bw" : "1GB/s",
+    "flit_size" : "32B",
+    "num_ports" : "2",
+    "id" : 0
+})
+
+# ---------------------------------------------- NETWORK ----------------------------------------------
 
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
@@ -257,15 +343,32 @@ memory_backend.addParams({
 
 # ---------------------------------------------- Links ------------------------------------------------
 
-link_cpu_l1Dcache = sst.Link("link_cpu_l1Dcache_link")
-link_cpu_l1Dcache.connect( (dataInterface, "port", "0ps"), (l1Dcache, "high_network_0", "0ps") )
-link_cpu_l1Icache = sst.Link("link_cpu_l1Icache_link")
-link_cpu_l1Icache.connect( (instrInterface, "port", "0ps"), (l1Icache, "high_network_0", "0ps") )
+link_os_l1Dcache = sst.Link("link_os_l1Dcache_link")
+link_os_l1Dcache.connect( (dataInterface0, "port", "0ps"), (os_l1Dcache, "high_network_0", "0ps") )
+link_os_l1Icache = sst.Link("link_os_l1Icache_link")
+link_os_l1Icache.connect( (instrInterface0, "port", "0ps"), (os_l1Icache, "high_network_0", "0ps") )
+link_os_router = sst.Link("link_os_router")
+link_os_router.connect((netInterface0, "rtr_port", "0ps"), (router, "port0", "0ps"))
 
-link_l1Dcache_l2bus = sst.Link("link_l1Dcache_l2bus_link")
-link_l1Dcache_l2bus.connect( (l1Dcache, "low_network_0", "0ps"), (bus, "high_network_0", "0ps") )
-link_l1Icache_l2bus = sst.Link("link_l1Icache_l2bus_link")
-link_l1Icache_l2bus.connect( (l1Icache, "low_network_0", "0ps"), (bus, "high_network_1", "0ps") )
+
+link_cpu0_l1Dcache = sst.Link("link_cpu0_l1Dcache_link")
+link_cpu0_l1Dcache.connect( (dataInterface1, "port", "0ps"), (c0_l1Dcache, "high_network_0", "0ps") )
+link_cpu0_l1Icache = sst.Link("link_cpu0_l1Icache_link")
+link_cpu0_l1Icache.connect( (instrInterface1, "port", "0ps"), (c0_l1Icache, "high_network_0", "0ps") )
+link_cpu0_router = sst.Link("link_cpu0_router")
+link_cpu0_router.connect((netInterface1, "rtr_port", "0ps"), (router, "port1", "0ps"))
+
+
+link_os_l1D_l2bus = sst.Link("link_os_l1D_l2bus_link")
+link_os_l1D_l2bus.connect( (os_l1Dcache, "low_network_0", "0ps"), (bus, "high_network_0", "0ps") )
+link_os_l1I_l2bus = sst.Link("link_os_l1I_l2bus_link")
+link_os_l1I_l2bus.connect( (os_l1Icache, "low_network_0", "0ps"), (bus, "high_network_1", "0ps") )
+
+
+link_cpu0_l1D_l2bus = sst.Link("link_cpu0_l1D_l2bus_link")
+link_cpu0_l1D_l2bus.connect( (c0_l1Dcache, "low_network_0", "0ps"), (bus, "high_network_2", "0ps") )
+link_cpu0_l1I_l2bus = sst.Link("link_cpu0_l1I_l2bus_link")
+link_cpu0_l1I_l2bus.connect( (c0_l1Icache, "low_network_0", "0ps"), (bus, "high_network_3", "0ps") )
 
 link_bus_l2 = sst.Link("link_bus_l2")
 link_bus_l2.connect( (bus, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps") )
