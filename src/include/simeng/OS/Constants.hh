@@ -212,6 +212,10 @@ static constexpr uint64_t UNMAP = 0x1000000000000000;
  * the virtual address not being in a valid address range. */
 static constexpr uint64_t DATA_ABORT = 0x5000000000000000;
 
+/** This mask signifies that the virtual address mapping is being asynchronously
+ * being resolved. */
+static constexpr uint64_t PENDING = 0x6000000000000000;
+
 }  // namespace pagetable
 
 /** This function returns true if value contains a fault code. */

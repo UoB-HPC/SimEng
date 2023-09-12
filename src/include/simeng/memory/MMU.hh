@@ -59,6 +59,10 @@ class MMU {
   /** Retrieve all completed instruction read requests. */
   const span<MemoryReadResult> getCompletedInstrReads() const;
 
+  /** Supply a virtual address translation that could not instantly be
+   * retrieved. */
+  void supplyDelayedTranslation(uint64_t vaddr, uint64_t paddr);
+
   /** Clear the completed instruction reads. */
   void clearCompletedIntrReads();
 
@@ -135,6 +139,10 @@ class MMU {
   std::map<uint64_t,
            std::map<uint16_t, std::vector<std::unique_ptr<MemPacket>>>>
       readResponses_;
+
+  /** A map of virtual addresses to SimEng MemPacket objects helf whilst a
+   * address translation is being retrieved asynchronously. */
+  std::map<uint64_t, std::vector<std::unique_ptr<MemPacket>>> pendingRequests_;
 
   /** A map containing all store instructions waiting for their results.
    * Key = Instruction sequenceID

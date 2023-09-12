@@ -219,6 +219,18 @@ const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
           completedInstrReads_.size()};
 }
 
+void MMU::supplyDelayedTranslation(uint64_t vaddr, uint64_t paddr) {
+  auto it = pendingRequests_.find(vaddr);
+  if (it != pendingRequests_.end()) {
+    // If a delayed virtual address translation exists, re-issue the request so
+    // that the new translation can be supplied
+    for (int i = 0; i < it->second.size(); i++) {
+      issueRequest(std::move(it->second[i]));
+    }
+    pendingRequests_.erase(it);
+  }
+}
+
 void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
@@ -275,6 +287,13 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
     request->markAsFaulty();
     port_->recieve(std::move(request));
+    return;
+  }
+
+  if (faultCode == simeng::OS::masks::faults::pagetable::PENDING) {
+    // Record the wanted translation if it is currently bein resolved
+    // asynchronously
+    pendingRequests_[request->vaddr_].push_back(std::move(request));
     return;
   }
 

@@ -201,7 +201,7 @@ struct SyscallResult {
   uint64_t syscallId = 0;
 
   /** The unique ID of the core associated with the syscall. */
-  uint64_t coreId = 0;
+  uint16_t coreId = 0;
 
   /** Any changes to apply to the process state. */
   ProcessStateChange stateChange = {};
@@ -227,7 +227,7 @@ struct SyscallInfo {
   uint64_t syscallId = 0;
 
   /** The unique ID of the core associated with the syscall. */
-  uint64_t coreId = 0;
+  uint16_t coreId = 0;
 
   /** The unique ID of the process associated with the syscall. Default value is
    * 1 as this is the lowest TID available. */
