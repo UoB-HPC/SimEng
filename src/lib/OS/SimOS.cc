@@ -628,7 +628,14 @@ uint64_t SimOS::requestPageFrames(size_t size) {
 }
 
 uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
-  auto process = processes_.find(tid)->second;
+  const auto& processItr = processes_.find(tid);
+  // If no process exists for the supplied TID, consider it to be a data abort
+  // fault
+  if (processItr == processes_.end()) {
+    return masks::faults::pagetable::FAULT |
+           masks::faults::pagetable::DATA_ABORT;
+  }
+  auto process = processItr->second;
   uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
 
