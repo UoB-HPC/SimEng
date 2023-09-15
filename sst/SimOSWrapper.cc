@@ -219,8 +219,11 @@ void SimOSWrapper::fabricateSimOS() {
     return;
   };
 
-  registerEv* regReq = new registerEv(getName(), 0);
-  sstNoc_->send(regReq, 1);
+  // Send core registration network events to all available core components
+  for (int i = 0; i < numCores_; i++) {
+    registerEv* regReq = new registerEv(getName(), 0);
+    sstNoc_->send(regReq, i + 1);
+  }
 
   simOS_->registerCoreProxy(proxy_);
 }
@@ -327,7 +330,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Register msg from %s\n\t- "
                         "CoreId: %u\n\t- TID: %llu\n\t- Status: %u\n",
-                        regReq->getSource().c_str(), regReq->getSourceId(),
+                        regReq->getSource().c_str(), regReq->getCoreId(),
                         regReq->getContext().TID,
                         unsigned(regReq->getCoreStatus()));
       }

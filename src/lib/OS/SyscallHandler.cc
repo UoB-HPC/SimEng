@@ -1660,6 +1660,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
               sizeof(uint32_t), currentInfo_.threadId, 0);
       request->paddr_ = uaddr;
       reqMemAccess_ = true;
+      currentInfo_.started = false;
       memPort_->send(std::move(request));
       if (reqMemAccess_) return {false, -1};
     }

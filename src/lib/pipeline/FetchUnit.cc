@@ -86,7 +86,7 @@ void FetchUnit::tick() {
       // If the pc is not contained within any fetched blocks, fetch a new one
       if (requestedBlocks_.find(pcBlock_) == requestedBlocks_.end()) {
         // If there are no spare entries in the requestedBlocks_ maps, replace
-        // the least recently used one
+        // the least recently used (LRU) one
         if (requestedBlocks_.size() >= 6) {
           uint64_t entryToRemove = 0;
           uint64_t oldestCount = 0;

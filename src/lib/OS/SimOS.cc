@@ -110,8 +110,11 @@ void SimOS::tick() {
                (scheduledProcs_.front()->status_ == procStatus::completed)) {
           scheduledProcs_.pop();
         }
-        desc.pendingResponseFromCore = true;
-        coreProxy_.getCoreInfo(desc.info.coreId, false);
+        // Only fetch coreInfo if there are processes to be scheduled
+        if ((waitingProcs_.size() + scheduledProcs_.size()) > 0) {
+          desc.pendingResponseFromCore = true;
+          coreProxy_.getCoreInfo(desc.info.coreId, false);
+        }
         break;
       }
 
@@ -257,8 +260,6 @@ void SimOS::tick() {
 
 void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
                            uint64_t ticks) {
-  // std::cerr << "Core" << coreId << " is now of status " << unsigned(status)
-  //           << std::endl;
   auto& desc = coreDescs_[coreId - 1];
   desc.info.ctx = ctx;
   desc.info.status = status;
@@ -418,7 +419,7 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
       currProc->context_.pc = currContext.pc;
       currProc->context_.regFile = currContext.regFile;
       // Change status from Executing to Waiting
-      if (currProc->status_ != procStatus::sleeping) {
+      if (currProc->status_ == procStatus::executing) {
         currProc->status_ = procStatus::waiting;
         waitingProcs_.push(currProc);
       }

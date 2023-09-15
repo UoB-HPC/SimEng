@@ -47,7 +47,7 @@ void SimEngNOC::init(unsigned int phase) {
   // Check for init data from the network interface
   while (SST::Interfaces::SimpleNetwork::Request* req =
              interface_->recvInitData()) {
-    simengNetEv* ev = static_cast<simengNetEv*>(req->takePayload());
+    // simengNetEv* ev = static_cast<simengNetEv*>(req->takePayload());
     // output_.verbose(CALL_INFO, 1, 0, "%s received init msg from %s\n",
     //                 getName().c_str(), ev->getSource().c_str());
     numDevices_++;
