@@ -21,12 +21,14 @@ namespace simeng {
 
 namespace memory {
 
-/** Simple struct representing an entry for the requestedLoads_ map.*/
-struct reqLoadEntry {
+/** Simple struct representing an entry for the requested[Load|Store]_ map.*/
+struct reqEntry {
   /** A load instruction that is waiting on responses from memory. */
   std::shared_ptr<Instruction> insn = nullptr;
   /** The number of MemoryPackets sent to memory that have not returned yet. */
   uint16_t totalPacketsRemaining = 0;
+  /** Whether a memory access associated with this entry has failed. */
+  bool failed = false;
 };
 
 class MMU {
@@ -83,17 +85,6 @@ class MMU {
   /** Method used to buffer data requests to memory. */
   void issueRequest(std::unique_ptr<MemPacket> request);
 
-  /** Open a new cache line monitor. */
-  void openLLSCMonitor(const std::shared_ptr<Instruction>& loadRes);
-
-  /** Checks whether a valid monitor is open for a store conditional. Returns
-   * whether the store can proceed or not. */
-  bool checkLLSCMonitor(const std::shared_ptr<Instruction>& strCond);
-
-  /** Potentially updates the local cache line monitor to enforce correct LL/SC
-   * behaviour. */
-  void updateLLSCMonitor(const MemoryAccessTarget& storeTarget);
-
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow(uint64_t a, uint64_t b) const {
     return (a + b) < a || (a + b) < b;
@@ -126,8 +117,8 @@ class MMU {
 
   /** A map containing all load instructions waiting for their results.
    * Key = Instruction sequenceID
-   * Value = Instruction */
-  std::map<uint64_t, reqLoadEntry> requestedLoads_;
+   * Value = reqEntry struct */
+  std::map<uint64_t, reqEntry> requestedLoads_;
 
   /** Map containing all read response packets before they have been added to
    * their associated instruction.
@@ -146,8 +137,8 @@ class MMU {
 
   /** A map containing all store instructions waiting for their results.
    * Key = Instruction sequenceID
-   * Value = Instruction */
-  std::map<uint64_t, std::shared_ptr<Instruction>> requestedStores_;
+   * Value = reqEntry struct */
+  std::map<uint64_t, reqEntry> requestedStores_;
 
   /** A vector containing all completed Instruction read requests. */
   std::vector<MemoryReadResult> completedInstrReads_;
@@ -157,13 +148,6 @@ class MMU {
 
   /** TID of the process currently communicating with this MMU. */
   uint64_t tid_ = 0;
-
-  // We model "weak" LL/SC support (as is the case in the majority of hardware)
-  // and so only one monitor can be usable. Atomics are processed when at the
-  // head of ROB so no speculation.
-  /** The cache line monitor represented as a pair. Containes a set of cache
-   * line addresses within monitor, and whether the monitor is valid. */
-  std::pair<std::set<uint64_t>, bool> cacheLineMonitor_;
 
   /** Size of a single cache line in bytes. */
   const uint64_t cacheLineWidth_;

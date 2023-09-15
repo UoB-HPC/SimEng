@@ -12,22 +12,24 @@ namespace simeng {
 namespace memory {
 
 /** Enum representing the different types of MemPackets. */
-enum MemPacketType : uint8_t {
-  READ_REQUEST = 0b11000000,
-  READ_RESPONSE = 0b01000000,
-  WRITE_REQUEST = 0b10000000,
-  WRITE_RESPONSE = 0b00000000,
+enum MemPacketType : uint16_t {
+  READ_REQUEST = 0b1100000000000000,
+  READ_RESPONSE = 0b0100000000000000,
+  WRITE_REQUEST = 0b1000000000000000,
+  WRITE_RESPONSE = 0b0000000000000000,
 };
 
 /** Masks used for manipulating the metadata associated with a MemPacket. */
-static constexpr uint8_t AccessTypeMask = 0b10000000;
-static constexpr uint8_t PacketTypeMask = 0b01000000;
-static constexpr uint8_t FaultMask = 0b00100000;
-static constexpr uint8_t IgnoreMask = 0b00010000;
-static constexpr uint8_t PayloadMask = 0b00001000;
-static constexpr uint8_t InstrReadMask = 0b00000100;
-static constexpr uint8_t UntimedMemAccessMask = 0b00000010;
-static constexpr uint8_t FromSystem = 0b00000001;
+static constexpr uint16_t AccessTypeMask = 0b1000000000000000;
+static constexpr uint16_t PacketTypeMask = 0b0100000000000000;
+static constexpr uint16_t FaultMask = 0b0010000000000000;
+static constexpr uint16_t IgnoreMask = 0b0001000000000000;
+static constexpr uint16_t PayloadMask = 0b0000100000000000;
+static constexpr uint16_t InstrReadMask = 0b0000010000000000;
+static constexpr uint16_t UntimedMemAccessMask = 0b0000001000000000;
+static constexpr uint16_t FromSystemMask = 0b0000000100000000;
+static constexpr uint16_t IsAtomicMask = 0b0000000010000000;
+static constexpr uint16_t FailedMask = 0b0000000001000000;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -83,7 +85,15 @@ class MemPacket {
 
   /** Function which indicates whether a MemPacket has been sent from a system
    * class. */
-  inline bool isFromSystem() const { return metadata_ & FromSystem; }
+  inline bool isFromSystem() const { return metadata_ & FromSystemMask; }
+
+  /** Function which indicates whether a MemPacket belongs to an atomic
+   * operation. */
+  inline bool isAtomic() const { return metadata_ & IsAtomicMask; }
+
+  /** Function which indicates whether a MemPacket has failed in its memory
+   * access. */
+  inline bool hasFailed() const { return metadata_ & FailedMask; }
 
   /** Function which indicates whether a MemPacket contains a payload.  */
   inline bool hasPayload() const { return metadata_ & PayloadMask; }
@@ -101,7 +111,13 @@ class MemPacket {
   inline void markAsUntimed() { metadata_ = metadata_ | UntimedMemAccessMask; }
 
   /** Function used to mark a MemPacket as being from a system class. */
-  inline void markAsFromSystem() { metadata_ = metadata_ | FromSystem; }
+  inline void markAsFromSystem() { metadata_ = metadata_ | FromSystemMask; }
+
+  /** Function used to mark a MemPacket as belonging to an atmoic operation. */
+  inline void markAsAtomic() { metadata_ = metadata_ | IsAtomicMask; }
+
+  /** Function used to mark a MemPacket as having failed in it memory access. */
+  inline void markAsFailed() { metadata_ = metadata_ | FailedMask; }
 
   /** Function to return the data assosciated with a MemPacket. */
   std::vector<char>& payload() { return payload_; }
@@ -141,8 +157,11 @@ class MemPacket {
    * 5th bit indicates whether a MemPacket contains a payload (1) or not (0).
    * 6th bit indicates whether a MemPacket reads an instruction (1) or not (0).
    * 7th bit indicates whether an untimed (1) or timed (0) memory access occurs.
+   * 8th bit indicates whether a MemPacket's access should be atomic (1) or
+   * non-atomic (0). 9th bit indicates whether the memory access associated with
+   * the MemPacket has failed (1) or succeeded (0).
    */
-  uint8_t metadata_ = 0;
+  uint16_t metadata_ = 0;
 
   /** Payload assosciate with a MemPacket. */
   std::vector<char> payload_;

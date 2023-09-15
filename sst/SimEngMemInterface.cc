@@ -126,9 +126,6 @@ void SimEngMemInterface::handleWriteRequest(
   uint64_t size = pkt->size_;
   uint64_t pAddrEnd = pAddrStart + size - 1;
 
-  // std::cerr << "Writing " << std::hex << vAddrStart << std::dec << " sized "
-  //           << size << std::endl;
-
   AggregateWriteRequest* aggrReq = new AggregateWriteRequest(pkt);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, pAddrStart, pAddrEnd,
@@ -249,8 +246,16 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     if (aggrReq->pkt_->isUntimed()) {
       flags = 2;
     }
-    StandardMem::Request* writeReq =
-        new StandardMem::Write(pAddrStart, currReqSize, payload, false, flags);
+    StandardMem::Request* writeReq;
+    // The underlying class of the StandardMem::Request pointer depends on
+    // whether the access is atomic
+    if (aggrReq->pkt_->isAtomic()) {
+      writeReq = new StandardMem::StoreConditional(pAddrStart, currReqSize,
+                                                   payload, flags);
+    } else {
+      writeReq = new StandardMem::Write(pAddrStart, currReqSize, payload, false,
+                                        flags);
+    }
 
     aggrReq->aggregateCount_++;
     dataIndex += currReqSize;
@@ -278,8 +283,13 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
       currReqSize = cacheLineWidth_;
     }
 
-    StandardMem::Request* readReq =
-        new StandardMem::Read(pAddrStart, currReqSize);
+    StandardMem::Request* readReq;
+    // The underlying class of the StandardMem::Request pointer depends on
+    // whether the access is atomic
+    if (aggrReq->pkt_->isAtomic())
+      readReq = new StandardMem::LoadLink(pAddrStart, currReqSize);
+    else
+      readReq = new StandardMem::Read(pAddrStart, currReqSize);
 
     // Increase the aggregate count to denote the number SST requests a read
     // request from SimEng was split into.
@@ -323,7 +333,7 @@ void SimEngMemInterface::aggregatedReadResponses(
   // Format:
   // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-data-<value>
-  uint64_t id = aggrReq->id_;
+  // uint64_t id = aggrReq->id_;
   // if (debug_) {
   //   std::cout << "[SSTSimEng:SSTDebug] MemRead"
   //             << "-read-response-" << id << "-cycle-" << tickCounter_
@@ -354,8 +364,8 @@ void SimEngMemInterface::aggregatedWriteResponses(
   uint64_t id = aggrReq->id_;
   // if (debug_) {
   //   std::cout << "[SSTSimEng:SSTDebug] MemWrite"
-  //             << "-read-response-" << id << "-cycle-" << tickCounter_
-  //             << std::endl;
+  //             << "-write-response-" << id << "-cycle-" << tickCounter_
+  //             << "-failed-" << aggrReq->pkt_->hasFailed() << std::endl;
   // }
   aggrReq->pkt_->turnIntoWriteResponse();
   if (aggrReq->pkt_->isFromSystem())
@@ -413,6 +423,8 @@ void SimEngMemInterface::SimEngMemHandlers::handle(
 
   SimEngMemInterface::AggregateWriteRequest* aggrReq =
       reinterpret_cast<SimEngMemInterface::AggregateWriteRequest*>(itr->second);
+  // Record a failure
+  if (rsp->getFail()) aggrReq->pkt_->markAsFailed();
 
   if (--aggrReq->aggregateCount_ <= 0) {
     memInterface_.aggregatedWriteResponses(aggrReq);
