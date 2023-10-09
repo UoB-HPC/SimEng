@@ -453,7 +453,7 @@ void LoadStoreQueue::tick() {
             // No more requests of this type can be scheduled this cycle
             exceededLimits[isStore] = true;
             // Remove speculative increment to ensure it doesn't count for
-            // comparisons aginast the totalLimit_
+            // comparisons against the totalLimit_
             reqCounts[isStore]--;
             itInsn = itReq->second.end();
             break;
