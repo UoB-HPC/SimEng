@@ -119,22 +119,22 @@ Reservation-Stations:
     - EXB
   2:
     Size: 10
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - EAGA
   3:
     Size: 10
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - EAGB
   4:
     Size: 19
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - BR
   5:
     Size: 20
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - SME
 Execution-Units:
@@ -265,6 +265,7 @@ Latencies:
     - STORE_ADDRESS_SME
     Execution-Latency: 6
     Execution-Throughput: 1
+# Indexed FMLA instructions split into 2 dependent µops. Latency increased to 15 to mimic such behaviour.
   11:
     Instruction-Groups:
     - ~1922,
