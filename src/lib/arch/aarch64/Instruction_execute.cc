@@ -1876,6 +1876,7 @@ void Instruction::execute() {
         // Check core is in correct context mode (check SM first)
         if (!SMenabled) return SMdisabled();
         if (!ZAenabled) return ZAdisabled();
+
         const uint16_t rowCount = VL_bits / 64;
         const uint64_t* pn = operands[rowCount].getAsVector<uint64_t>();
         const uint64_t* pm = operands[rowCount + 1].getAsVector<uint64_t>();
@@ -2554,10 +2555,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -2591,10 +2591,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1_MXIPXX_V_D: {  // ld1d {zatv.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -2620,10 +2619,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -2657,10 +2655,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1_MXIPXX_V_S: {  // ld1w {zatv.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4400,10 +4397,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1_MXIPXX_H_D: {  // st1d {zath.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4421,10 +4417,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4456,10 +4451,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4477,10 +4471,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -5851,10 +5844,9 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ZERO_M: {  // zero {mask}
         // SME
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         for (int i = 0; i < destinationRegisterCount; i++) {
           results[i] = RegisterValue(0, 256);
         }
