@@ -480,7 +480,7 @@ void LoadStoreQueue::tick() {
           // Remove processed address from queue
           addressQueue.pop();
         }
-        // Remove entry from vector iff all of its requests have been
+        // Remove entry from vector if all of its requests have been
         // scheduled
         if (addressQueue.size() == 0) {
           itInsn = itReq->second.erase(itInsn);
