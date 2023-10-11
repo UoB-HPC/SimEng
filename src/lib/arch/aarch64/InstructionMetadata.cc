@@ -202,7 +202,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].type = ARM64_OP_IMM;
       operandCount = 3;
 
+      // Extract immediate in SVE add with immediate instruction
       size_t start = operandStr.find("#");
+      // Identify whether the immediate value is in base-10 or base-16
       if (start != std::string::npos) {
         start++;
         bool hex = false;
@@ -214,12 +216,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         uint8_t end = operandStr.size();
         size_t shifted = operandStr.find("LSL");
         if (shifted != std::string::npos) {
-          std::cerr << "[SimEng:arch] SVE add with immediate has shift vlaue "
+          std::cerr << "[SimEng:arch] SVE add with immediate has shift value "
                        "in operandStr which is unsupported."
                     << std::endl;
           exit(1);
         }
-
+        // Convert extracted immediate from string to int64_t
         std::string sub = operandStr.substr(start, end);
         if (hex) {
           operands[2].imm = std::stoul(sub, 0, 16);
