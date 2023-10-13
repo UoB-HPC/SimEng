@@ -513,7 +513,10 @@ void ModelConfig::validate() {
           // AArch64_INSTRUCTION_LIST_END
           boundChecker(configFile_[root][i]["Instruction-Opcode"][opcodeIndex],
                        (std::string(latNum) + std::string(grpNum)),
-                       std::make_pair(0, 4516), ExpectedValue::UInteger);
+                       std::make_pair(
+                           0, static_cast<int>(
+                                  AARCH64Opcode::AArch64_INSTRUCTION_LIST_END)),
+                       ExpectedValue::UInteger);
           opcodeIndex++;
         } else if (nodeChecker<std::string>(
                        grpNode[j], (std::string(latNum) + std::string(grpNum)),

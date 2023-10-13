@@ -433,55 +433,57 @@ void LoadStoreQueue::tick() {
 
       // Iterate over requests ready this cycle
       while (itInsn != itReq->second.end()) {
-        // Speculatively increment count of this request type
-        reqCounts[isStore]++;
+        // Schedule requests from the queue of addresses in
+        // request[Load|Store]Queue_ entry
+        auto& addressQueue = itInsn->reqAddresses;
+        while (addressQueue.size()) {
+          const simeng::MemoryAccessTarget req =
+              addressQueue.front();  // Speculatively increment count of this
+                                     // request type
+          reqCounts[isStore]++;
 
-        // Ensure the limit on the number of permitted operations is adhered
-        // to
-        if (reqCounts[isStore] + reqCounts[!isStore] > totalLimit_) {
-          // No more requests can be scheduled this cycle
-          exceededLimits = {true, true};
-          break;
-        } else if (reqCounts[isStore] > reqLimits_[isStore]) {
-          // No more requests of this type can be scheduled this cycle
-          exceededLimits[isStore] = true;
-          // Remove speculative increment to ensure it doesn't count for
-          // comparisons aginast the totalLimit_
-          reqCounts[isStore]--;
-          break;
-        } else {
-          // Schedule requests from the queue of addresses in
-          // request[Load|Store]Queue_ entry
-          auto& addressQueue = itInsn->reqAddresses;
-          while (addressQueue.size()) {
-            const simeng::MemoryAccessTarget req = addressQueue.front();
-
-            // Ensure the limit on the data transfered per cycle is adhered to
-            assert(req.size <= bandwidth &&
-                   "Individual memory request from LoadStoreQueue exceeds L1 "
-                   "bandwidth set and thus will never be submitted");
-            dataTransfered[isStore] += req.size;
-            if (dataTransfered[isStore] > bandwidth) {
-              // No more requests can be scheduled this cycle
-              exceededLimits[isStore] = true;
-              itInsn = itReq->second.end();
-              break;
-            }
-
-            // Request a read from the memory interface if the requestQueue_
-            // entry represents a read
-            if (!isStore) {
-              memory_.requestRead(req, itInsn->insn->getSequenceId());
-            }
-
-            // Remove processed address from queue
-            addressQueue.pop();
+          // Ensure the limit on the number of permitted operations is adhered
+          // to
+          if (reqCounts[isStore] + reqCounts[!isStore] > totalLimit_) {
+            // No more requests can be scheduled this cycle
+            exceededLimits = {true, true};
+            itInsn = itReq->second.end();
+            break;
+          } else if (reqCounts[isStore] > reqLimits_[isStore]) {
+            // No more requests of this type can be scheduled this cycle
+            exceededLimits[isStore] = true;
+            // Remove speculative increment to ensure it doesn't count for
+            // comparisons against the totalLimit_
+            reqCounts[isStore]--;
+            itInsn = itReq->second.end();
+            break;
           }
-          // Remove entry from vector iff all of its requests have been
-          // scheduled
-          if (addressQueue.size() == 0) {
-            itInsn = itReq->second.erase(itInsn);
+
+          // Ensure the limit on the data transfered per cycle is adhered to
+          assert(req.size <= bandwidth &&
+                 "Individual memory request from LoadStoreQueue exceeds L1 "
+                 "bandwidth set and thus will never be submitted");
+          dataTransfered[isStore] += req.size;
+          if (dataTransfered[isStore] > bandwidth) {
+            // No more requests can be scheduled this cycle
+            exceededLimits[isStore] = true;
+            itInsn = itReq->second.end();
+            break;
           }
+
+          // Request a read from the memory interface if the requestQueue_
+          // entry represents a read
+          if (!isStore) {
+            memory_.requestRead(req, itInsn->insn->getSequenceId());
+          }
+
+          // Remove processed address from queue
+          addressQueue.pop();
+        }
+        // Remove entry from vector if all of its requests have been
+        // scheduled
+        if (addressQueue.size() == 0) {
+          itInsn = itReq->second.erase(itInsn);
         }
       }
 
