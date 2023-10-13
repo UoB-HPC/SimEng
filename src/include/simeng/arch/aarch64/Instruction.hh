@@ -51,8 +51,39 @@ inline uint8_t getDataSize(cs_arm64_op op) {
 
   // ARM64_REG_V0 -> {end} are vector registers
   if (op.reg >= ARM64_REG_V0) {
-    // Data size for vector registers relies on opcode thus return 0
-    return 0;
+    // Data size for vector registers relies on opcode, get vector access
+    // specifier
+    arm64_vas vas = op.vas;
+    assert(vas != ARM64_VAS_INVALID && "Invalid VAS type");
+    switch (vas) {
+      case ARM64_VAS_16B:
+      case ARM64_VAS_8H:
+      case ARM64_VAS_4S:
+      case ARM64_VAS_2D:
+      case ARM64_VAS_1Q: {
+        return 16;
+      }
+      case ARM64_VAS_8B:
+      case ARM64_VAS_4H:
+      case ARM64_VAS_2S:
+      case ARM64_VAS_1D: {
+        return 8;
+      }
+      case ARM64_VAS_4B:
+      case ARM64_VAS_2H:
+      case ARM64_VAS_1S: {
+        return 4;
+      }
+      case ARM64_VAS_1H: {
+        return 2;
+      }
+      case ARM64_VAS_1B: {
+        return 1;
+      }
+      default: {
+        assert(false && "Unknown VAS type");
+      }
+    }
   }
 
   // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
@@ -258,14 +289,14 @@ class Instruction : public simeng::Instruction {
 
   /** Override the specified source register with a renamed physical register.
    */
-  void renameSource(uint8_t i, Register renamed) override;
+  void renameSource(uint16_t i, Register renamed) override;
 
   /** Override the specified destination register with a renamed physical
    * register. */
-  void renameDestination(uint8_t i, Register renamed) override;
+  void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint8_t i, const RegisterValue& value) override;
+  virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */

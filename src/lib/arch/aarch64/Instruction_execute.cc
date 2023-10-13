@@ -91,6 +91,10 @@ void Instruction::execute() {
         results[0] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
+      case MicroOpcode::OFFSET_REG: {
+        results[0] = operands[0].get<uint64_t>() + operands[1].get<uint64_t>();
+        break;
+      }
       case MicroOpcode::STR_DATA: {
         setMemoryAddresses({{0, 0}});
         memoryData[0] = operands[0];
@@ -185,6 +189,14 @@ void Instruction::execute() {
         results[0] = x + (VL * y);
         break;
       }
+      case Opcode::AArch64_ADDVv4i16v: {  // addv hd, vn.4h
+        results[0] = neonHelp::vecSumElems_2ops<uint16_t, 4>(operands);
+        break;
+      }
+      case Opcode::AArch64_ADDVv4i32v: {  // addv sd, vn.4s
+        results[0] = neonHelp::vecSumElems_2ops<uint32_t, 4>(operands);
+        break;
+      }
       case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
         results[0] = neonHelp::vecSumElems_2ops<uint8_t, 8>(operands);
         break;
@@ -224,6 +236,22 @@ void Instruction::execute() {
         auto [result, nzcv] =
             arithmeticHelp::addExtend_3ops<uint64_t>(operands, metadata, false);
         results[0] = result;
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_B: {  // add zdn.b, zdn.b, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint8_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_D: {  // add zdn.d, zdn.d, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint64_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_H: {  // add zdn.h zdn.h, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint16_t>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ADD_ZI_S: {  // add zdn.s, zdn.s, imm{, shift}
+        results[0] = sveHelp::sveAdd_imm<uint32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_ADD_ZPmZ_B: {  // add zdn.b, pg/m, zdn.b, zm.b
@@ -1162,6 +1190,12 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
         break;
       }
+      case Opcode::AArch64_EOR_ZZZ: {  // eor zd.d, zn.d, zm.d
+        results[0] = sveHelp::sveLogicOpUnPredicated_3vecs<uint64_t>(
+            operands, VL_bits,
+            [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
+        break;
+      }
       case Opcode::AArch64_EORv16i8: {  // eor vd.16b, vn.16b, vm.16b
         results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 16>(
             operands, [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
@@ -1170,6 +1204,34 @@ void Instruction::execute() {
       case Opcode::AArch64_EORv8i8: {  // eor vd.8b, vn.8b, vm.8b
         results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 8>(
             operands, [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {  // MOVA zd.b, pg/m, zanh.b[ws,
+                                                 // #imm]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 8;
+        const uint8_t* zd = operands[0].getAsVector<uint8_t>();
+        const uint64_t* pg = operands[1].getAsVector<uint64_t>();
+        const uint64_t sliceNum =
+            (operands[2 + rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata.operands[2].sme_index.disp)) %
+            rowCount;
+        const uint8_t* zanRow = operands[2 + sliceNum].getAsVector<uint8_t>();
+        uint8_t out[256] = {0};
+
+        for (int elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 64));
+          if (pg[elem / 64] & shifted_active)
+            out[elem] = zanRow[elem];
+          else
+            out[elem] = zd[elem];
+        }
+
+        results[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
@@ -1189,6 +1251,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_EXTv8i8: {  // ext vd.8b, vn.8b, vm.8b, #index
         results[0] = neonHelp::vecExtVecs_index<uint8_t, 8>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_FABDv2f64: {  // fabd vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecFabd<double, 2>(operands);
+        break;
+      }
+      case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecFabd<float, 4>(operands);
         break;
       }
       case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
@@ -1407,6 +1477,11 @@ void Instruction::execute() {
       case Opcode::AArch64_FCMGTv2i64rz: {  // fcmgt vd.2d, vn.2d, #0.0
         results[0] = neonHelp::vecFCompare<double, uint64_t, 2>(
             operands, true, [](double x, double y) -> bool { return x > y; });
+        break;
+      }
+      case Opcode::AArch64_FCMGTv2f64: {  // fcmgt vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecFCompare<double, uint64_t, 2>(
+            operands, false, [](double x, double y) -> bool { return x > y; });
         break;
       }
       case Opcode::AArch64_FCMGTv4f32: {  // fcmgt vd.4s, vn.4s, vm.4s
@@ -1793,6 +1868,37 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results[0] =
             neonHelp::vecFmlsIndexed_3vecs<float, 4>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_FMOPA_MPPZZ_D: {  // fmopa zada.d, pn/m, pm/m, zn.d,
+                                             // zm.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint64_t* pn = operands[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm = operands[rowCount + 1].getAsVector<uint64_t>();
+        const double* zn = operands[rowCount + 2].getAsVector<double>();
+        const double* zm = operands[rowCount + 3].getAsVector<double>();
+
+        // zn is row, zm is col
+        for (int row = 0; row < rowCount; row++) {
+          double outRow[32] = {0};
+          uint64_t shifted_active_row = 1ull << ((row % 8) * 8);
+          const double* zadaRow = operands[row].getAsVector<double>();
+          for (int col = 0; col < rowCount; col++) {
+            double zadaElem = zadaRow[col];
+            uint64_t shifted_active_col = 1ull << ((col % 8) * 8);
+            if ((pm[col / 8] & shifted_active_col) &&
+                (pn[row / 8] & shifted_active_row))
+              outRow[col] = zadaElem + (zn[row] * zm[col]);
+            else
+              outRow[col] = zadaElem;
+          }
+          results[row] = {outRow, 256};
+        }
         break;
       }
       case Opcode::AArch64_FMOPA_MPPZZ_S: {  // fmopa zada.s, pn/m, pm/m, zn.s,
@@ -2268,6 +2374,24 @@ void Instruction::execute() {
         results[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_GLD1W_SXTW_REAL: {  // ld1w {zd.s}, pg/z,
+                                               // [<xn|sp>, zm.s, sxtw]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 32;
+        uint32_t out[64] = {0};
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            out[i] = memoryData[index].get<uint32_t>();
+            index++;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // TODO: Observe hints
         break;
@@ -2428,13 +2552,76 @@ void Instruction::execute() {
                                                                       metadata);
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, LOAD
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
+        uint64_t out[32] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            out[i] = data[i];
+          } else {
+            out[i] = 0;
+          }
+        }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (int i = 0; i < partition_num; i++) {
+          if (i == sliceNum)
+            results[i] = {out, 256};
+          else
+            // Maintain un-updated rows.
+            results[i] = operands[i];
+        }
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_D: {  // ld1d {zatv.d[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, LOAD
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t* row =
+              const_cast<uint64_t*>(operands[i].getAsVector<uint64_t>());
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            row[sliceNum] = data[i];
+          } else {
+            row[sliceNum] = 0;
+          }
+          results[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -2468,10 +2655,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1_MXIPXX_V_S: {  // ld1w {zatv.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -2501,6 +2687,25 @@ void Instruction::execute() {
         const uint16_t partition_num = VL_bits / 8;
         const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
 
+        uint8_t out[256] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (p[i / 64] & shifted_active) {
+            out[i] = data[i];
+          } else {
+            out[i] = 0;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LD1B_IMM_REAL: {  // ld1b {zt.b}, pg/z, [xn{, #imm,
+                                             // mul vl}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 8;
+        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
@@ -2575,9 +2780,14 @@ void Instruction::execute() {
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
         break;
       }
-      case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], #imm
+      case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], <#imm|xm>
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
+
+        // if #imm post-index, value can only be 16
+        const uint64_t postIndex = (metadata.operands[2].type == ARM64_OP_REG)
+                                       ? operands[1].get<uint64_t>()
+                                       : 16;
+        results[1] = operands[0].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
@@ -2627,6 +2837,32 @@ void Instruction::execute() {
         for (int i = 0; i < (partition_num / 2); i++) {
           out[2 * i] = mini[0];
           out[(2 * i) + 1] = mini[1];
+        }
+        results[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LD1RQ_W: {  // ld1rqw {zd.s}, pg/z, [xn, xm, lsl #2]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+        uint32_t out[64] = {0};
+        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+
+        // Get mini-vector (quadword)
+        uint32_t mini[4] = {0};
+        for (int i = 0; i < 4; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            mini[i] = data[i];
+          }
+        }
+
+        // Duplicate mini-vector into output vector
+        for (int i = 0; i < (partition_num / 4); i++) {
+          out[4 * i] = mini[0];
+          out[(4 * i) + 1] = mini[1];
+          out[(4 * i) + 2] = mini[2];
+          out[(4 * i) + 3] = mini[3];
         }
         results[0] = {out, 256};
         break;
@@ -2805,18 +3041,68 @@ void Instruction::execute() {
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
-      case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
+      case Opcode::AArch64_LD1Fourv16b:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
+                                         // vt4.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv2d:  // ld1 {vt1.2d, vt2.2d, vt3.2d, vt4.2d},
+                                        // [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv4s: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
+                                          // vt4.4s}, [xn]
+        // LOAD
+        results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+        results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
+        results[2] = memoryData[2].zeroExtend(memoryData[2].size(), 256);
+        results[3] = memoryData[3].zeroExtend(memoryData[3].size(), 256);
+        break;
+      }
+      case Opcode::AArch64_LD1Fourv16b_POST:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
+                                              // vt4.16b}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv2d_POST:  // ld1 {vt1.2d, vt2.2d, vt3.2d,
+                                             // vt4.2d}, [xn], <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Fourv4s_POST: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
+                                               // vt4.4s}, [xn], <#imm|xm>
+        // LOAD
+        results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+        results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
+        results[2] = memoryData[2].zeroExtend(memoryData[2].size(), 256);
+        results[3] = memoryData[3].zeroExtend(memoryData[3].size(), 256);
+        // if #imm post-index, value can only be 64
+        const uint64_t postIndex = (metadata.operands[5].type == ARM64_OP_REG)
+                                       ? operands[1].get<uint64_t>()
+                                       : 64;
+        results[4] = operands[0].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_LD1Twov16b:  // ld1 {vt1.16b, vt2.16b}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov2d:  // ld1 {vt1.2d, vt2.2d}, [xn]
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov4s: {  // ld1 {vt1.4s, vt2.4s}, [xn]
         // LOAD
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
         results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
         break;
       }
-      case Opcode::AArch64_LD1Twov16b_POST: {  // ld1 {vt1.16b, vt2.16b}, [xn],
-                                               //   #imm
+      case Opcode::AArch64_LD1Twov16b_POST:  // ld1 {vt1.16b, vt2.16b}, [xn],
+                                             // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov2d_POST:  // ld1 {vt1.2d, vt2.2d}, [xn],
+                                            // <#imm|xm>
+        [[fallthrough]];
+      case Opcode::AArch64_LD1Twov4s_POST: {  // ld1 {vt1.4s, vt2.4s}, [xn],
+                                              // <#imm|xm>
         // LOAD
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
         results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
-        results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex = (metadata.operands[3].type == ARM64_OP_REG)
+                                       ? operands[1].get<uint64_t>()
+                                       : 32;
+        results[2] = operands[0].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
@@ -3681,19 +3967,19 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_B: {  // psel pd, pn, pm.b[wa, #imm]
-        results[0] = sveHelp::svePsel<uint8_t>(operands, metadata);
+        results[0] = sveHelp::svePsel<uint8_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_D: {  // psel pd, pn, pm.d[wa, #imm]
-        results[0] = sveHelp::svePsel<uint64_t>(operands, metadata);
+        results[0] = sveHelp::svePsel<uint64_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_H: {  // psel pd, pn, pm.h[wa, #imm]
-        results[0] = sveHelp::svePsel<uint16_t>(operands, metadata);
+        results[0] = sveHelp::svePsel<uint16_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_S: {  // psel pd, pn, pm.s[wa, #imm]
-        results[0] = sveHelp::svePsel<uint32_t>(operands, metadata);
+        results[0] = sveHelp::svePsel<uint32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
@@ -4033,6 +4319,11 @@ void Instruction::execute() {
             operands, metadata, true);
         break;
       }
+      case Opcode::AArch64_SHRNv8i8_shift: {  // shrn vd.8b, vn.8h, #imm
+        results[0] = neonHelp::vecShrnShift_imm<uint16_t, uint8_t, 8>(operands,
+                                                                      metadata);
+        break;
+      }
       case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
         results[0] = neonHelp::vecSshrShift_imm<int32_t, 4>(operands, metadata);
         break;
@@ -4103,13 +4394,66 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg/z,
+      case Opcode::AArch64_ST1_MXIPXX_H_D: {  // st1d {zath.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, STORE
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        const uint64_t* tileSlice = operands[sliceNum].getAsVector<uint64_t>();
+        memoryData =
+            sveHelp::sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
+
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, STORE
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        std::array<uint64_t, 32> mdata;
+        uint16_t md_size = 0;
+        uint16_t index = 0;
+
+        for (uint16_t x = 0; x < partition_num; x++) {
+          uint64_t shifted_active = 1ull << ((x % 8) * 8);
+          if (pg[x / 8] & shifted_active) {
+            mdata[md_size] = operands[x].getAsVector<uint64_t>()[sliceNum];
+            md_size++;
+          } else if (md_size) {
+            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+            md_size = 0;
+          }
+        }
+
+        if (md_size) {
+          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4124,13 +4468,12 @@ void Instruction::execute() {
 
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
+      case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, STORE
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();
         const uint64_t* pg =
@@ -4139,30 +4482,23 @@ void Instruction::execute() {
         const uint32_t sliceNum =
             (ws + metadata.operands[0].sme_index.disp) % partition_num;
 
-        uint16_t num_vec_elems = (VL_bits / 32);
-        uint16_t prdcns_per_preg = (64 / 4);
-
-        std::array<uint32_t, 256 / 4> mdata;
+        std::array<uint32_t, 64> mdata;
         uint16_t md_size = 0;
         uint16_t index = 0;
 
-        for (uint16_t x = 0; x < num_vec_elems; x++) {
-          uint64_t predicate = pg[x / prdcns_per_preg];
-          uint64_t bit_mask = 1ull << ((x % prdcns_per_preg) * 4);
-          uint64_t is_elem_active = predicate & bit_mask;
-          if (is_elem_active) {
+        for (uint16_t x = 0; x < partition_num; x++) {
+          uint64_t shifted_active = 1ull << ((x % 16) * 4);
+          if (pg[x / 16] & shifted_active) {
             mdata[md_size] = operands[x].getAsVector<uint32_t>()[sliceNum];
             md_size++;
-          } else if (md_size && !is_elem_active) {
-            const char* data = (char*)mdata.data();
-            memoryData[index] = RegisterValue(data, md_size * 4);
+          } else if (md_size) {
+            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
             md_size = 0;
           }
         }
 
         if (md_size) {
-          const char* data = (char*)mdata.data();
-          memoryData[index] = RegisterValue(data, md_size * 4);
+          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
         }
 
         break;
@@ -4207,6 +4543,14 @@ void Instruction::execute() {
         memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
+      case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
+        // STORE
+        const uint8_t* d = operands[0].getAsVector<uint8_t>();
+        const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+        memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        break;
+      }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
@@ -4223,6 +4567,53 @@ void Instruction::execute() {
         memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
+      case Opcode::AArch64_ST1Fourv16b: {  // st1 {vt.16b, vt2.16b, vt3.16b,
+                                           // vt4.16b}, [xn|sp]
+        // STORE
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint8_t>(), 16 * sizeof(uint8_t));
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1Fourv16b_POST: {  // st1 {vt.16b, vt2.16b,
+                                                // vt3.16b, vt4.16b}, [xn|sp],
+                                                // <#imm|xm>
+        // STORE
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint8_t>(), 16 * sizeof(uint8_t));
+        }
+        // if #imm post-index, value can only be 64
+        const uint64_t postIndex = (metadata.operands[5].type == ARM64_OP_REG)
+                                       ? operands[5].get<uint64_t>()
+                                       : 64;
+        results[0] = operands[4].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_ST1Fourv2d: {  // st1 {vt.2d, vt2.2d, vt3.2d,
+                                          // vt4.2d}, [xn|sp]
+        // STORE
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint64_t>(), 2 * sizeof(uint64_t));
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1Fourv2d_POST: {  // st1 {vt.2d, vt2.2d, vt3.2d,
+                                               // vt4.2d}, [xn|sp], <#imm|xm>
+        // STORE
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint64_t>(), 2 * sizeof(uint64_t));
+        }
+        // if #imm post-index, value can only be 64
+        const uint64_t postIndex = (metadata.operands[5].type == ARM64_OP_REG)
+                                       ? operands[5].get<uint64_t>()
+                                       : 64;
+        results[0] = operands[4].get<uint64_t>() + postIndex;
+        break;
+      }
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
@@ -4231,9 +4622,19 @@ void Instruction::execute() {
               (char*)operands[i].getAsVector<uint32_t>(), 2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex =
-            (metadata.operandCount == 6) ? operands[5].get<uint64_t>() : 32;
+        const uint64_t postIndex = (metadata.operands[5].type == ARM64_OP_REG)
+                                       ? operands[5].get<uint64_t>()
+                                       : 32;
         results[0] = operands[4].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_ST1Fourv4s: {  // st1 {vt.4s, vt2.4s, vt3.4s,
+                                          // vt4.4s}, [xn|sp]
+        // STORE
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = RegisterValue(
+              (char*)operands[i].getAsVector<uint32_t>(), 4 * sizeof(uint32_t));
+        }
         break;
       }
       case Opcode::AArch64_ST1Fourv4s_POST: {  // st1 {vt.4s, vt2.4s, vt3.4s,
@@ -4244,8 +4645,9 @@ void Instruction::execute() {
               (char*)operands[i].getAsVector<uint32_t>(), 4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
-        const uint64_t postIndex =
-            (metadata.operandCount == 6) ? operands[5].get<uint64_t>() : 64;
+        const uint64_t postIndex = (metadata.operands[5].type == ARM64_OP_REG)
+                                       ? operands[5].get<uint64_t>()
+                                       : 64;
         results[0] = operands[4].get<uint64_t>() + postIndex;
         break;
       }
@@ -4257,12 +4659,65 @@ void Instruction::execute() {
         memoryData[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
         break;
       }
+      case Opcode::AArch64_ST1Twov16b_POST: {  // st1 {vt.16b, vt2.16b},
+                                               // [xn|sp], <#imm|xm>
+        // STORE
+        const uint8_t* t = operands[0].getAsVector<uint8_t>();
+        const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
+        memoryData[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
+        memoryData[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
+
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex = (metadata.operands[3].type == ARM64_OP_REG)
+                                       ? operands[3].get<uint64_t>()
+                                       : 32;
+        results[0] = operands[2].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_ST1Twov2d: {  // st1 {vt.2d, vt2.2d}, [xn|sp]
+        // STORE
+        const uint64_t* t = operands[0].getAsVector<uint64_t>();
+        const uint64_t* t2 = operands[1].getAsVector<uint64_t>();
+        memoryData[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
+        memoryData[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        break;
+      }
+      case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
+                                              // [xn|sp], <#imm|xm>
+        // STORE
+        const uint64_t* t = operands[0].getAsVector<uint64_t>();
+        const uint64_t* t2 = operands[1].getAsVector<uint64_t>();
+        memoryData[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
+        memoryData[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex = (metadata.operands[3].type == ARM64_OP_REG)
+                                       ? operands[3].get<uint64_t>()
+                                       : 32;
+        results[0] = operands[2].get<uint64_t>() + postIndex;
+        break;
+      }
       case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
         // STORE
         const uint32_t* t = operands[0].getAsVector<uint32_t>();
         const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
         memoryData[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
         memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        break;
+      }
+      case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
+                                              // [xn|sp], <#imm|xm>
+        // STORE
+        const uint32_t* t = operands[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
+        memoryData[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
+        memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex = (metadata.operands[3].type == ARM64_OP_REG)
+                                       ? operands[3].get<uint64_t>()
+                                       : 32;
+        results[0] = operands[2].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
@@ -5307,6 +5762,34 @@ void Instruction::execute() {
         results[0] = sveHelp::sveZip_vecs<uint32_t>(operands, VL_bits, false);
         break;
       }
+      case Opcode::AArch64_ZIP1v16i8: {  // zip1 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecZip<uint8_t, 16>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v2i32: {  // zip1 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecZip<uint32_t, 2>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v2i64: {  // zip1 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecZip<uint64_t, 2>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v4i16: {  // zip1 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecZip<uint16_t, 4>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v4i32: {  // zip1 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecZip<uint32_t, 4>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v8i16: {  // zip1 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecZip<uint16_t, 8>(operands, false);
+        break;
+      }
+      case Opcode::AArch64_ZIP1v8i8: {  // zip1 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecZip<uint8_t, 8>(operands, false);
+        break;
+      }
       case Opcode::AArch64_ZIP2_PPP_B: {  // zip2 pd.b, pn.b, pm.b
         results[0] = sveHelp::sveZip_preds<uint8_t>(operands, VL_bits, true);
         break;
@@ -5331,12 +5814,39 @@ void Instruction::execute() {
         results[0] = sveHelp::sveZip_vecs<uint32_t>(operands, VL_bits, true);
         break;
       }
+      case Opcode::AArch64_ZIP2v16i8: {  // zip2 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecZip<uint8_t, 16>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v2i32: {  // zip2 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecZip<uint32_t, 2>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v2i64: {  // zip2 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecZip<uint64_t, 2>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v4i16: {  // zip2 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecZip<uint16_t, 4>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v4i32: {  // zip2 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecZip<uint32_t, 4>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v8i16: {  // zip2 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecZip<uint16_t, 8>(operands, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2v8i8: {  // zip2 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecZip<uint8_t, 8>(operands, true);
+        break;
+      }
       case Opcode::AArch64_ZERO_M: {  // zero {mask}
         // SME
-        if (!ZAenabled) {
-          // Not in right context mode. Raise exception
-          return ZAdisabled();
-        }
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
         for (int i = 0; i < destinationRegisterCount; i++) {
           results[i] = RegisterValue(0, 256);
         }

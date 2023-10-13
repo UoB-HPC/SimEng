@@ -181,32 +181,25 @@ TEST_P(InstLoad, ld1_tworeg) {  // 128-bit
 }
 
 TEST_P(InstLoad, ld1_multi_struct) {
-  // 16-bit, load into one register
-  // 16B = 16 elements of one byte
-  initialHeapData_.resize(16);
-  uint8_t* heapi8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
-  heapi8[0] = 0xFF;
-  heapi8[1] = 0x00;
-  heapi8[2] = 0x11;
-  heapi8[3] = 0x22;
-  heapi8[4] = 0x33;
-  heapi8[5] = 0x44;
-  heapi8[6] = 0x55;
-  heapi8[7] = 0x66;
-  heapi8[8] = 0x77;
-  heapi8[9] = 0x88;
-  heapi8[10] = 0x99;
-  heapi8[11] = 0xAA;
-  heapi8[12] = 0xBB;
-  heapi8[13] = 0xCC;
-  heapi8[14] = 0xDD;
-  heapi8[15] = 0xEE;
+  initialHeapData_.resize(64);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0x66554433221100FF;
+  heap[1] = 0xEEDDCCBBAA998877;
+  heap[2] = 0x66554433221100FF;
+  heap[3] = 0xEEDDCCBBAA998877;
+  heap[4] = 0x66554433221100FF;
+  heap[5] = 0xEEDDCCBBAA998877;
+  heap[6] = 0x66554433221100FF;
+  heap[7] = 0xEEDDCCBBAA998877;
 
+  // One reg, 16b elements
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
     mov x8, 214
     svc #0
+
+    mov x1, #16
 
     # Load values from heap
     ld1 {v0.16b}, [x0]
@@ -214,24 +207,317 @@ TEST_P(InstLoad, ld1_multi_struct) {
     # save heap address before post index
     mov x10, x0
 
-    # Load values from heap with post-index
+    # Load values from heap with imm post-index
     ld1 {v1.16b}, [x0], #16
 
     # save heap address after post index
     mov x11, x0
+    sub x0, x0, #16
 
+    # Load values from heap with reg post-index
+    ld1 {v2.16b}, [x0], x1
+
+    mov x12, x0
   )");
 
   CHECK_NEON(0, uint8_t,
              {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
               0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
-
   CHECK_NEON(1, uint8_t,
              {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
               0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
-
   EXPECT_EQ(getGeneralRegister<uint64_t>(11),
             getGeneralRegister<uint64_t>(10) + 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 16);
+
+  // Two reg, 16b elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #32
+
+    # Load values from heap
+    ld1 {v0.16b, v1.16b}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v2.16b, v3.16b}, [x0], #32
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #32
+
+    # Load values from heap with reg post-index
+    ld1 {v4.16b, v5.16b}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(3, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(4, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(5, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 32);
+
+  // Two reg, 2d elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #32
+
+    # Load values from heap
+    ld1 {v0.2d, v1.2d}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v2.2d, v3.2d}, [x0], #32
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #32
+
+    # Load values from heap with reg post-index
+    ld1 {v4.2d, v5.2d}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(1, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(2, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(3, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(4, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(5, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 32);
+
+  // Two reg, 4s elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #32
+
+    # Load values from heap
+    ld1 {v0.4s, v1.4s}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v2.4s, v3.4s}, [x0], #32
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #32
+
+    # Load values from heap with reg post-index
+    ld1 {v4.4s, v5.4s}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(1, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(2, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(3, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(4, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(5, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 32);
+
+  // Four reg, 16b elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #64
+
+    # Load values from heap
+    ld1 {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v4.16b, v5.16b, v6.16b, v7.16b}, [x0], #64
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #64
+
+    # Load values from heap with reg post-index
+    ld1 {v8.16b, v9.16b, v10.16b, v11.16b}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(3, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(4, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(5, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(6, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(7, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(8, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(9, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(10, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(11, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 64);
+
+  // Four reg, 2d elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #64
+
+    # Load values from heap
+    ld1 {v0.2d, v1.2d, v2.2d, v3.2d}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v4.2d, v5.2d, v6.2d, v7.2d}, [x0], #64
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #64
+
+    # Load values from heap with reg post-index
+    ld1 {v8.2d, v9.2d, v10.2d, v11.2d}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(1, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(2, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(3, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(4, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(5, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(6, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(7, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(8, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(9, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(10, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(11, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 64);
+
+  // Four reg, 4s elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #64
+
+    # Load values from heap
+    ld1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v4.4s, v5.4s, v6.4s, v7.4s}, [x0], #64
+
+    # save heap address after post index
+    mov x11, x0
+    sub x0, x0, #64
+
+    # Load values from heap with reg post-index
+    ld1 {v8.4s, v9.4s, v10.4s, v11.4s}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(0, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(1, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(2, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(3, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(4, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(5, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(6, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(7, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(8, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(9, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(10, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(11, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 64);
 }
 
 TEST_P(InstLoad, ld2_multi_struct) {

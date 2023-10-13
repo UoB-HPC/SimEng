@@ -33,14 +33,14 @@ class Instruction {
 
   /** Override the specified source register with a renamed physical register.
    */
-  virtual void renameSource(uint8_t i, Register renamed) = 0;
+  virtual void renameSource(uint16_t i, Register renamed) = 0;
 
   /** Override the specified destination register with a renamed physical
    * register. */
-  virtual void renameDestination(uint8_t i, Register renamed) = 0;
+  virtual void renameDestination(uint16_t i, Register renamed) = 0;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint8_t i, const RegisterValue& value) = 0;
+  virtual void supplyOperand(uint16_t i, const RegisterValue& value) = 0;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;

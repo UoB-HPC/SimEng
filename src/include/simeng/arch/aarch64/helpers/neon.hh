@@ -200,6 +200,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `fabd vd.T, vn.T,
+   * vm.T`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = std::fabs(n[i] - m[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `fabs vd, vn`.
    * T represents the type of operands (e.g. for vn.2d, T = double).
    * I represents the number of elements in the output array to be updated (e.g.
@@ -690,6 +707,31 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `shrn vd, vn, #imm`.
+   * Ta represents the type of source operand (e.g. for vn.2d, Ta = uint64_t).
+   * Tb represents the type of destination operand (e.g. for vd.2s, Tb =
+   * uint32_t).
+   * I represents the number of elements in the output array to be
+   * updated (e.g. for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue.
+   */
+  template <typename Ta, typename Tb, int I>
+  static RegisterValue vecShrnShift_imm(
+      std::vector<RegisterValue>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool shrn2 = false) {
+    const Ta* n = operands[0].getAsVector<Ta>();
+
+    uint64_t shift = metadata.operands[2].imm;
+
+    Tb out[16 / sizeof(Tb)] = {0};
+    int index = shrn2 ? I : 0;
+    for (int i = 0; i < I; i++) {
+      out[index + i] = static_cast<Tb>(std::trunc(n[i] >> shift));
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `sshr vd, vn, #imm`.
    * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
    * I represents the number of elements in the output array to be updated (e.g.
@@ -885,6 +927,29 @@ class neonHelp {
       int index = isUzp1 ? (2 * i) : (2 * i) + 1;
       out[i] = n[index];
       out[(I / 2) + i] = m[index];
+    }
+
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `zip<1,2> vd.T,
+   * vn.T, vm.T`.
+   * T represents the type of operands (e.g. for vn.d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vn.8b, I = 8).
+   * Returns formatted Register Value. */
+  template <typename T, int I>
+  static RegisterValue vecZip(std::vector<RegisterValue>& operands,
+                              bool isZip2) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    T out[16 / sizeof(T)] = {0};
+    int index = isZip2 ? (I / 2) : 0;
+    for (int i = 0; i < I / 2; i++) {
+      out[2 * i] = n[index];
+      out[(2 * i) + 1] = m[index];
+      index++;
     }
 
     return {out, 256};

@@ -189,11 +189,56 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_ADD_ZI_B:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ADD_ZI_S: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[2].type = ARM64_OP_IMM;
+      operandCount = 3;
+
+      // Extract immediate in SVE add with immediate instruction
+      size_t start = operandStr.find("#");
+      // Identify whether the immediate value is in base-10 or base-16
+      if (start != std::string::npos) {
+        start++;
+        bool hex = false;
+        if (operandStr[start + 1] == 'x') {
+          hex = true;
+          start += 2;
+        }
+
+        uint8_t end = operandStr.size();
+        size_t shifted = operandStr.find("LSL");
+        if (shifted != std::string::npos) {
+          std::cerr << "[SimEng:arch] SVE add with immediate has shift value "
+                       "in operandStr which is unsupported."
+                    << std::endl;
+          exit(1);
+        }
+        // Convert extracted immediate from string to int64_t
+        std::string sub = operandStr.substr(start, end);
+        if (hex) {
+          operands[2].imm = std::stoul(sub, 0, 16);
+        } else {
+          operands[2].imm = stoi(sub);
+        }
+      } else {
+        operands[2].imm = 0;
+      }
+      break;
+    }
     case Opcode::AArch64_AND_ZI: {
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       operands[2].type = ARM64_OP_IMM;
+      operandCount = 3;
 
       char specifier = operandStr[operandStr.find(".") + 1];
       switch (specifier) {
@@ -230,6 +275,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_CNTP_XPP_H:
       [[fallthrough]];
     case Opcode::AArch64_CNTP_XPP_S:
+      [[fallthrough]];
+    case Opcode::AArch64_EOR_ZZZ:
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
@@ -663,10 +710,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
-    case Opcode::AArch64_GLD1W_D_SCALED_REAL: {
+    case Opcode::AArch64_GLD1W_D_SCALED_REAL:
+      [[fallthrough]];
+    case Opcode::AArch64_GLD1W_SXTW_REAL: {
       // Access types are not set correctly
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_GLD1D_SCALED_REAL:
@@ -702,6 +752,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].mem.index = static_cast<arm64_reg>(vec_enum);
       break;
     }
+    case Opcode::AArch64_LD1RQ_W:
+      [[fallthrough]];
     case Opcode::AArch64_LD1RQ_W_IMM: {
       // LD1RQW doesn't identify correct access types
       operands[0].access = CS_AC_WRITE;
@@ -769,6 +821,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1B:
       [[fallthrough]];
     case Opcode::AArch64_LD1D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1B_IMM_REAL:
       [[fallthrough]];
     case Opcode::AArch64_LD1D_IMM_REAL:
       [[fallthrough]];
@@ -865,6 +919,31 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
+    case Opcode::AArch64_LD1Fourv16b:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv4s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv2d:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_WRITE;
+      operands[3].access = CS_AC_WRITE;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1Fourv16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Fourv4s_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_WRITE;
+      operands[3].access = CS_AC_WRITE;
+      operands[4].access = CS_AC_READ | CS_AC_WRITE;
+      operands[5].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_LD1Onev16b:
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -875,10 +954,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_LD1Twov16b:
       [[fallthrough]];
-    case Opcode::AArch64_LD1Twov16b_POST:
+    case Opcode::AArch64_LD1Twov4s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov2d:
       // Fix incorrect access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1Twov16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov4s_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      operands[3].access = CS_AC_READ;
       break;
     case Opcode::AArch64_LDADDLW:
       [[fallthrough]];
@@ -1194,6 +1287,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ST1D:
       [[fallthrough]];
+    case Opcode::AArch64_ST1B_IMM:
+      [[fallthrough]];
     case Opcode::AArch64_ST1D_IMM:
       [[fallthrough]];
     case Opcode::AArch64_ST1W_IMM: {
@@ -1273,18 +1368,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
-    case Opcode::AArch64_ST1Fourv2s_POST:
-      [[fallthrough]];
-    case Opcode::AArch64_ST1Fourv4s_POST: {
-      // ST1 four vectors doesn't set access rights correctly
-      operands[0].access = CS_AC_READ;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
-      operands[3].access = CS_AC_READ;
-      // operands[4] is memory + write-back enabled already
-      if (operandCount == 6) operands[5].access = CS_AC_READ;
-      break;
-    }
     case Opcode::AArch64_ST1i8_POST:
       [[fallthrough]];
     case Opcode::AArch64_ST1i16_POST:
@@ -1297,11 +1380,52 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[2].access = CS_AC_READ;
       }
       break;
-    case Opcode::AArch64_ST1Twov4s:
+    case Opcode::AArch64_ST1Fourv16b:
       [[fallthrough]];
-    case Opcode::AArch64_ST1Twov16b:
+    case Opcode::AArch64_ST1Fourv2d:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv4s:
       // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Fourv16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv2s_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv4s_POST:
+      // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ | CS_AC_WRITE;
+      operands[5].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Twov16b:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov2d:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov4s:
+      // ST1 incorrectly flags read and write
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST1Twov16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov2d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Twov4s_POST:
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      operands[3].access = CS_AC_READ;
       break;
     case Opcode::AArch64_ST2Twov4s_POST:
       // ST2 post incorrectly flags read and write
@@ -1520,6 +1644,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_LD1_MXIPXX_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_V_D:
+      [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_S:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_S: {
@@ -1528,6 +1656,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_ST1_MXIPXX_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_V_D:
+      [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_H_S:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_S:
@@ -1535,6 +1667,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FMOPA_MPPZZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMOPA_MPPZZ_S: {
       // Need to add access specifiers
       // although operands[0] should be READ | WRITE, due to the implemented
@@ -1546,6 +1680,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
+      operandCount = 4;
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].reg = operands[2].sme_index.base;
+      operands[3].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_ZERO_M: {
@@ -2013,6 +2156,10 @@ void InstructionMetadata::revertAliasing() {
         operands[2] = operands[1];
         operands[1].access = CS_AC_READ;
         operands[2].access = CS_AC_READ;
+        return;
+      }
+      if (opcode >= Opcode::AArch64_EXTRACT_ZPMXI_H_B &&
+          opcode <= Opcode::AArch64_EXTRACT_ZPMXI_V_S) {
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||
