@@ -27,6 +27,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `add zd, zn, #imm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveAdd_imm(
+      std::vector<RegisterValue>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T imm = static_cast<T>(metadata.operands[2].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] + imm;
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
    * const`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
@@ -911,6 +930,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `<AND, EOR, ...>
+   * zd, zn, zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveLogicOpUnPredicated_3vecs(
+      std::vector<RegisterValue>& operands, const uint16_t VL_bits,
+      std::function<T(T, T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = func(n[i], m[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `lsl sz, zn, #imm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
@@ -1179,13 +1217,16 @@ class sveHelp {
   template <typename T>
   static std::array<uint64_t, 4> svePsel(
       std::vector<RegisterValue>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
     const uint64_t* pn = operands[0].getAsVector<uint64_t>();
     const uint64_t* pm = operands[1].getAsVector<uint64_t>();
     const uint32_t wa = operands[2].get<uint32_t>();
     const uint32_t imm = metadata.operands[2].sme_index.disp;
 
-    uint32_t index = wa + imm;
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+
+    uint32_t index = (wa + imm) % partition_num;
     uint64_t shifted_active = 1ull << ((index % (64 / sizeof(T))) * sizeof(T));
 
     std::array<uint64_t, 4> out = {0, 0, 0, 0};

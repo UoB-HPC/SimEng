@@ -81,29 +81,17 @@ Ports:
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support:
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE    
-    - STORE_INT
-    - STORE_SCALAR
-    - STORE_VECTOR
-    - STORE_SVE
+    Instruction-Support: 
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
     Instruction-Support:
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE    
-    - STORE_INT
-    - STORE_SCALAR
-    - STORE_VECTOR
-    - STORE_SVE
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
@@ -115,11 +103,6 @@ Ports:
     Portname: SME
     Instruction-Support:
     - SME
-  9:
-    Portname: SME_LD_STR
-    Instruction-Support:
-    - LOAD_SME
-    - STORE_SME
 Reservation-Stations:
   0:
     Size: 20
@@ -136,29 +119,24 @@ Reservation-Stations:
     - EXB
   2:
     Size: 10
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - EAGA
   3:
     Size: 10
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - EAGB
   4:
     Size: 19
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - BR
   5:
     Size: 20
-    Dispatch-Rate: 2
+    Dispatch-Rate: 1
     Ports:
     - SME
-  6:
-    Size: 10
-    Dispatch-Rate: 2
-    Ports:
-    - SME_LD_STR
 Execution-Units:
   0:
     Pipelined: True
@@ -214,12 +192,6 @@ Execution-Units:
     - INT_DIV_OR_SQRT
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT
-  9:
-    Pipelined: True
-    Blocking-Groups:
-    - INT_DIV_OR_SQRT
-    - FP_DIV_OR_SQRT
-    - SVE_DIV_OR_SQRT
 Latencies:
   0:
     Instruction-Groups: 
@@ -248,8 +220,10 @@ Latencies:
     - SCALAR_SIMPLE
     - VECTOR_SIMPLE_LOGICAL
     - SVE_SIMPLE_LOGICAL
+    - SME_SIMPLE_LOGICAL
     - VECTOR_SIMPLE_CMP
     - SVE_SIMPLE_CMP
+    - SME_SIMPLE_CMP
     Execution-Latency: 4
     Execution-Throughput: 1
   5:
@@ -258,18 +232,20 @@ Latencies:
     Execution-Latency: 29
     Execution-Throughput: 29
   6:
-    Instruction-Groups: 
+    Instruction-Groups:
+    - SCALAR_SIMPLE_CVT
     - VECTOR_SIMPLE
     - SVE_SIMPLE
-    - SCALAR_SIMPLE_CVT
+    - SME_SIMPLE
     - FP_MUL
     - SVE_MUL
-    - SME
+    - SME_MUL
     Execution-Latency: 9
     Execution-Throughput: 1
   7:
     Instruction-Groups: 
     - SVE_DIV_OR_SQRT
+    - SME_DIV_OR_SQRT
     Execution-Latency: 98
     Execution-Throughput: 98
   8:
@@ -288,34 +264,129 @@ Latencies:
   10:
     Instruction-Groups: 
     - LOAD_SVE
-    - STORE_ADDRESS_SVE
     - LOAD_SME
+    - STORE_ADDRESS_SVE
     - STORE_ADDRESS_SME
     Execution-Latency: 6
     Execution-Throughput: 1
+# Indexed FMLA instructions split into 2 dependent µops. Latency increased to 15 to mimic such behaviour
+# NOTE: Any changes to the capstone opcode list could invalidate the mapping between ARM instructions and the values below
   11:
     Instruction-Groups:
-    - SME_SIMPLE_LOGICAL
-    - SME_SIMPLE_CMP
-    # Same as SVE
-    Execution-Latency: 4
-    Execution-Throughput: 1
-  12:
-    Instruction-Groups:
-    - SME_SIMPLE
-    - SME_DIV_OR_SQRT
-    - SME_MUL
-    # SME_MUL Used only by outer-product instructions
-    # Same as SVE. No SME DIV or SQRT so classification to this group should be impossible. 
-    # Kept to catch edge cases.
-    Execution-Latency: 9
-    Execution-Throughput: 1
-  13:
-    Instruction-Groups:
-    - LOAD_SME
-    - STORE_ADDRESS_SME
-    # Same as SVE LD/STR
-    Execution-Latency: 6
+    - ~1922
+    - ~1924
+    - ~1926
+    - ~2359
+    - ~2360
+    - ~2361
+    - ~2364
+    - ~2365
+    - ~2368
+    - ~2369
+    - ~2371
+    - ~2390
+    - ~2391
+    - ~2392
+    - ~2395
+    - ~2396
+    - ~2399
+    - ~2400
+    - ~2402
+    - ~2445
+    - ~2446
+    - ~2447
+    - ~2450
+    - ~2451
+    - ~2454
+    - ~2455
+    - ~2457
+    - ~2470
+    - ~2471
+    - ~2472
+    - ~2475
+    - ~2476
+    - ~2479
+    - ~2480
+    - ~2482
+    - ~3627
+    - ~3629
+    - ~3631
+    - ~3633
+    - ~3644
+    - ~3646
+    - ~3648
+    - ~3650
+    - ~3709
+    - ~3711
+    - ~3713
+    - ~3715
+    - ~4306
+    - ~4308
+    - ~4310
+    - ~4312
+    - ~4326
+    - ~4328
+    - ~4330
+    - ~4332
+    - ~4372
+    - ~4374
+    - ~4376
+    - ~4378
+    - ~4468
+    - ~4469
+    - ~4470
+    - ~4472
+    - ~4474
+    - ~4476
+    - ~4493
+    - ~4494
+    - ~4495
+    - ~4497
+    - ~4499
+    - ~4501
+    - ~4511
+    - ~4513
+    - ~4515
+    - ~4517
+    - ~4519
+    - ~4521
+    - ~4534
+    - ~4535
+    - ~4536
+    - ~4538
+    - ~4540
+    - ~4542
+    - ~4594
+    - ~4595
+    - ~4599
+    - ~4601
+    - ~4603
+    - ~4605
+    - ~4613
+    - ~4614
+    - ~4618
+    - ~4620
+    - ~4622
+    - ~4624
+    - ~4633
+    - ~4635
+    - ~4637
+    - ~4639
+    - ~4641
+    - ~4643
+    - ~5760
+    - ~5762
+    - ~5764
+    - ~5766
+    - ~5780
+    - ~5782
+    - ~5784
+    - ~5786
+    - ~5824
+    - ~5826
+    - ~5828
+    - ~5830
+    Execution-Latency: 15
     Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure

@@ -26,8 +26,9 @@ class ReorderBufferTest : public testing::Test {
   ReorderBufferTest()
       : memory{},
         rat({{8, 32}}, {64}),
-        lsq(maxLSQLoads, maxLSQStores, dataMemory, {nullptr, 0},
-            [](auto registers, auto values) {}),
+        lsq(
+            maxLSQLoads, maxLSQStores, dataMemory, {nullptr, 0},
+            [](auto registers, auto values) {}, [](auto uop) {}),
         uop(new MockInstruction),
         uop2(new MockInstruction),
         uopPtr(uop),

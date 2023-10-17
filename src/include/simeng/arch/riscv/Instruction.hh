@@ -86,14 +86,14 @@ class Instruction : public simeng::Instruction {
 
   /** Override the specified source register with a renamed physical register.
    */
-  void renameSource(uint8_t i, Register renamed) override;
+  void renameSource(uint16_t i, Register renamed) override;
 
   /** Override the specified destination register with a renamed physical
    * register. */
-  void renameDestination(uint8_t i, Register renamed) override;
+  void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint8_t i, const RegisterValue& value) override;
+  virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */

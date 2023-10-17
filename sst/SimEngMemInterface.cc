@@ -196,6 +196,7 @@ void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }
+  delete aggrReq;
 }
 
 void SimEngMemInterface::tick() { tickCounter_++; }
