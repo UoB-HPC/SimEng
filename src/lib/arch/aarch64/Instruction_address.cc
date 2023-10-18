@@ -1471,12 +1471,6 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
             {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
         break;
       }
-      case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend {#amount}}]
-        uint64_t offset =
-            extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
-        setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 16}});
-        break;
-      }
       case Opcode::AArch64_STRSroW: {  // str st, [xn, wm{, extend {#amount}}]
         uint64_t offset =
             extendOffset(operands[2].get<uint32_t>(), metadata.operands[1]);
@@ -1578,6 +1572,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
         break;
       }
+      // case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend
+      // {#amount}}]
+      //   uint64_t offset =
+      //       extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
+      //   setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 16}});
+      //   break;
+      // }
       default:
         exceptionEncountered_ = true;
         exception_ = InstructionException::ExecutionNotYetImplemented;

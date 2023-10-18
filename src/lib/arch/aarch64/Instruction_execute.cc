@@ -4219,10 +4219,6 @@ void Instruction::execute() {
             operands, [](int32_t x) -> float { return static_cast<float>(x); });
         break;
       }
-      case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
-        results[0] = {divideHelp::div_3ops<int32_t>(operands), 8};
-        break;
-      }
       case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
         results[0] = {divideHelp::div_3ops<int64_t>(operands), 8};
         break;
@@ -5017,11 +5013,6 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
-        // STORE
-        memoryData[0] = operands[0];
-        break;
-      }
-      case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
         // STORE
         memoryData[0] = operands[0];
         break;
@@ -5852,6 +5843,22 @@ void Instruction::execute() {
         }
         break;
       }
+      // case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
+      //   const int32_t n = operands[0].get<int32_t>();
+      //   const int32_t m = operands[1].get<int32_t>();
+      //   int32_t res;
+      //   if (m == 0) res = 0;
+      //   res = (n / m);
+      //   results[0] = res;
+      //   //   results[0] = {divideHelp::div_3ops<int32_t>(operands), 8};
+      //   break;
+      // }
+      // case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend,
+      // {#amount}}]
+      //   // STORE
+      //   memoryData[0] = operands[0];
+      //   break;
+      // }
       default:
         return executionNYI();
     }
