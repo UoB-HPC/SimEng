@@ -260,7 +260,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // frflags Rs is pseudo of CSRRS Rs, fflags, zero (Read FP exception
         // flags) CSRRS Rs, _, _ -> CSRRS Rs, fflags, zero
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operands[2].type = RISCV_OP_REG;
@@ -268,22 +268,34 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdinstret");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "rdinstret");
       } else if (strcmp(mnemonic, "rdcycle") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdcycle");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "rdcycle");
       } else if (strcmp(mnemonic, "rdtime") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdtime");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "rdtime");
       } else if (strcmp(mnemonic, "csrr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrr");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "csrr");
       } else if (strcmp(mnemonic, "csrs") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrs");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "csrs");
       } else if (strcmp(mnemonic, "frcsr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdtime");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "rdtime");
       } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
         // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
         // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FRM;  // frm address
 
         operands[2].type = RISCV_OP_REG;
@@ -304,7 +316,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[0].reg = 1;
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
@@ -315,17 +327,23 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[2] = operands[1];
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrw");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "csrw");
       } else if (strcmp(mnemonic, "fscsr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction fscsr");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "fscsr");
       } else if (strcmp(mnemonic, "fscsr") == 0) {
         // 2 pseudoinstructions with same name but different number of registers
-        assert(false && "Unimplemented psuedoinstruction fscsr");
+        assert(false &&
+               "[SimEng::InstructionMetadata] Unimplemented psuedoinstruction "
+               "fscsr");
       } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
         // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
         // CSRRW Rs, _, _ -> CSRRW zero, frm, Rs
@@ -335,7 +353,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[0].reg = 1;
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FRM;  // frm address
 
         operandCount = 3;

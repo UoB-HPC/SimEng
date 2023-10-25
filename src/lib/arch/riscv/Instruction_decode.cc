@@ -26,15 +26,19 @@ Register csRegToRegister(unsigned int reg) {
   // Modulus ensures only 64 bit registers are recognised
   if (RISCV_REG_F31_64 >= reg && reg >= RISCV_REG_F0_64 && reg % 2 == 0) {
     // Register ft0.64 has encoding 34 with subsequent encodings interleaved
-    // with 32 bit floating point registers. See riscv.h
-    return {RegisterType::FLOAT, static_cast<uint16_t>((reg - 34) / 2)};
+    // with 32 bit floating point registers. See
+    // capstone-lib-src/include/riscv.h
+    return {RegisterType::FLOAT,
+            static_cast<uint16_t>((reg - RISCV_REG_F0_64) / 2)};
   }
 
   // Modulus ensures only 32 bit registers are recognised
   if (RISCV_REG_F31_32 >= reg && reg >= RISCV_REG_F0_32 && reg % 2 == 1) {
     // Register ft0.32 has encoding 33 with subsequent encodings interleaved
-    // with 64 bit floating point registers. See riscv.h
-    return {RegisterType::FLOAT, static_cast<uint16_t>((reg - 33) / 2)};
+    // with 64 bit floating point registers. See
+    // capstone-lib-src/include/riscv.h
+    return {RegisterType::FLOAT,
+            static_cast<uint16_t>((reg - RISCV_REG_F0_32) / 2)};
   }
 
   if (RISCV_REG_X31 >= reg && reg >= RISCV_REG_X1) {

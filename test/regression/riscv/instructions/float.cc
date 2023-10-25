@@ -2074,13 +2074,9 @@ TEST_P(InstFloat, FMAX_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0xffffffff00000000);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstFloat,
-    ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{}"))
-        //                      std::make_tuple(INORDER, YAML::Load("{}")),
-        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-        ),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstFloat,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

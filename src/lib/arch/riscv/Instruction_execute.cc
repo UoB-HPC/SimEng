@@ -122,7 +122,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
-      // Note: elements of memory data are RegisterValue's
       results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
       break;
     }
@@ -876,7 +875,7 @@ void Instruction::execute() {
             // TODO any subsequent attempt to execute a floating-point operation
             // with a dynamic rounding mode will raise an illegal instruction
             // exception.
-            std::cerr << "[SimEng:RISC-V:Execute] Invalid rounding mode"
+            std::cerr << "[SimEng:Instruction_execute] Invalid rounding mode"
                       << std::endl;
             break;
         }
@@ -933,12 +932,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FLD: {  // FLD rd,rs1,imm
-      // Note: elements of memory data are RegisterValue's
       results[0] = memoryData[0].get<double>();
       break;
     }
     case Opcode::RISCV_FLW: {  // FLW rd,rs1,imm
-      // Note: elements of memory data are RegisterValue's
       const float memSingle = memoryData[0].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(memSingle), 8);
@@ -1046,7 +1043,7 @@ void Instruction::execute() {
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
-      // As fmin.d
+      // Comments regarding fminf similar to RISCV_FMIN_D
       if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
         results[0] = RegisterValue(0xffffffff80000000, 8);
       } else {
@@ -1077,7 +1074,7 @@ void Instruction::execute() {
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
-      // As fmax_d
+      // Comments regarding fmaxf similar to RISCV_FMAX_D
       float res;
       if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
         res = +0;
