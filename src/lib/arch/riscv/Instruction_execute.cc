@@ -378,7 +378,7 @@ void Instruction::execute() {
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -386,12 +386,17 @@ void Instruction::execute() {
     case Opcode::RISCV_BNE: {  // BNE rs1,rs2,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
+      //      std::cerr << rs1 << ", " << rs2 << ", " <<
+      //      metadata.operands[2].imm
+      //                << std::endl;
+
       if (rs1 != rs2) {
         branchAddress_ = instructionAddress_ +
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        // Increase by instruction size to account for compressed instructions
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -404,7 +409,7 @@ void Instruction::execute() {
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -417,7 +422,7 @@ void Instruction::execute() {
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -430,7 +435,7 @@ void Instruction::execute() {
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -443,7 +448,7 @@ void Instruction::execute() {
                          metadata.operands[2].imm;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + 4;
+        branchAddress_ = instructionAddress_ + metadata.lenBytes;
         branchTaken_ = false;
       }
       break;
@@ -452,7 +457,7 @@ void Instruction::execute() {
       branchAddress_ = instructionAddress_ +
                        metadata.operands[1].imm;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + 4, 8);
+      results[0] = RegisterValue(instructionAddress_ + metadata.lenBytes, 8);
       break;
     }
     case Opcode::RISCV_JALR: {  // JALR rd,rs1,imm
@@ -460,7 +465,7 @@ void Instruction::execute() {
           (operands[0].get<uint64_t>() + metadata.operands[2].imm) &
           ~1;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + 4, 8);
+      results[0] = RegisterValue(instructionAddress_ + metadata.lenBytes, 8);
       break;
     }
       // TODO EBREAK
@@ -1480,6 +1485,15 @@ void Instruction::execute() {
     default:
       return executionNYI();
   }
+  //  std::cerr << "0x" << std::hex << instructionAddress_ << std::dec << ": "
+  //            << metadata.mnemonic << " " << metadata.operandStr;
+  //  if (results[0]) {
+  //    uint64_t val = results[0].get<uint64_t>();
+  //
+  //    std::cerr << " => " << val << std::endl;
+  //  } else {
+  //    std::cerr << std::endl;
+  //  }
 }
 
 }  // namespace riscv

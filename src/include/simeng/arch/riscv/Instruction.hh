@@ -166,6 +166,9 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
+  static const Register RA_REGISTER;
+  static const Register SP_REGISTER;
+
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
@@ -245,6 +248,9 @@ class Instruction : public simeng::Instruction {
   bool isFloat_ = false;
   /** Is this a floating point <-> integer convert operation? */
   bool isConvert_ = false;
+
+  /** Extracted value of current immediate from metadata */
+  uint32_t c_imm = 0;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

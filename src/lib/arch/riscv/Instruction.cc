@@ -11,6 +11,8 @@ namespace arch {
 namespace riscv {
 
 const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
+const Register Instruction::RA_REGISTER = {RegisterType::GENERAL, 1};
+const Register Instruction::SP_REGISTER = {RegisterType::GENERAL, 2};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)

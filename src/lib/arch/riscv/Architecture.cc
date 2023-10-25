@@ -16,7 +16,20 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
-  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
+  cs_mode csMode = CS_MODE_RISCV64;
+  constantsPool constantsPool;
+
+  // TODO if here to check if compressed instructions are allowed based off of
+  // config options
+
+  constants_.alignMask = constantsPool.alignMaskCompressed;
+  constants_.regWidth = constantsPool.byteLength64;
+  constants_.bytesLimit = constantsPool.bytesLimitCompressed;
+
+  cs_err n = cs_open(CS_ARCH_RISCV,
+                     static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
+                     &capstoneHandle);
+
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
                  "to error "
@@ -146,8 +159,11 @@ Architecture::~Architecture() {
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
+  //  std::cerr << std::hex << instructionAddress << std::dec;
+
   // Check that instruction address is 4-byte aligned as required by RISC-V
-  if (instructionAddress & 0x3) {
+  // 2-byte when Compressed ISA is supported
+  if (instructionAddress & constants_.alignMask) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
     metadataCache.emplace_front(metadata);
@@ -160,8 +176,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= 4 &&
-         "Fewer than 4 bytes supplied to RISC-V decoder");
+  assert(bytesAvailable >= constants_.bytesLimit &&
+         "Fewer than bytes limit supplied to RISC-V decoder");
+
+  // TODO should this still be 4 bytes?? Seems to work as is
 
   // Dereference the instruction pointer to obtain the instruction word
   uint32_t insn;
@@ -205,7 +223,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   uop->setInstructionAddress(instructionAddress);
 
-  return 4;
+  return iter->second.getMetadata().lenBytes;
 }
 
 executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
@@ -286,6 +304,8 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   regFile->set(cycleSystemReg_, iterations);
   regFile->set(retiredSystemReg_, retired);
 }
+
+archConstants Architecture::getConstants() const { return constants_; }
 
 }  // namespace riscv
 }  // namespace arch

@@ -16,7 +16,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
       operandCount(insn.detail->riscv.op_count) {
-  std::memcpy(encoding, insn.bytes, sizeof(encoding));
+  //  std::memcpy(encoding, insn.bytes, sizeof(encoding));
+  setLength(insn.size);
+  std::memset(encoding, 0, 4);
+  std::memcpy(encoding, insn.bytes, insn.size);
+
   // Copy printed output
   std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
   operandStr = std::string(insn.op_str);
@@ -29,6 +33,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->riscv.operands,
               sizeof(cs_riscv_op) * operandCount);
 
+  convertCompressedInstruction(insn);
   alterPseudoInstructions(insn);
 }
 
@@ -38,7 +43,8 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
       implicitDestinationCount(0),
-      operandCount(0) {
+      operandCount(0),
+      len(INSTR_LENGTH::IL_INVALID) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
@@ -438,6 +444,414 @@ void InstructionMetadata::includeZeroRegisterPosZero() {
   operands[0].reg = 1;
 
   operandCount = 3;
+}
+
+void InstructionMetadata::duplicateFirstOp() {
+  // Given register sequence {Op_a, Op_b, _} return {Op_a, Op_a, Op_b}
+  operands[2] = operands[1];
+  operands[1] = operands[0];
+
+  operandCount = 3;
+}
+
+void InstructionMetadata::createMemOpPosOne() {
+  // Given register sequence {Op_a, imm, reg} return {Op_a, mem, _}
+  assert(operands[1].type == RISCV_OP_IMM &&
+         "Incorrect operand type when creating memory operand");
+  assert(operands[2].type == RISCV_OP_REG &&
+         "Incorrect operand type when creating memory operand");
+
+  cs_riscv_op temp;
+  temp.type = RISCV_OP_MEM;
+  temp.imm = operands[1].imm;  //
+  temp.mem.base = operands[2].reg;
+  temp.mem.disp = operands[1].imm;
+
+  operands[1] = temp;
+
+  operandCount = 2;
+}
+
+void InstructionMetadata::setLength(uint8_t size) {
+  lenBytes = size;
+  switch (size) {
+    case 2:
+      len = INSTR_LENGTH::IL_16B;
+      break;
+    case 4:
+      len = INSTR_LENGTH::IL_32B;
+      break;
+    default:
+      len = INSTR_LENGTH::IL_INVALID;
+  }
+}
+void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
+  //  std::cerr << ": " << insn.mnemonic << " " << operandStr << std::endl;
+  if (len != INSTR_LENGTH::IL_16B) {
+    return;
+  }
+
+  //  std::cerr << std::endl
+  //            << "COMPRESSED:: " << insn.address << ":" << insn.mnemonic << "
+  //            "
+  //            << operandStr << std::endl;
+
+  switch (insn.opcode) {
+    case Opcode::RISCV_C_JR:
+      //      jalr x0, 0(rs1)
+      // trap if rs1 = zero
+      opcode = Opcode::RISCV_JALR;
+      // TODO repeat logic so that mnemonic can remain for help when debugging
+      // Change mnemonic to allow pseudoinstruction code to work
+      strcpy(mnemonic, reinterpret_cast<const char*>("jr"));
+      break;
+    case Opcode::RISCV_C_MV:
+      // add rd, x0, rs2
+      //  trap if rs2 = zero. rs2 == zero corresponds to C.JR
+      //  rs2==zero and rd == zero are hints
+      // C.MV rd, rs2, _ -> ADD rd, zero, rs2
+      opcode = Opcode::RISCV_ADD;
+
+      includeZeroRegisterPosOne();
+
+      //      operands[2] = insn.detail->riscv.operands[1];
+      //
+      //      operands[1].type = RISCV_OP_REG;
+      //      operands[1].reg = 1;
+      //
+      //      operandCount = 3;
+      break;
+    case Opcode::RISCV_C_LDSP: {
+      // TODO valid for RV64 only. Make this check
+      // ld rd, offset[8:3](x2)
+      // offset is immediate scaled by 8
+      // trap if rd=zero
+      opcode = Opcode::RISCV_LD;
+
+      // Create operand formatted like LD instruction
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_ADDI4SPN:
+      // addi rd ′ , x2, nzuimm[9:2]
+      // trap if nzuimm=zero
+      opcode = Opcode::RISCV_ADDI;
+      // All operands correct
+      break;
+    case Opcode::RISCV_C_LI:
+      // addi rd, x0, imm[5:0]
+      // trap if rd=zero
+      // C.LI rd, imm, _ -> addi rd, zero, imm
+      opcode = Opcode::RISCV_ADDI;
+
+      includeZeroRegisterPosOne();
+
+      //      operands[2] = insn.detail->riscv.operands[1];
+      //
+      //      operands[1].type = RISCV_OP_REG;
+      //      operands[1].reg = 1;
+      //
+      //      operandCount = 3;
+
+      break;
+    case Opcode::RISCV_C_ADDI16SP:
+      // Opcode shared with C.LUI but has Rd = x2
+      // addi x2, x2, nzimm[9:4]
+      // trap if nzimm=zero
+      // C.ADDI16SP sp, imm, _ -> addi sp, sp, imm
+      opcode = Opcode::RISCV_ADDI;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_SLLI:
+      // slli rd, rd, shamt[5:0]
+      //
+      // For RV32C, shamt[5] must be zero; the code points with shamt[5]=1 are
+      // reserved for custom extensions. For RV32C and RV64C, the shift amount
+      // must be non-zero; the code points with shamt=0 are HINTs. For all base
+      // ISAs, the code points with rd=x0 are HINTs, except those with
+      // shamt[5]=1 in RV32C.
+
+      // C.SLLI rd, shamt, _ -> slli rd, rd, shamt
+
+      opcode = Opcode::RISCV_SLLI;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_SDSP: {
+      // TODO rv64 ONLY, make check for this
+      // sd rs2, offset[8:3](x2)
+
+      opcode = Opcode::RISCV_SD;
+
+      // Create operand formatted like SD instruction
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_ADD:
+      // add rd, rd, rs2
+      // trap if rs2 = zero
+      // code points with rs2=x0 correspond
+      // to the C.JALR and C.EBREAK
+      // instructions. The code points with
+      // rs2̸=x0 and rd=x0 are HINTs.
+      // C.ADD rd, rs2, _ -> add rd, rd, rs2
+
+      opcode = Opcode::RISCV_ADD;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_LD: {
+      // TODO rv64 ONLY, make check for this
+      // ld rd ′ , offset[7:3](rs1 ′)
+
+      opcode = Opcode::RISCV_LD;
+
+      // Create operand formatted like LD instruction
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_ADDI: {
+      // addi rd, rd, nzimm[5:0]
+      // trap if rd=zero and imm=zero
+      // C.ADDI rd, imm, _ -> addi rd, rd, imm
+
+      opcode = Opcode::RISCV_ADDI;
+
+      duplicateFirstOp();
+
+      break;
+    }
+    case Opcode::RISCV_C_BNEZ:
+      // bne rs1 ′ , x0, offset[8:1]
+      // C.BNEZ rs1, imm, _ -> bne rs1, zero, imm
+      opcode = Opcode::RISCV_BNE;
+
+      includeZeroRegisterPosOne();
+
+      break;
+    case Opcode::RISCV_C_SD: {
+      // TODO rv64 ONLY, make check for this
+      // sd rs2 ′ , offset[7:3](rs1 ′)
+
+      opcode = Opcode::RISCV_SD;
+      // Create operand formatted like SD instruction
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_BEQZ:
+      // beq rs1 ′ , x0, offset[8:1]
+      // C.BEQZ rs1, imm, _ -> beq rs1, zero, imm
+      opcode = Opcode::RISCV_BEQ;
+
+      includeZeroRegisterPosOne();
+
+      break;
+    case Opcode::RISCV_C_ANDI:
+      // andi rd ′, rd ′ , imm[5:0]
+      // C.ANDI rd, imm, _ -> andi rd, rd, imm
+      opcode = Opcode::RISCV_ANDI;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_LUI:
+      // lui rd, nzimm[17:12]
+      // trap if rd = x0/x2, imm = 0
+      opcode = Opcode::RISCV_LUI;
+      // all operands correct
+      break;
+    case Opcode::RISCV_C_LWSP: {
+      // lw rd, offset[7:2](x2)
+      opcode = Opcode::RISCV_LW;
+
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_SW: {
+      // sw rs2 ′, offset[6:2](rs1 ′)
+
+      opcode = Opcode::RISCV_SW;
+
+      createMemOpPosOne();
+
+      break;
+    }
+    case Opcode::RISCV_C_J:
+      // jal x0, offset[11:1]
+      // C.J imm, _ -> jal zero, imm
+      opcode = Opcode::RISCV_JAL;
+
+      operands[1] = operands[0];
+
+      operands[0].type = RISCV_OP_REG;
+      operands[0].reg = 1;
+
+      break;
+    case Opcode::RISCV_C_ADDIW:
+      // TODO rv64 ONLY, make check for this
+      // addiw rd, rd, imm[5:0]
+      // trap if rd = zero
+      // C.ADDIW rd, imm, _ -> addiw rd, rd, imm
+      opcode = Opcode::RISCV_ADDIW;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_SUB:
+      // sub rd ′ , rd ′ , rs2 ′
+      // C.SUB rd, rs2, -> sub rd, rd, rs2
+      opcode = Opcode::RISCV_SUB;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_LW:
+      // lw rd ′ , offset[6:2](rs1 ′ )
+
+      opcode = Opcode::RISCV_LW;
+
+      createMemOpPosOne();
+
+      break;
+
+    case Opcode::RISCV_C_SRLI:
+      // srli rd ′ , rd ′ , shamt[5:0]
+      // C.SRLI rd, imm, _ -> srli rd, rd, imm
+
+      opcode = Opcode::RISCV_SRLI;
+
+      duplicateFirstOp();
+
+      break;
+
+    case Opcode::RISCV_C_ADDW:
+      // TODO rv64 ONLY, make check for this
+      // addw rd ′ , rd ′ , rs2 ′
+      // C.ADDW rd, rs2, _ -> addw rd, rd, rs2
+      opcode = Opcode::RISCV_ADDW;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_AND:
+      // and rd ′ , rd ′ , rs2 ′
+      // C.AND rd, rs2, _ -> and rd, rd, rs2
+      opcode = Opcode::RISCV_AND;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_OR:
+      // or rd ′ , rd ′ , rs2 ′
+      // C.OR rd, rs2, _ ->  or rd, rd, rs2
+
+      opcode = Opcode::RISCV_OR;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_JALR:
+      // jalr x1, 0(rs1)
+      // trap if rs1=zero
+      // C.JALR rs1, _, _ -> jalr x1, rs1, 0
+
+      opcode = Opcode::RISCV_JALR;
+
+      operands[1] = operands[0];
+
+      operands[0].reg = 2;
+
+      operands[2].type = RISCV_OP_IMM;
+      operands[2].imm = 0;
+
+      operandCount = 3;
+
+      break;
+    case Opcode::RISCV_C_XOR:
+      // xor rd ′ , rd ′ , rs2 ′
+      // C.XOR rd, rs2, _ -> xor rd, rd, rs2
+
+      opcode = Opcode::RISCV_XOR;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_SRAI:
+      // srai rd ′ , rd ′ , shamt[5:0]
+      // C.SRAI rd, imm, _ -> srai rd, rd, imm
+
+      opcode = Opcode::RISCV_SRAI;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_FSD:
+      // TODO rv64dc ONLY, make check for this
+      // fsd rs2 ′, offset[7:3](rs1 ′)
+
+      opcode = Opcode::RISCV_FSD;
+
+      createMemOpPosOne();
+
+      break;
+    case Opcode::RISCV_C_FLD:
+      // TODO rv64dc ONLY, make check for this
+      // fld rd ′, offset[7:3](rs1 ′)
+
+      opcode = Opcode::RISCV_FLD;
+
+      createMemOpPosOne();
+
+      break;
+    case Opcode::RISCV_C_FSDSP:
+      // TODO rv64dc ONLY, make check for this
+      // fsd rs2, offset[8:3](x2)
+
+      opcode = Opcode::RISCV_FSD;
+
+      createMemOpPosOne();
+
+      break;
+    case Opcode::RISCV_C_SUBW:
+      // TODO rv64 ONLY, make check for this
+      // subw rd ′ , rd ′ , rs2 ′
+      // C.SUBW rd, rs2, _ -> subw rd, rd, rs2
+
+      opcode = Opcode::RISCV_SUBW;
+
+      duplicateFirstOp();
+
+      break;
+    case Opcode::RISCV_C_NOP:
+      // nop
+      // C.NOP _, _, _-> addi x0, x0, 0
+      opcode = Opcode::RISCV_ADDI;
+
+      // Duplicate implementation of nop pseudoinstruction
+      operands[0].type = RISCV_OP_REG;
+      operands[0].reg = 1;
+
+      operands[1].type = RISCV_OP_REG;
+      operands[1].reg = 1;
+
+      operands[2].type = RISCV_OP_IMM;
+      operands[2].imm = 0;
+
+      operandCount = 3;
+
+      break;
+    default:
+      break;
+  }
 }
 
 }  // namespace riscv

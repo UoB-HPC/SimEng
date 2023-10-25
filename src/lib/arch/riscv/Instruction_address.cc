@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/riscv/Instruction.hh"
@@ -14,10 +15,41 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   uint64_t address;
   if (isLoad() && isStoreAddress() && isAtomic()) {
     // Atomics
+    // Metadata operand[2] corresponds to instruction operand[1]
+    assert(metadata.operands[2].type == RISCV_OP_REG &&
+           "metadata operand not of correct type during RISC-V address "
+           "generation");
+    address = operands[1].get<uint64_t>();
+  } else if (isLoad() && isAtomic()) {
+    // Load reserved
+    // Metadata operand[1] corresponds to instruction operand[0]
+    assert(metadata.operands[1].type == RISCV_OP_REG &&
+           "metadata operand not of correct type during RISC-V address "
+           "generation");
+    address = operands[0].get<uint64_t>();
+  } else if (isStoreAddress() && isAtomic()) {
+    // Store conditional
+    assert(metadata.operands[2].type == RISCV_OP_REG &&
+           "metadata operand not of correct type during RISC-V address "
+           "generation");
     address = operands[1].get<uint64_t>();
   } else if (isLoad()) {
+    assert(metadata.operands[1].type == RISCV_OP_MEM &&
+           "metadata operand not of correct type during RISC-V address "
+           "generation");
+    //    std::cerr << "base val: " << operands[0].get<uint64_t>()
+    //              << ", disp: " << metadata.operands[1].mem.disp << std::endl;
+
     address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
   } else {
+    //    std::cerr << "mem disp: " << metadata.operands[1].mem.disp <<
+    //    std::endl; std::cerr << metadata.operands[1].type << std::endl;
+
+    assert((metadata.operands[1].type == RISCV_OP_MEM) &&
+           "metadata operand not of correct type during RISC-V address "
+           "generation");
+    // TODO don't use metadata directly here, extract it into member instruction
+    // variable
     address = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
   }
 

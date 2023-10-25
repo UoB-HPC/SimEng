@@ -14,6 +14,21 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
+struct constantsPool {
+  const uint8_t alignMask = 0x3;
+  const uint8_t alignMaskCompressed = 0x1;
+  const uint8_t bytesLimit = 4;
+  const uint8_t bytesLimitCompressed = 2;
+  const uint8_t byteLength64 = 8;
+  const uint8_t byteLength32 = 4;
+};
+
+struct archConstants {
+  uint8_t alignMask;
+  uint8_t bytesLimit; /* Minimum bytes the decoder needs to process */
+  uint8_t regWidth;   /* Register width in bytes */
+};
+
 // A temporary enum to hold system register addresses
 // TODO this should be removed upon relevant capstone updates
 typedef enum riscv_sysreg {
@@ -77,6 +92,9 @@ class Architecture : public arch::Architecture {
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const override;
 
+  /** Return a struct contains constants */
+  archConstants getConstants() const;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -115,6 +133,9 @@ class Architecture : public arch::Architecture {
 
   /** System Register of Processor Retired Counter. */
   simeng::Register retiredSystemReg_;
+
+  /** A struct contains constants */
+  archConstants constants_;
 };
 
 }  // namespace riscv
