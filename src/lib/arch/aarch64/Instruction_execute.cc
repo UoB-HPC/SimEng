@@ -3812,7 +3812,14 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
-        results[0] = operands[0];
+        // Handle case where SVCR is being updated as this invokes additional
+        // functionality
+        if (metadata.operands[0].reg ==
+            static_cast<arm64_reg>(ARM64_SYSREG_SVCR)) {
+          return SMZAupdated();
+        } else {
+          results[0] = operands[0];
+        }
         break;
       }
       case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
