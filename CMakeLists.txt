@@ -131,7 +131,7 @@ option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 # Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
 # They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
 if(APPLE)
-  add_compile_options(-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
+  add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
 endif()
 
 if (SIMENG_OPTIMIZE)
