@@ -649,16 +649,15 @@ bool ExceptionHandler::init() {
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
-    // Retrieve register file structure from architecture
-    auto regFileStruct =
-        instruction_.getArchitecture().getRegisterFileStructures();
-    // Retrieve metadata from architecture
-    auto metadata = instruction_.getMetadata();
     // Get Architecture
     const Architecture& arch = instruction_.getArchitecture();
+    // Retrieve register file structure from architecture
+    auto regFileStruct = arch.getRegisterFileStructures();
+    // Retrieve metadata from architecture
+    auto metadata = instruction_.getMetadata();
 
     uint64_t newSVCR = 0;
-    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
+    const uint64_t currSVCR = arch.getSVCRval();
 
     // Check if exception was called by AArch64_MSR (msr systemreg, xt) or
     // AArch64_MSRpstatesvcrImm1 (msr svcr<sm|za|smza>, #imm)
