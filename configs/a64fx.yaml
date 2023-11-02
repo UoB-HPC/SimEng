@@ -17,7 +17,7 @@ Fetch:
 Process-Image:
   Mmap-Size: 1073741824
   Heap-Size: 1073741824
-  Stack-Size: 1048576
+  Stack-Size: 536870912
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
@@ -44,7 +44,7 @@ Memory-Hierarchy:
     Size: 65536 # 64 KiB
   DRAM:
     Access-Latency: 5
-    Size: 3221225472 # 2.5 GiB
+    Size: 3221225472 # 3 GiB
 LSQ-Memory-Interface:
   Exclusive: True
   Load-Bandwidth: 128
@@ -255,7 +255,7 @@ CPU-Info:
   # (Not generating the special files directory may require the user to copy over files manually)
   Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
-  Core-Count: 1
+  Core-Count: 6
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
   Socket-Count: 1
   # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
@@ -272,4 +272,4 @@ CPU-Info:
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 Environment-Variables:
-  - "OMP_NUM_THREADS=1"
+  - "OMP_NUM_THREADS=6"

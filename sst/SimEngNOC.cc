@@ -70,6 +70,7 @@ void SimEngNOC::setRecvNotifyHandler(Event::HandlerBase* handler) {
 }
 
 void SimEngNOC::send(simengNetEv* ev, int dest) {
+  enumeratedComms_[ev->getType()]->addData(1);
   // Bundle the passed network event into a network request and send to the
   // passed dest Node ID
   SST::Interfaces::SimpleNetwork::Request* req =

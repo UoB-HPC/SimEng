@@ -145,6 +145,74 @@ class SimEngCoreWrapper : public SST::Component {
        "testing framework. (boolean)",
        "false"})
 
+  SST_ELI_DOCUMENT_STATISTICS(
+      {"cycles", "Number of elapsed cycled", "cycles", 1},
+      {"retired", "Number of retired instructions", "count", 1},
+      {"ipc", "Average instructions executed per cycles", "count", 1},
+      {"flushes", "Number of pipeline flushed", "count", 1},
+      {"fetch_fetchStalls",
+       "Number of stalls in the fetch unit due to a lack of instructions",
+       "count", 1},
+      {"decode_earlyFlushes",
+       "Number of pipeline flushes due to early misprediction detection",
+       "count", 1},
+      {"rename_allocationStalls",
+       "Number of frontend pipeline stalls due to a lack of physical registers "
+       "used in the renaming scheme",
+       "count", 1},
+      {"rename_robStalls",
+       "Number of frontend pipeline stalls due to a lack of free entries in "
+       "the reorder buffer",
+       "count", 1},
+      {"rename_lqStalls",
+       "Number of frontend pipeline stalls due to a lack of free entries in "
+       "the load queue",
+       "count", 1},
+      {"rename_sqStalls",
+       "Number of frontend pipeline stalls due to a lack of free entries in "
+       "the store queue",
+       "count", 1},
+      {"dispatch_rsStalls",
+       "Number of frontend pipeline stalls due to a lack of resources in a "
+       "reservation station",
+       "count", 1},
+      {"issue_frontendStalls",
+       "Enumeration of all pipeline stalls caused by a lack of instructions "
+       "being fed from the frontend of the pipeline",
+       "count", 1},
+      {"issue_backendStalls",
+       "Enumeration of all pipeline stalls caused by a lack of resources in "
+       "the backend of the pipeline",
+       "count", 1},
+      {"issue_portBusyStalls",
+       "Number of instances a instruction could not be issued as their "
+       "associated execution unit was busy undergoing a blocking operation",
+       "count", 1},
+      {"branch_executed", "Number of branches executed", "count", 1},
+      {"branch_mispredict", "Number of branches mispredicted", "count", 1},
+      {"branch_missrate", "Branch missrate", "count", 1},
+      {"lsq_loadViolations",
+       "Number of loads which violate the ordering of load-store execution",
+       "count", 1},
+      {"idle_ticks",
+       "Number of ticks in which a core has no active thread to execute",
+       "count", 1},
+      {"context_switches", "Number of context switches a core undergoes",
+       "count", 1},
+      {"rob_numLoadsRetired", "Number of loads retired", "count", 1},
+      {"rob_numStoresRetired", "Number of stores retired", "count", 1},
+      {"mmu_numInsnReads", "Number of instruction reads handled by the MMU",
+       "count", 1},
+      {"mmu_numDataReads", "Number of data reads handled by the MMU", "count",
+       1},
+      {"mmu_numDataWrites", "Number of data writes handled by the MMU", "count",
+       1},
+      {"duration", "Host time elapsed during simulation", "milliseconds", 1},
+      {"frequency", "Frequency that the simualted core was ticked by the host",
+       "kHz", 1},
+      {"mips", "Millions of instructions executed per second of host time",
+       "count", 1})
+
   SST_ELI_DOCUMENT_PORTS()
 
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
@@ -227,6 +295,45 @@ class SimEngCoreWrapper : public SST::Component {
    */
   SimEngMemInterface::SimEngMemHandlers* handlers_;
 
+  std::map<std::string, Statistic<uint64_t>*> statsU64 = {
+      {"cycles", registerStatistic<uint64_t>("cycles")},
+      {"retired", registerStatistic<uint64_t>("retired")},
+      {"flushes", registerStatistic<uint64_t>("flushes")},
+      {"fetch_fetchStalls", registerStatistic<uint64_t>("fetch_fetchStalls")},
+      {"decode_earlyFlushes",
+       registerStatistic<uint64_t>("decode_earlyFlushes")},
+      {"rename_allocationStalls",
+       registerStatistic<uint64_t>("rename_allocationStalls")},
+      {"rename_robStalls", registerStatistic<uint64_t>("rename_robStalls")},
+      {"rename_lqStalls", registerStatistic<uint64_t>("rename_lqStalls")},
+      {"rename_sqStalls", registerStatistic<uint64_t>("rename_sqStalls")},
+      {"dispatch_rsStalls", registerStatistic<uint64_t>("dispatch_rsStalls")},
+      {"issue_frontendStalls",
+       registerStatistic<uint64_t>("issue_frontendStalls")},
+      {"issue_backendStalls",
+       registerStatistic<uint64_t>("issue_backendStalls")},
+      {"issue_portBusyStalls",
+       registerStatistic<uint64_t>("issue_portBusyStalls")},
+      {"branch_executed", registerStatistic<uint64_t>("branch_executed")},
+      {"branch_mispredict", registerStatistic<uint64_t>("branch_mispredict")},
+      {"lsq_loadViolations", registerStatistic<uint64_t>("lsq_loadViolations")},
+      {"idle_ticks", registerStatistic<uint64_t>("idle_ticks")},
+      {"context_switches", registerStatistic<uint64_t>("context_switches")},
+      {"rob_numLoadsRetired",
+       registerStatistic<uint64_t>("rob_numLoadsRetired")},
+      {"rob_numStoresRetired",
+       registerStatistic<uint64_t>("rob_numStoresRetired")},
+      {"mmu_numInsnReads", registerStatistic<uint64_t>("mmu_numInsnReads")},
+      {"mmu_numDataReads", registerStatistic<uint64_t>("mmu_numDataReads")},
+      {"mmu_numDataWrites", registerStatistic<uint64_t>("mmu_numDataWrites")},
+      {"duration", registerStatistic<uint64_t>("duration")}};
+
+  std::map<std::string, Statistic<float>*> statsF32 = {
+      {"ipc", registerStatistic<float>("ipc")},
+      {"branch_missrate", registerStatistic<float>("branch_missrate")},
+      {"frequency", registerStatistic<float>("frequency")},
+      {"mips", registerStatistic<float>("mips")}};
+
   // SimEng properties
   /** Reference to the CoreInstance class responsible for creating the core
   to
@@ -266,8 +373,6 @@ class SimEngCoreWrapper : public SST::Component {
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;
 
-  bool canEnd_ = false;
-
   /** String which holds source instructions to be assembled. (if any)*/
   //   std::string source_;
 
@@ -284,7 +389,9 @@ class SimEngCoreWrapper : public SST::Component {
   const std::string a64fxConfigPath_ =
       std::string(SIMENG_BUILD_DIR) +
       "/simeng-configs/sst-cores/a64fx-sst.yaml";
-};
+
+  std::chrono::high_resolution_clock::time_point intervalStart_;
+};  // namespace SSTSimEng
 
 }  // namespace SSTSimEng
 

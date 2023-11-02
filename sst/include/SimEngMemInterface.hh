@@ -60,6 +60,8 @@ class SimEngMemInterface : public simeng::memory::Mem {
    */
   void tick() override;
 
+  void printLatencies() const;
+
   /**
    * An instance of `SimEngMemHandlers` is registered to an instance of
    * SST::StandardMem and is used to handle Read and Write response. The same
@@ -259,6 +261,9 @@ class SimEngMemInterface : public simeng::memory::Mem {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  std::map<uint64_t, uint64_t> idTracking_;
+  std::map<uint64_t, uint64_t> latMap_;
 };
 
 };  // namespace SSTSimEng

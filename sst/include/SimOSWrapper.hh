@@ -235,8 +235,6 @@ class SimOSWrapper : public SST::Component {
   bool debug_ = false;
 
   // SimEng properties
-  /** The total number of times the SimOS class has been ticked. */
-  uint64_t ticks_ = 0;
 
   /** Path to the executable binary to be simulated by SimEng. */
   std::string executablePath_ = DEFAULT_STR;
@@ -254,14 +252,6 @@ class SimOSWrapper : public SST::Component {
   std::function<void()> processImageSent_;
 
   simeng::OS::CoreProxy proxy_;
-
-  /** Indicates if all processes have completed or a core has halted due to an
-   * exception. */
-  bool halted_ = false;
-
-  /** The value of the next TID value that should be assigned to a process on
-   * instantiation. */
-  uint64_t nextFreeTID_ = 1;
 
   /** Reference to the PageFrameAllocator object.  */
   simeng::OS::PageFrameAllocator pageFrameAllocator_;

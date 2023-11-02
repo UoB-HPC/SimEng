@@ -148,6 +148,8 @@ int main(int argc, char** argv) {
   // Get simulation objects needed to forward simulation
   core = coreInstance->getCore();
 
+  core->setCoreId(1);
+
   simeng::OS::CoreProxy proxy;
   proxy.getCoreInfo = [&](uint16_t coreId, bool forClone) {
     uint64_t ticks = core->getCurrentProcTicks();

@@ -55,6 +55,8 @@ class MemPacket {
    * being unaligned. */
   uint16_t packetSplitId_ = 0;
 
+  uint64_t tid_ = 0;
+
   /** Function which indicates whether a MemPacket is a request. */
   inline bool isRequest() const { return metadata_ & AccessTypeMask; }
 
@@ -132,14 +134,13 @@ class MemPacket {
   static std::unique_ptr<MemPacket> createReadRequest(uint64_t vaddr,
                                                       uint32_t size,
                                                       uint64_t seqId,
-                                                      uint16_t pktOrderId);
+                                                      uint16_t pktOrderId,
+                                                      uint64_t tid);
 
   /** Static function used to create a write request. */
-  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t vaddr,
-                                                       uint32_t size,
-                                                       uint64_t seqId,
-                                                       uint16_t pktOrderId,
-                                                       std::vector<char> data);
+  static std::unique_ptr<MemPacket> createWriteRequest(
+      uint64_t vaddr, uint32_t size, uint64_t seqId, uint16_t pktOrderId,
+      uint64_t tid, std::vector<char> data);
 
   /** Function to change a Read MemPacket into a Response. */
   void turnIntoReadResponse(std::vector<char> payload);
@@ -171,11 +172,11 @@ class MemPacket {
 
   /** Constructor for MemPackets which do not hold any data. */
   MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type, uint64_t seqId,
-            uint16_t pktOrderId);
+            uint16_t pktOrderId, uint64_t tid);
 
   /** Constructor for MemPackets which hold any data. */
   MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type, uint64_t seqId,
-            uint16_t pktOrderId, std::vector<char> data);
+            uint16_t pktOrderId, uint64_t tid, std::vector<char> data);
 };
 
 }  // namespace memory

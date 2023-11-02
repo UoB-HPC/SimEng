@@ -66,6 +66,9 @@ void SyscallHandler::handleSyscall() {
   syscallQueue_.front().started = true;
   currentInfo_ = syscallQueue_.front();
 
+  // std::cerr << currentInfo_.threadId << "| Starting Syscall "
+  //           << currentInfo_.syscallId << std::endl;
+
   ProcessStateChange stateChange = {};
 
   switch (currentInfo_.syscallId) {
@@ -786,22 +789,23 @@ void SyscallHandler::handleSyscall() {
       uint64_t newLimit = currentInfo_.registerArguments[2].get<uint64_t>();
       uint64_t oldLimit = currentInfo_.registerArguments[3].get<uint64_t>();
       int64_t retVal = 0;
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       if (pid != 0) {
         // We only support changes to current process
-        retVal = -EPERM;
+        stateChange.modifiedRegisterValues[0] = -EPERM;
       } else {
         if (resource != RLIMIT_STACK) {
           std::cout << "[SimEng:SyscallHandler] Un-supported resource used in "
                        "prlimit64 syscall."
                     << std::endl;
-          retVal = -EINVAL;
+          stateChange.modifiedRegisterValues[0] = -EINVAL;
         } else {
           if (newLimit) {
             // Update rlimit for Process
             uint64_t physAddr =
                 OS_->handleVAddrTranslation(newLimit, currentInfo_.threadId);
             if (masks::faults::hasFault(physAddr)) {
-              retVal = -EFAULT;
+              stateChange.modifiedRegisterValues[0] = -EFAULT;
             } else {
               rlimit newRlim;
               // If the read memory target does not equal the data required,
@@ -809,7 +813,7 @@ void SyscallHandler::handleSyscall() {
               if (memRead_.target.vaddr != newLimit) {
                 std::unique_ptr<simeng::memory::MemPacket> request =
                     simeng::memory::MemPacket::createReadRequest(
-                        newLimit, sizeof(rlimit), currentInfo_.threadId, 0);
+                        newLimit, sizeof(rlimit), currentInfo_.threadId, 0, 0);
                 request->paddr_ = physAddr;
                 reqMemAccess_ = true;
                 memPort_->send(std::move(request));
@@ -824,26 +828,30 @@ void SyscallHandler::handleSyscall() {
           }
           if (oldLimit) {
             // Update rlimit struct pointed to by oldLimit
-            uint64_t physAddr =
-                OS_->handleVAddrTranslation(oldLimit, currentInfo_.threadId);
-            if (masks::faults::hasFault(physAddr)) {
-              retVal = -EFAULT;
-            } else {
-              rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
-              std::vector<char> vec(sizeof(rlimit), '\0');
-              std::memcpy(vec.data(), &rlim, sizeof(rlimit));
-              // Write the new rlimit struct to memory
-              std::unique_ptr<simeng::memory::MemPacket> request =
-                  simeng::memory::MemPacket::createWriteRequest(
-                      oldLimit, sizeof(rlimit), currentInfo_.threadId, 0, vec);
-              request->paddr_ = physAddr;
-              memPort_->send(std::move(request));
+            // uint64_t physAddr =
+            //     OS_->handleVAddrTranslation(oldLimit, currentInfo_.threadId);
+            // if (masks::faults::hasFault(physAddr)) {
+            //   stateChange.modifiedRegisterValues[0] = -EFAULT;
+            // } else {
+            rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
+            std::vector<uint8_t> vec(sizeof(rlimit), '\0');
+            std::memcpy(vec.data(), &rlim, sizeof(rlimit));
+            // Write the new rlimit struct to memory
+            for (size_t i = 0; i < sizeof(rlimit); i++) {
+              stateChange.memoryAddresses.push_back({oldLimit + i, 1});
+              stateChange.memoryAddressValues.push_back({vec[i], 1});
             }
+            // std::unique_ptr<simeng::memory::MemPacket> request =
+            //     simeng::memory::MemPacket::createWriteRequest(
+            //         oldLimit, sizeof(rlimit), currentInfo_.threadId, 0, 0,
+            //         vec);
+            // request->paddr_ = physAddr;
+            // memPort_->send(std::move(request));
+            // }
           }
         }
       }
 
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       break;
     }
     case 278: {  // getrandom
@@ -908,7 +916,7 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
     if (memRead_.target.vaddr != address) {
       std::unique_ptr<simeng::memory::MemPacket> request =
           simeng::memory::MemPacket::createReadRequest(
-              address, maxLength, currentInfo_.threadId, 0);
+              address, maxLength, currentInfo_.threadId, 0, 0);
       request->paddr_ = translatedAddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));
@@ -985,7 +993,7 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
     if (memRead_.target.vaddr != ptr) {
       std::unique_ptr<simeng::memory::MemPacket> request =
           simeng::memory::MemPacket::createReadRequest(
-              ptr, length, currentInfo_.threadId, 0);
+              ptr, length, currentInfo_.threadId, 0, 0);
       request->paddr_ = translatedAddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));
@@ -1007,6 +1015,12 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
                                      bool fatal, bool idleAftersycall) {
   currentInfo_.started = false;
+  // std::cerr << currentInfo_.threadId << "| Syscall " <<
+  // currentInfo_.syscallId
+  //           << " results" << std::endl;
+  // std::cerr << currentInfo_.threadId << "|\t fatal: " << fatal << std::endl;
+  // std::cerr << currentInfo_.threadId
+  //           << "|\t idleAftersycall: " << idleAftersycall << std::endl;
   sendSyscallResultToCore_({fatal, idleAftersycall, currentInfo_.syscallId,
                             currentInfo_.coreId, change});
   // Remove syscall from queue and reset handler to default state
@@ -1649,6 +1663,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
   auto ftableItr = futexTable_.find(tgid);
 
   if (wait) {
+    // std::cerr << currentInfo_.threadId << "| \tFutex wait" << std::endl;
     // Atomically get the value at the address specified by the futex.
     // If the read memory target does not equal the data required,
     // request it and recall the `futex` call after its return
@@ -1657,7 +1672,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
       std::unique_ptr<simeng::memory::MemPacket> request =
           simeng::memory::MemPacket::createReadRequest(
               currentInfo_.registerArguments[0].get<uint64_t>(),
-              sizeof(uint32_t), currentInfo_.threadId, 0);
+              sizeof(uint32_t), currentInfo_.threadId, 0, 0);
       request->paddr_ = uaddr;
       reqMemAccess_ = true;
       currentInfo_.started = false;
@@ -1691,6 +1706,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
   }
 
   if (wake) {
+    // std::cerr << currentInfo_.threadId << "| \tFutex wake" << std::endl;
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
     if (ftableItr != futexTable_.end()) {
@@ -1705,6 +1721,8 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
         ftableItr->second.pop_front();
         procWokenUp++;
       }
+      // std::cerr << currentInfo_.threadId << "| \tWoke " << procWokenUp
+      //           << " procs" << std::endl;
     }
     // procWokenUp should be be 0 if no processes were woken up.
     return {false, procWokenUp};

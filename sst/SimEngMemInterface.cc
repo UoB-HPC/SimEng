@@ -114,6 +114,7 @@ void SimEngMemInterface::handleReadRequest(
       // std::cerr << req->getString() << std::endl;
       // std::cerr << "Sent MemPacket from insn " << aggrReq->pkt_->insnSeqId_
       //           << ":" << req->getString() << std::endl;
+      idTracking_[req->getID()] = tickCounter_;
       dataMem_->send(req);
     }
   }
@@ -139,6 +140,7 @@ void SimEngMemInterface::handleWriteRequest(
 
   for (StandardMem::Request* req : requests) {
     // std::cerr << req->getString() << std::endl;
+    idTracking_[req->getID()] = tickCounter_;
     dataMem_->send(req);
   }
 }
@@ -250,11 +252,17 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     // The underlying class of the StandardMem::Request pointer depends on
     // whether the access is atomic
     if (aggrReq->pkt_->isAtomic()) {
-      writeReq = new StandardMem::StoreConditional(pAddrStart, currReqSize,
-                                                   payload, flags);
+      writeReq = new StandardMem::StoreConditional(
+          pAddrStart, currReqSize, payload, flags, vAddrStart,
+          aggrReq->pkt_->insnSeqId_, aggrReq->pkt_->tid_);
+      // std::cerr << "\t\tAtomic write access at " << std::hex << vAddrStart
+      //           << std::dec << " from instruction " <<
+      //           aggrReq->pkt_->insnSeqId_
+      //           << " with id " << writeReq->getID() << std::endl;
     } else {
-      writeReq = new StandardMem::Write(pAddrStart, currReqSize, payload, false,
-                                        flags);
+      writeReq = new StandardMem::Write(
+          pAddrStart, currReqSize, payload, false, flags, vAddrStart,
+          aggrReq->pkt_->insnSeqId_, aggrReq->pkt_->tid_);
     }
 
     aggrReq->aggregateCount_++;
@@ -286,10 +294,19 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     StandardMem::Request* readReq;
     // The underlying class of the StandardMem::Request pointer depends on
     // whether the access is atomic
-    if (aggrReq->pkt_->isAtomic())
-      readReq = new StandardMem::LoadLink(pAddrStart, currReqSize);
-    else
-      readReq = new StandardMem::Read(pAddrStart, currReqSize);
+    if (aggrReq->pkt_->isAtomic()) {
+      readReq = new StandardMem::LoadLink(pAddrStart, currReqSize, 0,
+                                          vAddrStart, aggrReq->pkt_->insnSeqId_,
+                                          aggrReq->pkt_->tid_);
+      // std::cerr << "\t\tAtomic read access at " << std::hex << vAddrStart
+      //           << std::dec << " from instruction " <<
+      //           aggrReq->pkt_->insnSeqId_
+      //           << " with id " << readReq->getID() << std::endl;
+    } else {
+      readReq =
+          new StandardMem::Read(pAddrStart, currReqSize, 0, vAddrStart,
+                                aggrReq->pkt_->insnSeqId_, aggrReq->pkt_->tid_);
+    }
 
     // Increase the aggregate count to denote the number SST requests a read
     // request from SimEng was split into.
@@ -387,6 +404,16 @@ void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
   // of.
   auto itr = memInterface_.aggregationMap_.find(id);
   if (itr == memInterface_.aggregationMap_.end()) return;
+  auto itrLat = memInterface_.idTracking_.find(id);
+  if (itrLat != memInterface_.idTracking_.end()) {
+    uint64_t lat = memInterface_.tickCounter_ - memInterface_.idTracking_[id];
+    if (memInterface_.latMap_.find(lat) == memInterface_.latMap_.end())
+      memInterface_.latMap_[lat] = 1;
+    else
+      memInterface_.latMap_[lat]++;
+    memInterface_.idTracking_.erase(itrLat);
+  }
+
   /*
       After succesful retrieval of AggregatedReadRequest from aggregation_map
      the response data is stored inside the AggregatedReadRequest in an
@@ -412,25 +439,43 @@ void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
 void SimEngMemInterface::SimEngMemHandlers::handle(
     StandardMem::WriteResp* rsp) {
   uint64_t id = rsp->getID();
+  bool failure = rsp->getFail();
   // std::cout << "HANDLE " << id << std::endl;
-  delete rsp;
 
   auto itr = memInterface_.aggregationMap_.find(id);
   if (itr == memInterface_.aggregationMap_.end()) {
+    delete rsp;
     // std::cerr << "\tNo aggr req" << std::endl;
     return;
+  }
+  auto itrLat = memInterface_.idTracking_.find(id);
+  if (itrLat != memInterface_.idTracking_.end()) {
+    uint64_t lat = memInterface_.tickCounter_ - memInterface_.idTracking_[id];
+    if (memInterface_.latMap_.find(lat) == memInterface_.latMap_.end())
+      memInterface_.latMap_[lat] = 1;
+    else
+      memInterface_.latMap_[lat]++;
+    memInterface_.idTracking_.erase(itrLat);
   }
 
   SimEngMemInterface::AggregateWriteRequest* aggrReq =
       reinterpret_cast<SimEngMemInterface::AggregateWriteRequest*>(itr->second);
   // Record a failure
-  if (rsp->getFail()) aggrReq->pkt_->markAsFailed();
+  if (aggrReq->pkt_->isAtomic())
+    // std::cerr << "\t\tAtomic write access at " << std::hex
+    //           << aggrReq->pkt_->vaddr_ << std::dec << " from instruction "
+    //           << aggrReq->pkt_->insnSeqId_ << " returned with flags of "
+    //           << rsp->getFlagString() << std::endl;
+    if (failure) {
+      aggrReq->pkt_->markAsFailed();
+    }
 
   if (--aggrReq->aggregateCount_ <= 0) {
     memInterface_.aggregatedWriteResponses(aggrReq);
     // } else {
     //   std::cerr << "\t" << aggrReq->aggregateCount_ << " left" << std::endl;
   }
+  delete rsp;
 }
 
 int SimEngMemInterface::getNumCacheLinesNeeded(uint64_t size) const {
@@ -450,3 +495,12 @@ bool SimEngMemInterface::requestSpansMultipleCacheLines(
 uint64_t SimEngMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
   return (addrStart / cacheLineWidth_) + 1;
 };
+
+void SimEngMemInterface::printLatencies() const {
+  for (auto const& x : latMap_) {
+    if (x.second > 100)
+      std::cout << "[SSTSimEng::SimEngMemInterface] " << dataMem_->getName()
+                << "Memory latency of " << x.first << " occured " << x.second
+                << " times" << std::endl;
+  }
+}

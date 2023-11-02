@@ -17,6 +17,8 @@ class RegisterAliasTable {
   RegisterAliasTable(std::vector<RegisterFileStructure> architecturalStructure,
                      std::vector<uint16_t> physicalStructure);
 
+  Register reverseMapping(Register physical) const;
+
   /** Retrieve the current physical register assigned to the provided
    * architectural register. */
   Register getMapping(Register architectural) const;

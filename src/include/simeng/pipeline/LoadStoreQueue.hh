@@ -90,6 +90,8 @@ class LoadStoreQueue {
    * memory order violation. */
   std::shared_ptr<Instruction> getViolatingLoad() const;
 
+  std::map<uint64_t, uint64_t> getLatencies() const;
+
  private:
   /** The load queue: holds in-flight load instructions. */
   std::deque<std::shared_ptr<Instruction>> loadQueue_;
@@ -104,7 +106,8 @@ class LoadStoreQueue {
   span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
 
   /** Map of loads that have requested their data, keyed by sequence ID. */
-  std::map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
+  std::map<uint64_t, std::pair<std::shared_ptr<Instruction>, uint64_t>>
+      requestedLoads_;
 
   /** The conditional store that has been sent to MMU. */
   std::shared_ptr<Instruction> requestedCondStore_;
@@ -167,6 +170,8 @@ class LoadStoreQueue {
 
   /** The order in which instructions can be passed to the completion slots. */
   CompletionOrder completionOrder_;
+
+  std::map<uint64_t, uint64_t> latencies_;
 };
 
 }  // namespace pipeline

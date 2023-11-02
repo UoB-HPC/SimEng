@@ -74,9 +74,15 @@ class MMU {
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
 
+  uint64_t getTid();
+
   /** Function used to initialise the Data Port used for bidirection
    * communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
+
+  uint64_t getNumDataReads() const { return numDataReads_; };
+  uint64_t getNumDataWrites() const { return numDataWrites_; };
+  uint64_t getNumInsnReads() const { return numInsnReads_; };
 
  private:
   /** Process load or store requests. */
@@ -190,6 +196,10 @@ class MMU {
 
   /** Data port used for communication with the memory hierarchy. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> port_ = nullptr;
+
+  uint64_t numDataReads_ = 0;
+  uint64_t numInsnReads_ = 0;
+  uint64_t numDataWrites_ = 0;
 };
 
 }  // namespace memory

@@ -90,6 +90,11 @@ class ReorderBuffer {
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
 
+  void setTid(uint64_t tid);
+
+  uint64_t getNumLoads() const { return numLoads_; };
+  uint64_t getNumStores() const { return numStores_; };
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -150,6 +155,13 @@ class ReorderBuffer {
   /** Indicates whether the atomic (or load-reserved) at the front of the buffer
    * has been started. */
   bool sentAtomic_ = false;
+
+  uint64_t tid_ = 0;
+
+  uint64_t numStores_ = 0;
+  uint64_t numLoads_ = 0;
+
+  std::ofstream fileOut_;
 };
 
 }  // namespace pipeline

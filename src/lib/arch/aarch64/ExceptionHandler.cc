@@ -258,6 +258,43 @@ bool ExceptionHandler::concludeSyscall() {
     return fatal();
   }
 
+  if (core_.getCurrentTID() == 99) {
+    std::cerr << core_.getCurrentTID() << "|" << std::hex
+              << instruction_->getInstructionAddress() << std::dec;
+    std::cerr << ":" << instruction_->getSequenceId();
+    std::cerr << std::endl;
+    for (int i = 0; i < syscallResult_.stateChange.modifiedRegisters.size();
+         i++) {
+      std::cerr << "\t{"
+                << unsigned(
+                       syscallResult_.stateChange.modifiedRegisters[i].type)
+                << ":" << syscallResult_.stateChange.modifiedRegisters[i].tag
+                << "}"
+                << " <- " << std::hex;
+      for (int j =
+               syscallResult_.stateChange.modifiedRegisterValues[i].size() - 1;
+           j >= 0; j--) {
+        std::cerr << unsigned(
+            syscallResult_.stateChange.modifiedRegisterValues[i]
+                .getAsVector<uint8_t>()[j]);
+      }
+      std::cerr << std::endl;
+    }
+
+    for (int i = 0; i < syscallResult_.stateChange.memoryAddresses.size();
+         i++) {
+      std::cerr << "\tAddr " << std::hex
+                << syscallResult_.stateChange.memoryAddresses[i].vaddr
+                << std::dec << " <- " << std::hex;
+      for (int j = syscallResult_.stateChange.memoryAddressValues[i].size() - 1;
+           j >= 0; j--) {
+        std::cerr << unsigned(syscallResult_.stateChange.memoryAddressValues[i]
+                                  .getAsVector<uint8_t>()[j]);
+      }
+      std::cerr << std::endl;
+    }
+  }
+
   uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
   result_ = {false, syscallResult_.idleAfterSyscall, nextInstructionAddress,
              syscallResult_.stateChange};

@@ -265,6 +265,12 @@ void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
   desc.info.status = status;
   desc.info.coreId = coreId;
   desc.info.ticks = ticks;
+
+  if (status == CoreStatus::idle || status == CoreStatus::halted) {
+    // std::cerr << "DeSchedule TID " << ctx.TID << " from " << coreId
+    //           << std::endl;
+    recieveCoreInfo({coreId, status, ctx, ticks}, false);
+  }
 }
 
 void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
@@ -343,7 +349,7 @@ void SimOS::resumeClone(CoreInfo cinfo) {
 
     std::unique_ptr<simeng::memory::MemPacket> request =
         simeng::memory::MemPacket::createWriteRequest(
-            paddr, sizeof(newChildTid), 0, 0, dataVec);
+            paddr, sizeof(newChildTid), 0, 0, 0, dataVec);
     request->paddr_ = paddr;
     memPort_->send(std::move(request));
   }
@@ -373,6 +379,8 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
   processes_.emplace(newChildTid, newProc);
+  // std::cerr << "Adding " << newProc->getTID()
+  //           << " to waitingProcs_ via resumeClone" << std::endl;
   waitingProcs_.push(newProc);
 
   // Add stack to `proc/tgid/maps`
@@ -421,6 +429,8 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
       // Change status from Executing to Waiting
       if (currProc->status_ == procStatus::executing) {
         currProc->status_ = procStatus::waiting;
+        // std::cerr << "Adding " << currProc->getTID()
+        //           << " to waitingProcs_ via recieveCoreInfo" << std::endl;
         waitingProcs_.push(currProc);
       }
     }
@@ -460,7 +470,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   auto sendToMem = [this](std::vector<char> data, uint64_t pAddr,
                           uint64_t vAddr, size_t size) {
     std::unique_ptr<simeng::memory::MemPacket> request =
-        simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, 0, data);
+        simeng::memory::MemPacket::createWriteRequest(vAddr, size, 0, 0, 0,
+                                                      data);
     request->paddr_ = pAddr;
     request->markAsUntimed();
     processImageAddrs_.push_back(vAddr);
@@ -573,7 +584,7 @@ void SimOS::terminateThread(uint64_t tid) {
   uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
   if (!masks::faults::hasFault(addr)) {
     std::unique_ptr<simeng::memory::MemPacket> request =
-        simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0,
+        simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0, 0,
                                                       {0, 0, 0, 0});
     request->paddr_ = addr;
     memPort_->send(std::move(request));
@@ -600,7 +611,7 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
                                              proc->second->getTID());
       if (!masks::faults::hasFault(addr)) {
         std::unique_ptr<simeng::memory::MemPacket> request =
-            simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0,
+            simeng::memory::MemPacket::createWriteRequest(addr, 4, 0, 0, 0,
                                                           {0, 0, 0, 0});
         request->paddr_ = addr;
         memPort_->send(std::move(request));

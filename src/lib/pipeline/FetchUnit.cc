@@ -175,6 +175,12 @@ void FetchUnit::tick() {
   auto outputSlots = output_.getTailSlots();
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     if (mOpBuffer_.size()) {
+      // if (mmu_->getTid() == 3)
+      //   std::cerr << "Fetched " << std::hex
+      //             << mOpBuffer_.front()[0]->getInstructionAddress() <<
+      //             std::dec
+      //             << ":" << mOpBuffer_.front()[0]->getSequenceId() <<
+      //             std::endl;
       outputSlots[slot] = mOpBuffer_.front();
       mOpBuffer_.pop_front();
     } else {
@@ -201,6 +207,10 @@ void FetchUnit::registerLoopBoundary(uint64_t branchAddress) {
 bool FetchUnit::hasHalted() const { return hasHalted_; }
 
 void FetchUnit::updatePC(uint64_t address) {
+  // if (mmu_->getTid() == 3)
+  //   std::cerr << "Updating PC from  " << std::hex << pc_ << std::dec << " to
+  //   "
+  //             << std::hex << address << std::dec << std::endl;
   pc_ = address;
   mOpBuffer_.clear();
   if (programByteLength_ == 0) {

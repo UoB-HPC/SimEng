@@ -48,7 +48,8 @@ TEST(SimpleMemTest, Read) {
   uint8_t dataSize = 10;
   uint64_t addr = 0;
   sMem.sendUntimedData(data, addr, dataSize);
-  auto req = simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0, 0);
+  auto req =
+      simeng::memory::MemPacket::createReadRequest(addr, dataSize, 0, 0, 0);
   req->paddr_ = addr;
   port2->send(std::move(req));
   auto res = respRecv.resp->payload();
@@ -59,7 +60,7 @@ TEST(SimpleMemTest, Read) {
   addr = 8;
   dataSize = 2;
   auto req2 =
-      simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1, 0);
+      simeng::memory::MemPacket::createReadRequest(addr, dataSize, 1, 0, 0);
   req2->paddr_ = addr;
   port2->send(std::move(req2));
   auto res2 = respRecv.resp->payload();
@@ -90,8 +91,8 @@ TEST(SimpleMemTest, Write) {
   std::vector<char> data = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   uint8_t dataSize = 10;
   uint64_t addr = 0;
-  auto req =
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, 0, data);
+  auto req = simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 0, 0,
+                                                           0, data);
   req->paddr_ = addr;
   port2->send(std::move(req));
   auto mem = sMem.getUntimedData(0, dataSize);
@@ -100,8 +101,8 @@ TEST(SimpleMemTest, Write) {
   }
 
   addr = 30;
-  auto req2 =
-      simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1, 0, data);
+  auto req2 = simeng::memory::MemPacket::createWriteRequest(addr, dataSize, 1,
+                                                            0, 0, data);
   req2->paddr_ = addr;
   port2->send(std::move(req2));
   mem = sMem.getUntimedData(addr, dataSize);

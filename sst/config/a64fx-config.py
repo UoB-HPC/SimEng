@@ -29,6 +29,9 @@ def getMemoryProps(memory_size: int, si: str):
 
 # ------------------------------------------------ Utility -------------------------------------------
 
+# ranks = sst.getMPIRankCount()
+
+# print(ranks)
 
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
@@ -84,9 +87,10 @@ memprops = getMemoryProps(3, "GiB")
 # Using sst-info sstsimeng.simos to get all cache parameters, ports and subcomponent slots.
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
+    "num_cores": 2,
     "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx.yaml",
     "executable_path": "/Users/jj16791/workspace/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4",
-    "executable_args": "-n 64 -i 1 --deck /Users/jj16791/workspace/simeng-benchmarks/Data_Files/miniBUDE/bm1",
+    "executable_args": "-n 128 -i 1 --deck /Users/jj16791/workspace/simeng-benchmarks/Data_Files/miniBUDE/bm1",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -106,6 +110,8 @@ instrInterface0.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
+
+simos.setRank(0, 0)
 
 os_l1Dcache = sst.Component("a64fx.l1Dcache0", "memHierarchy.Cache")
 os_l1Dcache.addParams({
@@ -131,6 +137,8 @@ replacement_policy_os_l1D = os_l1Dcache.setSubComponent("replacement", "memHiera
 prefetcher_os_l1D = os_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_os_l1D.addParams({"cache_line_size": A64FX_CLW})
 
+os_l1Dcache.setRank(0, 0)
+
 os_l1Icache = sst.Component("a64fx.l1Icache0", "memHierarchy.Cache")
 os_l1Icache.addParams({
         "L1": 1,
@@ -154,6 +162,8 @@ replacement_policy_os_l1I = os_l1Icache.setSubComponent("replacement", "memHiera
 
 prefetcher_os_l1I = os_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_os_l1I.addParams({"cache_line_size": A64FX_CLW})
+
+os_l1Icache.setRank(0, 0)
 
 # --------------------------------------------- SSTSimEng OS ---------------------------------------
 
@@ -182,6 +192,8 @@ instrInterface1.addParams({
       "verbose": 2
 })
 
+cpu0.setRank(1, 0)
+
 c0_l1Dcache = sst.Component("a64fx.l1Dcache1", "memHierarchy.Cache")
 c0_l1Dcache.addParams({
         "L1": 1,
@@ -200,11 +212,13 @@ c0_l1Dcache.addParams({
         "tag_access_latency": 2,
 })
 
-coherence_controller_c0_l1 = c0_l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
-replacement_policy_c0_l1 = c0_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+coherence_controller_c0_l1D = c0_l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_c0_l1D = c0_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
-prefetcher_c0_l1 = c0_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-prefetcher_c0_l1.addParams({"cache_line_size": A64FX_CLW})
+prefetcher_c0_l1D = c0_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_c0_l1D.addParams({"cache_line_size": A64FX_CLW})
+
+c0_l1Dcache.setRank(1, 0)
 
 c0_l1Icache = sst.Component("a64fx.l1Icache1", "memHierarchy.Cache")
 c0_l1Icache.addParams({
@@ -230,6 +244,84 @@ replacement_policy_c0_l1I = c0_l1Icache.setSubComponent("replacement", "memHiera
 prefetcher_c0_l1I = c0_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c0_l1I.addParams({"cache_line_size": A64FX_CLW})
 
+c0_l1Icache.setRank(1, 0)
+
+cpu1 = sst.Component("core1", "sstsimeng.simengcore")
+cpu1.addParams({
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx.yaml",
+    "clock" : A64FX_CLOCK,
+    "max_addr_memory": memprops["end_addr"],
+    "cache_line_width": A64FX_CLW,
+    "debug": False,
+})
+
+cpu1.setRank(2, 0)
+
+dataInterface2 = cpu1.setSubComponent("dataMemory", "memHierarchy.standardInterface")
+dataInterface2.addParams({
+      "debug" : DEBUG_L1,
+      "debug_level" : DEBUG_LEVEL,
+      "verbose": 2
+})
+instrInterface2 = cpu1.setSubComponent("instrMemory", "memHierarchy.standardInterface")
+instrInterface2.addParams({
+      "debug" : DEBUG_L1,
+      "debug_level" : DEBUG_LEVEL,
+      "verbose": 2
+})
+
+c1_l1Dcache = sst.Component("a64fx.l1Dcache2", "memHierarchy.Cache")
+c1_l1Dcache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
+
+coherence_controller_c1_l1D = c1_l1Dcache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_c1_l1D = c1_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_c1_l1D = c1_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_c1_l1D.addParams({"cache_line_size": A64FX_CLW})
+
+c1_l1Dcache.setRank(2, 0)
+
+c1_l1Icache = sst.Component("a64fx.l1Icache2", "memHierarchy.Cache")
+c1_l1Icache.addParams({
+        "L1": 1,
+        "cache_type": A64FX_CACHE_TYPE,
+        "access_latency_cycles": A64FX_HL_L1,
+        "cache_frequency": A64FX_CLOCK,
+        "associativity": A64FX_SA_L1,
+        "cache_line_size": A64FX_CLW,
+        "cache_size": A64FX_L1_SIZE,
+        "debug": DEBUG_L1,
+        "debug_level": DEBUG_LEVEL,
+        "coherence_protocol": A64FX_COHP,
+        "request_link_width": A64FX_L1TOL2_PC_TPUT,
+        "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+        "mshr_latency_cycles": 1,
+        "tag_access_latency": 2,
+})
+
+coherence_controller_c1_l1I = c1_l1Icache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+replacement_policy_c1_l1I = c1_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_c1_l1I = c1_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
+prefetcher_c1_l1I.addParams({"cache_line_size": A64FX_CLW})
+
+c1_l1Icache.setRank(2, 0)
+
 # --------------------------------------------- SSTSimEng Core ---------------------------------------
 
 
@@ -240,13 +332,15 @@ bus.addParams({
       "bus_frequency" : A64FX_CLOCK,
 })
 
+bus.setRank(0, 0)
+
 # --------------------------------------------- L1-L2 BUS ---------------------------------------------
 
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l2cache = sst.Component("a64fx.l2cache", "memHierarchy.Cache")
+l2cache = sst.Component("core.l2cache", "memHierarchy.Cache")
 l2cache.addParams({
         "L1": 0,
         "cache_type": A64FX_CACHE_TYPE,
@@ -280,6 +374,8 @@ l2cachePre.addParams({
     'overrun_page_boundaries': 0,                 #Allow prefetcher to run over page boundaries, 0 is no, 1 is yes
 })
 
+l2cache.setRank(0, 0)
+
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 
@@ -302,15 +398,22 @@ noc1.addParams(verb_params)
 netInterface1 = noc1.setSubComponent("interface", "merlin.linkcontrol")
 netInterface1.addParams(net_params)
 
+noc2 = cpu1.setSubComponent("noc", "sstsimeng.SimEngNOC")
+noc2.addParams(verb_params)
+netInterface2 = noc2.setSubComponent("interface", "merlin.linkcontrol")
+netInterface2.addParams(net_params)
+
 router = sst.Component("router", "merlin.hr_router")
 router.setSubComponent("topology", "merlin.singlerouter")
 router.addParams(net_params)
 router.addParams({
     "xbar_bw" : "1GB/s",
     "flit_size" : "32B",
-    "num_ports" : "2",
+    "num_ports" : "3",
     "id" : 0
 })
+
+router.setRank(0, 0)
 
 # ---------------------------------------------- NETWORK ----------------------------------------------
 
@@ -338,42 +441,63 @@ memory_backend.addParams({
       "debug_level": DEBUG_LEVEL,
 })
 
+memory_controller.setRank(0, 0)
+
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
 
 # ---------------------------------------------- Links ------------------------------------------------
 
 link_os_l1Dcache = sst.Link("link_os_l1Dcache_link")
-link_os_l1Dcache.connect( (dataInterface0, "port", "0ps"), (os_l1Dcache, "high_network_0", "0ps") )
+link_os_l1Dcache.connect( (dataInterface0, "port", "1ps"), (os_l1Dcache, "high_network_0", "1ps") )
 link_os_l1Icache = sst.Link("link_os_l1Icache_link")
-link_os_l1Icache.connect( (instrInterface0, "port", "0ps"), (os_l1Icache, "high_network_0", "0ps") )
+link_os_l1Icache.connect( (instrInterface0, "port", "1ps"), (os_l1Icache, "high_network_0", "1ps") )
 link_os_router = sst.Link("link_os_router")
-link_os_router.connect((netInterface0, "rtr_port", "0ps"), (router, "port0", "0ps"))
-
+link_os_router.connect((netInterface0, "rtr_port", "1ps"), (router, "port0", "1ps"))
 
 link_cpu0_l1Dcache = sst.Link("link_cpu0_l1Dcache_link")
-link_cpu0_l1Dcache.connect( (dataInterface1, "port", "0ps"), (c0_l1Dcache, "high_network_0", "0ps") )
+link_cpu0_l1Dcache.connect( (dataInterface1, "port", "1ps"), (c0_l1Dcache, "high_network_0", "1ps") )
 link_cpu0_l1Icache = sst.Link("link_cpu0_l1Icache_link")
-link_cpu0_l1Icache.connect( (instrInterface1, "port", "0ps"), (c0_l1Icache, "high_network_0", "0ps") )
+link_cpu0_l1Icache.connect( (instrInterface1, "port", "1ps"), (c0_l1Icache, "high_network_0", "1ps") )
 link_cpu0_router = sst.Link("link_cpu0_router")
-link_cpu0_router.connect((netInterface1, "rtr_port", "0ps"), (router, "port1", "0ps"))
+link_cpu0_router.connect((netInterface1, "rtr_port", "1ps"), (router, "port1", "1ps"))
 
+link_cpu1_l1Dcache = sst.Link("link_cpu1_l1Dcache_link")
+link_cpu1_l1Dcache.connect( (dataInterface2, "port", "1ps"), (c1_l1Dcache, "high_network_0", "1ps") )
+link_cpu1_l1Icache = sst.Link("link_cpu1_l1Icache_link")
+link_cpu1_l1Icache.connect( (instrInterface2, "port", "1ps"), (c1_l1Icache, "high_network_0", "1ps") )
+link_cpu1_router = sst.Link("link_cpu1_router")
+link_cpu1_router.connect((netInterface2, "rtr_port", "1ps"), (router, "port2", "1ps"))
 
 link_os_l1D_l2bus = sst.Link("link_os_l1D_l2bus_link")
-link_os_l1D_l2bus.connect( (os_l1Dcache, "low_network_0", "0ps"), (bus, "high_network_0", "0ps") )
+link_os_l1D_l2bus.connect( (os_l1Dcache, "low_network_0", "1ps"), (bus, "high_network_0", "1ps") )
 link_os_l1I_l2bus = sst.Link("link_os_l1I_l2bus_link")
-link_os_l1I_l2bus.connect( (os_l1Icache, "low_network_0", "0ps"), (bus, "high_network_1", "0ps") )
-
+link_os_l1I_l2bus.connect( (os_l1Icache, "low_network_0", "1ps"), (bus, "high_network_1", "1ps") )
 
 link_cpu0_l1D_l2bus = sst.Link("link_cpu0_l1D_l2bus_link")
-link_cpu0_l1D_l2bus.connect( (c0_l1Dcache, "low_network_0", "0ps"), (bus, "high_network_2", "0ps") )
+link_cpu0_l1D_l2bus.connect( (c0_l1Dcache, "low_network_0", "1ps"), (bus, "high_network_2", "1ps") )
 link_cpu0_l1I_l2bus = sst.Link("link_cpu0_l1I_l2bus_link")
-link_cpu0_l1I_l2bus.connect( (c0_l1Icache, "low_network_0", "0ps"), (bus, "high_network_3", "0ps") )
+link_cpu0_l1I_l2bus.connect( (c0_l1Icache, "low_network_0", "1ps"), (bus, "high_network_3", "1ps") )
+
+link_cpu1_l1D_l2bus = sst.Link("link_cpu1_l1D_l2bus_link")
+link_cpu1_l1D_l2bus.connect( (c1_l1Dcache, "low_network_0", "1ps"), (bus, "high_network_4", "1ps") )
+link_cpu1_l1I_l2bus = sst.Link("link_cpu1_l1I_l2bus_link")
+link_cpu1_l1I_l2bus.connect( (c1_l1Icache, "low_network_0", "1ps"), (bus, "high_network_5", "1ps") )
 
 link_bus_l2 = sst.Link("link_bus_l2")
-link_bus_l2.connect( (bus, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps") )
+link_bus_l2.connect( (bus, "low_network_0", "1ps"), (l2cache, "high_network_0", "1ps") )
 
 link_mem_bus = sst.Link("link_mem_bus_link")
-link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
+link_mem_bus.connect( (l2cache, "low_network_0", "1ps"), (memory_controller, "direct_link", "1ps") )
 
 # ---------------------------------------------- Links ------------------------------------------------
+
+
+# ---------------------------------------------- Statistics -------------------------------------------
+
+sst.setStatisticOutput("sst.statoutputcsv")
+sst.setStatisticOutputOptions({"filepath": "stats.csv"})
+sst.setStatisticLoadLevel(10)
+sst.enableAllStatisticsForAllComponents()
+
+# ---------------------------------------------- Statistics -------------------------------------------

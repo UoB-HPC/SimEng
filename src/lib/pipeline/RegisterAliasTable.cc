@@ -41,6 +41,11 @@ RegisterAliasTable::RegisterAliasTable(
   }
 };
 
+Register RegisterAliasTable::reverseMapping(Register physical) const {
+  auto tag = destinationTable_[physical.type][physical.tag];
+  return {physical.type, tag};
+}
+
 Register RegisterAliasTable::getMapping(Register architectural) const {
   // Asserts to ensure mapping isn't attempted for an out-of-bound index (i.e.
   // mapping of WZR / XZR)

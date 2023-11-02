@@ -109,18 +109,29 @@ void SimEngCoreWrapper::finish() {
   double mips = (retired / (static_cast<double>(duration))) / 1000.0;
 
   // Print stats
-  std::cout << std::endl;
   auto stats = core_->getStats();
   for (const auto& [key, value] : stats) {
-    std::cout << "[SimEng] " << key << ": " << value << std::endl;
+    if (statsU64.find(key) != statsU64.end()) {
+      statsU64[key]->addData(std::stoull(value, nullptr, 10));
+    } else if (statsF32.find(key) != statsF32.end()) {
+      statsF32[key]->addData(std::stof(value));
+    }
   }
-  std::cout << std::endl;
-  std::cout << "[SimEng] Finished " << iterations_ << " ticks in " << duration
-            << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
-            << mips << " MIPS)" << std::endl;
+  statsU64["mmu_numInsnReads"]->addData(mmu_->getNumInsnReads());
+  statsU64["mmu_numDataReads"]->addData(mmu_->getNumDataReads());
+  statsU64["mmu_numDataWrites"]->addData(mmu_->getNumDataWrites());
+  statsU64["duration"]->addData(duration);
+  statsF32["frequency"]->addData(std::round(khz));
+  statsF32["mips"]->addData(mips);
+  memInterface_->printLatencies();
 }
 
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
+  // auto intervalEnd = std::chrono::high_resolution_clock::now();
+  // std::cerr << std::chrono::duration_cast<std::chrono::nanoseconds>(
+  //                  intervalEnd - intervalStart_)
+  //                  .count()
+  //           << std::endl;
   sstNoc_->clockTick(current_cycle);
   // output_.verbose(CALL_INFO, 1, 0, "tick %llu\n", current_cycle);
   // Tick the core and memory interfaces until the program has halted
@@ -136,6 +147,8 @@ bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
     memInterface_->tick();
 
     iterations_++;
+
+    // intervalStart_ = std::chrono::high_resolution_clock::now();
 
     return false;
   } else {
@@ -199,7 +212,7 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Context msg from %s\n\t- CoreId: "
-                        "%u\n\t- TID: %llu\n",
+                        "%u\n\t- TID: %lu\n",
                         cntxEv->getSource().c_str(), cntxEv->getSourceId(),
                         cntxEv->getPayload().TID);
       }
@@ -211,7 +224,7 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Syscall msg from %s\n\t- CoreId: "
-                        "%u\n\t- SyscallId: %llu\n",
+                        "%u\n\t- SyscallId: %lu\n",
                         sysRes->getSource().c_str(), sysRes->getSourceId(),
                         sysRes->getPayload().syscallId);
       }
@@ -415,7 +428,7 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 std::string SimEngCoreWrapper::trimSpaces(std::string strArgs) {
   int trailingEnd = -1;
   int leadingEnd = -1;
-  for (int x = 0; x < strArgs.size(); x++) {
+  for (size_t x = 0; x < strArgs.size(); x++) {
     int end = strArgs.size() - 1 - x;
     // Find the index, from the start of the string, which is not a space.
     if (strArgs.at(x) != ' ' && leadingEnd == -1) {

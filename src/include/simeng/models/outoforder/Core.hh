@@ -240,6 +240,8 @@ class Core : public simeng::Core {
    * CoreID held in SimOS. */
   std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
       updateCoreDescInOS_;
+
+  uint64_t noactivity_ = 0;
 };
 
 }  // namespace outoforder

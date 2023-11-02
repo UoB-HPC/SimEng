@@ -7,36 +7,39 @@ namespace simeng {
 namespace memory {
 
 MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
-                     uint64_t seqId, uint16_t pktOrderId)
+                     uint64_t seqId, uint16_t pktOrderId, uint64_t tid)
     : vaddr_(vaddr),
       size_(size),
       insnSeqId_(seqId),
       packetOrderId_(pktOrderId),
+      tid_(tid),
       metadata_(type) {}
 
 MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
-                     uint64_t seqId, uint16_t pktOrderId,
+                     uint64_t seqId, uint16_t pktOrderId, uint64_t tid,
                      std::vector<char> payload)
     : vaddr_(vaddr),
       size_(size),
       insnSeqId_(seqId),
       packetOrderId_(pktOrderId),
+      tid_(tid),
       metadata_(type),
       payload_(payload) {}
 
 std::unique_ptr<MemPacket> MemPacket::createReadRequest(uint64_t vaddr,
                                                         uint32_t size,
                                                         uint64_t seqId,
-                                                        uint16_t pktOrderId) {
+                                                        uint16_t pktOrderId,
+                                                        uint64_t tid) {
   return std::unique_ptr<MemPacket>(
-      new MemPacket(vaddr, size, READ_REQUEST, seqId, pktOrderId));
+      new MemPacket(vaddr, size, READ_REQUEST, seqId, pktOrderId, tid));
 }
 
 std::unique_ptr<MemPacket> MemPacket::createWriteRequest(
     uint64_t vaddr, uint32_t size, uint64_t seqId, uint16_t pktOrderId,
-    std::vector<char> payload) {
-  return std::unique_ptr<MemPacket>(
-      new MemPacket(vaddr, size, WRITE_REQUEST, seqId, pktOrderId, payload));
+    uint64_t tid, std::vector<char> payload) {
+  return std::unique_ptr<MemPacket>(new MemPacket(
+      vaddr, size, WRITE_REQUEST, seqId, pktOrderId, tid, payload));
 }
 
 void MemPacket::turnIntoWriteResponse() {

@@ -139,6 +139,7 @@ void Core::tick() {
         // Core.
         updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
                             0);
+        currentTID_ = -1;
         return;
       }
       break;
@@ -193,7 +194,22 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth_);
+  if (reorderBuffer_.commit(commitWidth_) == 0)
+    noactivity_++;
+  else
+    noactivity_ = 0;
+
+  if (noactivity_ > 10000) {
+    status_ = CoreStatus::halted;
+    // Update status of corresponding CoreDesc in SimOS as there is no
+    // causal action originating from SimOS which caused this change in
+    // Core.
+    updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
+                        0);
+    currentTID_ = -1;
+    std::cout << "[SimEng:Core" << coreId_ << "] Halting due to no activity"
+              << std::endl;
+  }
 
   if (exceptionGenerated_) {
     handleException();
@@ -329,6 +345,7 @@ void Core::processException() {
     // Core.
     updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
                         0);
+    currentTID_ = -1;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.updatePC(result.instructionAddress);
@@ -337,8 +354,12 @@ void Core::processException() {
       // Update status of corresponding CoreDesc in SimOS as there is no
       // causal action originating from SimOS which caused this change in
       // Core.
+      // std::cerr << getCurrentContext().TID << "| Idling on Core " << coreId_
+      //           << ". Return PC is " << std::hex << getCurrentContext().pc
+      //           << std::dec << std::endl;
       updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
                           0);
+      currentTID_ = -1;
       // Enusre all pipeline stages are flushed
       dispatchIssueUnit_.flush();
       writebackUnit_.flush();
@@ -475,7 +496,9 @@ std::map<std::string, std::string> Core::getStats() const {
       {"lsq.loadViolations",
        std::to_string(reorderBuffer_.getViolatingLoadsCount())},
       {"idle.ticks", std::to_string(idle_ticks_)},
-      {"context.switches", std::to_string(contextSwitches_)}};
+      {"context.switches", std::to_string(contextSwitches_)},
+      {"rob.numLoadsRetired", std::to_string(reorderBuffer_.getNumLoads())},
+      {"rob.numStoresRetired", std::to_string(reorderBuffer_.getNumStores())}};
 
   const std::vector<uint64_t> possibleIssues =
       dispatchIssueUnit_.getPossibleIssues();
@@ -491,6 +514,19 @@ std::map<std::string, std::string> Core::getStats() const {
     stats[key.str()] = val.str();
   }
 
+  // std::map<uint64_t, uint64_t> lsqLatencies = loadStoreQueue_.getLatencies();
+  // std::map<uint64_t, uint64_t>::iterator it;
+
+  // for (it = lsqLatencies.begin(); it != lsqLatencies.end(); it++) {
+  //   if (it->second > 10) {
+  //     std::ostringstream key;
+  //     key << "lsq.latency_" << it->first;
+  //     std::ostringstream val;
+  //     val << it->second;
+  //     stats[key.str()] = val.str();
+  //   }
+  // }
+
   return stats;
 }
 
@@ -500,6 +536,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
                             physicalRegisterQuantities_);
 
   currentTID_ = newContext.TID;
+  reorderBuffer_.setTid(currentTID_);
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
   for (size_t type = 0; type < newContext.regFile.size(); type++) {

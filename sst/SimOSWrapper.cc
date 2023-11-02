@@ -125,6 +125,7 @@ void SimOSWrapper::setup() {
 
 bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
   sstNoc_->clockTick(current_cycle);
+  // output_.verbose(CALL_INFO, 1, 0, "tick %llu\n", current_cycle);
   if (!initialProcessImageWritten_) {
     // Tick Memory
     memInterface_->tick();
@@ -166,8 +167,10 @@ bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
 }
 
 void SimOSWrapper::finish() {
-  output_.verbose(CALL_INFO, 1, 0,
-                  "Simulation complete. Finalising stats....\n");
+  output_.verbose(
+      CALL_INFO, 1, 0,
+      "Simulation complete in %d iterations. Finalising stats....\n",
+      iterations_);
 }
 
 void SimOSWrapper::fabricateSimOS() {
@@ -213,7 +216,7 @@ void SimOSWrapper::fabricateSimOS() {
 
   proxy_.schedule = [&](uint16_t coreId, simeng::OS::cpuContext ctx) {
     contextEv* cntxEv = new contextEv(getName(), 0);
-    // std::cerr << "Schedule packet to " << coreId << std::endl;
+    // std::cerr << "Schedule TID " << ctx.TID << " to " << coreId << std::endl;
     cntxEv->setPayload(ctx);
     sstNoc_->send(cntxEv, coreId);
     return;
@@ -257,7 +260,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Context msg from %s\n\t- CoreId: "
-                        "%u\n\t- TID: %llu\n",
+                        "%u\n\t- TID: %lu\n",
                         cntxEv->getSource().c_str(), cntxEv->getSourceId(),
                         cntxEv->getPayload().TID);
       }
@@ -268,7 +271,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Syscall msg from %s\n\t- CoreId: "
-                        "%u\n\t- SyscallId: %llu\n",
+                        "%u\n\t- SyscallId: %lu\n",
                         sysInfo->getSource().c_str(), sysInfo->getSourceId(),
                         sysInfo->getPayload().syscallId);
       }
@@ -299,7 +302,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::CoreInfo msg from %s\n\t- "
-                        "CoreId: %u\n\t- FromOS: %u\n\t- TID: %llu\n",
+                        "CoreId: %u\n\t- FromOS: %u\n\t- TID: %lu\n",
                         cinfoEv->getSource().c_str(), cinfoEv->getSourceId(),
                         cinfoEv->isReqFromOS(), cinfo.ctx.TID);
       }
@@ -329,7 +332,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
       if (debug_) {
         output_.verbose(CALL_INFO, 1, 0,
                         "Received PacketType::Register msg from %s\n\t- "
-                        "CoreId: %u\n\t- TID: %llu\n\t- Status: %u\n",
+                        "CoreId: %u\n\t- TID: %lu\n\t- Status: %u\n",
                         regReq->getSource().c_str(), regReq->getCoreId(),
                         regReq->getContext().TID,
                         unsigned(regReq->getCoreStatus()));
@@ -347,7 +350,7 @@ void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
 std::string SimOSWrapper::trimSpaces(std::string strArgs) {
   int trailingEnd = -1;
   int leadingEnd = -1;
-  for (int x = 0; x < strArgs.size(); x++) {
+  for (size_t x = 0; x < strArgs.size(); x++) {
     int end = strArgs.size() - 1 - x;
     // Find the index, from the start of the string, which is not a space.
     if (strArgs.at(x) != ' ' && leadingEnd == -1) {

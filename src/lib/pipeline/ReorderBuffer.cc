@@ -76,6 +76,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     auto& uop = buffer_.front();
 
     if (uop->exceptionEncountered()) {
+      // std::cerr << "Raise exception on " << std::hex
+      //           << uop->getInstructionAddress() << std::dec << ":"
+      //           << uop->getSequenceId() << std::endl;
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
@@ -110,19 +113,68 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       }
     }
 
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
+    if (uop->isLastMicroOp()) {
+      instructionsCommitted_++;
+      // if (tid_ == 9) {
+      // std::cout << tid_ << "|" << std::hex << uop->getInstructionAddress()
+      //           << std::dec << ":" << uop->getSequenceId() << std::endl;
+      // }
+    }
 
     const auto& destinations = uop->getDestinationRegisters();
+
+    // if (tid_ == 6) {
+    if (fileOut_.is_open()) {
+      const auto& results = uop->getResults();
+      fileOut_ << tid_ << "|" << std::hex << uop->getInstructionAddress()
+               << std::dec;
+      fileOut_ << ":" << uop->getSequenceId();
+      fileOut_ << std::endl;
+      for (int i = 0; i < destinations.size(); i++) {
+        fileOut_ << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"
+                 << rat_.reverseMapping(destinations[i]) << "}"
+                 << " <- " << std::hex;
+        for (int j = results[i].size() - 1; j >= 0; j--) {
+          fileOut_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+        }
+        fileOut_ << std::dec << std::endl;
+      }
+
+      if (uop->isLoad()) {
+        const auto& addrs = uop->getGeneratedAddresses();
+        for (int i = 0; i < addrs.size(); i++) {
+          fileOut_ << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
+                   << std::dec << std::endl;
+        }
+      }
+      if (uop->isStoreAddress()) {
+        const auto& addrs = uop->getGeneratedAddresses();
+        const auto& data = uop->getData();
+
+        for (int i = 0; i < addrs.size(); i++) {
+          fileOut_ << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
+                   << std::dec << " <- " << std::hex;
+          for (int j = data[i].size() - 1; j >= 0; j--) {
+            fileOut_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+          }
+          fileOut_ << std::dec << std::endl;
+        }
+      }
+    }
+
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
 
-    // If it's a memory op, commit the entry at the head of the respective queue
+    // If it's a memory op, commit the entry at the head of the respective
+    // queue
     if (uop->isLoad()) {
+      numLoads_++;
       lsq_.commitLoad(uop);
       // TODO: If aqcuire, flush
     }
     if (uop->isStoreAddress()) {
+      numStores_++;
       startedStore_ = false;
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
@@ -132,6 +184,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         shouldFlush_ = true;
         flushAfter_ = load->getInstructionId() - 1;
         pc_ = load->getInstructionAddress();
+
+        // Reset sentAtomic if needed
+        if (sentAtomic_) sentAtomic_ = false;
 
         buffer_.pop_front();
         return n + 1;
@@ -161,9 +216,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
           branchCounter_.second++;
 
           if (branchCounter_.second > loopDetectionThreshold_) {
-            // If the same branch with the same outcome is sequentially retired
-            // more times than the loopDetectionThreshold_ value, identify as a
-            // loop boundary
+            // If the same branch with the same outcome is sequentially
+            // retired more times than the loopDetectionThreshold_ value,
+            // identify as a loop boundary
             loopDetected_ = true;
             sendLoopBoundary_(uop->getInstructionAddress());
           }
@@ -237,6 +292,14 @@ uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
 
 uint64_t ReorderBuffer::getViolatingLoadsCount() const {
   return loadViolations_;
+}
+
+void ReorderBuffer::setTid(uint64_t tid) {
+  fileOut_.close();
+  tid_ = tid;
+  std::ostringstream str;
+  str << "simeng" << tid_ << ".out";
+  fileOut_.open(str.str(), std::ofstream::out | std::ofstream::app);
 }
 
 }  // namespace pipeline

@@ -195,6 +195,8 @@ class SimOS {
 
   /** This public method adds a process to the waitingProcs_ queue. */
   void addProcessToWaitQueue(std::shared_ptr<Process> procPtr) {
+    // std::cerr << "Adding " << procPtr->getTID()
+    //           << " to waitingProcs_ via addProcessToWaitQueue" << std::endl;
     waitingProcs_.push(procPtr);
   };
 

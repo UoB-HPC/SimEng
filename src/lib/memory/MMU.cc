@@ -201,7 +201,7 @@ void MMU::requestInstrRead(const MemoryAccessTarget& target) {
          "[SimEng:MMU] Unlaigned instruction read requests are not permitted.");
   // Create and fire off request
   std::unique_ptr<memory::MemPacket> insRequest =
-      MemPacket::createReadRequest(target.vaddr, target.size, 0, 0);
+      MemPacket::createReadRequest(target.vaddr, target.size, 0, 0, tid_);
   insRequest->markAsUntimed();
   insRequest->markAsInstrRead();
   issueRequest(std::move(insRequest));
@@ -229,6 +229,7 @@ void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 bool MMU::hasPendingRequests() const { return pendingDataRequests_ != 0; }
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
+uint64_t MMU::getTid() { return tid_; }
 
 std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   port_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
@@ -304,6 +305,12 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
     request->paddr_ = paddr;
   }
 
+  if (request->isInstrRead())
+    numInsnReads_++;
+  else if (request->isRead())
+    numDataReads_++;
+  else if (request->isWrite())
+    numDataWrites_++;
   port_->send(std::move(request));
 }
 
@@ -332,7 +339,7 @@ void MMU::createReadMemPackets(
     const uint64_t insnSeqId, const uint16_t pktOrderId) {
   if (isAligned(target)) {
     std::unique_ptr<memory::MemPacket> req = MemPacket::createReadRequest(
-        target.vaddr, target.size, insnSeqId, pktOrderId);
+        target.vaddr, target.size, insnSeqId, pktOrderId, tid_);
     outputVec.push_back(std::move(req));
     // Resize response data structure to equal the number of packets created
     readResponses_[insnSeqId][pktOrderId].resize(1);
@@ -347,7 +354,7 @@ void MMU::createReadMemPackets(
           remSize);
       // Create MemPacket
       auto req = MemPacket::createReadRequest(nextAddr, regSize, insnSeqId,
-                                              pktOrderId);
+                                              pktOrderId, tid_);
       req->packetSplitId_ = nextSplitId;
       outputVec.push_back(std::move(req));
       // Update vars
@@ -367,7 +374,7 @@ void MMU::createWriteMemPackets(
     const uint16_t pktOrderId) {
   if (isAligned(target)) {
     std::unique_ptr<MemPacket> req = MemPacket::createWriteRequest(
-        target.vaddr, target.size, insnSeqId, pktOrderId, data);
+        target.vaddr, target.size, insnSeqId, pktOrderId, tid_, data);
     outputVec.push_back(std::move(req));
   } else {
     uint64_t nextAddr = target.vaddr;
@@ -384,7 +391,7 @@ void MMU::createWriteMemPackets(
           std::vector<char>(remData.begin(), remData.begin() + regSize);
       // Create MemPacket
       auto req = MemPacket::createWriteRequest(nextAddr, regSize, insnSeqId,
-                                               pktOrderId, regData);
+                                               pktOrderId, tid_, regData);
       req->packetSplitId_ = nextSplitId;
       outputVec.push_back(std::move(req));
       // Update vars

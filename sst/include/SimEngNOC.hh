@@ -779,6 +779,21 @@ class SimEngNOC : public nocAPI {
       {"interface", "SimpleNetwork interface to the linked network",
        "SST::Interfaces::SimpleNetwork"})
 
+  SST_ELI_DOCUMENT_STATISTICS(
+      {"empty_packets", "Number of empty packets processed", "event", 1},
+      {"syscall_packets", "Number of syscall packets processed", "event", 1},
+      {"context_packets", "Number of thread context packets processed", "event",
+       1},
+      {"translate_packets", "Number of address translation packets processed",
+       "event", 1},
+      {"coreInfo_packets", "Number of coreInfo packets processed", "event", 1},
+      {"requestCoreInfo_packets",
+       "Number of request for coreInfo packets processed", "event", 1},
+      {"interrupt_packets", "Number of interrupt packets processed", "event",
+       1},
+      {"register_packets", "Number of register core packets processed", "event",
+       1})
+
   SimEngNOC(ComponentId_t id, Params& params);
   virtual ~SimEngNOC();
 
@@ -842,6 +857,17 @@ class SimEngNOC : public nocAPI {
   with.
    */
   uint16_t numDevices_ = 0;
+
+  std::map<PacketType, Statistic<uint64_t>*> enumeratedComms_ = {
+      {PacketType::Empty, registerStatistic<uint64_t>("empty_packets")},
+      {PacketType::Syscall, registerStatistic<uint64_t>("syscall_packets")},
+      {PacketType::Context, registerStatistic<uint64_t>("context_packets")},
+      {PacketType::Translate, registerStatistic<uint64_t>("translate_packets")},
+      {PacketType::CoreInfo, registerStatistic<uint64_t>("coreInfo_packets")},
+      {PacketType::RequestCoreInfo,
+       registerStatistic<uint64_t>("requestCoreInfo_packets")},
+      {PacketType::Interrupt, registerStatistic<uint64_t>("interrupt_packets")},
+      {PacketType::Register, registerStatistic<uint64_t>("register_packets")}};
 };
 
 }  // namespace SSTSimEng
