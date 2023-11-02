@@ -5848,7 +5848,7 @@ void Instruction::execute() {
       //   const int32_t m = operands[1].get<int32_t>();
       //   int32_t res;
       //   if (m == 0) res = 0;
-      //   res = (n / m);
+      //   else res = (n / m);
       //   results[0] = res;
       //   //   results[0] = {divideHelp::div_3ops<int32_t>(operands), 8};
       //   break;
