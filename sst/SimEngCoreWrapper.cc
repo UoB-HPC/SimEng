@@ -284,8 +284,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
             : std::make_unique<simeng::CoreInstance>(
                   a64fxConfigPath_, executablePath_, executableArgs_);
   }
-  if (coreInstance_->getSimulationMode() !=
-      simeng::SimulationMode::OutOfOrder) {
+  if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
     output_.verbose(CALL_INFO, 1, 0,
                     "SimEng currently only supports Out-of-Order "
                     "archetypes with SST.");
@@ -335,12 +334,23 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
+  // Output general simulation details
   std::cout << "[SimEng] Running in "
-            << coreInstance_->getSimulationModeString() << " mode" << std::endl;
+            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath_;
   for (const auto& arg : executableArgs_) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << simengConfigPath_ << std::endl;
+  std::cout << "[SimEng] Config file: "
+            << simeng::config::SimInfo::getConfigPath() << std::endl;
+  std::cout << "[SimEng] Local Special File directory: ";
+  if (simeng::config::SimInfo::getGenSpecFiles())
+    std::cout << "True";
+  else
+    std::cout << "False";
+  std::cout << std::endl;
+  uint64_t numCores;
+  simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"] >> numCores;
+  std::cout << "[SimEng] Number of Cores: " << numCores << std::endl;
 }
 
 std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {
