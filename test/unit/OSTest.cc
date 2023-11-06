@@ -11,20 +11,20 @@ class OSTest : public testing::Test {
   OSTest()
       : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
                    .getConfigFile()),
-        proc_elf(simeng::span<char>(reinterpret_cast<char*>(demoHex),
+        proc_elf(simeng::kernel::LinuxProcess(cmdLine, config)),
+        proc_hex(simeng::span<char>(reinterpret_cast<char*>(demoHex),
                                     sizeof(demoHex)),
-                 config),
-        proc_insns(simeng::kernel::LinuxProcess(cmdLine, config)) {}
+                 config) {}
 
  protected:
   // Linux class is ISA agnostic so we can just use one of the supported ones
   YAML::Node config;
-  const std::vector<std::string> cmdLine = {SIMENG_SOURCE_DIR
-                                            "/test/unit/data/stream-aarch64"};
+  const std::vector<std::string> cmdLine = {
+      SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 
   simeng::kernel::Linux os;
   simeng::kernel::LinuxProcess proc_elf;
-  simeng::kernel::LinuxProcess proc_insns;
+  simeng::kernel::LinuxProcess proc_hex;
 
   // Program used when no executable is provided; counts down from
   // 1024*1024, with an independent `orr` at the start of each branch.
@@ -45,12 +45,14 @@ class OSTest : public testing::Test {
 // syscalls and are tested in the Regression suite.
 TEST_F(OSTest, processElf_stackPointer) {
   os.createProcess(proc_elf);
-  EXPECT_EQ(os.getInitialStackPointer(), 1074790240);
+  EXPECT_EQ(os.getInitialStackPointer(), 1079830624);
+  EXPECT_EQ(os.getInitialStackPointer(), proc_elf.getStackPointer());
 }
 
 TEST_F(OSTest, processHex_stackPointer) {
-  os.createProcess(proc_insns);
-  EXPECT_EQ(os.getInitialStackPointer(), 1079830624);
+  os.createProcess(proc_hex);
+  EXPECT_EQ(os.getInitialStackPointer(), 1074790240);
+  EXPECT_EQ(os.getInitialStackPointer(), proc_hex.getStackPointer());
 }
 
 // createProcess
