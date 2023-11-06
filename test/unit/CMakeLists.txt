@@ -13,6 +13,7 @@ set(TEST_SOURCES
     GenericPredictorTest.cc
     ArchitectureTest.cc
     RegisterValueTest.cc
+    OSTest.cc
     PoolTest.cc
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
