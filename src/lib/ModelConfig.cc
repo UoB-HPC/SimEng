@@ -81,11 +81,11 @@ void ModelConfig::validate() {
   nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
+                        ExpectedValue::UInteger, 128);
   nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
+                        ExpectedValue::UInteger, 128);
   subFields.clear();
 
   // First check that the ISA config option is valid, this protects reads from
