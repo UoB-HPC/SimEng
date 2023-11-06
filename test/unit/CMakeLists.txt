@@ -11,7 +11,7 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     GenericPredictorTest.cc
-    ISATest.cc
+    ArchitectureTest.cc
     RegisterValueTest.cc
     PoolTest.cc
     ShiftValueTest.cc
