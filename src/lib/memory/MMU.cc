@@ -255,6 +255,18 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       assert(requestedLoads_.find(seqId) != requestedLoads_.end() &&
              "[SimEng:MMU] Read response packet recieved for instruction that "
              "does not exist.");
+      // if (packet->tid_ == 3)
+      //   std::cerr << "\tType: ReadResp, PhysAddr: 0x" << std::hex
+      //             << packet->paddr_ << std::dec << ", VirtAddr: 0x" <<
+      //             std::hex
+      //             << packet->vaddr_ << std::dec << ", Size: " <<
+      //             packet->size_
+      //             << ", InstPtr: 0x" << std::hex << packet->insnSeqId_
+      //             << std::dec << ", ThreadID: " << packet->tid_
+      //             << ", totalPacketsRemaining: "
+      //             <<
+      //             requestedLoads_.find(seqId)->second.totalPacketsRemaining
+      //             << std::endl;
       readResponses_[seqId][packet->packetOrderId_][packet->packetSplitId_] =
           std::move(packet);
       requestedLoads_.find(seqId)->second.totalPacketsRemaining--;
@@ -311,6 +323,18 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
     numDataReads_++;
   else if (request->isWrite())
     numDataWrites_++;
+
+  // if (request->tid_ == 3)
+  //   std::cerr << "\tType: Read, PhysAddr: 0x" << std::hex << request->paddr_
+  //             << std::dec << ", VirtAddr: 0x" << std::hex << request->vaddr_
+  //             << std::dec << ", Size: " << request->size_ << ", InstPtr: 0x"
+  //             << std::hex << request->insnSeqId_ << std::dec
+  //             << ", ThreadID: " << request->tid_ << ", totalPacketsRemaining:
+  //             "
+  //             << requestedLoads_.find(request->insnSeqId_)
+  //                    ->second.totalPacketsRemaining
+  //             << std::endl;
+
   port_->send(std::move(request));
 }
 
@@ -444,7 +468,18 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
       mergedData.insert(mergedData.end(), tempData.begin(), tempData.end());
     }
     // Supply data to instruction
-    if (!isFaulty) insn->supplyData(addr, {mergedData.data(), mergedSize});
+    if (!isFaulty) {
+      insn->supplyData(addr, {mergedData.data(), mergedSize});
+      // if (tid_ == 3)
+      //   std::cerr << "\tData supply for 0x" << std::hex <<
+      //   insn->getSequenceId()
+      //             << std::dec << ":0x" << std::hex <<
+      //             insn->getInstructionId()
+      //             << std::dec << " at addr 0x" << std::hex << addr <<
+      //             std::dec
+      //             << ", hasAllData: " << insn->hasAllData()
+      //             << ", hasExecuted: " << insn->hasExecuted() << std::endl;
+    }
   }
   assert(insn->hasAllData() &&
          "[SimEng:MMU] Load instruction was supplied memory data but is still "

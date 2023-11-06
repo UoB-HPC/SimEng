@@ -92,6 +92,10 @@ class LoadStoreQueue {
 
   std::map<uint64_t, uint64_t> getLatencies() const;
 
+  void setTid(uint64_t tid);
+
+  uint64_t getTid();
+
  private:
   /** The load queue: holds in-flight load instructions. */
   std::deque<std::shared_ptr<Instruction>> loadQueue_;
@@ -172,6 +176,8 @@ class LoadStoreQueue {
   CompletionOrder completionOrder_;
 
   std::map<uint64_t, uint64_t> latencies_;
+
+  uint64_t tid_;
 };
 
 }  // namespace pipeline

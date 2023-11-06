@@ -114,6 +114,8 @@ void SimEngMemInterface::handleReadRequest(
       // std::cerr << req->getString() << std::endl;
       // std::cerr << "Sent MemPacket from insn " << aggrReq->pkt_->insnSeqId_
       //           << ":" << req->getString() << std::endl;
+      // if (aggrReq->pkt_->tid_ == 3)
+      //   std::cerr << "\t\t" << req->getString() << std::endl;
       idTracking_[req->getID()] = tickCounter_;
       dataMem_->send(req);
     }
@@ -139,7 +141,7 @@ void SimEngMemInterface::handleWriteRequest(
   // }
 
   for (StandardMem::Request* req : requests) {
-    // std::cerr << req->getString() << std::endl;
+    // if (req->tid == 3) std::cerr << req->getString() << std::endl;
     idTracking_[req->getID()] = tickCounter_;
     dataMem_->send(req);
   }
@@ -395,6 +397,7 @@ void SimEngMemInterface::aggregatedWriteResponses(
 }
 
 void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
+  // if (rsp->tid == 3) std::cerr << "\t\t" << rsp->getString() << std::endl;
   uint64_t id = rsp->getID();
   auto data = rsp->data;
   delete rsp;

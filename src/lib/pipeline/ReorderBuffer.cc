@@ -115,20 +115,22 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     if (uop->isLastMicroOp()) {
       instructionsCommitted_++;
-      // if (tid_ == 9) {
-      // std::cout << tid_ << "|" << std::hex << uop->getInstructionAddress()
-      //           << std::dec << ":" << uop->getSequenceId() << std::endl;
-      // }
     }
+    // if (tid_ == 3) {
+    //   std::cerr << tid_ << "|" << std::hex << uop->getInstructionAddress()
+    //             << std::dec << ":" << std::hex << uop->getSequenceId()
+    //             << std::dec << std::endl;
+    // }
 
     const auto& destinations = uop->getDestinationRegisters();
 
     // if (tid_ == 6) {
-    if (fileOut_.is_open()) {
+    if (false) {
+      // if (fileOut_.is_open()) {
       const auto& results = uop->getResults();
       fileOut_ << tid_ << "|" << std::hex << uop->getInstructionAddress()
                << std::dec;
-      fileOut_ << ":" << uop->getSequenceId();
+      fileOut_ << ":0x" << std::hex << uop->getSequenceId() << std::dec;
       fileOut_ << std::endl;
       for (int i = 0; i < destinations.size(); i++) {
         fileOut_ << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"
