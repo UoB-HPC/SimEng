@@ -5,6 +5,8 @@
 
 #include "simeng/Instruction.hh"
 #include "simeng/RegisterFileSet.hh"
+#include "simeng/arch/aarch64/ArchInfo.hh"
+#include "simeng/arch/riscv/ArchInfo.hh"
 #include "simeng/config/ModelConfig.hh"
 #include "simeng/config/yaml/ryml.hh"
 
@@ -152,33 +154,23 @@ class SimInfo {
   /** A function to extract various values from the generated config file to
    * populate frequently queried model config values. */
   void extractValues() {
-    // Get ISA type and set the corresponding architectural fileset
+    // Get ISA type and set the corresponding ArchInfo class
     std::string isa;
     validatedConfig_["Core"]["ISA"] >> isa;
     if (isa == "AArch64") {
       isa_ = config::ISA::AArch64;
-      // Define system registers
-      sysRegisterEnums_ = {arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-                           arm64_sysreg::ARM64_SYSREG_FPCR,
-                           arm64_sysreg::ARM64_SYSREG_FPSR,
-                           arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-                           arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-                           arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_SVCR};
+      archInfo_ =
+          std::make_unique<arch::aarch64::ArchInfo>(arch::aarch64::ArchInfo());
     } else if (isa == "rv64") {
       isa_ = config::ISA::RV64;
-      // Define system registers
-      sysRegisterEnums_ = {arch::riscv::riscv_sysreg::RISCV_SYSREG_FFLAGS,
-                           arch::riscv::riscv_sysreg::RISCV_SYSREG_FRM,
-                           arch::riscv::riscv_sysreg::RISCV_SYSREG_FCSR,
-                           arch::riscv::riscv_sysreg::RISCV_SYSREG_CYCLE,
-                           arch::riscv::riscv_sysreg::RISCV_SYSREG_TIME,
-                           arch::riscv::riscv_sysreg::RISCV_SYSREG_INSTRET};
+      archInfo_ =
+          std::make_unique<arch::riscv::ArchInfo>(arch::riscv::ArchInfo());
     }
 
-    // Initialise architectural reg structures by using the reset
-    // functionality
+    // Define system registers
+    sysRegisterEnums_ = archInfo_->getSysRegEnums(validatedConfig_.crootref());
+
+    // Initialise architectural reg structures by using the reset functionality
     resetArchRegStruct();
 
     // Get Simulation mode
@@ -201,32 +193,7 @@ class SimInfo {
 
   /** Function used to reset the architectural register file structure. */
   void resetArchRegStruct() {
-    // Given some register quantities rely on Config file arguments (SME
-    // relies on SVL), it is possible that if the config was to change the
-    // register quantities would be incorrect. This function provides a way to
-    // reset the Architectural register structure.
-    if (isa_ == config::ISA::AArch64) {
-      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      // Set the size of SME ZA in bytes by dividing the SVL by 8
-      uint16_t ZAbits;
-      validatedConfig_["Core"]["Streaming-Vector-Length"] >> ZAbits;
-      const uint16_t ZAsize = ZAbits / 8;
-      archRegStruct_ = {
-          {8, 32},          // General purpose
-          {256, 32},        // Vector
-          {32, 17},         // Predicate
-          {1, 1},           // NZCV
-          {8, numSysRegs},  // System
-          {256, ZAsize},    // Matrix (Each row is a register)
-      };
-    } else if (isa_ == config::ISA::RV64) {
-      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      archRegStruct_ = {
-          {8, 32},          // General purpose
-          {8, 32},          // Floating Point
-          {8, numSysRegs},  // System
-      };
-    }
+    archRegStruct_ = archInfo_->getArchRegStruct(validatedConfig_.crootref());
   }
 
   /** The validated model config file represented as a ryml:Tree. */
@@ -247,6 +214,10 @@ class SimInfo {
 
   /** The instruction set architecture of the current execution of SimEng. */
   ISA isa_;
+
+  /** Instance of an ArchInfo class used to store architecture specific
+   * configuration options. */
+  std::unique_ptr<arch::ArchInfo> archInfo_;
 
   /** The architectural register structure of the current execution of SimEng.
    */
