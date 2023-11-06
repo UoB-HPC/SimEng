@@ -4,13 +4,34 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-#define AARCH64_ADDITIONAL_CONFIG                                              \
-  ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
-   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
-   "128, Matrix-Count: 2}, L1-Data-Memory: {Interface-Type: Flat}, "           \
-   "L1-Instruction-Memory: {Interface-Type: Flat}, Ports: {'0': {Portname: "   \
-   "0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, "     \
-   "BRANCH, SME]}}}")
+static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
+{
+  Core:
+    {
+      Clock-Frequency: 2.5,
+    },
+  Register-Set:
+    {
+      GeneralPurpose-Count: 154,
+      FloatingPoint/SVE-Count: 90,
+      Predicate-Count: 17, 
+      Conditional-Count: 128,
+      Matrix-Count: 2,
+    },
+  L1-Data-Memory:
+    {
+      Interface-Type: Flat,
+    },
+  L1-Instruction-Memory:
+    {
+      Interface-Type: Flat,
+    },
+  Ports:
+    {
+      '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME] },
+    },
+}
+)YAML";
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */

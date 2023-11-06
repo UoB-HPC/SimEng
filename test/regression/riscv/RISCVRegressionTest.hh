@@ -4,11 +4,31 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
-#define RISCV_ADDITIONAL_CONFIG                                                \
-  ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
-   "Floating-Point-Count: 90}, L1-Data-Memory: {Interface-Type: Fixed}, "      \
-   "L1-Instruction-Memory: {Interface-Type: Flat}, Ports: {'0': {Portname: "   \
-   "0, Instruction-Group-Support: [INT, FLOAT, LOAD, STORE, BRANCH]}}}")
+static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
+{
+  Core:
+    {
+      Clock-Frequency: 2.5,
+    },
+  Register-Set:
+    {
+      GeneralPurpose-Count: 154,
+      Floating-Point-Count: 90,
+    },
+  L1-Data-Memory:
+    {
+      Interface-Type: Fixed,
+    },
+  L1-Instruction-Memory:
+    {
+      Interface-Type: Flat,
+    },
+  Ports:
+    {
+      '0': { Portname: 0, Instruction-Group-Support: [INT, FLOAT, LOAD, STORE, BRANCH] },
+    },
+}
+)YAML";
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
