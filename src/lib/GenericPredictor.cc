@@ -14,13 +14,13 @@ GenericPredictor::GenericPredictor() {
   // Calculate the saturation counter boundary between weakly taken and
   // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
   // value
-  uint16_t weaklyTaken = std::pow(2, (satCntBits_ - 1));
+  uint8_t weaklyTaken = std::pow(2, (satCntBits_ - 1));
   std::string fallback;
   config["Branch-Predictor"]["Fallback-Static-Predictor"] >> fallback;
-  uint16_t satCntVal =
+  uint8_t satCntVal =
       (fallback == "Always-Taken") ? weaklyTaken : (weaklyTaken - 1);
   btb_ =
-      std::vector<std::pair<uint16_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
+      std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
   // Alter globalHistoryLength_ value to better suit required format in update()
   globalHistoryLength_ = (1 << globalHistoryLength_) - 1;
 }
