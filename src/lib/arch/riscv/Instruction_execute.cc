@@ -1390,12 +1390,14 @@ void Instruction::execute() {
       // exception flag if either input is NaN. FEQ.S performs a quiet
       // comparison: it only sets the invalid operation exception flag if either
       // input is a signaling NaN. For all three instructions, the result is 0
-      // if either operand is NaN.
+      // if either operand is NaN. This requires a proper implementation of the
+      // Zicsr extension
     case Opcode::RISCV_FEQ_D: {  // FEQ.D rd,rs1,rs2
       // TODO FEQ.S performs a quiet
       // comparison: it only sets the invalid operation exception flag if
       // either input is a signaling NaN. Qemu doesn't seem to set CSR flags
-      // with sNANs
+      // with sNANs so unsure of correct implementation. Also require proper
+      // Zicsr implementation
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 

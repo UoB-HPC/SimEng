@@ -206,13 +206,6 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
-  /** Invalidate instructions that are currently not yet implemented. This
- prevents errors during speculated branches with unknown destinations;
- non-executable assertions. memory is decoded into valid but not implemented
- instructions tripping assertions.
- TODO remove once all extensions are supported*/
-  void invalidateIfNotImplemented();
-
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
