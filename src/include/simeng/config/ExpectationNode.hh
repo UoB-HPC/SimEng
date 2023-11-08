@@ -124,7 +124,15 @@ class ExpectationNode {
   /** A getter function to retrieve the key of a node. */
   std::string getKey() const { return nodeKey_; }
 
-  void setParentKey(std::string parentKey) { parentKey_ = parentKey; };
+  /** A setter function to create the hierarchy key of this node, prefixed by
+   * the key sent from a parent node. */
+  void setHierarchyKey(std::string hKey) {
+    // If a non-blank key is passed, prefix this instances hierarchyKey_ with it
+    if (hKey != "") hierarchyKey_ = hKey + ":" + nodeKey_;
+    // Don't consider "INVALID" node keys when constructing a hierarchyKey_
+    else if (nodeKey_ != "INVALID")
+      hierarchyKey_ = nodeKey_;
+  }
 
   /** A getter function to retrieve the held default value of a node. */
   template <typename T>
@@ -157,7 +165,7 @@ class ExpectationNode {
           << "[SimEng:ExpectationNode] The data type of the passed "
              "value bounds used in setValueBounds() does not match that held "
              "within the ExpectationNode with key "
-          << nodeKey_ << ". Passed bounds are of type "
+          << hierarchyKey_ << ". Passed bounds are of type "
           << typeToString(valCheck.index())
           << " and the expected type of this node is "
           << typeToString(static_cast<size_t>(type_)) << "." << std::endl;
@@ -168,7 +176,7 @@ class ExpectationNode {
       std::cerr
           << "[SimEng:ExpectationNode] Invalid call of setValueBounds() for "
              "the ExpectationNode with key "
-          << nodeKey_ << " as a value set has already been defined."
+          << hierarchyKey_ << " as a value set has already been defined."
           << std::endl;
       exit(1);
     }
@@ -190,7 +198,7 @@ class ExpectationNode {
         std::cerr << "[SimEng:ExpectationNode] The data type of the passed "
                      "vector used in setValueSet() does not match that held "
                      "within the ExpectationNode with key "
-                  << nodeKey_ << ". Passed vector elements are of type "
+                  << hierarchyKey_ << ". Passed vector elements are of type "
                   << typeToString(valCheck.index())
                   << " and the expected type of this node is "
                   << typeToString(static_cast<size_t>(type_)) << "."
@@ -202,8 +210,8 @@ class ExpectationNode {
     if (definedBounds_) {
       std::cerr << "[SimEng:ExpectationNode] Invalid call of setValueSet() for "
                    "the ExpectationNode with key "
-                << nodeKey_ << " as value bounds have already been defined."
-                << std::endl;
+                << hierarchyKey_
+                << " as value bounds have already been defined." << std::endl;
       exit(1);
     }
 
@@ -227,12 +235,15 @@ class ExpectationNode {
         std::cerr
             << "[SimEng:ExpectationNode] Attempted to add multiple wildcard "
                "nodes to the same ExpectationNode instance of key "
-            << nodeKey_ << std::endl;
+            << hierarchyKey_ << std::endl;
         exit(1);
       }
       hasWildcard_ = true;
     }
     nodeChildren_.push_back(child);
+
+    // Set hierarchy key of child
+    nodeChildren_.back().setHierarchyKey(hierarchyKey_);
   }
 
   /** An intermediary function which sets the expectations that the passed
@@ -333,7 +344,7 @@ class ExpectationNode {
           << "[SimEng:ExpectationNode] A DataTypeVariant used to set the "
              "default value is not of type held within the ExpectationNode "
              "with key "
-          << nodeKey_ << ". Variant holds a " << typeToString(var.index())
+          << hierarchyKey_ << ". Variant holds a " << typeToString(var.index())
           << " and the expected type of this node is "
           << typeToString(static_cast<size_t>(type_)) << "." << std::endl;
       exit(1);
@@ -354,14 +365,14 @@ class ExpectationNode {
     if (variant.valueless_by_exception()) {
       std::cerr << "[SimEng:ExpectationNode] No value in passed "
                    "DataTypeVariant within ExpectationNode with key "
-                << nodeKey_ << std::endl;
+                << hierarchyKey_ << std::endl;
       exit(1);
     }
     // Value type check
     if (!std::holds_alternative<T>(variant)) {
       std::cerr << "[SimEng:ExpectationNode] A value of given type not held in "
                    "variant within ExpectationNode with key "
-                << nodeKey_ << ". Variant holds a "
+                << hierarchyKey_ << ". Variant holds a "
                 << typeToString(variant.index())
                 << " and the expected type of this node is "
                 << typeToString(static_cast<size_t>(type_)) << "." << std::endl;
@@ -437,7 +448,10 @@ class ExpectationNode {
    * structure. */
   std::string nodeKey_ = "INVALID";
 
-  std::string parentKey_ = "";
+  /** The cumulatively constructed key of all connected nodes which came before
+   * this instance. Primarily used for improved debugging when an errored
+   * ExceptionNode instance is encountered. */
+  std::string hierarchyKey_ = "";
 
   /** The expected value type this node places on it associated config option.
    */

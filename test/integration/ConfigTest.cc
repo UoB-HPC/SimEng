@@ -297,7 +297,7 @@ TEST(ConfigTest, invalidTypeOnValueBounds) {
   ASSERT_DEATH({ expectations["HEAD"]["CHILD"].setValueBounds(0, 10); },
                "The data type of the passed value bounds used in "
                "setValueBounds\\() does not match that held within the "
-               "ExpectationNode with key CHILD. Passed bounds are of type "
+               "ExpectationNode with key HEAD:CHILD. Passed bounds are of type "
                "integer and the expected type of this node is string.");
 }
 
@@ -316,7 +316,7 @@ TEST(ConfigTest, invalidTypeOnSetBounds) {
       },
       "The data type of the passed vector used in setValueSet\\() "
       "does not match that held within the ExpectationNode with key "
-      "CHILD. Passed vector elements are of type integer and the "
+      "HEAD:CHILD. Passed vector elements are of type integer and the "
       "expected type of this node is string.");
 }
 
@@ -335,7 +335,7 @@ TEST(ConfigTest, alreadyDefinedBounds) {
         expectations["HEAD"]["CHILD"].setValueSet<uint64_t>({1, 2, 3});
       },
       "Invalid call of setValueSet\\() for the ExpectationNode with key "
-      "CHILD as value bounds have already been defined.");
+      "HEAD:CHILD as value bounds have already been defined.");
 }
 
 // Test that calling setValueBounds() after expectation value bounds have
@@ -351,7 +351,7 @@ TEST(ConfigTest, alreadyDefinedSet) {
   ASSERT_DEATH(
       { expectations["HEAD"]["CHILD"].setValueBounds<uint64_t>(0, 10); },
       "Invalid call of setValueBounds\\() for the ExpectationNode with "
-      "key CHILD as a value set has already been defined.");
+      "key HEAD:CHILD as a value set has already been defined.");
 }
 
 // Test that adding multiple wild ExpectationNodes to the same parent fails
