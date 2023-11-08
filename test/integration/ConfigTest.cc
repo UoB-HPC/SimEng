@@ -12,7 +12,7 @@ TEST(ConfigTest, Default) {
   EXPECT_EQ(simeng::config::SimInfo::getConfigPath(), "Default");
   EXPECT_EQ(simeng::config::SimInfo::getISA(), simeng::config::ISA::AArch64);
   EXPECT_EQ(simeng::config::SimInfo::getSimMode(),
-            simeng::config::simMode::emulation);
+            simeng::config::SimulationMode::Emulation);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Emulation");
   std::vector<uint64_t> sysRegisterEnums = {
       arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
@@ -30,7 +30,7 @@ TEST(ConfigTest, Default) {
       {32, 17},
       {1, 1},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 64}};
+      {256, 16}};
   EXPECT_EQ(simeng::config::SimInfo::getArchRegStruct(), archRegStruct);
 
   // Test that default config generated matches for AArch64 ISA
@@ -39,7 +39,7 @@ TEST(ConfigTest, Default) {
   std::string expectedValues =
       "Core:\n  ISA: AArch64\n  'Simulation-Mode': emulation\n  "
       "'Clock-Frequency': 1\n  'Timer-Frequency': 100\n  'Micro-Operations': "
-      "0\n  'Vector-Length': 512\n  'Streaming-Vector-Length': 512\nFetch:\n  "
+      "0\n  'Vector-Length': 128\n  'Streaming-Vector-Length': 128\nFetch:\n  "
       "'Fetch-Block-Size': 32\n  'Loop-Buffer-Size': 32\n  "
       "'Loop-Detection-Threshold': 5\n'Process-Image':\n  'Heap-Size': "
       "100000\n  'Stack-Size': 100000\n'Register-Set':\n  "
@@ -285,6 +285,75 @@ TEST(ConfigTest, validation) {
             "333 not in the bounds {345 to 678}");
 }
 
+// Test that calling setValueBounds() with the wrong data type fails
+TEST(ConfigTest, invalidTypeOnValueBounds) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<std::string>("DEFAULT",
+                                                                      "CHILD"));
+  ASSERT_DEATH({ expectations["HEAD"]["CHILD"].setValueBounds(0, 10); },
+               "The data type of the passed value bounds used in "
+               "setValueBounds\\() does not match that held within the "
+               "ExpectationNode with key CHILD. Passed bounds are of type "
+               "integer and the expected type of this node is string.");
+}
+
+// Test that calling setValueSet() with the wrong data type fails
+TEST(ConfigTest, invalidTypeOnSetBounds) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<std::string>("DEFAULT",
+                                                                      "CHILD"));
+  ASSERT_DEATH(
+      {
+        expectations["HEAD"]["CHILD"].setValueSet<int>({0, 1, 2});
+      },
+      "The data type of the passed vector used in setValueSet\\() "
+      "does not match that held within the ExpectationNode with key "
+      "CHILD. Passed vector elements are of type integer and the "
+      "expected type of this node is string.");
+}
+
+// Test that calling setValueSet() after an expectation value set has already
+// been defined fails
+TEST(ConfigTest, alreadyDefinedBounds) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<uint64_t>(0, "CHILD"));
+  expectations["HEAD"]["CHILD"].setValueBounds<uint64_t>(0, 10);
+  ASSERT_DEATH(
+      {
+        expectations["HEAD"]["CHILD"].setValueSet<uint64_t>({1, 2, 3});
+      },
+      "Invalid call of setValueSet\\() for the ExpectationNode with key "
+      "CHILD as value bounds have already been defined.");
+}
+
+// Test that calling setValueBounds() after expectation value bounds have
+// already been defined fails
+TEST(ConfigTest, alreadyDefinedSet) {
+  simeng::config::ExpectationNode expectations =
+      simeng::config::ExpectationNode();
+  expectations.addChild(
+      simeng::config::ExpectationNode::createExpectation("HEAD"));
+  expectations["HEAD"].addChild(
+      simeng::config::ExpectationNode::createExpectation<uint64_t>(0, "CHILD"));
+  expectations["HEAD"]["CHILD"].setValueSet<uint64_t>({1, 2, 3});
+  ASSERT_DEATH(
+      { expectations["HEAD"]["CHILD"].setValueBounds<uint64_t>(0, 10); },
+      "Invalid call of setValueBounds\\() for the ExpectationNode with "
+      "key CHILD as a value set has already been defined.");
+}
+
 // Test that adding multiple wild ExpectationNodes to the same parent fails
 TEST(ConfigTest, multipleWildNodes) {
   simeng::config::ExpectationNode expectations =
@@ -300,7 +369,7 @@ TEST(ConfigTest, multipleWildNodes) {
             simeng::config::ExpectationNode::createExpectation(
                 simeng::config::wildcard));
       },
-      "Attempted to add multiple wild nodes to the same ExpectationNode "
+      "Attempted to add multiple wildcard nodes to the same ExpectationNode "
       "instance of key HEAD");
 }
 
