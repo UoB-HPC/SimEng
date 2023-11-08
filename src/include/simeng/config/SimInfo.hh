@@ -112,18 +112,6 @@ class SimInfo {
     return getInstance()->archInfo_->getSysRegEnums();
   }
 
-  /** A getter function to retrieve an index of a Capstone sysreg enum
-   * within the sysRegisterEnums_ vector. */
-  static uint32_t getSysRegVecIndex(uint64_t sysReg) {
-    auto sysRegVec = getInstance()->archInfo_->getSysRegEnums();
-    auto regItr = std::find(sysRegVec.begin(), sysRegVec.end(), sysReg);
-    assert(regItr != sysRegVec.end() &&
-           "[SimEng:SimInfo] System register was not defined in the System "
-           "Register Vector. Please ensure it is included in "
-           "simeng::arch::archInfo::sysRegisterEnums_.");
-    return regItr - sysRegVec.begin();
-  }
-
   /** A getter function to retrieve whether or not the special files
    * directories should be generated. */
   static const bool getGenSpecFiles() {
