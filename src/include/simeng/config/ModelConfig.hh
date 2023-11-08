@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <variant>
 
-#include "simeng/config/Expectations.hh"
+#include "simeng/config/ExpectationNode.hh"
 #include "simeng/config/yaml/ryml.hh"
 
 namespace simeng {
@@ -37,8 +37,8 @@ class ModelConfig {
   ryml::Tree getConfig();
 
   /** Re-generate the default config file based on the passed isa. A force bool
-   * is used to force the re-generation of the default regardless of previously
-   * set ISA. */
+   * is used to force the re-generation of the default config, regardless of
+   * previously set ISA. */
   void reGenerateDefault(ISA isa, bool force = false);
 
   /** Append/replace config options within the held config file. */
@@ -92,7 +92,7 @@ class ModelConfig {
   /** The ISA currently being simulated. Various config options rely on the
    * knowledge of the ISA under simulation thus a variable is used to keep track
    * of its value. */
-  ISA ISA_ = ISA::AArch64;
+  ISA isa_ = ISA::AArch64;
 
   /** Whether the config file was created from default values. */
   bool isDefault_ = true;

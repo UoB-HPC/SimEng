@@ -34,32 +34,32 @@ class ArchInfo : public simeng::arch::ArchInfo {
 
     // Generate the config-defined physical register structure and quantities
     ryml::ConstNodeRef regConfig = config["Register-Set"];
-    uint16_t gpCnt;
-    regConfig["GeneralPurpose-Count"] >> gpCnt;
-    uint16_t fpCnt;
-    regConfig["FloatingPoint/SVE-Count"] >> fpCnt;
-    uint16_t predCnt;
-    regConfig["Predicate-Count"] >> predCnt;
-    uint16_t condCnt;
-    regConfig["Conditional-Count"] >> condCnt;
-    uint16_t matCnt;
-    regConfig["Matrix-Count"] >> matCnt;
+    uint16_t gpCount;
+    regConfig["GeneralPurpose-Count"] >> gpCount;
+    uint16_t fpCount;
+    regConfig["FloatingPoint/SVE-Count"] >> fpCount;
+    uint16_t predCount;
+    regConfig["Predicate-Count"] >> predCount;
+    uint16_t condCount;
+    regConfig["Conditional-Count"] >> condCount;
+    uint16_t matCount;
+    regConfig["Matrix-Count"] >> matCount;
     // Matrix-Count multiplied by (SVL/8) as internal representation of
     // ZA is a block of row-vector-registers. Therefore we need to
     // convert physical counts from whole-ZA to rows-in-ZA.
-    matCnt *= zaSize_;
-    physRegStruct_ = {{8, gpCnt},
-                      {256, fpCnt},
-                      {32, predCnt},
-                      {1, condCnt},
+    matCount *= zaSize_;
+    physRegStruct_ = {{8, gpCount},
+                      {256, fpCount},
+                      {32, predCount},
+                      {1, condCount},
                       {8, static_cast<uint16_t>(sysRegisterEnums_.size())},
-                      {256, matCnt}};
-    physRegQuantities_ = {gpCnt,
-                          fpCnt,
-                          predCnt,
-                          condCnt,
+                      {256, matCount}};
+    physRegQuantities_ = {gpCount,
+                          fpCount,
+                          predCount,
+                          condCount,
                           static_cast<uint16_t>(sysRegisterEnums_.size()),
-                          matCnt};
+                          matCount};
   }
 
   /** Get the set of system register enums currently supported. */

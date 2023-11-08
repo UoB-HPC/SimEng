@@ -79,8 +79,8 @@ void ModelConfig::validate() {
 void ModelConfig::reGenerateDefault(ISA isa, bool force) {
   // Only re-generate the default config file if it hasn't already been
   // generated for the specified ISA
-  if (!force && (ISA_ == isa && isDefault_)) return;
-  ISA_ = isa;
+  if (!force && (isa_ == isa && isDefault_)) return;
+  isa_ = isa;
   generateDefault();
 }
 
@@ -100,10 +100,10 @@ void ModelConfig::generateDefault() {
 void ModelConfig::constructDefault(ExpectationNode expectations,
                                    size_t root_id) {
   // Iterate over the expectations supplied
-  for (const auto& chld : expectations.getChildren()) {
-    std::string key = chld.getKey();
-    ExpectedType type = chld.getType();
-    // If the key is a wildcard , then change it to be an appropriate value
+  for (const auto& child : expectations.getChildren()) {
+    std::string key = child.getKey();
+    ExpectedType type = child.getType();
+    // If the key is a wildcard, then change it to be an appropriate value
     // in the resultant config file and its type to be valueless
     if (key == wildcard) {
       key = "0";
@@ -114,7 +114,7 @@ void ModelConfig::constructDefault(ExpectationNode expectations,
                          << ryml::key(key);
     // If the expectation is a sequence, then add an additional ryml::NodeRef as
     // a child to the former to act as the sequence of values when read in later
-    if (chld.isSequence()) {
+    if (child.isSequence()) {
       node |= ryml::SEQ;
       node = configTree_.ref(node.id()).append_child();
     }
@@ -124,22 +124,22 @@ void ModelConfig::constructDefault(ExpectationNode expectations,
     // id as the root id
     switch (type) {
       case ExpectedType::Bool:
-        node << chld.getDefault<bool>();
+        node << child.getDefault<bool>();
         break;
       case ExpectedType::Double:
-        node << chld.getDefault<double>();
+        node << child.getDefault<double>();
         break;
       case ExpectedType::Float:
-        node << chld.getDefault<float>();
+        node << child.getDefault<float>();
         break;
       case ExpectedType::Integer:
-        node << chld.getDefault<int64_t>();
+        node << child.getDefault<int64_t>();
         break;
       case ExpectedType::String:
-        node << chld.getDefault<std::string>();
+        node << child.getDefault<std::string>();
         break;
       case ExpectedType::UInteger:
-        node << chld.getDefault<uint64_t>();
+        node << child.getDefault<uint64_t>();
         break;
       case ExpectedType::Valueless:
         node |= ryml::MAP;
@@ -163,39 +163,39 @@ void ModelConfig::addConfigOptions(std::string config) {
 
 void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
   // Iterate over the config options supplied
-  for (ryml::NodeRef chld : node.children()) {
+  for (ryml::NodeRef child : node.children()) {
     ryml::NodeRef ref;
     // If the config option doesn't already exists, add it. Otherwise get the
     // reference to it
-    if (!configTree_.ref(id).has_child(chld.key())) {
-      std::string key = std::string(chld.key().data(), chld.key().size());
+    if (!configTree_.ref(id).has_child(child.key())) {
+      std::string key = std::string(child.key().data(), child.key().size());
       ref = configTree_.ref(id).append_child() << ryml::key(key);
       // Set any appropriate ryml::NodeRef types
-      if (chld.is_map()) {
+      if (child.is_map()) {
         ref |= ryml::MAP;
       }
-      if (chld.is_seq()) {
+      if (child.is_seq()) {
         ref |= ryml::SEQ;
       }
     } else {
-      ref = configTree_.ref(id)[chld.key()];
+      ref = configTree_.ref(id)[child.key()];
     }
-    if (chld.is_map()) {
+    if (child.is_map()) {
       // If the config option had children, iterate through them.
-      recursiveAdd(chld, ref.id());
-    } else if (chld.is_seq()) {
+      recursiveAdd(child, ref.id());
+    } else if (child.is_seq()) {
       // If the config option is a sequence, then add the sequence of values
       // held within the config option (its children) as children to the current
       // ryml::Tree node identified by `id`
       ref.clear_children();
-      for (size_t entry = 0; entry < chld.num_children(); entry++) {
+      for (size_t entry = 0; entry < child.num_children(); entry++) {
         ref.append_child();
-        ref[entry] << chld[entry].val();
+        ref[entry] << child[entry].val();
       }
     } else {
       // If the config option is neither a map nor a sequence, simply add its
       // value to the ryml::Tree node reference
-      ref << chld.val();
+      ref << child.val();
     }
   }
 }
@@ -207,10 +207,10 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Core
   expectations_.addChild(ExpectationNode::createExpectation("Core"));
 
-  if (ISA_ == ISA::AArch64)
+  if (isa_ == ISA::AArch64)
     expectations_["Core"].addChild(
         ExpectationNode::createExpectation<std::string>("AArch64", "ISA"));
-  else if (ISA_ == ISA::RV64)
+  else if (isa_ == ISA::RV64)
     expectations_["Core"].addChild(
         ExpectationNode::createExpectation<std::string>("rv64", "ISA"));
   expectations_["Core"]["ISA"].setValueSet(
@@ -223,18 +223,18 @@ void ModelConfig::setExpectations(bool isDefault) {
         configTree_["Core"]["ISA"]);
     std::string ISA;
     configTree_["Core"]["ISA"] >> ISA;
-    if (result.errored) {
+    if (!result.valid) {
       std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
                 << "\" passed in config file due to \"" << result.message
                 << "\" error. Cannot continue with config validation. Exiting."
                 << std::endl;
       exit(1);
     }
-    // Set ISA_
+    // Set isa_
     if (ISA == "AArch64") {
-      ISA_ = ISA::AArch64;
+      isa_ = ISA::AArch64;
     } else if ("rv64") {
-      ISA_ = ISA::RV64;
+      isa_ = ISA::RV64;
     }
   }
   createGroupMapping();
@@ -258,7 +258,7 @@ void ModelConfig::setExpectations(bool isDefault) {
             configTree_["Core"]["Clock-Frequency"]);
     float cFreq;
     configTree_["Core"]["Clock-Frequency"] >> cFreq;
-    if (result.errored) {
+    if (!result.valid) {
       std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
                 << cFreq << "\" passed in config file due to \""
                 << result.message
@@ -280,15 +280,15 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Core"]["Micro-Operations"].setValueSet(
       std::vector{false, true});
 
-  if (ISA_ == ISA::AArch64) {
+  if (isa_ == ISA::AArch64) {
     expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
-        512, "Vector-Length", true));
+        128, "Vector-Length", true));
     expectations_["Core"]["Vector-Length"].setValueSet(
         std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
                               1280, 1408, 1536, 1664, 1792, 1920, 2048});
 
     expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
-        512, "Streaming-Vector-Length", true));
+        128, "Streaming-Vector-Length", true));
     expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
         std::vector<uint64_t>{128, 256, 384, 512, 1024, 2048});
   }
@@ -326,7 +326,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // Register-Set
   expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
-  if (ISA_ == ISA::AArch64) {
+  if (isa_ == ISA::AArch64) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint64_t>(32,
                                                      "GeneralPurpose-Count"));
@@ -354,7 +354,7 @@ void ModelConfig::setExpectations(bool isDefault) {
         ExpectationNode::createExpectation<uint64_t>(1, "Matrix-Count", true));
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint64_t>(
         1, UINT16_MAX);
-  } else if (ISA_ == ISA::RV64) {
+  } else if (isa_ == ISA::RV64) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint64_t>(32,
                                                      "GeneralPurpose-Count"));
@@ -509,9 +509,9 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // Get the upper bound of what the opcode value can be based on the ISA
   uint64_t maxOpcode = 0;
-  if (ISA_ == ISA::AArch64) {
+  if (isa_ == ISA::AArch64) {
     maxOpcode = arch::aarch64::Opcode::AArch64_INSTRUCTION_LIST_END;
-  } else if (ISA_ == ISA::RV64) {
+  } else if (isa_ == ISA::RV64) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }
   expectations_["Ports"][wildcard].addChild(
@@ -530,13 +530,13 @@ void ModelConfig::setExpectations(bool isDefault) {
     // An index value used in case of error
     uint16_t idx = 0;
     // Get all portnames defined in the config file and ensure they are unique
-    for (ryml::NodeRef chld : configTree_["Ports"]) {
+    for (ryml::NodeRef child : configTree_["Ports"]) {
       ValidationResult result =
           expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
-              chld["Portname"]);
+              child["Portname"]);
       std::string portname;
-      chld["Portname"] >> portname;
-      if (!result.errored) {
+      child["Portname"] >> portname;
+      if (result.valid) {
         if (std::find(portnames.begin(), portnames.end(), portname) ==
             portnames.end()) {
           portnames.push_back(portname);
@@ -686,33 +686,33 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
                                     ryml::NodeRef node,
                                     std::string hierarchyString) {
   // Iterate over passed expectations
-  for (auto& chld : expectation.getChildren()) {
-    std::string nodeKey = chld.getKey();
+  for (auto& child : expectation.getChildren()) {
+    std::string nodeKey = child.getKey();
     // If the expectation is a wildcard, then iterate over the associated
     // children in the config option using the same expectation(s)
     if (nodeKey == wildcard) {
-      for (ryml::NodeRef rymlChld : node) {
+      for (ryml::NodeRef rymlChild : node) {
         // An index value used in case of error
         std::string idx =
-            std::string(rymlChld.key().data(), rymlChld.key().size());
-        ValidationResult result = chld.validateConfigNode(rymlChld);
-        if (result.errored)
+            std::string(rymlChild.key().data(), rymlChild.key().size());
+        ValidationResult result = child.validateConfigNode(rymlChild);
+        if (!result.valid)
           invalid_ << "\t- "
                    << hierarchyString + idx + " " + result.message + "\n";
-        recursiveValidate(chld, rymlChld, hierarchyString + idx + ":");
+        recursiveValidate(child, rymlChild, hierarchyString + idx + ":");
       }
     } else if (node.has_child(ryml::to_csubstr(nodeKey))) {
       // If the config file contains the key of the expectation node, get
       // it
-      ryml::NodeRef rymlChld = node[ryml::to_csubstr(nodeKey)];
-      if (chld.isSequence()) {
+      ryml::NodeRef rymlChild = node[ryml::to_csubstr(nodeKey)];
+      if (child.isSequence()) {
         // If the expectation node is a sequence, then treat the ryml::NodeRef
         // as a parent and validate all its children against the expectation
         // node
         int idx = 0;
-        for (ryml::NodeRef grndChld : rymlChld) {
-          ValidationResult result = chld.validateConfigNode(grndChld);
-          if (result.errored)
+        for (ryml::NodeRef grndchild : rymlChild) {
+          ValidationResult result = child.validateConfigNode(grndchild);
+          if (!result.valid)
             invalid_ << "\t- "
                      << hierarchyString + nodeKey + ":" + std::to_string(idx) +
                             " " + result.message + "\n";
@@ -722,12 +722,12 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
         // If the expectation node is not a sequence, validate the config
         // option against the current expectations and if it has children,
         // validate those recursively
-        ValidationResult result = chld.validateConfigNode(rymlChld);
-        if (result.errored)
+        ValidationResult result = child.validateConfigNode(rymlChild);
+        if (!result.valid)
           invalid_ << "\t- "
                    << hierarchyString + nodeKey + " " + result.message + "\n";
-        if (chld.getChildren().size()) {
-          recursiveValidate(chld, rymlChld, hierarchyString + nodeKey + ":");
+        if (child.getChildren().size()) {
+          recursiveValidate(child, rymlChild, hierarchyString + nodeKey + ":");
         }
       }
     } else {
@@ -735,9 +735,9 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
       // create is as a child to the config ryml::NodeRef supplied. If the
       // config option is optional, a default value will be injected,
       // otherwise the validation will fail
-      ryml::NodeRef rymlChld = node.append_child() << ryml::key(nodeKey);
-      ValidationResult result = chld.validateConfigNode(rymlChld);
-      if (result.errored)
+      ryml::NodeRef rymlChild = node.append_child() << ryml::key(nodeKey);
+      ValidationResult result = child.validateConfigNode(rymlChild);
+      if (!result.valid)
         invalid_ << "\t- "
                  << hierarchyString + nodeKey + " " + result.message + "\n";
     }
@@ -768,9 +768,9 @@ void ModelConfig::postValidation() {
     }
     // Read in each group and place its corresponding group number into the
     // new config option
-    for (ryml::NodeRef chld : node["Instruction-Group-Support"]) {
+    for (ryml::NodeRef child : node["Instruction-Group-Support"]) {
       std::string groupStr;
-      chld >> groupStr;
+      child >> groupStr;
       node["Instruction-Group-Support-Nums"].append_child()
           << groupMapping_[groupStr];
     }
@@ -785,9 +785,9 @@ void ModelConfig::postValidation() {
     // Read in each bloacking group and place its corresponding group number
     // into the new config option.
     std::queue<uint16_t> blockingGroups;
-    for (ryml::NodeRef chld : node["Blocking-Groups"]) {
+    for (ryml::NodeRef child : node["Blocking-Groups"]) {
       std::string groupStr;
-      chld >> groupStr;
+      child >> groupStr;
       uint16_t parentGroup = groupMapping_[groupStr];
       blockingGroups.push(parentGroup);
       node["Blocking-Group-Nums"].append_child() << parentGroup;
@@ -795,9 +795,9 @@ void ModelConfig::postValidation() {
     // Expand the set of blocking groups to include those that inherit from the
     // user defined set
     std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance;
-    if (ISA_ == ISA::AArch64) {
+    if (isa_ == ISA::AArch64) {
       groupInheritance = arch::aarch64::groupInheritance;
-    } else if (ISA_ == ISA::RV64) {
+    } else if (isa_ == ISA::RV64) {
       groupInheritance = arch::riscv::groupInheritance;
     }
     while (blockingGroups.size()) {
@@ -823,9 +823,9 @@ void ModelConfig::postValidation() {
     }
     // Read in each group and place its corresponding group number into the
     // new config option
-    for (ryml::NodeRef chld : node["Instruction-Groups"]) {
+    for (ryml::NodeRef child : node["Instruction-Groups"]) {
       std::string groupStr;
-      chld >> groupStr;
+      child >> groupStr;
       node["Instruction-Group-Nums"].append_child() << groupMapping_[groupStr];
     }
   }
@@ -878,7 +878,7 @@ void ModelConfig::postValidation() {
 ryml::Tree ModelConfig::getConfig() { return configTree_; }
 
 void ModelConfig::createGroupMapping() {
-  if (ISA_ == ISA::AArch64) {
+  if (isa_ == ISA::AArch64) {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
@@ -967,7 +967,7 @@ void ModelConfig::createGroupMapping() {
                      "STORE_SME",
                      "ALL",
                      "NONE"};
-  } else if (ISA_ == ISA::RV64) {
+  } else if (isa_ == ISA::RV64) {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
