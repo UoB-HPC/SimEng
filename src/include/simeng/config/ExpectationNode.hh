@@ -145,7 +145,9 @@ class ExpectationNode {
 
   /** A getter function to retrieve the child ExpectationNode instances of this
    * node. */
-  std::vector<ExpectationNode>& getChildren() { return nodeChildren_; }
+  const std::vector<ExpectationNode>& getChildren() const {
+    return nodeChildren_;
+  }
 
   /** A getter function to retrieve whether the expectations should be applied
    * to a sequence of config values. */
@@ -248,7 +250,7 @@ class ExpectationNode {
 
   /** An intermediary function which sets the expectations that the passed
    * config option should be checked against. */
-  ValidationResult validateConfigNode(ryml::NodeRef node) {
+  ValidationResult validateConfigNode(ryml::NodeRef node) const {
     // If the node is a wildcard, then only a key will exist in the validation
     // check
     if (isWildcard_) {
@@ -384,7 +386,7 @@ class ExpectationNode {
   /** A function to validate a passed config option against held expectations.
    */
   template <typename T>
-  ValidationResult validateConfigNodeWithType(ryml::NodeRef node) {
+  ValidationResult validateConfigNodeWithType(ryml::NodeRef node) const {
     // Value existence check
     if (!node.has_val()) {
       // If the node is optional, fill in the missing config
