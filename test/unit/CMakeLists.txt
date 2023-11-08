@@ -15,6 +15,7 @@ set(TEST_SOURCES
     RegisterValueTest.cc
     OSTest.cc
     PoolTest.cc
+    ProcessTest.cc
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
     )
