@@ -223,7 +223,7 @@ TEST(A64FXPortAllocator, table5) {
   rsFreeEntries[1]--;
 }
 
-// Test correct allocation for Table 6  condition
+// Test correct allocation for Table 6 condition
 TEST(A64FXPortAllocator, table6) {
   auto portAllocator = A64FXPortAllocator(portArrangement);
   portAllocator.setRSSizeGetter(
