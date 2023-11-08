@@ -64,7 +64,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"])),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint,
-                 config::SimInfo::getValue<uint16_t>(
+                 config::SimInfo::getValue<uint32_t>(
                      config["Fetch"]["Fetch-Block-Size"]),
                  isa, branchPredictor),
       reorderBuffer_(

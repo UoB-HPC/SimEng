@@ -68,7 +68,7 @@ class MicroDecoder {
 
  private:
   /** Flag to determine whether instruction splitting is enabled. */
-  bool instructionSplit_;
+  const bool instructionSplit_;
 
   /** A micro-decoding cache, mapping an instruction word to a previously split
    * instruction. Instructions are added to the cache as they're split into

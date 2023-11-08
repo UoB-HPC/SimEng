@@ -39,7 +39,7 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
-            uint64_t programByteLength, uint64_t entryPoint, uint8_t blockSize,
+            uint64_t programByteLength, uint64_t entryPoint, uint32_t blockSize,
             const arch::Architecture& isa, BranchPredictor& branchPredictor);
 
   ~FetchUnit();
