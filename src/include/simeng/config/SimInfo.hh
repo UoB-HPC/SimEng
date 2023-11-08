@@ -91,19 +91,31 @@ class SimInfo {
   /** A getter function to retrieve a vector of {size, number} pairs describing
    * the available architectural registers. */
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
-    return getInstance()->archRegStruct_;
+    return getInstance()->archInfo_->getArchRegStruct();
+  }
+
+  /** A getter function to retrieve a vector of {size, number} pairs describing
+   * the available physical registers. */
+  static const std::vector<simeng::RegisterFileStructure>& getPhysRegStruct() {
+    return getInstance()->archInfo_->getPhysRegStruct();
+  }
+
+  /** A getter function to retrieve a vector of uint16_t values describing
+   * the quantities of physical registers available. */
+  static const std::vector<uint16_t>& getPhysRegQuantities() {
+    return getInstance()->archInfo_->getPhysRegQuantities();
   }
 
   /** A getter function to retrieve a vector of Capstone sysreg enums for
    * all the system registers that should be utilised in simulation. */
   static const std::vector<uint64_t>& getSysRegVec() {
-    return getInstance()->sysRegisterEnums_;
+    return getInstance()->archInfo_->getSysRegEnums();
   }
 
   /** A getter function to retrieve an index of a Capstone sysreg enum
    * within the sysRegisterEnums_ vector. */
   static uint32_t getSysRegVecIndex(uint64_t sysReg) {
-    auto sysRegVec = getInstance()->sysRegisterEnums_;
+    auto sysRegVec = getInstance()->archInfo_->getSysRegEnums();
     auto regItr = std::find(sysRegVec.begin(), sysRegVec.end(), sysReg);
     assert(regItr != sysRegVec.end() &&
            "[SimEng:SimInfo] System register was not defined in the System "
@@ -118,8 +130,8 @@ class SimInfo {
     return getInstance()->genSpecialFiles_;
   }
 
-  /** A function used to reset the architectural register file structure. */
-  static void resetArchRegs() { getInstance()->resetArchRegStruct(); }
+  /** A utility function to rebuild/construct member variables/classes. */
+  static void reBuild() { getInstance()->extractValues(); }
 
  private:
   SimInfo() {
@@ -159,19 +171,13 @@ class SimInfo {
     validatedConfig_["Core"]["ISA"] >> isa;
     if (isa == "AArch64") {
       isa_ = config::ISA::AArch64;
-      archInfo_ =
-          std::make_unique<arch::aarch64::ArchInfo>(arch::aarch64::ArchInfo());
+      archInfo_ = std::make_unique<arch::aarch64::ArchInfo>(
+          arch::aarch64::ArchInfo(validatedConfig_));
     } else if (isa == "rv64") {
       isa_ = config::ISA::RV64;
-      archInfo_ =
-          std::make_unique<arch::riscv::ArchInfo>(arch::riscv::ArchInfo());
+      archInfo_ = std::make_unique<arch::riscv::ArchInfo>(
+          arch::riscv::ArchInfo(validatedConfig_));
     }
-
-    // Define system registers
-    sysRegisterEnums_ = archInfo_->getSysRegEnums(validatedConfig_.crootref());
-
-    // Initialise architectural reg structures by using the reset functionality
-    resetArchRegStruct();
 
     // Get Simulation mode
     std::string mode;
@@ -189,11 +195,6 @@ class SimInfo {
 
     // Get if the special files directory should be created
     validatedConfig_["CPU-Info"]["Generate-Special-Dir"] >> genSpecialFiles_;
-  }
-
-  /** Function used to reset the architectural register file structure. */
-  void resetArchRegStruct() {
-    archRegStruct_ = archInfo_->getArchRegStruct(validatedConfig_.crootref());
   }
 
   /** The validated model config file represented as a ryml:Tree. */
@@ -218,14 +219,6 @@ class SimInfo {
   /** Instance of an ArchInfo class used to store architecture specific
    * configuration options. */
   std::unique_ptr<arch::ArchInfo> archInfo_;
-
-  /** The architectural register structure of the current execution of SimEng.
-   */
-  std::vector<simeng::RegisterFileStructure> archRegStruct_;
-
-  /** The vector of all system register Capstone enum values used in the
-   * associated Architecture class. */
-  std::vector<uint64_t> sysRegisterEnums_;
 
   /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;

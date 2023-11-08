@@ -262,28 +262,6 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure() const {
-  // Get register counts
-  ryml::ConstNodeRef regConfig = config::SimInfo::getConfig()["Register-Set"];
-  uint16_t gpCnt;
-  regConfig["GeneralPurpose-Count"] >> gpCnt;
-  uint16_t fpCnt;
-  regConfig["FloatingPoint-Count"] >> fpCnt;
-  return {{8, gpCnt}, {8, fpCnt}, {8, getNumSystemRegisters()}};
-}
-
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
-    const {
-  // Get register counts
-  ryml::ConstNodeRef regConfig = config::SimInfo::getConfig()["Register-Set"];
-  uint16_t gpCnt;
-  regConfig["GeneralPurpose-Count"] >> gpCnt;
-  uint16_t fpCnt;
-  regConfig["FloatingPoint-Count"] >> fpCnt;
-  return {gpCnt, fpCnt, getNumSystemRegisters()};
-}
-
 uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }

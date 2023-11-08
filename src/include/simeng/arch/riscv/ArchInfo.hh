@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/arch/ArchInfo.hh"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -10,32 +11,68 @@ namespace riscv {
  * options. */
 class ArchInfo : public simeng::arch::ArchInfo {
  public:
-  ArchInfo() {
-    sysRegisterEnums_ = {
-        riscv_sysreg::RISCV_SYSREG_FFLAGS, riscv_sysreg::RISCV_SYSREG_FRM,
-        riscv_sysreg::RISCV_SYSREG_FCSR,   riscv_sysreg::RISCV_SYSREG_CYCLE,
-        riscv_sysreg::RISCV_SYSREG_TIME,   riscv_sysreg::RISCV_SYSREG_INSTRET};
+  ArchInfo(ryml::ConstNodeRef config)
+      : sysRegisterEnums_(
+            {riscv_sysreg::RISCV_SYSREG_FFLAGS, riscv_sysreg::RISCV_SYSREG_FRM,
+             riscv_sysreg::RISCV_SYSREG_FCSR, riscv_sysreg::RISCV_SYSREG_CYCLE,
+             riscv_sysreg::RISCV_SYSREG_TIME,
+             riscv_sysreg::RISCV_SYSREG_INSTRET}),
+        archRegStruct_({{8, 32},
+                        {8, 32},
+                        {8, static_cast<uint16_t>(sysRegisterEnums_.size())}}) {
+    // Generate the config-defined physical register structure and quantities
+    ryml::ConstNodeRef regConfig = config["Register-Set"];
+    uint16_t gpCnt;
+    regConfig["GeneralPurpose-Count"] >> gpCnt;
+    uint16_t fpCnt;
+    regConfig["FloatingPoint-Count"] >> fpCnt;
+    physRegStruct_ = {{8, gpCnt},
+                      {8, fpCnt},
+                      {8, static_cast<uint16_t>(sysRegisterEnums_.size())}};
+    physRegQuantities_ = {gpCnt, fpCnt,
+                          static_cast<uint16_t>(sysRegisterEnums_.size())};
   }
 
   /** Get the set of system register enums currently supported. */
-  std::vector<uint64_t> getSysRegEnums(ryml::ConstNodeRef config) override {
+  const std::vector<uint64_t>& getSysRegEnums() const override {
     return sysRegisterEnums_;
   }
 
   /** Get the structure of the architecture register fileset(s). */
-  std::vector<simeng::RegisterFileStructure> getArchRegStruct(
-      ryml::ConstNodeRef config) override {
-    return {
-        {8, 32},                                              // General purpose
-        {8, 32},                                              // Floating Point
-        {8, static_cast<uint16_t>(sysRegisterEnums_.size())}  // System
-    };
+  const std::vector<simeng::RegisterFileStructure>& getArchRegStruct()
+      const override {
+    return archRegStruct_;
+  }
+
+  /** Get the structure of the physical register fileset(s) as defined in the
+   * simulation configuration. */
+  const std::vector<simeng::RegisterFileStructure>& getPhysRegStruct()
+      const override {
+    return physRegStruct_;
+  }
+
+  /** Get the quantities of the physical register in each fileset as defined in
+   * the simulation configuration. */
+  const std::vector<uint16_t>& getPhysRegQuantities() const override {
+    return physRegQuantities_;
   }
 
  private:
   /** The vector of all system register Capstone enum values used in the
    * associated Architecture class. */
-  std::vector<uint64_t> sysRegisterEnums_;
+  const std::vector<uint64_t> sysRegisterEnums_;
+
+  /** The structure of the architectural register filesets within the
+   * implemented aarch64 architecture. */
+  std::vector<simeng::RegisterFileStructure> archRegStruct_;
+
+  /** The structure of the physical register filesets within the
+   * implemented aarch64 architecture. */
+  std::vector<simeng::RegisterFileStructure> physRegStruct_;
+
+  /** The quantities of the physical register within each filesets of the
+   * implemented aarch64 architecture. */
+  std::vector<uint16_t> physRegQuantities_;
 };
 
 }  // namespace riscv

@@ -63,15 +63,6 @@ class Architecture : public arch::Architecture {
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
 
-  /** Returns the physical register structure as defined within the config file
-   */
-  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure()
-      const override;
-
-  /** Returns the physical register quantities as defined within the config file
-   */
-  std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const override;
-
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or

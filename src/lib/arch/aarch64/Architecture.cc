@@ -295,53 +295,6 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   }
 }
 
-std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure() const {
-  // Get register counts
-  ryml::ConstNodeRef regConfig = config::SimInfo::getConfig()["Register-Set"];
-  uint16_t gpCnt;
-  regConfig["GeneralPurpose-Count"] >> gpCnt;
-  uint16_t fpCnt;
-  regConfig["FloatingPoint/SVE-Count"] >> fpCnt;
-  uint16_t predCnt;
-  regConfig["Predicate-Count"] >> predCnt;
-  uint16_t condCnt;
-  regConfig["Conditional-Count"] >> condCnt;
-  uint16_t matCnt;
-  regConfig["Matrix-Count"] >> matCnt;
-  // Matrix-Count multiplied by (SVL/8) as internal representation of
-  // ZA is a block of row-vector-registers. Therefore we need to
-  // convert physical counts from whole-ZA to rows-in-ZA.
-  matCnt *= SVL_ / 8;
-  return {{8, gpCnt},
-          {256, fpCnt},
-          {32, predCnt},
-          {1, condCnt},
-          {8, getNumSystemRegisters()},
-          {256, matCnt}};
-}
-
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
-    const {
-  // Get register counts
-  ryml::ConstNodeRef regConfig = config::SimInfo::getConfig()["Register-Set"];
-  uint16_t gpCnt;
-  regConfig["GeneralPurpose-Count"] >> gpCnt;
-  uint16_t fpCnt;
-  regConfig["FloatingPoint/SVE-Count"] >> fpCnt;
-  uint16_t predCnt;
-  regConfig["Predicate-Count"] >> predCnt;
-  uint16_t condCnt;
-  regConfig["Conditional-Count"] >> condCnt;
-  uint16_t matCnt;
-  regConfig["Matrix-Count"] >> matCnt;
-  // Matrix-Count multiplied by (SVL/8) as internal representation of
-  // ZA is a block of row-vector-registers. Therefore we need to
-  // convert physical counts from whole-ZA to rows-in-ZA.
-  matCnt *= SVL_ / 8;
-  return {gpCnt, fpCnt, predCnt, condCnt, getNumSystemRegisters(), matCnt};
-}
-
 /** The SVCR value is stored in Architecture to allow the value to be
  * retrieved within execution pipeline. This prevents adding an implicit
  * operand to every SME instruction; reducing the amount of complexity when

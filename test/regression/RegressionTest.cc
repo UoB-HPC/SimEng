@@ -31,9 +31,9 @@ void RegressionTest::run(const char* source, const char* triple,
   // Generate the predefined model config
   generateConfig();
 
-  // Due to SimInfo being static, we need to reset the architectural register
-  // file each time the config file is updated
-  simeng::config::SimInfo::resetArchRegs();
+  // Due to SimInfo being static, we need to ensure the config values/options
+  // stored are up-to-date with the latest generated config file
+  simeng::config::SimInfo::reBuild();
 
   // Create a linux process from the assembled code block.
   // Memory allocation for process images also takes place
