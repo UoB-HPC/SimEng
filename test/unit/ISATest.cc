@@ -8,16 +8,10 @@ namespace {
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
   simeng::kernel::Linux kernel;
-  simeng::config::SimInfo::addToConfig(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, Vector-Length: 512, "
-      "Streaming-Vector-Length: 512}, CPU-Info: {Generate-Special-Dir: "
-      "False}}");
+  simeng::config::SimInfo::addToConfig("{Core: {Micro-Operations: True}}");
 
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel);
-
-  EXPECT_GT(isa->getNumSystemRegisters(), 0);
 }
 
 // Test that we can set a value in a register file set

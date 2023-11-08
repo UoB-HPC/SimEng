@@ -42,14 +42,14 @@ void CoreInstance::generateCoreModel(std::string executablePath,
   // simeng::MemInterfaceType
   std::string dType_string;
   config_["L1-Data-Memory"]["Interface-Type"] >> dType_string;
-  simeng::MemInterfaceType dType = simeng::MemInterfaceType::Flat;
+  MemInterfaceType dType = MemInterfaceType::Flat;
   if (dType_string == "Fixed") {
-    dType = simeng::MemInterfaceType::Fixed;
+    dType = MemInterfaceType::Fixed;
   } else if (dType_string == "External") {
-    dType = simeng::MemInterfaceType::External;
+    dType = MemInterfaceType::External;
   }
   // Create data memory if appropriate
-  if (dType == simeng::MemInterfaceType::External) {
+  if (dType == MemInterfaceType::External) {
     setDataMemory_ = true;
   } else {
     createL1DataMemory(dType);
@@ -59,14 +59,14 @@ void CoreInstance::generateCoreModel(std::string executablePath,
   // simeng::MemInterfaceType
   std::string iType_string;
   config_["L1-Instruction-Memory"]["Interface-Type"] >> iType_string;
-  simeng::MemInterfaceType iType = simeng::MemInterfaceType::Flat;
+  MemInterfaceType iType = MemInterfaceType::Flat;
   if (iType_string == "Fixed") {
-    iType = simeng::MemInterfaceType::Fixed;
+    iType = MemInterfaceType::Fixed;
   } else if (iType_string == "External") {
-    iType = simeng::MemInterfaceType::External;
+    iType = MemInterfaceType::External;
   }
   // Create instruction memory if appropriate
-  if (iType == simeng::MemInterfaceType::External) {
+  if (iType == MemInterfaceType::External) {
     setInstructionMemory_ = true;
   } else {
     createL1InstructionMemory(iType);
@@ -86,8 +86,7 @@ void CoreInstance::createProcess(std::string executablePath,
     std::vector<std::string> commandLine = {executablePath};
     commandLine.insert(commandLine.end(), executableArgs.begin(),
                        executableArgs.end());
-    process_ =
-        std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config_);
+    process_ = std::make_unique<kernel::LinuxProcess>(commandLine, config_);
 
     // Raise error if created process is not valid
     if (!process_->isValid()) {
@@ -97,8 +96,8 @@ void CoreInstance::createProcess(std::string executablePath,
     }
   } else if (assembledSource_) {
     // Create a process image from the source code assembled by LLVM.
-    process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(source_, sourceSize_), config_);
+    process_ = std::make_unique<kernel::LinuxProcess>(
+        span<char>(source_, sourceSize_), config_);
     // Raise error if created process is not valid
     if (!process_->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not create process based on "
@@ -108,9 +107,8 @@ void CoreInstance::createProcess(std::string executablePath,
     }
   } else {
     // Create a process image from the set of instructions held in hex_
-    process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        config_);
+    process_ = std::make_unique<kernel::LinuxProcess>(
+        span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)), config_);
 
     // Raise error if created process is not valid
     if (!process_->isValid()) {
@@ -138,16 +136,15 @@ void CoreInstance::createProcessMemory() {
   return;
 }
 
-void CoreInstance::createL1InstructionMemory(
-    const simeng::MemInterfaceType type) {
+void CoreInstance::createL1InstructionMemory(const MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
-  if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
+  if (type == MemInterfaceType::Flat) {
+    instructionMemory_ = std::make_shared<FlatMemoryInterface>(
         processMemory_.get(), processMemorySize_);
-  } else if (type == simeng::MemInterfaceType::Fixed) {
+  } else if (type == MemInterfaceType::Fixed) {
     uint16_t accessLat;
     config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
-    instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
+    instructionMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr
@@ -161,7 +158,7 @@ void CoreInstance::createL1InstructionMemory(
 }
 
 void CoreInstance::setL1InstructionMemory(
-    std::shared_ptr<simeng::MemoryInterface> memRef) {
+    std::shared_ptr<MemoryInterface> memRef) {
   assert(setInstructionMemory_ &&
          "setL1InstructionMemory(...) called but the interface was created by "
          "the CoreInstance class.");
@@ -170,15 +167,15 @@ void CoreInstance::setL1InstructionMemory(
   return;
 }
 
-void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
+void CoreInstance::createL1DataMemory(const MemInterfaceType type) {
   // Create a L1D cache instance based on type supplied
-  if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_.get(), processMemorySize_);
-  } else if (type == simeng::MemInterfaceType::Fixed) {
+  if (type == MemInterfaceType::Flat) {
+    dataMemory_ = std::make_shared<FlatMemoryInterface>(processMemory_.get(),
+                                                        processMemorySize_);
+  } else if (type == MemInterfaceType::Fixed) {
     uint16_t accessLat;
     config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
-    dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
+    dataMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
@@ -190,8 +187,7 @@ void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
   return;
 }
 
-void CoreInstance::setL1DataMemory(
-    std::shared_ptr<simeng::MemoryInterface> memRef) {
+void CoreInstance::setL1DataMemory(std::shared_ptr<MemoryInterface> memRef) {
   assert(setDataMemory_ &&
          "setL1DataMemory(...) called but the interface was created by the "
          "CoreInstance class.");
@@ -219,13 +215,13 @@ void CoreInstance::createCore() {
 
   // Create the architecture, with knowledge of the OS
   if (config::SimInfo::getISA() == config::ISA::RV64) {
-    arch_ = std::make_unique<simeng::arch::riscv::Architecture>(kernel_);
+    arch_ = std::make_unique<arch::riscv::Architecture>(kernel_);
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
-    arch_ = std::make_unique<simeng::arch::aarch64::Architecture>(kernel_);
+    arch_ = std::make_unique<arch::aarch64::Architecture>(kernel_);
   }
 
   // Construct branch predictor object
-  predictor_ = std::make_unique<simeng::GenericPredictor>();
+  predictor_ = std::make_unique<GenericPredictor>();
 
   // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
@@ -240,21 +236,23 @@ void CoreInstance::createCore() {
       portArrangement[i].push_back(grp);
     }
   }
-  portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
-      portArrangement);
+  portAllocator_ =
+      std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
 
   // Construct the core object based on the defined simulation mode
   uint64_t entryPoint = process_->getEntryPoint();
-  if (config::SimInfo::getSimMode() == config::simMode::emulation) {
-    core_ = std::make_shared<simeng::models::emulation::Core>(
+  if (config::SimInfo::getSimMode() == config::SimulationMode::Emulation) {
+    core_ = std::make_shared<models::emulation::Core>(
         *instructionMemory_, *dataMemory_, entryPoint, processMemorySize_,
         *arch_);
-  } else if (config::SimInfo::getSimMode() == config::simMode::inorder) {
-    core_ = std::make_shared<simeng::models::inorder::Core>(
+  } else if (config::SimInfo::getSimMode() ==
+             config::SimulationMode::InOrderPipelined) {
+    core_ = std::make_shared<models::inorder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_);
-  } else if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
-    core_ = std::make_shared<simeng::models::outoforder::Core>(
+  } else if (config::SimInfo::getSimMode() ==
+             config::SimulationMode::Outoforder) {
+    core_ = std::make_shared<models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_, *portAllocator_, config_);
   }
@@ -266,10 +264,8 @@ void CoreInstance::createCore() {
 
 void CoreInstance::createSpecialFileDirectory() {
   // Create the Special Files directory if indicated to do so in Config
-  bool generate;
-  config_["CPU-Info"]["Generate-Special-Dir"] >> generate;
-  if (generate) {
-    simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
+  if (config::SimInfo::getGenSpecFiles()) {
+    SpecialFileDirGen SFdir = SpecialFileDirGen();
     // Remove any current special files dir
     SFdir.RemoveExistingSFDir();
     // Create new special files dir
@@ -279,7 +275,7 @@ void CoreInstance::createSpecialFileDirectory() {
   return;
 }
 
-std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
+std::shared_ptr<Core> CoreInstance::getCore() const {
   if (core_ == nullptr) {
     std::cerr
         << "[SimEng:CoreInstance] Core object not constructed. If either data "
@@ -292,7 +288,7 @@ std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
   return core_;
 }
 
-std::shared_ptr<simeng::MemoryInterface> CoreInstance::getDataMemory() const {
+std::shared_ptr<MemoryInterface> CoreInstance::getDataMemory() const {
   if (setDataMemory_ && (dataMemory_ == nullptr)) {
     std::cerr << "[SimEng:CoreInstance] `External` data memory object not set."
               << std::endl;
@@ -301,8 +297,7 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getDataMemory() const {
   return dataMemory_;
 }
 
-std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
-    const {
+std::shared_ptr<MemoryInterface> CoreInstance::getInstructionMemory() const {
   if (setInstructionMemory_ && (instructionMemory_ == nullptr)) {
     std::cerr
         << "`[SimEng:CoreInstance] External` instruction memory object not set."

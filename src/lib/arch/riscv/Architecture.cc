@@ -101,7 +101,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
   // using the outoforder core archetype
-  if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
+  if (config::SimInfo::getSimMode() == config::SimulationMode::Outoforder) {
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -262,10 +262,7 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-uint16_t Architecture::getNumSystemRegisters() const {
-  return static_cast<uint16_t>(systemRegisterMap_.size());
-}
-
+// Left blank as no implementation necessary
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);

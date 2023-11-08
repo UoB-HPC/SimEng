@@ -70,12 +70,12 @@ int main(int argc, char** argv) {
     // (empty) values for executable information
     coreInstance =
         std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
-    configFilePath = "Default";
+    configFilePath = DEFAULT_STR;
   }
 
   // Replace empty executablePath string with more useful content for
   // outputting
-  if (executablePath == "") executablePath = "Default";
+  if (executablePath == "") executablePath = DEFAULT_STR;
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();

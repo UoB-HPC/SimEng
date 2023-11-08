@@ -284,7 +284,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
             : std::make_unique<simeng::CoreInstance>(
                   a64fxConfigPath_, executablePath_, executableArgs_);
   }
-  if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
+  if (config::SimInfo::getSimMode() == config::SimulationMode::Outoforder) {
     output_.verbose(CALL_INFO, 1, 0,
                     "SimEng currently only supports Out-of-Order "
                     "archetypes with SST.");

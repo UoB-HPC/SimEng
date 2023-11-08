@@ -107,7 +107,7 @@ Architecture::Architecture(kernel::Linux& kernel)
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
   // using the outoforder core archetype
-  if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
+  if (config::SimInfo::getSimMode() == config::SimulationMode::Outoforder) {
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].num_children(); i++) {
@@ -252,10 +252,6 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // instructions get through they can cause an out-of-range error.
   if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
-}
-
-uint16_t Architecture::getNumSystemRegisters() const {
-  return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
 ProcessStateChange Architecture::getInitialState() const {
