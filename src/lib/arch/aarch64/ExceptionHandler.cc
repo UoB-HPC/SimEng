@@ -651,7 +651,7 @@ bool ExceptionHandler::init() {
              exception == InstructionException::SMZAUpdate) {
     // Get Architecture
     const Architecture& arch = instruction_.getArchitecture();
-    // Retrieve register file structure from architecture
+    // Retrieve register file structure from SimInfo
     auto regFileStruct = config::SimInfo::getArchRegStruct();
     // Retrieve metadata from architecture
     auto metadata = instruction_.getMetadata();
