@@ -25,21 +25,22 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
-      fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(), {}),
-      decodeToRenameBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(),
-                            nullptr),
-      renameToDispatchBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(),
-                              nullptr),
+      fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(),
+                           {}),
+      decodeToRenameBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
+      renameToDispatchBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(
           config["Execution-Units"].num_children() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<int>(),
+              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
           {1, nullptr}),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<uint32_t>(),
           config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
-           config["Pipeline-Widths"]["LSQ-Completion"].as<size_t>()},
+           config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
@@ -54,7 +55,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint32_t>(),
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
@@ -76,7 +77,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};

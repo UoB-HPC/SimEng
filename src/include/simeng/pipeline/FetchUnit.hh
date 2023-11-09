@@ -39,7 +39,7 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
-            uint64_t programByteLength, uint64_t entryPoint, uint32_t blockSize,
+            uint64_t programByteLength, uint64_t entryPoint, uint16_t blockSize,
             const arch::Architecture& isa, BranchPredictor& branchPredictor);
 
   ~FetchUnit();
@@ -105,7 +105,7 @@ class FetchUnit {
   uint64_t branchStalls_ = 0;
 
   /** The size of a fetch block, in bytes. */
-  uint8_t blockSize_;
+  uint16_t blockSize_;
 
   /** A mask of the bits of the program counter to use for obtaining the block
    * address to fetch. */

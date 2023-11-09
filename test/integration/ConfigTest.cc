@@ -274,11 +274,12 @@ TEST(ConfigTest, invalidTypeOnValueBounds) {
   expectations["HEAD"].addChild(
       simeng::config::ExpectationNode::createExpectation<std::string>("DEFAULT",
                                                                       "CHILD"));
-  ASSERT_DEATH({ expectations["HEAD"]["CHILD"].setValueBounds(0, 10); },
-               "The data type of the passed value bounds used in "
-               "setValueBounds\\() does not match that held within the "
-               "ExpectationNode with key HEAD:CHILD. Passed bounds are of type "
-               "integer and the expected type of this node is string.");
+  ASSERT_DEATH(
+      { expectations["HEAD"]["CHILD"].setValueBounds<uint32_t>(0, 10); },
+      "The data type of the passed value bounds used in setValueBounds\\() "
+      "does not match that held within the ExpectationNode with key "
+      "HEAD:CHILD. Passed bounds are of type 32-bit unsigned integer and the "
+      "expected type of this node is string.");
 }
 
 // Test that calling setValueSet() with the wrong data type fails
@@ -292,11 +293,11 @@ TEST(ConfigTest, invalidTypeOnSetBounds) {
                                                                       "CHILD"));
   ASSERT_DEATH(
       {
-        expectations["HEAD"]["CHILD"].setValueSet<int>({0, 1, 2});
+        expectations["HEAD"]["CHILD"].setValueSet<int32_t>({0, 1, 2});
       },
       "The data type of the passed vector used in setValueSet\\() "
       "does not match that held within the ExpectationNode with key "
-      "HEAD:CHILD. Passed vector elements are of type integer and the "
+      "HEAD:CHILD. Passed vector elements are of type 32-bit integer and the "
       "expected type of this node is string.");
 }
 

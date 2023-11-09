@@ -20,14 +20,23 @@ namespace simeng {
 namespace config {
 
 /** An enum containing all supported data types that can be expected of a
- * config option.*/
+ * config option.
+ * NOTE: The index of the ExpectedType enum matches that of
+ * ExpectationNode::DataTypeVariant.
+ */
 enum class ExpectedType {
   Bool,
   Double,
   Float,
-  Integer,
+  Integer8,
+  Integer16,
+  Integer32,
+  Integer64,
   String,
-  UInteger,
+  UInteger8,
+  UInteger16,
+  UInteger32,
+  UInteger64,
   Valueless
 };
 
@@ -71,10 +80,12 @@ struct ValidationResult {
  */
 class ExpectationNode {
  public:
-  /** NOTE: The index of the ExpectedType enum matches that of DataTypeVariant.
+  /** NOTE: The index of the ExpectedType enum matches that of
+   * ExpectationNode::DataTypeVariant.
    */
   using DataTypeVariant =
-      std::variant<bool, double, float, int64_t, std::string, uint64_t>;
+      std::variant<bool, double, float, int8_t, int16_t, int32_t, int64_t,
+                   std::string, uint8_t, uint16_t, uint32_t, uint64_t>;
 
   /** A templated struct to store a boolean value denoting whether a passed
    * typename T belongs to one types represented in ExpectedType. */
@@ -83,8 +94,14 @@ class ExpectationNode {
       : std::integral_constant<bool, std::is_same<bool, T>::value ||
                                          std::is_same<double, T>::value ||
                                          std::is_same<float, T>::value ||
+                                         std::is_same<int8_t, T>::value ||
+                                         std::is_same<int16_t, T>::value ||
+                                         std::is_same<int32_t, T>::value ||
                                          std::is_same<int64_t, T>::value ||
                                          std::is_same<std::string, T>::value ||
+                                         std::is_same<uint8_t, T>::value ||
+                                         std::is_same<uint16_t, T>::value ||
+                                         std::is_same<uint32_t, T>::value ||
                                          std::is_same<uint64_t, T>::value> {};
 
   /** A templated function to allow for the creation of an `ExpectationNode`
@@ -115,7 +132,7 @@ class ExpectationNode {
     return node;
   }
 
-  /** Default constructor. Used primairly to provide a root node for populated
+  /** Default constructor. Used primarily to provide a root node for populated
    * ExpectationNode instances to be added to. */
   ExpectationNode(){};
 
@@ -268,11 +285,23 @@ class ExpectationNode {
           return validateConfigNodeWithType<double>(node);
         case ExpectedType::Float:
           return validateConfigNodeWithType<float>(node);
-        case ExpectedType::Integer:
+        case ExpectedType::Integer8:
+          return validateConfigNodeWithType<int8_t>(node);
+        case ExpectedType::Integer16:
+          return validateConfigNodeWithType<int16_t>(node);
+        case ExpectedType::Integer32:
+          return validateConfigNodeWithType<int32_t>(node);
+        case ExpectedType::Integer64:
           return validateConfigNodeWithType<int64_t>(node);
         case ExpectedType::String:
           return validateConfigNodeWithType<std::string>(node);
-        case ExpectedType::UInteger:
+        case ExpectedType::UInteger8:
+          return validateConfigNodeWithType<uint8_t>(node);
+        case ExpectedType::UInteger16:
+          return validateConfigNodeWithType<uint16_t>(node);
+        case ExpectedType::UInteger32:
+          return validateConfigNodeWithType<uint32_t>(node);
+        case ExpectedType::UInteger64:
           return validateConfigNodeWithType<uint64_t>(node);
         case ExpectedType::Valueless: {
           // If the node has no value, then only a key will exist in the
@@ -328,12 +357,24 @@ class ExpectationNode {
         return "double";
       case static_cast<size_t>(ExpectedType::Float):
         return "float";
-      case static_cast<size_t>(ExpectedType::Integer):
-        return "integer";
+      case static_cast<size_t>(ExpectedType::Integer8):
+        return "8-bit integer";
+      case static_cast<size_t>(ExpectedType::Integer16):
+        return "16-bit integer";
+      case static_cast<size_t>(ExpectedType::Integer32):
+        return "32-bit integer";
+      case static_cast<size_t>(ExpectedType::Integer64):
+        return "64-bit integer";
       case static_cast<size_t>(ExpectedType::String):
         return "string";
-      case static_cast<size_t>(ExpectedType::UInteger):
-        return "unsigned integer";
+      case static_cast<size_t>(ExpectedType::UInteger8):
+        return "8-bit unsigned integer";
+      case static_cast<size_t>(ExpectedType::UInteger16):
+        return "16-bit unsigned integer";
+      case static_cast<size_t>(ExpectedType::UInteger32):
+        return "32-bit unsigned integer";
+      case static_cast<size_t>(ExpectedType::UInteger64):
+        return "64-bit unsigned integer";
     }
     return "unknown";
   }
@@ -503,7 +544,7 @@ class ExpectationNode {
    */
   std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_;
 
-  /** The instances of ExpectationNode's held within this node. Considered to be
+  /** The instances of ExpectationNodes held within this node. Considered to be
    * the children of this node. */
   std::vector<ExpectationNode> nodeChildren_;
 };

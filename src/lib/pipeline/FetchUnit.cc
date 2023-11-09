@@ -6,7 +6,7 @@ namespace pipeline {
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
                      MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
-                     uint32_t blockSize, const arch::Architecture& isa,
+                     uint16_t blockSize, const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
       pc_(entryPoint),
