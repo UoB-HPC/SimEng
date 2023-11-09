@@ -59,15 +59,6 @@ class SimInfo {
     getInstance()->extractValues();
   }
 
-  /** A utility function to get a value, of a specified type, from a config
-   * option. */
-  template <typename T>
-  static T getValue(ryml::ConstNodeRef node) {
-    T val;
-    node >> val;
-    return val;
-  }
-
   /** A getter function to retrieve the config file path. */
   static std::string getConfigPath() { return getInstance()->configFilePath_; }
 
@@ -157,8 +148,7 @@ class SimInfo {
    * populate frequently queried model config values. */
   void extractValues() {
     // Get ISA type and set the corresponding ArchInfo class
-    std::string isa;
-    validatedConfig_["Core"]["ISA"] >> isa;
+    std::string isa = validatedConfig_["Core"]["ISA"].as<std::string>();
     if (isa == "AArch64") {
       isa_ = ISA::AArch64;
       archInfo_ = std::make_unique<arch::aarch64::ArchInfo>(
@@ -170,8 +160,8 @@ class SimInfo {
     }
 
     // Get Simulation mode
-    std::string mode;
-    validatedConfig_["Core"]["Simulation-Mode"] >> mode;
+    std::string mode =
+        validatedConfig_["Core"]["Simulation-Mode"].as<std::string>();
     if (mode == "emulation") {
       mode_ = SimulationMode::Emulation;
       modeStr_ = "Emulation";
@@ -184,7 +174,8 @@ class SimInfo {
     }
 
     // Get if the special files directory should be created
-    validatedConfig_["CPU-Info"]["Generate-Special-Dir"] >> genSpecialFiles_;
+    genSpecialFiles_ =
+        validatedConfig_["CPU-Info"]["Generate-Special-Dir"].as<bool>();
   }
 
   /** The validated model config file represented as a ryml:Tree. */

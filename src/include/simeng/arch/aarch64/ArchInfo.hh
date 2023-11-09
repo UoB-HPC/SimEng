@@ -18,10 +18,8 @@ class ArchInfo : public simeng::arch::ArchInfo {
                            arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
                            arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
                            arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_SVCR}) {
-    // Set the size of SME ZA in bytes by dividing the SVL by 8
-    config["Core"]["Streaming-Vector-Length"] >> zaSize_;
-    zaSize_ = zaSize_ / 8;
+                           arm64_sysreg::ARM64_SYSREG_SVCR}),
+        zaSize_(config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8) {
     // Generate the architecture-defined architectural register structure
     archRegStruct_ = {
         {8, 32},    // General purpose
@@ -34,16 +32,11 @@ class ArchInfo : public simeng::arch::ArchInfo {
 
     // Generate the config-defined physical register structure and quantities
     ryml::ConstNodeRef regConfig = config["Register-Set"];
-    uint16_t gpCount;
-    regConfig["GeneralPurpose-Count"] >> gpCount;
-    uint16_t fpCount;
-    regConfig["FloatingPoint/SVE-Count"] >> fpCount;
-    uint16_t predCount;
-    regConfig["Predicate-Count"] >> predCount;
-    uint16_t condCount;
-    regConfig["Conditional-Count"] >> condCount;
-    uint16_t matCount;
-    regConfig["Matrix-Count"] >> matCount;
+    uint16_t gpCount = regConfig["GeneralPurpose-Count"].as<uint16_t>();
+    uint16_t fpCount = regConfig["FloatingPoint/SVE-Count"].as<uint16_t>();
+    uint16_t predCount = regConfig["Predicate-Count"].as<uint16_t>();
+    uint16_t condCount = regConfig["Conditional-Count"].as<uint16_t>();
+    uint16_t matCount = regConfig["Matrix-Count"].as<uint16_t>();
     // Matrix-Count multiplied by (SVL/8) as internal representation of
     // ZA is a block of row-vector-registers. Therefore we need to
     // convert physical counts from whole-ZA to rows-in-ZA.
@@ -104,7 +97,7 @@ class ArchInfo : public simeng::arch::ArchInfo {
   std::vector<uint16_t> physRegQuantities_;
 
   /** The size, in bytes, used by the aarch64 SME ZA register. */
-  uint16_t zaSize_;
+  const uint16_t zaSize_;
 };
 
 }  // namespace aarch64

@@ -122,21 +122,13 @@ TEST(ConfigTest, Default) {
 }
 
 // Test that getting values from the config returns the correct values
-TEST(ConfigTest, GetValue) {
+TEST(ConfigTest, as) {
   simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
   ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<std::string>(config["Core"]["ISA"]),
-      "AArch64");
-  EXPECT_EQ(simeng::config::SimInfo::getValue<float>(
-                config["Core"]["Clock-Frequency"]),
-            1.f);
-  EXPECT_EQ(simeng::config::SimInfo::getValue<uint64_t>(
-                config["Core"]["Timer-Frequency"]),
-            100);
-  EXPECT_EQ(simeng::config::SimInfo::getValue<bool>(
-                config["Core"]["Micro-Operations"]),
-            false);
+  EXPECT_EQ(config["Core"]["ISA"].as<std::string>(), "AArch64");
+  EXPECT_EQ(config["Core"]["Clock-Frequency"].as<float>(), 1.f);
+  EXPECT_EQ(config["Core"]["Timer-Frequency"].as<uint64_t>(), 100);
+  EXPECT_EQ(config["Core"]["Micro-Operations"].as<bool>(), false);
 }
 
 // Test that editting existing and adding new values is correct
@@ -152,29 +144,17 @@ TEST(ConfigTest, AddConfigValues) {
       "1]}}, Execution-Units: {1: {Pipelined: False}}}");
 
   ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
-  EXPECT_EQ(simeng::config::SimInfo::getValue<std::string>(
-                config["Core"]["Simulation-Mode"]),
-            "outoforder");
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<std::string>(config["Core"]["Key"]),
-      "Value");
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<std::string>(config["TestA"]["Key"]),
-      "Value");
+  EXPECT_EQ(config["Core"]["Simulation-Mode"].as<std::string>(), "outoforder");
+  EXPECT_EQ(config["Core"]["Key"].as<std::string>(), "Value");
+  EXPECT_EQ(config["TestA"]["Key"].as<std::string>(), "Value");
 
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["Core"]["Seq"][0]), 0);
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["Core"]["Seq"][1]), 1);
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["Core"]["Seq"][2]), 2);
+  EXPECT_EQ(config["Core"]["Seq"][0].as<uint8_t>(), 0);
+  EXPECT_EQ(config["Core"]["Seq"][1].as<uint8_t>(), 1);
+  EXPECT_EQ(config["Core"]["Seq"][2].as<uint8_t>(), 2);
 
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["TestB"]["Seq"][0]), 0);
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["TestB"]["Seq"][1]), 1);
-  EXPECT_EQ(
-      simeng::config::SimInfo::getValue<uint8_t>(config["TestB"]["Seq"][2]), 2);
+  EXPECT_EQ(config["TestB"]["Seq"][0].as<uint8_t>(), 0);
+  EXPECT_EQ(config["TestB"]["Seq"][1].as<uint8_t>(), 1);
+  EXPECT_EQ(config["TestB"]["Seq"][2].as<uint8_t>(), 2);
 
   EXPECT_EQ(config["Ports"].num_children(), 2);
   EXPECT_EQ(config["Reservation-Stations"].num_children(), 2);

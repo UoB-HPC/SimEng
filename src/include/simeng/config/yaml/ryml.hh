@@ -20761,6 +20761,14 @@ public:
         }
     }
 
+    template<class T>
+    T as() const 
+    {
+        T val;
+        tree__->cref(id__) >> val;
+        return val;
+    }
+
     /** @} */
 
 public:

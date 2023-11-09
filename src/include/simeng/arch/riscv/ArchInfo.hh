@@ -22,10 +22,8 @@ class ArchInfo : public simeng::arch::ArchInfo {
                         {8, static_cast<uint16_t>(sysRegisterEnums_.size())}}) {
     // Generate the config-defined physical register structure and quantities
     ryml::ConstNodeRef regConfig = config["Register-Set"];
-    uint16_t gpCount;
-    regConfig["GeneralPurpose-Count"] >> gpCount;
-    uint16_t fpCount;
-    regConfig["FloatingPoint-Count"] >> fpCount;
+    uint16_t gpCount = regConfig["GeneralPurpose-Count"].as<uint16_t>();
+    uint16_t fpCount = regConfig["FloatingPoint-Count"].as<uint16_t>();
     physRegStruct_ = {{8, gpCount},
                       {8, fpCount},
                       {8, static_cast<uint16_t>(sysRegisterEnums_.size())}};

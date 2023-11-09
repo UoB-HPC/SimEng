@@ -348,9 +348,10 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   else
     std::cout << "False";
   std::cout << std::endl;
-  uint64_t numCores;
-  simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"] >> numCores;
-  std::cout << "[SimEng] Number of Cores: " << numCores << std::endl;
+  std::cout << "[SimEng] Number of Cores: "
+            << simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"]
+                   .as<uint16_t>()
+            << std::endl;
 }
 
 std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {

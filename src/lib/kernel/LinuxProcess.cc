@@ -18,10 +18,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
                            ryml::ConstNodeRef config)
-    : STACK_SIZE(config::SimInfo::getValue<uint64_t>(
-          config["Process-Image"]["Stack-Size"])),
-      HEAP_SIZE(config::SimInfo::getValue<uint64_t>(
-          config["Process-Image"]["Heap-Size"])),
+    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
+      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
       commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -65,10 +63,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 }
 
 LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
-    : STACK_SIZE(config::SimInfo::getValue<uint64_t>(
-          config["Process-Image"]["Stack-Size"])),
-      HEAP_SIZE(config::SimInfo::getValue<uint64_t>(
-          config["Process-Image"]["Heap-Size"])) {
+    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
+      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 

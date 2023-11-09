@@ -40,8 +40,8 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Convert Data-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
-  std::string dType_string;
-  config_["L1-Data-Memory"]["Interface-Type"] >> dType_string;
+  std::string dType_string =
+      config_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
   MemInterfaceType dType = MemInterfaceType::Flat;
   if (dType_string == "Fixed") {
     dType = MemInterfaceType::Fixed;
@@ -57,8 +57,8 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Convert Instruction-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
-  std::string iType_string;
-  config_["L1-Instruction-Memory"]["Interface-Type"] >> iType_string;
+  std::string iType_string =
+      config_["L1-Instruction-Memory"]["Interface-Type"].as<std::string>();
   MemInterfaceType iType = MemInterfaceType::Flat;
   if (iType_string == "Fixed") {
     iType = MemInterfaceType::Fixed;
@@ -142,8 +142,8 @@ void CoreInstance::createL1InstructionMemory(const MemInterfaceType type) {
     instructionMemory_ = std::make_shared<FlatMemoryInterface>(
         processMemory_.get(), processMemorySize_);
   } else if (type == MemInterfaceType::Fixed) {
-    uint16_t accessLat;
-    config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
+    uint16_t accessLat =
+        config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>();
     instructionMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
@@ -173,8 +173,8 @@ void CoreInstance::createL1DataMemory(const MemInterfaceType type) {
     dataMemory_ = std::make_shared<FlatMemoryInterface>(processMemory_.get(),
                                                         processMemorySize_);
   } else if (type == MemInterfaceType::Fixed) {
-    uint16_t accessLat;
-    config_["LSQ-L1-Interface"]["Access-Latency"] >> accessLat;
+    uint16_t accessLat =
+        config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>();
     dataMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
@@ -231,8 +231,7 @@ void CoreInstance::createCore() {
     auto config_groups = config_ports[i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
-      uint16_t grp;
-      config_groups[j] >> grp;
+      uint16_t grp = config_groups[j].as<uint16_t>();
       portArrangement[i].push_back(grp);
     }
   }

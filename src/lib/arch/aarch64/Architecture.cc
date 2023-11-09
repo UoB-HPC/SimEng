@@ -24,15 +24,12 @@ Architecture::Architecture(kernel::Linux& kernel)
 
   // Initialise SVE and SME vector lengths
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
-  config["Core"]["Vector-Length"] >> VL_;
-  config["Core"]["Streaming-Vector-Length"] >> SVL_;
+  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
+  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
 
   // Initialise virtual counter timer increment frequency
-  float clkFreq;
-  config["Core"]["Clock-Frequency"] >> clkFreq;
-  uint32_t timFreq;
-  config["Core"]["Timer-Frequency"] >> timFreq;
-  vctModulo_ = (clkFreq * 1e9) / (timFreq * 1e6);
+  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
+               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
 
   // Generate zero-indexed system register map
   std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();
@@ -57,14 +54,11 @@ Architecture::Architecture(kernel::Linux& kernel)
   std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
     ryml::ConstNodeRef port_node = config["Latencies"][i];
-    uint16_t latency;
-    port_node["Execution-Latency"] >> latency;
-    uint16_t throughput;
-    port_node["Execution-Throughput"] >> throughput;
+    uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
+    uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
     for (size_t j = 0; j < port_node["Instruction-Group-Nums"].num_children();
          j++) {
-      uint16_t group;
-      port_node["Instruction-Group-Nums"][j] >> group;
+      uint16_t group = port_node["Instruction-Group-Nums"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Set zero inheritance distance for latency assignment as it's explicitly
@@ -98,8 +92,7 @@ Architecture::Architecture(kernel::Linux& kernel)
     // Store any opcode-based latency override
     for (size_t j = 0; j < port_node["Instruction-Opcodes"].num_children();
          j++) {
-      uint16_t opcode;
-      port_node["Instruction-Opcodes"][j] >> opcode;
+      uint16_t opcode = port_node["Instruction-Opcodes"][j].as<uint16_t>();
       opcodeExecutionInfo_[opcode].latency = latency;
       opcodeExecutionInfo_[opcode].stallCycles = throughput;
     }
@@ -115,8 +108,7 @@ Architecture::Architecture(kernel::Linux& kernel)
       ryml::ConstNodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
-        uint16_t group;
-        group_node[j] >> group;
+        uint16_t group = group_node[j].as<uint16_t>();
         uint16_t newPort = static_cast<uint16_t>(i);
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
@@ -141,8 +133,7 @@ Architecture::Architecture(kernel::Linux& kernel)
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
-        uint16_t opcode;
-        opcode_node[j] >> opcode;
+        uint16_t opcode = opcode_node[j].as<uint16_t>();
         opcodeExecutionInfo_.try_emplace(
             opcode, simeng::arch::aarch64::ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));

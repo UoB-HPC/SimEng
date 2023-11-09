@@ -60,14 +60,13 @@ inline std::string paramToString(
       ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(val.param)));
   if (tempTree.rootref().has_child("Core")) {
     if (tempTree.rootref()["Core"].has_child("Vector-Length")) {
-      std::string val;
-      tempTree["Core"]["Vector-Length"] >> val;
-      vectorLengthString += "WithVL" + val;
+      vectorLengthString +=
+          "WithVL" + tempTree["Core"]["Vector-Length"].as<std::string>();
     }
     if (tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
-      std::string val;
-      tempTree["Core"]["Streaming-Vector-Length"] >> val;
-      vectorLengthString += "WithSVL" + val;
+      vectorLengthString +=
+          "WithSVL" +
+          tempTree["Core"]["Streaming-Vector-Length"].as<std::string>();
     }
   }
   return coreString + vectorLengthString;
@@ -491,7 +490,7 @@ class AArch64RegressionTest : public RegressionTest {
         ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
     if (tempTree.rootref().has_child("Core") &&
         tempTree.rootref()["Core"].has_child("Vector-Length")) {
-      tempTree["Core"]["Vector-Length"] >> VL;
+      VL = tempTree["Core"]["Vector-Length"].as<uint64_t>();
     }
     return VL;
   }
@@ -505,7 +504,7 @@ class AArch64RegressionTest : public RegressionTest {
         ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
     if (tempTree.rootref().has_child("Core") &&
         tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
-      tempTree["Core"]["Streaming-Vector-Length"] >> SVL;
+      SVL = tempTree["Core"]["Streaming-Vector-Length"].as<uint64_t>();
     }
     return SVL;
   }

@@ -221,8 +221,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   if (!isDefault) {
     ValidationResult result = expectations_["Core"]["ISA"].validateConfigNode(
         configTree_["Core"]["ISA"]);
-    std::string ISA;
-    configTree_["Core"]["ISA"] >> ISA;
+    std::string ISA = configTree_["Core"]["ISA"].as<std::string>();
     if (!result.valid) {
       std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
                 << "\" passed in config file due to \"" << result.message
@@ -256,8 +255,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     ValidationResult result =
         expectations_["Core"]["Clock-Frequency"].validateConfigNode(
             configTree_["Core"]["Clock-Frequency"]);
-    float cFreq;
-    configTree_["Core"]["Clock-Frequency"] >> cFreq;
+    float cFreq = configTree_["Core"]["Clock-Frequency"].as<float>();
     if (!result.valid) {
       std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
                 << cFreq << "\" passed in config file due to \""
@@ -534,8 +532,7 @@ void ModelConfig::setExpectations(bool isDefault) {
       ValidationResult result =
           expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
               child["Portname"]);
-      std::string portname;
-      child["Portname"] >> portname;
+      std::string portname = child["Portname"].as<std::string>();
       if (result.valid) {
         if (std::find(portnames.begin(), portnames.end(), portname) ==
             portnames.end()) {
@@ -747,10 +744,9 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
 void ModelConfig::postValidation() {
   // Ensure package_count size is a less than or equal to the core count,
   // and that the core count can be divided by the package count
-  uint64_t packageCount;
-  configTree_["CPU-Info"]["Package-Count"] >> packageCount;
-  uint64_t coreCount;
-  configTree_["CPU-Info"]["Core-Count"] >> coreCount;
+  uint64_t packageCount =
+      configTree_["CPU-Info"]["Package-Count"].as<uint64_t>();
+  uint64_t coreCount = configTree_["CPU-Info"]["Core-Count"].as<uint64_t>();
   if (!((packageCount <= coreCount) && (coreCount % packageCount == 0))) {
     invalid_ << "\t- Package-Count must be a Less-than or equal to Core-Count, "
                 "and Core-Count must be divisible by Package-Count\n";
@@ -769,10 +765,9 @@ void ModelConfig::postValidation() {
     // Read in each group and place its corresponding group number into the
     // new config option
     for (ryml::NodeRef child : node["Instruction-Group-Support"]) {
-      std::string groupStr;
-      child >> groupStr;
-      node["Instruction-Group-Support-Nums"].append_child()
-          << groupMapping_[groupStr];
+      ryml::NodeRef newChild =
+          node["Instruction-Group-Support-Nums"].append_child();
+      newChild << groupMapping_[child.as<std::string>()];
     }
   }
   for (ryml::NodeRef node : configTree_["Execution-Units"]) {
@@ -786,9 +781,7 @@ void ModelConfig::postValidation() {
     // into the new config option.
     std::queue<uint16_t> blockingGroups;
     for (ryml::NodeRef child : node["Blocking-Groups"]) {
-      std::string groupStr;
-      child >> groupStr;
-      uint16_t parentGroup = groupMapping_[groupStr];
+      uint16_t parentGroup = groupMapping_[child.as<std::string>()];
       blockingGroups.push(parentGroup);
       node["Blocking-Group-Nums"].append_child() << parentGroup;
     }
@@ -824,9 +817,8 @@ void ModelConfig::postValidation() {
     // Read in each group and place its corresponding group number into the
     // new config option
     for (ryml::NodeRef child : node["Instruction-Groups"]) {
-      std::string groupStr;
-      child >> groupStr;
-      node["Instruction-Group-Nums"].append_child() << groupMapping_[groupStr];
+      node["Instruction-Group-Nums"].append_child()
+          << groupMapping_[child.as<std::string>()];
     }
   }
 
@@ -844,8 +836,7 @@ void ModelConfig::postValidation() {
   uint16_t idx = 0;
   // Read all available port names.
   for (ryml::NodeRef node : configTree_["Ports"]) {
-    std::string portname;
-    node["Portname"] >> portname;
+    std::string portname = node["Portname"].as<std::string>();
     portnames.push_back(portname);
     portIndexes[portname] = idx++;
   }
@@ -858,8 +849,7 @@ void ModelConfig::postValidation() {
       node.append_child() << ryml::key("Port-Nums") |= ryml::SEQ;
     }
     for (int i = 0; i < node["Ports"].num_children(); i++) {
-      std::string portname;
-      node["Ports"][i] >> portname;
+      std::string portname = node["Ports"][i].as<std::string>();
       std::vector<std::string>::iterator itr =
           std::find(portnames.begin(), portnames.end(), portname);
       // If a port is yet to be marked as linked, remove it from portnames

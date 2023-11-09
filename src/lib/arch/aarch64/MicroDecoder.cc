@@ -11,8 +11,9 @@ std::unordered_map<uint32_t, std::vector<Instruction>>
 std::forward_list<InstructionMetadata> MicroDecoder::microMetadataCache;
 
 MicroDecoder::MicroDecoder()
-    : instructionSplit_(config::SimInfo::getValue<bool>(
-          config::SimInfo::getConfig()["Core"]["Micro-Operations"])) {}
+    : instructionSplit_(
+          config::SimInfo::getConfig()["Core"]["Micro-Operations"].as<bool>()) {
+}
 
 MicroDecoder::~MicroDecoder() {
   microDecodeCache.clear();

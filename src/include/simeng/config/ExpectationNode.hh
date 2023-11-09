@@ -405,8 +405,7 @@ class ExpectationNode {
     }
 
     // Read as check
-    T nodeVal;
-    node >> nodeVal;
+    T nodeVal = node.as<T>();
 
     std::ostringstream retStr;
 

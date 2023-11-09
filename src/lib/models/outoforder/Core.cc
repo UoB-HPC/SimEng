@@ -25,60 +25,46 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
-      fetchToDecodeBuffer_(
-          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
-          {}),
-      decodeToRenameBuffer_(
-          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
-          nullptr),
-      renameToDispatchBuffer_(
-          config::SimInfo::getValue<int>(config["Pipeline-Widths"]["FrontEnd"]),
-          nullptr),
+      fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(), {}),
+      decodeToRenameBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(),
+                            nullptr),
+      renameToDispatchBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<int>(),
+                              nullptr),
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
-      completionSlots_(config["Execution-Units"].num_children() +
-                           config::SimInfo::getValue<int>(
-                               config["Pipeline-Widths"]["LSQ-Completion"]),
-                       {1, nullptr}),
+      completionSlots_(
+          config["Execution-Units"].num_children() +
+              config["Pipeline-Widths"]["LSQ-Completion"].as<int>(),
+          {1, nullptr}),
       loadStoreQueue_(
-          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Load"]),
-          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["Store"]),
-          dataMemory,
+          config["Queue-Sizes"]["Load"].as<uint32_t>(),
+          config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
-           config::SimInfo::getValue<size_t>(
-               config["Pipeline-Widths"]["LSQ-Completion"])},
+           config["Pipeline-Widths"]["LSQ-Completion"].as<size_t>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
           [](auto uop) { uop->setCommitReady(); },
-          config::SimInfo::getValue<bool>(
-              config["LSQ-L1-Interface"]["Exclusive"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["LSQ-L1-Interface"]["Load-Bandwidth"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["LSQ-L1-Interface"]["Store-Bandwidth"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"])),
+          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+              .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint,
-                 config::SimInfo::getValue<uint32_t>(
-                     config["Fetch"]["Fetch-Block-Size"]),
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint32_t>(),
                  isa, branchPredictor),
       reorderBuffer_(
-          config::SimInfo::getValue<uint32_t>(config["Queue-Sizes"]["ROB"]),
-          registerAliasTable_, loadStoreQueue_,
+          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
+          loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
           [this](auto branchAddress) {
             fetchUnit_.registerLoopBoundary(branchAddress);
           },
-          branchPredictor,
-          config::SimInfo::getValue<uint16_t>(
-              config["Fetch"]["Loop-Buffer-Size"]),
-          config::SimInfo::getValue<uint16_t>(
-              config["Fetch"]["Loop-Detection-Threshold"])),
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -89,19 +75,14 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(
-          config::SimInfo::getValue<float>(config["Core"]["Clock-Frequency"]) *
-          1e9),
-      commitWidth_(config::SimInfo::getValue<unsigned int>(
-          config["Pipeline-Widths"]["Commit"])) {
+      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
     for (ryml::ConstNodeRef grp :
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
-      uint16_t grpNum;
-      grp >> grpNum;
-      blockingGroups.push_back(grpNum);
+      blockingGroups.push_back(grp.as<uint16_t>());
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -111,9 +92,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
-        config::SimInfo::getValue<bool>(
-            config["Execution-Units"][i]["Pipelined"]),
-        blockingGroups);
+        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {

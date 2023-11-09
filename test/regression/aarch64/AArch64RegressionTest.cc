@@ -61,9 +61,7 @@ AArch64RegressionTest::createPortAllocator() const {
     auto config_groups = config["Ports"][i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
-      uint16_t grp;
-      config_groups[j] >> grp;
-      portArrangement[i].push_back(grp);
+      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
     }
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
