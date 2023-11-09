@@ -262,28 +262,30 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Core"]["Simulation-Mode"].setValueSet(
       std::vector<std::string>{"emulation", "inorderpipelined", "outoforder"});
 
+  const float clockFreqUpperBound = 10.f;
   expectations_["Core"].addChild(
       ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency"));
-  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f, 10.f);
+  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f,
+                                                          clockFreqUpperBound);
 
   // Early check on ["Core"]["Clock-Frequency"] as values are needed to inform
   // the expected lower bound of the ["Core"]["Timer-Frequency"] value
-  uint64_t tFreqUpperBound = 1000;
+  uint64_t tFreqUpperBound = clockFreqUpperBound * 1000;
   if (!isDefault) {
     ValidationResult result =
         expectations_["Core"]["Clock-Frequency"].validateConfigNode(
             configTree_["Core"]["Clock-Frequency"]);
-    float cFreq = configTree_["Core"]["Clock-Frequency"].as<float>();
+    float clockFreq = configTree_["Core"]["Clock-Frequency"].as<float>();
     if (!result.valid) {
       std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
-                << cFreq << "\" passed in config file due to \""
+                << clockFreq << "\" passed in config file due to \""
                 << result.message
                 << "\" error. Cannot continue with config validation. Exiting."
                 << std::endl;
       exit(1);
     }
 
-    tFreqUpperBound = cFreq * 1000;
+    tFreqUpperBound = clockFreq * 1000;
   }
 
   expectations_["Core"].addChild(
