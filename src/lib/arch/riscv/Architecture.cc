@@ -6,7 +6,6 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
-#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -15,9 +14,8 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
-  ryml::ConstNodeRef config = config::SimInfo::getConfig();
-
+Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
+    : linux_(kernel) {
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);

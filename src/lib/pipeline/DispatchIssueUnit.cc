@@ -10,14 +10,14 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-    const std::vector<uint16_t>& physicalRegisterStructure)
+    const std::vector<uint16_t>& physicalRegisterStructure,
+    ryml::ConstNodeRef config)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator) {
-  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);

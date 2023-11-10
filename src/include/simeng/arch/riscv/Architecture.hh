@@ -30,7 +30,8 @@ typedef enum riscv_sysreg {
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel);
+  Architecture(kernel::Linux& kernel,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),

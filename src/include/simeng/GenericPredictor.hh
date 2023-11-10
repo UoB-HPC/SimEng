@@ -23,7 +23,7 @@ namespace simeng {
 class GenericPredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
-  GenericPredictor();
+  GenericPredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a

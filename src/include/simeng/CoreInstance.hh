@@ -41,17 +41,19 @@ class CoreInstance {
   /** Default constructor with an executable and its arguments but no model
    * configuration. */
   CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Constructor with an executable, its arguments, and a model configuration.
    */
   CoreInstance(std::string configPath, std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
-  CoreInstance(char* assembledSource, size_t sourceSize,
-               std::string configPath);
+  CoreInstance(char* assembledSource, size_t sourceSize, std::string configPath,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~CoreInstance();
 

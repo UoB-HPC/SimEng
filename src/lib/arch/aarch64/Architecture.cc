@@ -2,7 +2,6 @@
 #include <cassert>
 
 #include "InstructionMetadata.hh"
-#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -12,7 +11,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
-Architecture::Architecture(kernel::Linux& kernel)
+Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     : linux_(kernel), microDecoder_(std::make_unique<MicroDecoder>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
@@ -23,7 +22,6 @@ Architecture::Architecture(kernel::Linux& kernel)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Initialise SVE and SME vector lengths
-  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
   SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
 

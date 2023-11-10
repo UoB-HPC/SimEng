@@ -4,8 +4,7 @@
 
 namespace simeng {
 
-SpecialFileDirGen::SpecialFileDirGen() {
-  ryml::ConstNodeRef config = config::SimInfo::getConfig();
+SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config) {
   // Import all values from config file
   coreCount_ = config["CPU-Info"]["Core-Count"].as<uint64_t>();
   socketCount_ = config["CPU-Info"]["Socket-Count"].as<uint64_t>();

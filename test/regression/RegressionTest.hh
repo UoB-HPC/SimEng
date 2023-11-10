@@ -67,8 +67,8 @@ class RegressionTest
       simeng::kernel::Linux& kernel) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
-      const = 0;
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig()) const = 0;
 
   /** Get the value of an architectural register. */
   template <typename T>

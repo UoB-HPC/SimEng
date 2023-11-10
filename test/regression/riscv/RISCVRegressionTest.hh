@@ -93,6 +93,7 @@ class RISCVRegressionTest : public RegressionTest {
   }
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
-      const override;
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const override;
 };

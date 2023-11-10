@@ -59,7 +59,8 @@ class DispatchIssueUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-      const std::vector<uint16_t>& physicalRegisterStructure);
+      const std::vector<uint16_t>& physicalRegisterStructure,
+      ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */

@@ -11,7 +11,7 @@ class SpecialFileDirGen {
  public:
   /** Construct a SpecialFileDirGen class by reading in the YAML file and
    * running it through checks and formatting. */
-  SpecialFileDirGen();
+  SpecialFileDirGen(ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Removes all files inside the '/src.lib/kernel/specialFiles' directory. */
   void RemoveExistingSFDir();

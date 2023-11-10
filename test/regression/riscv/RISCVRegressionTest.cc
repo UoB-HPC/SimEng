@@ -46,9 +46,8 @@ RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>
-RISCVRegressionTest::createPortAllocator() const {
+RISCVRegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
   // Extract the port arrangement from the config file
-  ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
   std::vector<std::vector<uint16_t>> portArrangement(
       config["Ports"].num_children());
   for (size_t i = 0; i < config["Ports"].num_children(); i++) {

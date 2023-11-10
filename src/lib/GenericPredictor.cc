@@ -4,8 +4,7 @@
 
 namespace simeng {
 
-GenericPredictor::GenericPredictor() {
-  ryml::ConstNodeRef config = config::SimInfo::getConfig();
+GenericPredictor::GenericPredictor(ryml::ConstNodeRef config) {
   btbBits_ = config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint8_t>();
   // Create branch prediction structures
   satCntBits_ =
