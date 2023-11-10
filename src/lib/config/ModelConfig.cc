@@ -265,7 +265,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   const float clockFreqUpperBound = 10.f;
   expectations_["Core"].addChild(
       ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency"));
-  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.f,
+  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.001f,
                                                           clockFreqUpperBound);
 
   // Early check on ["Core"]["Clock-Frequency"] as values are needed to inform
