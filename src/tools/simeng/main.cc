@@ -63,15 +63,14 @@ int main(int argc, char** argv) {
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
-    coreInstance = std::make_unique<simeng::CoreInstance>(
-        configFilePath, executablePath, executableArgs);
   } else {
     // Without a config file, no executable can be supplied so pass default
     // (empty) values for executable information
-    coreInstance =
-        std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
     configFilePath = DEFAULT_STR;
   }
+
+  coreInstance =
+      std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
 
   // Replace empty executablePath string with more useful content for
   // outputting

@@ -267,22 +267,26 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     assembled_source_size = assemble.getAssembledSourceSize();
   }
   if (simengConfigPath_ != "") {
-    coreInstance_ =
-        assembleWithSource_
-            ? std::make_unique<simeng::CoreInstance>(
-                  assembled_source, assembled_source_size, simengConfigPath_)
-            : std::make_unique<simeng::CoreInstance>(
-                  simengConfigPath_, executablePath_, executableArgs_);
+    // Set the global config file to one at the file path defined
+    simeng::config::SimInfo::setConfig(simengConfigPath_);
+
+    coreInstance_ = assembleWithSource_
+                        ? std::make_unique<simeng::CoreInstance>(
+                              assembled_source, assembled_source_size)
+                        : std::make_unique<simeng::CoreInstance>(
+                              executablePath_, executableArgs_);
   } else {
     output_.verbose(CALL_INFO, 1, 0,
                     "No SimEng configuration provided. Using the default "
                     "a64fx-sst.yaml configuration file.\n");
-    coreInstance_ =
-        assembleWithSource_
-            ? std::make_unique<simeng::CoreInstance>(
-                  assembled_source, assembled_source_size, a64fxConfigPath_)
-            : std::make_unique<simeng::CoreInstance>(
-                  a64fxConfigPath_, executablePath_, executableArgs_);
+    // Set the global config file to the default a64fx-sst.yaml file
+    simeng::config::SimInfo::setConfig(a64fxConfigPath_);
+
+    coreInstance_ = assembleWithSource_
+                        ? std::make_unique<simeng::CoreInstance>(
+                              assembled_source, assembled_source_size)
+                        : std::make_unique<simeng::CoreInstance>(
+                              executablePath_, executableArgs_);
   }
   if (config::SimInfo::getSimMode() == config::SimulationMode::Outoforder) {
     output_.verbose(CALL_INFO, 1, 0,

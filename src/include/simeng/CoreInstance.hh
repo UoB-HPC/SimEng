@@ -38,21 +38,14 @@ namespace simeng {
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {
  public:
-  /** Default constructor with an executable and its arguments but no model
-   * configuration. */
+  /** Default constructor with an executable and its arguments. */
   CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs,
-               ryml::ConstNodeRef config = config::SimInfo::getConfig());
-
-  /** Constructor with an executable, its arguments, and a model configuration.
-   */
-  CoreInstance(std::string configPath, std::string executablePath,
                std::vector<std::string> executableArgs,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
-  CoreInstance(char* assembledSource, size_t sourceSize, std::string configPath,
+  CoreInstance(char* assembledSource, size_t sourceSize,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~CoreInstance();
