@@ -130,7 +130,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       const auto& results = uop->getResults();
       fileOut_ << tid_ << "|" << std::hex << uop->getInstructionAddress()
                << std::dec;
-      fileOut_ << ":0x" << std::hex << uop->getSequenceId() << std::dec;
+      // fileOut_ << ":0x" << std::hex << uop->getSequenceId() << std::dec;
       fileOut_ << std::endl;
       for (int i = 0; i < destinations.size(); i++) {
         fileOut_ << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"

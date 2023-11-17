@@ -1687,11 +1687,11 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     // exit with a failure value (-1).
     // Source: https://man7.org/linux/man-pages/man2/futex.2.html
     if (val != futexWord) {
-      std::cerr
-          << "[SimEng:SyscallHandler]  Value of the futex word did not match "
-             "with the value specified in the futex argument:\n"
-          << "\tFutex word: " << futexWord << "\n"
-          << "\tArgument value: " << val << std::endl;
+      std::cerr << "[SimEng:SyscallHandler:TID " << currentInfo_.threadId
+                << "] Value of the futex word did not match "
+                   "with the value specified in the futex argument:\n"
+                << "\tFutex word: " << futexWord << "\n"
+                << "\tArgument value: " << val << std::endl;
       return {false, -1};
     }
     if (ftableItr == futexTable_.end()) {
