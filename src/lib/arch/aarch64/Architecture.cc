@@ -12,7 +12,12 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
-    : linux_(kernel), microDecoder_(std::make_unique<MicroDecoder>()) {
+    : linux_(kernel),
+      microDecoder_(std::make_unique<MicroDecoder>()),
+      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
+      SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
+      vctModulo_((config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
+                 (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6)) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
@@ -20,14 +25,6 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
-
-  // Initialise SVE and SME vector lengths
-  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
-  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
-
-  // Initialise virtual counter timer increment frequency
-  vctModulo_ = (config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
-               (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6);
 
   // Generate zero-indexed system register map
   std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();

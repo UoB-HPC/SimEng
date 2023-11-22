@@ -21,6 +21,7 @@ class MicroDecoder {
  public:
   /** Construct a micro decoder for splitting relevant instructions. */
   MicroDecoder(ryml::ConstNodeRef config = config::SimInfo::getConfig());
+
   ~MicroDecoder();
 
   /** From a macro-op, split into one or more micro-ops and populate passed

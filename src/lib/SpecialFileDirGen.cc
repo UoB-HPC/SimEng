@@ -4,20 +4,18 @@
 
 namespace simeng {
 
-SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config) {
-  // Import all values from config file
-  coreCount_ = config["CPU-Info"]["Core-Count"].as<uint64_t>();
-  socketCount_ = config["CPU-Info"]["Socket-Count"].as<uint64_t>();
-  smt_ = config["CPU-Info"]["SMT"].as<uint64_t>();
-  bogoMIPS_ = config["CPU-Info"]["BogoMIPS"].as<float>();
-  features_ = config["CPU-Info"]["Features"].as<std::string>();
-  cpuImplementer_ = config["CPU-Info"]["CPU-Implementer"].as<std::string>();
-  cpuArchitecture_ = config["CPU-Info"]["CPU-Architecture"].as<uint64_t>();
-  cpuVariant_ = config["CPU-Info"]["CPU-Variant"].as<std::string>();
-  cpuPart_ = config["CPU-Info"]["CPU-Part"].as<std::string>();
-  cpuRevision_ = config["CPU-Info"]["CPU-Revision"].as<uint64_t>();
-  packageCount_ = config["CPU-Info"]["Package-Count"].as<uint64_t>();
-}
+SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
+    : coreCount_(config["CPU-Info"]["Core-Count"].as<uint64_t>()),
+      socketCount_(config["CPU-Info"]["Socket-Count"].as<uint64_t>()),
+      smt_(config["CPU-Info"]["SMT"].as<uint64_t>()),
+      bogoMIPS_(config["CPU-Info"]["BogoMIPS"].as<float>()),
+      features_(config["CPU-Info"]["Features"].as<std::string>()),
+      cpuImplementer_(config["CPU-Info"]["CPU-Implementer"].as<std::string>()),
+      cpuArchitecture_(config["CPU-Info"]["CPU-Architecture"].as<uint64_t>()),
+      cpuVariant_(config["CPU-Info"]["CPU-Variant"].as<std::string>()),
+      cpuPart_(config["CPU-Info"]["CPU-Part"].as<std::string>()),
+      cpuRevision_(config["CPU-Info"]["CPU-Revision"].as<uint64_t>()),
+      packageCount_(config["CPU-Info"]["Package-Count"].as<uint64_t>()) {}
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
   const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
