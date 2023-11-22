@@ -3,7 +3,7 @@
 
 Core:
   Simulation-Mode: outoforder
-  ISA: AArch64]
+  ISA: AArch64
   Clock-Frequency-GHz: 1.8
   Timer-Frequency-MHz: 100
   Micro-Operations: True
