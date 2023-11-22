@@ -2,8 +2,8 @@
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
-  Clock-Frequency: 3.2
-  Timer-Frequency: 100
+  Clock-Frequency-GHz: 3.2
+  Timer-Frequency-MHz: 100
   Micro-Operations: True
 Fetch:
   Fetch-Block-Size: 64

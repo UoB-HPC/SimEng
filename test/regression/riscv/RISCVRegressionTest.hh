@@ -8,7 +8,7 @@ static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
 {
   Core:
     {
-      Clock-Frequency: 2.5,
+      Clock-Frequency-GHz: 2.5,
     },
   Register-Set:
     {

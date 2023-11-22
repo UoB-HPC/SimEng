@@ -3,11 +3,9 @@
 
 Core:
   Simulation-Mode: outoforder
-  ISA: AArch64
-  # Clock Frequency is in GHz.
-  Clock-Frequency: 1.8
-  # Timer-Frequency is in MHz.
-  Timer-Frequency: 100
+  ISA: AArch64]
+  Clock-Frequency-GHz: 1.8
+  Timer-Frequency-MHz: 100
   Micro-Operations: True
   Vector-Length: 512
   Streaming-Vector-Length: 512

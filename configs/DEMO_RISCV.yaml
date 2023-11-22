@@ -5,9 +5,8 @@
 Core:
   ISA: rv64
   Simulation-Mode: outoforder
-  Clock-Frequency: 2.5
-  # Timer-Frequency is in MHz.
-  Timer-Frequency: 200
+  Clock-Frequency-GHz: 2.5
+  Timer-Frequency-MHz: 200
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 64

@@ -38,17 +38,17 @@ TEST(ConfigTest, Default) {
       ryml::emitrs_yaml<std::string>(simeng::config::SimInfo::getConfig());
   std::string expectedValues =
       "Core:\n  ISA: AArch64\n  'Simulation-Mode': emulation\n  "
-      "'Clock-Frequency': 1\n  'Timer-Frequency': 100\n  'Micro-Operations': "
-      "0\n  'Vector-Length': 128\n  'Streaming-Vector-Length': 128\nFetch:\n  "
-      "'Fetch-Block-Size': 32\n  'Loop-Buffer-Size': 32\n  "
-      "'Loop-Detection-Threshold': 5\n'Process-Image':\n  'Heap-Size': "
-      "100000\n  'Stack-Size': 100000\n'Register-Set':\n  "
-      "'GeneralPurpose-Count': 32\n  'FloatingPoint/SVE-Count': 32\n  "
-      "'Predicate-Count': 17\n  'Conditional-Count': 1\n  'Matrix-Count': "
-      "1\n'Pipeline-Widths':\n  Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': "
-      "1\n'Queue-Sizes':\n  ROB: 32\n  Load: 16\n  Store: "
-      "16\n'Branch-Predictor':\n  'BTB-Tag-Bits': 8\n  "
-      "'Saturating-Count-Bits': 2\n  'Global-History-Length': 8\n  "
+      "'Clock-Frequency-GHz': 1\n  'Timer-Frequency-MHz': 100\n  "
+      "'Micro-Operations': 0\n  'Vector-Length': 128\n  "
+      "'Streaming-Vector-Length': 128\nFetch:\n  'Fetch-Block-Size': 32\n  "
+      "'Loop-Buffer-Size': 32\n  'Loop-Detection-Threshold': "
+      "5\n'Process-Image':\n  'Heap-Size': 100000\n  'Stack-Size': "
+      "100000\n'Register-Set':\n  'GeneralPurpose-Count': 32\n  "
+      "'FloatingPoint/SVE-Count': 32\n  'Predicate-Count': 17\n  "
+      "'Conditional-Count': 1\n  'Matrix-Count': 1\n'Pipeline-Widths':\n  "
+      "Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': 1\n'Queue-Sizes':\n  ROB: "
+      "32\n  Load: 16\n  Store: 16\n'Branch-Predictor':\n  'BTB-Tag-Bits': 8\n "
+      " 'Saturating-Count-Bits': 2\n  'Global-History-Length': 8\n  "
       "'RAS-entries': 8\n  'Fallback-Static-Predictor': "
       "'Always-Taken'\n'L1-Data-Memory':\n  'Interface-Type': "
       "Flat\n'L1-Instruction-Memory':\n  'Interface-Type': "
@@ -88,14 +88,14 @@ TEST(ConfigTest, Default) {
       ryml::emitrs_yaml<std::string>(simeng::config::SimInfo::getConfig());
   expectedValues =
       "Core:\n  ISA: rv64\n  'Simulation-Mode': emulation\n  "
-      "'Clock-Frequency': 1\n  'Timer-Frequency': 100\n  'Micro-Operations': "
-      "0\nFetch:\n  'Fetch-Block-Size': 32\n  'Loop-Buffer-Size': 32\n  "
-      "'Loop-Detection-Threshold': 5\n'Process-Image':\n  'Heap-Size': "
-      "100000\n  'Stack-Size': 100000\n'Register-Set':\n  "
-      "'GeneralPurpose-Count': 32\n  'FloatingPoint-Count': "
-      "32\n'Pipeline-Widths':\n  Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': "
-      "1\n'Queue-Sizes':\n  ROB: 32\n  Load: 16\n  Store: "
-      "16\n'Branch-Predictor':\n  'BTB-Tag-Bits': 8\n  "
+      "'Clock-Frequency-GHz': 1\n  'Timer-Frequency-MHz': 100\n  "
+      "'Micro-Operations': 0\nFetch:\n  'Fetch-Block-Size': 32\n  "
+      "'Loop-Buffer-Size': 32\n  'Loop-Detection-Threshold': "
+      "5\n'Process-Image':\n  'Heap-Size': 100000\n  'Stack-Size': "
+      "100000\n'Register-Set':\n  'GeneralPurpose-Count': 32\n  "
+      "'FloatingPoint-Count': 32\n'Pipeline-Widths':\n  Commit: 1\n  FrontEnd: "
+      "1\n  'LSQ-Completion': 1\n'Queue-Sizes':\n  ROB: 32\n  Load: 16\n  "
+      "Store: 16\n'Branch-Predictor':\n  'BTB-Tag-Bits': 8\n  "
       "'Saturating-Count-Bits': 2\n  'Global-History-Length': 8\n  "
       "'RAS-entries': 8\n  'Fallback-Static-Predictor': "
       "'Always-Taken'\n'L1-Data-Memory':\n  'Interface-Type': "
@@ -126,8 +126,8 @@ TEST(ConfigTest, as) {
   simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
   ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
   EXPECT_EQ(config["Core"]["ISA"].as<std::string>(), "AArch64");
-  EXPECT_EQ(config["Core"]["Clock-Frequency"].as<float>(), 1.f);
-  EXPECT_EQ(config["Core"]["Timer-Frequency"].as<uint64_t>(), 100);
+  EXPECT_EQ(config["Core"]["Clock-Frequency-GHz"].as<float>(), 1.f);
+  EXPECT_EQ(config["Core"]["Timer-Frequency-MHz"].as<uint64_t>(), 100);
   EXPECT_EQ(config["Core"]["Micro-Operations"].as<bool>(), false);
 }
 

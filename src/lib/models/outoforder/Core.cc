@@ -76,7 +76,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
+      clockFrequency_(config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups

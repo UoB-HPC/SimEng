@@ -264,24 +264,25 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   const float clockFreqUpperBound = 10.f;
   expectations_["Core"].addChild(
-      ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency"));
-  expectations_["Core"]["Clock-Frequency"].setValueBounds(0.001f,
-                                                          clockFreqUpperBound);
+      ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency-GHz"));
+  expectations_["Core"]["Clock-Frequency-GHz"].setValueBounds(
+      0.001f, clockFreqUpperBound);
 
-  // Early check on ["Core"]["Clock-Frequency"] as values are needed to inform
-  // the expected lower bound of the ["Core"]["Timer-Frequency"] value
+  // Early check on ["Core"]["Clock-Frequency-GHz"] as values are needed to
+  // inform the expected lower bound of the ["Core"]["Timer-Frequency-MHz"]
+  // value
   uint64_t tFreqUpperBound = clockFreqUpperBound * 1000;
   if (!isDefault) {
     ValidationResult result =
-        expectations_["Core"]["Clock-Frequency"].validateConfigNode(
-            configTree_["Core"]["Clock-Frequency"]);
-    float clockFreq = configTree_["Core"]["Clock-Frequency"].as<float>();
+        expectations_["Core"]["Clock-Frequency-GHz"].validateConfigNode(
+            configTree_["Core"]["Clock-Frequency-GHz"]);
+    float clockFreq = configTree_["Core"]["Clock-Frequency-GHz"].as<float>();
     if (!result.valid) {
-      std::cerr << "[SimEng:ModelConfig] Invalid Clock-Frequency value of \""
-                << clockFreq << "\" passed in config file due to \""
-                << result.message
-                << "\" error. Cannot continue with config validation. Exiting."
-                << std::endl;
+      std::cerr
+          << "[SimEng:ModelConfig] Invalid Clock-Frequency-GHz value of \""
+          << clockFreq << "\" passed in config file due to \"" << result.message
+          << "\" error. Cannot continue with config validation. Exiting."
+          << std::endl;
       exit(1);
     }
 
@@ -289,8 +290,8 @@ void ModelConfig::setExpectations(bool isDefault) {
   }
 
   expectations_["Core"].addChild(
-      ExpectationNode::createExpectation<uint32_t>(100, "Timer-Frequency"));
-  expectations_["Core"]["Timer-Frequency"].setValueBounds<uint32_t>(
+      ExpectationNode::createExpectation<uint32_t>(100, "Timer-Frequency-MHz"));
+  expectations_["Core"]["Timer-Frequency-MHz"].setValueBounds<uint32_t>(
       1, tFreqUpperBound);
 
   expectations_["Core"].addChild(ExpectationNode::createExpectation<bool>(

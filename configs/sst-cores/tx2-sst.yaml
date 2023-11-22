@@ -4,10 +4,8 @@
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
-  # Clock Frequency is in GHz.
-  Clock-Frequency: 2.5
-  # Timer-Frequency is in MHz.
-  Timer-Frequency: 200
+  Clock-Frequency-GHz: 2.5
+  Timer-Frequency-MHz: 200
   Micro-Operations: True
 Fetch:
   Fetch-Block-Size: 32

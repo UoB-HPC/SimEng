@@ -26,8 +26,8 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
 
   // Initialise virtual counter timer increment frequency
-  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
-               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
+  vctModulo_ = (config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
+               (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6);
 
   // Generate zero-indexed system register map
   std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();
