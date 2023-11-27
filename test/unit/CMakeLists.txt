@@ -3,6 +3,7 @@ set(TEST_SOURCES
     pipeline/BalancedPortAllocatorTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
+    pipeline/DispatchIssueUnitTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/FetchUnitTest.cc
     pipeline/LoadStoreQueueTest.cc
