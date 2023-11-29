@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cfenv>
 #include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
@@ -201,6 +202,8 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
+  int tempRM_ = fegetround();
+
   // Decoding
   /** Process the instruction's metadata to determine source/destination
    * registers. */
@@ -252,6 +255,9 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
+
+  void setStaticRoundingMode();
+  void revertStaticRoundingMode();
 };
 
 }  // namespace riscv

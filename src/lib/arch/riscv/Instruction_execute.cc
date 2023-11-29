@@ -76,6 +76,61 @@ uint64_t zeroExtend(uint64_t bits, uint64_t msb) {
   return rightShift;
 }
 
+void Instruction::setStaticRoundingMode() {
+  uint8_t rm = (metadata.encoding[1] & 0x70) >> 4;
+
+  tempRM_ = fegetround();
+
+  switch (rm) {
+    case 0x00:  // RNE, Round to nearest, ties to even
+      fesetround(FE_TONEAREST);
+      break;
+    case 0x01:  // RTZ Round towards zero
+      fesetround(FE_TOWARDZERO);
+      break;
+    case 0x02:  // RDN Round down (-infinity)
+      fesetround(FE_DOWNWARD);
+      break;
+    case 0x03:  // RUP Round up (+infinity)
+      fesetround(FE_UPWARD);
+      break;
+    case 0x04:  // RMM Round to nearest, ties to max magnitude
+      // FE_TONEAREST ties towards even but no other option available
+      fesetround(FE_TONEAREST);
+      break;
+    case 0x05:
+      // If frm is set to an invalid value (101–111), any subsequent attempt to
+      // execute a floating-point operation with a dynamic rounding mode will
+      // raise an illegal instruction exception.
+      // Reserved
+      std::cerr << "[SimEng:execute] Invalid rounding mode 5 used by "
+                   "instruction at address"
+                << instructionAddress_ << std::endl;
+      exit(1);
+    case 0x06:
+      // Reserved
+      std::cerr << "[SimEng:execute] Invalid rounding mode 6 used by "
+                   "instruction at address"
+                << instructionAddress_ << std::endl;
+      exit(1);
+    case 0x07:
+      // Use dynamic rounding mode e.g. that which is already set
+      break;
+    default:
+      std::cerr << "SOMETHING WENT WRONG STATIC ROUNDING MODE" << std::endl;
+      break;
+  }
+
+  // potentially set temp target rounding mode and only update if different to
+  // currentRM
+  return;
+}
+
+void Instruction::revertStaticRoundingMode() {
+  fesetround(tempRM_);
+  return;
+}
+
 void Instruction::executionNYI() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::ExecutionNotYetImplemented;
@@ -472,8 +527,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FENCE: {  // FENCE
       // TODO currently modelled as a NOP as all codes are currently single
       // threaded "Informally, no other RISC-V hart or external device can
-      // observe any operation in the successor set following a FENCE before any
-      // operation in the predecessor set preceding the FENCE."
+      // observe any operation in the successor set following a FENCE before
+      // any operation in the predecessor set preceding the FENCE."
       // https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#fence
 
       /* "a simple implementation ... might be able to implement the FENCE
@@ -487,7 +542,8 @@ void Instruction::execute() {
     case Opcode::RISCV_LR_W_AQ:
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL: {
-      // TODO set "reservation set" in memory, currently not needed as all codes
+      // TODO set "reservation set" in memory, currently not needed as all
+      // codes
       //  are single threaded
       // TODO check that address is naturally aligned to operand size,
       //  if not raise address-misaligned/access-fault exception
@@ -849,10 +905,10 @@ void Instruction::execute() {
 
       if (metadata.operands[1].reg == 2) {
         // TODO this won't work properly in OoO core as rounding mode could be
-        // updated before instructions earlier in program order execute causing
-        // them to be rounded incorrectly. Rounding mode needs to be set on
-        // commit and all subsequent instructions must be performed with updated
-        // mode. e.g. this should be performed atomically
+        // updated before instructions earlier in program order execute
+        // causing them to be rounded incorrectly. Rounding mode needs to be
+        // set on commit and all subsequent instructions must be performed
+        // with updated mode. e.g. this should be performed atomically
 
         switch (operands[0].get<uint64_t>()) {
           case 0:
@@ -872,15 +928,17 @@ void Instruction::execute() {
             break;
           default:
             // Invalid Case
-            // TODO any subsequent attempt to execute a floating-point operation
-            // with a dynamic rounding mode will raise an illegal instruction
-            // exception.
+            // TODO any subsequent attempt to execute a floating-point
+            // operation with a dynamic rounding mode will raise an illegal
+            // instruction exception.
             std::cerr << "[SimEng:Instruction_execute] Invalid rounding mode"
                       << std::endl;
+            exit(1);
             break;
         }
       } else {
-        //        std::cerr << "[SimEng:RISC-V:Execute] Unknown system register:
+        //        std::cerr << "[SimEng:RISC-V:Execute] Unknown system
+        //        register:
         //        "
         //                  << metadata.operands[1].reg << std::endl;
       }
@@ -913,9 +971,10 @@ void Instruction::execute() {
 
       // TODO "Apart from transfer operations ... all other floating-point
       // operations on narrower n-bit operations, n < FLEN, check if the input
-      // operands are correctly NaN-boxed, i.e., all upper FLEN−n bits are 1. If
-      // so, the n least-significant bits of the input are used as the input
-      // value, otherwise the input value is treated as an n-bit canonical NaN."
+      // operands are correctly NaN-boxed, i.e., all upper FLEN−n bits are 1.
+      // If so, the n least-significant bits of the input are used as the
+      // input value, otherwise the input value is treated as an n-bit
+      // canonical NaN."
 
       // TODO need to take rounding mode into account as these can be set per
       // instruction https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
@@ -943,62 +1002,98 @@ void Instruction::execute() {
     }
 
     case Opcode::RISCV_FADD_D: {  // FADD.D rd,rs1,rs2
+      // ROUND
+      // Could be done by passing lambda so only 1 function is called instead of
+      // 2
+      setStaticRoundingMode();
+
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 + rs2, 8);
+
+      revertStaticRoundingMode();
       break;
     }
     case Opcode::RISCV_FADD_S: {  // FADD.S rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 + rs2), 8);
+      revertStaticRoundingMode();
       break;
     }
     case Opcode::RISCV_FSUB_D: {  // FSUB.D rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 - rs2, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FSUB_S: {  // FSUB.S rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 - rs2), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FDIV_D: {  // FDIV.D rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 / rs2, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FDIV_S: {  // FDIV.S rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 / rs2), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FMUL_D: {  // FMUL.D rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 * rs2, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FMUL_S: {  // FMUL.S rd,rs1,rs2
+                                  // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 * rs2), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FSQRT_D: {  // FSQRT.D rd,rs1
+                                   // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
 
       const double sqrtAns = sqrt(rs1);
@@ -1008,9 +1103,13 @@ void Instruction::execute() {
       const double res = std::isnan(sqrtAns) ? nanf("0") : sqrtAns;
 
       results[0] = RegisterValue(res, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FSQRT_S: {  // FSQRT.S rd,rs1
+                                   // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
 
       const float sqrtAns = sqrtf(rs1);
@@ -1020,6 +1119,8 @@ void Instruction::execute() {
       const float res = std::isnan(sqrtAns) ? nanf("0") : sqrtAns;
 
       results[0] = RegisterValue(NanBoxFloat(res), 8);
+      revertStaticRoundingMode();
+
       break;
     }
 
@@ -1087,94 +1188,148 @@ void Instruction::execute() {
     }
 
     case Opcode::RISCV_FMADD_D: {  // FMADD.D rd,rs1,rs2,rs3
+      // The fused multiply-add instructions must set the invalid operation
+      // exception flag when the multiplicands are ∞ and zero, even when the
+      // addend is a quiet NaN.
+
+      // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
 
       results[0] = RegisterValue(fma(rs1, rs2, rs3), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FMADD_S: {  // FMADD.S rd,rs1,rs2,rs3
+                                   // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FNMSUB_D: {  // FNMSUB.D rd,rs1,rs2,rs3
+                                    // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
 
       results[0] = RegisterValue(-(rs1 * rs2) + rs3, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FNMSUB_S: {  // FNMSUB.S rd,rs1,rs2,rs3
+                                    // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FMSUB_D: {  // FMSUB.D rd,rs1,rs2,rs3
+                                   // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
 
       results[0] = RegisterValue((rs1 * rs2) - rs3, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FMSUB_S: {  // FMSUB.S rd,rs1,rs2,rs3
+                                   // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FNMADD_D: {  // FNMADD.D rd,rs1,rs2,rs3
+                                    // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
 
       results[0] = RegisterValue(-(rs1 * rs2) - rs3, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FNMADD_S: {  // FNMADD.S rd,rs1,rs2,rs3
+                                    // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_D_L: {  // FCVT.D.L rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const int64_t rs1 = operands[0].get<int64_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_D_W: {  // FCVT.D.W rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const int32_t rs1 = operands[0].get<int32_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_S_L: {  // FCVT.S.L rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const int64_t rs1 = operands[0].get<int64_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_S_W: {  // FCVT.S.W rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const int32_t rs1 = operands[0].get<int32_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_W_D: {  // FCVT.W.D rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const double rs1 = std::rint(operands[0].get<double>());
 
       if (std::isnan(rs1)) {
@@ -1182,9 +1337,13 @@ void Instruction::execute() {
       } else {
         results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_W_S: {  // FCVT.W.S rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1)) {
@@ -1192,9 +1351,13 @@ void Instruction::execute() {
       } else {
         results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_L_D: {  // FCVT.L.D rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const double rs1 = std::rint(operands[0].get<double>());
 
       if (std::isnan(rs1)) {
@@ -1202,9 +1365,13 @@ void Instruction::execute() {
       } else {
         results[0] = RegisterValue((int64_t)rs1, 8);
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_L_S: {  // FCVT.L.S rd,rs1
+                                    // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1)) {
@@ -1212,9 +1379,13 @@ void Instruction::execute() {
       } else {
         results[0] = RegisterValue((int64_t)rs1, 8);
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_WU_D: {  // FCVT.WU.D rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
@@ -1227,9 +1398,13 @@ void Instruction::execute() {
           results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
         }
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_WU_S: {  // FCVT.WU.S rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
@@ -1242,9 +1417,13 @@ void Instruction::execute() {
           results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
         }
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_LU_D: {  // FCVT.LU.D rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
@@ -1257,9 +1436,13 @@ void Instruction::execute() {
           results[0] = RegisterValue((uint64_t)rs1, 8);
         }
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_LU_S: {  // FCVT.LU.S rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
@@ -1272,30 +1455,48 @@ void Instruction::execute() {
           results[0] = RegisterValue((uint64_t)rs1, 8);
         }
       }
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_D_LU: {  // FCVT.D.LU rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const uint64_t rs1 = operands[0].get<uint64_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_D_WU: {  // FCVT.D.WU rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const uint32_t rs1 = operands[0].get<uint32_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_S_LU: {  // FCVT.S.LU rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const uint64_t rs1 = operands[0].get<uint64_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      revertStaticRoundingMode();
+
       break;
     }
     case Opcode::RISCV_FCVT_S_WU: {  // FCVT.S.WU rd,rs1
+                                     // ROUND
+      setStaticRoundingMode();
       const uint32_t rs1 = operands[0].get<uint32_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      revertStaticRoundingMode();
+
       break;
     }
 
@@ -1385,13 +1586,13 @@ void Instruction::execute() {
       break;
     }
 
-      // TODO FLT.S and FLE.S perform what the IEEE 754-2008 standard refers to
-      // as signaling comparisons: that is, they set the invalid operation
+      // TODO FLT.S and FLE.S perform what the IEEE 754-2008 standard refers
+      // to as signaling comparisons: that is, they set the invalid operation
       // exception flag if either input is NaN. FEQ.S performs a quiet
-      // comparison: it only sets the invalid operation exception flag if either
-      // input is a signaling NaN. For all three instructions, the result is 0
-      // if either operand is NaN. This requires a proper implementation of the
-      // Zicsr extension
+      // comparison: it only sets the invalid operation exception flag if
+      // either input is a signaling NaN. For all three instructions, the
+      // result is 0 if either operand is NaN. This requires a proper
+      // implementation of the Zicsr extension
     case Opcode::RISCV_FEQ_D: {  // FEQ.D rd,rs1,rs2
       // TODO FEQ.S performs a quiet
       // comparison: it only sets the invalid operation exception flag if
@@ -1473,6 +1674,14 @@ void Instruction::execute() {
       } else {
         results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       }
+      break;
+    }
+    case Opcode::RISCV_FCLASS_S: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_FCLASS_D: {
+      executionNYI();
       break;
     }
 
