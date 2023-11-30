@@ -219,6 +219,13 @@ class Instruction : public simeng::Instruction {
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction
+   */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
+
   // Metadata
   /** Is this a store operation? */
   bool isStore_ = false;
@@ -256,8 +263,6 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  void setStaticRoundingModeThen(std::function<void(void)> operation);
 };
 
 }  // namespace riscv
