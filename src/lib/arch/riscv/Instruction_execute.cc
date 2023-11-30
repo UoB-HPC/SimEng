@@ -95,7 +95,7 @@ void Instruction::setStaticRoundingMode() {
       fesetround(FE_UPWARD);
       break;
     case 0x04:  // RMM Round to nearest, ties to max magnitude
-      // FE_TONEAREST ties towards even but no other option available
+      // FE_TONEAREST ties towards even but no other options available in fenv
       fesetround(FE_TONEAREST);
       break;
     case 0x05:
@@ -1330,12 +1330,12 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_W_D: {  // FCVT.W.D rd,rs1
                                     // ROUND
       setStaticRoundingMode();
-      const double rs1 = std::rint(operands[0].get<double>());
+      const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFF, 8);
       } else {
-        results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
+        results[0] = RegisterValue(signExtendW((int32_t)rint(rs1)), 8);
       }
       revertStaticRoundingMode();
 
@@ -1349,7 +1349,7 @@ void Instruction::execute() {
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFF, 8);
       } else {
-        results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
+        results[0] = RegisterValue(signExtendW((int32_t)rintf(rs1)), 8);
       }
       revertStaticRoundingMode();
 
@@ -1358,12 +1358,12 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_L_D: {  // FCVT.L.D rd,rs1
                                     // ROUND
       setStaticRoundingMode();
-      const double rs1 = std::rint(operands[0].get<double>());
+      const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
       } else {
-        results[0] = RegisterValue((int64_t)rs1, 8);
+        results[0] = RegisterValue((int64_t)rint(rs1), 8);
       }
       revertStaticRoundingMode();
 
@@ -1377,7 +1377,7 @@ void Instruction::execute() {
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
       } else {
-        results[0] = RegisterValue((int64_t)rs1, 8);
+        results[0] = RegisterValue((int64_t)rintf(rs1), 8);
       }
       revertStaticRoundingMode();
 
@@ -1395,7 +1395,7 @@ void Instruction::execute() {
           // TODO set CSR flags
           results[0] = RegisterValue((uint64_t)0, 8);
         } else {
-          results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
+          results[0] = RegisterValue(signExtendW((uint32_t)rint(rs1)), 8);
         }
       }
       revertStaticRoundingMode();
@@ -1414,7 +1414,7 @@ void Instruction::execute() {
           // TODO set CSR flags
           results[0] = RegisterValue((uint64_t)0, 8);
         } else {
-          results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
+          results[0] = RegisterValue(signExtendW((uint32_t)rintf(rs1)), 8);
         }
       }
       revertStaticRoundingMode();
@@ -1433,7 +1433,7 @@ void Instruction::execute() {
           // TODO set CSR flags
           results[0] = RegisterValue((uint64_t)0, 8);
         } else {
-          results[0] = RegisterValue((uint64_t)rs1, 8);
+          results[0] = RegisterValue((uint64_t)rint(rs1), 8);
         }
       }
       revertStaticRoundingMode();
@@ -1452,7 +1452,7 @@ void Instruction::execute() {
           // TODO set CSR flags
           results[0] = RegisterValue((uint64_t)0, 8);
         } else {
-          results[0] = RegisterValue((uint64_t)rs1, 8);
+          results[0] = RegisterValue((uint64_t)rintf(rs1), 8);
         }
       }
       revertStaticRoundingMode();

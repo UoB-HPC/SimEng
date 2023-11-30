@@ -359,6 +359,10 @@ TEST_P(InstFloat, FCVT_W_D) {
     li a7, 214
     ecall
 
+    # Set rounding mode to nearest ties to even
+    li a1, 0
+    fsrm a1
+
     fld fa3, 0(a0)
     fld fa5, 8(a0)
     fld fa4, 16(a0)
@@ -375,22 +379,14 @@ TEST_P(InstFloat, FCVT_W_D) {
   EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
-            0x5);  // Should round to nearest, but cpp rounds to
-                   // zero so fails
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28),
-            0x4);  // expected to fail as functionality not implemented
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
-            0xFFFFFFFFFFFFFFFC);  // Should round to nearest, but cpp rounds to
-                                  // zero so fails
-  EXPECT_EQ(
-      getGeneralRegister<uint64_t>(29),
-      0xFFFFFFFFFFFFFFFD);  // expected to fail as functionality not implemented
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
 }
 
 TEST_P(InstFloat, FCVT_W_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -419,11 +415,8 @@ TEST_P(InstFloat, FCVT_W_S) {
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
-            0x5);  // Should round to nearest, but cpp rounds to
-                   // zero so fails
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28),
-            0x4);  // expected to fail as functionality not implemented
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
@@ -466,7 +459,6 @@ TEST_P(InstFloat, FCVT_L_D) {
 }
 
 TEST_P(InstFloat, FCVT_L_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -503,7 +495,6 @@ TEST_P(InstFloat, FCVT_L_S) {
 }
 
 TEST_P(InstFloat, FCVT_LU_D) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -543,7 +534,6 @@ TEST_P(InstFloat, FCVT_LU_D) {
 }
 
 TEST_P(InstFloat, FCVT_WU_D) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -583,7 +573,6 @@ TEST_P(InstFloat, FCVT_WU_D) {
 }
 
 TEST_P(InstFloat, FCVT_LU_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -623,7 +612,6 @@ TEST_P(InstFloat, FCVT_LU_S) {
 }
 
 TEST_P(InstFloat, FCVT_WU_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -2072,6 +2060,153 @@ TEST_P(InstFloat, FMAX_S) {
   EXPECT_EQ(getFPRegister<float>(3), (float)0);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0xffffffff00000000);
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0xffffffff00000000);
+}
+
+TEST_P(InstFloat, RoundToNearest) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 3.5;
+  heap[1] = 2.5;
+  heap[2] = -3.5;
+  heap[3] = -2.5;
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    # Set rounding mode to RISC-V "nearest ties to even"
+    li a1, 0
+    fsrm a1
+
+    fld fa3, 0(a0)   # 3.5
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.5
+    fld fa6, 24(a0)  # -2.5
+
+    # Test for how CPP handles ties
+    fcvt.w.d t0, fa3      # should convert to 4
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+    fcvt.w.d t3, fa6      # should convert to -2
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)3.5);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.5);
+  EXPECT_EQ(getFPRegister<double>(16), (double)-2.5);
+
+  // Test for CPP tie handling. Below case test for ties to even
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFFFFE);
+}
+
+TEST_P(InstFloat, StaticRoundingMode) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 2.5;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    # Set rounding mode to "nearest ties to even"
+    li a1, 0
+    fsrm a1
+
+    fld fa3, 0(a0)   # 4.52432537
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.78900003
+    fld fa6, 24(a0)  # nan
+
+    # Should obey dynamic rounding mode in CSR
+    fcvt.w.d t0, fa3      # should convert to 5
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+
+    #towards zero
+    fcvt.w.d t3, fa3, rtz      # should convert to 4
+    fcvt.w.d t4, fa4, rtz      # should convert to 2
+    fcvt.w.d t5, fa5, rtz      # should convert to -3
+
+    #towards -inf
+    fcvt.w.d t6, fa3, rdn      # should convert to 4
+    fcvt.w.d a0, fa4, rdn      # should convert to 2
+    fcvt.w.d a1, fa5, rdn      # should convert to -4
+
+    #towards +inf
+    fcvt.w.d a2, fa3, rup      # should convert to 5
+    fcvt.w.d a3, fa4, rup      # should convert to 3
+    fcvt.w.d a4, fa5, rup      # should convert to -3
+
+    #to nearest ties to maximum magnitude
+    fcvt.w.d a5, fa3, rmm      # should convert to 5
+    fcvt.w.d a6, fa4, rmm      # should convert to 3
+    fcvt.w.d a7, fa5, rmm      # should convert to -4
+
+
+    # Set rounding mode to "round down"
+    li s2, 2
+    fsrm s2
+
+    # Should obey dynamic rounding mode in CSR
+    fcvt.w.d s2, fa3      # should convert to 4
+    fcvt.w.d s3, fa4      # should convert to 2
+    fcvt.w.d s4, fa5      # should convert to -4
+
+    #to nearest ties to even
+    fcvt.w.d s5, fa3, rne      # should convert to 5
+    fcvt.w.d s6, fa4, rne      # should convert to 2
+    fcvt.w.d s7, fa5, rne      # should convert to -4
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  // Dynamic
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+
+  // RTZ
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFD);
+
+  // RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 0xFFFFFFFFFFFFFFFC);
+
+  // RUP
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0xFFFFFFFFFFFFFFFD);
+
+  // RMM
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0x5);
+  // This test won't pass as CPP doesn't provide functionality to tie to max
+  // magnitude
+  //  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0xFFFFFFFFFFFFFFFC);
+
+  // Dynamic change to RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(18), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(19), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0xFFFFFFFFFFFFFFFC);
+
+  // Dynamic
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(22), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0xFFFFFFFFFFFFFFFC);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstFloat,

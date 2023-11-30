@@ -16,6 +16,10 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
+  // Set initial rounding mode for F/D extensions
+  // TODO set fcsr accordingly when Zicsr extension supported
+  fesetround(FE_TONEAREST);
+
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
