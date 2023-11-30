@@ -60,8 +60,7 @@ class Architecture : public arch::Architecture {
 
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                  const uint64_t iterations,
-                                  const uint64_t retired) const override;
+                                  const uint64_t iterations) const override;
 
   /** Returns the physical register structure as defined within the config file
    */

@@ -822,6 +822,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
       break;
+    case InstructionException::IllegalInstruction:
+      std::cout << "illegal instruction";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";

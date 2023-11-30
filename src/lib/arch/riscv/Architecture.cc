@@ -285,10 +285,8 @@ uint16_t Architecture::getNumSystemRegisters() const {
 }
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                              const uint64_t iterations,
-                                              const uint64_t retired) const {
+                                              const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);
-  regFile->set(retiredSystemReg_, retired);
 }
 
 }  // namespace riscv

@@ -48,7 +48,8 @@ enum class InstructionException {
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  IllegalInstruction
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -256,8 +257,7 @@ class Instruction : public simeng::Instruction {
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
 
-  void setStaticRoundingMode();
-  void revertStaticRoundingMode();
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
 };
 
 }  // namespace riscv
