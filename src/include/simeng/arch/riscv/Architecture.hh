@@ -111,9 +111,6 @@ class Architecture : public arch::Architecture {
 
   /** System Register of Processor Cycle Counter. */
   simeng::Register cycleSystemReg_;
-
-  /** System Register of Processor Retired Counter. */
-  simeng::Register retiredSystemReg_;
 };
 
 }  // namespace riscv

@@ -14,14 +14,20 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.metadataException_) {
+  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
   decode();
 }
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata, uint8_t latency,
                          uint8_t stallCycles)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.metadataException_) {
+  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
   latency_ = latency;
   stallCycles_ = stallCycles;
 
@@ -31,7 +37,10 @@ Instruction::Instruction(const Architecture& architecture,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.metadataException_) {
+  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
   exception_ = exception;
   exceptionEncountered_ = true;
 }

@@ -268,26 +268,32 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "rdinstret");
       } else if (strcmp(mnemonic, "rdcycle") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "rdcycle");
       } else if (strcmp(mnemonic, "rdtime") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "rdtime");
       } else if (strcmp(mnemonic, "csrr") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "csrr");
       } else if (strcmp(mnemonic, "csrs") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "csrs");
       } else if (strcmp(mnemonic, "frcsr") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "rdtime");
@@ -332,14 +338,17 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "csrw");
       } else if (strcmp(mnemonic, "fscsr") == 0) {
+        aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "fscsr");
       } else if (strcmp(mnemonic, "fscsr") == 0) {
+        aliasNYI();
         // 2 pseudoinstructions with same name but different number of registers
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
@@ -435,7 +444,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
   }
 }
 
-void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
+void InstructionMetadata::aliasNYI() {
+  metadataExceptionEncountered_ = true;
+  metadataException_ = InstructionException::ExecutionNotYetImplemented;
+}
 
 void InstructionMetadata::includeZeroRegisterPosOne() {
   // Given register sequence {Op_a, Op_b , _} return {Op_a, x0, Op_b}

@@ -3,6 +3,7 @@
 #include <string>
 
 #include "capstone/capstone.h"
+#include "simeng/arch/riscv/Instruction.hh"
 
 namespace simeng {
 namespace arch {
@@ -52,30 +53,41 @@ struct InstructionMetadata {
 
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];
+
   /** The remainder of the instruction's assembly representation. */
   std::string operandStr;
 
   /** The implicitly referenced registers. */
   uint16_t implicitSources[MAX_IMPLICIT_SOURCES];
+
   /** The number of implicitly referenced registers. */
   uint8_t implicitSourceCount;
 
   /** The implicitly referenced destination registers. */
   uint16_t implicitDestinations[MAX_IMPLICIT_DESTINATIONS];
+
   /** The number of implicitly referenced destination registers. */
   uint8_t implicitDestinationCount;
 
   /** The explicit operands. */
   cs_riscv_op operands[MAX_OPERANDS];
+
   /** The number of explicit operands. */
   uint8_t operandCount;
+
+  /** The current exception state of this instruction. */
+  simeng::arch::riscv::InstructionException metadataException_ =
+      InstructionException::None;
+
+  /** Whether an exception has been encountered. */
+  bool metadataExceptionEncountered_ = false;
 
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
   void alterPseudoInstructions(const cs_insn& insn);
 
-  /** Flag the instruction as invalid due to a detected unsupported alias. */
+  /** Flag the instruction as NYI due to a detected unsupported alias. */
   void aliasNYI();
 
   /** RISC-V helper function

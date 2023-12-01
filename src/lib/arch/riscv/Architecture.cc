@@ -43,10 +43,6 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
 
-  retiredSystemReg_ = {
-      RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_INSTRET))};
-
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {

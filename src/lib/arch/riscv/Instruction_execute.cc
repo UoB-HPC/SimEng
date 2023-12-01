@@ -5,6 +5,7 @@
 #include <tuple>
 
 #include "InstructionMetadata.hh"
+#include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
 namespace simeng {
@@ -78,8 +79,16 @@ uint64_t zeroExtend(uint64_t bits, uint64_t msb) {
 
 void Instruction::setStaticRoundingModeThen(
     std::function<void(void)> operation) {
+  // Extract rounding mode (rm) from raw bytes
+  // The 3 relevant bits are always in positions 12-14. Take second byte from
+  // encoding and mask with 01110000. Shift right by 4 to remove trailing 0's
+  // and improve readability
   uint8_t rm = (metadata.encoding[1] & 0x70) >> 4;
-  tempRM_ = fegetround();
+
+  /** A variable to hold the current fenv rounding mode/architectural dynamic
+   * rounding mode. Used to restore the rounding mode after the architecturally
+   * static rounding mode is used. */
+  int currRM_ = fegetround();
 
   switch (rm) {
     case 0x00:  // RNE, Round to nearest, ties to even
@@ -103,7 +112,8 @@ void Instruction::setStaticRoundingModeThen(
       // execute a floating-point operation with a dynamic rounding mode will
       // raise an illegal instruction exception.
       // Reserved
-      std::cerr << "[SimEng:execute] Invalid static rounding mode 5 used, "
+      std::cerr << "[SimEng:Instruction_execute] Invalid static rounding mode "
+                   "5 used, "
                    "instruction address:"
                 << instructionAddress_ << std::endl;
       exceptionEncountered_ = true;
@@ -111,7 +121,8 @@ void Instruction::setStaticRoundingModeThen(
       break;
     case 0x06:
       // Reserved
-      std::cerr << "[SimEng:execute] Invalid static rounding mode 6 used, "
+      std::cerr << "[SimEng:Instruction_execute] Invalid static rounding mode "
+                   "6 used, "
                    "instruction address:"
                 << instructionAddress_ << std::endl;
       exceptionEncountered_ = true;
@@ -121,20 +132,20 @@ void Instruction::setStaticRoundingModeThen(
       // Use dynamic rounding mode e.g. that which is already set
       break;
     default:
-      std::cerr << "[SimEng:execute] Invalid static rounding mode out of "
-                   "range, instruction address:"
-                << instructionAddress_ << std::endl;
+      std::cerr
+          << "[SimEng:Instruction_execute] Invalid static rounding mode out of "
+             "range, instruction address:"
+          << instructionAddress_ << std::endl;
       exceptionEncountered_ = true;
       exception_ = InstructionException::IllegalInstruction;
   }
 
   operation();
 
-  fesetround(tempRM_);
+  fesetround(currRM_);
 
   // TODO if it appears that repeated rounding mode changes are slow, could
-  // set
-  // target rounding mode variable and only update if different to currentRM
+  // set target rounding mode variable and only update if different to currentRM
   return;
 }
 
@@ -911,7 +922,7 @@ void Instruction::execute() {
       // correctness of other extensions
     case Opcode::RISCV_CSRRW: {  // CSRRW rd,csr,rs1
 
-      if (metadata.operands[1].reg == 2) {
+      if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
         // Update CPP rounding mode but not floating point CSR as currently no
         // implementation
 
@@ -952,6 +963,7 @@ void Instruction::execute() {
         }
       }
 
+      // Dummy logic to allow progression
       results[0] = RegisterValue(0, 8);
       break;
     }
@@ -960,7 +972,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_CSRRS: {  // CSRRS rd,csr,rs1
-      // dummy implementation
+      // dummy implementation to allow progression
       results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
     }
@@ -1189,8 +1201,8 @@ void Instruction::execute() {
 
     case Opcode::RISCV_FMADD_D: {  // FMADD.D rd,rs1,rs2,rs3
       // The fused multiply-add instructions must set the invalid operation
-      // exception flag when the multiplicands are ∞ and zero, even when the
-      // addend is a quiet NaN.
+      // exception flag when the multiplicands are infinity and zero, even when
+      // the addend is a quiet NaN.
 
       setStaticRoundingModeThen([&] {
         const double rs1 = operands[0].get<double>();
@@ -1624,7 +1636,7 @@ void Instruction::execute() {
       const double rs2 = operands[1].get<double>();
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
-        // TODO set csr flag
+        // TODO: set csr flag when Zicsr implementation is complete
       }
       if (rs1 < rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
@@ -1638,7 +1650,7 @@ void Instruction::execute() {
       const float rs2 = operands[1].get<float>();
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
-        // TODO set csr flag
+        // TODO: set csr flag when Zicsr implementation is complete
       }
       if (rs1 < rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
@@ -1652,7 +1664,7 @@ void Instruction::execute() {
       const double rs2 = operands[1].get<double>();
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
-        // TODO set csr flag
+        // TODO: set csr flag when Zicsr implementation is complete
       }
       if (rs1 <= rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
@@ -1666,7 +1678,7 @@ void Instruction::execute() {
       const float rs2 = operands[1].get<float>();
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
-        // TODO set csr flag
+        // TODO: set csr flag when Zicsr implementation is complete
       }
       if (rs1 <= rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
