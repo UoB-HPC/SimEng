@@ -1,6 +1,5 @@
 #include "InstructionMetadata.hh"
 
-#include <cassert>
 #include <cstring>
 #include <iostream>
 
@@ -269,34 +268,16 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "rdinstret");
       } else if (strcmp(mnemonic, "rdcycle") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "rdcycle");
       } else if (strcmp(mnemonic, "rdtime") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "rdtime");
       } else if (strcmp(mnemonic, "csrr") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "csrr");
       } else if (strcmp(mnemonic, "csrs") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "csrs");
       } else if (strcmp(mnemonic, "frcsr") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "rdtime");
       } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
         // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
         // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
@@ -339,20 +320,11 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "csrw");
       } else if (operandCount == 1 && strcmp(mnemonic, "fscsr") == 0) {
         aliasNYI();
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "fscsr");
       } else if (operandCount == 2 && strcmp(mnemonic, "fscsr") == 0) {
         aliasNYI();
         // 2 pseudoinstructions with same name but different number of registers
-        assert(false &&
-               "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
-               "fscsr");
       } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
         // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
         // CSRRW Rs, _, _ -> CSRRW zero, frm, Rs

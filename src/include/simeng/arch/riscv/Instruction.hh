@@ -183,9 +183,6 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
-  /* Return the array of operand values */
-  const std::array<RegisterValue, MAX_SOURCE_REGISTERS> getOperands() const;
-
  private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;

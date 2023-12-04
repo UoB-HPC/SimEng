@@ -650,12 +650,12 @@ bool ExceptionHandler::init() {
     // Retrieve metadata, operand values and destination registers from
     // instruction
     auto metadata = instruction_.getMetadata();
-    auto operands = instruction_.getOperands();
+    auto operands = instruction_.getSourceOperands();
     auto destinationRegs = instruction_.getDestinationRegisters();
 
     ProcessStateChange stateChange;
     switch (instruction_.getMetadata().opcode) {
-      case Opcode::RISCV_CSRRW:
+      case Opcode::RISCV_CSRRW:  // CSRRW rd,csr,rs1
         if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
           // Update CPP rounding mode but not floating point CSR as currently no
           // implementation
@@ -695,8 +695,8 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {destinationRegs[0]}, {0ull}};
         break;
       default:
-        // Make simulation stop
-        break;
+        printException(instruction_);
+        return fatal();
     }
 
     return concludeSyscall(stateChange);
@@ -858,7 +858,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
+      std::cout << "encoding unallocated";
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
@@ -883,6 +883,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::IllegalInstruction:
       std::cout << "illegal instruction";
+      break;
+    case InstructionException::AtomicOperation:
+      std::cout << "unknown atomic operation";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)

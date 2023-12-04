@@ -112,7 +112,7 @@ void Instruction::setStaticRoundingModeThen(
       // execute a floating-point operation with a dynamic rounding mode will
       // raise an illegal instruction exception.
       // Reserved
-      std::cerr << "[SimEng:Instruction_execute] Invalid static rounding mode "
+      std::cout << "[SimEng:Instruction_execute] Invalid static rounding mode "
                    "5 used, "
                    "instruction address:"
                 << instructionAddress_ << std::endl;
@@ -121,7 +121,7 @@ void Instruction::setStaticRoundingModeThen(
       break;
     case 0x06:
       // Reserved
-      std::cerr << "[SimEng:Instruction_execute] Invalid static rounding mode "
+      std::cout << "[SimEng:Instruction_execute] Invalid static rounding mode "
                    "6 used, "
                    "instruction address:"
                 << instructionAddress_ << std::endl;
@@ -137,7 +137,7 @@ void Instruction::setStaticRoundingModeThen(
       // full Zicsr implementation
       break;
     default:
-      std::cerr
+      std::cout
           << "[SimEng:Instruction_execute] Invalid static rounding mode out of "
              "range, instruction address:"
           << instructionAddress_ << std::endl;
@@ -990,7 +990,6 @@ void Instruction::execute() {
     }
 
     case Opcode::RISCV_FADD_D: {  // FADD.D rd,rs1,rs2
-
       setStaticRoundingModeThen([&] {
         const double rs1 = operands[0].get<double>();
         const double rs2 = operands[1].get<double>();
@@ -1671,10 +1670,6 @@ void Instruction::execute() {
     default:
       return executionNYI();
   }
-}
-const std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>
-Instruction::getOperands() const {
-  return operands;
 }
 
 }  // namespace riscv
