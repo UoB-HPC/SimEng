@@ -643,9 +643,9 @@ bool ExceptionHandler::init() {
 
     return concludeSyscall(stateChange);
   } else if (exception == InstructionException::AtomicOperation) {
-    // TODO this may complete in only a single cycle and not the value from the
+    // NOTE this may complete in only a single cycle and not the value from the
     // config file. The instruction should be completely reissued and allowed to
-    // execute with latency
+    // execute with latency once it reaches the head of the ROB
 
     // Retrieve metadata, operand values and destination registers from
     // instruction
