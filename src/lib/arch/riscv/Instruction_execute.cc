@@ -921,6 +921,9 @@ void Instruction::execute() {
       // CSR addresses. Some partial functionality is implemented for
       // correctness of other extensions
     case Opcode::RISCV_CSRRW: {  // CSRRW rd,csr,rs1
+      // TODO dummy implementation to allow progression and correct setting of
+      // floating point rounding modes. Full functionality to be implemented
+      // with Zicsr implementation
 
       if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
         // Update CPP rounding mode but not floating point CSR as currently no
@@ -973,6 +976,7 @@ void Instruction::execute() {
     }
     case Opcode::RISCV_CSRRS: {  // CSRRS rd,csr,rs1
       // dummy implementation to allow progression
+      // TODO implement fully when Zicsr extension is supported
       results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
     }

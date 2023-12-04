@@ -342,12 +342,12 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "csrw");
-      } else if (strcmp(mnemonic, "fscsr") == 0) {
+      } else if (operandCount == 1 && strcmp(mnemonic, "fscsr") == 0) {
         aliasNYI();
         assert(false &&
                "[SimEng:InstructionMetadata] Unimplemented psuedoinstruction "
                "fscsr");
-      } else if (strcmp(mnemonic, "fscsr") == 0) {
+      } else if (operandCount == 2 && strcmp(mnemonic, "fscsr") == 0) {
         aliasNYI();
         // 2 pseudoinstructions with same name but different number of registers
         assert(false &&

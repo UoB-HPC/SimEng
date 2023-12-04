@@ -37,10 +37,7 @@ Instruction::Instruction(const Architecture& architecture,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
-    : architecture_(architecture),
-      metadata(metadata),
-      exception_(metadata.metadataException_) {
-  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
+    : architecture_(architecture), metadata(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
 }
