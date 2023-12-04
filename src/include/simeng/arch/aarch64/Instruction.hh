@@ -279,6 +279,10 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
 
+  /** Retrieve the data contained in the source registers this instruction
+   * reads.*/
+  const span<RegisterValue> getSourceOperands() const override;
+
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */

@@ -128,6 +128,13 @@ option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 
+# Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
+# They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
+# TODO: Remove once SST integration has updated to SST version 13 or later - the use of unary and binary functions are removed in later versions.
+if(APPLE)
+  add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
+endif()
+
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)

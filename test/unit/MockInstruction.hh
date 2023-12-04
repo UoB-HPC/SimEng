@@ -9,7 +9,8 @@ namespace simeng {
 class MockInstruction : public Instruction {
  public:
   MOCK_CONST_METHOD0(getException, InstructionException());
-  MOCK_CONST_METHOD0(getSourceRegisters, const span<Register>());
+  MOCK_CONST_METHOD0(getOperandRegisters, const span<Register>());
+  MOCK_CONST_METHOD0(getSourceOperands, const span<RegisterValue>());
   MOCK_CONST_METHOD0(getDestinationRegisters, const span<Register>());
   MOCK_METHOD2(renameSource, void(uint16_t i, Register renamed));
   MOCK_METHOD2(renameDestination, void(uint16_t i, Register renamed));

@@ -36,6 +36,11 @@ InstructionException Instruction::getException() const { return exception_; }
 const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
+
+const span<RegisterValue> Instruction::getSourceOperands() const {
+  return {const_cast<RegisterValue*>(operands.data()), operands.size()};
+}
+
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
