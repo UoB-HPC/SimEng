@@ -49,7 +49,8 @@ enum class InstructionException {
   HypervisorCall,
   SecureMonitorCall,
   NoAvailablePort,
-  IllegalInstruction
+  IllegalInstruction,
+  AtomicOperation
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -76,7 +77,7 @@ class Instruction : public simeng::Instruction {
   virtual InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
-  const span<Register> getOperandRegisters() const override;
+  const span<Register> getSourceRegisters() const override;
 
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
@@ -163,12 +164,14 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
 
+  /** Retrieve the instruction's associated architecture. */
+  const Architecture& getArchitecture() const;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
- private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 3;
@@ -176,6 +179,10 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
+  /* Return the array of operand values */
+  const std::array<RegisterValue, MAX_SOURCE_REGISTERS> getOperands() const;
+
+ private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 

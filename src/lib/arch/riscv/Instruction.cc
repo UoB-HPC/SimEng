@@ -44,13 +44,14 @@ Instruction::Instruction(const Architecture& architecture,
 
 InstructionException Instruction::getException() const { return exception_; }
 
-const span<Register> Instruction::getOperandRegisters() const {
+const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
+
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
@@ -175,6 +176,10 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+
+const Architecture& Instruction::getArchitecture() const {
+  return architecture_;
+}
 
 }  // namespace riscv
 }  // namespace arch

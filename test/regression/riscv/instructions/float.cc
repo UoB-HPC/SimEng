@@ -2209,6 +2209,108 @@ TEST_P(InstFloat, StaticRoundingMode) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0xFFFFFFFFFFFFFFFC);
 }
 
+TEST_P(InstFloat, DynamicRoundingMode) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 2.5;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)   # 4.52432537
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.78900003
+    fld fa6, 24(a0)  # nan
+
+    # Set rounding mode to RNE
+    li a1, 0
+    fsrm a1
+
+    #nearest ties to even
+    fcvt.w.d t0, fa3      # should convert to 5
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+
+
+    # Set rounding mode to RTZ
+    li a1, 1
+    fsrm a1
+
+    #towards zero
+    fcvt.w.d t3, fa3      # should convert to 4
+    fcvt.w.d t4, fa4      # should convert to 2
+    fcvt.w.d t5, fa5      # should convert to -3
+
+
+    # Set rounding mode to RDN
+    li a1, 2
+    fsrm a1
+
+    #towards -inf
+    fcvt.w.d t6, fa3      # should convert to 4
+    fcvt.w.d a0, fa4      # should convert to 2
+    fcvt.w.d s7, fa5      # should convert to -4
+
+
+    # Set rounding mode to RUP
+    li a1, 3
+    fsrm a1
+
+    #towards +inf
+    fcvt.w.d a2, fa3      # should convert to 5
+    fcvt.w.d a3, fa4      # should convert to 3
+    fcvt.w.d a4, fa5      # should convert to -3
+
+
+    # Set rounding mode to RMM
+    li a1, 4
+    fsrm a1
+
+    #to nearest ties to maximum magnitude
+    fcvt.w.d a5, fa3, rmm      # should convert to 5
+    fcvt.w.d a6, fa4, rmm      # should convert to 3
+    fcvt.w.d a7, fa5, rmm      # should convert to -4
+
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  // RNE
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+
+  // RTZ
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFD);
+
+  // RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0xFFFFFFFFFFFFFFFC);
+
+  // RUP
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0xFFFFFFFFFFFFFFFD);
+
+  // RMM
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0x5);
+  // This test won't pass as CPP doesn't provide functionality to tie to max
+  // magnitude
+  //  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0xFFFFFFFFFFFFFFFC);
+}
+
 INSTANTIATE_TEST_SUITE_P(RISCV, InstFloat,
                          ::testing::Values(std::make_tuple(EMULATION,
                                                            YAML::Load("{}"))),

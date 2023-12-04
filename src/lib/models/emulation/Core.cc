@@ -105,7 +105,7 @@ void Core::tick() {
   }
 
   // Issue
-  auto registers = uop->getOperandRegisters();
+  auto registers = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (!uop->isOperandReady(i)) {

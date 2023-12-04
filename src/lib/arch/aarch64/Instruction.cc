@@ -33,7 +33,7 @@ Instruction::Instruction(const Architecture& architecture,
 
 InstructionException Instruction::getException() const { return exception_; }
 
-const span<Register> Instruction::getOperandRegisters() const {
+const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
 const span<Register> Instruction::getDestinationRegisters() const {

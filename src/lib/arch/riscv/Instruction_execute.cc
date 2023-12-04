@@ -130,6 +130,11 @@ void Instruction::setStaticRoundingModeThen(
       break;
     case 0x07:
       // Use dynamic rounding mode e.g. that which is already set
+      // TODO check the dynamic rounding mode value in the CSR here. If set to
+      // invalid value raise an illegal instruction exception. From spec "any
+      // subsequent attempt to execute a floating-point operation with a dynamic
+      // rounding mode will raise an illegal instruction exception". Requires
+      // full Zicsr implementation
       break;
     default:
       std::cerr
@@ -925,49 +930,12 @@ void Instruction::execute() {
       // floating point rounding modes. Full functionality to be implemented
       // with Zicsr implementation
 
-      if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
-        // Update CPP rounding mode but not floating point CSR as currently no
-        // implementation
+      // Raise exception to force pipeline flush and commit of all older
+      // instructions in program order before execution. Execution
+      // logic in ExceptionHandler.cc
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::AtomicOperation;
 
-        // TODO this won't work properly in OoO core as rounding mode could be
-        // updated before instructions earlier in program order execute
-        // causing them to be rounded incorrectly. Rounding mode needs to be
-        // set on commit and all subsequent instructions must be performed
-        // with updated mode. e.g. this should be performed atomically
-
-        switch (operands[0].get<uint64_t>()) {
-          case 0:
-            fesetround(FE_TONEAREST);
-            break;
-          case 1:
-            fesetround(FE_TOWARDZERO);
-            break;
-          case 2:
-            fesetround(FE_DOWNWARD);
-            break;
-          case 3:
-            fesetround(FE_UPWARD);
-            break;
-          case 4:
-            fesetround(FE_TONEAREST);
-            break;
-          default:
-            // Invalid Case
-            // TODO any subsequent attempt to execute a floating-point
-            // operation with a dynamic rounding mode will raise an illegal
-            // instruction exception.
-            // Should be allowed to be set incorrectly and only caught when
-            // used. Currently SimEng halts on incorrect setting
-            std::cerr << "[SimEng:Instruction_execute] Invalid rounding mode"
-                      << std::endl;
-            exceptionEncountered_ = true;
-            exception_ = InstructionException::IllegalInstruction;
-            break;
-        }
-      }
-
-      // Dummy logic to allow progression
-      results[0] = RegisterValue(0, 8);
       break;
     }
     case Opcode::RISCV_CSRRWI: {  // CSRRWI rd,csr,imm
@@ -1703,6 +1671,10 @@ void Instruction::execute() {
     default:
       return executionNYI();
   }
+}
+const std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>
+Instruction::getOperands() const {
+  return operands;
 }
 
 }  // namespace riscv

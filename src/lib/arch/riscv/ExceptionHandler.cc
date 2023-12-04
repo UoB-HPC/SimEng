@@ -5,6 +5,7 @@
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/arch/riscv/Architecture.hh"
 
 namespace simeng {
 namespace arch {
@@ -638,6 +639,64 @@ bool ExceptionHandler::init() {
         std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
                   << syscallId << std::endl;
         return fatal();
+    }
+
+    return concludeSyscall(stateChange);
+  } else if (exception == InstructionException::AtomicOperation) {
+    // TODO this may complete in only a single cycle and not the value from the
+    // config file. The instruction should be completely reissued and allowed to
+    // execute with latency
+
+    // Retrieve metadata, operand values and destination registers from
+    // instruction
+    auto metadata = instruction_.getMetadata();
+    auto operands = instruction_.getOperands();
+    auto destinationRegs = instruction_.getDestinationRegisters();
+
+    ProcessStateChange stateChange;
+    switch (instruction_.getMetadata().opcode) {
+      case Opcode::RISCV_CSRRW:
+        if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
+          // Update CPP rounding mode but not floating point CSR as currently no
+          // implementation
+
+          switch (operands[0].get<uint64_t>()) {
+            case 0:  // RNE, Round to nearest, ties to even
+              fesetround(FE_TONEAREST);
+              break;
+            case 1:  // RTZ Round towards zero
+              fesetround(FE_TOWARDZERO);
+              break;
+            case 2:  // RDN Round down (-infinity)
+              fesetround(FE_DOWNWARD);
+              break;
+            case 3:  // RUP Round up (+infinity)
+              fesetround(FE_UPWARD);
+              break;
+            case 4:  // RMM Round to nearest, ties to max magnitude
+              // FE_TONEAREST ties towards even but no other options available
+              // in fenv
+              fesetround(FE_TONEAREST);
+              break;
+            default:
+              // Invalid Case
+              // TODO any subsequent attempt to execute a floating-point
+              // operation with a dynamic rounding mode will raise an illegal
+              // instruction exception.
+              // Should be allowed to be set incorrectly and only caught when
+              // used. Set CSR to requested value, checking logic should be done
+              // by Instruction::setStaticRoundingModeThen. Requires full
+              // implementation of Zicsr
+              break;
+          }
+        }
+
+        // Dummy logic to allow progression. Set Rd to 0
+        stateChange = {ChangeType::REPLACEMENT, {destinationRegs[0]}, {0ull}};
+        break;
+      default:
+        // Make simulation stop
+        break;
     }
 
     return concludeSyscall(stateChange);
