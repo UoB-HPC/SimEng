@@ -22,19 +22,6 @@ Instruction::Instruction(const Architecture& architecture,
 }
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata, uint8_t latency,
-                         uint8_t stallCycles)
-    : architecture_(architecture),
-      metadata(metadata),
-      exception_(metadata.metadataException_) {
-  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
-  latency_ = latency;
-  stallCycles_ = stallCycles;
-
-  decode();
-}
-
-Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
     : architecture_(architecture), metadata(metadata) {

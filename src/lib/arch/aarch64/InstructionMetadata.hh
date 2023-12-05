@@ -85,8 +85,7 @@ struct InstructionMetadata {
   uint8_t operandCount;
 
   /** The current exception state of this instruction. */
-  simeng::arch::aarch64::InstructionException metadataException_ =
-      InstructionException::None;
+  InstructionException metadataException_ = InstructionException::None;
 
   /** Whether an exception has been encountered. */
   bool metadataExceptionEncountered_ = false;

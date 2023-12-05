@@ -52,7 +52,7 @@ enum class InstructionException {
   SecureMonitorCall,
   NoAvailablePort,
   IllegalInstruction,
-  AtomicOperation
+  PipelineFlush
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -62,12 +62,6 @@ class Instruction : public simeng::Instruction {
    */
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata);
-
-  /** Construct an instruction instance by decoding a provided instruction word.
-   */
-  Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata, uint8_t latency,
-              uint8_t stallCycles);
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,

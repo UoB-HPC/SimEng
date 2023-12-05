@@ -934,7 +934,7 @@ void Instruction::execute() {
       // instructions in program order before execution. Execution
       // logic in ExceptionHandler.cc
       exceptionEncountered_ = true;
-      exception_ = InstructionException::AtomicOperation;
+      exception_ = InstructionException::PipelineFlush;
 
       break;
     }
