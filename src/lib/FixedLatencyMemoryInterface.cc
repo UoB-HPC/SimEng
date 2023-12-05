@@ -1,6 +1,6 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 
-#include <cassert>
+#include <iostream>
 
 namespace simeng {
 
@@ -24,8 +24,12 @@ void FixedLatencyMemoryInterface::tick() {
 
     if (request.write) {
       // Write: write data directly to memory
-      assert(target.address + target.size <= size_ &&
-             "Attempted to write beyond memory limit");
+      if (target.address + target.size > size_) {
+        std::cerr << "[SimEng:FixedLatencyMemoryInterface] Attempted to write "
+                     "beyond memory limit."
+                  << std::endl;
+        exit(1);
+      }
 
       auto ptr = memory_ + target.address;
       // Copy the data from the RegisterValue to memory

@@ -11,13 +11,13 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
-    GenericPredictorTest.cc
     ArchitectureTest.cc
-    RegisterValueTest.cc
+    FixedLatencyMemoryInterfaceTest.cc
+    GenericPredictorTest.cc
     OSTest.cc
     PoolTest.cc
     ProcessTest.cc
-    LatencyMemoryInterfaceTest.cc
+    RegisterValueTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
