@@ -680,9 +680,12 @@ bool ExceptionHandler::init() {
               break;
             default:
               // Invalid Case
-              // TODO any subsequent attempt to execute a floating-point
-              // operation with a dynamic rounding mode will raise an illegal
-              // instruction exception.
+              // TODO "If frm is set to an invalid
+              // value (101–111), any subsequent attempt to execute a
+              // floating-point operation with a dynamic rounding mode will
+              // raise an illegal instruction exception." - Volume I: RISC-V
+              // Unprivileged ISA V20191213 pg65
+              //
               // Should be allowed to be set incorrectly and only caught when
               // used. Set CSR to requested value, checking logic should be done
               // by Instruction::setStaticRoundingModeThen. Requires full
