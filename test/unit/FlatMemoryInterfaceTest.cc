@@ -1,16 +1,14 @@
 #include "gtest/gtest.h"
-#include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/FlatMemoryInterface.hh"
 
 namespace {
 
-class FixedLatencyMemoryInterfaceTest : public testing::Test {
+class FlatMemoryInterfaceTest : public testing::Test {
  public:
-  FixedLatencyMemoryInterfaceTest()
-      : memory(memoryData.data(), memorySize, latency) {}
+  FlatMemoryInterfaceTest() : memory(memoryData.data(), memorySize) {}
 
  protected:
   static constexpr uint16_t memorySize = 4;
-  const uint16_t latency = 2;
   std::array<char, memorySize> memoryData = {(char)0xFE, (char)0xCA, (char)0xBA,
                                              (char)0xAB};
 
@@ -23,23 +21,13 @@ class FixedLatencyMemoryInterfaceTest : public testing::Test {
   const std::string writeOverflowStr =
       "Attempted to write beyond memory limit.";
 
-  simeng::FixedLatencyMemoryInterface memory;
+  simeng::FlatMemoryInterface memory;
 };
 
 // Test that we can read data and it completes after a number of cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData) {
+TEST_F(FlatMemoryInterfaceTest, FixedReadData) {
   // Read a 32-bit value
   memory.requestRead(target, 1);
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
-
   auto entries = memory.getCompletedReads();
   EXPECT_EQ(entries.size(), 1);
   EXPECT_EQ(entries[0].requestId, 1);
@@ -48,36 +36,19 @@ TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData) {
 }
 
 // Test that we can write data and it completes after a number of cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData) {
+TEST_F(FlatMemoryInterfaceTest, FixedWriteData) {
   // Write a 32-bit value to memory
   memory.requestWrite(target, value);
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
   EXPECT_EQ(reinterpret_cast<uint32_t*>(memoryData.data())[0], 0xDEADBEEF);
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
+TEST_F(FlatMemoryInterfaceTest, OutofBoundsRead) {
   // Create a target such that address + size will overflow
   memory.requestRead(target_OutOfBound1, 1);
 
   // Create a regular out-of-bounds target
   memory.requestRead(target_OutOfBound2, 2);
-
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick twice - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
 
   auto entries = memory.getCompletedReads();
   EXPECT_EQ(entries.size(), 2);
@@ -94,29 +65,17 @@ TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_1) {
+TEST_F(FlatMemoryInterfaceTest, OutofBoundsWrite_1) {
   // Create a target such that address + size will overflow
-  memory.requestWrite(target_OutOfBound1, value);
-
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick twice - simulation should have come to a stop
-  ASSERT_DEATH(memory.tick(), writeOverflowStr);
+  ASSERT_DEATH(memory.requestWrite(target_OutOfBound1, value),
+               writeOverflowStr);
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_2) {
+TEST_F(FlatMemoryInterfaceTest, OutofBoundsWrite_2) {
   // Create a regular out-of-bounds target
-  memory.requestWrite(target_OutOfBound2, value_oversized);
-
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick twice - simulation should have come to a stop
-  ASSERT_DEATH(memory.tick(), writeOverflowStr);
+  ASSERT_DEATH(memory.requestWrite(target_OutOfBound2, value_oversized),
+               writeOverflowStr);
 }
 
 }  // namespace

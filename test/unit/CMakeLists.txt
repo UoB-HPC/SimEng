@@ -13,6 +13,7 @@ set(TEST_SOURCES
     pipeline/WritebackUnitTest.cc
     ArchitectureTest.cc
     FixedLatencyMemoryInterfaceTest.cc
+    FlatMemoryInterfaceTest.cc
     GenericPredictorTest.cc
     OSTest.cc
     PoolTest.cc
