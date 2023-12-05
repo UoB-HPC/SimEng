@@ -866,6 +866,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
       break;
+    case InstructionException::AliasNotYetImplemented:
+      std::cout << "alias not-yet-implemented" << std::endl;
+      break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";
       break;

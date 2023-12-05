@@ -2571,7 +2571,10 @@ void InstructionMetadata::revertAliasing() {
   }
 }
 
-void InstructionMetadata::aliasNYI() { id = ARM64_INS_INVALID; }
+void InstructionMetadata::aliasNYI() {
+  metadataExceptionEncountered_ = true;
+  metadataException_ = InstructionException::AliasNotYetImplemented;
+}
 
 }  // namespace aarch64
 }  // namespace arch

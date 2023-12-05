@@ -267,17 +267,17 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (strcmp(mnemonic, "rdcycle") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (strcmp(mnemonic, "rdtime") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (strcmp(mnemonic, "csrr") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (strcmp(mnemonic, "csrs") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (strcmp(mnemonic, "frcsr") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
         // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
         // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
@@ -319,11 +319,11 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (operandCount == 1 && strcmp(mnemonic, "fscsr") == 0) {
-        aliasNYI();
+        return aliasNYI();
       } else if (operandCount == 2 && strcmp(mnemonic, "fscsr") == 0) {
-        aliasNYI();
+        return aliasNYI();
         // 2 pseudoinstructions with same name but different number of registers
       } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
         // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
@@ -418,7 +418,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
 void InstructionMetadata::aliasNYI() {
   metadataExceptionEncountered_ = true;
-  metadataException_ = InstructionException::ExecutionNotYetImplemented;
+  metadataException_ = InstructionException::AliasNotYetImplemented;
 }
 
 void InstructionMetadata::includeZeroRegisterPosOne() {

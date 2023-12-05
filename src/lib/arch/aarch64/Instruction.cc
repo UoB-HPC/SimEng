@@ -14,7 +14,10 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          MicroOpInfo microOpInfo)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.metadataException_) {
+  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;

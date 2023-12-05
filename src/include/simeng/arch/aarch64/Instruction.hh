@@ -224,6 +224,7 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
