@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cfenv>
+#include <functional>
 #include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
