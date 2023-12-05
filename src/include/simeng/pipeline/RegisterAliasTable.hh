@@ -43,9 +43,6 @@ class RegisterAliasTable {
    * is reinstated to the mapping table, and the provided register is freed. */
   void rewind(Register physical);
 
-  /** Free the provided physical register. */
-  void free(Register physical);
-
  private:
   /** The register mapping tables. Holds a map of architectural -> physical
    * register mappings for each register type. */

@@ -93,6 +93,7 @@ void RegisterAliasTable::commit(Register physical) {
   auto oldTag = historyTable_[physical.type][physical.tag];
   freeQueues_[physical.type].push(oldTag);
 }
+
 void RegisterAliasTable::rewind(Register physical) {
   // Find which architectural tag this referred to
   auto destinationTag = destinationTable_[physical.type][physical.tag];
@@ -100,9 +101,6 @@ void RegisterAliasTable::rewind(Register physical) {
   mappingTable_[physical.type][destinationTag] =
       historyTable_[physical.type][physical.tag];
   // Add the rewound physical tag back to the free queue
-  freeQueues_[physical.type].push(physical.tag);
-}
-void RegisterAliasTable::free(Register physical) {
   freeQueues_[physical.type].push(physical.tag);
 }
 
