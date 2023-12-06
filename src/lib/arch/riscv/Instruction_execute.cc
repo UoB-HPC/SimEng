@@ -24,6 +24,20 @@ uint64_t NanBoxFloat(float f) {
   return box;
 }
 
+float checkNanBox(RegisterValue operand) {
+  // Ensure NaN box is correct
+  if ((operand.get<uint64_t>() & 0xffffffff00000000) == 0xffffffff00000000) {
+    // Correct
+    return operand.get<float>();
+  } else {
+    std::cerr << "NAN BOX WRONG" << std::endl;
+
+    exit(1);
+    // Not correct
+    return std::nanf("");
+  }
+}
+
 /** Multiply unsigned `a` and unsigned `b`, and return the high 64 bits of the
  * result. https://stackoverflow.com/a/28904636 */
 uint64_t mulhiuu(uint64_t a, uint64_t b) {
@@ -1001,8 +1015,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FADD_S: {  // FADD.S rd,rs1,rs2
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
 
         results[0] = RegisterValue(NanBoxFloat(rs1 + rs2), 8);
       });
@@ -1022,8 +1036,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FSUB_S: {  // FSUB.S rd,rs1,rs2
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
 
         results[0] = RegisterValue(NanBoxFloat(rs1 - rs2), 8);
       });
@@ -1044,8 +1058,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FDIV_S: {  // FDIV.S rd,rs1,rs2
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
 
         results[0] = RegisterValue(NanBoxFloat(rs1 / rs2), 8);
       });
@@ -1066,8 +1080,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FMUL_S: {  // FMUL.S rd,rs1,rs2
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
 
         results[0] = RegisterValue(NanBoxFloat(rs1 * rs2), 8);
       });
@@ -1093,7 +1107,7 @@ void Instruction::execute() {
     case Opcode::RISCV_FSQRT_S: {  // FSQRT.S rd,rs1
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
 
         const float sqrtAns = sqrtf(rs1);
 
@@ -1124,8 +1138,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FMIN_S: {  // FMIN.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       // Comments regarding fminf similar to RISCV_FMIN_D
       if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
@@ -1137,6 +1151,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FMAX_D: {  // FMAX.D rd,rs1,rs2
+
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1155,8 +1170,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FMAX_S: {  // FMAX.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       // Comments regarding fmaxf similar to RISCV_FMAX_D
       float res;
@@ -1188,9 +1203,9 @@ void Instruction::execute() {
     case Opcode::RISCV_FMADD_S: {  // FMADD.S rd,rs1,rs2,rs3
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
-        const float rs3 = operands[2].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
 
         results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
       });
@@ -1212,9 +1227,9 @@ void Instruction::execute() {
     case Opcode::RISCV_FNMSUB_S: {  // FNMSUB.S rd,rs1,rs2,rs3
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
-        const float rs3 = operands[2].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
 
         results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
       });
@@ -1236,9 +1251,9 @@ void Instruction::execute() {
     case Opcode::RISCV_FMSUB_S: {  // FMSUB.S rd,rs1,rs2,rs3
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
-        const float rs3 = operands[2].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
 
         results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
       });
@@ -1260,9 +1275,9 @@ void Instruction::execute() {
     case Opcode::RISCV_FNMADD_S: {  // FNMADD.S rd,rs1,rs2,rs3
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
-        const float rs2 = operands[1].get<float>();
-        const float rs3 = operands[2].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
 
         results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
       });
@@ -1326,7 +1341,7 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_W_S: {  // FCVT.W.S rd,rs1
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
 
         if (std::isnan(rs1)) {
           results[0] = RegisterValue(0x7FFFFFFF, 8);
@@ -1354,7 +1369,7 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_L_S: {  // FCVT.L.S rd,rs1
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
 
         if (std::isnan(rs1)) {
           results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
@@ -1387,7 +1402,7 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_WU_S: {  // FCVT.WU.S rd,rs1
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
 
         if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
           results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
@@ -1425,7 +1440,7 @@ void Instruction::execute() {
     case Opcode::RISCV_FCVT_LU_S: {  // FCVT.LU.S rd,rs1
 
       setStaticRoundingModeThen([&] {
-        const float rs1 = operands[0].get<float>();
+        const float rs1 = checkNanBox(operands[0]);
 
         if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
           results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
@@ -1483,7 +1498,7 @@ void Instruction::execute() {
     }
 
     case Opcode::RISCV_FCVT_D_S: {  // FCVT.D.S rd,rs1
-      const float rs1 = operands[0].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
 
       results[0] = RegisterValue((double)rs1, 8);
       break;
@@ -1503,8 +1518,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FSGNJ_S: {  // FSGNJ.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, rs2)), 8);
       break;
@@ -1518,8 +1533,8 @@ void Instruction::execute() {
     }
 
     case Opcode::RISCV_FSGNJN_S: {  // FSGNJN.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       results[0] = RegisterValue(std::copysign(rs1, -rs2), 8);
       break;
@@ -1534,8 +1549,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FSGNJX_S: {  // FSGNJX.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       const float xorSign = pow(-1, std::signbit(rs1) ^ std::signbit(rs2));
 
@@ -1592,8 +1607,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FEQ_S: {  // FEQ.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       if (rs1 == rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
         results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
@@ -1617,8 +1632,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FLT_S: {  // FLT.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
         // TODO: set csr flag when Zicsr implementation is complete
@@ -1645,8 +1660,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FLE_S: {  // FLE.S rd,rs1,rs2
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
 
       if (std::isnan(rs1) || std::isnan(rs2)) {
         // TODO: set csr flag when Zicsr implementation is complete
