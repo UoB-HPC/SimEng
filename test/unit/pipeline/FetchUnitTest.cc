@@ -10,8 +10,13 @@
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 using ::testing::_;
+using ::testing::AllOf;
+using ::testing::AnyNumber;
+using ::testing::AnyOf;
+using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::Field;
+using ::testing::Ne;
 using ::testing::Return;
 using ::testing::SetArgReferee;
 
@@ -26,7 +31,9 @@ class PipelineFetchUnitTest : public testing::Test {
         completedReads(&fetchBuffer, 1),
         fetchUnit(output, memory, 1024, 0, blockSize, isa, predictor),
         uop(new MockInstruction),
-        uopPtr(uop) {
+        uopPtr(uop),
+        uop2(new MockInstruction),
+        uopPtr2(uop2) {
     uopPtr->setInstructionAddress(0);
   }
 
@@ -46,6 +53,8 @@ class PipelineFetchUnitTest : public testing::Test {
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
+  MockInstruction* uop2;
+  std::shared_ptr<Instruction> uopPtr2;
 };
 
 // Tests that ticking a fetch unit attempts to predecode from the correct
@@ -261,14 +270,169 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   fetchUnit.requestFromPC();
 }
 
-// Tests the functionality of the Loop Buffer
-TEST_F(PipelineFetchUnitTest, fetchUnitLoopBuffer) {
+// Tests the functionality of the supplying from the Loop Buffer
+TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
+  // Set instructions to be fetched from memory
+  MemoryReadResult memReadResult = {
+      {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
+  span<MemoryReadResult> nextBlock = {&memReadResult, 1};
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
+
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+
   // Register loop boundary
-  // Fill loop buffer
-  // Have loop buffer supply instructions
-  // Make sure `requestFromPC` does nothing
-  // Exit from buffer mid supply due to a branch
-  // Ensure `requestFromPC` works again
+  fetchUnit.registerLoopBoundary(0xC);
+
+  // Set the instructions, within the loop body, to be returned from predecode
+  MacroOp mOp2 = {uopPtr2};
+  ON_CALL(isa, predecode(_, _, 0xC, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
+  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
+
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, _, Ne(0xC), _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
+
+  // Set the expectation from the predcitor to be true so a loop body will
+  // be detected
+  ON_CALL(predictor, predict(_, _, _))
+      .WillByDefault(Return(BranchPrediction({true, 0x0})));
+
+  // Set Loop Buffer state to be LoopBufferState::FILLING
+  // Tick 4 times to process all 16 bytes of fetched data
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Fetch the next block of instructions from memory
+  fetchUnit.requestFromPC();
+
+  // Fill Loop Buffer and set its state to be LoopBufferState::SUPPLYING
+  // Tick 4 times to process all 16 bytes of fetched data
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Whilst the Loop Buffer state is LoopBufferState::SUPPLYING, the request
+  // read should never be called
+  EXPECT_CALL(memory, requestRead(_, _)).Times(0);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(0);
+  EXPECT_CALL(memory, getCompletedReads()).Times(0);
+  fetchUnit.requestFromPC();
+
+  // Empty output buffer and ensure the correct instructions are supplied from
+  // the Loop Buffer
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
+
+  // Flush the Loop Buffer and ensure correct instructions are fetched from
+  // memory
+  fetchUnit.flushLoopBuffer();
+  fetchUnit.updatePC(0x0);
+  EXPECT_CALL(memory, requestRead(_, _)).Times(AtLeast(1));
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(AtLeast(1));
+  EXPECT_CALL(memory, getCompletedReads()).Times(AtLeast(1));
+  fetchUnit.requestFromPC();
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
+}
+
+// Tests the functionality of idling the supply to the Loop Buffer one of not
+// taken branch at the loopBoundaryAddress_
+TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
+  // Set instructions to be fetched from memory
+  MemoryReadResult memReadResultA = {
+      {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
+  span<MemoryReadResult> nextBlockA = {&memReadResultA, 1};
+  MemoryReadResult memReadResultB = {
+      {0x10, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
+  span<MemoryReadResult> nextBlockB = {&memReadResultB, 1};
+  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockA));
+
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+
+  // Register loop boundary
+  fetchUnit.registerLoopBoundary(0xC);
+
+  // Set the instructions, within the loop body, to be returned from predecode
+  MacroOp mOp2 = {uopPtr2};
+  ON_CALL(isa, predecode(_, _, AnyOf(0xC, 0x1C), _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
+  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
+
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, _, AllOf(Ne(0xC), Ne(0x1C)), _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
+
+  // Set the first expectation from the predcitor to be true so a loop body will
+  // be detected
+  EXPECT_CALL(predictor, predict(_, _, _))
+      .WillOnce(Return(BranchPrediction({true, 0x0})));
+
+  // Set Loop Buffer state to be LoopBufferState::FILLING
+  // Tick 4 times to process all 16 bytes of fetched data
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Fetch the next block of instructions from memory and change the expected
+  // outcome of the branch predictor
+  fetchUnit.requestFromPC();
+  EXPECT_CALL(predictor, predict(_, _, _))
+      .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
+
+  // Attempt to fill Loop Buffer but prevent it on a not taken outcome at the
+  // loopBoundaryAddress_ branch
+  // Tick 4 times to process all 16 bytes of fetched data
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Set the expectation for the next block to be fetched after the Loop Buffer
+  // state has been reset
+  const MemoryAccessTarget target = {0x10, blockSize};
+  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockB));
+  EXPECT_CALL(memory, requestRead(target, _)).Times(1);
+
+  // Fetch the next block of instructions from memory
+  fetchUnit.requestFromPC();
+
+  // Empty output buffer and ensure the correct instructions are fetched from
+  // memory
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  output.fill({});
+  fetchUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
 }
 
 }  // namespace pipeline
