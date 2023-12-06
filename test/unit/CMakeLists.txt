@@ -7,6 +7,7 @@ set(TEST_SOURCES
     pipeline/FetchUnitTest.cc
     pipeline/LoadStoreQueueTest.cc
     pipeline/M1PortAllocatorTest.cc
+    pipeline/MappedRegisterFileSetTest.cc
     pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc

@@ -15,7 +15,7 @@ class RegisterAliasTable {
    * structure, and the corresponding numbers of physical registers that should
    * be available. */
   RegisterAliasTable(std::vector<RegisterFileStructure> architecturalStructure,
-                     std::vector<uint16_t> physicalStructure);
+                     std::vector<uint16_t> physicalRegisterCounts);
 
   /** Retrieve the current physical register assigned to the provided
    * architectural register. */
