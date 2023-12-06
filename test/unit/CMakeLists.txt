@@ -11,6 +11,7 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
+    ArchitecturalRegisterFileSettest.cc
     ArchitectureTest.cc
     FixedLatencyMemoryInterfaceTest.cc
     FlatMemoryInterfaceTest.cc
