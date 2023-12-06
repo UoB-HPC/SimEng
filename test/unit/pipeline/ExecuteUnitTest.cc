@@ -320,8 +320,11 @@ TEST_F(PipelineExecuteUnitTest, purgeFlushed) {
   uop->setStallCycles(5);
   // Set up instructions so that only one is in the EU pipeline at a time
   ON_CALL(*uop, getGroup()).WillByDefault(Return(3));
+  ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   ON_CALL(*secondUop, getGroup()).WillByDefault(Return(4));
+  ON_CALL(*secondUop, canExecute()).WillByDefault(Return(true));
   ON_CALL(*thirdUop, getGroup()).WillByDefault(Return(5));
+  ON_CALL(*thirdUop, canExecute()).WillByDefault(Return(true));
 
   EXPECT_CALL(*uop, execute()).Times(0);
   EXPECT_CALL(*secondUop, execute()).Times(0);

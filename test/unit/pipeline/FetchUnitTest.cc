@@ -173,6 +173,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
 
 // Tests that halting functionality triggers correctly
 TEST_F(PipelineFetchUnitTest, halted) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
   EXPECT_FALSE(fetchUnit.hasHalted());
   fetchUnit.tick();
   EXPECT_FALSE(fetchUnit.hasHalted());
@@ -182,7 +183,6 @@ TEST_F(PipelineFetchUnitTest, halted) {
   EXPECT_TRUE(fetchUnit.hasHalted());
 
   // Test PC being incremented to >= programByteLength triggers halting
-  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
   fetchUnit.updatePC(1008);
   EXPECT_FALSE(fetchUnit.hasHalted());
 
