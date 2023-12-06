@@ -18,6 +18,7 @@ set(TEST_SOURCES
     OSTest.cc
     PoolTest.cc
     ProcessTest.cc
+    RegisterFileSetTest.cc
     RegisterValueTest.cc
     )
 
