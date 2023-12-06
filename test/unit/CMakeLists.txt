@@ -1,12 +1,12 @@
 set(TEST_SOURCES
     pipeline/A64FXPortAllocatorTest.cc
     pipeline/BalancedPortAllocatorTest.cc
-    pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
     pipeline/DispatchIssueUnitTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/FetchUnitTest.cc
     pipeline/LoadStoreQueueTest.cc
+    pipeline/M1PortAllocatorTest.cc
     pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
