@@ -27,14 +27,14 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
       return static_cast<std::make_signed_t<T>>(value) >> amount;
     case ARM64_SFT_ROR: {
       // Assuming sizeof(T) is a power of 2.
-      const auto mask = sizeof(T) * 8 - 1;
+      const T mask = sizeof(T) * 8 - 1;
       assert((amount <= mask) && "Rotate amount exceeds type width");
       amount &= mask;
       return (value >> amount) | (value << ((-amount) & mask));
     }
     case ARM64_SFT_MSL: {
       // pad in with ones instead of zeros
-      const auto mask = (1 << amount) - 1;
+      const T mask = (1 << amount) - 1;
       return (value << amount) | mask;
     }
     case ARM64_SFT_INVALID:
