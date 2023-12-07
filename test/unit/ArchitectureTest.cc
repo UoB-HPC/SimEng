@@ -207,9 +207,12 @@ TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
   EXPECT_EQ(insn[0]->getInstructionAddress(), 0x4);
   EXPECT_EQ(insn[0]->exceptionEncountered(), false);
 
-  // Insn[0] = z1.s, p0/m, z1.s, z0.s
+  // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
   simeng::arch::aarch64::Instruction* aarch64Insn =
-      dynamic_cast<simeng::arch::aarch64::Instruction*>(insn[0].get());
+      (simeng::arch::aarch64::Instruction*)insn[0].get();
+  // The above *dirty* conversion between Abstract and derived types is required
+  // to avoid the use of a dynamic_cast.
+
   simeng::arch::aarch64::ExecutionInfo info =
       arch->getExecutionInfo(*aarch64Insn);
 
