@@ -209,9 +209,7 @@ TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
 
   // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
   simeng::arch::aarch64::Instruction* aarch64Insn =
-      (simeng::arch::aarch64::Instruction*)insn[0].get();
-  // The above *dirty* conversion between Abstract and derived types is required
-  // to avoid the use of a dynamic_cast.
+      reinterpret_cast<simeng::arch::aarch64::Instruction*>(insn[0].get());
 
   simeng::arch::aarch64::ExecutionInfo info =
       arch->getExecutionInfo(*aarch64Insn);
