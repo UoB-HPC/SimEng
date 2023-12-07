@@ -216,6 +216,8 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
                         cntxEv->getSource().c_str(), cntxEv->getSourceId(),
                         cntxEv->getPayload().TID);
       }
+      fakeTLB_.clear();
+      pendingTranslation_.clear();
       core_->schedule(cntx);
       break;
     }
@@ -249,6 +251,14 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
 
       fakeTLB_[downAlign(vaddr, simeng::OS::PAGE_SIZE)] =
           downAlign(paddr, simeng::OS::PAGE_SIZE);
+      auto it = pendingTranslation_.begin();
+      while (it != pendingTranslation_.end()) {
+        if (*it == vaddr) {
+          pendingTranslation_.erase(it);
+          break;
+        } else
+          it++;
+      }
       mmu_->supplyDelayedTranslation(vaddr, paddr);
       break;
     }
@@ -314,10 +324,17 @@ uint64_t SimEngCoreWrapper::translateVAddr(uint64_t vaddr, uint64_t pid) {
     //           fakeTLB_[alignedVaddr]
     //           << std::dec << std::endl;
     return (vaddr & (simeng::OS::PAGE_SIZE - 1)) + fakeTLB_[alignedVaddr];
+  } else if (std::find(pendingTranslation_.begin(), pendingTranslation_.end(),
+                       vaddr) != pendingTranslation_.end()) {
+    uint64_t retVal = simeng::OS::masks::faults::pagetable::FAULT;
+    retVal = retVal | simeng::OS::masks::faults::pagetable::PENDING;
+    return retVal;
   } else {
     transEv* translation = new transEv(getName(), core_->getCoreId());
     translation->setVirtualAddr(vaddr, pid);
     sstNoc_->send(translation, 0);
+
+    pendingTranslation_.push_back(vaddr);
 
     uint64_t retVal = simeng::OS::masks::faults::pagetable::FAULT;
     retVal = retVal | simeng::OS::masks::faults::pagetable::PENDING;

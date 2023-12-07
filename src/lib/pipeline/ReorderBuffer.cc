@@ -99,6 +99,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
+    lastAddr_ = uop->getInstructionAddress();
+
     // If the uop is a store address operation, begin the processing of its
     // memory accesses
     if (uop->isStoreAddress() && !startedStore_) {
@@ -124,29 +126,30 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     const auto& destinations = uop->getDestinationRegisters();
 
-    // if (tid_ == 6) {
+    // if (tid_ == 24) {
     if (false) {
       // if (fileOut_.is_open()) {
       const auto& results = uop->getResults();
-      fileOut_ << tid_ << "|" << std::hex << uop->getInstructionAddress()
-               << std::dec;
-      // fileOut_ << ":0x" << std::hex << uop->getSequenceId() << std::dec;
-      fileOut_ << std::endl;
+      std::cerr << tid_ << "|" << std::hex << uop->getInstructionAddress()
+                << std::dec;
+      std::cerr << ":0x" << std::hex << uop->getSequenceId() << std::dec;
+      std::cerr << ":0x" << std::hex << uop->getInstructionId() << std::dec;
+      std::cerr << std::endl;
       for (int i = 0; i < destinations.size(); i++) {
-        fileOut_ << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"
-                 << rat_.reverseMapping(destinations[i]) << "}"
-                 << " <- " << std::hex;
+        std::cerr << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"
+                  << rat_.reverseMapping(destinations[i]) << "}"
+                  << " <- " << std::hex;
         for (int j = results[i].size() - 1; j >= 0; j--) {
-          fileOut_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+          std::cerr << unsigned(results[i].getAsVector<uint8_t>()[j]);
         }
-        fileOut_ << std::dec << std::endl;
+        std::cerr << std::dec << std::endl;
       }
 
       if (uop->isLoad()) {
         const auto& addrs = uop->getGeneratedAddresses();
         for (int i = 0; i < addrs.size(); i++) {
-          fileOut_ << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
-                   << std::dec << std::endl;
+          std::cerr << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
+                    << std::dec << std::endl;
         }
       }
       if (uop->isStoreAddress()) {
@@ -154,12 +157,12 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         const auto& data = uop->getData();
 
         for (int i = 0; i < addrs.size(); i++) {
-          fileOut_ << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
-                   << std::dec << " <- " << std::hex;
+          std::cerr << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
+                    << std::dec << " <- " << std::hex;
           for (int j = data[i].size() - 1; j >= 0; j--) {
-            fileOut_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+            std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]);
           }
-          fileOut_ << std::dec << std::endl;
+          std::cerr << std::dec << std::endl;
         }
       }
     }
@@ -300,7 +303,7 @@ void ReorderBuffer::setTid(uint64_t tid) {
   fileOut_.close();
   tid_ = tid;
   std::ostringstream str;
-  str << "simeng" << tid_ << ".out";
+  str << "/projects/bristol/br-jjones/simeng" << tid_ << ".out";
   fileOut_.open(str.str(), std::ofstream::out | std::ofstream::app);
 }
 

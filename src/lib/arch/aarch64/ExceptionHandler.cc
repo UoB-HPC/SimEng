@@ -258,7 +258,7 @@ bool ExceptionHandler::concludeSyscall() {
     return fatal();
   }
 
-  if (core_.getCurrentTID() == 99) {
+  if (core_.getCurrentTID() == 1024) {
     std::cerr << core_.getCurrentTID() << "|" << std::hex
               << instruction_->getInstructionAddress() << std::dec;
     std::cerr << ":" << instruction_->getSequenceId();

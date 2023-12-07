@@ -94,6 +94,13 @@ class ReorderBuffer {
 
   uint64_t getNumLoads() const { return numLoads_; };
   uint64_t getNumStores() const { return numStores_; };
+  uint64_t getLastAddr() const { return lastAddr_; }
+  uint64_t getHeadOfBuffer() const {
+    if (buffer_.size())
+      return buffer_.front()->getInstructionAddress();
+    else
+      return 0;
+  }
 
  private:
   /** A reference to the register alias table. */
@@ -162,6 +169,8 @@ class ReorderBuffer {
   uint64_t numLoads_ = 0;
 
   std::ofstream fileOut_;
+
+  uint64_t lastAddr_ = 0;
 };
 
 }  // namespace pipeline

@@ -147,8 +147,16 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   if (!exclusiveRequests_ &&
       (loadsStores_[LD].size() + loadsStores_[STR].size() >= requestLimit_))
     return false;
+
   // Check space left for a store
   if (loadsStores_[STR].size() >= storeRequestLimit_) return false;
+
+  const auto& checkTargets = uop->getGeneratedAddresses();
+  for (const auto& trg : checkTargets) {
+    if (simeng::OS::masks::faults::getFaultCode(translate_(trg.vaddr, tid_)) ==
+        simeng::OS::masks::faults::pagetable::PENDING)
+      return false;
+  }
 
   // Initialise space in stores
   loadsStores_[STR].push_back({});
@@ -319,21 +327,29 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
 
   if (request->isInstrRead())
     numInsnReads_++;
-  else if (request->isRead())
+  else if (request->isRead()) {
     numDataReads_++;
-  else if (request->isWrite())
+    // if (request->tid_ == 24)
+    //   std::cerr << "\tType: Read, PhysAddr: 0x" << std::hex <<
+    //   request->paddr_
+    //             << std::dec << ", VirtAddr: 0x" << std::hex <<
+    //             request->vaddr_
+    //             << std::dec << ", Size: " << request->size_ << ", InstPtr:
+    //             0x"
+    //             << std::hex << request->insnSeqId_ << std::dec
+    //             << ", ThreadID: " << request->tid_ << std::endl;
+  } else if (request->isWrite()) {
     numDataWrites_++;
-
-  // if (request->tid_ == 3)
-  //   std::cerr << "\tType: Read, PhysAddr: 0x" << std::hex << request->paddr_
-  //             << std::dec << ", VirtAddr: 0x" << std::hex << request->vaddr_
-  //             << std::dec << ", Size: " << request->size_ << ", InstPtr: 0x"
-  //             << std::hex << request->insnSeqId_ << std::dec
-  //             << ", ThreadID: " << request->tid_ << ", totalPacketsRemaining:
-  //             "
-  //             << requestedLoads_.find(request->insnSeqId_)
-  //                    ->second.totalPacketsRemaining
-  //             << std::endl;
+    // if (request->tid_ == 24)
+    //   std::cerr << "\tType: Write, PhysAddr: 0x" << std::hex <<
+    //   request->paddr_
+    //             << std::dec << ", VirtAddr: 0x" << std::hex <<
+    //             request->vaddr_
+    //             << std::dec << ", Size: " << request->size_ << ", InstPtr:
+    //             0x"
+    //             << std::hex << request->insnSeqId_ << std::dec
+    //             << ", ThreadID: " << request->tid_ << std::endl;
+  }
 
   port_->send(std::move(request));
 }

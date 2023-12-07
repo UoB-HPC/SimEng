@@ -194,23 +194,27 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth_);
-  // if (reorderBuffer_.commit(commitWidth_) == 0)
-  //   noactivity_++;
-  // else
-  //   noactivity_ = 0;
+  // reorderBuffer_.commit(commitWidth_);
+  if (reorderBuffer_.commit(commitWidth_) == 0)
+    noactivity_++;
+  else
+    noactivity_ = 0;
 
-  // if (noactivity_ > 100000) {
-  //   status_ = CoreStatus::halted;
-  //   // Update status of corresponding CoreDesc in SimOS as there is no
-  //   // causal action originating from SimOS which caused this change in
-  //   // Core.
-  //   updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
-  //                       0);
-  //   currentTID_ = -1;
-  //   std::cout << "[SimEng:Core" << coreId_ << "] Halting due to no activity"
-  //             << std::endl;
-  // }
+  if (noactivity_ != 0 && (noactivity_ % 100000 == 0)) {
+    // status_ = CoreStatus::halted;
+    // Update status of corresponding CoreDesc in SimOS as there is no
+    // causal action originating from SimOS which caused this change in
+    // Core.
+    // updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
+    //                     0);
+    // currentTID_ = -1;
+    std::cout << "[SimEng:Core" << coreId_ << ":TID" << currentTID_
+              << "] no activity for " << noactivity_
+              << " cycles total, last committed address was 0x" << std::hex
+              << reorderBuffer_.getLastAddr() << std::dec << " and 0x"
+              << std::hex << reorderBuffer_.getHeadOfBuffer() << std::dec
+              << " at the HEAD of the ROB" << std::endl;
+  }
 
   if (exceptionGenerated_) {
     handleException();
@@ -244,7 +248,7 @@ void Core::flushIfNeeded() {
       lowestInsnId = reorderBuffer_.getFlushInsnId();
       targetAddress = reorderBuffer_.getFlushAddress();
     }
-    // if (currentTID_ == 3)
+    // if (currentTID_ == 24)
     //   std::cerr << "### FLUSHING AT 0x" << std::hex << lowestInsnId <<
     //   std::dec
     //             << std::endl;

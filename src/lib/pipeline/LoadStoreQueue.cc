@@ -401,18 +401,31 @@ void LoadStoreQueue::tick() {
           accepted = mmu_->requestWrite((*itInsn), (*itInsn)->getData());
         } else {
           accepted = mmu_->requestRead((*itInsn));
-          if (accepted) {
-            // if (tid_ == 3)
-            //   std::cerr << tickCounter_ << "|LSQ REQ for 0x" << std::hex
-            //             << (*itInsn)->getSequenceId() << std::dec << ":0x"
-            //             << std::hex << (*itInsn)->getInstructionId() <<
-            //             std::dec
-            //             << " at 0x" << std::hex
-            //             << (*itInsn)->getGeneratedAddresses()[0].vaddr
-            //             << std::dec << std::endl;
-          }
-          // requestedLoads_[(*itInsn)->getSequenceId()].second = tickCounter_;
         }
+        // if (accepted) {
+        //   if (tid_ == 24)
+        //     std::cerr << tickCounter_ << "|LSQ REQ accepted for 0x" <<
+        //     std::hex
+        //               << (*itInsn)->getSequenceId() << std::dec << ":0x"
+        //               << std::hex << (*itInsn)->getInstructionId() <<
+        //               std::dec
+        //               << " at 0x" << std::hex
+        //               << (*itInsn)->getGeneratedAddresses()[0].vaddr <<
+        //               std::dec
+        //               << std::endl;
+        // } else {
+        //   if (tid_ == 24)
+        //     std::cerr << tickCounter_ << "|LSQ REQ rejected for 0x" <<
+        //     std::hex
+        //               << (*itInsn)->getSequenceId() << std::dec << ":0x"
+        //               << std::hex << (*itInsn)->getInstructionId() <<
+        //               std::dec
+        //               << " at 0x" << std::hex
+        //               << (*itInsn)->getGeneratedAddresses()[0].vaddr <<
+        //               std::dec
+        //               << std::endl;
+        // }
+        // requestedLoads_[(*itInsn)->getSequenceId()].second = tickCounter_;
         // Remove entry from vector if accepted (available bandwidth this
         // cycle)
         if (accepted) {
@@ -528,6 +541,14 @@ void LoadStoreQueue::tick() {
     if (insn->isStoreCond() && !insn->isCondResultReady()) {
       break;
     }
+
+    // if (tid_ == 24 && insn->getGeneratedAddresses().size())
+    //   std::cerr << tickCounter_ << "|LSQ RET for 0x" << std::hex
+    //             << insn->getSequenceId() << std::dec << ":0x" << std::hex
+    //             << insn->getInstructionId() << std::dec << " at 0x" <<
+    //             std::hex
+    //             << insn->getGeneratedAddresses()[0].vaddr << std::dec
+    //             << std::endl;
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());

@@ -347,6 +347,8 @@ class SimEngCoreWrapper : public SST::Component {
 
   std::map<uint64_t, uint64_t> fakeTLB_;
 
+  std::vector<uint64_t> pendingTranslation_;
+
   std::shared_ptr<
       simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>>
       connection_ = std::make_shared<
