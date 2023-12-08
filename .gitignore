@@ -12,6 +12,7 @@ install-debug
 capstone.pc
 version.hh
 **/specialFiles/
+.cache
 
 CMakeCache.txt
 CPackConfig.cmake
