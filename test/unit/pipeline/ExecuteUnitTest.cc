@@ -56,8 +56,8 @@ class PipelineExecuteUnitTest : public testing::Test {
   MockInstruction* thirdUop;
 
   std::shared_ptr<Instruction> uopPtr;
-  std::shared_ptr<MockInstruction> secondUopPtr;
-  std::shared_ptr<MockInstruction> thirdUopPtr;
+  std::shared_ptr<Instruction> secondUopPtr;
+  std::shared_ptr<Instruction> thirdUopPtr;
 };
 
 // Tests that the execution unit processes nothing if no instruction is present
