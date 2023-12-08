@@ -436,36 +436,36 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     }
   }
   if (!scheduledProcs_.empty()) {
-    if (scheduledProcs_.front()->getTID() == cinfo.coreId) {
-      // Schedule new process on core
-      desc.info.status = simeng::executing;
-      desc.info.ticks = 0;
-      // std::cerr << "schedule " << scheduledProcs_.front()->context_.TID << "
-      // to
-      // "
-      //           << cinfo.coreId << " from scheduledProcs_" << std::endl;
-      coreProxy_.schedule(cinfo.coreId, scheduledProcs_.front()->context_);
-      // Update newly scheduled process' status
-      scheduledProcs_.front()->status_ = procStatus::executing;
-      // Remove process from waiting queue
-      scheduledProcs_.pop();
-    }
+    // if (scheduledProcs_.front()->getTID() == cinfo.coreId) {
+    // Schedule new process on core
+    desc.info.status = simeng::executing;
+    desc.info.ticks = 0;
+    // std::cerr << "schedule " << scheduledProcs_.front()->context_.TID << "
+    // to
+    // "
+    //           << cinfo.coreId << " from scheduledProcs_" << std::endl;
+    coreProxy_.schedule(cinfo.coreId, scheduledProcs_.front()->context_);
+    // Update newly scheduled process' status
+    scheduledProcs_.front()->status_ = procStatus::executing;
+    // Remove process from waiting queue
+    scheduledProcs_.pop();
+    // }
 
   } else if (!waitingProcs_.empty()) {
-    if (waitingProcs_.front()->getTID() == cinfo.coreId) {
-      // If nothing inside scheduledProcs_, check if there are any
-      // processes inside waitingProcs which can jump ahead
-      desc.info.status = simeng::executing;
-      desc.info.ticks = 0;
-      // std::cerr << "schedule " << waitingProcs_.front()->context_.TID << " to
-      // "
-      //           << cinfo.coreId << " from waitingProcs_" << std::endl;
-      coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
-      // Update newly scheduled process' status
-      waitingProcs_.front()->status_ = procStatus::executing;
-      // Remove process from waiting queue
-      waitingProcs_.pop();
-    }
+    // if (waitingProcs_.front()->getTID() == cinfo.coreId) {
+    // If nothing inside scheduledProcs_, check if there are any
+    // processes inside waitingProcs which can jump ahead
+    desc.info.status = simeng::executing;
+    desc.info.ticks = 0;
+    // std::cerr << "schedule " << waitingProcs_.front()->context_.TID << " to
+    // "
+    //           << cinfo.coreId << " from waitingProcs_" << std::endl;
+    coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
+    // Update newly scheduled process' status
+    waitingProcs_.front()->status_ = procStatus::executing;
+    // Remove process from waiting queue
+    waitingProcs_.pop();
+    // }
   }
 }
 
