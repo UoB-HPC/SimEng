@@ -15,6 +15,7 @@ set(TEST_SOURCES
     pipeline/WritebackUnitTest.cc
     ArchitecturalRegisterFileSetTest.cc
     ArchitectureTest.cc
+    ElfTest.cc
     FixedLatencyMemoryInterfaceTest.cc
     FlatMemoryInterfaceTest.cc
     GenericPredictorTest.cc
