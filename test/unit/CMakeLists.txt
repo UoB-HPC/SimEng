@@ -10,6 +10,7 @@ set(TEST_SOURCES
     pipeline/MappedRegisterFileSetTest.cc
     pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
+    pipeline/RenameUnitTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     ArchitecturalRegisterFileSetTest.cc
