@@ -3,6 +3,7 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/version.hh"
 
 #define AARCH64_CONFIG                                                        \
   ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, " \
@@ -22,8 +23,8 @@
    "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
    "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
    "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "      \
-   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_BUILD_DIR   \
-   "/specialFiles/}}")
+   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_SOURCE_DIR  \
+   "/test/regression/aarch64/specialFiles/}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */

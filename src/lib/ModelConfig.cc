@@ -554,11 +554,12 @@ void ModelConfig::validate() {
                "CPU-Part",
                "CPU-Revision",
                "Package-Count"};
+  const std::string defaultSpecialFilePath = SIMENG_BUILD_DIR "/specialFiles/";
   nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
                     std::vector<bool>{false, true}, ExpectedValue::Bool, false);
   nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
                            std::vector<std::string>(), ExpectedValue::String,
-                           std::string(SIMENG_BUILD_DIR "/specialFiles/"));
+                           defaultSpecialFilePath);
   nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
@@ -603,7 +604,9 @@ void ModelConfig::validate() {
     }
   }
   // Ensure that if a Special-File-Dir-Path is provided, it exists
-  if (!std::filesystem::exists(
+  if (!(defaultSpecialFilePath ==
+        configFile_[root][subFields[1]].as<std::string>()) &&
+      !std::filesystem::exists(
           configFile_[root][subFields[1]].as<std::string>())) {
     invalid_ << "\t- Special-File-Dir-Path must exist. Please ensure the given "
                 "path is absolute and correct.";

@@ -22,8 +22,8 @@
    "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: "        \
    "{'0': {Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, " \
    "Execution-Latency: 39, Execution-Throughput: 39}}, CPU-Info: "             \
-   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_BUILD_DIR    \
-   "/specialFiles/}}")
+   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_SOURCE_DIR   \
+   "/test/regression/aarch64/specialFiles/}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
