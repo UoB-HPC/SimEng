@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "gtest/gtest.h"
 #include "simeng/CoreInstance.hh"
 #include "simeng/ModelConfig.hh"
@@ -12,16 +14,17 @@ namespace simeng {
 // AArch64 Tests
 class AArch64ArchitectureTest : public testing::Test {
  public:
-  AArch64ArchitectureTest() {
+  AArch64ArchitectureTest()
+      : config(simeng::ModelConfig(configPath).getConfigFile()),
+        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
     arch =
         std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
     kernel.createProcess(process);
   }
 
  protected:
-  YAML::Node config =
-      simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
-          .getConfigFile();
+  const std::string configPath = SIMENG_SOURCE_DIR "/configs/a64fx.yaml";
+  YAML::Node config;
 
   // fdivr z1.s, p0/m, z1.s, z0.s
   std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
@@ -104,7 +107,8 @@ TEST_F(AArch64ArchitectureTest, handleException) {
   std::string executablePath = "";
   std::vector<std::string> executableArgs = {};
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
+      std::make_unique<simeng::CoreInstance>(configPath, executablePath,
+                                             executableArgs);
   const simeng::Core& core = *coreInstance->getCore();
   simeng::MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);
@@ -230,15 +234,17 @@ TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
 // RISC-V Tests
 class RiscVArchitectureTest : public testing::Test {
  public:
-  RiscVArchitectureTest() {
+  RiscVArchitectureTest()
+      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml")
+                   .getConfigFile()),
+        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
     arch = std::make_unique<simeng::arch::riscv::Architecture>(kernel, config);
     kernel.createProcess(process);
   }
 
  protected:
-  YAML::Node config =
-      simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml")
-          .getConfigFile();
+  const std::string configPath = SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml";
+  YAML::Node config;
 
   // addi	sp, ra, 2000
   std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
@@ -314,7 +320,8 @@ TEST_F(RiscVArchitectureTest, handleException) {
   std::string executablePath = "";
   std::vector<std::string> executableArgs = {};
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
+      std::make_unique<simeng::CoreInstance>(configPath, executablePath,
+                                             executableArgs);
   const simeng::Core& core = *coreInstance->getCore();
   simeng::MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);

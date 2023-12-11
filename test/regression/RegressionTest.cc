@@ -65,7 +65,8 @@ void RegressionTest::run(const char* source, const char* triple,
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
-  simeng::kernel::Linux kernel;
+  simeng::kernel::Linux kernel(
+      config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>());
   kernel.createProcess(*process_);
 
   // Populate the heap with initial data (specified by the test being run).

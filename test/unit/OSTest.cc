@@ -11,6 +11,7 @@ class OSTest : public testing::Test {
   OSTest()
       : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
                    .getConfigFile()),
+        os(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
         proc_elf(simeng::kernel::LinuxProcess(cmdLine, config)),
         proc_hex(simeng::span<char>(reinterpret_cast<char*>(demoHex),
                                     sizeof(demoHex)),

@@ -123,8 +123,11 @@ class CoreInstance {
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
 
-  /** Whether or not the source has been assembled by LLVM. */
-  bool assembledSource_ = false;
+  /** The config file describing the modelled core to be created. */
+  YAML::Node config_;
+
+  /** The SimEng Linux kernel object. */
+  simeng::kernel::Linux kernel_;
 
   /** Reference to source assembled by LLVM. */
   char* source_ = nullptr;
@@ -132,8 +135,8 @@ class CoreInstance {
   /** Size of the source code assembled by LLVM. */
   size_t sourceSize_ = 0;
 
-  /** The config file describing the modelled core to be created. */
-  YAML::Node config_;
+  /** Whether or not the source has been assembled by LLVM. */
+  bool assembledSource_ = false;
 
   /** Reference to the SimEng linux process object. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;
@@ -143,9 +146,6 @@ class CoreInstance {
 
   /** The process memory space. */
   std::shared_ptr<char> processMemory_;
-
-  /** The SimEng Linux kernel object. */
-  simeng::kernel::Linux kernel_;
 
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;

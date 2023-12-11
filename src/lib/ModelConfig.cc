@@ -542,6 +542,7 @@ void ModelConfig::validate() {
   // CPU-Info
   root = "CPU-Info";
   subFields = {"Generate-Special-Dir",
+               "Special-File-Dir-Path",
                "Core-Count",
                "Socket-Count",
                "SMT",
@@ -555,41 +556,44 @@ void ModelConfig::validate() {
                "Package-Count"};
   nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
                     std::vector<bool>{false, true}, ExpectedValue::Bool, false);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
+  nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
+                           std::vector<std::string>(), ExpectedValue::String,
+                           std::string(SIMENG_BUILD_DIR "/specialFiles/"));
   nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
   nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
-  nodeChecker<float>(configFile_[root][subFields[4]], subFields[4],
+  nodeChecker<unsigned int>(configFile_[root][subFields[4]], subFields[4],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<float>(configFile_[root][subFields[5]], subFields[5],
                      std::make_pair(0.0f, std::numeric_limits<float>::max()),
                      ExpectedValue::Float, 0.0f);
-  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
+  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],
                            std::vector<std::string>(), ExpectedValue::String,
                            "");
-  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
+  nodeChecker<std::string>(configFile_[root][subFields[7]], subFields[7],
                            std::vector<std::string>(), ExpectedValue::String,
                            "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
+  nodeChecker<unsigned int>(configFile_[root][subFields[8]], subFields[8],
                             std::make_pair(0, UINT_MAX),
                             ExpectedValue::UInteger, 0);
-  nodeChecker<std::string>(configFile_[root][subFields[8]], subFields[8],  //
+  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],
                            std::vector<std::string>(), ExpectedValue::String,
                            "0x0");
-  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],  //
+  nodeChecker<std::string>(configFile_[root][subFields[10]], subFields[10],
                            std::vector<std::string>(), ExpectedValue::String,
                            "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[10]], subFields[10],
+  nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
                             std::make_pair(0, UINT_MAX),
                             ExpectedValue::UInteger, 0x0);
-  if (nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
+  if (nodeChecker<unsigned int>(configFile_[root][subFields[12]], subFields[12],
                                 std::make_pair(1, UINT_MAX),
                                 ExpectedValue::UInteger, 1)) {
-    uint64_t package_count = configFile_[root][subFields[11]].as<uint64_t>();
-    uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
+    uint64_t package_count = configFile_[root][subFields[12]].as<uint64_t>();
+    uint64_t core_count = configFile_[root][subFields[2]].as<uint64_t>();
     // Ensure package_count size is a less than or equal to the core count, and
     // that the core count can be divided by the package count
     if (!((package_count <= core_count) && (core_count % package_count == 0))) {
@@ -597,6 +601,12 @@ void ModelConfig::validate() {
           << "\t- Package-Count must be a Less-than or equal to Core-Count, "
              "and Core-Count must be divisible by Package-Count.";
     }
+  }
+  // Ensure that if a Special-File-Dir-Path is provided, it exists
+  if (!std::filesystem::exists(
+          configFile_[root][subFields[1]].as<std::string>())) {
+    invalid_ << "\t- Special-File-Dir-Path must exist. Please ensure the given "
+                "path is absolute and correct.";
   }
   subFields.clear();
 

@@ -3,23 +3,29 @@
 namespace simeng {
 
 CoreInstance::CoreInstance(std::string executablePath,
-                           std::vector<std::string> executableArgs) {
-  config_ = YAML::Load(DEFAULT_CONFIG);
+                           std::vector<std::string> executableArgs)
+    : config_(YAML::Load(DEFAULT_CONFIG)),
+      kernel_(kernel::Linux(
+          config_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())) {
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
-                           std::vector<std::string> executableArgs) {
-  config_ = simeng::ModelConfig(configPath).getConfigFile();
+                           std::vector<std::string> executableArgs)
+    : config_(simeng::ModelConfig(configPath).getConfigFile()),
+      kernel_(kernel::Linux(
+          config_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())) {
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
-                           std::string configPath) {
-  config_ = simeng::ModelConfig(configPath).getConfigFile();
-  source_ = assembledSource;
-  sourceSize_ = sourceSize;
-  assembledSource_ = true;
+                           std::string configPath)
+    : config_(simeng::ModelConfig(configPath).getConfigFile()),
+      kernel_(kernel::Linux(
+          config_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())),
+      source_(assembledSource),
+      sourceSize_(sourceSize),
+      assembledSource_(true) {
   // Pass an empty string for executablePath and empty vector of strings for
   // executableArgs.
   generateCoreModel("", std::vector<std::string>{});

@@ -19,9 +19,11 @@
    "Permitted-Requests-Per-Cycle: 2, Permitted-Loads-Per-Cycle: 2, "           \
    "Permitted-Stores-Per-Cycle: 1}, Ports: {'0': {Portname: Port 0, "          \
    "Instruction-Group-Support: [0, 10, 20, 21, 22]}}, Reservation-Stations: "  \
-   "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: {'0': "  \
-   "{Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, "       \
-   "Execution-Latency: 39, Execution-Throughput: 39}}}")
+   "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: "        \
+   "{'0': {Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, " \
+   "Execution-Latency: 39, Execution-Throughput: 39}}, CPU-Info: "             \
+   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_BUILD_DIR    \
+   "/specialFiles/}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */

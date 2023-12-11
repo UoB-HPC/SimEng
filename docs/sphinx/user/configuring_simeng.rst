@@ -333,9 +333,20 @@ CPU Info
     These fields are currently only used to generate a replica of the required Special Files directory structure.
 
 Generate-Special-Dir
-    Values are either "True" or "False".
-    Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
-    The alternative to this would be to copy in the required SpecialFiles by hand.
+    Values are either `True` or `False`.
+    Dictates whether or not SimEng should generate the Special-Files directory tree at runtime.
+    If your code requires Special-Files but you wish to use your own / existing files from a real system, you will need to set this option to `False`.
+    The files which are currently generated / supported in SimEng are:
+
+        - `/proc/cpuinfo`
+        - `/proc/stat`
+        - `/sys/deviced/system/cpu/online`
+        - `/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/core_id`
+        - `/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/physical_package_id`
+
+Special-File-Dir-Path
+    Represented as a String; is the **absolute path**  to the root directory where the Special-Files will be generated *OR* where existing Special-Files are located.
+    This is optional, and defaults to `SIMENG_BUILD_DIRECTORY/specialFiles`. The root directory must already exist.
 
 Core-Count
     Defines the total number of Physical cores (Not including threads).

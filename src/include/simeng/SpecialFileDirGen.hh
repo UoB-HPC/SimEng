@@ -22,13 +22,13 @@ class SpecialFileDirGen {
 
  private:
   /** Path to the root of the SimEng special files directory. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
+  const std::string specialFilesDir_;
 
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */
   uint64_t core_count;
-  uint64_t smt;
   uint64_t socket_count;
+  uint64_t smt;
   float bogoMIPS;
   std::string features;
   std::string cpu_implementer;

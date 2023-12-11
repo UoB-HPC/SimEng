@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <climits>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <queue>
@@ -12,6 +13,7 @@
 #include <unordered_map>
 
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/version.hh"
 #include "yaml-cpp/yaml.h"
 
 #define DEFAULT_CONFIG                                                         \
@@ -39,10 +41,13 @@
    "60, Dispatch-Rate: 4, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: "      \
    "{'0': {Pipelined: true}, '1': {Pipelined: true}, '2': {Pipelined: true}, " \
    "'3': {Pipelined:true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, "  \
-   "CPU-Info: {Generate-Special-Dir: false, Core-Count: 1, Socket-Count: 1, "  \
-   "SMT: 1, BogoMIPS: 200.00, Features: fp asimd evtstrm atomics cpuid, "      \
-   "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "   \
-   "0x0, CPU-Revision: 0, Package-Count: 1}}")
+   "CPU-Info: {Generate-Special-Dir: false, "                                  \
+   "Special-File-Dir-Path: " SIMENG_BUILD_DIR                                  \
+   "/specialFiles/, Core-Count: 1, Socket-Count: 1, SMT: 1, BogoMIPS: "        \
+   "200.00, "                                                                  \
+   "Features: fp asimd evtstrm atomics cpuid, CPU-Implementer: 0x0, "          \
+   "CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: 0x0, CPU-Revision: 0, "   \
+   "Package-Count: 1}}")
 
 namespace simeng {
 
