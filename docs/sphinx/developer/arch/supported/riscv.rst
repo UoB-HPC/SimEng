@@ -26,8 +26,8 @@ The logic held in ``src/lib/arch/riscv/Instruction_decode.cc`` is primarily asso
 
 .. _riscv-instruction-groups:
 
-Instruction Groups
-******************
+Instruction Groups/Opcodes
+**************************
 Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the RISC-V ISA are detailed below:
 
 .. image:: ../../../assets/instruction_groups_RISCV.png
@@ -40,7 +40,7 @@ This hierarchy-based naming convention has been chosen to provide the user with 
         .. Note::
                 INT_SIMPLE_CVT and FLOAT_SIMPLE_SHIFT are both invalid instruction groups
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+If the supplied instruction groups don't provide a small enough scope, a numerical Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``).
 
 .. _riscv-adding-instructions:
 

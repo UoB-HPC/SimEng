@@ -32,8 +32,8 @@ The logic held in ``src/lib/arch/aarch64/Instruction_decode.cc`` is primarily as
 
 .. _aarch64-instruction-groups:
 
-Instruction Groups
-******************
+Instruction Groups/Opcodes
+**************************
 Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA are detailed below:
 
 .. image:: ../../../assets/instruction_groups_AArch64.png
@@ -43,7 +43,7 @@ The above diagram describes the instruction groups currently implemented for the
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+If the supplied instruction groups don't provide a small enough scope, a numerical Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/AArch64/AArch64GenInstrInfo.inc``).
 
 Implementation
 ''''''''''''''
