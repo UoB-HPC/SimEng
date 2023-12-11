@@ -30,9 +30,6 @@ float checkNanBox(RegisterValue operand) {
     // Correct
     return operand.get<float>();
   } else {
-    std::cerr << "NAN BOX WRONG" << std::endl;
-
-    exit(1);
     // Not correct
     return std::nanf("");
   }
@@ -1128,8 +1125,8 @@ void Instruction::execute() {
       // cpp fmin reference: This function is not required to be sensitive to
       // the sign of zero, although some implementations additionally enforce
       // that if one argument is +0 and the other is -0, then +0 is returned.
-      // But RISC-V spec requires this to be the case
-      if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
+      // But RISC-V spec requires -0.0 to be considered < +0.0
+      if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0x8000000000000000, 8);
       } else {
         results[0] = RegisterValue(fmin(rs1, rs2), 8);
@@ -1142,7 +1139,7 @@ void Instruction::execute() {
       const float rs2 = checkNanBox(operands[1]);
 
       // Comments regarding fminf similar to RISCV_FMIN_D
-      if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
+      if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0xffffffff80000000, 8);
       } else {
         results[0] = RegisterValue(NanBoxFloat(fminf(rs1, rs2)), 8);
@@ -1160,13 +1157,11 @@ void Instruction::execute() {
       // that if one argument is +0 and the other is -0, then +0 is returned.
       // But RISC-V spec requires this to be the case
       double res;
-      if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
-        res = +0;
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0x0000000000000000, 8);
       } else {
-        res = fmax(rs1, rs2);
+        results[0] = RegisterValue(fmax(rs1, rs2), 8);
       }
-
-      results[0] = RegisterValue(res, 8);
       break;
     }
     case Opcode::RISCV_FMAX_S: {  // FMAX.S rd,rs1,rs2
@@ -1175,16 +1170,17 @@ void Instruction::execute() {
 
       // Comments regarding fmaxf similar to RISCV_FMAX_D
       float res;
-      if ((rs1 == +0 && rs2 == -0) || (rs1 == -0 && rs2 == +0)) {
-        res = +0;
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0xffffffff00000000, 8);
       } else {
-        res = fmaxf(rs1, rs2);
+        results[0] = RegisterValue(NanBoxFloat(fmaxf(rs1, rs2)), 8);
       }
-
-      results[0] = RegisterValue(NanBoxFloat(res), 8);
       break;
     }
 
+      // TODO "The fused multiply-add instructions must set the invalid
+      // operation exception flag when the multiplicands are ∞ and zero, even
+      // when the addend is a quiet NaN." pg69, require Zicsr extension
     case Opcode::RISCV_FMADD_D: {  // FMADD.D rd,rs1,rs2,rs3
       // The fused multiply-add instructions must set the invalid operation
       // exception flag when the multiplicands are infinity and zero, even when
@@ -1279,7 +1275,13 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+        // Some implementations return -NaN if certain inputs are NaN but spec
+        // requires +NaN. Ensure this happens
+        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+        }
       });
 
       break;
@@ -1536,7 +1538,7 @@ void Instruction::execute() {
       const float rs1 = checkNanBox(operands[0]);
       const float rs2 = checkNanBox(operands[1]);
 
-      results[0] = RegisterValue(std::copysign(rs1, -rs2), 8);
+      results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, -rs2)), 8);
       break;
     }
     case Opcode::RISCV_FSGNJX_D: {  // FSGNJX.D rd,rs1,rs2
