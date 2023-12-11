@@ -549,28 +549,30 @@ void ModelConfig::setExpectations(bool isDefault) {
     // An index value used in case of error
     uint16_t idx = 0;
     // Get all portnames defined in the config file and ensure they are unique
-    for (ryml::NodeRef child : configTree_["Ports"]) {
-      ValidationResult result =
-          expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
-              child["Portname"]);
-      std::string portname = child["Portname"].as<std::string>();
-      if (result.valid) {
-        if (std::find(portnames.begin(), portnames.end(), portname) ==
-            portnames.end()) {
-          portnames.push_back(portname);
+    if (configTree_.rootref().has_child(ryml::to_csubstr("Ports"))) {
+      for (ryml::NodeRef child : configTree_["Ports"]) {
+        ValidationResult result =
+            expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
+                child["Portname"]);
+        std::string portname = child["Portname"].as<std::string>();
+        if (result.valid) {
+          if (std::find(portnames.begin(), portnames.end(), portname) ==
+              portnames.end()) {
+            portnames.push_back(portname);
+          } else {
+            invalid_ << "\t- duplicate portname \"" << portname << "\"\n";
+          }
         } else {
-          invalid_ << "\t- duplicate portname \"" << portname << "\"\n";
+          std::cerr
+              << "[SimEng:ModelConfig] Invalid portname for port " << idx
+              << ", namely \"" << portname
+              << "\", passed in config file due to \"" << result.message
+              << "\" error. Cannot continue with config validation. Exiting."
+              << std::endl;
+          exit(1);
         }
-      } else {
-        std::cerr
-            << "[SimEng:ModelConfig] Invalid portname for port " << idx
-            << ", namely \"" << portname
-            << "\", passed in config file due to \"" << result.message
-            << "\" error. Cannot continue with config validation. Exiting."
-            << std::endl;
-        exit(1);
+        idx++;
       }
-      idx++;
     }
   }
 
@@ -750,7 +752,7 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
       }
     } else {
       // If the config file doesn't contain the key of the expectation node,
-      // create is as a child to the config ryml::NodeRef supplied. If the
+      // create it as a child to the config ryml::NodeRef supplied. If the
       // config option is optional, a default value will be injected,
       // otherwise the validation will fail
       ryml::NodeRef rymlChild = node.append_child() << ryml::key(nodeKey);
