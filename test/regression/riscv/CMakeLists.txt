@@ -12,7 +12,6 @@ add_executable(regression-riscv
             instructions/jump.cc
             instructions/branch.cc
             instructions/atomic.cc
-            instructions/csr.cc
             instructions/float.cc
         )
 target_include_directories(regression-riscv PRIVATE
