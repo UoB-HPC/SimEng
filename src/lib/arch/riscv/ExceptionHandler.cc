@@ -643,10 +643,6 @@ bool ExceptionHandler::init() {
 
     return concludeSyscall(stateChange);
   } else if (exception == InstructionException::PipelineFlush) {
-    // NOTE this may complete in only a single cycle and not the value from the
-    // config file. The instruction should be completely reissued and allowed to
-    // execute with latency once it reaches the head of the ROB
-
     // Retrieve metadata, operand values and destination registers from
     // instruction
     auto metadata = instruction_.getMetadata();

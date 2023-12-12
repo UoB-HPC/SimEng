@@ -972,13 +972,6 @@ void Instruction::execute() {
       break;
     }
 
-      // TODO "Apart from transfer operations ... all other floating-point
-      // operations on narrower n-bit operations, n < FLEN, check if the input
-      // operands are correctly NaN-boxed, i.e., all upper FLEN−n bits are 1.
-      // If so, the n least-significant bits of the input are used as the
-      // input value, otherwise the input value is treated as an n-bit
-      // canonical NaN."
-
       // Single-Precision Floating-Point (F)
       // Double-Precision Floating-Point (D)
     case Opcode::RISCV_FSD: {  // FSD rs1,rs2,imm
@@ -1203,7 +1196,11 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
+        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
+        }
       });
 
       break;
@@ -1227,7 +1224,11 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
+        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
+        }
       });
 
       break;
@@ -1251,7 +1252,11 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
+        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
+        }
       });
 
       break;

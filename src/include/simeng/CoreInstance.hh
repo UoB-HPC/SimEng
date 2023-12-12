@@ -75,6 +75,8 @@ class CoreInstance {
   /** Getter for the set simulation mode in a string format. */
   const std::string getSimulationModeString() const;
 
+  const std::string getISAString() const;
+
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
 
@@ -168,6 +170,8 @@ class CoreInstance {
   /** A string format for the simulation mode in use, defaulting to emulation.
    */
   std::string modeString_ = "Emulation";
+
+  std::string instructionSetArchString_ = "";
 
   /** Reference to the SimEng data memory object. */
   std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;
