@@ -4,6 +4,8 @@ namespace {
 
 using InstFloat = RISCVRegressionTest;
 
+static constexpr uint64_t boxedPositiveNan = 0xffffffff7fc00000;
+
 // All test verified with qemu
 
 TEST_P(InstFloat, FLD) {
@@ -223,7 +225,7 @@ TEST_P(InstFloat, FDIV_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMUL_D) {
@@ -304,7 +306,7 @@ TEST_P(InstFloat, FMUL_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FCVT_D_L) {
@@ -461,7 +463,7 @@ TEST_P(InstFloat, FCVT_W_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -559,7 +561,7 @@ TEST_P(InstFloat, FCVT_L_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -700,7 +702,7 @@ TEST_P(InstFloat, FCVT_LU_S) {
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -764,7 +766,7 @@ TEST_P(InstFloat, FCVT_WU_S) {
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -974,9 +976,9 @@ TEST_P(InstFloat, FMADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff40000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(18), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FNMSUB_D) {
@@ -1057,9 +1059,9 @@ TEST_P(InstFloat, FNMSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(18), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMSUB_S) {
@@ -1116,9 +1118,9 @@ TEST_P(InstFloat, FMSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(18), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMSUB_D) {
@@ -1207,9 +1209,9 @@ TEST_P(InstFloat, FNMADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffffc0000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(18), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FNMADD_D) {
@@ -1732,7 +1734,7 @@ TEST_P(InstFloat, FSGNJN_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(2),
             0xffffffffbf800000);  // TOOD CHECK THIS AGAINST SPIKE
 }
@@ -1789,7 +1791,7 @@ TEST_P(InstFloat, FADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff40000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FADD_D) {
@@ -1899,7 +1901,7 @@ TEST_P(InstFloat, FSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FSQRT_D) {
@@ -1965,7 +1967,7 @@ TEST_P(InstFloat, FSQRT_S) {
 
   EXPECT_EQ(getFPRegister<float>(0), (float)31.610321);
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF41FCE1F0);
-  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF7FC00000);  // NaN
+  EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);  // NaN
   EXPECT_EQ(getFPRegister<float>(2), (float)0.0672896132);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF3D89CF23);
 
@@ -1991,7 +1993,7 @@ TEST_P(InstFloat, FSQRT_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMV_X_D) {
@@ -2185,7 +2187,7 @@ TEST_P(InstFloat, FEQ_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
@@ -2278,7 +2280,7 @@ TEST_P(InstFloat, FLT_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
@@ -2372,7 +2374,7 @@ TEST_P(InstFloat, FLE_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
@@ -2477,11 +2479,11 @@ TEST_P(InstFloat, FMIN_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getFPRegister<float>(10), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<float>(11), (float)4.52432537);
-  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), boxedPositiveNan);
 
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff00000000);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff80000000);
@@ -2510,7 +2512,7 @@ TEST_P(InstFloat, FMIN_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMAX_D) {
@@ -2585,11 +2587,11 @@ TEST_P(InstFloat, FMAX_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getFPRegister<uint64_t>(10), 0xffffffff4090c746);
   EXPECT_EQ(getFPRegister<uint64_t>(11), 0xffffffff4090c746);
-  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), boxedPositiveNan);
 
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff00000000);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff80000000);
@@ -2618,7 +2620,7 @@ TEST_P(InstFloat, FMAX_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, RoundToNearest) {
