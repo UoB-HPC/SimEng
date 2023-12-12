@@ -891,6 +891,8 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       std::cout << "illegal instruction";
       break;
     case InstructionException::PipelineFlush:
+      // TODO update/parameterize this output when more sources of this
+      // exception are implemented
       std::cout << "unknown atomic operation";
       break;
     default:

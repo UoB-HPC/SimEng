@@ -25,6 +25,16 @@ struct InstructionMetadata {
   /** Constructs an invalid metadata object containing the invalid encoding. */
   InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
 
+  /* Returns the current exception state of the metadata */
+  InstructionException getMetadataException() const {
+    return metadataException_;
+  }
+
+  /* Returns a bool stating whether an exception has been encountered */
+  bool getMetadataExceptionEncountered() const {
+    return metadataExceptionEncountered_;
+  }
+
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
@@ -75,12 +85,6 @@ struct InstructionMetadata {
   /** The number of explicit operands. */
   uint8_t operandCount;
 
-  /** The current exception state of this instruction. */
-  InstructionException metadataException_ = InstructionException::None;
-
-  /** Whether an exception has been encountered. */
-  bool metadataExceptionEncountered_ = false;
-
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
@@ -96,6 +100,12 @@ struct InstructionMetadata {
   /** RISC-V helper function
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
+
+  /** The current exception state of this instruction. */
+  InstructionException metadataException_ = InstructionException::None;
+
+  /** Whether an exception has been encountered. */
+  bool metadataExceptionEncountered_ = false;
 };
 
 }  // namespace riscv

@@ -16,8 +16,8 @@ Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
     : architecture_(architecture),
       metadata(metadata),
-      exception_(metadata.metadataException_) {
-  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
+      exception_(metadata.getMetadataException()) {
+  exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   decode();
 }
 

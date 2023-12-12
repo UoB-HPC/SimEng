@@ -16,8 +16,8 @@ Instruction::Instruction(const Architecture& architecture,
                          MicroOpInfo microOpInfo)
     : architecture_(architecture),
       metadata(metadata),
-      exception_(metadata.metadataException_) {
-  exceptionEncountered_ = metadata.metadataExceptionEncountered_;
+      exception_(metadata.getMetadataException()) {
+  exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;
