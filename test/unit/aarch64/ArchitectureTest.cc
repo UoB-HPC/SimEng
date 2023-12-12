@@ -19,7 +19,7 @@ class AArch64ArchitectureTest : public testing::Test {
   AArch64ArchitectureTest()
       : config(ModelConfig(configPath).getConfigFile()),
         kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
-    arch = std::make_unique<arch::aarch64::Architecture>(kernel, config);
+    arch = std::make_unique<Architecture>(kernel, config);
     kernel.createProcess(process);
   }
 
@@ -31,7 +31,7 @@ class AArch64ArchitectureTest : public testing::Test {
   std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
   std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
-  std::unique_ptr<arch::aarch64::Architecture> arch;
+  std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
   kernel::LinuxProcess process = kernel::LinuxProcess(
       span((char*)validInstrBytes.data(), validInstrBytes.size()), config);
@@ -122,8 +122,8 @@ TEST_F(AArch64ArchitectureTest, handleException) {
 
 TEST_F(AArch64ArchitectureTest, getInitialState) {
   std::vector<Register> regs = {
-      {arch::aarch64::RegisterType::GENERAL, 31},
-      {arch::aarch64::RegisterType::SYSTEM,
+      {RegisterType::GENERAL, 31},
+      {RegisterType::SYSTEM,
        (uint16_t)arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)}};
   std::vector<RegisterValue> regVals = {{kernel.getInitialStackPointer(), 8},
                                         {20, 8}};
@@ -157,18 +157,18 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
   for (int i = 0; i < 30; i++) {
     vctCount += (i % vctModulo) == 0 ? 1 : 0;
     arch->updateSystemTimerRegisters(&regFile, i);
-    EXPECT_EQ(regFile
-                  .get({arch::aarch64::RegisterType::SYSTEM,
-                        (uint16_t)arch->getSystemRegisterTag(
-                            ARM64_SYSREG_PMCCNTR_EL0)})
-                  .get<uint64_t>(),
-              i);
-    EXPECT_EQ(regFile
-                  .get({arch::aarch64::RegisterType::SYSTEM,
-                        (uint16_t)arch->getSystemRegisterTag(
-                            ARM64_SYSREG_CNTVCT_EL0)})
-                  .get<uint64_t>(),
-              vctCount);
+    EXPECT_EQ(
+        regFile
+            .get({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
+                                            ARM64_SYSREG_PMCCNTR_EL0)})
+            .get<uint64_t>(),
+        i);
+    EXPECT_EQ(
+        regFile
+            .get({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
+                                            ARM64_SYSREG_CNTVCT_EL0)})
+            .get<uint64_t>(),
+        vctCount);
   }
 }
 
@@ -211,10 +211,9 @@ TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
   EXPECT_EQ(insn[0]->exceptionEncountered(), false);
 
   // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
-  arch::aarch64::Instruction* aarch64Insn =
-      reinterpret_cast<arch::aarch64::Instruction*>(insn[0].get());
+  Instruction* aarch64Insn = reinterpret_cast<Instruction*>(insn[0].get());
 
-  arch::aarch64::ExecutionInfo info = arch->getExecutionInfo(*aarch64Insn);
+  ExecutionInfo info = arch->getExecutionInfo(*aarch64Insn);
 
   // Latencies and Port numbers from a64fx.yaml
   EXPECT_EQ(info.latency, 98);
