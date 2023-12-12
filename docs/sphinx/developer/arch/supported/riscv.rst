@@ -83,3 +83,17 @@ An example of this would be the pseudoinstruction ``not rd, rs``. This is implem
 This must be fixed in the ``InstructionMetadata`` constructor. A new entry should be added to the switch statement and the pseudoinstruction mnemonic checked. The correct set of operands can then be set. A couple of helper functions are used for common operand fixes.
 
 To ensure all pseudoinstructions are accounted for, the table in chapter 25 of the `RISC-V Unprivileged specification <https://riscv.org/technical/specifications/>`_ should be checked. It is recommended to implement all pseudoinstructions for all currently implemented instructions.
+
+Rounding Modes
+**************
+
+RISC-V floating point instructions can use either static or dynamic rounding modes. The former embedded as 3 bits within the instruction encoding, and the later held as 3 bits of the ``fcsr`` system register.
+
+To enforce static rounding modes, the function ``setStaticRoundingModeThen`` is used. This takes the execution logic of the instruction as a parameter in the form of a lambda function. ``setStaticRoundingModeThen`` extracts the rounding mode from the raw instruction encoding as Capstone currently doesn't perform this functionality. It then changes the C++ ``fenv`` rounding mode before calling the lambda to perform the execution logic within this new environment. Before returning execution to the switch statement, it reverts the ``fenv`` rounding mode to its initial state to preserve the dynamic rounding mode.
+
+Updating the dynamic rounding mode can only be performed by a change to the ``fcsr`` system register. This is done using a Zicsr instruction and must happen atomically. To enforce this functionality, the relevant instruction causes a non-fatal exception. This forces all instructions earlier in program order to be committed and all instructions later to be flushed from the pipeline. This allows the ``fenv`` rounding mode to be changed while the pipeline is sterile, thus preventing incorrect rounding of speculatively executed instructions.
+
+Zicsr
+*****
+
+The Zicsr extension is required by the F and D extensions; however, this is left with dummy implementations for this release (0.9.6). Therefore, the ``fcsr`` register is not updated based on the result of operations or the changing of the rounding mode. Thus far, this has not affected our ability to run typical high performance computing applications and miniapps.
