@@ -1,4 +1,7 @@
 set(TEST_SOURCES
+    aarch64/ArchitectureTest.cc
+    aarch64/ShiftValueTest.cc
+    riscv/ArchitectureTest.cc
     pipeline/A64FXPortAllocatorTest.cc
     pipeline/BalancedPortAllocatorTest.cc
     pipeline/DecodeUnitTest.cc
@@ -14,7 +17,6 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     ArchitecturalRegisterFileSetTest.cc
-    ArchitectureTest.cc
     ElfTest.cc
     FixedLatencyMemoryInterfaceTest.cc
     FlatMemoryInterfaceTest.cc

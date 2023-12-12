@@ -4,7 +4,6 @@ add_executable(regression-aarch64
                Exception.cc
                LoadStoreQueue.cc
                MicroOperation.cc
-               ShiftValueTest.cc
                SmokeTest.cc
                Syscall.cc
                SystemRegisters.cc

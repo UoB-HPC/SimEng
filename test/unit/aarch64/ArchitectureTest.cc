@@ -10,15 +10,16 @@
 #include "simeng/version.hh"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 // AArch64 Tests
 class AArch64ArchitectureTest : public testing::Test {
  public:
   AArch64ArchitectureTest()
-      : config(simeng::ModelConfig(configPath).getConfigFile()),
+      : config(ModelConfig(configPath).getConfigFile()),
         kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
-    arch =
-        std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
+    arch = std::make_unique<arch::aarch64::Architecture>(kernel, config);
     kernel.createProcess(process);
   }
 
@@ -30,11 +31,10 @@ class AArch64ArchitectureTest : public testing::Test {
   std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
   std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
-  std::unique_ptr<simeng::arch::aarch64::Architecture> arch;
-  simeng::kernel::Linux kernel;
-  simeng::kernel::LinuxProcess process = simeng::kernel::LinuxProcess(
-      simeng::span((char*)validInstrBytes.data(), validInstrBytes.size()),
-      config);
+  std::unique_ptr<arch::aarch64::Architecture> arch;
+  kernel::Linux kernel;
+  kernel::LinuxProcess process = kernel::LinuxProcess(
+      span((char*)validInstrBytes.data(), validInstrBytes.size()), config);
 };
 
 TEST_F(AArch64ArchitectureTest, predecode) {
@@ -106,11 +106,10 @@ TEST_F(AArch64ArchitectureTest, handleException) {
   // Get Core
   std::string executablePath = "";
   std::vector<std::string> executableArgs = {};
-  std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(configPath, executablePath,
-                                             executableArgs);
-  const simeng::Core& core = *coreInstance->getCore();
-  simeng::MemoryInterface& memInt = *coreInstance->getDataMemory();
+  std::unique_ptr<CoreInstance> coreInstance = std::make_unique<CoreInstance>(
+      configPath, executablePath, executableArgs);
+  const Core& core = *coreInstance->getCore();
+  MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);
 
   bool tickRes = exceptionHandler->tick();
@@ -122,12 +121,12 @@ TEST_F(AArch64ArchitectureTest, handleException) {
 }
 
 TEST_F(AArch64ArchitectureTest, getInitialState) {
-  std::vector<simeng::Register> regs = {
-      {simeng::arch::aarch64::RegisterType::GENERAL, 31},
-      {simeng::arch::aarch64::RegisterType::SYSTEM,
+  std::vector<Register> regs = {
+      {arch::aarch64::RegisterType::GENERAL, 31},
+      {arch::aarch64::RegisterType::SYSTEM,
        (uint16_t)arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)}};
-  std::vector<simeng::RegisterValue> regVals = {
-      {kernel.getInitialStackPointer(), 8}, {20, 8}};
+  std::vector<RegisterValue> regVals = {{kernel.getInitialStackPointer(), 8},
+                                        {20, 8}};
 
   arch::ProcessStateChange changes = arch->getInitialState();
   EXPECT_EQ(changes.type, arch::ChangeType::REPLACEMENT);
@@ -159,13 +158,13 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
     vctCount += (i % vctModulo) == 0 ? 1 : 0;
     arch->updateSystemTimerRegisters(&regFile, i);
     EXPECT_EQ(regFile
-                  .get({simeng::arch::aarch64::RegisterType::SYSTEM,
+                  .get({arch::aarch64::RegisterType::SYSTEM,
                         (uint16_t)arch->getSystemRegisterTag(
                             ARM64_SYSREG_PMCCNTR_EL0)})
                   .get<uint64_t>(),
               i);
     EXPECT_EQ(regFile
-                  .get({simeng::arch::aarch64::RegisterType::SYSTEM,
+                  .get({arch::aarch64::RegisterType::SYSTEM,
                         (uint16_t)arch->getSystemRegisterTag(
                             ARM64_SYSREG_CNTVCT_EL0)})
                   .get<uint64_t>(),
@@ -212,11 +211,10 @@ TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
   EXPECT_EQ(insn[0]->exceptionEncountered(), false);
 
   // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
-  simeng::arch::aarch64::Instruction* aarch64Insn =
-      reinterpret_cast<simeng::arch::aarch64::Instruction*>(insn[0].get());
+  arch::aarch64::Instruction* aarch64Insn =
+      reinterpret_cast<arch::aarch64::Instruction*>(insn[0].get());
 
-  simeng::arch::aarch64::ExecutionInfo info =
-      arch->getExecutionInfo(*aarch64Insn);
+  arch::aarch64::ExecutionInfo info = arch->getExecutionInfo(*aarch64Insn);
 
   // Latencies and Port numbers from a64fx.yaml
   EXPECT_EQ(info.latency, 98);
@@ -231,148 +229,6 @@ TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
   EXPECT_EQ(arch->getSVCRval(), 3);
 }
 
-// RISC-V Tests
-class RiscVArchitectureTest : public testing::Test {
- public:
-  RiscVArchitectureTest()
-      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml")
-                   .getConfigFile()),
-        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
-    arch = std::make_unique<simeng::arch::riscv::Architecture>(kernel, config);
-    kernel.createProcess(process);
-  }
-
- protected:
-  const std::string configPath = SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml";
-  YAML::Node config;
-
-  // addi	sp, ra, 2000
-  std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
-  std::array<uint8_t, 4> invalidInstrBytes = {0x7d, 0x00, 0x81, 0xbb};
-
-  std::unique_ptr<simeng::arch::riscv::Architecture> arch;
-  simeng::kernel::Linux kernel;
-  simeng::kernel::LinuxProcess process = simeng::kernel::LinuxProcess(
-      simeng::span((char*)validInstrBytes.data(), validInstrBytes.size()),
-      config);
-};
-
-TEST_F(RiscVArchitectureTest, predecode) {
-  // Test that mis-aligned instruction address results in error
-  MacroOp output;
-  uint8_t result = arch->predecode(validInstrBytes.data(),
-                                   validInstrBytes.size(), 0x7, output);
-  EXPECT_EQ(result, 1);
-  EXPECT_EQ(output[0]->getInstructionAddress(), 0x7);
-  EXPECT_EQ(output[0]->exceptionEncountered(), true);
-
-  // Test that an invalid instruction returns instruction with an exception
-  output = MacroOp();
-  result = arch->predecode(invalidInstrBytes.data(), invalidInstrBytes.size(),
-                           0x8, output);
-  EXPECT_EQ(result, 4);
-  EXPECT_EQ(output[0]->getInstructionAddress(), 0x8);
-  EXPECT_EQ(output[0]->exceptionEncountered(), true);
-
-  // Test that an instruction can be properly decoded
-  output = MacroOp();
-  result = arch->predecode(validInstrBytes.data(), validInstrBytes.size(), 0x4,
-                           output);
-  EXPECT_EQ(result, 4);
-  EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
-  EXPECT_EQ(output[0]->exceptionEncountered(), false);
-}
-
-TEST_F(RiscVArchitectureTest, getRegisterFileStructures) {
-  auto output = arch->getRegisterFileStructures();
-  EXPECT_EQ(output[0].bytes, 8);
-  EXPECT_EQ(output[0].quantity, 32);
-  EXPECT_EQ(output[1].bytes, 8);
-  EXPECT_EQ(output[1].quantity, 32);
-  EXPECT_EQ(output[2].bytes, 8);
-  EXPECT_EQ(output[2].quantity, arch->getNumSystemRegisters());
-}
-
-TEST_F(RiscVArchitectureTest, getSystemRegisterTag) {
-  // Test incorrect system register will fail
-  int32_t output = arch->getSystemRegisterTag(-1);
-  EXPECT_EQ(output, -1);
-
-  // Test for correct behaviour
-  // TODO: Implement once system registers have been added
-}
-
-TEST_F(RiscVArchitectureTest, getNumSystemRegisters) {
-  uint16_t output = arch->getNumSystemRegisters();
-  EXPECT_EQ(output, 0);
-}
-
-TEST_F(RiscVArchitectureTest, handleException) {
-  // Get Instruction
-  MacroOp insn;
-  uint8_t bytes = arch->predecode(invalidInstrBytes.data(),
-                                  invalidInstrBytes.size(), 0x4, insn);
-  EXPECT_EQ(bytes, 4);
-  EXPECT_EQ(insn[0]->getInstructionAddress(), 0x4);
-  EXPECT_EQ(insn[0]->exceptionEncountered(), true);
-
-  // Get Core
-  std::string executablePath = "";
-  std::vector<std::string> executableArgs = {};
-  std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(configPath, executablePath,
-                                             executableArgs);
-  const simeng::Core& core = *coreInstance->getCore();
-  simeng::MemoryInterface& memInt = *coreInstance->getDataMemory();
-  auto exceptionHandler = arch->handleException(insn[0], core, memInt);
-
-  bool tickRes = exceptionHandler->tick();
-  auto result = exceptionHandler->getResult();
-  EXPECT_TRUE(tickRes);
-  EXPECT_TRUE(result.fatal);
-  // Instruction address for fatal exception is always 0.
-  EXPECT_EQ(result.instructionAddress, 0x0);
-}
-
-TEST_F(RiscVArchitectureTest, getInitialState) {
-  std::vector<simeng::Register> regs = {
-      {simeng::arch::riscv::RegisterType::GENERAL, 2}};
-  std::vector<simeng::RegisterValue> regVals = {
-      {kernel.getInitialStackPointer(), 8}};
-
-  arch::ProcessStateChange changes = arch->getInitialState();
-  EXPECT_EQ(changes.type, arch::ChangeType::REPLACEMENT);
-  EXPECT_EQ(changes.modifiedRegisters, regs);
-  EXPECT_EQ(changes.modifiedRegisterValues, regVals);
-}
-
-TEST_F(RiscVArchitectureTest, getMaxInstructionSize) {
-  EXPECT_EQ(arch->getMaxInstructionSize(), 4);
-}
-
-TEST_F(RiscVArchitectureTest, updateSystemTimerRegisters) {
-  // TODO: add tests once function has non-blank implementation.
-}
-
-TEST_F(RiscVArchitectureTest, getConfigPhysicalRegisterStructure) {
-  std::vector<RegisterFileStructure> regStruct =
-      arch->getConfigPhysicalRegisterStructure(config);
-  // Values taken from DEMO_RISCV.yaml config file
-  EXPECT_EQ(regStruct[0].bytes, 8);
-  EXPECT_EQ(regStruct[0].quantity, 154);
-  EXPECT_EQ(regStruct[1].bytes, 8);
-  EXPECT_EQ(regStruct[1].quantity, 90);
-  EXPECT_EQ(regStruct[2].bytes, 8);
-  EXPECT_EQ(regStruct[2].quantity, arch->getNumSystemRegisters());
-}
-
-TEST_F(RiscVArchitectureTest, getConfigPhysicalRegisterQuantities) {
-  std::vector<uint16_t> physQuants =
-      arch->getConfigPhysicalRegisterQuantities(config);
-  // Values taken from DEMO_RISCV.yaml config file
-  EXPECT_EQ(physQuants[0], 154);
-  EXPECT_EQ(physQuants[1], 90);
-  EXPECT_EQ(physQuants[2], arch->getNumSystemRegisters());
-}
-
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng
