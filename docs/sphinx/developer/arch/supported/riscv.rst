@@ -1,7 +1,7 @@
 RISCV
 =======
 
-SimEng provides an almost complete implementation of the rv64ima architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.
+SimEng provides an almost complete implementation of the rv64imafd architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
@@ -21,6 +21,8 @@ The logic held in ``src/lib/arch/riscv/Instruction_decode.cc`` is primarily asso
 - ``isAtomic_``, is an atomic operation.
 - ``isLogical_``, is a logical operation e.g bitwise and.
 - ``isCompare_``, is a compare operation.
+- ``isFloat_``, is a floating point operation.
+- ``isConvert_``, is a floating point to integer conversion operation.
 
 .. _riscv-instruction-groups:
 
@@ -34,6 +36,9 @@ Through a combination of the above identifiers, an instruction can be allocated 
 The above diagram follows the same structure as :ref:`AArch64 instruction groups <aarch64-instruction-groups>`. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. Each of the above levels is combined through the ``_`` character, working from the top level of the diagram to the bottom. Lower levels are not required if a larger set of instructions is desired. For example the instruction group ``INT`` is valid and would encapsulate all instructions that perform integer operations, while ``INT_MUL`` is also valid but would only encapsulate the 5 multiply instructions.
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
+
+        .. Note::
+                INT_SIMPLE_CVT and FLOAT_SIMPLE_SHIFT are both invalid instruction groups
 
 If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
 
