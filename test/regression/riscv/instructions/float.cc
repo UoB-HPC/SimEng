@@ -1475,8 +1475,7 @@ TEST_P(InstFloat, FSGNJ_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffffbf800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(2),
-            0xffffffff3f800000);  // TOOD CHECK THIS AGAINST SPIKE
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff3f800000);
 }
 
 TEST_P(InstFloat, FSGNJX_D) {
@@ -1604,8 +1603,7 @@ TEST_P(InstFloat, FSGNJX_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
-  EXPECT_EQ(getFPRegister<uint64_t>(2),
-            0xffffffffbf800000);  // TOOD CHECK THIS AGAINST SPIKE
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
 }
 
 TEST_P(InstFloat, FSGNJN_D) {
@@ -1735,8 +1733,7 @@ TEST_P(InstFloat, FSGNJN_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);
-  EXPECT_EQ(getFPRegister<uint64_t>(2),
-            0xffffffffbf800000);  // TOOD CHECK THIS AGAINST SPIKE
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
 }
 
 TEST_P(InstFloat, FADD_S) {
