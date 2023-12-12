@@ -24,6 +24,7 @@ set(TEST_SOURCES
     ProcessTest.cc
     RegisterFileSetTest.cc
     RegisterValueTest.cc
+    SpecialFileDirGenTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
