@@ -21,6 +21,7 @@ class MockInstruction : public Instruction {
   MOCK_METHOD0(generateAddresses, span<const MemoryAccessTarget>());
   MOCK_METHOD2(supplyData, void(uint64_t address, const RegisterValue& data));
   MOCK_CONST_METHOD0(getGeneratedAddresses, span<const MemoryAccessTarget>());
+  MOCK_CONST_METHOD0(hasAllData, bool());
   MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
@@ -33,6 +34,8 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isLoad, bool());
   MOCK_CONST_METHOD0(isBranch, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
+
+  MOCK_CONST_METHOD0(getLSQLatency, uint16_t());
 
   MOCK_METHOD0(getSupportedPorts, const std::vector<uint16_t>&());
 
@@ -50,7 +53,7 @@ class MockInstruction : public Instruction {
   void setDataPending(uint8_t value) { dataPending_ = value; }
 
   void setLatency(uint16_t cycles) { latency_ = cycles; }
-
+  void setLSQLatency(uint16_t cycles) { lsqExecutionLatency_ = cycles; }
   void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
 };
 
