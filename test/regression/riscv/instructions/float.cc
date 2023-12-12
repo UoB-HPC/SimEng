@@ -491,8 +491,9 @@ TEST_P(InstFloat, FCVT_W_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
-            (uint64_t)pow(2, 31) - 1);  // Expected result from spec
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6),
+            pow(2, 31) - 1);  // Expected result from spec
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x000000007fffffff);
 }
 
 TEST_P(InstFloat, FCVT_L_D) {
@@ -795,7 +796,7 @@ TEST_P(InstFloat, FCVT_WU_S) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6),
-            (uint64_t)pow(2, 32) - 1);  // Expected result from spec
+            pow(2, 32) - 1);  // Expected result from spec
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFF);
 }
 
