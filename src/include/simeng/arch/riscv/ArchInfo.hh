@@ -1,11 +1,23 @@
 #pragma once
 
 #include "simeng/arch/ArchInfo.hh"
-#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
 namespace riscv {
+
+// A temporary enum to hold system register addresses
+// TODO this should be removed upon relevant capstone updates
+typedef enum riscv_sysreg {
+  RISCV_SYSREG_FFLAGS = 0x001,
+  RISCV_SYSREG_FRM = 0x002,
+  RISCV_SYSREG_FCSR = 0x003,
+
+  RISCV_SYSREG_CYCLE = 0xC00,
+  RISCV_SYSREG_TIME = 0xC01,
+  RISCV_SYSREG_INSTRET = 0xC02,
+
+} riscv_sysreg;
 
 /** A class to hold and generate riscv specific architecture configuration
  * options. */

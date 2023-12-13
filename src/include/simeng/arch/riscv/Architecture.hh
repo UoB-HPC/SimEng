@@ -14,19 +14,6 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-// A temporary enum to hold system register addresses
-// TODO this should be removed upon relevant capstone updates
-typedef enum riscv_sysreg {
-  RISCV_SYSREG_FFLAGS = 0x001,
-  RISCV_SYSREG_FRM = 0x002,
-  RISCV_SYSREG_FCSR = 0x003,
-
-  RISCV_SYSREG_CYCLE = 0xC00,
-  RISCV_SYSREG_TIME = 0xC01,
-  RISCV_SYSREG_INSTRET = 0xC02,
-
-} riscv_sysreg;
-
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:

@@ -13,7 +13,7 @@ void RISCVRegressionTest::run(const char* source) {
 
   RegressionTest::run(source, "riscv64", "+m,+a,+f,+d");
 }
-// TODO create yaml
+
 void RISCVRegressionTest::generateConfig() const {
   // Re-generate the default config for the rv64 ISA
   simeng::config::SimInfo::generateDefault(simeng::config::ISA::RV64);

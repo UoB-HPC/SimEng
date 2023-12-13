@@ -77,7 +77,12 @@ TEST(ConfigTest, Default) {
 
   // Test SimInfo exposed have correctly changed
   EXPECT_EQ(simeng::config::SimInfo::getISA(), simeng::config::ISA::RV64);
-  sysRegisterEnums = {};
+  sysRegisterEnums = {simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FFLAGS,
+                      simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FRM,
+                      simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FCSR,
+                      simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_CYCLE,
+                      simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_TIME,
+                      simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_INSTRET};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   archRegStruct = {
       {8, 32}, {8, 32}, {8, static_cast<uint16_t>(sysRegisterEnums.size())}};
@@ -107,13 +112,13 @@ TEST(ConfigTest, Default) {
       "'Instruction-Group-Support':\n      - ALL\n    "
       "'Instruction-Opcode-Support':\n      - 450\n    "
       "'Instruction-Group-Support-Nums':\n      - "
-      "13\n'Reservation-Stations':\n  0:\n    Size: 32\n    'Dispatch-Rate': "
+      "23\n'Reservation-Stations':\n  0:\n    Size: 32\n    'Dispatch-Rate': "
       "4\n    Ports:\n      - 0\n    'Port-Nums':\n      - "
       "0\n'Execution-Units':\n  0:\n    Pipelined: 1\n    'Blocking-Groups':\n "
-      "     - NONE\n    'Blocking-Group-Nums':\n      - 14\nLatencies:\n  0:\n "
+      "     - NONE\n    'Blocking-Group-Nums':\n      - 24\nLatencies:\n  0:\n "
       "   'Instruction-Groups':\n      - NONE\n    'Instruction-Opcodes':\n    "
       "  - 450\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n    "
-      "'Instruction-Group-Nums':\n      - 14\n'CPU-Info':\n  "
+      "'Instruction-Group-Nums':\n      - 24\n'CPU-Info':\n  "
       "'Generate-Special-Dir': 0\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
       "SMT: 1\n  BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
       "'CPU-Architecture': 0\n  'CPU-Variant': 0x0\n  'CPU-Part': 0x0\n  "
