@@ -14,17 +14,10 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
-    : architecture_(architecture), metadata(metadata) {
-  decode();
-}
-
-Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata, uint8_t latency,
-                         uint8_t stallCycles)
-    : architecture_(architecture), metadata(metadata) {
-  latency_ = latency;
-  stallCycles_ = stallCycles;
-
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.getMetadataException()) {
+  exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   decode();
 }
 
@@ -38,7 +31,7 @@ Instruction::Instruction(const Architecture& architecture,
 
 InstructionException Instruction::getException() const { return exception_; }
 
-const span<Register> Instruction::getOperandRegisters() const {
+const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
 
@@ -50,6 +43,7 @@ const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
+
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
@@ -105,6 +99,7 @@ bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isAtomic() const { return isAtomic_; }
+bool Instruction::isFloat() const { return isFloat_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -139,12 +134,16 @@ int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
+  if (isFloat()) {
+    base = InstructionGroups::FLOAT;
+  }
+
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
   if (isDivide_) return base + 7;
   if (isMultiply_) return base + 6;
-  if (isShift_) return base + 5;
+  if (isShift_ || isConvert_) return base + 5;
   if (isLogical_) return base + 4;
   if (isCompare_) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
@@ -169,6 +168,10 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+
+const Architecture& Instruction::getArchitecture() const {
+  return architecture_;
+}
 
 }  // namespace riscv
 }  // namespace arch

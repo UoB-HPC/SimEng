@@ -105,7 +105,7 @@ void Core::tick() {
   }
 
   // Issue
-  auto registers = uop->getOperandRegisters();
+  auto registers = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (!uop->isOperandReady(i)) {
@@ -244,7 +244,7 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accoradance with the ProcessStateChange type
+  // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
     case arch::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {

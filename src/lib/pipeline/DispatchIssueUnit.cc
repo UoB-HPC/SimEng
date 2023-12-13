@@ -95,7 +95,7 @@ void DispatchIssueUnit::tick() {
 
     // Register read
     // Identify remaining missing registers and supply values
-    auto& sourceRegisters = uop->getOperandRegisters();
+    auto& sourceRegisters = uop->getSourceRegisters();
     for (uint16_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
 

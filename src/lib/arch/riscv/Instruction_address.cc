@@ -39,7 +39,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   switch (metadata.opcode) {
     case Opcode::RISCV_SD:
       [[fallthrough]];
-    case Opcode::RISCV_LD: {
+    case Opcode::RISCV_LD:
+      [[fallthrough]];
+    case Opcode::RISCV_FSD:
+      [[fallthrough]];
+    case Opcode::RISCV_FLD: {
       setMemoryAddresses({{address, 8}});
       break;
     }
@@ -47,7 +51,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       [[fallthrough]];
     case Opcode::RISCV_LW:
       [[fallthrough]];
-    case Opcode::RISCV_LWU: {
+    case Opcode::RISCV_LWU:
+      [[fallthrough]];
+    case Opcode::RISCV_FSW:
+      [[fallthrough]];
+    case Opcode::RISCV_FLW: {
       setMemoryAddresses({{address, 4}});
       break;
     }

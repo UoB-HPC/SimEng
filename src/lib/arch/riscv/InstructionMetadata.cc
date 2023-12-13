@@ -1,8 +1,9 @@
 #include "InstructionMetadata.hh"
 
-#include <cassert>
 #include <cstring>
 #include <iostream>
+
+#include "simeng/arch/riscv/Architecture.hh"
 
 namespace simeng {
 namespace arch {
@@ -252,10 +253,173 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
       }
       break;
     }
+
+    case Opcode::RISCV_CSRRS: {
+      if (operandCount == 1 && strcmp(mnemonic, "frflags") == 0) {
+        // frflags Rs is pseudo of CSRRS Rs, fflags, zero (Read FP exception
+        // flags) CSRRS Rs, _, _ -> CSRRS Rs, fflags, zero
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operands[2].type = RISCV_OP_REG;
+        operands[2].reg = 1;
+
+        operandCount = 3;
+      } else if (strcmp(mnemonic, "rdinstret") == 0) {
+        return aliasNYI();
+      } else if (strcmp(mnemonic, "rdcycle") == 0) {
+        return aliasNYI();
+      } else if (strcmp(mnemonic, "rdtime") == 0) {
+        return aliasNYI();
+      } else if (strcmp(mnemonic, "csrr") == 0) {
+        return aliasNYI();
+      } else if (strcmp(mnemonic, "csrs") == 0) {
+        return aliasNYI();
+      } else if (strcmp(mnemonic, "frcsr") == 0) {
+        return aliasNYI();
+      } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
+        // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
+        // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
+        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+
+        operands[2].type = RISCV_OP_REG;
+        operands[2].reg = 1;
+
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_CSRRW: {
+      if (operandCount == 1 && strcmp(mnemonic, "fsflags") == 0) {
+        // fsflags Rs is pseudo of CSRRW zero, fflags, rs (Write FP exception
+        // flags)
+        // CSRRW Rs, _, _ -> CSRRW zero, fflags, Rs
+        operands[2] = operands[0];
+
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operandCount = 3;
+      } else if (operandCount == 2 && strcmp(mnemonic, "fsflags") == 0) {
+        // fsflags R1, R2 is pseudo of CSRRW r1, fflags, rs (Write FP exception
+        // flags)
+        // CSRRW R1, R2, _ -> CSRRW R1, fflags, R2
+        operands[2] = operands[1];
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operandCount = 3;
+      } else if (strcmp(mnemonic, "csrw") == 0) {
+        return aliasNYI();
+      } else if (operandCount == 1 && strcmp(mnemonic, "fscsr") == 0) {
+        return aliasNYI();
+      } else if (operandCount == 2 && strcmp(mnemonic, "fscsr") == 0) {
+        return aliasNYI();
+        // 2 pseudoinstructions with same name but different number of registers
+      } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
+        // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
+        // CSRRW Rs, _, _ -> CSRRW zero, frm, Rs
+        operands[2] = operands[0];
+
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
+        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+
+        operandCount = 3;
+      } else if (operandCount == 2 && strcmp(mnemonic, "fsrm") == 0) {
+        // fsrm R1, R2 is pseudo of CSRRW R1, frm, R2 (Write FP rounding mode)
+        // CSRRW R1, R2, _ -> CSRRW R1, frm, R2
+        operands[2] = operands[1];
+
+        operands[1].type = RISCV_OP_IMM;
+        operands[1].reg = RISCV_SYSREG_FRM;
+
+        operandCount = 3;
+      }
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJ_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fmv.s") == 0) {
+        // fmv.s rd, rs is pseudo of fsgnj.s rd, rs, rs (Copy single-precision
+        // register)
+        // fsgnj.s Rd, Rs, _ -> fsgnj.s Rd, Rs, Rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fabs.s") == 0) {
+        // fabs.s rd, rs is pseudo of  fsgnjx.s rd, rs, rs (Single-precision
+        // absolute value)
+        // fsgnjx.s rd, rs, _ -> fsgnjx.s rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJN_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fneg.s") == 0) {
+        // fneg.s rd, rs is pseudo of  fsgnjn.s rd, rs, rs (Single-precision
+        // negate)
+        // fsgnjn.s rd, rs, _ -> fsgnjn.s rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJ_D: {
+      if (operandCount == 2 && strcmp(mnemonic, "fmv.d") == 0) {
+        // fmv.d rd, rs is pseudo of fsgnj.d rd, rs, rs (Copy double-precision
+        // register)
+        // fsgnj.d Rd, Rs, _ -> fsgnj.d Rd, Rs, Rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_D: {
+      if (operandCount == 2 && strcmp(mnemonic, "fabs.d") == 0) {
+        // fabs.d rd, rs is pseudo of  fsgnjx.d rd, rs, rs (Double-precision
+        // absolute value)
+        // fsgnjx.d rd, rs, _ -> fsgnjx.d rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJN_D: {
+      // fneg.d rd, rs, fsgnjn.d rd, rs, rs, Double-precision negate
+      if (operandCount == 2 && strcmp(mnemonic, "fneg.d") == 0) {
+        // fneg.d rd, rs is pseudo of  fsgnjn.d rd, rs, rs (Double-precision
+        // neagte)
+        // fsgnjn.d rd, rs, _ -> fsgnjn.d rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
   }
 }
 
-void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
+void InstructionMetadata::aliasNYI() {
+  metadataExceptionEncountered_ = true;
+  metadataException_ = InstructionException::AliasNotYetImplemented;
+}
 
 void InstructionMetadata::includeZeroRegisterPosOne() {
   // Given register sequence {Op_a, Op_b , _} return {Op_a, x0, Op_b}

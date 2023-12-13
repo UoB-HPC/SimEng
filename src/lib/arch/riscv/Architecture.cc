@@ -16,6 +16,10 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
+  // Set initial rounding mode for F/D extensions
+  // TODO set fcsr accordingly when Zicsr extension supported
+  fesetround(FE_TONEAREST);
+
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
@@ -25,6 +29,19 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Generate zero-indexed system register map
+  systemRegisterMap_[RISCV_SYSREG_FFLAGS] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FRM] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FCSR] = systemRegisterMap_.size();
+
+  systemRegisterMap_[RISCV_SYSREG_CYCLE] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_TIME] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_INSTRET] = systemRegisterMap_.size();
+
+  cycleSystemReg_ = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -88,6 +105,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       for (size_t j = 0; j < group_node.size(); j++) {
         uint16_t group = group_node[j].as<uint16_t>();
         uint8_t newPort = static_cast<uint8_t>(i);
+
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
         std::queue<uint16_t> groups;
@@ -262,9 +280,9 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
-// Left blank as no implementation necessary
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
+  regFile->set(cycleSystemReg_, iterations);
 }
 
 }  // namespace riscv

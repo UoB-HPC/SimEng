@@ -52,7 +52,7 @@ A64FX_SA_L2 = 16
 A64FX_HL_L1 = 5
 # Hit latency of A64FX L2 cache (cycles).
 A64FX_HL_L2 = 56
-# Cohenrence protocol of A64FX caches.
+# Coherence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
 A64FX_CACHE_TYPE = "inclusive"

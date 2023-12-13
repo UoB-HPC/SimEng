@@ -25,6 +25,16 @@ struct InstructionMetadata {
   /** Constructs an invalid metadata object containing the invalid encoding. */
   InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
 
+  /* Returns the current exception state of the metadata */
+  InstructionException getMetadataException() const {
+    return metadataException_;
+  }
+
+  /* Returns a bool stating whether an exception has been encountered */
+  bool getMetadataExceptionEncountered() const {
+    return metadataExceptionEncountered_;
+  }
+
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
@@ -91,6 +101,12 @@ struct InstructionMetadata {
 
   /** Flag the instruction as invalid due to a detected unsupported alias. */
   void aliasNYI();
+
+  /** The current exception state of this instruction. */
+  InstructionException metadataException_ = InstructionException::None;
+
+  /** Whether an exception has been encountered. */
+  bool metadataExceptionEncountered_ = false;
 };
 
 }  // namespace aarch64

@@ -142,7 +142,7 @@ class ReorderBuffer {
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
 
-  /** The number of speculatived loads which violated load-store ordering. */
+  /** The number of speculative loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
 };
 

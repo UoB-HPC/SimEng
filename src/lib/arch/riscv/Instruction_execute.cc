@@ -1,13 +1,39 @@
 
+#include <cfenv>
 #include <cmath>
+#include <iostream>
 #include <tuple>
 
 #include "InstructionMetadata.hh"
+#include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
 namespace simeng {
 namespace arch {
 namespace riscv {
+
+/** NaN box single precision floating point values as defined in
+ * riscv-spec-20191213 page 73 */
+uint64_t NanBoxFloat(float f) {
+  static_assert(sizeof(float) == 4 && "Float not of size 4 bytes");
+
+  uint64_t box = 0xffffffff00000000;
+  std::memcpy(reinterpret_cast<char*>(&box), reinterpret_cast<char*>(&f),
+              sizeof(float));
+
+  return box;
+}
+
+float checkNanBox(RegisterValue operand) {
+  // Ensure NaN box is correct
+  if ((operand.get<uint64_t>() & 0xffffffff00000000) == 0xffffffff00000000) {
+    // Correct
+    return operand.get<float>();
+  } else {
+    // Not correct
+    return std::nanf("");
+  }
+}
 
 /** Multiply unsigned `a` and unsigned `b`, and return the high 64 bits of the
  * result. https://stackoverflow.com/a/28904636 */
@@ -62,6 +88,83 @@ uint64_t zeroExtend(uint64_t bits, uint64_t msb) {
   return rightShift;
 }
 
+void Instruction::setStaticRoundingModeThen(
+    std::function<void(void)> operation) {
+  // Extract rounding mode (rm) from raw bytes
+  // The 3 relevant bits are always in positions 12-14. Take second byte from
+  // encoding and mask with 01110000. Shift right by 4 to remove trailing 0's
+  // and improve readability
+  uint8_t rm = (metadata.encoding[1] & 0x70) >> 4;
+
+  /** A variable to hold the current fenv rounding mode/architectural dynamic
+   * rounding mode. Used to restore the rounding mode after the architecturally
+   * static rounding mode is used. */
+  int currRM_ = fegetround();
+
+  switch (rm) {
+    case 0x00:  // RNE, Round to nearest, ties to even
+      fesetround(FE_TONEAREST);
+      break;
+    case 0x01:  // RTZ Round towards zero
+      fesetround(FE_TOWARDZERO);
+      break;
+    case 0x02:  // RDN Round down (-infinity)
+      fesetround(FE_DOWNWARD);
+      break;
+    case 0x03:  // RUP Round up (+infinity)
+      fesetround(FE_UPWARD);
+      break;
+    case 0x04:  // RMM Round to nearest, ties to max magnitude
+      // FE_TONEAREST ties towards even but no other options available in fenv
+      fesetround(FE_TONEAREST);
+      break;
+    case 0x05:
+      // If frm is set to an invalid value (101–111), any subsequent attempt to
+      // execute a floating-point operation with a dynamic rounding mode will
+      // raise an illegal instruction exception.
+      // Reserved
+      std::cout << "[SimEng:Instruction_execute] Invalid static rounding mode "
+                   "5 used, "
+                   "instruction address:"
+                << instructionAddress_ << std::endl;
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::IllegalInstruction;
+      break;
+    case 0x06:
+      // Reserved
+      std::cout << "[SimEng:Instruction_execute] Invalid static rounding mode "
+                   "6 used, "
+                   "instruction address:"
+                << instructionAddress_ << std::endl;
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::IllegalInstruction;
+      break;
+    case 0x07:
+      // Use dynamic rounding mode e.g. that which is already set
+      // TODO check the dynamic rounding mode value in the CSR here. If set to
+      // invalid value raise an illegal instruction exception. From spec "any
+      // subsequent attempt to execute a floating-point operation with a dynamic
+      // rounding mode will raise an illegal instruction exception". Requires
+      // full Zicsr implementation
+      break;
+    default:
+      std::cout
+          << "[SimEng:Instruction_execute] Invalid static rounding mode out of "
+             "range, instruction address:"
+          << instructionAddress_ << std::endl;
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::IllegalInstruction;
+  }
+
+  operation();
+
+  fesetround(currRM_);
+
+  // TODO if it appears that repeated rounding mode changes are slow, could
+  // set target rounding mode variable and only update if different to currentRM
+  return;
+}
+
 void Instruction::executionNYI() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::ExecutionNotYetImplemented;
@@ -74,7 +177,7 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  // Implementation of rv64iam according to the v. 20191213 unprivileged spec
+  // Implementation of rv64iamfd according to the v. 20191213 unprivileged spec
 
   executed_ = true;
   switch (metadata.opcode) {
@@ -108,8 +211,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
-      // Note: elements of memory data are RegisterValue's
-      results[0] = memoryData[0];
+      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
       break;
     }
     case Opcode::RISCV_SB:  // SB rs1,rs2,imm
@@ -459,8 +561,8 @@ void Instruction::execute() {
     case Opcode::RISCV_FENCE: {  // FENCE
       // TODO currently modelled as a NOP as all codes are currently single
       // threaded "Informally, no other RISC-V hart or external device can
-      // observe any operation in the successor set following a FENCE before any
-      // operation in the predecessor set preceding the FENCE."
+      // observe any operation in the successor set following a FENCE before
+      // any operation in the predecessor set preceding the FENCE."
       // https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#fence
 
       /* "a simple implementation ... might be able to implement the FENCE
@@ -474,7 +576,8 @@ void Instruction::execute() {
     case Opcode::RISCV_LR_W_AQ:
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL: {
-      // TODO set "reservation set" in memory, currently not needed as all codes
+      // TODO set "reservation set" in memory, currently not needed as all
+      // codes
       //  are single threaded
       // TODO check that address is naturally aligned to operand size,
       //  if not raise address-misaligned/access-fault exception
@@ -824,6 +927,765 @@ void Instruction::execute() {
         results[0] =
             RegisterValue(static_cast<uint64_t>(signExtendW(rs1 % rs2)), 8);
       }
+      break;
+    }
+
+      // Control and Status Register extension (Zicsr)
+
+      // Currently do not read-modify-write ATOMICALLY
+      // Left mostly unimplemented due to Capstone being unable to disassemble
+      // CSR addresses. Some partial functionality is implemented for
+      // correctness of other extensions
+    case Opcode::RISCV_CSRRW: {  // CSRRW rd,csr,rs1
+      // TODO dummy implementation to allow progression and correct setting of
+      // floating point rounding modes. Full functionality to be implemented
+      // with Zicsr implementation
+
+      // Raise exception to force pipeline flush and commit of all older
+      // instructions in program order before execution. Execution
+      // logic in ExceptionHandler.cc
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::PipelineFlush;
+
+      break;
+    }
+    case Opcode::RISCV_CSRRWI: {  // CSRRWI rd,csr,imm
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRS: {  // CSRRS rd,csr,rs1
+      // dummy implementation to allow progression
+      // TODO implement fully when Zicsr extension is supported
+      results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      break;
+    }
+    case Opcode::RISCV_CSRRSI: {  // CSRRSI rd,csr,imm
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRC: {  // CSRRC rd,csr,rs1
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRCI: {  // CSRRCI rd,csr,imm
+      executionNYI();
+      break;
+    }
+
+      // Single-Precision Floating-Point (F)
+      // Double-Precision Floating-Point (D)
+    case Opcode::RISCV_FSD: {  // FSD rs1,rs2,imm
+      memoryData[0] = operands[0];
+      break;
+    }
+    case Opcode::RISCV_FSW: {  // FSW rs1,rs2,imm
+      memoryData[0] = operands[0];
+      break;
+    }
+    case Opcode::RISCV_FLD: {  // FLD rd,rs1,imm
+      results[0] = memoryData[0].get<double>();
+      break;
+    }
+    case Opcode::RISCV_FLW: {  // FLW rd,rs1,imm
+      const float memSingle = memoryData[0].get<float>();
+
+      results[0] = RegisterValue(NanBoxFloat(memSingle), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FADD_D: {  // FADD.D rd,rs1,rs2
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+
+        results[0] = RegisterValue(rs1 + rs2, 8);
+      });
+      break;
+    }
+    case Opcode::RISCV_FADD_S: {  // FADD.S rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+
+        results[0] = RegisterValue(NanBoxFloat(rs1 + rs2), 8);
+      });
+      break;
+    }
+    case Opcode::RISCV_FSUB_D: {  // FSUB.D rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+
+        results[0] = RegisterValue(rs1 - rs2, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FSUB_S: {  // FSUB.S rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+
+        results[0] = RegisterValue(NanBoxFloat(rs1 - rs2), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FDIV_D: {  // FDIV.D rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+
+        results[0] = RegisterValue(rs1 / rs2, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FDIV_S: {  // FDIV.S rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+
+        results[0] = RegisterValue(NanBoxFloat(rs1 / rs2), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FMUL_D: {  // FMUL.D rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+
+        results[0] = RegisterValue(rs1 * rs2, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FMUL_S: {  // FMUL.S rd,rs1,rs2
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+
+        results[0] = RegisterValue(NanBoxFloat(rs1 * rs2), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FSQRT_D: {  // FSQRT.D rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+
+        const double sqrtAns = sqrt(rs1);
+
+        // With -ve rs1, sqrt = -NaN, but qemu returns canonical (+)NaN. Adjust
+        // for this here
+        const double res = std::isnan(sqrtAns) ? nanf("0") : sqrtAns;
+
+        results[0] = RegisterValue(res, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FSQRT_S: {  // FSQRT.S rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+
+        const float sqrtAns = sqrtf(rs1);
+
+        // With -ve rs1, sqrt = -NaN, but qemu returns canonical (+)NaN. Adjust
+        // for this here
+        const float res = std::isnan(sqrtAns) ? nanf("0") : sqrtAns;
+
+        results[0] = RegisterValue(NanBoxFloat(res), 8);
+      });
+
+      break;
+    }
+
+    case Opcode::RISCV_FMIN_D: {  // FMIN.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      // cpp fmin reference: This function is not required to be sensitive to
+      // the sign of zero, although some implementations additionally enforce
+      // that if one argument is +0 and the other is -0, then +0 is returned.
+      // But RISC-V spec requires -0.0 to be considered < +0.0
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0x8000000000000000, 8);
+      } else {
+        results[0] = RegisterValue(fmin(rs1, rs2), 8);
+      }
+
+      break;
+    }
+    case Opcode::RISCV_FMIN_S: {  // FMIN.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      // Comments regarding fminf similar to RISCV_FMIN_D
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0xffffffff80000000, 8);
+      } else {
+        results[0] = RegisterValue(NanBoxFloat(fminf(rs1, rs2)), 8);
+      }
+
+      break;
+    }
+    case Opcode::RISCV_FMAX_D: {  // FMAX.D rd,rs1,rs2
+
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      // cpp fmax reference: This function is not required to be sensitive to
+      // the sign of zero, although some implementations additionally enforce
+      // that if one argument is +0 and the other is -0, then +0 is returned.
+      // But RISC-V spec requires this to be the case
+      double res;
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0x0000000000000000, 8);
+      } else {
+        results[0] = RegisterValue(fmax(rs1, rs2), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FMAX_S: {  // FMAX.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      // Comments regarding fmaxf similar to RISCV_FMAX_D
+      float res;
+      if (rs1 == 0 && rs2 == 0) {
+        results[0] = RegisterValue(0xffffffff00000000, 8);
+      } else {
+        results[0] = RegisterValue(NanBoxFloat(fmaxf(rs1, rs2)), 8);
+      }
+      break;
+    }
+
+      // TODO "The fused multiply-add instructions must set the invalid
+      // operation exception flag when the multiplicands are ∞ and zero, even
+      // when the addend is a quiet NaN." pg69, require Zicsr extension
+    case Opcode::RISCV_FMADD_D: {  // FMADD.D rd,rs1,rs2,rs3
+      // The fused multiply-add instructions must set the invalid operation
+      // exception flag when the multiplicands are infinity and zero, even when
+      // the addend is a quiet NaN.
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+        const double rs3 = operands[2].get<double>();
+
+        results[0] = RegisterValue(fma(rs1, rs2, rs3), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FMADD_S: {  // FMADD.S rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
+
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FNMSUB_D: {  // FNMSUB.D rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+        const double rs3 = operands[2].get<double>();
+
+        results[0] = RegisterValue(-(rs1 * rs2) + rs3, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FNMSUB_S: {  // FNMSUB.S rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
+
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FMSUB_D: {  // FMSUB.D rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+        const double rs3 = operands[2].get<double>();
+
+        results[0] = RegisterValue((rs1 * rs2) - rs3, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FMSUB_S: {  // FMSUB.S rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
+
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FNMADD_D: {  // FNMADD.D rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+        const double rs2 = operands[1].get<double>();
+        const double rs3 = operands[2].get<double>();
+
+        results[0] = RegisterValue(-(rs1 * rs2) - rs3, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FNMADD_S: {  // FNMADD.S rd,rs1,rs2,rs3
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+        const float rs2 = checkNanBox(operands[1]);
+        const float rs3 = checkNanBox(operands[2]);
+
+        // Some implementations return -NaN if certain inputs are NaN but spec
+        // requires +NaN. Ensure this happens
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
+          results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
+        } else {
+          results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_L: {  // FCVT.D.L rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const int64_t rs1 = operands[0].get<int64_t>();
+
+        results[0] = RegisterValue((double)rs1, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_W: {  // FCVT.D.W rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const int32_t rs1 = operands[0].get<int32_t>();
+
+        results[0] = RegisterValue((double)rs1, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_L: {  // FCVT.S.L rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const int64_t rs1 = operands[0].get<int64_t>();
+
+        results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_W: {  // FCVT.S.W rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const int32_t rs1 = operands[0].get<int32_t>();
+
+        results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_W_D: {  // FCVT.W.D rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+
+        if (std::isnan(rs1)) {
+          results[0] = RegisterValue(0x7FFFFFFF, 8);
+        } else {
+          results[0] = RegisterValue(signExtendW((int32_t)rint(rs1)), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_W_S: {  // FCVT.W.S rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+
+        if (std::isnan(rs1)) {
+          results[0] = RegisterValue(0x7FFFFFFF, 8);
+        } else {
+          results[0] = RegisterValue(signExtendW((int32_t)rintf(rs1)), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_L_D: {  // FCVT.L.D rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+
+        if (std::isnan(rs1)) {
+          results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
+        } else {
+          results[0] = RegisterValue((int64_t)rint(rs1), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_L_S: {  // FCVT.L.S rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+
+        if (std::isnan(rs1)) {
+          results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
+        } else {
+          results[0] = RegisterValue((int64_t)rintf(rs1), 8);
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_WU_D: {  // FCVT.WU.D rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+
+        if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
+          results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+        } else {
+          if (rs1 < 0) {
+            // TODO: set csr flag when Zicsr implementation is complete
+            results[0] = RegisterValue((uint64_t)0, 8);
+          } else {
+            results[0] = RegisterValue(signExtendW((uint32_t)rint(rs1)), 8);
+          }
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_WU_S: {  // FCVT.WU.S rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+
+        if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
+          results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+        } else {
+          if (rs1 < 0) {
+            // TODO: set csr flag when Zicsr implementation is complete
+            results[0] = RegisterValue((uint64_t)0, 8);
+          } else {
+            results[0] = RegisterValue(signExtendW((uint32_t)rintf(rs1)), 8);
+          }
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_LU_D: {  // FCVT.LU.D rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const double rs1 = operands[0].get<double>();
+
+        if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
+          results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+        } else {
+          if (rs1 < 0) {
+            // TODO: set csr flag when Zicsr implementation is complete
+            results[0] = RegisterValue((uint64_t)0, 8);
+          } else {
+            results[0] = RegisterValue((uint64_t)rint(rs1), 8);
+          }
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_LU_S: {  // FCVT.LU.S rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const float rs1 = checkNanBox(operands[0]);
+
+        if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
+          results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+        } else {
+          if (rs1 < 0) {
+            // TODO: set csr flag when Zicsr implementation is complete
+            results[0] = RegisterValue((uint64_t)0, 8);
+          } else {
+            results[0] = RegisterValue((uint64_t)rintf(rs1), 8);
+          }
+        }
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_LU: {  // FCVT.D.LU rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const uint64_t rs1 = operands[0].get<uint64_t>();
+
+        results[0] = RegisterValue((double)rs1, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_WU: {  // FCVT.D.WU rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const uint32_t rs1 = operands[0].get<uint32_t>();
+
+        results[0] = RegisterValue((double)rs1, 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_LU: {  // FCVT.S.LU rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const uint64_t rs1 = operands[0].get<uint64_t>();
+
+        results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      });
+
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_WU: {  // FCVT.S.WU rd,rs1
+
+      setStaticRoundingModeThen([&] {
+        const uint32_t rs1 = operands[0].get<uint32_t>();
+
+        results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      });
+
+      break;
+    }
+
+    case Opcode::RISCV_FCVT_D_S: {  // FCVT.D.S rd,rs1
+      const float rs1 = checkNanBox(operands[0]);
+
+      results[0] = RegisterValue((double)rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_D: {  // FCVT.S.D rd,rs1
+      const double rs1 = operands[0].get<double>();
+
+      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJ_D: {  // FSGNJ.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      results[0] = RegisterValue(std::copysign(rs1, rs2), 8);
+      break;
+    }
+    case Opcode::RISCV_FSGNJ_S: {  // FSGNJ.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, rs2)), 8);
+      break;
+    }
+    case Opcode::RISCV_FSGNJN_D: {  // FSGNJN.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      results[0] = RegisterValue(std::copysign(rs1, -rs2), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJN_S: {  // FSGNJN.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, -rs2)), 8);
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_D: {  // FSGNJX.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      const double xorSign = pow(-1, std::signbit(rs1) ^ std::signbit(rs2));
+
+      results[0] = RegisterValue(std::copysign(rs1, xorSign), 8);
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_S: {  // FSGNJX.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      const float xorSign = pow(-1, std::signbit(rs1) ^ std::signbit(rs2));
+
+      results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, xorSign)), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FMV_D_X: {  // FMV.D.X rd,rs1
+      const double rs1 = operands[0].get<double>();
+
+      results[0] = RegisterValue(rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FMV_X_D: {  // FMV.X.D rd,rs1
+      const double rs1 = operands[0].get<double>();
+
+      results[0] = RegisterValue(rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FMV_W_X: {  // FMV.W.X rd,rs1
+      const float rs1 = operands[0].get<float>();
+
+      results[0] = RegisterValue(NanBoxFloat(rs1), 8);
+      break;
+    }
+    case Opcode::RISCV_FMV_X_W: {  // FMV.X.W rd,rs1
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+
+      results[0] = RegisterValue(signExtendW(rs1), 8);
+      break;
+    }
+
+      // TODO FLT.S and FLE.S perform what the IEEE 754-2008 standard refers
+      // to as signaling comparisons: that is, they set the invalid operation
+      // exception flag if either input is NaN. FEQ.S performs a quiet
+      // comparison: it only sets the invalid operation exception flag if
+      // either input is a signaling NaN. For all three instructions, the
+      // result is 0 if either operand is NaN. This requires a proper
+      // implementation of the Zicsr extension
+    case Opcode::RISCV_FEQ_D: {  // FEQ.D rd,rs1,rs2
+      // TODO FEQ.S performs a quiet
+      // comparison: it only sets the invalid operation exception flag if
+      // either input is a signaling NaN. Qemu doesn't seem to set CSR flags
+      // with sNANs so unsure of correct implementation. Also require proper
+      // Zicsr implementation
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      if (rs1 == rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FEQ_S: {  // FEQ.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      if (rs1 == rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FLT_D: {  // FLT.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      if (std::isnan(rs1) || std::isnan(rs2)) {
+        // TODO: set csr flag when Zicsr implementation is complete
+      }
+      if (rs1 < rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FLT_S: {  // FLT.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      if (std::isnan(rs1) || std::isnan(rs2)) {
+        // TODO: set csr flag when Zicsr implementation is complete
+      }
+      if (rs1 < rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FLE_D: {  // FLE.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      if (std::isnan(rs1) || std::isnan(rs2)) {
+        // TODO: set csr flag when Zicsr implementation is complete
+      }
+      if (rs1 <= rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FLE_S: {  // FLE.S rd,rs1,rs2
+      const float rs1 = checkNanBox(operands[0]);
+      const float rs2 = checkNanBox(operands[1]);
+
+      if (std::isnan(rs1) || std::isnan(rs2)) {
+        // TODO: set csr flag when Zicsr implementation is complete
+      }
+      if (rs1 <= rs2 && !std::isnan(rs1) && !std::isnan(rs2)) {
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
+      } else {
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FCLASS_S: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_FCLASS_D: {
+      executionNYI();
       break;
     }
 

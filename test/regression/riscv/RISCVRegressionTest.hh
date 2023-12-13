@@ -18,9 +18,9 @@
    "False, Load-Bandwidth: 32, Store-Bandwidth: 16, "                          \
    "Permitted-Requests-Per-Cycle: 2, Permitted-Loads-Per-Cycle: 2, "           \
    "Permitted-Stores-Per-Cycle: 1}, Ports: {'0': {Portname: Port 0, "          \
-   "Instruction-Group-Support: [0, 10, 11, 12 ]}}, Reservation-Stations: "     \
-   "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: "        \
-   "{'0': {Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, " \
+   "Instruction-Group-Support: [0, 10, 20, 21, 22]}}, Reservation-Stations: "  \
+   "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: {'0': "  \
+   "{Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, "       \
    "Execution-Latency: 39, Execution-Throughput: 39}}}")
 
 /** A helper function to convert the supplied parameters of
@@ -79,6 +79,12 @@ class RISCVRegressionTest : public RegressionTest {
   template <typename T>
   T getGeneralRegister(uint8_t tag) const {
     return getRegister<T>({simeng::arch::riscv::RegisterType::GENERAL, tag});
+  }
+
+  /** Get the value of a floating point register. */
+  template <typename T>
+  T getFPRegister(uint8_t tag) const {
+    return getRegister<T>({simeng::arch::riscv::RegisterType::FLOAT, tag});
   }
 
   /** Create a port allocator for an out-of-order core model. */

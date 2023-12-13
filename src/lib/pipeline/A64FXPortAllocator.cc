@@ -9,7 +9,7 @@ namespace pipeline {
 
 A64FXPortAllocator::A64FXPortAllocator(
     const std::vector<std::vector<uint16_t>>& portArrangement)
-    :  // Initiliase reservation station to port mapping
+    :  // Initialise reservation station to port mapping
       rsToPort_({{0, 1, 2}, {3, 4}, {5}, {6}, {7}}) {}
 
 uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {

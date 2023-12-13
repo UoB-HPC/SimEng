@@ -96,7 +96,7 @@ void RenameUnit::tick() {
     }
 
     // Allocate source registers
-    auto& sourceRegisters = uop->getOperandRegisters();
+    auto& sourceRegisters = uop->getSourceRegisters();
     for (size_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
       if (!uop->isOperandReady(i)) {

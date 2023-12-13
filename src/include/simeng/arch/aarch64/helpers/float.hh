@@ -138,7 +138,7 @@ class floatHelp {
    * D represents the destination vector register type (e.g. for dd, D =
    * double).
    * N represents the source vector register type (e.g. for wn, N = int32_t).
-   * Returns correctly formated RegisterValue. */
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N>
   static RegisterValue scvtf_FixedPoint(
       std::vector<RegisterValue>& operands,

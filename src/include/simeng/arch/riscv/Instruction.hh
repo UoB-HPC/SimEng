@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cfenv>
+#include <functional>
 #include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
@@ -42,12 +44,15 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  IllegalInstruction,
+  PipelineFlush
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -57,12 +62,6 @@ class Instruction : public simeng::Instruction {
    */
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata);
-
-  /** Construct an instruction instance by decoding a provided instruction word.
-   */
-  Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata, uint8_t latency,
-              uint8_t stallCycles);
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,
@@ -74,7 +73,7 @@ class Instruction : public simeng::Instruction {
   virtual InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
-  const span<Register> getOperandRegisters() const override;
+  const span<Register> getSourceRegisters() const override;
 
   /** Retrieve the data contained in the source registers this instruction
    * reads.*/
@@ -149,6 +148,9 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic instruction? */
   bool isAtomic() const;
 
+  /** Is this a floating point operation? */
+  bool isFloat() const;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -162,19 +164,22 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
 
+  /** Retrieve the instruction's associated architecture. */
+  const Architecture& getArchitecture() const;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
- private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 2;
+  static const uint8_t MAX_SOURCE_REGISTERS = 3;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
+ private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -207,13 +212,6 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
-  /** Invalidate instructions that are currently not yet implemented. This
- prevents errors during speculated branches with unknown destinations;
- non-executable assertions. memory is decoded into valid but not implemented
- instructions tripping assertions.
- TODO remove once all extensions are supported*/
-  void invalidateIfNotImplemented();
-
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
@@ -222,6 +220,13 @@ class Instruction : public simeng::Instruction {
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
+
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction
+   */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
 
   // Metadata
   /** Is this a store operation? */
@@ -242,6 +247,10 @@ class Instruction : public simeng::Instruction {
   bool isLogical_ = false;
   /** Is this a compare instruction? */
   bool isCompare_ = false;
+  /** Is this a floating point operation? */
+  bool isFloat_ = false;
+  /** Is this a floating point <-> integer convert operation? */
+  bool isConvert_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

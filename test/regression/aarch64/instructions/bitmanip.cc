@@ -7,7 +7,7 @@ using InstBitmanip = AArch64RegressionTest;
 TEST_P(InstBitmanip, bfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -29,7 +29,7 @@ TEST_P(InstBitmanip, bfm) {
 
   // 64-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1
@@ -172,7 +172,7 @@ TEST_P(InstBitmanip, rev) {
 TEST_P(InstBitmanip, sbfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -207,7 +207,7 @@ TEST_P(InstBitmanip, sbfm) {
 
   // 64-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1
@@ -248,7 +248,7 @@ TEST_P(InstBitmanip, sbfm) {
 TEST_P(InstBitmanip, ubfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -269,7 +269,7 @@ TEST_P(InstBitmanip, ubfm) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
 
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1

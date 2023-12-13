@@ -224,6 +224,7 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
@@ -277,7 +278,7 @@ class Instruction : public simeng::Instruction {
   virtual InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
-  const span<Register> getOperandRegisters() const override;
+  const span<Register> getSourceRegisters() const override;
 
   /** Retrieve the data contained in the source registers this instruction
    * reads.*/

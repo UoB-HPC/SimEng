@@ -138,7 +138,7 @@ void LinuxProcess::createStack(char** processImage) {
     for (int i = 0; i < env.size(); i++) {
       stringBytes.push_back(env.c_str()[i]);
     }
-    // Null entry to seperate strings
+    // Null entry to separate strings
     stringBytes.push_back(0);
   }
 
@@ -149,7 +149,7 @@ void LinuxProcess::createStack(char** processImage) {
   initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
   for (int i = 0; i < stringBytes.size(); i++) {
     if (ptrCount == commandLine_.size()) {
-      // null terminator to seperate argv and env strings
+      // null terminator to separate argv and env strings
       initialStackFrame.push_back(0);
       ptrCount++;
     }
@@ -162,8 +162,8 @@ void LinuxProcess::createStack(char** processImage) {
 
   initialStackFrame.push_back(0);  // null terminator
 
-  // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
-  // TODO: populate remaining auxillary vector entries
+  // ELF auxiliary vector, keys defined in `uapi/linux/auxvec.h`
+  // TODO: populate remaining auxiliary vector entries
   initialStackFrame.push_back(auxVec::AT_PHDR);  // AT_PHDR
   initialStackFrame.push_back(progHeaderTableAddress_);
 

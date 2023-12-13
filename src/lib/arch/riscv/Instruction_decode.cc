@@ -19,6 +19,32 @@ namespace riscv {
 Register csRegToRegister(unsigned int reg) {
   // Check from top of the range downwards
 
+  // Metadata could produce either 64-bit floating point register or 32-bit
+  // floating point register. Map both encodings to the same SimEng register.
+  // Only 64-bit registers are supported
+
+  // Modulus ensures only 64 bit registers are recognised
+  if (RISCV_REG_F31_64 >= reg && reg >= RISCV_REG_F0_64 && reg % 2 == 0) {
+    // Register ft0.64 has encoding 34 with subsequent encodings interleaved
+    // with 32 bit floating point registers. See
+    // capstone-lib-src/include/riscv.h
+    // Division always results in integer as reg is required to be even by if
+    // condition and ft0.64 is also even
+    return {RegisterType::FLOAT,
+            static_cast<uint16_t>((reg - RISCV_REG_F0_64) / 2)};
+  }
+
+  // Modulus ensures only 32 bit registers are recognised
+  if (RISCV_REG_F31_32 >= reg && reg >= RISCV_REG_F0_32 && reg % 2 == 1) {
+    // Register ft0.32 has encoding 33 with subsequent encodings interleaved
+    // with 64 bit floating point registers. See
+    // capstone-lib-src/include/riscv.h
+    // Division always results in integer as reg is required to be odd by if
+    // condition and ft0.32 is also odd
+    return {RegisterType::FLOAT,
+            static_cast<uint16_t>((reg - RISCV_REG_F0_32) / 2)};
+  }
+
   if (RISCV_REG_X31 >= reg && reg >= RISCV_REG_X1) {
     // Capstone produces 1 indexed register operands
     return {RegisterType::GENERAL, static_cast<uint16_t>(reg - 1)};
@@ -34,43 +60,10 @@ Register csRegToRegister(unsigned int reg) {
           std::numeric_limits<uint16_t>::max()};
 }
 
-/** Invalidate instructions that are currently not yet implemented. This
- prevents errors during speculated branches with unknown destinations;
- non-executable assertions. memory is decoded into valid but not implemented
- instructions tripping assertions.
- TODO remove once all extensions are supported*/
-void Instruction::invalidateIfNotImplemented() {
-  if (metadata.opcode >= Opcode::RISCV_ADD &&
-      metadata.opcode <= Opcode::RISCV_BNE)
-    return;
-  if (metadata.opcode >= Opcode::RISCV_DIV &&
-      metadata.opcode <= Opcode::RISCV_ECALL)
-    return;
-  if (metadata.opcode >= Opcode::RISCV_JAL &&
-      metadata.opcode <= Opcode::RISCV_SD)
-    return;
-  if (metadata.opcode >= Opcode::RISCV_SH &&
-      metadata.opcode <= Opcode::RISCV_SRAW)
-    return;
-  if (metadata.opcode >= Opcode::RISCV_SRL &&
-      metadata.opcode <= Opcode::RISCV_SW)
-    return;
-  if (metadata.opcode >= Opcode::RISCV_XOR &&
-      metadata.opcode <= Opcode::RISCV_XORI)
-    return;
-  if (metadata.opcode == Opcode::RISCV_FENCE) return;
-
-  exception_ = InstructionException::EncodingUnallocated;
-  exceptionEncountered_ = true;
-  return;
-}
-
 /******************
  * DECODING LOGIC
  *****************/
 void Instruction::decode() {
-  invalidateIfNotImplemented();
-  if (exceptionEncountered_) return;
   if (metadata.id == RISCV_INS_INVALID) {
     exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
@@ -107,6 +100,8 @@ void Instruction::decode() {
     case Opcode::RISCV_LW:
     case Opcode::RISCV_LWU:
     case Opcode::RISCV_LD:
+    case Opcode::RISCV_FLW:
+    case Opcode::RISCV_FLD:
       isLoad_ = true;
       break;
     case Opcode::RISCV_SC_D:
@@ -123,6 +118,8 @@ void Instruction::decode() {
     case Opcode::RISCV_SW:
     case Opcode::RISCV_SH:
     case Opcode::RISCV_SD:
+    case Opcode::RISCV_FSW:
+    case Opcode::RISCV_FSD:
       isStore_ = true;
       break;
   }
@@ -228,29 +225,59 @@ void Instruction::decode() {
       (Opcode::RISCV_OR <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_ORI) ||
       (Opcode::RISCV_AND <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_ANDI)) {
+       metadata.opcode <= Opcode::RISCV_ANDI) ||
+      (Opcode::RISCV_FSGNJN_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FSGNJ_S)) {
     // Logical instructions
     isLogical_ = true;
   }
 
   if ((Opcode::RISCV_SLT <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_SLTU)) {
+       metadata.opcode <= Opcode::RISCV_SLTU) ||
+      (Opcode::RISCV_FEQ_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FEQ_S) ||
+      (Opcode::RISCV_FLE_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FLT_S) ||
+      (Opcode::RISCV_FMAX_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMIN_S)) {
     // Compare instructions
     isCompare_ = true;
   }
 
   if ((Opcode::RISCV_MUL <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_MULW)) {
+       metadata.opcode <= Opcode::RISCV_MULW) ||
+      (Opcode::RISCV_FMADD_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMADD_S) ||
+      (Opcode::RISCV_FMSUB_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMUL_S) ||
+      (Opcode::RISCV_FNMADD_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FNMSUB_S)) {
     // Multiply instructions
     isMultiply_ = true;
   }
 
-  if (((Opcode::RISCV_REM <= metadata.opcode &&
-        metadata.opcode <= Opcode::RISCV_REMW) ||
-       (Opcode::RISCV_DIV <= metadata.opcode &&
-        metadata.opcode <= Opcode::RISCV_DIVW))) {
+  if ((Opcode::RISCV_REM <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_REMW) ||
+      (Opcode::RISCV_DIV <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_DIVW) ||
+      (Opcode::RISCV_FDIV_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FDIV_S) ||
+      (Opcode::RISCV_FSQRT_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FSQRT_S)) {
     // Divide instructions
     isDivide_ = true;
+  }
+
+  if ((metadata.opcode >= Opcode::RISCV_FADD_D &&
+       metadata.opcode <= Opcode::RISCV_FDIV_S) ||
+      (metadata.opcode >= Opcode::RISCV_FEQ_D &&
+       metadata.opcode <= Opcode::RISCV_FSW)) {
+    // Floating point operation
+    isFloat_ = true;
+    if ((metadata.opcode >= Opcode::RISCV_FCVT_D_L &&
+         metadata.opcode <= Opcode::RISCV_FCVT_W_S)) {
+      isConvert_ = true;
+    }
   }
 
   // Set branch type

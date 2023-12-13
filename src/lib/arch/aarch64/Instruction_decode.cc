@@ -136,7 +136,7 @@ Register csRegToRegister(arm64_reg reg) {
           std::numeric_limits<uint16_t>::max()};
 }
 
-/** Resturns a full set of rows from the ZA matrix register that make up the
+/** Returns a full set of rows from the ZA matrix register that make up the
  * supplied SME tile register. */
 std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
   std::vector<Register> outRegs;
@@ -211,7 +211,7 @@ void Instruction::decode() {
           op.reg != ARM64_REG_XZR) {
         // Determine the data type the instruction operates on based on the
         // register operand used
-        // Belongs to the predicate group if the detsination register is a
+        // Belongs to the predicate group if the destination register is a
         // predicate
         if (op.reg >= ARM64_REG_V0) {
           isVectorData_ = true;
@@ -293,7 +293,7 @@ void Instruction::decode() {
         isSMEData_ = true;
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
-        // If WRITE, then also need to add to souce registers to maintain
+        // If WRITE, then also need to add to source registers to maintain
         // un-updated rows
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters.push_back(regs[i]);
@@ -616,7 +616,7 @@ void Instruction::decode() {
   }
 
   // Catch exceptions to the above identifier assignments
-  // Uncaught preciate assignment due to lacking destination register
+  // Uncaught predicate assignment due to lacking destination register
   if (metadata.opcode == Opcode::AArch64_PTEST_PP) {
     isPredicate_ = true;
   }

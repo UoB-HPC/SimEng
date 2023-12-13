@@ -63,7 +63,7 @@ class MemoryInterface {
   /** Clear the completed reads. */
   virtual void clearCompletedReads() = 0;
 
-  /** Returns true if there are any oustanding memory requests in-flight. */
+  /** Returns true if there are any outstanding memory requests in-flight. */
   virtual bool hasPendingRequests() const = 0;
 
   /** Tick the memory interface to allow it to process internal tasks.

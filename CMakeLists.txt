@@ -124,7 +124,7 @@ FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
-option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 
@@ -203,7 +203,7 @@ if(SIMENG_ENABLE_TESTS)
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
-    # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
+    # we just assume it's good because it must be whitelisted in FetchContent_Declare
 endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")

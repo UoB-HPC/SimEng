@@ -24,7 +24,7 @@ class Instruction {
   bool exceptionEncountered() const;
 
   /** Retrieve the source registers this instruction reads. */
-  virtual const span<Register> getOperandRegisters() const = 0;
+  virtual const span<Register> getSourceRegisters() const = 0;
 
   /** Retrieve the data contained in the source registers this instruction
    * reads.*/
