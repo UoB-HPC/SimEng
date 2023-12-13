@@ -309,7 +309,7 @@ TEST_F(PipelineExecuteUnitTest, mispredictedBranch) {
   EXPECT_EQ(executeUnit.getBranchExecutedCount(), 1);
   EXPECT_EQ(executeUnit.getBranchMispredictedCount(), 1);
   EXPECT_EQ(executeUnit.getFlushAddress(), pc);
-  EXPECT_EQ(executeUnit.getFlushSeqId(), insnID);
+  EXPECT_EQ(executeUnit.getFlushInsnId(), insnID);
 }
 
 // Test that the flushing mechansim works correctly via purgeFlushed()
