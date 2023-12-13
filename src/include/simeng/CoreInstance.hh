@@ -75,6 +75,7 @@ class CoreInstance {
   /** Getter for the set simulation mode in a string format. */
   const std::string getSimulationModeString() const;
 
+  /** Getter for the ISA in a string format */
   const std::string getISAString() const;
 
   /** Getter for the create core object. */
@@ -171,6 +172,7 @@ class CoreInstance {
    */
   std::string modeString_ = "Emulation";
 
+  /** A string format for the instruction set in use */
   std::string instructionSetArchString_ = "";
 
   /** Reference to the SimEng data memory object. */

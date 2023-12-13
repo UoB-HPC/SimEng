@@ -87,7 +87,7 @@ To ensure all pseudoinstructions are accounted for, the table in chapter 25 of t
 Rounding Modes
 **************
 
-RISC-V floating point instructions can use either static or dynamic rounding modes. The former embedded as 3 bits within the instruction encoding, and the later held as 3 bits of the ``fcsr`` system register.
+RISC-V floating point instructions can use either static or dynamic rounding modes. The former embedded as 3 bits within the instruction encoding, and the latter held as 3 bits of the ``fcsr`` system register.
 
 To enforce static rounding modes, the function ``setStaticRoundingModeThen`` is used. This takes the execution logic of the instruction as a parameter in the form of a lambda function. ``setStaticRoundingModeThen`` extracts the rounding mode from the raw instruction encoding as Capstone currently doesn't perform this functionality. It then changes the C++ ``fenv`` rounding mode before calling the lambda to perform the execution logic within this new environment. Before returning execution to the switch statement, it reverts the ``fenv`` rounding mode to its initial state to preserve the dynamic rounding mode.
 
