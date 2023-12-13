@@ -312,8 +312,5 @@ const uint64_t CoreInstance::getProcessImageSize() const {
 const uint64_t CoreInstance::getHeapStart() const {
   return process_->getHeapStart();
 }
-const std::string CoreInstance::getISAString() const {
-  return instructionSetArchString_;
-};
 
 }  // namespace simeng

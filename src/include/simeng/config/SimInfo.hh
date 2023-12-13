@@ -79,6 +79,10 @@ class SimInfo {
    */
   static ISA getISA() { return getInstance()->isa_; }
 
+  /** A getter function to retrieve which ISA the current simulation is using in
+   * a string format. */
+  static std::string getISAString() { return getInstance()->isaString_; }
+
   /** A getter function to retrieve a vector of {size, number} pairs describing
    * the available architectural registers. */
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
@@ -148,12 +152,12 @@ class SimInfo {
    * populate frequently queried model config values. */
   void extractValues() {
     // Get ISA type and set the corresponding ArchInfo class
-    std::string isa = validatedConfig_["Core"]["ISA"].as<std::string>();
-    if (isa == "AArch64") {
+    isaString_ = validatedConfig_["Core"]["ISA"].as<std::string>();
+    if (isaString_ == "AArch64") {
       isa_ = ISA::AArch64;
       archInfo_ = std::make_unique<arch::aarch64::ArchInfo>(
           arch::aarch64::ArchInfo(validatedConfig_));
-    } else if (isa == "rv64") {
+    } else if (isaString_ == "rv64") {
       isa_ = ISA::RV64;
       archInfo_ = std::make_unique<arch::riscv::ArchInfo>(
           arch::riscv::ArchInfo(validatedConfig_));
@@ -196,6 +200,10 @@ class SimInfo {
 
   /** The instruction set architecture of the current execution of SimEng. */
   ISA isa_;
+
+  /** The instruction set architecture of the current execution of SimEng in a
+   * string format. */
+  std::string isaString_;
 
   /** Instance of an ArchInfo class used to store architecture specific
    * configuration options. */

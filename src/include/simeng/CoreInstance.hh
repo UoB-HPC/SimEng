@@ -144,13 +144,6 @@ class CoreInstance {
   /** Reference to the SimEng core object. */
   std::shared_ptr<simeng::Core> core_ = nullptr;
 
-  /** A string format for the simulation mode in use, defaulting to emulation.
-   */
-  std::string modeString_ = "Emulation";
-
-  /** A string format for the instruction set in use */
-  std::string instructionSetArchString_ = "";
-
   /** Reference to the SimEng data memory object. */
   std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;
 
