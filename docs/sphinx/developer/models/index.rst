@@ -104,7 +104,7 @@ Which is used for those nodes whose corresponding config option has no value (on
             template <typename T>
             createExpectation(T defaultValue, std::string key, bool optional = false)
 
-Which is used for those nodes whose corresponding config option do have a value. The function is templated to support different config value types (e.g. T = string, integer, floating point, etc).
+Which is used for those nodes whose corresponding config option does have a value. The function is templated to support different config value types (e.g. T = string, integer, floating point, etc).
 
 For the expectation on the parent config key ``Core``, given it holds no value, we don't need to set any value expectations. Therefore, the first ``createExpectation`` can be used.
 
