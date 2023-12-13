@@ -53,8 +53,14 @@ class MockInstruction : public Instruction {
   void setDataPending(uint8_t value) { dataPending_ = value; }
 
   void setLatency(uint16_t cycles) { latency_ = cycles; }
+
   void setLSQLatency(uint16_t cycles) { lsqExecutionLatency_ = cycles; }
+
   void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
+
+  void setIsMicroOp(bool isMicroOp) { isMicroOp_ = isMicroOp; }
+
+  void setIsLastMicroOp(bool isLastOp) { isLastMicroOp_ = isLastOp; }
 };
 
 }  // namespace simeng

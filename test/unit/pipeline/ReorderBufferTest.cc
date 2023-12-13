@@ -31,12 +31,15 @@ class ReorderBufferTest : public testing::Test {
             [](auto registers, auto values) {}, [](auto uop) {}),
         uop(new MockInstruction),
         uop2(new MockInstruction),
+        uop3(new MockInstruction),
         uopPtr(uop),
         uopPtr2(uop2),
+        uopPtr3(uop3),
         reorderBuffer(
             maxROBSize, rat, lsq,
             [this](auto insn) { exceptionHandler.raiseException(insn); },
-            [](auto branchAddress) {}, predictor, 0, 0) {}
+            [this](auto branchAddress) { loobBoundaryAddr = branchAddress; },
+            predictor, 4, 2) {}
 
  protected:
   const uint8_t maxLSQLoads = 32;
@@ -52,13 +55,17 @@ class ReorderBufferTest : public testing::Test {
 
   MockInstruction* uop;
   MockInstruction* uop2;
+  MockInstruction* uop3;
 
   std::shared_ptr<Instruction> uopPtr;
-  std::shared_ptr<MockInstruction> uopPtr2;
+  std::shared_ptr<Instruction> uopPtr2;
+  std::shared_ptr<Instruction> uopPtr3;
 
   MockMemoryInterface dataMemory;
 
   ReorderBuffer reorderBuffer;
+
+  uint64_t loobBoundaryAddr = 0;
 };
 
 // Tests that an instruction can have a slot reserved in the ROB and be
@@ -100,6 +107,7 @@ TEST_F(ReorderBufferTest, Commit) {
 
   EXPECT_EQ(committed, 1);
   EXPECT_EQ(reorderBuffer.size(), 0);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 1);
 }
 
 // Tests that the reorder buffer won't commit an instruction if it's not ready
@@ -110,6 +118,7 @@ TEST_F(ReorderBufferTest, CommitNotReady) {
 
   EXPECT_EQ(committed, 0);
   EXPECT_EQ(reorderBuffer.size(), 1);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 0);
 }
 
 // Tests that the reorder buffer won't commit a ready instruction if it's not at
@@ -124,6 +133,7 @@ TEST_F(ReorderBufferTest, CommitHeadNotReady) {
 
   EXPECT_EQ(committed, 0);
   EXPECT_EQ(reorderBuffer.size(), 2);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 0);
 }
 
 // Tests that the reorder buffer can commit multiple ready instructions
@@ -138,6 +148,7 @@ TEST_F(ReorderBufferTest, CommitMultiple) {
 
   EXPECT_EQ(committed, 2);
   EXPECT_EQ(reorderBuffer.size(), 0);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 2);
 }
 
 // Tests that the reorder buffer correctly informs the LSQ when committing a
@@ -153,6 +164,7 @@ TEST_F(ReorderBufferTest, CommitLoad) {
 
   // Check that the load was removed from the LSQ
   EXPECT_EQ(lsq.getLoadQueueSpace(), maxLSQLoads);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 1);
 }
 
 // Tests that the reorder buffer correctly triggers a store upon commit
@@ -190,6 +202,7 @@ TEST_F(ReorderBufferTest, CommitStore) {
 
   // Check that the store was committed and removed from the LSQ
   EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 1);
 
   // Tick lsq to complete store
   lsq.tick();
@@ -221,6 +234,193 @@ TEST_F(ReorderBufferTest, Exception) {
   auto committed = reorderBuffer.commit(1);
 
   EXPECT_EQ(committed, 1);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 1);
+}
+
+// Test the reorder buffer correctly sets a macro-op to commitReady when all of
+// its associated micro-ops have been
+TEST_F(ReorderBufferTest, commitMicroOps) {
+  // Reserve all microOps
+  uop->setIsMicroOp(true);
+  uop->setIsLastMicroOp(false);
+  uop2->setIsMicroOp(true);
+  uop2->setIsLastMicroOp(false);
+  uop3->setIsMicroOp(true);
+  uop3->setIsLastMicroOp(true);
+  reorderBuffer.reserve(uopPtr);
+  reorderBuffer.reserve(uopPtr2);
+  reorderBuffer.reserve(uopPtr3);
+  EXPECT_EQ(reorderBuffer.size(), 3);
+
+  EXPECT_EQ(uopPtr->getInstructionId(), 0);
+  EXPECT_EQ(uopPtr2->getInstructionId(), 0);
+  EXPECT_EQ(uopPtr3->getInstructionId(), 0);
+
+  // No micro-ops are waiting commit. Make sure they're not commit ready after
+  // call to `commitMicroOps`
+  reorderBuffer.commitMicroOps(0);
+  EXPECT_FALSE(uopPtr->canCommit());
+  EXPECT_FALSE(uopPtr2->canCommit());
+  EXPECT_FALSE(uopPtr3->canCommit());
+
+  // Set middle instruction as waitingCommit - ensure still not set commit ready
+  uop->setWaitingCommit();
+  reorderBuffer.commitMicroOps(0);
+  EXPECT_FALSE(uopPtr->canCommit());
+  EXPECT_FALSE(uopPtr2->canCommit());
+  EXPECT_FALSE(uopPtr3->canCommit());
+
+  // Set last instruction as waitingCommit - ensure still not set commit ready
+  uop3->setWaitingCommit();
+  reorderBuffer.commitMicroOps(0);
+  EXPECT_FALSE(uopPtr->canCommit());
+  EXPECT_FALSE(uopPtr2->canCommit());
+  EXPECT_FALSE(uopPtr3->canCommit());
+
+  // Set first instruction as waitingCommit - ensure still they are set commit
+  // ready now all micro-ops are done
+  uop2->setWaitingCommit();
+  reorderBuffer.commitMicroOps(0);
+  EXPECT_TRUE(uopPtr->canCommit());
+  EXPECT_TRUE(uopPtr2->canCommit());
+  EXPECT_TRUE(uopPtr3->canCommit());
+
+  // Now call commit in ROB and make sure micro-ops are committed properly
+  unsigned int committed = reorderBuffer.commit(3);
+  EXPECT_EQ(committed, 3);
+  EXPECT_EQ(reorderBuffer.getInstructionsCommittedCount(), 1);
+  EXPECT_EQ(reorderBuffer.size(), 0);
+}
+
+// Test that a detected violating load in the lsq leads to a flush
+TEST_F(ReorderBufferTest, violatingLoad) {
+  const uint64_t strAddr = 16;
+  const uint64_t strSize = 4;
+  const uint64_t ldAddr = 18;
+  const uint64_t ldSize = 4;
+
+  // Init Store
+  const MemoryAccessTarget strTarget = {strAddr, strSize};
+  span<const MemoryAccessTarget> strTargetSpan = {&strTarget, 1};
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(strTargetSpan));
+  ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
+  ON_CALL(*uop, isStoreData()).WillByDefault(Return(true));
+  uopPtr->setSequenceId(0);
+  uopPtr->setInstructionId(0);
+  lsq.addStore(uopPtr);
+  reorderBuffer.reserve(uopPtr);
+  // Init load
+  const MemoryAccessTarget ldTarget = {ldAddr, ldSize};
+  span<const MemoryAccessTarget> ldTargetSpan = {&ldTarget, 1};
+  ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(Return(ldTargetSpan));
+  ON_CALL(*uop2, isLoad()).WillByDefault(Return(true));
+  uopPtr2->setSequenceId(1);
+  uopPtr2->setInstructionId(1);
+  uopPtr2->setInstructionAddress(4096);
+  lsq.addLoad(uopPtr2);
+  reorderBuffer.reserve(uopPtr2);
+
+  EXPECT_EQ(reorderBuffer.size(), 2);
+
+  // Start load "Out of order"
+  EXPECT_CALL(*uop2, getGeneratedAddresses()).Times(1);
+  EXPECT_CALL(*uop, getGeneratedAddresses()).Times(1);
+  lsq.startLoad(uopPtr2);
+
+  // Set store "ready to commit" so that violation gets detected
+  uopPtr->setCommitReady();
+  // Supply Store's data
+  RegisterValue strData = RegisterValue(0xABCD, strSize);
+  span<const RegisterValue> strDataSpan = {&strData, 1};
+  ON_CALL(*uop, getData()).WillByDefault(Return(strDataSpan));
+  EXPECT_CALL(*uop, getData()).Times(1);
+  lsq.supplyStoreData(uopPtr);
+
+  EXPECT_CALL(*uop, isStoreAddress()).WillOnce(Return(true));
+  EXPECT_CALL(*uop, getGeneratedAddresses()).Times(1);        // in LSQ
+  EXPECT_CALL(dataMemory, requestWrite(strTarget, strData));  // in LSQ
+  EXPECT_CALL(*uop2, getGeneratedAddresses()).Times(1);       // in LSQ
+  unsigned int committed = reorderBuffer.commit(4);
+
+  EXPECT_EQ(committed, 1);
+  EXPECT_EQ(reorderBuffer.size(), 1);
+  EXPECT_TRUE(reorderBuffer.shouldFlush());
+  EXPECT_EQ(reorderBuffer.getViolatingLoadsCount(), 1);
+  EXPECT_EQ(lsq.getViolatingLoad(), uopPtr2);
+  EXPECT_EQ(reorderBuffer.getFlushAddress(), 4096);
+  EXPECT_EQ(reorderBuffer.getFlushInsnId(), 0);
+}
+
+// Test that a branch is treated as expected, will trigger the loop buffer when
+// seen enough times (loop detection threshold set to 2)
+TEST_F(ReorderBufferTest, branch) {
+  // Set up branch instruction
+  const uint64_t insnAddr = 4096;
+  const uint64_t branchAddr = 1024;
+  BranchPrediction pred = {true, branchAddr};
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
+  uopPtr->setSequenceId(0);
+  uopPtr->setInstructionId(0);
+  uopPtr->setInstructionAddress(insnAddr);
+  uopPtr->setBranchPrediction(pred);
+  uopPtr->setCommitReady();
+
+  // First pass through ROB -- seen count reset to 0 as new branch
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Second pass through ROB -- seen count = 1
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Third pass through ROB -- seen count = 2
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
+  // loobBoundaryAddr updated
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_EQ(loobBoundaryAddr, insnAddr);
+
+  // Update prediction & reset loobBoundaryAddr. Flush ROB to reset loopDetected
+  pred = {false, branchAddr + 64};
+  uopPtr->setBranchPrediction(pred);
+  loobBoundaryAddr = 0;
+  reorderBuffer.flush(0);
+
+  // Re-do loop detecition
+  // First pass through ROB -- seen count reset to 0 as new branch
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Second pass through ROB -- seen count = 1
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Third pass through ROB -- seen count = 2
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_NE(loobBoundaryAddr, insnAddr);
+
+  // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
+  // loobBoundaryAddr updated
+  reorderBuffer.reserve(uopPtr);
+  EXPECT_CALL(*uop, isBranch()).Times(1);
+  reorderBuffer.commit(1);
+  EXPECT_EQ(loobBoundaryAddr, insnAddr);
 }
 
 }  // namespace pipeline
