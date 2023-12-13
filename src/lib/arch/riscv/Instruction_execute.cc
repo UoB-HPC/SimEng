@@ -1196,7 +1196,7 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
           results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
         } else {
           results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
@@ -1224,7 +1224,7 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
           results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
         } else {
           results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
@@ -1252,7 +1252,7 @@ void Instruction::execute() {
         const float rs2 = checkNanBox(operands[1]);
         const float rs3 = checkNanBox(operands[2]);
 
-        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
           results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
         } else {
           results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
@@ -1282,7 +1282,7 @@ void Instruction::execute() {
 
         // Some implementations return -NaN if certain inputs are NaN but spec
         // requires +NaN. Ensure this happens
-        if (isnanf(rs1) || isnanf(rs2) || isnanf(rs3)) {
+        if (std::isnan(rs1) || std::isnan(rs2) || std::isnan(rs3)) {
           results[0] = RegisterValue(NanBoxFloat(std::nanf("")), 8);
         } else {
           results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
