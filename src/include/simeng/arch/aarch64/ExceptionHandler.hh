@@ -96,6 +96,16 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   static constexpr Register R3 = {RegisterType::GENERAL, 3};
   static constexpr Register R4 = {RegisterType::GENERAL, 4};
   static constexpr Register R5 = {RegisterType::GENERAL, 5};
+
+  /** Let the following ExceptionHandlerTest derived classes be a friend of this
+   * class to allow proper testing of `readStringThen()`, `readBufferThen()` and
+   * `printException()` functions. */
+  friend class AArch64ExceptionHandlerTest_readStringThen_Test;
+  friend class AArch64ExceptionHandlerTest_readStringThen_maxLen0_Test;
+  friend class AArch64ExceptionHandlerTest_readStringThen_maxLenReached_Test;
+  friend class AArch64ExceptionHandlerTest_readBufferThen_Test;
+  friend class AArch64ExceptionHandlerTest_readBufferThen_length0_Test;
+  friend class AArch64ExceptionHandlerTest_printException_Test;
 };
 
 }  // namespace aarch64
