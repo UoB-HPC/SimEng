@@ -402,7 +402,7 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered illegal "
                         "instruction exception"));
-  buffer.clear();
+  buffer.str(std::string());
   uops.clear();
 
   // Create instruction for ExecutionNotYetImplemented
@@ -421,13 +421,13 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered execution "
                         "not-yet-implemented exception"));
-  buffer.clear();
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for MisalignedPC
+  // Create instruction for AliasNotYetImplemented
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::MisalignedPC;
+  exception = InstructionException::AliasNotYetImplemented;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -437,16 +437,15 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_2.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered misaligned "
-                        "program counter exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "alias not-yet-implemented exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for DataAbort
+  // Create instruction for MisalignedPC
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::DataAbort;
+  exception = InstructionException::MisalignedPC;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -456,16 +455,16 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_3.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(
-      buffer.str(),
-      HasSubstr("[SimEng:ExceptionHandler] Encountered data abort exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler] Encountered misaligned "
+                        "program counter exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SupervisorCall
+  // Create instruction for DataAbort
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SupervisorCall;
+  exception = InstructionException::DataAbort;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -477,15 +476,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(
       buffer.str(),
-      HasSubstr(
-          "[SimEng:ExceptionHandler] Encountered supervisor call exception"));
-  buffer.clear();
+      HasSubstr("[SimEng:ExceptionHandler] Encountered data abort exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for HypervisorCall
+  // Create instruction for SupervisorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::HypervisorCall;
+  exception = InstructionException::SupervisorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -498,14 +496,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   EXPECT_THAT(
       buffer.str(),
       HasSubstr(
-          "[SimEng:ExceptionHandler] Encountered hypervisor call exception"));
-  buffer.clear();
+          "[SimEng:ExceptionHandler] Encountered supervisor call exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SecureMonitorCall
+  // Create instruction for HypervisorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SecureMonitorCall;
+  exception = InstructionException::HypervisorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -515,15 +513,17 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_6.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "secure monitor call exception"));
-  buffer.clear();
+  EXPECT_THAT(
+      buffer.str(),
+      HasSubstr(
+          "[SimEng:ExceptionHandler] Encountered hypervisor call exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for NoAvailablePort
+  // Create instruction for SecureMonitorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::NoAvailablePort;
+  exception = InstructionException::SecureMonitorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -534,14 +534,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_7.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "unsupported execution port exception"));
-  buffer.clear();
+                                      "secure monitor call exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for UnmappedSysReg
+  // Create instruction for NoAvailablePort
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::UnmappedSysReg;
+  exception = InstructionException::NoAvailablePort;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -552,14 +552,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_8.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "unmapped system register exception"));
-  buffer.clear();
+                                      "unsupported execution port exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for StreamingModeUpdate
+  // Create instruction for UnmappedSysReg
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::StreamingModeUpdate;
+  exception = InstructionException::UnmappedSysReg;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -570,14 +570,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_9.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "streaming mode update exception"));
-  buffer.clear();
+                                      "unmapped system register exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for ZAregisterStatusUpdate
+  // Create instruction for StreamingModeUpdate
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::ZAregisterStatusUpdate;
+  exception = InstructionException::StreamingModeUpdate;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -588,14 +588,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_10.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "ZA register status update exception"));
-  buffer.clear();
+                                      "streaming mode update exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SMZAUpdate
+  // Create instruction for ZAregisterStatusUpdate
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SMZAUpdate;
+  exception = InstructionException::ZAregisterStatusUpdate;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -605,16 +605,15 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_11.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered streaming mode "
-                        "& ZA register status update exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "ZA register status update exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for ZAdisabled
+  // Create instruction for SMZAUpdate
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::ZAdisabled;
+  exception = InstructionException::SMZAUpdate;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -625,15 +624,15 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_12.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered ZA register "
-                        "access attempt when disabled exception"));
-  buffer.clear();
+              HasSubstr("[SimEng:ExceptionHandler] Encountered streaming mode "
+                        "& ZA register status update exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SMdisabled
+  // Create instruction for ZAdisabled
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SMdisabled;
+  exception = InstructionException::ZAdisabled;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -644,15 +643,15 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_13.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered SME execution "
-                        "attempt when streaming mode disabled exception"));
-  buffer.clear();
+              HasSubstr("[SimEng:ExceptionHandler] Encountered ZA register "
+                        "access attempt when disabled exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for default case
+  // Create instruction for SMdisabled
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::None;
+  exception = InstructionException::SMdisabled;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -663,9 +662,28 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_14.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler] Encountered SME execution "
+                        "attempt when streaming mode disabled exception"));
+  buffer.str(std::string());
+  uops.clear();
+
+  // Create instruction for default case
+  arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
+                 uops);
+  exception = InstructionException::None;
+  insn = std::make_shared<Instruction>(
+      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  // Create ExceptionHandler
+  ExceptionHandler handler_15(insn, core, memory, kernel);
+  // Capture std::cout and tick exceptionHandler
+  sbuf = std::cout.rdbuf();         // Save cout's buffer
+  std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
+  handler_15.printException(*static_cast<Instruction*>(insn.get()));
+  std::cout.rdbuf(sbuf);  // Restore cout
+  EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered unknown (id: "
                         "0) exception"));
-  buffer.clear();
+  buffer.str(std::string());
   uops.clear();
 }
 

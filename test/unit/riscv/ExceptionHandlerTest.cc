@@ -395,10 +395,9 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());           // Redirect cout to buffer
   handler_0.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered illegal "
-                        "instruction exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "encoding unallocated exception"));
+  buffer.str(std::string());
   uops.clear();
 
   // Create instruction for ExecutionNotYetImplemented
@@ -417,13 +416,13 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered execution "
                         "not-yet-implemented exception"));
-  buffer.clear();
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for MisalignedPC
+  // Create instruction for AliasNotYetImplemented
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::MisalignedPC;
+  exception = InstructionException::AliasNotYetImplemented;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -433,16 +432,15 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_2.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered misaligned "
-                        "program counter exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "alias not-yet-implemented exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for DataAbort
+  // Create instruction for MisalignedPC
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::DataAbort;
+  exception = InstructionException::MisalignedPC;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -452,16 +450,16 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_3.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(
-      buffer.str(),
-      HasSubstr("[SimEng:ExceptionHandler] Encountered data abort exception"));
-  buffer.clear();
+  EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler] Encountered misaligned "
+                        "program counter exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SupervisorCall
+  // Create instruction for DataAbort
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SupervisorCall;
+  exception = InstructionException::DataAbort;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -473,15 +471,14 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(
       buffer.str(),
-      HasSubstr(
-          "[SimEng:ExceptionHandler] Encountered supervisor call exception"));
-  buffer.clear();
+      HasSubstr("[SimEng:ExceptionHandler] Encountered data abort exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for HypervisorCall
+  // Create instruction for SupervisorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::HypervisorCall;
+  exception = InstructionException::SupervisorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -494,14 +491,14 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   EXPECT_THAT(
       buffer.str(),
       HasSubstr(
-          "[SimEng:ExceptionHandler] Encountered hypervisor call exception"));
-  buffer.clear();
+          "[SimEng:ExceptionHandler] Encountered supervisor call exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for SecureMonitorCall
+  // Create instruction for HypervisorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::SecureMonitorCall;
+  exception = InstructionException::HypervisorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -511,15 +508,17 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
   handler_6.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "secure monitor call exception"));
-  buffer.clear();
+  EXPECT_THAT(
+      buffer.str(),
+      HasSubstr(
+          "[SimEng:ExceptionHandler] Encountered hypervisor call exception"));
+  buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for NoAvailablePort
+  // Create instruction for SecureMonitorCall
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  exception = InstructionException::NoAvailablePort;
+  exception = InstructionException::SecureMonitorCall;
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
@@ -530,8 +529,62 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   handler_7.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "secure monitor call exception"));
+  buffer.str(std::string());
+  uops.clear();
+
+  // Create instruction for NoAvailablePort
+  arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
+                 uops);
+  exception = InstructionException::NoAvailablePort;
+  insn = std::make_shared<Instruction>(
+      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  // Create ExceptionHandler
+  ExceptionHandler handler_8(insn, core, memory, kernel);
+  // Capture std::cout and tick exceptionHandler
+  sbuf = std::cout.rdbuf();         // Save cout's buffer
+  std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
+  handler_8.printException(*static_cast<Instruction*>(insn.get()));
+  std::cout.rdbuf(sbuf);  // Restore cout
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "unsupported execution port exception"));
-  buffer.clear();
+  buffer.str(std::string());
+  uops.clear();
+
+  // Create instruction for IllegalInstruction
+  arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
+                 uops);
+  exception = InstructionException::IllegalInstruction;
+  insn = std::make_shared<Instruction>(
+      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  // Create ExceptionHandler
+  ExceptionHandler handler_9(insn, core, memory, kernel);
+  // Capture std::cout and tick exceptionHandler
+  sbuf = std::cout.rdbuf();         // Save cout's buffer
+  std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
+  handler_9.printException(*static_cast<Instruction*>(insn.get()));
+  std::cout.rdbuf(sbuf);  // Restore cout
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "illegal instruction exception"));
+  buffer.str(std::string());
+  uops.clear();
+
+  // Create instruction for PipelineFlush
+  arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
+                 uops);
+  exception = InstructionException::PipelineFlush;
+  insn = std::make_shared<Instruction>(
+      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  // Create ExceptionHandler
+  ExceptionHandler handler_10(insn, core, memory, kernel);
+  // Capture std::cout and tick exceptionHandler
+  sbuf = std::cout.rdbuf();         // Save cout's buffer
+  std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
+  handler_10.printException(*static_cast<Instruction*>(insn.get()));
+  std::cout.rdbuf(sbuf);  // Restore cout
+  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                                      "unknown atomic operation exception"));
+  buffer.str(std::string());
   uops.clear();
 
   // Create instruction for default case
@@ -541,16 +594,16 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   insn = std::make_shared<Instruction>(
       arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
   // Create ExceptionHandler
-  ExceptionHandler handler_14(insn, core, memory, kernel);
+  ExceptionHandler handler_11(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_14.printException(*static_cast<Instruction*>(insn.get()));
+  handler_11.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered unknown (id: "
                         "0) exception"));
-  buffer.clear();
+  buffer.str(std::string());
   uops.clear();
 }
 
