@@ -34,6 +34,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {

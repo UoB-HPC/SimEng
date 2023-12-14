@@ -16,6 +16,10 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
+  // Set initial rounding mode for F/D extensions
+  // TODO set fcsr accordingly when Zicsr extension supported
+  fesetround(FE_TONEAREST);
+
   cs_mode csMode = CS_MODE_RISCV64;
   constantsPool constantsPool;
 
@@ -51,10 +55,6 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cycleSystemReg_ = {
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
-
-  retiredSystemReg_ = {
-      RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_INSTRET))};
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -159,8 +159,6 @@ Architecture::~Architecture() {
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
-  //  std::cerr << std::hex << instructionAddress << std::dec;
-
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed ISA is supported
   if (instructionAddress & constants_.alignMask) {
@@ -299,10 +297,8 @@ uint16_t Architecture::getNumSystemRegisters() const {
 }
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                              const uint64_t iterations,
-                                              const uint64_t retired) const {
+                                              const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);
-  regFile->set(retiredSystemReg_, retired);
 }
 
 archConstants Architecture::getConstants() const { return constants_; }

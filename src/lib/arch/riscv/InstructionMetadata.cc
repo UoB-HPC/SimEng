@@ -1,6 +1,5 @@
 #include "InstructionMetadata.hh"
 
-#include <cassert>
 #include <cstring>
 #include <iostream>
 
@@ -266,7 +265,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // frflags Rs is pseudo of CSRRS Rs, fflags, zero (Read FP exception
         // flags) CSRRS Rs, _, _ -> CSRRS Rs, fflags, zero
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operands[2].type = RISCV_OP_REG;
@@ -274,22 +273,22 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdinstret");
+        return aliasNYI();
       } else if (strcmp(mnemonic, "rdcycle") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdcycle");
+        return aliasNYI();
       } else if (strcmp(mnemonic, "rdtime") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdtime");
+        return aliasNYI();
       } else if (strcmp(mnemonic, "csrr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrr");
+        return aliasNYI();
       } else if (strcmp(mnemonic, "csrs") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrs");
+        return aliasNYI();
       } else if (strcmp(mnemonic, "frcsr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction rdtime");
+        return aliasNYI();
       } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
         // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
         // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FRM;  // frm address
 
         operands[2].type = RISCV_OP_REG;
@@ -310,7 +309,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[0].reg = 1;
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
@@ -321,17 +320,17 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[2] = operands[1];
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
-        assert(false && "Unimplemented psuedoinstruction csrw");
-      } else if (strcmp(mnemonic, "fscsr") == 0) {
-        assert(false && "Unimplemented psuedoinstruction fscsr");
-      } else if (strcmp(mnemonic, "fscsr") == 0) {
+        return aliasNYI();
+      } else if (operandCount == 1 && strcmp(mnemonic, "fscsr") == 0) {
+        return aliasNYI();
+      } else if (operandCount == 2 && strcmp(mnemonic, "fscsr") == 0) {
+        return aliasNYI();
         // 2 pseudoinstructions with same name but different number of registers
-        assert(false && "Unimplemented psuedoinstruction fscsr");
       } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
         // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
         // CSRRW Rs, _, _ -> CSRRW zero, frm, Rs
@@ -341,7 +340,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[0].reg = 1;
 
         operands[1].type =
-            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+            RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
         operands[1].reg = RISCV_SYSREG_FRM;  // frm address
 
         operandCount = 3;
@@ -423,7 +422,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
   }
 }
 
-void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
+void InstructionMetadata::aliasNYI() {
+  metadataExceptionEncountered_ = true;
+  metadataException_ = InstructionException::AliasNotYetImplemented;
+}
 
 void InstructionMetadata::includeZeroRegisterPosOne() {
   // Given register sequence {Op_a, Op_b , _} return {Op_a, x0, Op_b}

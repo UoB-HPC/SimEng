@@ -3,6 +3,7 @@
 #include <string>
 
 #include "capstone/capstone.h"
+#include "simeng/arch/riscv/Instruction.hh"
 
 namespace simeng {
 namespace arch {
@@ -25,6 +26,16 @@ struct InstructionMetadata {
 
   /** Constructs an invalid metadata object containing the invalid encoding. */
   InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
+
+  /* Returns the current exception state of the metadata */
+  InstructionException getMetadataException() const {
+    return metadataException_;
+  }
+
+  /* Returns a bool stating whether an exception has been encountered */
+  bool getMetadataExceptionEncountered() const {
+    return metadataExceptionEncountered_;
+  }
 
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
@@ -54,21 +65,25 @@ struct InstructionMetadata {
 
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];
+
   /** The remainder of the instruction's assembly representation. */
   std::string operandStr;
 
   /** The implicitly referenced registers. */
   uint16_t implicitSources[MAX_IMPLICIT_SOURCES];
+
   /** The number of implicitly referenced registers. */
   uint8_t implicitSourceCount;
 
   /** The implicitly referenced destination registers. */
   uint16_t implicitDestinations[MAX_IMPLICIT_DESTINATIONS];
+
   /** The number of implicitly referenced destination registers. */
   uint8_t implicitDestinationCount;
 
   /** The explicit operands. */
   cs_riscv_op operands[MAX_OPERANDS];
+
   /** The number of explicit operands. */
   uint8_t operandCount;
 
@@ -81,7 +96,7 @@ struct InstructionMetadata {
    * instruction. */
   void alterPseudoInstructions(const cs_insn& insn);
 
-  /** Flag the instruction as invalid due to a detected unsupported alias. */
+  /** Flag the instruction as aliasNYI due to a detected unsupported alias. */
   void aliasNYI();
 
   /** RISC-V helper function
@@ -91,6 +106,12 @@ struct InstructionMetadata {
   /** RISC-V helper function
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
+
+  /** The current exception state of this instruction. */
+  InstructionException metadataException_ = InstructionException::None;
+
+  /** Whether an exception has been encountered. */
+  bool metadataExceptionEncountered_ = false;
 
   /** Set the byte length of instruction */
   void setLength(uint8_t size);

@@ -24,7 +24,11 @@ class Instruction {
   bool exceptionEncountered() const;
 
   /** Retrieve the source registers this instruction reads. */
-  virtual const span<Register> getOperandRegisters() const = 0;
+  virtual const span<Register> getSourceRegisters() const = 0;
+
+  /** Retrieve the data contained in the source registers this instruction
+   * reads.*/
+  virtual const span<RegisterValue> getSourceOperands() const = 0;
 
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be

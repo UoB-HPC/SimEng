@@ -649,57 +649,75 @@ bool ExceptionHandler::init() {
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
+    // Get Architecture
+    const Architecture& arch = instruction_.getArchitecture();
     // Retrieve register file structure from architecture
-    auto regFileStruct =
-        instruction_.getArchitecture().getRegisterFileStructures();
+    auto regFileStruct = arch.getRegisterFileStructures();
     // Retrieve metadata from architecture
     auto metadata = instruction_.getMetadata();
 
-    // Update SVCR value
-    const uint64_t svcrBits = static_cast<uint64_t>(metadata.operands[0].svcr);
-    const uint8_t imm = metadata.operands[1].imm;
-    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
     uint64_t newSVCR = 0;
+    const uint64_t currSVCR = arch.getSVCRval();
 
-    if (imm == 0) {
-      // Zero out relevant bits dictated by svcrBits
-      const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
-      newSVCR = currSVCR & mask;
-    } else if (imm == 1) {
-      // Enable relevant bits, dictated by svcrBits
-      const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
-      newSVCR = currSVCR | mask;
+    // Check if exception was called by AArch64_MSR (msr systemreg, xt) or
+    // AArch64_MSRpstatesvcrImm1 (msr svcr<sm|za|smza>, #imm)
+    if (metadata.opcode == Opcode::AArch64_MSR) {
+      newSVCR = instruction_.getSourceOperands()[0].get<uint64_t>();
+    } else if (metadata.opcode == Opcode::AArch64_MSRpstatesvcrImm1) {
+      const uint64_t svcrBits =
+          static_cast<uint64_t>(metadata.operands[0].svcr);
+      const uint64_t imm = metadata.operands[1].imm;
+      assert((imm == 0 || imm == 1) &&
+             "[SimEng:ExceptionHandler] SVCR Instruction invalid - Imm value "
+             "can only be 0 or 1");
+      // Zero out SM & ZA bits as appropriate
+      newSVCR = currSVCR & ~(svcrBits);
+      // Update only relevant bits of SVCR
+      newSVCR = newSVCR | (svcrBits * imm);
     } else {
-      // Invalid instruction
-      assert("SVCR Instruction invalid - Imm value can only be 0 or 1");
+      std::cerr << "[SimEng::ExceptionHandler] SVCR system register exception "
+                   "triggered by incorrect instruction. Opcode "
+                << metadata.opcode << std::endl;
+      exit(1);
     }
-    instruction_.getArchitecture().setSVCRval(newSVCR);
+    arch.setSVCRval(newSVCR);
 
     // Initialise vectors for all registers & values
     std::vector<Register> regs;
     std::vector<RegisterValue> regValues;
 
-    // Add Vector/Predicate registers + 0 values (zeroed out on Streaming Mode
-    // context switch)
-    if (exception != InstructionException::ZAregisterStatusUpdate) {
-      for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
-           i++) {
-        regs.push_back({RegisterType::VECTOR, i});
-        regValues.push_back(RegisterValue(0, 256));
-        if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
-          regs.push_back({RegisterType::PREDICATE, i});
-          regValues.push_back(RegisterValue(0, 32));
+    // If SVCR.ZA has changed state then zero out ZA register, else don't
+    if (exception != InstructionException::StreamingModeUpdate) {
+      if ((newSVCR & ARM64_SVCR_SVCRZA) != (currSVCR & ARM64_SVCR_SVCRZA)) {
+        for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
+             i++) {
+          regs.push_back({RegisterType::MATRIX, i});
+          regValues.push_back(RegisterValue(0, 256));
         }
       }
     }
-    // Zero out ZA register (zeroed out on ZA-reg context switch)
-    if (exception != InstructionException::StreamingModeUpdate) {
-      for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
-           i++) {
-        regs.push_back({RegisterType::MATRIX, i});
-        regValues.push_back(RegisterValue(0, 256));
+    // If SVCR.SM has changed state then zero out SVE, NEON, Predicate
+    // registers, else don't
+    if (exception != InstructionException::ZAregisterStatusUpdate) {
+      if ((newSVCR & ARM64_SVCR_SVCRSM) != (currSVCR & ARM64_SVCR_SVCRSM)) {
+        for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
+             i++) {
+          regs.push_back({RegisterType::VECTOR, i});
+          regValues.push_back(RegisterValue(0, 256));
+          if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
+            regs.push_back({RegisterType::PREDICATE, i});
+            regValues.push_back(RegisterValue(0, 32));
+          }
+        }
       }
     }
+
+    // Update SVCR system register in regFile
+    regs.push_back(
+        {RegisterType::SYSTEM,
+         static_cast<uint16_t>(arch.getSystemRegisterTag(ARM64_SYSREG_SVCR))});
+    regValues.push_back(RegisterValue(newSVCR, 8));
+
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
     return concludeSyscall(stateChange);
   }
@@ -864,6 +882,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
+      break;
+    case InstructionException::AliasNotYetImplemented:
+      std::cout << "alias not-yet-implemented";
       break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";

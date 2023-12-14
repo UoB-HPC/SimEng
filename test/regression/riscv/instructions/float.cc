@@ -4,6 +4,8 @@ namespace {
 
 using InstFloat = RISCVRegressionTest;
 
+static constexpr uint64_t boxedPositiveNan = 0xffffffff7fc00000;
+
 // All test verified with qemu
 
 TEST_P(InstFloat, FLD) {
@@ -200,6 +202,30 @@ TEST_P(InstFloat, FDIV_S) {
   EXPECT_EQ(getFPRegister<float>(15), (float)999.212341);
   EXPECT_EQ(getFPRegister<float>(16), (float)999.212341 / (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(0), (float)999.212341 / (float)-3.78900003);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fdiv.s fa5, fa3, fa3  # 1 / 1 = 1
+    fdiv.s fa6, fa4, fa3  # Incorrect NaN box should be caught by fdiv and
+                          # canonical NaN used as input, NaN / 1 = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMUL_D) {
@@ -257,6 +283,30 @@ TEST_P(InstFloat, FMUL_S) {
   EXPECT_EQ(getFPRegister<float>(16), (float)999.212341 * (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(0), (float)999.212341 * (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFFC56CA040);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fmul.s fa5, fa3, fa3  # 1 * 1 = 1
+    fmul.s fa6, fa4, fa3  # Incorrect NaN box should be caught by fmul and
+                          # canonical NaN used as input, NaN * 1 = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FCVT_D_L) {
@@ -359,6 +409,10 @@ TEST_P(InstFloat, FCVT_W_D) {
     li a7, 214
     ecall
 
+    # Set rounding mode to nearest ties to even
+    li a1, 0
+    fsrm a1
+
     fld fa3, 0(a0)
     fld fa5, 8(a0)
     fld fa4, 16(a0)
@@ -375,22 +429,14 @@ TEST_P(InstFloat, FCVT_W_D) {
   EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
-            0x5);  // Should round to nearest, but cpp rounds to
-                   // zero so fails
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28),
-            0x4);  // expected to fail as functionality not implemented
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
-            0xFFFFFFFFFFFFFFFC);  // Should round to nearest, but cpp rounds to
-                                  // zero so fails
-  EXPECT_EQ(
-      getGeneralRegister<uint64_t>(29),
-      0xFFFFFFFFFFFFFFFD);  // expected to fail as functionality not implemented
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
 }
 
 TEST_P(InstFloat, FCVT_W_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -417,16 +463,39 @@ TEST_P(InstFloat, FCVT_W_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
-            0x5);  // Should round to nearest, but cpp rounds to
-                   // zero so fails
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28),
-            0x4);  // expected to fail as functionality not implemented
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fcvt.w.s t0, fa3 # fcvt 1 = 1
+    fcvt.w.s t1, fa4 # Incorrect NaN box should be caught by fcvt and
+                          # canonical NaN used as input, fcvt NaN = 2^31 − 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6),
+            pow(2, 31) - 1);  // Expected result from spec
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x000000007fffffff);
 }
 
 TEST_P(InstFloat, FCVT_L_D) {
@@ -466,7 +535,6 @@ TEST_P(InstFloat, FCVT_L_D) {
 }
 
 TEST_P(InstFloat, FCVT_L_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -493,17 +561,41 @@ TEST_P(InstFloat, FCVT_L_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x7FFFFFFFFFFFFFFF);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fcvt.l.s t0, fa3 # fcvt 1 = 1
+    fcvt.l.s t1, fa4 # Incorrect NaN box should be caught by fcvt and
+                          # canonical NaN used as input, fcvt NaN = 2^31 − 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
+            (uint64_t)pow(2, 63) - 1);  // Expected result from spec
 }
 
 TEST_P(InstFloat, FCVT_LU_D) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -543,7 +635,6 @@ TEST_P(InstFloat, FCVT_LU_D) {
 }
 
 TEST_P(InstFloat, FCVT_WU_D) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -583,7 +674,6 @@ TEST_P(InstFloat, FCVT_WU_D) {
 }
 
 TEST_P(InstFloat, FCVT_LU_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -612,7 +702,7 @@ TEST_P(InstFloat, FCVT_LU_S) {
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -620,10 +710,34 @@ TEST_P(InstFloat, FCVT_LU_S) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fcvt.lu.s t0, fa3 # fcvt 1 = 1
+    fcvt.lu.s t1, fa4 # Incorrect NaN box should be caught by fcvt and
+                          # canonical NaN used as input, fcvt NaN = 2^32 − 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
+            0xFFFFFFFFFFFFFFFF);  // Expected result from spec
 }
 
 TEST_P(InstFloat, FCVT_WU_S) {
-  // TODO expected to fail as rounding modes not implemented
   initialHeapData_.resize(32);
   float* heap = reinterpret_cast<float*>(initialHeapData_.data());
   heap[0] = 4.52432537;
@@ -652,7 +766,7 @@ TEST_P(InstFloat, FCVT_WU_S) {
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
@@ -660,6 +774,32 @@ TEST_P(InstFloat, FCVT_WU_S) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fcvt.wu.s t0, fa3 # fcvt 1 = 1
+    fcvt.wu.s t1, fa4 # Incorrect NaN box should be caught by fcvt and
+                          # canonical NaN used as input, fcvt NaN = 2^32 − 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6),
+            pow(2, 32) - 1);  // Expected result from spec
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFF);
 }
 
 TEST_P(InstFloat, FCVT_D_WU) {
@@ -811,6 +951,34 @@ TEST_P(InstFloat, FMADD_S) {
   EXPECT_EQ(getFPRegister<float>(16), (float)-3781.49121);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFFC56C57DC);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xFFFFFFFF44758476);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fmadd.s fa5, fa3, fa3, fa3  # (1 * 1) + 1 = 2
+    fmadd.s fa6, fa4, fa3, fa3  # Incorrect NaN box should be caught by fmadd and
+                          # canonical NaN used as input, (NaN * 1) + 1 = NaN
+    fmadd.s fa7, fa3, fa4, fa3
+    fmadd.s fs2, fa3, fa3, fa4
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff40000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FNMSUB_D) {
@@ -866,6 +1034,34 @@ TEST_P(InstFloat, FNMSUB_S) {
   EXPECT_EQ(getFPRegister<float>(16),
             -((float)999.212341 * (float)-3.78900003) + (float)4.52432537);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF456CE8A4);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fnmsub.s fa5, fa3, fa3, fa3  # -(1 * 1) + 1 = 0
+    fnmsub.s fa6, fa4, fa3, fa3  # Incorrect NaN box should be caught by fmadd and
+                          # canonical NaN used as input, -(NaN * 1) + 1 = NaN
+    fnmsub.s fa7, fa3, fa4, fa3
+    fnmsub.s fs2, fa3, fa3, fa4
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMSUB_S) {
@@ -897,6 +1093,34 @@ TEST_P(InstFloat, FMSUB_S) {
   EXPECT_EQ(getFPRegister<float>(16), (float)-3790.54004);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFFC56CE8A4);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xFFFFFFFFC47E16B8);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fmsub.s fa5, fa3, fa3, fa3  # (1 * 1) - 1 = 0
+    fmsub.s fa6, fa4, fa3, fa3  # Incorrect NaN box should be caught by fmadd and
+                          # canonical NaN used as input, (NaN * 1) - 1 = NaN
+    fmsub.s fa7, fa3, fa4, fa3
+    fmsub.s fs2, fa3, fa3, fa4
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMSUB_D) {
@@ -960,6 +1184,34 @@ TEST_P(InstFloat, FNMADD_S) {
   EXPECT_EQ(getFPRegister<float>(16), (float)3781.4912646554);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF456c57dc);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xFFFFFFFFc4758476);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fnmadd.s fa5, fa3, fa3, fa3  # -(1 * 1) - 1 = -2
+    fnmadd.s fa6, fa4, fa3, fa3  # Incorrect NaN box should be caught by fmadd and
+                          # canonical NaN used as input, -(NaN * 1) - 1 = NaN
+    fnmadd.s fa7, fa3, fa4, fa3
+    fnmadd.s fs2, fa3, fa3, fa4
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffffc0000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FNMADD_D) {
@@ -1032,6 +1284,30 @@ TEST_P(InstFloat, FCVT_D_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xC00E4FDF40000000);
   EXPECT_EQ(getFPRegister<double>(2), (double)(float)999.212341);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x408F39B2E0000000);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fcvt.d.s ft0, fa3 # fcvt 1 = 1
+    fcvt.d.s ft1, fa4 # Incorrect NaN box should be caught by fcvt and
+                          # canonical NaN used as input, fcvt NaN = 2^32 − 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0x3FF0000000000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0x7FF8000000000000);
 }
 
 TEST_P(InstFloat, FCVT_S_D) {
@@ -1174,6 +1450,32 @@ TEST_P(InstFloat, FSGNJ_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFFc0727efa);
   EXPECT_EQ(getFPRegister<float>(3), (float)4.52432537);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0xFFFFFFFF4090c746);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fsgnj.s ft0, fa3, fa3 # fsgnj -1, -1 = -1
+    fsgnj.s ft1, fa4, fa3 # Incorrect NaN box should be caught by fsgnj and
+                          # canonical NaN used as input, fsgnj +NaN, -1 = -NaN
+    fsgnj.s ft2, fa3, fa4 # Not commutative, fsgnj -1, +NaN = 1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff3f800000);
 }
 
 TEST_P(InstFloat, FSGNJX_D) {
@@ -1276,6 +1578,32 @@ TEST_P(InstFloat, FSGNJX_S) {
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<float>(2), (float)3.78900003);
   EXPECT_EQ(getFPRegister<float>(3), (float)4.52432537);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fsgnjx.s ft0, fa3, fa3 # fsgnjx -1, -1 = 1
+    fsgnjx.s ft1, fa4, fa3 # Incorrect NaN box should be caught by fsgnjx and
+                          # canonical NaN used as input, fsgnjx +NaN, -1 = -NaN
+    fsgnjx.s ft2, fa3, fa4 # Not commutative, fsgnjx -1, +NaN = -1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
 }
 
 TEST_P(InstFloat, FSGNJN_D) {
@@ -1380,6 +1708,32 @@ TEST_P(InstFloat, FSGNJN_S) {
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<float>(2), (float)3.78900003);
   EXPECT_EQ(getFPRegister<float>(3), (float)-4.52432537);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fsgnjn.s ft0, fa3, fa3 # fsgnjn -1, -1 = 1
+    fsgnjn.s ft1, fa4, fa3 # Incorrect NaN box should be caught by fsgnjn and
+                          # canonical NaN used as input, fsgnjn +NaN, -1 = NaN
+    fsgnjn.s ft2, fa3, fa4 # Not commutative, fsgnjn -1, +NaN = -1
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
 }
 
 TEST_P(InstFloat, FADD_S) {
@@ -1411,6 +1765,30 @@ TEST_P(InstFloat, FADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF3f3c3e48);
   EXPECT_EQ(getFPRegister<float>(1), (float)995.423341);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF4478db18);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fadd.s fa5, fa3, fa3  # 1 + 1 = 1
+    fadd.s fa6, fa4, fa3  # Incorrect NaN box should be caught by fadd and
+                          # canonical NaN used as input, NaN + 1 = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff40000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FADD_D) {
@@ -1497,6 +1875,30 @@ TEST_P(InstFloat, FSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFFc1050362);
   EXPECT_EQ(getFPRegister<float>(1), (float)4.52432537 - (float)-3.78900003);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF41050362);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fsub.s fa5, fa3, fa3  # 1 - 1 = 0
+    fsub.s fa6, fa4, fa3  # Incorrect NaN box should be caught by fsub and
+                          # canonical NaN used as input, NaN - 1 = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FSQRT_D) {
@@ -1562,9 +1964,33 @@ TEST_P(InstFloat, FSQRT_S) {
 
   EXPECT_EQ(getFPRegister<float>(0), (float)31.610321);
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF41FCE1F0);
-  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF7FC00000);  // NaN
+  EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);  // NaN
   EXPECT_EQ(getFPRegister<float>(2), (float)0.0672896132);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF3D89CF23);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fsqrt.s fa5, fa3  # 1^0.5 = 1
+    fsqrt.s fa6, fa4  # Incorrect NaN box should be caught by fsqrt and
+                      # canonical NaN used as input, NaN^0.5 = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMV_X_D) {
@@ -1758,11 +2184,35 @@ TEST_P(InstFloat, FEQ_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    feq.s t0, fa3, fa3 # feq -1, -1 = 1
+    feq.s t1, fa4, fa3 # Incorrect NaN box should be caught by feq and
+                          # canonical NaN used as input, feq NaN, 1 = 0
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
 }
 
 TEST_P(InstFloat, FLT_D) {
@@ -1827,12 +2277,36 @@ TEST_P(InstFloat, FLT_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    flt.s t0, fa3, fa3 # flt -1, -1 = 0
+    flt.s t1, fa4, fa3 # Incorrect NaN box should be caught by flt and
+                          # canonical NaN used as input, flt NaN, 1 = 0
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
 }
 
 TEST_P(InstFloat, FLE_D) {
@@ -1897,12 +2371,36 @@ TEST_P(InstFloat, FLE_S) {
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffffbf800000;  // Correct NaN boxing of no. -1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fle.s t0, fa3, fa3 # fle -1, -1 = 1
+    fle.s t1, fa4, fa3 # Incorrect NaN box should be caught by fle and
+                          # canonical NaN used as input, fle NaN, 1 = 0
+)");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffffbf800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
 }
 
 TEST_P(InstFloat, FMIN_D) {
@@ -1962,7 +2460,6 @@ TEST_P(InstFloat, FMIN_S) {
     ecall
 
     flw fa3, 0(a0)
-    flw fa5, 4(a0)
     flw fa4, 8(a0)
     flw fa6, 12(a0)
 
@@ -1973,22 +2470,46 @@ TEST_P(InstFloat, FMIN_S) {
     fcvt.s.w ft1, zero
     fneg.s ft2, ft1
 
-    fmin.s ft3, ft1, ft2 # min(+0, -0) = -0 # fminf picks the later of the two options in both cases. Check our implementation fixes this
+    fmin.s ft3, ft1, ft2 # min(+0, -0) = -0 # fminf picks the later of the two options in both cases. Check our implementation fixes this to pick -0 instead
     fmin.s ft4, ft2, ft1 # min(-0, +0) = -0
   )");
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
   EXPECT_EQ(getFPRegister<float>(10), (float)-3.78900003);
   EXPECT_EQ(getFPRegister<float>(11), (float)4.52432537);
-  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<float>(3),
-            (float)-0);  // Doesn't check for sign so below test needed
+  EXPECT_EQ(getFPRegister<uint64_t>(0), boxedPositiveNan);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff00000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff80000000);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0xffffffff80000000);
-  EXPECT_EQ(getFPRegister<float>(4), (float)-0);
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0xffffffff80000000);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fmin.s fa5, fa3, fa3  # fmin(1, 1) = 1
+    fmin.s fa6, fa4, fa4  # Incorrect NaN box should be caught by fmin and
+                          # canonical NaN used as input, fmin(NaN, NaN) = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
 TEST_P(InstFloat, FMAX_D) {
@@ -2057,30 +2578,300 @@ TEST_P(InstFloat, FMAX_S) {
     fcvt.s.w ft1, zero
     fneg.s ft2, ft1
 
-    fmax.s ft3, ft1, ft2 # max(+0, -0) = 0
-    fmax.s ft4, ft2, ft1 # max(-0, +0) = 0
+    fmax.s ft3, ft1, ft2 # max(+0, -0) = +0
+    fmax.s ft4, ft2, ft1 # max(-0, +0) = +0
   )");
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
   EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
-  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xffffffff7fc00000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 
-  EXPECT_EQ(getFPRegister<float>(10), (float)4.52432537);
   EXPECT_EQ(getFPRegister<uint64_t>(10), 0xffffffff4090c746);
-  EXPECT_EQ(getFPRegister<float>(11), (float)4.52432537);
-  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff7fc00000);
-  EXPECT_EQ(getFPRegister<float>(3), (float)0);
+  EXPECT_EQ(getFPRegister<uint64_t>(11), 0xffffffff4090c746);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), boxedPositiveNan);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff00000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff80000000);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0xffffffff00000000);
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0xffffffff00000000);
+
+  initialHeapData_.resize(32);
+  uint64_t* intHeap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  intHeap[0] = 0xffffffff3f800000;  // Correct NaN boxing of no. 1
+  intHeap[1] = 0xfff7ffff3f800000;  // Incorrect NaN boxing of no. 1
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0) # Correct
+    fld fa4, 8(a0) # Incorrect
+
+    fmax.s fa5, fa3, fa3  # fmax(1, 1) = 1
+    fmax.s fa6, fa4, fa4  # Incorrect NaN box should be caught by fmax and
+                          # canonical NaN used as input, fmax(NaN, NaN) = NaN
+   )");
+
+  EXPECT_EQ(getFPRegister<uint64_t>(13), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(14), 0xfff7ffff3f800000);
+
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstFloat,
-    ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{}"))
-        //                      std::make_tuple(INORDER, YAML::Load("{}")),
-        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-        ),
-    paramToString);
+TEST_P(InstFloat, RoundToNearest) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 3.5;
+  heap[1] = 2.5;
+  heap[2] = -3.5;
+  heap[3] = -2.5;
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    # Set rounding mode to RISC-V "nearest ties to even"
+    li a1, 0
+    fsrm a1
+
+    fld fa3, 0(a0)   # 3.5
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.5
+    fld fa6, 24(a0)  # -2.5
+
+    # Test for how CPP handles ties
+    fcvt.w.d t0, fa3      # should convert to 4
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+    fcvt.w.d t3, fa6      # should convert to -2
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)3.5);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.5);
+  EXPECT_EQ(getFPRegister<double>(16), (double)-2.5);
+
+  // Test for CPP tie handling. Below case test for ties to even
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFFFFE);
+}
+
+TEST_P(InstFloat, StaticRoundingMode) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 2.5;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    # Set rounding mode to "nearest ties to even"
+    li a1, 0
+    fsrm a1
+
+    fld fa3, 0(a0)   # 4.52432537
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.78900003
+    fld fa6, 24(a0)  # nan
+
+    # Should obey dynamic rounding mode in CSR
+    fcvt.w.d t0, fa3      # should convert to 5
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+
+    #towards zero
+    fcvt.w.d t3, fa3, rtz      # should convert to 4
+    fcvt.w.d t4, fa4, rtz      # should convert to 2
+    fcvt.w.d t5, fa5, rtz      # should convert to -3
+
+    #towards -inf
+    fcvt.w.d t6, fa3, rdn      # should convert to 4
+    fcvt.w.d a0, fa4, rdn      # should convert to 2
+    fcvt.w.d a1, fa5, rdn      # should convert to -4
+
+    #towards +inf
+    fcvt.w.d a2, fa3, rup      # should convert to 5
+    fcvt.w.d a3, fa4, rup      # should convert to 3
+    fcvt.w.d a4, fa5, rup      # should convert to -3
+
+    #to nearest ties to maximum magnitude
+    fcvt.w.d a5, fa3, rmm      # should convert to 5
+    fcvt.w.d a6, fa4, rmm      # should convert to 3
+    fcvt.w.d a7, fa5, rmm      # should convert to -4
+
+
+    # Set rounding mode to "round down"
+    li s2, 2
+    fsrm s2
+
+    # Should obey dynamic rounding mode in CSR
+    fcvt.w.d s2, fa3      # should convert to 4
+    fcvt.w.d s3, fa4      # should convert to 2
+    fcvt.w.d s4, fa5      # should convert to -4
+
+    #to nearest ties to even
+    fcvt.w.d s5, fa3, rne      # should convert to 5
+    fcvt.w.d s6, fa4, rne      # should convert to 2
+    fcvt.w.d s7, fa5, rne      # should convert to -4
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  // Dynamic
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+
+  // RTZ
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFD);
+
+  // RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 0xFFFFFFFFFFFFFFFC);
+
+  // RUP
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0xFFFFFFFFFFFFFFFD);
+
+  // RMM
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0x5);
+  // This test won't pass as CPP doesn't provide functionality to tie to max
+  // magnitude
+  //  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0xFFFFFFFFFFFFFFFC);
+
+  // Dynamic change to RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(18), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(19), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0xFFFFFFFFFFFFFFFC);
+
+  // Dynamic
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(22), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0xFFFFFFFFFFFFFFFC);
+}
+
+TEST_P(InstFloat, DynamicRoundingMode) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 2.5;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)   # 4.52432537
+    fld fa4, 8(a0)   # 2.5
+    fld fa5, 16(a0)  # -3.78900003
+    fld fa6, 24(a0)  # nan
+
+    # Set rounding mode to RNE
+    li a1, 0
+    fsrm a1
+
+    #nearest ties to even
+    fcvt.w.d t0, fa3      # should convert to 5
+    fcvt.w.d t1, fa4      # should convert to 2
+    fcvt.w.d t2, fa5      # should convert to -4
+
+
+    # Set rounding mode to RTZ
+    li a1, 1
+    fsrm a1
+
+    #towards zero
+    fcvt.w.d t3, fa3      # should convert to 4
+    fcvt.w.d t4, fa4      # should convert to 2
+    fcvt.w.d t5, fa5      # should convert to -3
+
+
+    # Set rounding mode to RDN
+    li a1, 2
+    fsrm a1
+
+    #towards -inf
+    fcvt.w.d t6, fa3      # should convert to 4
+    fcvt.w.d a0, fa4      # should convert to 2
+    fcvt.w.d s7, fa5      # should convert to -4
+
+
+    # Set rounding mode to RUP
+    li a1, 3
+    fsrm a1
+
+    #towards +inf
+    fcvt.w.d a2, fa3      # should convert to 5
+    fcvt.w.d a3, fa4      # should convert to 3
+    fcvt.w.d a4, fa5      # should convert to -3
+
+
+    # Set rounding mode to RMM
+    li a1, 4
+    fsrm a1
+
+    #to nearest ties to maximum magnitude
+    fcvt.w.d a5, fa3, rmm      # should convert to 5
+    fcvt.w.d a6, fa4, rmm      # should convert to 3
+    fcvt.w.d a7, fa5, rmm      # should convert to -4
+
+)");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)2.5);
+  EXPECT_EQ(getFPRegister<double>(15), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  // RNE
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFC);
+
+  // RTZ
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFD);
+
+  // RDN
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0x2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0xFFFFFFFFFFFFFFFC);
+
+  // RUP
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0xFFFFFFFFFFFFFFFD);
+
+  // RMM
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0x5);
+  // This test won't pass as CPP doesn't provide functionality to tie to max
+  // magnitude
+  //  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0x3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0xFFFFFFFFFFFFFFFC);
+}
+
+INSTANTIATE_TEST_SUITE_P(RISCV, InstFloat,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

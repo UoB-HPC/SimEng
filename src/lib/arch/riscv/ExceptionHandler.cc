@@ -5,6 +5,7 @@
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/arch/riscv/Architecture.hh"
 
 namespace simeng {
 namespace arch {
@@ -641,6 +642,63 @@ bool ExceptionHandler::init() {
     }
 
     return concludeSyscall(stateChange);
+  } else if (exception == InstructionException::PipelineFlush) {
+    // Retrieve metadata, operand values and destination registers from
+    // instruction
+    auto metadata = instruction_.getMetadata();
+    auto operands = instruction_.getSourceOperands();
+    auto destinationRegs = instruction_.getDestinationRegisters();
+
+    ProcessStateChange stateChange;
+    switch (instruction_.getMetadata().opcode) {
+      case Opcode::RISCV_CSRRW:  // CSRRW rd,csr,rs1
+        if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
+          // Update CPP rounding mode but not floating point CSR as currently no
+          // implementation
+
+          switch (operands[0].get<uint64_t>()) {
+            case 0:  // RNE, Round to nearest, ties to even
+              fesetround(FE_TONEAREST);
+              break;
+            case 1:  // RTZ Round towards zero
+              fesetround(FE_TOWARDZERO);
+              break;
+            case 2:  // RDN Round down (-infinity)
+              fesetround(FE_DOWNWARD);
+              break;
+            case 3:  // RUP Round up (+infinity)
+              fesetround(FE_UPWARD);
+              break;
+            case 4:  // RMM Round to nearest, ties to max magnitude
+              // FE_TONEAREST ties towards even but no other options available
+              // in fenv
+              fesetround(FE_TONEAREST);
+              break;
+            default:
+              // Invalid Case
+              // TODO "If frm is set to an invalid
+              // value (101–111), any subsequent attempt to execute a
+              // floating-point operation with a dynamic rounding mode will
+              // raise an illegal instruction exception." - Volume I: RISC-V
+              // Unprivileged ISA V20191213 pg65
+              //
+              // Should be allowed to be set incorrectly and only caught when
+              // used. Set CSR to requested value, checking logic should be done
+              // by Instruction::setStaticRoundingModeThen. Requires full
+              // implementation of Zicsr
+              break;
+          }
+        }
+
+        // Dummy logic to allow progression. Set Rd to 0
+        stateChange = {ChangeType::REPLACEMENT, {destinationRegs[0]}, {0ull}};
+        break;
+      default:
+        printException(instruction_);
+        return fatal();
+    }
+
+    return concludeSyscall(stateChange);
   }
 
   printException(instruction_);
@@ -799,10 +857,13 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
+      std::cout << "encoding unallocated";
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
+      break;
+    case InstructionException::AliasNotYetImplemented:
+      std::cout << "alias not-yet-implemented" << std::endl;
       break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";
@@ -821,6 +882,14 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
+      break;
+    case InstructionException::IllegalInstruction:
+      std::cout << "illegal instruction";
+      break;
+    case InstructionException::PipelineFlush:
+      // TODO update/parameterize this output when more sources of this
+      // exception are implemented
+      std::cout << "unknown atomic operation";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)

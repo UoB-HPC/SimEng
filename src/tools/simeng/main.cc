@@ -88,6 +88,7 @@ int main(int argc, char** argv) {
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
   std::cout << "[SimEng] Config file: " << configFilePath << std::endl;
+  std::cout << "[SimEng] ISA: " << coreInstance->getISAString() << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;

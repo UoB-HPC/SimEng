@@ -14,7 +14,10 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          MicroOpInfo microOpInfo)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture),
+      metadata(metadata),
+      exception_(metadata.getMetadataException()) {
+  exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;
@@ -33,9 +36,14 @@ Instruction::Instruction(const Architecture& architecture,
 
 InstructionException Instruction::getException() const { return exception_; }
 
-const span<Register> Instruction::getOperandRegisters() const {
+const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
+
+const span<RegisterValue> Instruction::getSourceOperands() const {
+  return {const_cast<RegisterValue*>(operands.data()), operands.size()};
+}
+
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};

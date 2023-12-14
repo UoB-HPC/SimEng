@@ -272,7 +272,7 @@ void Core::forwardOperands(const span<Register>& registers,
     return;
   }
 
-  auto sourceRegisters = uop->getOperandRegisters();
+  auto sourceRegisters = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     // Check each forwarded register vs source operands and supply for each
     // match
@@ -301,7 +301,7 @@ void Core::readRegisters() {
 
   // Register read
   // Identify missing registers and supply values
-  const auto& sourceRegisters = uop->getOperandRegisters();
+  const auto& sourceRegisters = uop->getSourceRegisters();
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {

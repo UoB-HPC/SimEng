@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cfenv>
+#include <functional>
 #include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
@@ -42,12 +44,15 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  IllegalInstruction,
+  PipelineFlush
 };
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
@@ -57,12 +62,6 @@ class Instruction : public simeng::Instruction {
    */
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata);
-
-  /** Construct an instruction instance by decoding a provided instruction word.
-   */
-  Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata, uint8_t latency,
-              uint8_t stallCycles);
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,
@@ -74,7 +73,11 @@ class Instruction : public simeng::Instruction {
   virtual InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
-  const span<Register> getOperandRegisters() const override;
+  const span<Register> getSourceRegisters() const override;
+
+  /** Retrieve the data contained in the source registers this instruction
+   * reads.*/
+  const span<RegisterValue> getSourceOperands() const override;
 
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
@@ -161,6 +164,9 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
 
+  /** Retrieve the instruction's associated architecture. */
+  const Architecture& getArchitecture() const;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
@@ -177,6 +183,7 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
+ private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -209,13 +216,6 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
-  /** Invalidate instructions that are currently not yet implemented. This
- prevents errors during speculated branches with unknown destinations;
- non-executable assertions. memory is decoded into valid but not implemented
- instructions tripping assertions.
- TODO remove once all extensions are supported*/
-  void invalidateIfNotImplemented();
-
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
@@ -224,6 +224,13 @@ class Instruction : public simeng::Instruction {
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
+
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction
+   */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
 
   // Metadata
   /** Is this a store operation? */

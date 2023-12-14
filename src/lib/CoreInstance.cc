@@ -233,10 +233,11 @@ void CoreInstance::createCore() {
   }
 
   // Create the architecture, with knowledge of the kernel
-  if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
+  instructionSetArchString_ = config_["Core"]["ISA"].as<std::string>();
+  if (instructionSetArchString_ == "rv64") {
     arch_ =
         std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_);
-  } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
+  } else if (instructionSetArchString_ == "AArch64") {
     arch_ =
         std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
   }
@@ -340,6 +341,9 @@ const uint64_t CoreInstance::getProcessImageSize() const {
 
 const uint64_t CoreInstance::getHeapStart() const {
   return process_->getHeapStart();
+}
+const std::string CoreInstance::getISAString() const {
+  return instructionSetArchString_;
 };
 
 }  // namespace simeng

@@ -1406,6 +1406,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ | CS_AC_WRITE;
       operands[5].access = CS_AC_READ;
+      // determine correct type for operand 5
+      if (operandStr.find("#") != std::string::npos) {
+        operands[5].type = ARM64_OP_IMM;
+      } else {
+        operands[5].type = ARM64_OP_REG;
+      }
       break;
     case Opcode::AArch64_ST1Twov16b:
       [[fallthrough]];
@@ -1426,6 +1432,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ | CS_AC_WRITE;
       operands[3].access = CS_AC_READ;
+      // determine correct type for operand 3
+      if (operandStr.find("#") != std::string::npos) {
+        operands[3].type = ARM64_OP_IMM;
+      } else {
+        operands[3].type = ARM64_OP_REG;
+      }
       break;
     case Opcode::AArch64_ST2Twov4s_POST:
       // ST2 post incorrectly flags read and write
@@ -2559,7 +2571,10 @@ void InstructionMetadata::revertAliasing() {
   }
 }
 
-void InstructionMetadata::aliasNYI() { id = ARM64_INS_INVALID; }
+void InstructionMetadata::aliasNYI() {
+  metadataExceptionEncountered_ = true;
+  metadataException_ = InstructionException::AliasNotYetImplemented;
+}
 
 }  // namespace aarch64
 }  // namespace arch
