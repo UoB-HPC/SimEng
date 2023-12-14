@@ -106,8 +106,7 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_,
-                                  writebackUnit_.getInstructionsWrittenCount());
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const {

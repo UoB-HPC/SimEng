@@ -5,7 +5,7 @@
 
 Core:
   ISA: rv64
-  Simulation-Mode: outoforder
+  Simulation-Mode: emulation
   Clock-Frequency: 2.5
   # Timer-Frequency is in MHz.
   Timer-Frequency: 200
@@ -34,7 +34,7 @@ Branch-Predictor:
   RAS-entries: 5
   Fallback-Static-Predictor: "Always-Taken"
 L1-Data-Memory:
-  Interface-Type: Fixed
+  Interface-Type: Flat
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
