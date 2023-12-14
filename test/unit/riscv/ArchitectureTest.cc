@@ -85,7 +85,7 @@ TEST_F(RiscVArchitectureTest, getSystemRegisterTag) {
 
 TEST_F(RiscVArchitectureTest, getNumSystemRegisters) {
   uint16_t output = arch->getNumSystemRegisters();
-  EXPECT_EQ(output, 0);
+  EXPECT_EQ(output, 6);
 }
 
 TEST_F(RiscVArchitectureTest, handleException) {

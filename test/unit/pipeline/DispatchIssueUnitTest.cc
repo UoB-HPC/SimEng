@@ -98,7 +98,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
   // All expected calls to instruction during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop, getOperandRegisters())
+  EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs)));
   EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
@@ -207,7 +207,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
     // All expected calls to instruction during tick()
     EXPECT_CALL(*insns[i].get(), getSupportedPorts())
         .WillOnce(ReturnRef(suppPorts));
-    EXPECT_CALL(*insns[i].get(), getOperandRegisters())
+    EXPECT_CALL(*insns[i].get(), getSourceRegisters())
         .WillOnce(Return(span<Register>()));
     EXPECT_CALL(*insns[i].get(), getDestinationRegisters())
         .WillOnce(Return(span<Register>()));
@@ -274,7 +274,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
   // All expected calls to instruction during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop, getOperandRegisters()).WillOnce(Return(span<Register>()));
+  EXPECT_CALL(*uop, getSourceRegisters()).WillOnce(Return(span<Register>()));
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>()));
   // Expected call to portAllocator during tick()
@@ -341,7 +341,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createDependancy_raw) {
   // All expected calls to instruction 1 during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop, getOperandRegisters())
+  EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_1)));
   EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
@@ -361,7 +361,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createDependancy_raw) {
   // All expected calls to instruction 2 during tick()
   EXPECT_CALL(*uop2, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop2, getOperandRegisters())
+  EXPECT_CALL(*uop2, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_2)));
   EXPECT_CALL(*uop2, isOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop2, getDestinationRegisters())
@@ -435,7 +435,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   // All expected calls to instruction 1 during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop, getOperandRegisters())
+  EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_1)));
   EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
@@ -452,7 +452,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   // All expected calls to instruction 2 during tick()
   EXPECT_CALL(*uop2, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   uop->setExceptionEncountered(false);
-  EXPECT_CALL(*uop2, getOperandRegisters())
+  EXPECT_CALL(*uop2, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_2)));
   EXPECT_CALL(*uop2, isOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop2, getDestinationRegisters())
