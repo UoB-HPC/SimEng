@@ -82,7 +82,7 @@ The ``ExpectationNode`` tree structure would be:
   :width: 350
   :alt: ExpectationNode structure example
 
-The tree structure formed with ``ExpectationNode`` instances is constructed through the ``addChild(...)`` utility of the ``ExpectationNode`` class. Starting at a root node, ``addChild(...)`` is used to create various branches of the tree which map to the various config options as described in the above diagram. For those nodes which hold config values, either ``setValueBounds(...)`` or ``setValueSet(...)`` can be used to set the config value restrictions.
+The tree structure formed with ``ExpectationNode`` instances is constructed through the ``addChild(...)`` utility of the ``ExpectationNode`` class. Starting at a root node, ``addChild(...)`` is used to create various branches of the tree which map to the various config options as described in the above diagram. For those nodes which hold config values, either ``setValueBounds(...)`` or ``setValueSet(...)`` is used to set the config value restrictions.
 
 Creating a new expectation
 **************************
