@@ -42,7 +42,6 @@ struct executionInfo {
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
-  EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
   AliasNotYetImplemented,
   MisalignedPC,
