@@ -346,6 +346,8 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   std::cout << std::endl;
   std::cout << "[SimEng] Config file: "
             << simeng::config::SimInfo::getConfigPath() << std::endl;
+  std::cout << "[SimEng] ISA: " << simeng::config::SimInfo::getISAString()
+            << std::endl;
   std::cout << "[SimEng] Local Special File directory: ";
   if (simeng::config::SimInfo::getGenSpecFiles())
     std::cout << "True";
