@@ -604,10 +604,10 @@ void ModelConfig::validate() {
     }
   }
   // Ensure that if a Special-File-Dir-Path is provided, it exists
-  if (!(defaultSpecialFilePath ==
-        configFile_[root][subFields[1]].as<std::string>()) &&
-      !std::filesystem::exists(
-          configFile_[root][subFields[1]].as<std::string>())) {
+  if ((defaultSpecialFilePath !=
+       configFile_[root][subFields[1]].as<std::string>()) &&
+      !std::ifstream(configFile_[root][subFields[1]].as<std::string>())
+           .good()) {
     invalid_ << "\t- Special-File-Dir-Path must exist. Please ensure the given "
                 "path is absolute and correct.";
   }

@@ -1,5 +1,3 @@
-#include <filesystem>
-
 #include "gmock/gmock.h"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
@@ -90,8 +88,9 @@ class SpecialFileDirGenTest : public testing::Test {
 TEST_F(SpecialFileDirGenTest, genAndDelete) {
   // Make sure files currently do not exist
   for (int i = 0; i < allFiles_names_Lines.size(); i++) {
-    EXPECT_FALSE(std::filesystem::exists(TEST_SPEC_FILE_DIR +
-                                         std::get<0>(allFiles_names_Lines[i])));
+    EXPECT_FALSE(
+        std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
+            .good());
   }
 
   // Generate files
@@ -99,8 +98,9 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
 
   // Validate files exist and are correct
   for (int i = 0; i < allFiles_names_Lines.size(); i++) {
-    EXPECT_TRUE(std::filesystem::exists(TEST_SPEC_FILE_DIR +
-                                        std::get<0>(allFiles_names_Lines[i])));
+    EXPECT_TRUE(
+        std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
+            .good());
     std::ifstream file(TEST_SPEC_FILE_DIR +
                        std::get<0>(allFiles_names_Lines[i]));
     const std::vector<std::string>& knownLines =
@@ -122,8 +122,9 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
 
   // Make sure files don't exist
   for (int i = 0; i < allFiles_names_Lines.size(); i++) {
-    EXPECT_FALSE(std::filesystem::exists(TEST_SPEC_FILE_DIR +
-                                         std::get<0>(allFiles_names_Lines[i])));
+    EXPECT_FALSE(
+        std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
+            .good());
   }
 }
 
