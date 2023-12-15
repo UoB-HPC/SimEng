@@ -47,9 +47,19 @@ class OSTest : public testing::Test {
 TEST_F(OSTest, processElf_stackPointer) {
   os.createProcess(proc_elf);
   // cmdLine[0] length will change depending on the host system so final stack
-  // pointer needs to be calculated, and need to add +1 for the null char at end
-  // of a string
-  EXPECT_EQ(os.getInitialStackPointer(), 1079830551 + cmdLine[0].length() + 1);
+  // pointer needs to be calculated manually
+  // cmdLineSize + 1 for null seperator
+  const uint64_t cmdLineSize = cmdLine[0].size() + 1;
+  // "OMP_NUM_THREADS=1" + 1 for null seperator
+  const uint64_t envStringsSize = 18;
+  // Size of initial stack frame (17 push_backs) * 8
+  const uint64_t stackFrameSize = 17 * 8;
+  // cmd + Env needs +1 for null seperator
+  const uint64_t stackPointer =
+      proc_elf.getStackStart() -
+      kernel::alignToBoundary(cmdLineSize + envStringsSize + 1, 32) -
+      kernel::alignToBoundary(stackFrameSize, 32);
+  EXPECT_EQ(os.getInitialStackPointer(), stackPointer);
   EXPECT_EQ(os.getInitialStackPointer(), proc_elf.getStackPointer());
 }
 

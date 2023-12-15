@@ -56,7 +56,7 @@ TEST_F(ProcessTest, createProcess_hex) {
 TEST_F(ProcessTest, get_x_Start) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
   EXPECT_TRUE(proc.isValid());
-  uint64_t heapStart = 5040480;
+  const uint64_t heapStart = 5040480;
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
   EXPECT_EQ(proc.getHeapStart(), heapStart);
@@ -94,9 +94,19 @@ TEST_F(ProcessTest, getStackPointer) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
   EXPECT_TRUE(proc.isValid());
   // cmdLine[0] length will change depending on the host system so final stack
-  // pointer needs to be calculated, and need to add +1 for the null char at end
-  // of a string
-  EXPECT_EQ(proc.getStackPointer(), 1079830551 + cmdLine[0].length() + 1);
+  // pointer needs to be calculated manually
+  // cmdLineSize + 1 for null seperator
+  const uint64_t cmdLineSize = cmdLine[0].size() + 1;
+  // "OMP_NUM_THREADS=1" + 1 for null seperator
+  const uint64_t envStringsSize = 18;
+  // Size of initial stack frame (17 push_backs) * 8
+  const uint64_t stackFrameSize = 17 * 8;
+  // cmd + Env needs +1 for null seperator
+  const uint64_t stackPointer =
+      proc.getStackStart() -
+      kernel::alignToBoundary(cmdLineSize + envStringsSize + 1, 32) -
+      kernel::alignToBoundary(stackFrameSize, 32);
+  EXPECT_EQ(proc.getStackPointer(), stackPointer);
 }
 
 }  // namespace simeng
