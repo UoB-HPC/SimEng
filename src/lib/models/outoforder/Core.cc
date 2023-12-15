@@ -16,33 +16,31 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node config)
+           pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
     : isa_(isa),
-      physicalRegisterStructures_(
-          isa.getConfigPhysicalRegisterStructure(config)),
-      physicalRegisterQuantities_(
-          isa.getConfigPhysicalRegisterQuantities(config)),
+      physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
+      physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
       registerFileSet_(physicalRegisterStructures_),
-      registerAliasTable_(isa.getRegisterFileStructures(),
+      registerAliasTable_(config::SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
-      fetchToDecodeBuffer_(
-          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), {}),
+      fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(),
+                           {}),
       decodeToRenameBuffer_(
-          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), nullptr),
+          config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
       renameToDispatchBuffer_(
-          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), nullptr),
-      issuePorts_(config["Execution-Units"].size(), {1, nullptr}),
+          config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
+      issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(
-          config["Execution-Units"].size() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>(),
+          config["Execution-Units"].num_children() +
+              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
           {1, nullptr}),
       loadStoreQueue_(
-          config["Queue-Sizes"]["Load"].as<unsigned int>(),
-          config["Queue-Sizes"]["Store"].as<unsigned int>(), dataMemory,
-          {completionSlots_.data() + config["Execution-Units"].size(),
-           config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
+          config["Queue-Sizes"]["Load"].as<uint32_t>(),
+          config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
+          {completionSlots_.data() + config["Execution-Units"].num_children(),
+           config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
@@ -60,7 +58,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
       reorderBuffer_(
-          config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
+          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
           loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
           [this](auto branchAddress) {
@@ -73,20 +71,19 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_, config),
+                         portAllocator, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
-  for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
+      clockFrequency_(config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9),
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
+  for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
-    if (config["Execution-Units"][i]["Blocking-Groups"].IsDefined()) {
-      for (YAML::Node gp : config["Execution-Units"][i]["Blocking-Groups"]) {
-        blockingGroups.push_back(gp.as<uint16_t>());
-      }
+    for (ryml::ConstNodeRef grp :
+         config["Execution-Units"][i]["Blocking-Group-Nums"]) {
+      blockingGroups.push_back(grp.as<uint16_t>());
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],

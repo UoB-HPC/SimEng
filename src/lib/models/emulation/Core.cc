@@ -19,7 +19,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       programByteLength_(programByteLength),
       isa_(isa),
       pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()),
+      registerFileSet_(config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_) {
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
@@ -299,7 +299,8 @@ uint64_t Core::getSystemTimer() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"instructions", std::to_string(instructionsExecuted_)},
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)}};
 };
 

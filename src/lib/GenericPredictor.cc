@@ -4,17 +4,24 @@
 
 namespace simeng {
 
-GenericPredictor::GenericPredictor(YAML::Node config)
-    : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint64_t>()),
-      btb_(1 << btbBits_,
-           {config["Branch-Predictor"]["Fallback-Static-Predictor"]
-                .as<uint16_t>(),
-            0}),
+GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
+    : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint8_t>()),
       satCntBits_(
-          config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint64_t>()),
+          config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint8_t>()),
       globalHistoryLength_(
-          config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
-      rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
+          config["Branch-Predictor"]["Global-History-Length"].as<uint16_t>()),
+      rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()) {
+  // Calculate the saturation counter boundary between weakly taken and
+  // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
+  // value
+  uint8_t weaklyTaken = 1 << (satCntBits_ - 1);
+  uint8_t satCntVal = (config["Branch-Predictor"]["Fallback-Static-Predictor"]
+                           .as<std::string>() == "Always-Taken")
+                          ? weaklyTaken
+                          : (weaklyTaken - 1);
+  // Create branch prediction structures
+  btb_ =
+      std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
   // Alter globalHistoryLength_ value to better suit required format in update()
   globalHistoryLength_ = (1 << globalHistoryLength_) - 1;
 }

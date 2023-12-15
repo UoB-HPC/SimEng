@@ -3,15 +3,15 @@
 #include <fstream>
 #include <string>
 
+#include "simeng/config/SimInfo.hh"
 #include "simeng/version.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 class SpecialFileDirGen {
  public:
   /** Construct a SpecialFileDirGen class by reading in the YAML file and
    * running it through checks and formatting. */
-  SpecialFileDirGen(YAML::Node config);
+  SpecialFileDirGen(ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Removes all files inside the '/src.lib/kernel/specialFiles' directory. */
   void RemoveExistingSFDir();
@@ -26,17 +26,17 @@ class SpecialFileDirGen {
 
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */
-  uint64_t core_count;
-  uint64_t smt;
-  uint64_t socket_count;
-  float bogoMIPS;
-  std::string features;
-  std::string cpu_implementer;
-  uint64_t cpu_architecture;
-  std::string cpu_variant;
-  std::string cpu_part;
-  uint64_t cpu_revision;
-  uint64_t package_count;
+  uint64_t coreCount_;
+  uint64_t socketCount_;
+  uint64_t smt_;
+  float bogoMIPS_;
+  std::string features_;
+  std::string cpuImplementer_;
+  uint64_t cpuArchitecture_;
+  std::string cpuVariant_;
+  std::string cpuPart_;
+  uint64_t cpuRevision_;
+  uint64_t packageCount_;
 
 };  // namespace SpecialFilesDirGen
 

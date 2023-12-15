@@ -14,7 +14,7 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
+Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     : linux_(kernel) {
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
@@ -31,13 +31,10 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  systemRegisterMap_[RISCV_SYSREG_FFLAGS] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_FRM] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_FCSR] = systemRegisterMap_.size();
-
-  systemRegisterMap_[RISCV_SYSREG_CYCLE] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_TIME] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_INSTRET] = systemRegisterMap_.size();
+  for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
+    systemRegisterMap_[config::SimInfo::getSysRegVec()[i]] =
+        systemRegisterMap_.size();
+  }
 
   cycleSystemReg_ = {
       RegisterType::SYSTEM,
@@ -50,12 +47,13 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
   // Extract execution latency/throughput for each group
   std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
-  for (size_t i = 0; i < config["Latencies"].size(); i++) {
-    YAML::Node port_node = config["Latencies"][i];
+  for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
+    ryml::ConstNodeRef port_node = config["Latencies"][i];
     uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
     uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
-    for (size_t j = 0; j < port_node["Instruction-Group"].size(); j++) {
-      uint16_t group = port_node["Instruction-Group"][j].as<uint16_t>();
+    for (size_t j = 0; j < port_node["Instruction-Group-Nums"].num_children();
+         j++) {
+      uint16_t group = port_node["Instruction-Group-Nums"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Set zero inheritance distance for latency assignment as it's explicitly
@@ -87,8 +85,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       }
     }
     // Store any opcode-based latency override
-    for (size_t j = 0; j < port_node["Instruction-Opcode"].size(); j++) {
-      uint16_t opcode = port_node["Instruction-Opcode"][j].as<uint16_t>();
+    for (size_t j = 0; j < port_node["Instruction-Opcodes"].num_children();
+         j++) {
+      uint16_t opcode = port_node["Instruction-Opcodes"][j].as<uint16_t>();
       opcodeExecutionInfo_[opcode].latency = latency;
       opcodeExecutionInfo_[opcode].stallCycles = throughput;
     }
@@ -96,15 +95,16 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
   // using the outoforder core archetype
-  if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
+  if (config::SimInfo::getSimMode() == config::SimulationMode::Outoforder) {
     // Create mapping between instructions groups and the ports that support
     // them
-    for (size_t i = 0; i < config["Ports"].size(); i++) {
+    for (size_t i = 0; i < config["Ports"].num_children(); i++) {
       // Store which ports support which groups
-      YAML::Node group_node = config["Ports"][i]["Instruction-Group-Support"];
-      for (size_t j = 0; j < group_node.size(); j++) {
+      ryml::ConstNodeRef group_node =
+          config["Ports"][i]["Instruction-Group-Support-Nums"];
+      for (size_t j = 0; j < group_node.num_children(); j++) {
         uint16_t group = group_node[j].as<uint16_t>();
-        uint8_t newPort = static_cast<uint8_t>(i);
+        uint16_t newPort = static_cast<uint16_t>(i);
 
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
@@ -124,8 +124,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         }
       }
       // Store any opcode-based port support override
-      YAML::Node opcode_node = config["Ports"][i]["Instruction-Opcode-Support"];
-      for (size_t j = 0; j < opcode_node.size(); j++) {
+      ryml::ConstNodeRef opcode_node =
+          config["Ports"][i]["Instruction-Opcode-Support"];
+      for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
@@ -230,16 +231,6 @@ std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
   return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 
-std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
-    const {
-  uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
-  return {
-      {8, 32},          // General purpose
-      {8, 32},          // Floating Point
-      {8, numSysRegs},  // System
-  };
-}
-
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
@@ -262,23 +253,6 @@ ProcessStateChange Architecture::getInitialState() const {
 }
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
-
-std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
-  return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
-          {8, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
-          {8, getNumSystemRegisters()}};
-}
-
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
-    YAML::Node config) const {
-  return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-          config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>(),
-          getNumSystemRegisters()};
-}
-uint16_t Architecture::getNumSystemRegisters() const {
-  return static_cast<uint16_t>(systemRegisterMap_.size());
-}
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {

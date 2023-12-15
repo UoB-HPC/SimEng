@@ -30,6 +30,10 @@ struct RegisterFileStructure {
   uint16_t bytes;
   /** The number of registers. */
   uint16_t quantity;
+  /** Check for the equality of two RegisterFileStructure structs. */
+  bool operator==(const RegisterFileStructure& other) const {
+    return (bytes == other.bytes) && (quantity == other.quantity);
+  }
 };
 
 /** A processor register file set. Holds the physical registers for each
