@@ -594,6 +594,14 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     }
+    case Opcode::RISCV_C_SWSP: {
+      // sw rs2, offset[7:2](x2)
+      opcode = Opcode::RISCV_SW;
+
+      createMemOpPosOne();
+
+      break;
+    }
     case Opcode::RISCV_C_ADD:
       // add rd, rd, rs2
       // trap if rs2 = zero
@@ -678,6 +686,14 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     }
+    case Opcode::RISCV_C_FLDSP:
+      // TODO RV32DC/RV64DC-only
+      // fld rd, offset[8:3](x2)
+      opcode = Opcode::RISCV_FLD;
+
+      createMemOpPosOne();
+
+      break;
     case Opcode::RISCV_C_SW: {
       // sw rs2 ′, offset[6:2](rs1 ′)
 
