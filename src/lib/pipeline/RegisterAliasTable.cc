@@ -50,7 +50,7 @@ Register RegisterAliasTable::getMapping(Register architectural) const {
          "Invalid register type. Cannot find RAT mapping.");
 
   auto tag = mappingTable_[architectural.type][architectural.tag];
-  return {architectural.type, tag};
+  return {architectural.type, tag, true};
 }
 
 bool RegisterAliasTable::canAllocate(uint8_t type,
@@ -84,7 +84,7 @@ Register RegisterAliasTable::allocate(Register architectural) {
   mappingTable_[architectural.type][architectural.tag] = tag;
   destinationTable_[architectural.type][tag] = architectural.tag;
 
-  return {architectural.type, tag};
+  return {architectural.type, tag, true};
 }
 
 void RegisterAliasTable::commit(Register physical) {
