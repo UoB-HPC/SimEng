@@ -46,7 +46,10 @@ class OSTest : public testing::Test {
 // syscalls and are tested in the Regression suite.
 TEST_F(OSTest, processElf_stackPointer) {
   os.createProcess(proc_elf);
-  EXPECT_EQ(os.getInitialStackPointer(), 1079830624);
+  // cmdLine[0] length will change depending on the host system so final stack
+  // pointer needs to be calculated, and need to add +1 for the null char at end
+  // of a string
+  EXPECT_EQ(os.getInitialStackPointer(), 1079830551 + cmdLine[0].length() + 1);
   EXPECT_EQ(os.getInitialStackPointer(), proc_elf.getStackPointer());
 }
 

@@ -93,7 +93,10 @@ TEST_F(ProcessTest, getEntryPoint) {
 TEST_F(ProcessTest, getStackPointer) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
   EXPECT_TRUE(proc.isValid());
-  EXPECT_EQ(proc.getStackPointer(), 1079830624);
+  // cmdLine[0] length will change depending on the host system so final stack
+  // pointer needs to be calculated, and need to add +1 for the null char at end
+  // of a string
+  EXPECT_EQ(proc.getStackPointer(), 1079830551 + cmdLine[0].length() + 1);
 }
 
 }  // namespace simeng
