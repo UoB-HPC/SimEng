@@ -1,8 +1,8 @@
 #include <iostream>
 
+#include "../ConfigInit.hh"
 #include "gtest/gtest.h"
 #include "simeng/CoreInstance.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
@@ -17,16 +17,14 @@ namespace riscv {
 class RiscVArchitectureTest : public testing::Test {
  public:
   RiscVArchitectureTest()
-      : config(ModelConfig(SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml")
-                   .getConfigFile()),
-        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
-    arch = std::make_unique<Architecture>(kernel, config);
+      : kernel(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                   .as<std::string>()) {
+    arch = std::make_unique<Architecture>(kernel);
     kernel.createProcess(process);
   }
 
  protected:
-  const std::string configPath = SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml";
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::RV64);
 
   // addi	sp, ra, 2000
   std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
@@ -35,7 +33,7 @@ class RiscVArchitectureTest : public testing::Test {
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
   kernel::LinuxProcess process = kernel::LinuxProcess(
-      span((char*)validInstrBytes.data(), validInstrBytes.size()), config);
+      span((char*)validInstrBytes.data(), validInstrBytes.size()));
 };
 
 TEST_F(RiscVArchitectureTest, predecode) {
@@ -64,16 +62,6 @@ TEST_F(RiscVArchitectureTest, predecode) {
   EXPECT_EQ(output[0]->exceptionEncountered(), false);
 }
 
-TEST_F(RiscVArchitectureTest, getRegisterFileStructures) {
-  auto output = arch->getRegisterFileStructures();
-  EXPECT_EQ(output[0].bytes, 8);
-  EXPECT_EQ(output[0].quantity, 32);
-  EXPECT_EQ(output[1].bytes, 8);
-  EXPECT_EQ(output[1].quantity, 32);
-  EXPECT_EQ(output[2].bytes, 8);
-  EXPECT_EQ(output[2].quantity, arch->getNumSystemRegisters());
-}
-
 TEST_F(RiscVArchitectureTest, getSystemRegisterTag) {
   // Test incorrect system register will fail
   int32_t output = arch->getSystemRegisterTag(-1);
@@ -81,11 +69,6 @@ TEST_F(RiscVArchitectureTest, getSystemRegisterTag) {
 
   // Test for correct behaviour
   // TODO: Implement once system registers have been added
-}
-
-TEST_F(RiscVArchitectureTest, getNumSystemRegisters) {
-  uint16_t output = arch->getNumSystemRegisters();
-  EXPECT_EQ(output, 6);
 }
 
 TEST_F(RiscVArchitectureTest, handleException) {
@@ -100,8 +83,8 @@ TEST_F(RiscVArchitectureTest, handleException) {
   // Get Core
   std::string executablePath = "";
   std::vector<std::string> executableArgs = {};
-  std::unique_ptr<CoreInstance> coreInstance = std::make_unique<CoreInstance>(
-      configPath, executablePath, executableArgs);
+  std::unique_ptr<CoreInstance> coreInstance =
+      std::make_unique<CoreInstance>(executablePath, executableArgs);
   const Core& core = *coreInstance->getCore();
   MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);
@@ -130,27 +113,6 @@ TEST_F(RiscVArchitectureTest, getMaxInstructionSize) {
 
 TEST_F(RiscVArchitectureTest, updateSystemTimerRegisters) {
   // TODO: add tests once function has non-blank implementation.
-}
-
-TEST_F(RiscVArchitectureTest, getConfigPhysicalRegisterStructure) {
-  std::vector<RegisterFileStructure> regStruct =
-      arch->getConfigPhysicalRegisterStructure(config);
-  // Values taken from DEMO_RISCV.yaml config file
-  EXPECT_EQ(regStruct[0].bytes, 8);
-  EXPECT_EQ(regStruct[0].quantity, 154);
-  EXPECT_EQ(regStruct[1].bytes, 8);
-  EXPECT_EQ(regStruct[1].quantity, 90);
-  EXPECT_EQ(regStruct[2].bytes, 8);
-  EXPECT_EQ(regStruct[2].quantity, arch->getNumSystemRegisters());
-}
-
-TEST_F(RiscVArchitectureTest, getConfigPhysicalRegisterQuantities) {
-  std::vector<uint16_t> physQuants =
-      arch->getConfigPhysicalRegisterQuantities(config);
-  // Values taken from DEMO_RISCV.yaml config file
-  EXPECT_EQ(physQuants[0], 154);
-  EXPECT_EQ(physQuants[1], 90);
-  EXPECT_EQ(physQuants[2], arch->getNumSystemRegisters());
 }
 
 }  // namespace riscv

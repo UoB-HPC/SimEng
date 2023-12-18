@@ -155,8 +155,7 @@ TEST_P(InstLoad, ld) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

@@ -1,9 +1,9 @@
+#include "../ConfigInit.hh"
 #include "../MockCore.hh"
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
 #include "gmock/gmock.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
@@ -19,15 +19,14 @@ using ::testing::ReturnRef;
 class RiscVExceptionHandlerTest : public ::testing::Test {
  public:
   RiscVExceptionHandlerTest()
-      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml")
-                   .getConfigFile()),
-        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
-        arch(kernel, config),
-        physRegFileSet(arch.getRegisterFileStructures()),
+      : kernel(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                   .as<std::string>()),
+        arch(kernel),
+        physRegFileSet(config::SimInfo::getArchRegStruct()),
         archRegFileSet(physRegFileSet) {}
 
  protected:
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::RV64);
 
   MockCore core;
   MockMemoryInterface memory;

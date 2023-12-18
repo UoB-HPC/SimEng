@@ -1,6 +1,6 @@
+#include "../ConfigInit.hh"
 #include "../MockArchitecture.hh"
 #include "gmock/gmock.h"
-#include "simeng/ModelConfig.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 #include "simeng/version.hh"
 
@@ -17,8 +17,7 @@ class RiscVInstructionTest : public testing::Test {
   RiscVInstructionTest() {}
 
  protected:
-  const std::string configPath = SIMENG_SOURCE_DIR "/configs/DEMO_RISCV.yaml";
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::RV64);
 
   MockArchitecture arch;
   //   InstructionMetadata metadata;

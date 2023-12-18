@@ -92,12 +92,19 @@ const uint16_t LOAD_SME = 82;
 const uint16_t STORE_ADDRESS_SME = 83;
 const uint16_t STORE_DATA_SME = 84;
 const uint16_t STORE_SME = 85;
+const uint16_t ALL = 86;
+const uint16_t NONE = 87;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-static constexpr uint8_t NUM_GROUPS = 86;
+static constexpr uint8_t NUM_GROUPS = 88;
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+    {InstructionGroups::ALL,
+     {InstructionGroups::INT, InstructionGroups::FP, InstructionGroups::SVE,
+      InstructionGroups::PREDICATE, InstructionGroups::SME,
+      InstructionGroups::LOAD, InstructionGroups::STORE,
+      InstructionGroups::BRANCH}},
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_DIV_OR_SQRT,
       InstructionGroups::INT_MUL}},

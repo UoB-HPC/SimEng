@@ -10,7 +10,8 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-    const std::vector<uint16_t>& physicalRegisterStructure, YAML::Node config)
+    const std::vector<uint16_t>& physicalRegisterStructure,
+    ryml::ConstNodeRef config)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
@@ -24,7 +25,7 @@ DispatchIssueUnit::DispatchIssueUnit(
   }
   // Create set of reservation station structs with correct issue port
   // mappings
-  for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
+  for (size_t i = 0; i < config["Reservation-Stations"].num_children(); i++) {
     // Iterate over each reservation station in config
     auto reservation_station = config["Reservation-Stations"][i];
     // Create ReservationStation struct to be stored
@@ -34,10 +35,11 @@ DispatchIssueUnit::DispatchIssueUnit(
         0,
         {}};
     // Resize rs port attribute to match what's defined in config file
-    rs.ports.resize(reservation_station["Ports"].size());
-    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
+    rs.ports.resize(reservation_station["Port-Nums"].num_children());
+    for (size_t j = 0; j < reservation_station["Port-Nums"].num_children();
+         j++) {
       // Iterate over issue ports in config
-      uint16_t issue_port = reservation_station["Ports"][j].as<uint16_t>();
+      uint16_t issue_port = reservation_station["Port-Nums"][j].as<uint16_t>();
       rs.ports[j].issuePort = issue_port;
       // Add port mapping entry, resizing vector if needed
       if ((issue_port + 1) > portMapping_.size()) {

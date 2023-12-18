@@ -1,5 +1,5 @@
+#include "ConfigInit.hh"
 #include "gtest/gtest.h"
-#include "simeng/ModelConfig.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/version.hh"
 
@@ -7,12 +7,11 @@ namespace simeng {
 
 class ProcessTest : public testing::Test {
  public:
-  ProcessTest()
-      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
-                   .getConfigFile()) {}
+  ProcessTest() {}
 
  protected:
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
+
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 
@@ -38,7 +37,7 @@ TEST_F(ProcessTest, alignToBoundary) {
 
 // Tests createProcess(), isValid(), and getPath() functions.
 TEST_F(ProcessTest, createProcess_elf) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   EXPECT_EQ(proc.getPath(),
             SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf");
@@ -47,18 +46,21 @@ TEST_F(ProcessTest, createProcess_elf) {
 // Tests createProcess(), isValid(), and getPath() functions.
 TEST_F(ProcessTest, createProcess_hex) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(
-      span(reinterpret_cast<char*>(demoHex), sizeof(demoHex)), config);
+      span(reinterpret_cast<char*>(demoHex), sizeof(demoHex)));
   EXPECT_TRUE(proc.isValid());
   EXPECT_EQ(proc.getPath(), "\0");
 }
 
 // Tests get{Heap, Stack, Mmap}Start() functions
 TEST_F(ProcessTest, get_x_Start) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   const uint64_t heapStart = 5040480;
-  uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
-  uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
+  uint64_t heapSize =
+      config::SimInfo::getConfig()["Process-Image"]["Heap-Size"].as<uint64_t>();
+  uint64_t stackSize =
+      config::SimInfo::getConfig()["Process-Image"]["Stack-Size"]
+          .as<uint64_t>();
   EXPECT_EQ(proc.getHeapStart(), heapStart);
   EXPECT_EQ(proc.getMmapStart(),
             kernel::alignToBoundary(heapStart + ((heapSize + stackSize) / 2),
@@ -67,31 +69,31 @@ TEST_F(ProcessTest, get_x_Start) {
 }
 
 TEST_F(ProcessTest, getPageSize) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   EXPECT_EQ(proc.getPageSize(), 4096);
 }
 
 TEST_F(ProcessTest, getProcessImage) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   EXPECT_NE(proc.getProcessImage(), nullptr);
 }
 
 TEST_F(ProcessTest, getProcessImageSize) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   EXPECT_GT(proc.getProcessImageSize(), 0);
 }
 
 TEST_F(ProcessTest, getEntryPoint) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   EXPECT_EQ(proc.getEntryPoint(), 4206008);
 }
 
 TEST_F(ProcessTest, getStackPointer) {
-  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine, config);
+  kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
   // cmdLine[0] length will change depending on the host system so final stack
   // pointer needs to be calculated manually

@@ -1,5 +1,5 @@
+#include "ConfigInit.hh"
 #include "gtest/gtest.h"
-#include "simeng/ModelConfig.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/span.hh"
@@ -9,17 +9,14 @@ namespace simeng {
 class OSTest : public testing::Test {
  public:
   OSTest()
-      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
-                   .getConfigFile()),
-        os(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
-        proc_elf(simeng::kernel::LinuxProcess(cmdLine, config)),
+      : os(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+               .as<std::string>()),
+        proc_elf(simeng::kernel::LinuxProcess(cmdLine)),
         proc_hex(simeng::span<char>(reinterpret_cast<char*>(demoHex),
-                                    sizeof(demoHex)),
-                 config) {}
+                                    sizeof(demoHex))) {}
 
  protected:
-  // Linux class is ISA agnostic so we can just use one of the supported ones
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 

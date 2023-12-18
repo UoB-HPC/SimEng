@@ -1,9 +1,9 @@
+#include "../ConfigInit.hh"
 #include "../MockCore.hh"
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
 #include "gmock/gmock.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -19,15 +19,14 @@ using ::testing::ReturnRef;
 class AArch64ExceptionHandlerTest : public ::testing::Test {
  public:
   AArch64ExceptionHandlerTest()
-      : config(simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
-                   .getConfigFile()),
-        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
-        arch(kernel, config),
-        physRegFileSet(arch.getRegisterFileStructures()),
+      : kernel(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                   .as<std::string>()),
+        arch(kernel),
+        physRegFileSet(config::SimInfo::getArchRegStruct()),
         archRegFileSet(physRegFileSet) {}
 
  protected:
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
 
   MockCore core;
   MockMemoryInterface memory;

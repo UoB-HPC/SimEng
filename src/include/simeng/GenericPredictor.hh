@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "simeng/BranchPredictor.hh"
-#include "yaml-cpp/yaml.h"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 
@@ -23,7 +23,7 @@ namespace simeng {
 class GenericPredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
-  GenericPredictor(YAML::Node config);
+  GenericPredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
@@ -42,7 +42,7 @@ class GenericPredictor : public BranchPredictor {
 
  private:
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
-  uint64_t btbBits_;
+  uint8_t btbBits_;
 
   /** A 2^bits length vector of pairs containing a satCntBits_-bit saturating
    * counter and a branch target. */
@@ -52,14 +52,14 @@ class GenericPredictor : public BranchPredictor {
   std::map<uint64_t, uint64_t> btbHistory_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
-  uint64_t satCntBits_;
+  uint8_t satCntBits_;
 
   /** A n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_. */
   uint64_t globalHistory_ = 0;
 
   /** The number of previous branch directions recorded globally. */
-  uint64_t globalHistoryLength_;
+  uint16_t globalHistoryLength_;
 
   /** A return address stack. */
   std::deque<uint64_t> ras_;
@@ -70,7 +70,7 @@ class GenericPredictor : public BranchPredictor {
   std::map<uint64_t, uint64_t> rasHistory_;
 
   /** The size of the RAS. */
-  uint64_t rasSize_;
+  uint16_t rasSize_;
 };
 
 }  // namespace simeng

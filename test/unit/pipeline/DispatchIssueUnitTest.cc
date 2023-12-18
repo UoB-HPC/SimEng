@@ -1,8 +1,8 @@
+#include "../ConfigInit.hh"
 #include "../MockInstruction.hh"
 #include "../MockPortAllocator.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "simeng/ModelConfig.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/version.hh"
 
@@ -17,17 +17,16 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
   PipelineDispatchIssueUnitTest()
       : regFile(physRegStruct),
         input(1, nullptr),
-        output(config["Execution-Units"].size(), {1, nullptr}),
-        diUnit(input, output, regFile, portAlloc, physRegQuants, config),
+        output(config::SimInfo::getConfig()["Execution-Units"].num_children(),
+               {1, nullptr}),
+        diUnit(input, output, regFile, portAlloc, physRegQuants),
         uop(new MockInstruction),
         uopPtr(uop),
         uop2(new MockInstruction),
         uop2Ptr(uop2) {}
 
  protected:
-  YAML::Node config =
-      simeng::ModelConfig(SIMENG_SOURCE_DIR "/configs/a64fx.yaml")
-          .getConfigFile();
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
 
   // Using AArch64 as basis: {GP, FP/SVE, PRED, COND, SYS, SME}
   const std::vector<uint16_t> physRegQuants = {96, 128, 48, 128, 64, 64};

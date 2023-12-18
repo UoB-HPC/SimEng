@@ -5,33 +5,45 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/version.hh"
 
-#define AARCH64_CONFIG                                                        \
-  ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, " \
-   "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                  \
-   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "  \
-   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000}, "             \
-   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "  \
-   "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "          \
-   "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
-   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "         \
-   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, " \
-   "RAS-entries: 5, Fallback-Static-Predictor: 2}, Data-Memory: "             \
-   "{Interface-Type: Flat}, Instruction-Memory: {Interface-Type: Flat}, "     \
-   "LSQ-L1-Interface: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: " \
-   "32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "               \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
-   "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
-   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "      \
-   "{Generate-Special-Dir: False, Special-File-Dir-Path: " SIMENG_SOURCE_DIR  \
-   "/test/regression/aarch64/specialFiles/}}")
+static const char* AARCH64_ADDITIONAL_CONFIG =
+    R"YAML(
+{
+  Core:
+    {
+      Clock-Frequency-GHz: 2.5,
+    },
+  Register-Set:
+    {
+      GeneralPurpose-Count: 154,
+      FloatingPoint/SVE-Count: 90,
+      Predicate-Count: 17, 
+      Conditional-Count: 128,
+      Matrix-Count: 2,
+    },
+  L1-Data-Memory:
+    {
+      Interface-Type: Flat,
+    },
+  L1-Instruction-Memory:
+    {
+      Interface-Type: Flat,
+    },
+  Ports:
+    {
+      '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME] },
+    },
+  CPU-Info:
+    {
+      Special-File-Dir-Path: )YAML" SIMENG_SOURCE_DIR
+    R"YAML("/test/regression/aarch64/specialFiles/
+    },
+}
+)YAML";
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
 inline std::string paramToString(
-    const testing::TestParamInfo<std::tuple<CoreType, YAML::Node>> val) {
-  YAML::Node config = YAML::Load(AARCH64_CONFIG);
-
+    const testing::TestParamInfo<std::tuple<CoreType, std::string>> val) {
   // Get core type as string
   std::string coreString = "";
   switch (std::get<0>(val.param)) {
@@ -50,39 +62,41 @@ inline std::string paramToString(
   }
   // Get vector length as string
   std::string vectorLengthString = "";
-  if (std::get<1>(val.param)["Vector-Length"].IsDefined() &&
-      !(std::get<1>(val.param)["Vector-Length"].IsNull())) {
-    vectorLengthString =
-        "WithVL" + std::get<1>(val.param)["Vector-Length"].as<std::string>();
-  } else if (std::get<1>(val.param)["Streaming-Vector-Length"].IsDefined() &&
-             !(std::get<1>(val.param)["Streaming-Vector-Length"].IsNull())) {
-    vectorLengthString =
-        "WithSVL" +
-        std::get<1>(val.param)["Streaming-Vector-Length"].as<std::string>();
+  // Temporarily construct a ryml::Tree to extract config options as strings
+  ryml::Tree tempTree =
+      ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(val.param)));
+  if (tempTree.rootref().has_child("Core")) {
+    if (tempTree.rootref()["Core"].has_child("Vector-Length")) {
+      vectorLengthString +=
+          "WithVL" + tempTree["Core"]["Vector-Length"].as<std::string>();
+    }
+    if (tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
+      vectorLengthString +=
+          "WithSVL" +
+          tempTree["Core"]["Streaming-Vector-Length"].as<std::string>();
+    }
   }
   return coreString + vectorLengthString;
 }
 
 /** A helper function to generate all coreType vector-length pairs. */
-inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeVLPairs(
+inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
     CoreType type) {
-  std::vector<std::tuple<CoreType, YAML::Node>> coreVLPairs;
+  std::vector<std::tuple<CoreType, std::string>> coreVLPairs;
   for (uint64_t i = 128; i <= 2048; i += 128) {
-    YAML::Node vlNode;
-    vlNode["Vector-Length"] = i;
-    coreVLPairs.push_back(std::make_tuple(type, vlNode));
+    coreVLPairs.push_back(std::make_tuple(
+        type, "{Core: {Vector-Length: " + std::to_string(i) + "}}"));
   }
   return coreVLPairs;
 }
 
 /** A helper function to generate all coreType streaming-vector-length pairs. */
-inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeSVLPairs(
+inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     CoreType type) {
-  std::vector<std::tuple<CoreType, YAML::Node>> coreSVLPairs;
-  for (uint64_t i = 128; i <= 2048; i += 128) {
-    YAML::Node svlNode;
-    svlNode["Streaming-Vector-Length"] = i;
-    coreSVLPairs.push_back(std::make_tuple(type, svlNode));
+  std::vector<std::tuple<CoreType, std::string>> coreSVLPairs;
+  for (uint64_t i = 128; i <= 2048; i *= 2) {
+    coreSVLPairs.push_back(std::make_tuple(
+        type, "{Core: {Streaming-Vector-Length: " + std::to_string(i) + "}}"));
   }
   return coreSVLPairs;
 }
@@ -184,15 +198,16 @@ class AArch64RegressionTest : public RegressionTest {
   void run(const char* source);
 
   /** Generate a default YAML-formatted configuration. */
-  YAML::Node generateConfig() const override;
+  void generateConfig() const override;
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const override;
+      simeng::kernel::Linux& kernel) const override;
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
-      const override;
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const override;
 
   /** Check the elements of a Neon register.
    *
@@ -474,17 +489,37 @@ class AArch64RegressionTest : public RegressionTest {
     return generatedArray;
   }
 
+  /** A function to get the current vector length from the test config string if
+   * present (defaults to 0). */
+  uint64_t getVL() {
+    uint64_t VL = 0;
+    // Temporarily construct a ryml::Tree to extract the VL
+    ryml::Tree tempTree =
+        ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
+    if (tempTree.rootref().has_child("Core") &&
+        tempTree.rootref()["Core"].has_child("Vector-Length")) {
+      VL = tempTree["Core"]["Vector-Length"].as<uint64_t>();
+    }
+    return VL;
+  }
+
+  /** A function to get the current streaming vector length from the test config
+   * string if present (defaults to 0). */
+  uint64_t getSVL() {
+    uint64_t SVL = 0;
+    // Temporarily construct a ryml::Tree to extract the SVL
+    ryml::Tree tempTree =
+        ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
+    if (tempTree.rootref().has_child("Core") &&
+        tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
+      SVL = tempTree["Core"]["Streaming-Vector-Length"].as<uint64_t>();
+    }
+    return SVL;
+  }
+
   /** The current vector-length being used by the test suite. */
-  const uint64_t VL =
-      (std::get<1>(GetParam())["Vector-Length"].IsDefined() &&
-       !(std::get<1>(GetParam())["Vector-Length"].IsNull()))
-          ? std::get<1>(GetParam())["Vector-Length"].as<uint64_t>()
-          : 0;
+  const uint64_t VL = getVL();
 
   /** The current streaming-vector-length being used by the test suite. */
-  const uint64_t SVL =
-      (std::get<1>(GetParam())["Streaming-Vector-Length"].IsDefined() &&
-       !(std::get<1>(GetParam())["Streaming-Vector-Length"].IsNull()))
-          ? std::get<1>(GetParam())["Streaming-Vector-Length"].as<uint64_t>()
-          : 0;
+  const uint64_t SVL = getSVL();
 };

@@ -1,8 +1,8 @@
 #include <iostream>
 
+#include "../ConfigInit.hh"
 #include "gtest/gtest.h"
 #include "simeng/CoreInstance.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
@@ -17,15 +17,14 @@ namespace aarch64 {
 class AArch64ArchitectureTest : public testing::Test {
  public:
   AArch64ArchitectureTest()
-      : config(ModelConfig(configPath).getConfigFile()),
-        kernel(config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()) {
-    arch = std::make_unique<Architecture>(kernel, config);
+      : kernel(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                   .as<std::string>()) {
+    arch = std::make_unique<Architecture>(kernel);
     kernel.createProcess(process);
   }
 
  protected:
-  const std::string configPath = SIMENG_SOURCE_DIR "/configs/a64fx.yaml";
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
 
   // fdivr z1.s, p0/m, z1.s, z0.s
   std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
@@ -34,7 +33,7 @@ class AArch64ArchitectureTest : public testing::Test {
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
   kernel::LinuxProcess process = kernel::LinuxProcess(
-      span((char*)validInstrBytes.data(), validInstrBytes.size()), config);
+      span((char*)validInstrBytes.data(), validInstrBytes.size()));
 };
 
 TEST_F(AArch64ArchitectureTest, predecode) {
@@ -63,22 +62,6 @@ TEST_F(AArch64ArchitectureTest, predecode) {
   EXPECT_EQ(output[0]->exceptionEncountered(), false);
 }
 
-TEST_F(AArch64ArchitectureTest, getRegisterFileStructures) {
-  auto output = arch->getRegisterFileStructures();
-  EXPECT_EQ(output[0].bytes, 8);
-  EXPECT_EQ(output[0].quantity, 32);
-  EXPECT_EQ(output[1].bytes, 256);
-  EXPECT_EQ(output[1].quantity, 32);
-  EXPECT_EQ(output[2].bytes, 32);
-  EXPECT_EQ(output[2].quantity, 17);
-  EXPECT_EQ(output[3].bytes, 1);
-  EXPECT_EQ(output[3].quantity, 1);
-  EXPECT_EQ(output[4].bytes, 8);
-  EXPECT_EQ(output[4].quantity, arch->getNumSystemRegisters());
-  EXPECT_EQ(output[5].bytes, 256);
-  EXPECT_EQ(output[5].quantity, (128 / 8));  // default SVL value is 128
-}
-
 TEST_F(AArch64ArchitectureTest, getSystemRegisterTag) {
   // Test incorrect system register will fail
   int32_t output = arch->getSystemRegisterTag(-1);
@@ -87,11 +70,6 @@ TEST_F(AArch64ArchitectureTest, getSystemRegisterTag) {
   // Test for correct behaviour
   output = arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0);
   EXPECT_EQ(output, 0);
-}
-
-TEST_F(AArch64ArchitectureTest, getNumSystemRegisters) {
-  uint16_t output = arch->getNumSystemRegisters();
-  EXPECT_EQ(output, 8);
 }
 
 TEST_F(AArch64ArchitectureTest, handleException) {
@@ -106,8 +84,8 @@ TEST_F(AArch64ArchitectureTest, handleException) {
   // Get Core
   std::string executablePath = "";
   std::vector<std::string> executableArgs = {};
-  std::unique_ptr<CoreInstance> coreInstance = std::make_unique<CoreInstance>(
-      configPath, executablePath, executableArgs);
+  std::unique_ptr<CoreInstance> coreInstance =
+      std::make_unique<CoreInstance>(executablePath, executableArgs);
   const Core& core = *coreInstance->getCore();
   MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);
@@ -148,12 +126,16 @@ TEST_F(AArch64ArchitectureTest, getStreamingVectorLength) {
 }
 
 TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
-  RegisterFileSet regFile = arch->getRegisterFileStructures();
+  RegisterFileSet regFile = config::SimInfo::getArchRegStruct();
 
   uint8_t vctCount = 0;
   // In A64FX, Timer frequency = (2.5 * 1e9) / (100 * 1e6) = 18
-  uint64_t vctModulo = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
-                       (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
+  uint64_t vctModulo =
+      (config::SimInfo::getConfig()["Core"]["Clock-Frequency-GHz"].as<float>() *
+       1e9) /
+      (config::SimInfo::getConfig()["Core"]["Timer-Frequency-MHz"]
+           .as<uint32_t>() *
+       1e6);
   for (int i = 0; i < 30; i++) {
     vctCount += (i % vctModulo) == 0 ? 1 : 0;
     arch->updateSystemTimerRegisters(&regFile, i);
@@ -170,36 +152,6 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
             .get<uint64_t>(),
         vctCount);
   }
-}
-
-TEST_F(AArch64ArchitectureTest, getConfigPhysicalRegisterStructure) {
-  std::vector<RegisterFileStructure> regStruct =
-      arch->getConfigPhysicalRegisterStructure(config);
-  // Values taken from a64fx.yaml config file
-  EXPECT_EQ(regStruct[0].bytes, 8);
-  EXPECT_EQ(regStruct[0].quantity, 96);
-  EXPECT_EQ(regStruct[1].bytes, 256);
-  EXPECT_EQ(regStruct[1].quantity, 128);
-  EXPECT_EQ(regStruct[2].bytes, 32);
-  EXPECT_EQ(regStruct[2].quantity, 48);
-  EXPECT_EQ(regStruct[3].bytes, 1);
-  EXPECT_EQ(regStruct[3].quantity, 128);
-  EXPECT_EQ(regStruct[4].bytes, 8);
-  EXPECT_EQ(regStruct[4].quantity, arch->getNumSystemRegisters());
-  EXPECT_EQ(regStruct[5].bytes, 256);
-  EXPECT_EQ(regStruct[5].quantity, 128 / 8);  // Default SVL is 128
-}
-
-TEST_F(AArch64ArchitectureTest, getConfigPhysicalRegisterQuantities) {
-  std::vector<uint16_t> physQuants =
-      arch->getConfigPhysicalRegisterQuantities(config);
-  // Values taken from a64fx.yaml config file
-  EXPECT_EQ(physQuants[0], 96);
-  EXPECT_EQ(physQuants[1], 128);
-  EXPECT_EQ(physQuants[2], 48);
-  EXPECT_EQ(physQuants[3], 128);
-  EXPECT_EQ(physQuants[4], arch->getNumSystemRegisters());
-  EXPECT_EQ(physQuants[5], 128 / 8);  // Default SVL is 128
 }
 
 TEST_F(AArch64ArchitectureTest, getExecutionInfo) {

@@ -1,6 +1,6 @@
+#include "../ConfigInit.hh"
 #include "../MockArchitecture.hh"
 #include "gmock/gmock.h"
-#include "simeng/ModelConfig.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/version.hh"
 
@@ -17,8 +17,7 @@ class AArch64InstructionTest : public testing::Test {
   AArch64InstructionTest() {}
 
  protected:
-  const std::string configPath = SIMENG_SOURCE_DIR "/configs/a64fx.yaml";
-  YAML::Node config;
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
 
   MockArchitecture arch;
   //   InstructionMetadata metadata;

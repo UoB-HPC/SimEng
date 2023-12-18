@@ -4,7 +4,6 @@
 
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace arch {
@@ -21,7 +20,8 @@ struct OpType {
 class MicroDecoder {
  public:
   /** Construct a micro decoder for splitting relevant instructions. */
-  MicroDecoder(YAML::Node config);
+  MicroDecoder(ryml::ConstNodeRef config = config::SimInfo::getConfig());
+
   ~MicroDecoder();
 
   /** From a macro-op, split into one or more micro-ops and populate passed
@@ -69,7 +69,7 @@ class MicroDecoder {
 
  private:
   /** Flag to determine whether instruction splitting is enabled. */
-  bool instructionSplit_;
+  const bool instructionSplit_;
 
   /** A micro-decoding cache, mapping an instruction word to a previously split
    * instruction. Instructions are added to the cache as they're split into

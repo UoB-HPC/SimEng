@@ -8,18 +8,17 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
-#include "yaml-cpp/yaml.h"
 
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
@@ -36,26 +35,18 @@ static uint32_t hex_[] = {
 
 namespace simeng {
 
-/** The available modes of simulation. */
-enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
-
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {
  public:
-  /** Default constructor with an executable and its arguments but no model
-   * configuration. */
+  /** Default constructor with an executable and its arguments. */
   CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs);
-
-  /** Constructor with an executable, its arguments, and a model configuration.
-   */
-  CoreInstance(std::string configPath, std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
   CoreInstance(char* assembledSource, size_t sourceSize,
-               std::string configPath);
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~CoreInstance();
 
@@ -68,15 +59,6 @@ class CoreInstance {
   /** Construct the core and all its associated simulation objects after the
    * process and memory interfaces have been instantiated. */
   void createCore();
-
-  /** Getter for the set simulation mode. */
-  const SimulationMode getSimulationMode() const;
-
-  /** Getter for the set simulation mode in a string format. */
-  const std::string getSimulationModeString() const;
-
-  /** Getter for the ISA in a string format */
-  const std::string getISAString() const;
 
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
@@ -102,9 +84,6 @@ class CoreInstance {
   void generateCoreModel(std::string executablePath,
                          std::vector<std::string> executableArgs);
 
-  /** Extract simulation mode from config file. */
-  void setSimulationMode();
-
   /** Construct the SimEng linux process object from command line arguments.
    * Empty command line arguments denote the usage of hardcoded
    * instructions held in the hex_ array. */
@@ -124,7 +103,7 @@ class CoreInstance {
   void createSpecialFileDirectory();
 
   /** The config file describing the modelled core to be created. */
-  YAML::Node config_;
+  ryml::ConstNodeRef config_;
 
   /** The SimEng Linux kernel object. */
   simeng::kernel::Linux kernel_;
@@ -164,16 +143,6 @@ class CoreInstance {
 
   /** Reference to the SimEng core object. */
   std::shared_ptr<simeng::Core> core_ = nullptr;
-
-  /** The simulation mode in use, defaulting to emulation. */
-  SimulationMode mode_ = SimulationMode::Emulation;
-
-  /** A string format for the simulation mode in use, defaulting to emulation.
-   */
-  std::string modeString_ = "Emulation";
-
-  /** A string format for the instruction set in use */
-  std::string instructionSetArchString_ = "";
 
   /** Reference to the SimEng data memory object. */
   std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;

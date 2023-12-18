@@ -1,14 +1,11 @@
----
 # The following resources where utilised to create the config file and naming schemes:
 # https://github.com/fujitsu/A64FX
 
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
-  # Clock Frequency is in GHz.
-  Clock-Frequency: 1.8
-  # Timer-Frequency is in MHz.
-  Timer-Frequency: 100
+  Clock-Frequency-GHz: 1.8
+  Timer-Frequency-MHz: 100
   Micro-Operations: True
   Vector-Length: 512
 Fetch:
@@ -52,34 +49,34 @@ LSQ-L1-Interface:
 Ports:
   0:
     Portname: FLA
-    Instruction-Support:
+    Instruction-Group-Support:
     - FP
     - SVE
   1:
     Portname: PR
-    Instruction-Support:
+    Instruction-Group-Support:
     - PREDICATE
   2:
     Portname: EXA
-    Instruction-Support:
+    Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
     - STORE_DATA
   3:
     Portname: FLB
-    Instruction-Support:
+    Instruction-Group-Support:
     - FP_SIMPLE
     - FP_MUL
     - SVE_SIMPLE
     - SVE_MUL
   4:
     Portname: EXB
-    Instruction-Support:
+    Instruction-Group-Support:
     - INT_SIMPLE
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -87,7 +84,7 @@ Ports:
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -95,7 +92,7 @@ Ports:
     - INT_SIMPLE_CMP
   7:
     Portname: BR
-    Instruction-Support:
+    Instruction-Group-Support:
     - BRANCH
 Reservation-Stations:
   0:

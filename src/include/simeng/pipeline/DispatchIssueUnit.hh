@@ -8,9 +8,9 @@
 #include <unordered_set>
 
 #include "simeng/Instruction.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace pipeline {
@@ -59,7 +59,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      YAML::Node config);
+      ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */

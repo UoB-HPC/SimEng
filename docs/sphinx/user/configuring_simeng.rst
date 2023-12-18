@@ -35,10 +35,10 @@ ISA
 Simulation-Mode
     The core archetype to use, the options are ``emulation``, ``inorderpipelined``, and ``outoforder``.
 
-Clock-Frequency
+Clock-Frequency-GHz
     The clock frequency, in GHz, of the processor being modelled.
 
-Timer Frequency
+Timer Frequency-MHz
     This dictates the frequency in MHz that the CPU's internal counter timer is updated. 
 
     i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through ``mrs x0 CNTVCT_el0``.
@@ -215,7 +215,7 @@ Permitted-Stores-Per-Cycle
 Ports
 -----
 
-Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <riscv-instruction-groups>`.
+Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups/opcodes it supports. The instruction groups/opcodes are architecture-dependent, but, the available AArch64 instruction groups/opcodes can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <riscv-instruction-groups>`.
 
 To define a port, the following structure must be adhered to:
 
@@ -223,17 +223,25 @@ To define a port, the following structure must be adhered to:
 
     0:
       Portname: <port_name>
-      Instruction-Support:
+      Instruction-Group-Support:
       - <instruction_group>
       - ...
       - <instruction_group>
+      Instruction-Opcode-Support:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
     ...
     N-1:
-        Portname: <port_name>
-        Instruction-Support:
-        - <instruction_group>
-        - ...
-        - <instruction_group>
+      Portname: <port_name>
+      Instruction-Group-Support:
+      - <instruction_group>
+      - ...
+      - <instruction_group>
+      Instruction-Opcode-Support:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
 
 With N as the number of execution ports.
 
@@ -297,7 +305,7 @@ With N as the number of execution units. The number of execution units should be
 Latencies
 ---------
 
-The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.
+The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups/opcodes, the groups/opcodes available are the same as the set discussed in the Ports section.
 
 The execution latency defines the total number of cycles an instruction will spend in an execution unit. The throughput is how many cycles an instruction will block another instruction entering the execution unit. In non-pipelined execution units, the throughput is equal to the latency.
 
@@ -310,16 +318,24 @@ The following structure must be adhered to when defining group latencies:
       - <instruction_group>
       - ...
       - <instruction_group>
+      Instruction-Opcodes:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
       Execution-Latency: <number_of_cycles>
       Execution-Throughput: <number_of_cycles>
     ...
     N-1:
-        Instruction-Groups:
-        - <instruction_group>
-        - ...
-        - <instruction_group>
-        Execution-Latency: <number_of_cycles>
-        Execution-Throughput: <number_of_cycles>
+      Instruction-Groups:
+      - <instruction_group>
+      - ...
+      - <instruction_group>
+      Instruction-Opcodes:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
+      Execution-Latency: <number_of_cycles>
+      Execution-Throughput: <number_of_cycles>
 
 With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.
 

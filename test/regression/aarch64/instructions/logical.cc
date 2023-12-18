@@ -510,8 +510,7 @@ TEST_P(InstLogical, rorv) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace
