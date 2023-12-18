@@ -1161,7 +1161,6 @@ void Instruction::execute() {
       const float rs2 = checkNanBox(operands[1]);
 
       // Comments regarding fmaxf similar to RISCV_FMAX_D
-      float res;
       if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0xffffffff00000000, 8);
       } else {
