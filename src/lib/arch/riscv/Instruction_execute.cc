@@ -1149,7 +1149,6 @@ void Instruction::execute() {
       // the sign of zero, although some implementations additionally enforce
       // that if one argument is +0 and the other is -0, then +0 is returned.
       // But RISC-V spec requires this to be the case
-      double res;
       if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0x0000000000000000, 8);
       } else {
