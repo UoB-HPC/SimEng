@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include "simeng/config/SimInfo.hh"
+#include "simeng/version.hh"
 
 namespace {
 
@@ -66,7 +67,8 @@ TEST(ConfigTest, Default) {
       "   'Instruction-Groups':\n      - NONE\n    'Instruction-Opcodes':\n    "
       "  - 6343\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n   "
       " 'Instruction-Group-Nums':\n      - 87\n'CPU-Info':\n  "
-      "'Generate-Special-Dir': 0\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
+      "'Generate-Special-Dir': 0\n  'Special-File-Dir-Path': " SIMENG_BUILD_DIR
+      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
       "SMT: 1\n  BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
       "'CPU-Architecture': 0\n  'CPU-Variant': 0x0\n  'CPU-Part': 0x0\n  "
       "'CPU-Revision': 0\n  'Package-Count': 1\n";
@@ -119,7 +121,8 @@ TEST(ConfigTest, Default) {
       "   'Instruction-Groups':\n      - NONE\n    'Instruction-Opcodes':\n    "
       "  - 450\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n    "
       "'Instruction-Group-Nums':\n      - 24\n'CPU-Info':\n  "
-      "'Generate-Special-Dir': 0\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
+      "'Generate-Special-Dir': 0\n  'Special-File-Dir-Path': " SIMENG_BUILD_DIR
+      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
       "SMT: 1\n  BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
       "'CPU-Architecture': 0\n  'CPU-Variant': 0x0\n  'CPU-Part': 0x0\n  "
       "'CPU-Revision': 0\n  'Package-Count': 1\n";
