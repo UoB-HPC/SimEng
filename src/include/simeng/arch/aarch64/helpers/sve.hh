@@ -1678,9 +1678,10 @@ class sveHelp {
 
   /** Helper function for SVE instructions store instructions to merge
    * consecutive active elements into blocks to be written.
-   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * T represents the size of the vector elements (e.g. for zn.d, T = uint64_t).
+   * C represents the size of the memory elements (e.g. for st1w, C = uint32_t).
    * Return a vector of RegisterValues.  */
-  template <typename T>
+  template <typename T, typename C = T>
   static std::vector<RegisterValue> sve_merge_store_data(const T* d,
                                                          const uint64_t* p,
                                                          uint16_t vl_bits) {
@@ -1690,26 +1691,26 @@ class sveHelp {
     // Determine how many predicate elements are present per uint64_t.
     uint16_t predsPer64 = (64 / sizeof(T));
 
-    // Determine size of array based on the size of the stored element (This is
-    // the T specifier in sve instructions)
-    std::array<T, 256 / sizeof(T)> mData;
+    // Determine size of array based on the size of the memory access (This is
+    // the C specifier in sve instructions)
+    std::array<C, 256 / sizeof(C)> mData;
     uint16_t mdSize = 0;
 
     for (uint16_t x = 0; x < numVecElems; x++) {
       // Determine mask to get predication for active element.
       uint64_t shiftedActive = 1ull << ((x % predsPer64) * sizeof(T));
       if (p[x / predsPer64] & shiftedActive) {
-        mData[mdSize] = d[x];
+        mData[mdSize] = static_cast<C>(d[x]);
         mdSize++;
       } else if (mdSize) {
         outputData.push_back(
-            RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
+            RegisterValue((char*)mData.data(), mdSize * sizeof(C)));
         mdSize = 0;
       }
     }
     if (mdSize) {
       outputData.push_back(
-          RegisterValue((char*)mData.data(), mdSize * sizeof(T)));
+          RegisterValue((char*)mData.data(), mdSize * sizeof(C)));
     }
     return outputData;
   }
