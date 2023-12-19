@@ -12,6 +12,7 @@ TEST(ConfigTest, Default) {
   // Test key default values exposed in SimInfo
   EXPECT_EQ(simeng::config::SimInfo::getConfigPath(), "Default");
   EXPECT_EQ(simeng::config::SimInfo::getISA(), simeng::config::ISA::AArch64);
+  EXPECT_EQ(simeng::config::SimInfo::getISAString(), "AArch64");
   EXPECT_EQ(simeng::config::SimInfo::getSimMode(),
             simeng::config::SimulationMode::Emulation);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Emulation");
@@ -79,6 +80,7 @@ TEST(ConfigTest, Default) {
 
   // Test SimInfo exposed have correctly changed
   EXPECT_EQ(simeng::config::SimInfo::getISA(), simeng::config::ISA::RV64);
+  EXPECT_EQ(simeng::config::SimInfo::getISAString(), "rv64");
   sysRegisterEnums = {simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FFLAGS,
                       simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FRM,
                       simeng::arch::riscv::riscv_sysreg::RISCV_SYSREG_FCSR,
@@ -361,5 +363,48 @@ TEST(ConfigTest, multipleWildNodes) {
       "Attempted to add multiple wildcard nodes to the same ExpectationNode "
       "instance of key HEAD");
 }
+
+// Test that, using a file path, a config can be set from a yaml file
+TEST(ConfigTest, configFromFile) {
+  std::string filePath = SIMENG_SOURCE_DIR "/configs/a64fx.yaml";
+  simeng::config::SimInfo::setConfig(filePath);
+  EXPECT_EQ(simeng::config::SimInfo::getConfigPath(), filePath);
+  EXPECT_EQ(simeng::config::SimInfo::getISA(), simeng::config::ISA::AArch64);
+  EXPECT_EQ(simeng::config::SimInfo::getISAString(), "AArch64");
+  EXPECT_EQ(simeng::config::SimInfo::getSimMode(),
+            simeng::config::SimulationMode::Outoforder);
+  EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Out-of-Order");
+  std::vector<uint64_t> sysRegisterEnums = {
+      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
+      arm64_sysreg::ARM64_SYSREG_FPCR,
+      arm64_sysreg::ARM64_SYSREG_FPSR,
+      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
+      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
+      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
+      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
+      arm64_sysreg::ARM64_SYSREG_SVCR};
+  EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
+  std::vector<simeng::RegisterFileStructure> archRegStruct = {
+      {8, 32},
+      {256, 32},
+      {32, 17},
+      {1, 1},
+      {8, static_cast<uint16_t>(sysRegisterEnums.size())},
+      {256, 16}};
+  EXPECT_EQ(simeng::config::SimInfo::getArchRegStruct(), archRegStruct);
+  std::vector<simeng::RegisterFileStructure> physRegStruct = {
+      {8, 96},
+      {256, 128},
+      {32, 48},
+      {1, 128},
+      {8, static_cast<uint16_t>(sysRegisterEnums.size())},
+      {256, 16}};
+  EXPECT_EQ(simeng::config::SimInfo::getPhysRegStruct(), physRegStruct);
+  std::vector<uint16_t> physRegQuants = {
+      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 16};
+  EXPECT_EQ(simeng::config::SimInfo::getPhysRegQuantities(), physRegQuants);
+}
+// getPhysRegStruct()
+// getPhysRegQuantities()
 
 }  // namespace
