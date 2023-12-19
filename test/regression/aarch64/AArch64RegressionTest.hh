@@ -32,11 +32,6 @@ static const char* AARCH64_ADDITIONAL_CONFIG =
     {
       '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME] },
     },
-  CPU-Info:
-    {
-      Special-File-Dir-Path: )YAML" SIMENG_SOURCE_DIR
-    R"YAML("/test/regression/aarch64/specialFiles/
-    },
 }
 )YAML";
 

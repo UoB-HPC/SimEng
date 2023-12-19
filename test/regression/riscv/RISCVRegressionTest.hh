@@ -28,11 +28,6 @@ static const char* RISCV_ADDITIONAL_CONFIG =
     {
       '0': { Portname: 0, Instruction-Group-Support: [INT, FLOAT, LOAD, STORE, BRANCH] },
     },
-  CPU-Info:
-    {
-      Special-File-Dir-Path: )YAML" SIMENG_SOURCE_DIR
-    R"YAML("/test/regression/riscv/specialFiles/
-    },
 }
 )YAML";
 

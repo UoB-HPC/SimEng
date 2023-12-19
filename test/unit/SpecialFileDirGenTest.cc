@@ -7,38 +7,6 @@ namespace simeng {
 
 #define TEST_SPEC_FILE_DIR SIMENG_SOURCE_DIR "/test/unit/specialFiles/"
 
-#define SPEC_FILE_TEST_CONFIG                                                  \
-  ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
-   "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
-   "Vector-Length: 512, Streaming-Vector-Length: 512}, Fetch: "                \
-   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
-   "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576}, "           \
-   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "   \
-   "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "           \
-   "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
-   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
-   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
-   "RAS-entries: 5, Fallback-Static-Predictor: 2}, L1-Data-Memory: "           \
-   "{Interface-Type: Flat}, L1-Instruction-Memory: {Interface-Type: Flat}, "   \
-   "LSQ-L1-Interface: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: "  \
-   "32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 14]}, '1': "    \
-   "{Portname: Port 1, Instruction-Group-Support: [0, 14]}, '2': {Portname: "  \
-   "Port 2, Instruction-Group-Support: [1, 8, 71]}, '3': {Portname: Port 4, "  \
-   "Instruction-Group-Support: [67]}, '4': {Portname: Port 5, "                \
-   "Instruction-Group-Support: [67]}, '5': {Portname: Port 3, "                \
-   "Instruction-Group-Support: [70]}}, Reservation-Stations: {'0': {Size: "    \
-   "60, Dispatch-Rate: 4, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: "      \
-   "{'0': {Pipelined: true}, '1': {Pipelined: true}, '2': {Pipelined: true}, " \
-   "'3': {Pipelined:true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, "  \
-   "CPU-Info: {Generate-Special-Dir: True, "                                   \
-   "Special-File-Dir-Path: " TEST_SPEC_FILE_DIR                                \
-   ", Core-Count: 1, Socket-Count: 1, SMT: 1, BogoMIPS: 200.00, Features: fp " \
-   "asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm fcma "   \
-   "dcpop sve, CPU-Implementer: 0x46, CPU-Architecture: 8, CPU-Variant: 0x1, " \
-   "CPU-Part: 0x001, CPU-Revision: 0, Package-Count: 1}}")
-
 class SpecialFileDirGenTest : public testing::Test {
  public:
   SpecialFileDirGenTest() {}
@@ -133,6 +101,25 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
         std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
             .good());
   }
+}
+
+// Test that a non-existant non-default special file directory causes the user
+// to be notified when generation is set to False
+TEST_F(SpecialFileDirGenTest, doesntExist) {
+  // Reset SimInfo Config
+  ASSERT_DEATH(
+      config::SimInfo::addToConfig(
+          "CPU-Info: {Generate-Special-Dir: False, "
+          "Special-File-Dir-Path: " SIMENG_BUILD_DIR "/thisDoesntExistDir/"
+          ", Core-Count: 1, Socket-Count: 1, SMT: 1, BogoMIPS: 200.00, "
+          "Features: "
+          "fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid "
+          "asimdrdm "
+          "fcma dcpop sve, CPU-Implementer: 0x46, CPU-Architecture: 8, "
+          "CPU-Variant: 0x1, CPU-Part: 0x001, CPU-Revision: 0, Package-Count: "
+          "1}}"),
+      "- Special File Directory '" SIMENG_BUILD_DIR
+      "/thisDoesntExistDir/' Does not exist");
 }
 
 }  // namespace simeng

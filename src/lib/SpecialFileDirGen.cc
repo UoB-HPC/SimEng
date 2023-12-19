@@ -30,7 +30,7 @@ void SpecialFileDirGen::RemoveExistingSFDir() {
 
 void SpecialFileDirGen::GenerateSFDir() {
   // Create root special files directory
-  system(("mkdir " + specialFilesDir_).c_str());
+  system(("mkdir -p " + specialFilesDir_).c_str());
   // Define frequently accessed root directories in special file tree
   const std::string proc_dir = specialFilesDir_ + "/proc/";
   const std::string online_dir = specialFilesDir_ + "/sys/devices/system/cpu/";

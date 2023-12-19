@@ -655,7 +655,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["CPU-Info"].addChild(
       ExpectationNode::createExpectation<std::string>(
-          SIMENG_BUILD_DIR "/specialFiles/", "Special-File-Dir-Path", true));
+          defaultSpecialFilePath_, "Special-File-Dir-Path", true));
 
   expectations_["CPU-Info"].addChild(
       ExpectationNode::createExpectation<uint64_t>(1, "Core-Count", true));
@@ -890,6 +890,21 @@ void ModelConfig::postValidation() {
   // Record any unlinked port names
   for (const auto& prt : portnames)
     invalid_ << "\t- " << prt << " has no associated reservation station\n";
+
+  // Ensure that given special file directory exists IF:
+  // - it is not the default path
+  // - auto-generation is False
+  if (!configTree_["CPU-Info"]["Generate-Special-Dir"].as<bool>() &&
+      (configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>() !=
+       defaultSpecialFilePath_) &&
+      !std::ifstream(
+           configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())
+           .good()) {
+    invalid_
+        << "\t- Special File Directory '"
+        << configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()
+        << "' Does not exist\n";
+  }
 }
 
 ryml::Tree ModelConfig::getConfig() { return configTree_; }
