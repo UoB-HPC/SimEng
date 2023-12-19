@@ -169,7 +169,8 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
     auto destinations = uop->getDestinationRegisters();
     for (int i = destinations.size() - 1; i >= 0; i--) {
       const auto& reg = destinations[i];
-      rat_.rewind(reg);
+      // Only rewind the register if it was renamed
+      if (reg.renamed) rat_.rewind(reg);
     }
     uop->setFlushed();
     // If the instruction is a branch, supply address to branch flushing logic

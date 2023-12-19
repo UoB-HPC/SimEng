@@ -24,6 +24,10 @@ void RegressionTest::run(const char* source, const char* triple,
                          const char* extensions) {
   testing::internal::CaptureStdout();
 
+  // Zero-out process memory from any prior runs
+  if (processMemory_ != nullptr)
+    std::memset(processMemory_, '\0', processMemorySize_);
+
   // Assemble the source to a flat binary
   assemble(source, triple, extensions);
   if (HasFatalFailure()) return;

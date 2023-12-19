@@ -16,6 +16,10 @@ struct Register {
    * architectural register, depending on point of usage. */
   uint16_t tag;
 
+  /** A boolean identifier for whether the creation of this register has been a
+   * result of a register renaming scheme. */
+  bool renamed = false;
+
   /** Check for equality of two register identifiers. */
   bool operator==(const Register& other) const;
 
