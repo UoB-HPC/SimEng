@@ -1,8 +1,10 @@
 set(TEST_SOURCES
+    aarch64/ArchInfoTest.cc
     aarch64/ArchitectureTest.cc
     aarch64/ExceptionHandlerTest.cc
     aarch64/InstructionTest.cc
     aarch64/ShiftValueTest.cc
+    riscv/ArchInfoTest.cc
     riscv/ArchitectureTest.cc
     riscv/ExceptionHandlerTest.cc
     riscv/InstructionTest.cc
