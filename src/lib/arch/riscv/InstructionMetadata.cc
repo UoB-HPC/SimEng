@@ -867,6 +867,11 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       operandCount = 3;
 
       break;
+    case Opcode::RISCV_C_EBREAK:
+
+      opcode = Opcode::RISCV_EBREAK;
+
+      break;
     default:
       break;
   }
