@@ -94,6 +94,9 @@ void RegisterAliasTable::commit(Register physical) {
   freeQueues_[physical.type].push(oldTag);
 }
 void RegisterAliasTable::rewind(Register physical) {
+  assert(physical.renamed &&
+         "Attempted to rewind a physical register which hasn't been subject to "
+         "the register renaming scheme");
   // Find which architectural tag this referred to
   auto destinationTag = destinationTable_[physical.type][physical.tag];
   // Rewind the mapping table to the old physical tag
