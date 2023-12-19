@@ -649,7 +649,7 @@ bool ExceptionHandler::init() {
     auto operands = instruction_.getSourceOperands();
     auto destinationRegs = instruction_.getDestinationRegisters();
 
-    uint8_t rm = 0b110; // Set to invalid rounding mode
+    uint8_t rm = 0b110;  // Set to invalid rounding mode
     uint64_t result = 0;
 
     ProcessStateChange stateChange;
@@ -659,7 +659,7 @@ bool ExceptionHandler::init() {
           // Update CPP rounding mode but not floating point CSR as currently no
           // implementation
 
-          rm = operands[0].get<uint64_t >() & 0b111; // Take the lower 3 bits
+          rm = operands[0].get<uint64_t>() & 0b111;  // Take the lower 3 bits
 
           switch (operands[0].get<uint64_t>()) {
             case 0:  // RNE, Round to nearest, ties to even
@@ -693,7 +693,8 @@ bool ExceptionHandler::init() {
               // implementation of Zicsr
               break;
           }
-          result = rm << 5; // Shift rounding mode to correct position, frm[5:7]
+          // Shift rounding mode to correct position, frm[5:7]
+          result = rm << 5;
         }
 
         // Only update if registers should be written to
