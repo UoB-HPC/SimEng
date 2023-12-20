@@ -40,7 +40,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  *
  * The constructed process follows a typical layout:
  *
- * |---------------| <- start of stack
+ * |---------------| <- start/top of stack
  * |     Stack     |    stack grows downwards
  * |-v-----------v-|
  * |               |
@@ -93,7 +93,7 @@ class LinuxProcess {
   uint64_t getEntryPoint() const;
 
   /** Get the initial stack pointer address. */
-  uint64_t getStackPointer() const;
+  uint64_t getInitialStackPointer() const;
 
   /** Get the path of the executable. */
   std::string getPath() const;
@@ -132,7 +132,7 @@ class LinuxProcess {
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
 
-  /** The address of the stack pointer. */
+  /** The address of the head/bottom of the stack */
   uint64_t stackPointer_;
 
   /** The process image size. */
