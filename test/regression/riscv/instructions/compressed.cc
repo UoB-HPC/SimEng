@@ -85,7 +85,8 @@ TEST_P(InstCompressed, swsp) {
       c.swsp t6, 4(sp)
   )");
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()), 0x000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()), 0x15400AA000000AA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
+            0x15400AA000000AA);
 }
 
 TEST_P(InstCompressed, sdsp) {
@@ -98,8 +99,10 @@ TEST_P(InstCompressed, sdsp) {
       addi t6, t6, 0xAA  # 0x15400AA
       c.sdsp t6, 8(sp)
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()), 0x00000000000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8), 0x00000000015400AA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
+            0x00000000000000AA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8),
+            0x00000000015400AA);
 }
 
 TEST_P(InstCompressed, fsdsp) {
@@ -114,8 +117,10 @@ TEST_P(InstCompressed, fsdsp) {
       fmv.d.x f8, t6
       c.fsdsp f8, 8(sp)
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()), 0x00000000000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8), 0x00000000015400AA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
+            0x00000000000000AA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8),
+            0x00000000015400AA);
 }
 
 TEST_P(InstCompressed, lw) {
@@ -186,10 +191,12 @@ TEST_P(InstCompressed, fld) {
 
 TEST_P(InstCompressed, addi4spn) {
   RUN_RISCV(R"(
-    c.addi4spn
+    c.addi4spn x8, x2, 4
+    c.addi4spn x9, x2, 12
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), process_->getStackPointer() + 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getStackPointer() + 12);
 }
-
 
 TEST_P(InstCompressed, sw) {
   RUN_RISCV(R"(
@@ -197,20 +204,17 @@ TEST_P(InstCompressed, sw) {
   )");
 }
 
-
 TEST_P(InstCompressed, sd) {
   RUN_RISCV(R"(
     c.sd
   )");
 }
 
-
 TEST_P(InstCompressed, fsd) {
   RUN_RISCV(R"(
     c.fsd
   )");
 }
-
 
 TEST_P(InstCompressed, j) {
   RUN_RISCV(R"(
@@ -224,20 +228,17 @@ TEST_P(InstCompressed, jalr) {
   )");
 }
 
-
 TEST_P(InstCompressed, beqz) {
   RUN_RISCV(R"(
     c.beqz
   )");
 }
 
-
 TEST_P(InstCompressed, bnez) {
   RUN_RISCV(R"(
     c.bnez
   )");
 }
-
 
 TEST_P(InstCompressed, li) {
   RUN_RISCV(R"(
@@ -263,14 +264,15 @@ TEST_P(InstCompressed, addiw) {
   )");
 }
 
-
 TEST_P(InstCompressed, addi16sp) {
   RUN_RISCV(R"(
-    c.addi16sp
+    mv x8, sp
+    c.addi16sp x2, 16
+    mv x9, x2
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), process_->getStackPointer());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getStackPointer() + 16);
 }
-
-
 
 TEST_P(InstCompressed, slli) {
   RUN_RISCV(R"(
@@ -278,13 +280,11 @@ TEST_P(InstCompressed, slli) {
   )");
 }
 
-
 TEST_P(InstCompressed, srli) {
   RUN_RISCV(R"(
     c.srli
   )");
 }
-
 
 TEST_P(InstCompressed, srai) {
   RUN_RISCV(R"(
@@ -315,7 +315,6 @@ TEST_P(InstCompressed, or) {
     c.or
   )");
 }
-
 
 TEST_P(InstCompressed, xor) {
   RUN_RISCV(R"(
