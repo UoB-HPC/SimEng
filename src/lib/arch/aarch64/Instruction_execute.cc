@@ -4740,7 +4740,8 @@ void Instruction::execute() {
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        memoryData =
+            sveHelp::sve_merge_store_data<uint64_t, uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]

@@ -6542,77 +6542,59 @@ TEST_P(InstSve, st1w) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 64) + 16 + (i * 4)), src[i % 4]);
   }
 
-  // 64-bit
-  // initialHeapData_.resize(64);
-  // uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
-  // heap64[0] = 0xDEADBEEFDEADBEEF;
-  // heap64[1] = 0x1234567812345678;
-  // heap64[2] = 0x9876543298765432;
-  // heap64[3] = 0xABCDEF01ABCDEF01;
-  // heap64[4] = 0xDEADBEEFDEADBEEF;
-  // heap64[5] = 0x1234567812345678;
-  // heap64[6] = 0x9876543298765432;
-  // heap64[7] = 0xABCDEF01ABCDEF01;
+  // 64 - bit
+  initialHeapData_.resize(VL / 8);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> srcA = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  std::vector<uint64_t> srcB = {0xDEADBEEFDEADBEEF, 0x1234567812345678,
+                                0x9876543298765432, 0xABCDEF01ABCDEF01};
+  fillHeapCombined(heap64, srcA, srcB, VL / 64);
 
-  // RUN_AARCH64(R"(
-  //   # Get heap address
-  //   mov x0, 0
-  //   mov x8, 214
-  //   svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-  //   mov x1, #0
-  //   mov x4, #64
-  //   mov x5, #3
-  //   ptrue p0.d
-  //   ld1w {z0.d}, p0/z, [x0, x1, lsl #3]
-  //   ld1w {z2.d}, p0/z, [x0, x1, lsl #3]
-  //   st1w {z0.d}, p0, [sp, x1, lsl #2]
-  //   st1w {z2.d}, p0, [x4, x5, lsl #2]
-  // )");
-  // CHECK_NEON(0, uint64_t,
-  //            {0xDEADBEEFDEADBEEFu, 0x1234567812345678u,
-  //            0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u, 0xDEADBEEFDEADBEEFu,
-  //             0x1234567812345678u, 0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u});
-  // CHECK_NEON(2, uint64_t,
-  //            {0xDEADBEEFDEADBEEFu, 0x1234567812345678u,
-  //            0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u, 0xDEADBEEFDEADBEEFu,
-  //             0x1234567812345678u, 0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u});
+    sub sp, sp, #4095
 
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()),
-  // 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()
-  // + 4),
-  //           0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() + 8),
-  //           0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() +
-  // 12),
-  //           0xABCDEF01);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() +
-  // 16),
-  //           0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() +
-  // 20),
-  //           0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() +
-  // 24),
-  //           0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() +
-  // 28),
-  //           0xABCDEF01);
+    ptrue p0.d
+    mov x2, #0
+    mov x5, #16
+    addvl x2, x2, #1
+    udiv x2, x2, x5
+    mov x3, #2
+    whilelo p1.d, xzr, x2
 
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4)), 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 4), 0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 8), 0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 12), 0xABCDEF01);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 16), 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 20), 0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 24), 0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 28), 0xABCDEF01);
+    mov x1, #0
+    mov x6, #64
+    mov x7, #3
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
+    st1w {z0.d}, p1, [sp, x1, lsl #2]
+    st1w {z2.d}, p0, [x6, x7, lsl #2]
+  )");
+
+  CHECK_NEON(0, uint64_t, fillNeonCombined<uint64_t>(srcA, {0ull}, VL / 8));
+  CHECK_NEON(2, uint64_t, fillNeonCombined<uint64_t>(srcA, srcB, VL / 8));
+
+  std::array<uint32_t, (256 / sizeof(uint32_t))> srcC =
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0ul}, VL / 16);
+  for (int i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 4)),
+              srcC[i]);
+  }
+
+  std::array<uint32_t, (256 / sizeof(uint32_t))> srcD =
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01},
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, VL / 16);
+  for (int i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 + i) * 4), srcD[i]);
+  }
 }
 
 TEST_P(InstSve, str_predicate) {

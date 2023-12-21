@@ -21,67 +21,48 @@ void AArch64RegressionTest::run(const char* source) {
   RegressionTest::run(source, "aarch64", subtargetFeatures);
 }
 
-YAML::Node AArch64RegressionTest::generateConfig() const {
-  YAML::Node config = YAML::Load(AARCH64_CONFIG);
+void AArch64RegressionTest::generateConfig() const {
+  // Re-generate the default config for the AArch64 ISA
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
+
+  // Add the base additional AArch64 test suite config options
+  simeng::config::SimInfo::addToConfig(AARCH64_ADDITIONAL_CONFIG);
+  std::string mode;
   switch (std::get<0>(GetParam())) {
     case EMULATION:
-      config["Core"]["Simulation-Mode"] = "emulation";
+      mode = "emulation";
       break;
     case INORDER:
-      config["Core"]["Simulation-Mode"] = "inorderpipeline";
+      mode = "inorderpipelined";
       break;
     case OUTOFORDER:
-      config["Core"]["Simulation-Mode"] = "outoforder";
+      mode = "outoforder";
       break;
   }
+  simeng::config::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode +
+                                       "}}");
 
-  YAML::Node additionalConfig = std::get<1>(GetParam());
-  // Merge specific aarch64 config options
-  if (additionalConfig["Vector-Length"].IsDefined() &&
-      !(additionalConfig["Vector-Length"].IsNull())) {
-    config["Core"]["Vector-Length"] =
-        additionalConfig["Vector-Length"].as<uint64_t>();
-  } else {
-    config["Core"]["Vector-Length"] = 512;
-  }
-  if (additionalConfig["Streaming-Vector-Length"].IsDefined() &&
-      !(additionalConfig["Streaming-Vector-Length"].IsNull())) {
-    config["Core"]["Streaming-Vector-Length"] =
-        additionalConfig["Streaming-Vector-Length"].as<uint64_t>();
-  } else {
-    config["Core"]["Streaming-Vector-Length"] = 512;
-  }
-  if (additionalConfig["Micro-Operations"].IsDefined() &&
-      !(additionalConfig["Micro-Operations"].IsNull())) {
-    config["Core"]["Micro-Operations"] =
-        additionalConfig["Micro-Operations"].as<bool>();
-  } else {
-    config["Core"]["Micro-Operations"] = false;
-  }
-  return config;
+  // Add the test specific config options
+  simeng::config::SimInfo::addToConfig(std::get<1>(GetParam()));
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
-                                          YAML::Node config) const {
-  return std::make_unique<Architecture>(kernel, config);
+AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+  return std::make_unique<Architecture>(kernel);
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>
-AArch64RegressionTest::createPortAllocator() const {
-  // TODO: this is currently tightly coupled to the number of execution units,
-  // which is specified in the out-of-order core model
-  const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::INT,
-       simeng::arch::aarch64::InstructionGroups::FP,
-       simeng::arch::aarch64::InstructionGroups::SVE,
-       simeng::arch::aarch64::InstructionGroups::PREDICATE,
-       simeng::arch::aarch64::InstructionGroups::LOAD,
-       simeng::arch::aarch64::InstructionGroups::STORE_ADDRESS,
-       simeng::arch::aarch64::InstructionGroups::STORE_DATA,
-       simeng::arch::aarch64::InstructionGroups::BRANCH,
-       simeng::arch::aarch64::InstructionGroups::SME}};
-
+AArch64RegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
+  // Extract the port arrangement from the config file
+  std::vector<std::vector<uint16_t>> portArrangement(
+      config["Ports"].num_children());
+  for (size_t i = 0; i < config["Ports"].num_children(); i++) {
+    auto config_groups = config["Ports"][i]["Instruction-Group-Support-Nums"];
+    // Read groups in associated port
+    for (size_t j = 0; j < config_groups.num_children(); j++) {
+      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
+    }
+  }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 }

@@ -237,13 +237,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_tuple(
             EMULATION,
-            YAML::Load("{Vector-Length: 512, Streaming-Vector-Length: 1024}")),
+            "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}"),
         std::make_tuple(
             INORDER,
-            YAML::Load("{Vector-Length: 512, Streaming-Vector-Length: 1024}")),
+            "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}"),
         std::make_tuple(
             OUTOFORDER,
-            YAML::Load("{Vector-Length: 512, Streaming-Vector-Length: 1024}"))),
+            "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}")),
     paramToString);
 
 }  // namespace

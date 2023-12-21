@@ -23,39 +23,49 @@ void RISCVRegressionTest::runCompressed(const char* source) {
   RegressionTest::run(source, "riscv64", "+m,+a,+f,+d,+c");
 }
 
-// TODO create yaml
-YAML::Node RISCVRegressionTest::generateConfig() const {
-  YAML::Node config = YAML::Load(RISCV_CONFIG);
+void RISCVRegressionTest::generateConfig() const {
+  // Re-generate the default config for the rv64 ISA
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::RV64);
+
+  // Add the base additional RISCV test suite config options
+  simeng::config::SimInfo::addToConfig(RISCV_ADDITIONAL_CONFIG);
+  std::string mode;
   switch (std::get<0>(GetParam())) {
     case EMULATION:
-      config["Core"]["Simulation-Mode"] = "emulation";
+      mode = "emulation";
       break;
     case INORDER:
-      config["Core"]["Simulation-Mode"] = "inorderpipeline";
+      mode = "inorderpipelined";
       break;
     case OUTOFORDER:
-      config["Core"]["Simulation-Mode"] = "outoforder";
+      mode = "outoforder";
       break;
   }
-  return config;
+
+  simeng::config::SimInfo::addToConfig("{Core: {Simulation-Mode: " + mode +
+                                       "}}");
+
+  // Add the test specific config options
+  simeng::config::SimInfo::addToConfig(std::get<1>(GetParam()));
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
-                                        YAML::Node config) const {
-  return std::make_unique<Architecture>(kernel, config);
+RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+  return std::make_unique<Architecture>(kernel);
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>
-RISCVRegressionTest::createPortAllocator() const {
-  // TODO: this is currently tightly coupled to the number of execution units,
-  // which is specified in the out-of-order core model
-  const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::riscv::InstructionGroups::INT,
-       simeng::arch::riscv::InstructionGroups::BRANCH,
-       simeng::arch::riscv::InstructionGroups::LOAD,
-       simeng::arch::riscv::InstructionGroups::STORE}};
-
+RISCVRegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
+  // Extract the port arrangement from the config file
+  std::vector<std::vector<uint16_t>> portArrangement(
+      config["Ports"].num_children());
+  for (size_t i = 0; i < config["Ports"].num_children(); i++) {
+    auto config_groups = config["Ports"][i]["Instruction-Group-Support-Nums"];
+    // Read groups in associated port
+    for (size_t j = 0; j < config_groups.num_children(); j++) {
+      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
+    }
+  }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 }

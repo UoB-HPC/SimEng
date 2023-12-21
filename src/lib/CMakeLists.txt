@@ -16,6 +16,7 @@ set(SIMENG_SOURCES
     arch/riscv/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
+    config/ModelConfig.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -41,7 +42,6 @@ set(SIMENG_SOURCES
     FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
-    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
@@ -55,7 +55,7 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone yaml-cpp)
+target_link_libraries(libsimeng capstone)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})

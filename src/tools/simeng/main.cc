@@ -7,6 +7,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
@@ -49,7 +50,9 @@ int main(int argc, char** argv) {
 
   // Determine if a config file has been supplied.
   if (argc > 1) {
-    configFilePath = std::string(argv[1]);
+    // Set the global config file to one at the file path defined.
+    simeng::config::SimInfo::setConfig(argv[1]);
+
     // Determine if an executable has been supplied
     if (argc > 2) {
       executablePath = std::string(argv[2]);
@@ -60,19 +63,18 @@ int main(int argc, char** argv) {
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
-    coreInstance = std::make_unique<simeng::CoreInstance>(
-        configFilePath, executablePath, executableArgs);
   } else {
     // Without a config file, no executable can be supplied so pass default
     // (empty) values for executable information
-    coreInstance =
-        std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
-    configFilePath = "Default";
+    configFilePath = DEFAULT_STR;
   }
+
+  coreInstance =
+      std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
 
   // Replace empty executablePath string with more useful content for
   // outputting
-  if (executablePath == "") executablePath = "Default";
+  if (executablePath == "") executablePath = DEFAULT_STR;
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
@@ -82,13 +84,25 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Output general simulation details
-  std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
-            << " mode" << std::endl;
+  std::cout << "[SimEng] Running in "
+            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << configFilePath << std::endl;
-  std::cout << "[SimEng] ISA: " << coreInstance->getISAString() << std::endl;
+  std::cout << "[SimEng] Config file: "
+            << simeng::config::SimInfo::getConfigPath() << std::endl;
+  std::cout << "[SimEng] ISA: " << simeng::config::SimInfo::getISAString()
+            << std::endl;
+  std::cout << "[SimEng] Auto-generated Special File directory: ";
+  if (simeng::config::SimInfo::getGenSpecFiles())
+    std::cout << "True";
+  else
+    std::cout << "False";
+  std::cout << std::endl;
+  std::cout << "[SimEng] Number of Cores: "
+            << simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"]
+                   .as<uint16_t>()
+            << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
@@ -121,27 +135,36 @@ int main(int argc, char** argv) {
 // of YAML formatted data.
 #ifdef YAML_OUTPUT
 
-  YAML::Emitter out;
-  out << YAML::BeginDoc << YAML::BeginMap;
-  out << YAML::Key << "build metadata" << YAML::Value;
-  out << YAML::BeginSeq;
-  out << "Version: " SIMENG_VERSION;
-  out << "Compile Time - Date: " __TIME__ " - " __DATE__;
-  out << "Build type: " SIMENG_BUILD_TYPE;
-  out << "Compile options: " SIMENG_COMPILE_OPTIONS;
-  out << "Test suite: " SIMENG_ENABLE_TESTS;
-  out << YAML::EndSeq;
+  ryml::Tree out;
+  ryml::NodeRef ref = out.rootref();
+  ref |= ryml::MAP;
+  ref.append_child() << ryml::key("build metadata");
+  ref["build metadata"] |= ryml::SEQ;
+  ref["build metadata"].append_child();
+  ref["build metadata"][0] << "Version: " SIMENG_VERSION;
+  ref["build metadata"].append_child();
+  ref["build metadata"][1] << "Compile Time - Date: " __TIME__ " - " __DATE__;
+  ref["build metadata"].append_child();
+  ref["build metadata"][2] << "Build type: " SIMENG_BUILD_TYPE;
+  ref["build metadata"].append_child();
+  ref["build metadata"][3] << "Compile options: " SIMENG_COMPILE_OPTIONS;
+  ref["build metadata"].append_child();
+  ref["build metadata"][4] << "Test suite: " SIMENG_ENABLE_TESTS;
   for (const auto& [key, value] : stats) {
-    out << YAML::Key << key << YAML::Value << value;
+    ref.append_child() << ryml::key(key);
+    ref[ryml::to_csubstr(key)] << value;
   }
-  out << YAML::Key << "duration" << YAML::Value << duration;
-  out << YAML::Key << "mips" << YAML::Value << mips;
-  out << YAML::Key << "cycles_per_sec" << YAML::Value
-      << std::stod(stats["cycles"]) / (duration / 1000.0);
-  out << YAML::EndMap << YAML::EndDoc;
+  ref.append_child() << ryml::key("duration");
+  ref["duration"] << duration;
+  ref.append_child() << ryml::key("mips");
+  ref["mips"] << mips;
+  ref.append_child() << ryml::key("cycles_per_sec");
+  ref["cycles_per_sec"] << std::stod(stats["cycles"]) / (duration / 1000.0);
 
   std::cout << "YAML-SEQ\n";
-  std::cout << out.c_str() << std::endl;
+  std::cout << "---\n";
+  std::cout << ryml::emitrs_yaml<std::string>(out);
+  std::cout << "...\n\n";
 
 #endif
 

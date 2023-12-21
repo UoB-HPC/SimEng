@@ -86,8 +86,7 @@ TEST_P(InstJump, jalAlias) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstJump,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

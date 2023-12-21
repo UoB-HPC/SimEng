@@ -89,7 +89,7 @@ External project usage
 While we have tried to minimise SimEng's dependencies to keep it as simple as possible, it does make use of a small number of libraries and frameworks to provide crucial capabilities:
 
 - `Capstone disassembly engine <https://www.capstone-engine.org/>`_ - Provides instruction decoding for AArch64, RISC-V, x86 and other important ISAs
-- `Yaml-cpp <https://github.com/jbeder/yaml-cpp>`_ - Parsing YAML configuration files
+- `Rapid YAML <https://github.com/biojppm/rapidyaml>`_ - Parsing YAML configuration files
 - `GoogleTest <https://github.com/google/googletest>`_ - Framework for the test suites
 - `LLVM <https://github.com/llvm-mirror/llvm>`_ - Generation of binaries for use in the regression test suite
 
@@ -107,6 +107,8 @@ Current development team:
 - Finn Wilkinson
 - Rahat Muneeb
 - Dan Weaver
+- Alex Cockrean
+- Joseph Moore
     
 Original SimEng design and implementation:
 

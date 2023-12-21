@@ -59,11 +59,10 @@ TEST_P(SmokeTest, heap) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart() + 4), 42u);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AArch64, SmokeTest,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}")),
-                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, SmokeTest,
+                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                                           std::make_tuple(INORDER, "{}"),
+                                           std::make_tuple(OUTOFORDER, "{}")),
+                         paramToString);
 
 }  // namespace

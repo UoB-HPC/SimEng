@@ -1149,7 +1149,6 @@ void Instruction::execute() {
       // the sign of zero, although some implementations additionally enforce
       // that if one argument is +0 and the other is -0, then +0 is returned.
       // But RISC-V spec requires this to be the case
-      double res;
       if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0x0000000000000000, 8);
       } else {
@@ -1162,7 +1161,6 @@ void Instruction::execute() {
       const float rs2 = checkNanBox(operands[1]);
 
       // Comments regarding fmaxf similar to RISCV_FMAX_D
-      float res;
       if (rs1 == 0 && rs2 == 0) {
         results[0] = RegisterValue(0xffffffff00000000, 8);
       } else {

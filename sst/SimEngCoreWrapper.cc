@@ -267,25 +267,28 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     assembled_source_size = assemble.getAssembledSourceSize();
   }
   if (simengConfigPath_ != "") {
-    coreInstance_ =
-        assembleWithSource_
-            ? std::make_unique<simeng::CoreInstance>(
-                  assembled_source, assembled_source_size, simengConfigPath_)
-            : std::make_unique<simeng::CoreInstance>(
-                  simengConfigPath_, executablePath_, executableArgs_);
+    // Set the global config file to one at the file path defined
+    simeng::config::SimInfo::setConfig(simengConfigPath_);
+
+    coreInstance_ = assembleWithSource_
+                        ? std::make_unique<simeng::CoreInstance>(
+                              assembled_source, assembled_source_size)
+                        : std::make_unique<simeng::CoreInstance>(
+                              executablePath_, executableArgs_);
   } else {
     output_.verbose(CALL_INFO, 1, 0,
                     "No SimEng configuration provided. Using the default "
                     "a64fx-sst.yaml configuration file.\n");
-    coreInstance_ =
-        assembleWithSource_
-            ? std::make_unique<simeng::CoreInstance>(
-                  assembled_source, assembled_source_size, a64fxConfigPath_)
-            : std::make_unique<simeng::CoreInstance>(
-                  a64fxConfigPath_, executablePath_, executableArgs_);
+    // Set the global config file to the default a64fx-sst.yaml file
+    simeng::config::SimInfo::setConfig(a64fxConfigPath_);
+
+    coreInstance_ = assembleWithSource_
+                        ? std::make_unique<simeng::CoreInstance>(
+                              assembled_source, assembled_source_size)
+                        : std::make_unique<simeng::CoreInstance>(
+                              executablePath_, executableArgs_);
   }
-  if (coreInstance_->getSimulationMode() !=
-      simeng::SimulationMode::OutOfOrder) {
+  if (config::SimInfo::getSimMode() != config::SimulationMode::Outoforder) {
     output_.verbose(CALL_INFO, 1, 0,
                     "SimEng currently only supports Out-of-Order "
                     "archetypes with SST.");
@@ -335,12 +338,26 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
+  // Output general simulation details
   std::cout << "[SimEng] Running in "
-            << coreInstance_->getSimulationModeString() << " mode" << std::endl;
+            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath_;
   for (const auto& arg : executableArgs_) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << simengConfigPath_ << std::endl;
+  std::cout << "[SimEng] Config file: "
+            << simeng::config::SimInfo::getConfigPath() << std::endl;
+  std::cout << "[SimEng] ISA: " << simeng::config::SimInfo::getISAString()
+            << std::endl;
+  std::cout << "[SimEng] Auto-generated Special File directory: ";
+  if (simeng::config::SimInfo::getGenSpecFiles())
+    std::cout << "True";
+  else
+    std::cout << "False";
+  std::cout << std::endl;
+  std::cout << "[SimEng] Number of Cores: "
+            << simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"]
+                   .as<uint16_t>()
+            << std::endl;
 }
 
 std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {

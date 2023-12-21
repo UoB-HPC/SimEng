@@ -1455,8 +1455,7 @@ TEST_P(InstFloat, frintp) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstFloat,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

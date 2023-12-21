@@ -5,6 +5,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -23,12 +24,20 @@ void RegressionTest::run(const char* source, const char* triple,
                          const char* extensions) {
   testing::internal::CaptureStdout();
 
+  // Zero-out process memory from any prior runs
+  if (processMemory_ != nullptr)
+    std::memset(processMemory_, '\0', processMemorySize_);
+
   // Assemble the source to a flat binary
   assemble(source, triple, extensions);
   if (HasFatalFailure()) return;
 
-  // Get pre-defined config file for OoO model
-  YAML::Node config = generateConfig();
+  // Generate the predefined model config
+  generateConfig();
+
+  // Due to SimInfo being static, we need to ensure the config values/options
+  // stored are up-to-date with the latest generated config file
+  simeng::config::SimInfo::reBuild();
 
   // Create a linux process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -39,7 +48,8 @@ void RegressionTest::run(const char* source, const char* triple,
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
   processMemorySize_ = process_->getProcessImageSize();
@@ -75,14 +85,14 @@ void RegressionTest::run(const char* source, const char* triple,
             processMemory_ + process_->getHeapStart());
 
   // Create the architecture
-  architecture_ = createArchitecture(kernel, config);
+  architecture_ = createArchitecture(kernel);
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::GenericPredictor predictor(config);
+  simeng::GenericPredictor predictor = simeng::GenericPredictor();
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -100,7 +110,7 @@ void RegressionTest::run(const char* source, const char* triple,
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, config);
+          entryPoint, *architecture_, predictor, *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
