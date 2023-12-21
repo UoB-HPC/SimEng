@@ -1664,32 +1664,24 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FCVTZUUWDr: {  // fcvtzu wd, dn
-        // TODO: Handle NaNs, denorms, and saturation
-        results[0] = {
-            static_cast<int32_t>(std::trunc(operands[0].get<double>())), 8};
+        results[0] = {floatHelp::fcvtzu_integer<uint32_t, double>(operands), 8};
         break;
       }
       case Opcode::AArch64_FCVTZUUWSr: {  // fcvtzu wd, sn
-        // TODO: Handle NaNs, denorms, and saturation
-        results[0] = {
-            static_cast<int32_t>(std::trunc(operands[0].get<float>())), 8};
+        results[0] = {floatHelp::fcvtzu_integer<uint32_t, float>(operands), 8};
         break;
       }
       case Opcode::AArch64_FCVTZUUXDr: {  // fcvtzu xd, dn
-        // TODO: Handle NaNs, denorms, and saturation
-        results[0] =
-            static_cast<int64_t>(std::trunc(operands[0].get<double>()));
+        results[0] = {floatHelp::fcvtzu_integer<uint64_t, double>(operands), 8};
         break;
       }
       case Opcode::AArch64_FCVTZUUXSr: {  // fcvtzu xd, sn
-        // TODO: Handle NaNs, denorms, and saturation
-        results[0] = static_cast<int64_t>(std::trunc(operands[0].get<float>()));
+        results[0] = {floatHelp::fcvtzu_integer<uint64_t, float>(operands), 8};
         break;
       }
       case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
-        // TODO: Handle NaNs, denorms, and saturation
-        results[0] = {
-            static_cast<uint64_t>(std::trunc(operands[0].get<double>())), 256};
+        results[0] = {floatHelp::fcvtzu_integer<uint64_t, double>(operands),
+                      256};
         break;
       }
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d

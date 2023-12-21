@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include "auxiliaryFunctions.hh"
 
 namespace simeng {
@@ -149,6 +151,28 @@ class floatHelp {
     D out = static_cast<D>(n) / std::pow(2, fbits);
 
     return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format fcvtzu rd, rn.
+   * D represents the destination register type (e.g. for Xd, D = uint64_t).
+   * N represents the source register type (e.g. for Sd, N = float).
+   * Returns single value of type D. */
+  template <typename D, typename N>
+  static D fcvtzu_integer(std::vector<RegisterValue>& operands) {
+    N input = operands[0].get<N>();
+    D result = static_cast<D>(0);
+
+    // Account for Infinity
+    // Check for nan and less than 0
+    if (!std::isnan(input) && (input > static_cast<N>(0))) {
+      if (std::isinf(input)) {
+        result = std::numeric_limits<D>::max();
+      } else {
+        result = static_cast<D>(std::trunc(input));
+      }
+    }
+
+    return result;
   }
 };
 }  // namespace aarch64
