@@ -18,6 +18,8 @@ add_executable(regression-riscv
 target_include_directories(regression-riscv PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(regression-riscv regression-test-base)
+target_link_libraries(regression-riscv gmock_main)
+
 
 # Define a macro so that tests can find data files
 target_compile_definitions(regression-riscv PRIVATE

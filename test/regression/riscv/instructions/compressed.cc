@@ -1,4 +1,7 @@
 #include "RISCVRegressionTest.hh"
+#include "gmock/gmock.h"
+
+using ::testing::HasSubstr;
 
 namespace {
 
@@ -314,44 +317,113 @@ TEST_P(InstCompressed, j) {
 
 TEST_P(InstCompressed, jalr) {
   RUN_RISCV_COMP(R"(
-    c.jalr
+    li x8, 12
+    c.jalr x8
+    mv t0, ra
+    addi t6, t6, 10
+    li x8, 20
+    c.jalr x8
+    mv t1, ra
+    addi t5, t5, 5
+    li x8, 4
+    c.jalr x8
+    mv t2, ra
+    addi t4, t4, 3
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 10);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 20);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 12);
 }
 
 TEST_P(InstCompressed, beqz) {
   RUN_RISCV_COMP(R"(
-    c.beqz
+    addi x8, x8, 2
+    c.beqz x8, b1
+    addi x10, x10, 10
+    li x9, 0
+    c.beqz x9, b2
+    j b3
+    b1:
+    addi x10, x10, 5
+    b2:
+    addi x11, x11, 10
+    j b4
+    b3:
+    addi x11, x11, 5
+    b4:
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 10);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 10);
 }
 
 TEST_P(InstCompressed, bnez) {
   RUN_RISCV_COMP(R"(
-    c.bnez
+    addi x8, x8, 0
+    c.bnez x8, b1
+    addi x10, x10, 10
+    li x9, 2
+    c.bnez x9, b2
+    j b3
+    b1:
+    addi x10, x10, 5
+    b2:
+    addi x11, x11, 10
+    j b4
+    b3:
+    addi x11, x11, 5
+    b4:
   )");
 }
 
 TEST_P(InstCompressed, li) {
   RUN_RISCV_COMP(R"(
-    c.li
+    addi a5, a5, 12
+    c.li a5, 0
+    addi a4, a4, 12
+    c.li a4, -32
+    addi a3, a3, 12
+    c.li a3, 31
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), -32);
+  EXPECT_EQ(getGeneralRegister<int64_t>(13), 31);
 }
 
 TEST_P(InstCompressed, lui) {
   RUN_RISCV_COMP(R"(
-    c.lui
+      c.lui t3, 4
+      c.lui t4, 0xFFFFC
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4ull << 12);
 }
 
 TEST_P(InstCompressed, addi) {
   RUN_RISCV_COMP(R"(
-    c.addi
+    c.addi t3, 3
+    c.addi t4, 6
+    c.addi t3, 30
+    c.addi zero, 16
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 6u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 33u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
 TEST_P(InstCompressed, addiw) {
   RUN_RISCV_COMP(R"(
-    c.addiw
+    addi t3, t3, 91
+    slli t3, t3, 28
+    addiw t5, t3, -5
+    addiw t6, t2, -5
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 24427626496);
+  EXPECT_EQ(getGeneralRegister<int32_t>(30), -1342177285);
+  EXPECT_EQ(getGeneralRegister<int64_t>(31), -5);
 }
 
 TEST_P(InstCompressed, addi16sp) {
@@ -368,80 +440,226 @@ TEST_P(InstCompressed, addi16sp) {
 
 TEST_P(InstCompressed, slli) {
   RUN_RISCV_COMP(R"(
-    c.slli
+      addi t4, t4, 6
+      c.slli t4, 5
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 192);
 }
 
 TEST_P(InstCompressed, srli) {
   RUN_RISCV_COMP(R"(
-    c.srli
+      addi x8, x8, -4
+      c.srli x8, 61
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 7);
 }
 
 TEST_P(InstCompressed, srai) {
   RUN_RISCV_COMP(R"(
-    c.srai
+    addi x8, x8, -4
+    add t0, t0, x8
+    c.srai x8, 1
+    addi x9, t0, 8
+    c.srai x9, 1
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), -2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 2);
 }
 
 TEST_P(InstCompressed, andi) {
   RUN_RISCV_COMP(R"(
-    c.andi
+    addi x9, x9, 3
+    addi t4, t4, 5
+    and x8, x9, t4
+    c.andi x8, 9
+    c.andi x9, -7
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0001);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 1);
 }
 
 TEST_P(InstCompressed, add) {
   RUN_RISCV_COMP(R"(
-    c.add
+     addi x8, x8, 3
+     addi x9, x9, 6
+     c.add x8, x9
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 9u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 6u);
 }
 
 TEST_P(InstCompressed, and) {
   RUN_RISCV_COMP(R"(
-    c.and
+    addi x8, x8, 3
+    addi x9, x9, 5
+    c.and x8, x9
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0001);
 }
 
 TEST_P(InstCompressed, or) {
   RUN_RISCV_COMP(R"(
-    c.or
+    addi x8, x8, 3
+    addi x9, x9, 5
+    c.or x8, x9
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0111);
 }
 
 TEST_P(InstCompressed, xor) {
   RUN_RISCV_COMP(R"(
-    c.xor
+    addi x8, x8, 3
+    addi x9, x9, 5
+    c.xor x8, x9
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0110);
 }
 
 TEST_P(InstCompressed, sub) {
   RUN_RISCV_COMP(R"(
-    c.sub
+    addi x8, x8, 3
+    addi x9, x9, 6
+    mv x10, x8
+    c.sub x8, x9
+    c.sub x9, x10
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), -3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 3);
 }
 
 TEST_P(InstCompressed, addw) {
   RUN_RISCV_COMP(R"(
-    c.addw
+    addi x9, x9, -7
+    addi x8, x8, 3
+    mv x11, x8
+    addi x10, x10, 6
+    c.addw x8, x10
+    c.addw x9, x11
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 9u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), -4);
 }
 
 TEST_P(InstCompressed, subw) {
   RUN_RISCV_COMP(R"(
-    c.subw
+    addi x9, x9, 3
+    addi x10, x10, 6
+    mv x11, x10
+    mv x12, x9
+    c.subw x9, x10
+    c.subw x10, x12
+
+    li x12, -1
+    addi x11, x11, -8
+    c.subw x12, x11
   )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), -3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 3);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), -2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x0000000000000001);
 }
 
 TEST_P(InstCompressed, nop) {
   RUN_RISCV_COMP(R"(
+    li x8, 1234
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 199840);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 1234);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(18), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(19), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(24), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(25), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(26), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(27), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
+  EXPECT_EQ(numTicks_, 2);  // 1 insn + 1 for unimplemented final insn
+
+  numTicks_ = 0;
+
+  RUN_RISCV_COMP(R"(
+    c.nop
+    c.nop
+    c.nop
+    c.nop
     c.nop
   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 199840);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(16), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(17), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(18), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(19), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(24), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(25), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(26), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(27), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
+  EXPECT_EQ(numTicks_, 6);  // 5 insns + 1 for unimplemented final insn
 }
 
 TEST_P(InstCompressed, ebreak) {
+  std::stringstream buffer;
+  std::streambuf* sbuf = std::cout.rdbuf();  // Save cout's buffer
+  std::cout.rdbuf(buffer.rdbuf());           // Redirect cout to buffer
+
   RUN_RISCV_COMP(R"(
     c.ebreak
   )");
+
+  std::cout.rdbuf(sbuf);  // Restore cout
+  EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler] Encountered execution "
+                        "not-yet-implemented exception"));
+  EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler]    0x0000000000000000: 02 "
+                        "90 00 00     c.ebreak "));
+  buffer.str(std::string());
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstCompressed,
