@@ -60,6 +60,21 @@ inline std::string paramToString(
   }                                            \
   if (HasFatalFailure()) return
 
+/** A helper macro to run a snippet of RISCV assembly code, returning from
+ * the calling function if a fatal error occurs. Four bytes containing zeros
+ * are appended to the source to ensure that the program will terminate with
+ * an illegal instruction exception instead of running into the heap. This
+ * specifically targets the compressed extension allowing for the above macro to
+ * ignore it, otherwise LLVM eagerly emits compressed instructions for
+ * non-compressed assembly*/
+#define RUN_RISCV_COMP(source)                   \
+  {                                              \
+    std::string sourceWithTerminator = source;   \
+    sourceWithTerminator += "\n.word 0";         \
+    runCompressed(sourceWithTerminator.c_str()); \
+  }                                              \
+  if (HasFatalFailure()) return
+
 /** The test fixture for all RISCV regression tests. */
 class RISCVRegressionTest : public RegressionTest {
  protected:
@@ -67,6 +82,10 @@ class RISCVRegressionTest : public RegressionTest {
 
   /** Run the assembly code in `source`. */
   void run(const char* source);
+
+  /** Run the assembly code in `source` with compressed extension in the target
+   * ISA. */
+  void runCompressed(const char* source);
 
   /** Generate a default YAML-formatted configuration. */
   YAML::Node generateConfig() const override;
