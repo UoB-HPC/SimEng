@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <iostream>
 
 namespace simeng {
@@ -33,40 +35,63 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   buffer_.push_back(insn);
 }
 
+/**
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  if (buffer_.size()) {
-    size_t index = 0;
-    int firstOp = -1;
-    bool validForCommit = false;
+  uint16_t bsize = cbuff_.size();
+  if (unlikely(!bsize)) return;
 
-    // Find first instance of uop belonging to macro-op instruction
-    for (; index < buffer_.size(); index++) {
-      if (buffer_[index]->getInstructionId() == insnId) {
-        firstOp = index;
-        break;
-      }
+  uint16_t index = cbuff_.headIdx_;
+  uint16_t cnt = 0;
+  uint16_t ins_cnt = 0;
+  while (cnt < bsize) {
+    auto& uop = cbuff_[index];
+    uint64_t ins_id = uop->getInstructionId();
+    if (ins_id == insnId) {
+      if (!uop->isWaitingCommit()) return;
+      ins_cnt++;
+    } else if (ins_cnt && ins_id != insnId) {
+      break;
     }
-
-    if (firstOp > -1) {
-      // If found, see if all uops are committable
-      for (; index < buffer_.size(); index++) {
-        if (buffer_[index]->getInstructionId() != insnId) break;
-        if (!buffer_[index]->isWaitingCommit()) {
-          return;
-        } else if (buffer_[index]->isLastMicroOp()) {
-          // all microOps must be in ROB for the commit to be valid
-          validForCommit = true;
-        }
-      }
-      if (!validForCommit) return;
-
-      // No early return thus all uops are committable
-      for (; firstOp < buffer_.size(); firstOp++) {
-        if (buffer_[firstOp]->getInstructionId() != insnId) break;
-        buffer_[firstOp]->setCommitReady();
-      }
-    }
+    cnt++;
+    index = (index + 1) % maxSize_;
   }
+
+  uint16_t idx = mod(index - ins_cnt, maxSize_);
+  for (cnt = 0; cnt < ins_cnt; cnt++) {
+    cbuff_[idx]->setCommitReady();
+    idx = (idx + 1) % maxSize_;
+  }
+
+  return;
+}
+*/
+
+void ReorderBuffer::commitMicroOps(uint64_t insnId) {
+  size_t bsize = buffer_.size();
+  if (!bsize) return;
+
+  size_t index = 0;
+  uint8_t ins_cnt = 0;
+
+  while (index < bsize) {
+    auto& uop = buffer_[index];
+    uint64_t mop_id = uop->getInstructionId();
+
+    if (mop_id == insnId) {
+      if (!uop->isWaitingCommit()) return;
+      ins_cnt++;
+    } else if (ins_cnt && mop_id != insnId) {
+      break;
+    }
+    index++;
+  }
+
+  index = index - ins_cnt;
+  for (int x = 0; x < ins_cnt; x++) {
+    buffer_[index]->setCommitReady();
+    index++;
+  }
+
   return;
 }
 
