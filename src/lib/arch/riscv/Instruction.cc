@@ -38,7 +38,8 @@ const span<Register> Instruction::getSourceRegisters() const {
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
-  return {const_cast<RegisterValue*>(operands.data()), operands.size()};
+  return {const_cast<RegisterValue*>(sourceRegValues.data()),
+          sourceRegValues.size()};
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
@@ -47,7 +48,7 @@ const span<Register> Instruction::getDestinationRegisters() const {
 }
 
 bool Instruction::isOperandReady(int index) const {
-  return static_cast<bool>(operands[index]);
+  return static_cast<bool>(sourceRegValues[index]);
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
@@ -63,8 +64,8 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
   assert(value.size() > 0 &&
          "Attempted to provide an uninitialised RegisterValue");
 
-  operands[i] = value;
-  operandsPending--;
+  sourceRegValues[i] = value;
+  numSourceOperandsPending--;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -90,7 +91,7 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool Instruction::canExecute() const { return (operandsPending == 0); }
+bool Instruction::canExecute() const { return (numSourceOperandsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};

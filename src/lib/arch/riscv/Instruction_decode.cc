@@ -150,9 +150,9 @@ void Instruction::decode() {
         if (sourceRegisters[sourceRegisterCount] ==
             Instruction::ZERO_REGISTER) {
           // Catch zero register references and pre-complete those operands
-          operands[sourceRegisterCount] = RegisterValue(0, 8);
+          sourceRegValues[sourceRegisterCount] = RegisterValue(0, 8);
         } else {
-          operandsPending++;
+          numSourceOperandsPending++;
         }
 
         sourceRegisterCount++;
@@ -192,9 +192,9 @@ void Instruction::decode() {
 
       if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
         // Catch zero register references and pre-complete those operands
-        operands[sourceRegisterCount] = RegisterValue(0, 8);
+        sourceRegValues[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
-        operandsPending++;
+        numSourceOperandsPending++;
       }
 
       sourceRegisterCount++;
@@ -202,11 +202,12 @@ void Instruction::decode() {
 
     // First operand is never MEM type, only check after the first. If register
     // contains memory address, extract reg number from capstone object
+    // TODO also extract offset for instruction address?
     else if (i > 0 && op.type == RISCV_OP_MEM) {
       //  Memory operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
-      operandsPending++;
+      numSourceOperandsPending++;
     }
   }
 

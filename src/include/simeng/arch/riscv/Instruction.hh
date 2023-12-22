@@ -202,7 +202,11 @@ class Instruction : public simeng::Instruction {
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
+  // TODO this name change requires updates of the docs on approval
+  // developer/arch/supported/aarch64.html#aarch64-adding-execution-behaviour-operands
+  // TODO update AArch64 to keep both inline and references in docs from RISC-V
+  // to AArch64 correct
+  std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceRegValues;
 
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
@@ -219,7 +223,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short operandsPending = 0;
+  uint16_t numSourceOperandsPending = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
