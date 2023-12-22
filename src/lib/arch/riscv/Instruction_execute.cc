@@ -179,6 +179,9 @@ void Instruction::execute() {
 
   // Implementation of rv64iamfdc according to the v. 20191213 unprivileged spec
 
+  //  std::cerr << std::hex << instructionAddress_ << " " << metadata.mnemonic
+  //            << " " << metadata.operandStr << std::dec << std::endl;
+
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm

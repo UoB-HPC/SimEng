@@ -17,6 +17,8 @@ uint64_t simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
+    std::cerr << "tick" << std::endl;
+
     // Tick the core
     core.tick();
 

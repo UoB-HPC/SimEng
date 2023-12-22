@@ -65,6 +65,9 @@ Register csRegToRegister(unsigned int reg) {
  *****************/
 void Instruction::decode() {
   if (metadata.id == RISCV_INS_INVALID) {
+    std::cerr << "INVALID at " << std::hex << instructionAddress_ << std::dec
+              << std::endl;
+
     exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
     return;
