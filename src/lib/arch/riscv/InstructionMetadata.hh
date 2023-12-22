@@ -96,6 +96,10 @@ struct InstructionMetadata {
    * instruction. */
   void alterPseudoInstructions(const cs_insn& insn);
 
+  /** Detect compressed instructions and update metadata to match the
+   * non-compressed instruction expansion. */
+  void convertCompressedInstruction(const cs_insn& insn);
+
   /** Flag the instruction as aliasNYI due to a detected unsupported alias. */
   void aliasNYI();
 
@@ -107,6 +111,15 @@ struct InstructionMetadata {
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
 
+  /** RISC-V helper function
+   * Duplicate operands[0] and move operands[1] to operands[2] */
+  void duplicateFirstOp();
+
+  /** RISC-V helper function
+   * Combine operands[1] and operands[2] which are of type imm and reg
+   * respectively into a single mem type operand */
+  void createMemOpPosOne();
+
   /** The current exception state of this instruction. */
   InstructionException metadataException_ = InstructionException::None;
 
@@ -115,9 +128,6 @@ struct InstructionMetadata {
 
   /** Set the byte length of instruction */
   void setLength(uint8_t size);
-  void convertCompressedInstruction(const cs_insn& insn);
-  void duplicateFirstOp();
-  void createMemOpPosOne();
 };
 
 }  // namespace riscv

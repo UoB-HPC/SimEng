@@ -465,7 +465,6 @@ void InstructionMetadata::createMemOpPosOne() {
 
   cs_riscv_op temp;
   temp.type = RISCV_OP_MEM;
-  temp.imm = operands[1].imm;  //
   temp.mem.base = operands[2].reg;
   temp.mem.disp = operands[1].imm;
 
@@ -488,40 +487,37 @@ void InstructionMetadata::setLength(uint8_t size) {
   }
 }
 void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
-  //  std::cerr << ": " << insn.mnemonic << " " << operandStr << std::endl;
   if (len != INSTR_LENGTH::IL_16B) {
     return;
   }
 
-  //  std::cerr << std::endl
-  //            << "COMPRESSED:: " << insn.address << ":" << insn.mnemonic << "
-  //            "
-  //            << operandStr << std::endl;
-
   switch (insn.opcode) {
     case Opcode::RISCV_C_JR:
-      //      jalr x0, 0(rs1)
+      // jalr x0, 0(rs1)
       // trap if rs1 = zero
+      // C.JR Rs, _, _ -> JALR x0, Rs, 0
       opcode = Opcode::RISCV_JALR;
-      // TODO repeat logic so that mnemonic can remain for help when debugging
-      // Change mnemonic to allow pseudoinstruction code to work
-      strcpy(mnemonic, reinterpret_cast<const char*>("jr"));
+
+      operands[0].type = RISCV_OP_REG;
+      operands[0].reg = 1;
+
+      operands[1] = insn.detail->riscv.operands[0];
+
+      operands[2].type = RISCV_OP_IMM;
+      operands[2].imm = 0;
+
+      operandCount = 3;
+
       break;
     case Opcode::RISCV_C_MV:
       // add rd, x0, rs2
-      //  trap if rs2 = zero. rs2 == zero corresponds to C.JR
-      //  rs2==zero and rd == zero are hints
+      // trap if rs2 = zero. rs2 == zero corresponds to C.JR
+      // rs2==zero and rd == zero are hints
       // C.MV rd, rs2, _ -> ADD rd, zero, rs2
       opcode = Opcode::RISCV_ADD;
 
       includeZeroRegisterPosOne();
 
-      //      operands[2] = insn.detail->riscv.operands[1];
-      //
-      //      operands[1].type = RISCV_OP_REG;
-      //      operands[1].reg = 1;
-      //
-      //      operandCount = 3;
       break;
     case Opcode::RISCV_C_LDSP: {
       // TODO valid for RV64 only. Make this check

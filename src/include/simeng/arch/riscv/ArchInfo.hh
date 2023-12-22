@@ -19,6 +19,15 @@ typedef enum riscv_sysreg {
 
 } riscv_sysreg;
 
+struct constantsPool {
+  const uint8_t alignMask = 0x3;
+  const uint8_t alignMaskCompressed = 0x1;
+  const uint8_t bytesLimit = 4;
+  const uint8_t bytesLimitCompressed = 2;
+  const uint8_t byteLength64 = 8;
+  const uint8_t byteLength32 = 4;
+};
+
 /** A class to hold and generate riscv specific architecture configuration
  * options. */
 class ArchInfo : public simeng::arch::ArchInfo {

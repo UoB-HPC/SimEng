@@ -172,9 +172,6 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
-  static const Register RA_REGISTER;
-  static const Register SP_REGISTER;
-
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
