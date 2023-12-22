@@ -132,7 +132,7 @@ void Instruction::decode() {
     isAtomic_ = true;
   }
 
-  // Extract explicit register accesses, ignore immediates until execute
+  // Extract explicit register accesses and immediates
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
@@ -206,8 +206,14 @@ void Instruction::decode() {
     else if (i > 0 && op.type == RISCV_OP_MEM) {
       //  Memory operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
+      imm = op.mem.disp;
       sourceRegisterCount++;
       numSourceOperandsPending++;
+    }
+
+    // First operands never immediate
+    else if (i > 0 && op.type == RISCV_OP_IMM) {
+      imm = op.imm;
     }
   }
 

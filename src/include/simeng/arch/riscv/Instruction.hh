@@ -208,6 +208,9 @@ class Instruction : public simeng::Instruction {
   // to AArch64 correct
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceRegValues;
 
+  /** Extracted value of current immediate from metadata */
+  int64_t imm = 0;
+
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
@@ -259,9 +262,6 @@ class Instruction : public simeng::Instruction {
   bool isFloat_ = false;
   /** Is this a floating point <-> integer convert operation? */
   bool isConvert_ = false;
-
-  /** Extracted value of current immediate from metadata */
-  uint32_t c_imm = 0;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

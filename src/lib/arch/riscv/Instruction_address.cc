@@ -15,14 +15,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   uint64_t address;
   if (isLoad() && isStoreAddress() && isAtomic()) {
     // Atomics
-    // Metadata operand[2] corresponds to instruction operand[1]
+    // Metadata operand[2] corresponds to instruction sourceRegValues[1]
     assert(metadata.operands[2].type == RISCV_OP_REG &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
     address = sourceRegValues[1].get<uint64_t>();
   } else if (isLoad() && isAtomic()) {
     // Load reserved
-    // Metadata operand[1] corresponds to instruction operand[0]
+    // Metadata operand[1] corresponds to instruction sourceRegValues[0]
     assert(metadata.operands[1].type == RISCV_OP_REG &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
@@ -37,23 +37,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     assert(metadata.operands[1].type == RISCV_OP_MEM &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
-    //    std::cerr << "base val: " << sourceRegValues[0].get<uint64_t>()
-    //              << ", disp: " << metadata.sourceRegValues[1].mem.disp <<
-    //              std::endl;
-
-    address =
-        sourceRegValues[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+    address = sourceRegValues[0].get<uint64_t>() + imm;
   } else {
-    //    std::cerr << "mem disp: " << metadata.sourceRegValues[1].mem.disp <<
-    //    std::endl; std::cerr << metadata.sourceRegValues[1].type << std::endl;
-
     assert((metadata.operands[1].type == RISCV_OP_MEM) &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
-    // TODO don't use metadata directly here, extract it into member instruction
-    // variable
-    address =
-        sourceRegValues[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+
+    address = sourceRegValues[1].get<uint64_t>() + imm;
   }
 
   // Atomics

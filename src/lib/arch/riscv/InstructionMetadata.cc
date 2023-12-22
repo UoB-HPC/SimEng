@@ -549,13 +549,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       includeZeroRegisterPosOne();
 
-      //      operands[2] = insn.detail->riscv.operands[1];
-      //
-      //      operands[1].type = RISCV_OP_REG;
-      //      operands[1].reg = 1;
-      //
-      //      operandCount = 3;
-
       break;
     case Opcode::RISCV_C_ADDI16SP:
       // Opcode shared with C.LUI but has Rd = x2
@@ -712,6 +705,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       operands[0].type = RISCV_OP_REG;
       operands[0].reg = 1;
+
+      operandCount = 2;
 
       break;
     case Opcode::RISCV_C_ADDIW:
