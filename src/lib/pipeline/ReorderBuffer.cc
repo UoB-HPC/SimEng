@@ -35,37 +35,6 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   buffer_.push_back(insn);
 }
 
-/**
-void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  uint16_t bsize = cbuff_.size();
-  if (unlikely(!bsize)) return;
-
-  uint16_t index = cbuff_.headIdx_;
-  uint16_t cnt = 0;
-  uint16_t ins_cnt = 0;
-  while (cnt < bsize) {
-    auto& uop = cbuff_[index];
-    uint64_t ins_id = uop->getInstructionId();
-    if (ins_id == insnId) {
-      if (!uop->isWaitingCommit()) return;
-      ins_cnt++;
-    } else if (ins_cnt && ins_id != insnId) {
-      break;
-    }
-    cnt++;
-    index = (index + 1) % maxSize_;
-  }
-
-  uint16_t idx = mod(index - ins_cnt, maxSize_);
-  for (cnt = 0; cnt < ins_cnt; cnt++) {
-    cbuff_[idx]->setCommitReady();
-    idx = (idx + 1) % maxSize_;
-  }
-
-  return;
-}
-*/
-
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   size_t bsize = buffer_.size();
   if (!bsize) return;
