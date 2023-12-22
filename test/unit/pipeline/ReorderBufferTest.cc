@@ -1,11 +1,9 @@
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
-#include "simeng/pipeline/RegisterAliasTable.hh"
 #include "simeng/pipeline/ReorderBuffer.hh"
 
 using ::testing::_;
@@ -421,6 +419,44 @@ TEST_F(ReorderBufferTest, branch) {
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
   EXPECT_EQ(loobBoundaryAddr, insnAddr);
+}
+
+// Tests that only those destination registers which have been renamed are
+// rewound upon a ROB flush
+TEST_F(ReorderBufferTest, registerRewind) {
+  uop->setInstructionId(0);
+  uop->setSequenceId(0);
+  uop2->setInstructionId(1);
+  uop2->setSequenceId(1);
+
+  // Reserve entries in ROB
+  reorderBuffer.reserve(uopPtr);
+  reorderBuffer.reserve(uopPtr2);
+
+  // Rename one of the destination registers
+  Register archReg = {0, 1, 0};
+  Register renamedReg = rat.allocate({0, 1});
+  EXPECT_EQ(renamedReg.tag, 32);
+
+  // Set destination registers for to be flushed uop2 with the second register
+  // not being renamed
+  std::vector<Register> destinations = {renamedReg, {0, 2, 0}};
+  const span<Register> destinationSpan = {
+      const_cast<Register*>(destinations.data()), 2};
+  EXPECT_CALL(*uop2, getDestinationRegisters())
+      .Times(1)
+      .WillRepeatedly(Return(destinationSpan));
+
+  // Check that mappings in RAT are correct
+  EXPECT_EQ(rat.getMapping(archReg).tag, 32);
+  EXPECT_EQ(rat.getMapping(destinations[1]).tag, 2);
+
+  // Flush ROB
+  reorderBuffer.flush(0);
+
+  // Check rewind occured on only the first destination register
+  EXPECT_EQ(rat.getMapping(archReg).tag, 1);
+  EXPECT_EQ(rat.getMapping(destinations[1]).tag, 2);
 }
 
 }  // namespace pipeline
