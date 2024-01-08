@@ -258,9 +258,9 @@ TEST_P(LoadStoreQueueTest, PurgeFlushedLoad) {
   EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
   EXPECT_CALL(dataMemory, getCompletedReads())
       .WillRepeatedly(Return(completedReads));
-  EXPECT_EQ(completionSlots[0].getTailSlots()[0], nullptr);
   queue.tick();
 
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0], nullptr);
   EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
 }
 
