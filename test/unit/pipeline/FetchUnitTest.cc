@@ -16,6 +16,8 @@ using ::testing::AnyOf;
 using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::Field;
+using ::testing::Gt;
+using ::testing::Lt;
 using ::testing::Ne;
 using ::testing::Return;
 using ::testing::SetArgReferee;
@@ -294,7 +296,7 @@ TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
 
-  // Set the expectation from the predcitor to be true so a loop body will
+  // Set the expectation from the predictor to be true so a loop body will
   // be detected
   ON_CALL(predictor, predict(_, _, _))
       .WillByDefault(Return(BranchPrediction({true, 0x0})));
@@ -377,16 +379,16 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
 
   // Set the instructions, within the loop body, to be returned from predecode
   MacroOp mOp2 = {uopPtr2};
-  ON_CALL(isa, predecode(_, _, AnyOf(0xC, 0x1C), _))
+  ON_CALL(isa, predecode(_, _, Gt(0x8), _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
   ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
 
   MacroOp mOp = {uopPtr};
-  ON_CALL(isa, predecode(_, _, AllOf(Ne(0xC), Ne(0x1C)), _))
+  ON_CALL(isa, predecode(_, _, Lt(0xC), _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
 
-  // Set the first expectation from the predcitor to be true so a loop body will
+  // Set the first expectation from the predictor to be true so a loop body will
   // be detected
   EXPECT_CALL(predictor, predict(_, _, _))
       .WillOnce(Return(BranchPrediction({true, 0x0})));
@@ -423,13 +425,13 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // memory
   output.fill({});
   fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
   output.fill({});
   fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
   output.fill({});
   fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
+  EXPECT_EQ(output.getTailSlots()[0], mOp2);
   output.fill({});
   fetchUnit.tick();
   EXPECT_EQ(output.getTailSlots()[0], mOp2);
