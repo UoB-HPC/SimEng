@@ -220,7 +220,12 @@ void CoreInstance::createCore() {
   }
 
   // Construct branch predictor object
-  predictor_ = std::make_unique<GenericPredictor>();
+  std::string predictorType = config_["Branch-Predictor"]["Type"].as<std::string>();
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<PerceptronPredictor>();
+  }
 
   // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
