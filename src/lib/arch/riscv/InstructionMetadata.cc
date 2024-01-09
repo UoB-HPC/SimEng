@@ -16,7 +16,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       implicitDestinationCount(insn.detail->regs_write_count),
       operandCount(insn.detail->riscv.op_count) {
   //  std::memcpy(encoding, insn.bytes, sizeof(encoding));
-  std::cerr << "metadata insn size" << insn.size << std::endl;
 
   setLength(insn.size);
   std::memset(encoding, 0, 4);

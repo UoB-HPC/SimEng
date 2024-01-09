@@ -160,9 +160,6 @@ Architecture::~Architecture() {
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
-  std::cerr << "predecode at address: " << std::hex << instructionAddress
-            << std::dec << std::endl;
-
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed ISA is supported
   if (instructionAddress & constants_.alignMask) {
@@ -177,8 +174,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Return non-zero value to avoid fatal error
     return 1;
   }
-
-  std::cerr << "predecode bytes avail " << (int)bytesAvailable << std::endl;
 
   assert(bytesAvailable >= constants_.bytesLimit &&
          "Fewer than bytes limit supplied to RISC-V decoder");
@@ -208,6 +203,12 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     auto metadata =
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
+    if (metadata.id == RISCV_INS_INVALID) {
+      // Invalid decoding, potentially read over the end of the valid buffer.
+      // BAIL. Do not add to cache as may be incorrect data
+      return 0;
+    }
+
     // Cache the metadata
     metadataCache.push_front(metadata);
 
@@ -221,7 +222,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   if (iter->second.getMetadata().lenBytes > bytesAvailable) {
     // Too many bytes read. BAIL
-    std::cerr << "TOO MANY BYTES READ" << std::endl;
+    // TODO don't write to cache
     return 0;
   }
 
@@ -231,12 +232,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // Retrieve the cached instruction and write to output
   uop = std::make_shared<Instruction>(iter->second);
 
-  std::cerr << "setInstructionAddress: " << std::hex << instructionAddress
-            << std::dec << std::endl;
-
   uop->setInstructionAddress(instructionAddress);
-
-  std::cerr << std::hex << instructionAddress << std::dec << std::endl;
 
   return iter->second.getMetadata().lenBytes;
 }
