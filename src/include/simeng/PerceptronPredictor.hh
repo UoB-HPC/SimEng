@@ -60,6 +60,10 @@ class PerceptronPredictor : public BranchPredictor {
   /** The number of previous branch directions recorded globally. */
   uint64_t globalHistoryLength_;
 
+  /** The magnitude of the dot product of the perceptron and the global history,
+   * below which the perceptron's weight must be updated */
+  uint64_t trainingThreshold_;
+
   /** A return address stack. */
   std::deque<uint64_t> ras_;
 
@@ -70,10 +74,6 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** The size of the RAS. */
   uint64_t rasSize_;
-
-  /** The magnitude of the dot product of the perceptron and the global history,
-   * below which the perceptron's weight must be updated */
-  uint64_t trainingThreshold_;
 };
 
 }  // namespace simeng
