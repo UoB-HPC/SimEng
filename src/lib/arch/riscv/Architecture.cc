@@ -209,6 +209,12 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
       return 0;
     }
 
+    if (metadata.lenBytes > bytesAvailable) {
+      // Too many bytes read. BAIL
+      // TODO don't write to cache
+      return 0;
+    }
+
     // Cache the metadata
     metadataCache.push_front(metadata);
 
@@ -221,8 +227,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   }
 
   if (iter->second.getMetadata().lenBytes > bytesAvailable) {
-    // Too many bytes read. BAIL
-    // TODO don't write to cache
+    // If cached but too many bytes read. BAIL
     return 0;
   }
 

@@ -4,7 +4,7 @@
 
 Core:
   ISA: rv64
-  Simulation-Mode: outoforder
+  Simulation-Mode: inorderpipelined
   Clock-Frequency-GHz: 2.5
   Timer-Frequency-MHz: 200
 Fetch:
