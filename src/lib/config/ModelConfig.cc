@@ -425,6 +425,11 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation("Branch-Predictor"));
 
   expectations_["Branch-Predictor"].addChild(
+      ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
+  expectations_["Branch-Predictor"]["Type"].setValueSet(
+      std::vector<std::string>{"Generic", "Perceptron"});
+
+  expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
   expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(1,
                                                                             64);
