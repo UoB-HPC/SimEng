@@ -1,19 +1,29 @@
 #include "simeng/PerceptronPredictor.hh"
 
+// ToDo -- remove this include
+#include <iostream>
 
 namespace simeng {
 
 PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
     : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint64_t>()),
-      globalHistoryLength_(config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
+      globalHistoryLength_(
+          config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
   // Build BTB based on config options
   btb_.resize(1 << (btbBits_));
+//  std::cout << "BTB size is " << btb_.capacity() << std::endl;
   for (int i = 0; i < (1 << (btbBits_)); i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
     btb_[i].second = 0;
   }
+//  std::cout << "First perceptron:" << std::endl << "{";
+//  for (int i = 0; i < (globalHistoryLength_); i++) {
+//    std::cout << (int)btb_[0].first[i] << ", ";
+//  }
+//  std::cout << (int)btb_[0].first[globalHistoryLength_] << "}" << std::endl;
+
 
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (int)((1.93 * (globalHistoryLength_)) + 14);

@@ -220,7 +220,6 @@ void CoreInstance::createCore() {
   }
 
   // Construct branch predictor object
-  std::cout << "building BP" << std::endl;
   std::string predictorType = config_["Branch-Predictor"]["Type"].as<std::string>();
   if (predictorType == "Generic") {
     predictor_ = std::make_unique<GenericPredictor>();

@@ -435,7 +435,7 @@ void ModelConfig::setExpectations(bool isDefault) {
                                                                             64);
 
   expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<uint8_t>(2, "Saturating-Count-Bits"));
+      ExpectationNode::createExpectation<uint8_t>(2, "Saturating-Count-Bits", true));
   expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
       .setValueBounds<uint8_t>(1, 64);
 
@@ -451,7 +451,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<std::string>(
-          "Always-Taken", "Fallback-Static-Predictor"));
+          "Always-Taken", "Fallback-Static-Predictor", true));
   expectations_["Branch-Predictor"]["Fallback-Static-Predictor"].setValueSet(
       std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
 
