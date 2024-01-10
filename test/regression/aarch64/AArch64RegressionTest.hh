@@ -3,10 +3,8 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/version.hh"
 
-static const char* AARCH64_ADDITIONAL_CONFIG =
-    R"YAML(
+static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
 {
   Core:
     {

@@ -32,7 +32,7 @@ class RenameUnitTest : public testing::Test {
         uop3Ptr(uop3) {}
 
  protected:
-  // 3rd register type has same arch & physical counts meaning reneaming is not
+  // 3rd register type has same arch & physical counts meaning renaming is not
   // permitted.
   const std::vector<RegisterFileStructure> archRegFileStruct = {
       {8, 10}, {24, 15}, {256, 31}};
@@ -69,6 +69,7 @@ class RenameUnitTest : public testing::Test {
   std::shared_ptr<Instruction> uop3Ptr;
 };
 
+// Test the correct functionality when input buffer and unit is empty
 TEST_F(RenameUnitTest, emptyTick) {
   EXPECT_EQ(input.getHeadSlots()[0], nullptr);
   EXPECT_EQ(output.getTailSlots()[0], nullptr);
@@ -132,7 +133,7 @@ TEST_F(RenameUnitTest, outputStall) {
   EXPECT_TRUE(input.isStalled());
 }
 
-// Test that an instruction excpetion is properly dealt with
+// Test that an instruction exception is properly dealt with
 TEST_F(RenameUnitTest, uopException) {
   input.getHeadSlots()[0] = uopPtr;
   uop->setExceptionEncountered(true);
@@ -421,7 +422,7 @@ TEST_F(RenameUnitTest, serializedDest) {
   EXPECT_EQ(output.getTailSlots()[0], nullptr);
 
   // Empty item in ROB
-  EXPECT_GT(rob.size(), 0);
+  EXPECT_EQ(rob.size(), 1);
   uop2Ptr->setCommitReady();
   EXPECT_CALL(*uop2, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop2, isLoad()).WillOnce(Return(false));

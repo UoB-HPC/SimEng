@@ -24,8 +24,8 @@ class OSTest : public testing::Test {
   simeng::kernel::LinuxProcess proc_elf;
   simeng::kernel::LinuxProcess proc_hex;
 
-  // Program used when no executable is provided; counts down from
-  // 1024*1024, with an independent `orr` at the start of each branch.
+  // A simple program used to test the functionality of creating a process with
+  // a stream of hex instructions.
   uint32_t demoHex[7] = {
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
@@ -38,7 +38,7 @@ class OSTest : public testing::Test {
   };
 };
 
-// These test verifies the functionality of both the `createProcess()` and
+// These tests verify the functionality of both the `createProcess()` and
 // `getInitialStackPointer()` functions. All other functions for this class are
 // syscalls and are tested in the Regression suite.
 TEST_F(OSTest, processElf_stackPointer) {
@@ -49,7 +49,9 @@ TEST_F(OSTest, processElf_stackPointer) {
   const uint64_t cmdLineSize = cmdLine[0].size() + 1;
   // "OMP_NUM_THREADS=1" + 1 for null seperator
   const uint64_t envStringsSize = 18;
-  // Size of initial stack frame (17 push_backs) * 8
+  // Size of initial stack frame as per LinuxProcess.cc:createStack()
+  // - (17 push_backs) * 8
+  // https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html
   const uint64_t stackFrameSize = 17 * 8;
   // cmd + Env needs +1 for null seperator
   const uint64_t stackPointer =

@@ -68,7 +68,8 @@ TEST_F(RiscVArchitectureTest, getSystemRegisterTag) {
   EXPECT_EQ(output, -1);
 
   // Test for correct behaviour
-  // TODO: Implement once system registers have been added
+  output = arch->getSystemRegisterTag(RISCV_SYSREG_FFLAGS);
+  EXPECT_EQ(output, 0);
 }
 
 TEST_F(RiscVArchitectureTest, handleException) {
@@ -112,7 +113,16 @@ TEST_F(RiscVArchitectureTest, getMaxInstructionSize) {
 }
 
 TEST_F(RiscVArchitectureTest, updateSystemTimerRegisters) {
-  // TODO: add tests once function has non-blank implementation.
+  // TODO: fix implementation
+  // RegisterFileSet regFile = config::SimInfo::getArchRegStruct();
+  // Register cycleSystemReg = {
+  //     RegisterType::SYSTEM,
+  //     static_cast<uint16_t>(arch->getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
+
+  // uint64_t ticks = 30;
+  // EXPECT_EQ(regFile.get(cycleSystemReg), 0);
+  // arch->updateSystemTimerRegisters(&regFile, ticks);
+  // EXPECT_EQ(regFile.get(cycleSystemReg), ticks);
 }
 
 }  // namespace riscv

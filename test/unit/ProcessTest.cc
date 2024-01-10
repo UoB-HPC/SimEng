@@ -83,7 +83,7 @@ TEST_F(ProcessTest, getProcessImage) {
 TEST_F(ProcessTest, getProcessImageSize) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(cmdLine);
   EXPECT_TRUE(proc.isValid());
-  EXPECT_GT(proc.getProcessImageSize(), 0);
+  EXPECT_EQ(proc.getProcessImageSize(), 1079830880);
 }
 
 TEST_F(ProcessTest, getEntryPoint) {

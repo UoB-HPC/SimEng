@@ -41,17 +41,22 @@ TEST_F(AArch64ArchitectureTest, predecode) {
   MacroOp output;
   uint8_t result = arch->predecode(validInstrBytes.data(),
                                    validInstrBytes.size(), 0x7, output);
+  Instruction* aarch64Insn = reinterpret_cast<Instruction*>(output[0].get());
   EXPECT_EQ(result, 1);
-  EXPECT_EQ(output[0]->getInstructionAddress(), 0x7);
-  EXPECT_EQ(output[0]->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getInstructionAddress(), 0x7);
+  EXPECT_EQ(aarch64Insn->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getException(), InstructionException::MisalignedPC);
 
   // Test that an invalid instruction returns instruction with an exception
   output = MacroOp();
   result = arch->predecode(invalidInstrBytes.data(), invalidInstrBytes.size(),
                            0x8, output);
+  aarch64Insn = reinterpret_cast<Instruction*>(output[0].get());
   EXPECT_EQ(result, 4);
-  EXPECT_EQ(output[0]->getInstructionAddress(), 0x8);
-  EXPECT_EQ(output[0]->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getInstructionAddress(), 0x8);
+  EXPECT_EQ(aarch64Insn->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getException(),
+            InstructionException::EncodingUnallocated);
 
   // Test that an instruction can be properly decoded
   output = MacroOp();
@@ -77,9 +82,12 @@ TEST_F(AArch64ArchitectureTest, handleException) {
   MacroOp insn;
   uint8_t bytes = arch->predecode(invalidInstrBytes.data(),
                                   invalidInstrBytes.size(), 0x4, insn);
+  Instruction* aarch64Insn = reinterpret_cast<Instruction*>(insn[0].get());
   EXPECT_EQ(bytes, 4);
-  EXPECT_EQ(insn[0]->getInstructionAddress(), 0x4);
-  EXPECT_EQ(insn[0]->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getInstructionAddress(), 0x4);
+  EXPECT_EQ(aarch64Insn->exceptionEncountered(), true);
+  EXPECT_EQ(aarch64Insn->getException(),
+            InstructionException::EncodingUnallocated);
 
   // Get Core
   std::string executablePath = "";
@@ -158,12 +166,11 @@ TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
   MacroOp insn;
   uint64_t bytes = arch->predecode(validInstrBytes.data(),
                                    validInstrBytes.size(), 0x4, insn);
-  EXPECT_EQ(bytes, 4);
-  EXPECT_EQ(insn[0]->getInstructionAddress(), 0x4);
-  EXPECT_EQ(insn[0]->exceptionEncountered(), false);
-
   // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
   Instruction* aarch64Insn = reinterpret_cast<Instruction*>(insn[0].get());
+  EXPECT_EQ(bytes, 4);
+  EXPECT_EQ(aarch64Insn->getInstructionAddress(), 0x4);
+  EXPECT_EQ(aarch64Insn->exceptionEncountered(), false);
 
   ExecutionInfo info = arch->getExecutionInfo(*aarch64Insn);
 

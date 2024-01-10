@@ -36,7 +36,7 @@ class ReorderBufferTest : public testing::Test {
         reorderBuffer(
             maxROBSize, rat, lsq,
             [this](auto insn) { exceptionHandler.raiseException(insn); },
-            [this](auto branchAddress) { loobBoundaryAddr = branchAddress; },
+            [this](auto branchAddress) { loopBoundaryAddr = branchAddress; },
             predictor, 4, 2) {}
 
  protected:
@@ -63,7 +63,7 @@ class ReorderBufferTest : public testing::Test {
 
   ReorderBuffer reorderBuffer;
 
-  uint64_t loobBoundaryAddr = 0;
+  uint64_t loopBoundaryAddr = 0;
 };
 
 // Tests that an instruction can have a slot reserved in the ROB and be
@@ -367,31 +367,31 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Second pass through ROB -- seen count = 1
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Third pass through ROB -- seen count = 2
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
-  // loobBoundaryAddr updated
+  // loopBoundaryAddr updated
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_EQ(loobBoundaryAddr, insnAddr);
+  EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
-  // Update prediction & reset loobBoundaryAddr. Flush ROB to reset loopDetected
+  // Update prediction & reset loopBoundaryAddr. Flush ROB to reset loopDetected
   pred = {false, branchAddr + 64};
   uopPtr->setBranchPrediction(pred);
-  loobBoundaryAddr = 0;
+  loopBoundaryAddr = 0;
   reorderBuffer.flush(0);
 
   // Re-do loop detecition
@@ -399,26 +399,26 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Second pass through ROB -- seen count = 1
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Third pass through ROB -- seen count = 2
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_NE(loobBoundaryAddr, insnAddr);
+  EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
-  // loobBoundaryAddr updated
+  // loopBoundaryAddr updated
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(1);
   reorderBuffer.commit(1);
-  EXPECT_EQ(loobBoundaryAddr, insnAddr);
+  EXPECT_EQ(loopBoundaryAddr, insnAddr);
 }
 
 // Tests that only those destination registers which have been renamed are

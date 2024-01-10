@@ -155,7 +155,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
 }
 
 // Single instruction with exception
-TEST_F(PipelineDispatchIssueUnitTest, singleInstr_excpetion) {
+TEST_F(PipelineDispatchIssueUnitTest, singleInstr_exception) {
   // Setup supported port instruction can use
   const std::vector<uint16_t> suppPorts = {EAGA};
 
@@ -327,9 +327,9 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
 }
 
 // Try dispatch two instructions with RAW hazard after renaming, second should
-// not be issued as it is dependant on first. Use forwardOpernad() to resolve
-// dependancy.
-TEST_F(PipelineDispatchIssueUnitTest, createDependancy_raw) {
+// not be issued as it is dependant on first. Use forwardOperand() to resolve
+// dependency.
+TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   // Set-up source & destination registers and ports for the instructions
   std::array<Register, 1> srcRegs_1 = {};
   std::array<Register, 1> destRegs_1 = {r0};
@@ -421,10 +421,10 @@ TEST_F(PipelineDispatchIssueUnitTest, createDependancy_raw) {
 }
 
 // Ensure correct instructions are flushed from reservation stations and the
-// dependancy matrix
+// dependency matrix
 TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   // Set-up source & destination registers and ports for the instructions;
-  // creating a dependancy
+  // creating a dependency
   std::array<Register, 1> srcRegs_1 = {};
   std::array<Register, 1> destRegs_1 = {r0};
   std::array<Register, 1> srcRegs_2 = {r0};
