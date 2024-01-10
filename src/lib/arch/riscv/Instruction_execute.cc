@@ -179,14 +179,6 @@ void Instruction::execute() {
 
   // Implementation of rv64iamfdc according to the v. 20191213 unprivileged spec
 
-  //  static int n = 0;
-  //  n++;
-  //
-  //  if (n < 100) {
-  //    std::cerr << std::hex << instructionAddress_ << " " << metadata.mnemonic
-  //              << " " << metadata.operandStr << std::dec << std::endl;
-  //  }
-
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
@@ -1690,15 +1682,6 @@ void Instruction::execute() {
     default:
       return executionNYI();
   }
-  //  std::cerr << "0x" << std::hex << instructionAddress_ << std::dec << ": "
-  //            << metadata.mnemonic << " " << metadata.operandStr;
-  //  if (results[0]) {
-  //    uint64_t val = results[0].get<uint64_t>();
-  //
-  //    std::cerr << " => " << val << std::endl;
-  //  } else {
-  //    std::cerr << std::endl;
-  //  }
 }
 
 }  // namespace riscv

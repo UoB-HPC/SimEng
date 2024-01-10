@@ -61,7 +61,7 @@ void FetchUnit::tick() {
   uint8_t bufferOffset;
 
   // Check if more instruction data is required
-  // TODO should this be minimum instructions size???
+  // TODO Unsure of whether this should be minimum instruction size instead
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
     // Calculate the address of the next fetch block
     uint64_t blockAddress;
@@ -74,9 +74,6 @@ void FetchUnit::tick() {
       // Fetch buffer is empty, so start from the PC
       blockAddress = pc_ & blockMask_;
       bufferOffset = pc_ - blockAddress;
-      //      std::cerr << "76 bufferOffset: " << (int)bufferOffset << " = " <<
-      //      (int)pc_
-      //                << " - " << (int)blockAddress << std::endl;
     }
 
     // Find fetched memory that matches the desired block
@@ -101,13 +98,8 @@ void FetchUnit::tick() {
     std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
                 blockSize_ - bufferOffset);
 
-    //    std::cerr << "pre101: " << (int)bufferedBytes_ << " += " <<
-    //    (int)blockSize_
-    //              << " - " << (int)bufferOffset << std::endl;
-
     // TODO can bufferedBytes_ go above the block size?
     bufferedBytes_ += blockSize_ - bufferOffset;
-    //    std::cerr << "101: " << (int)bufferedBytes_ << std::endl;
 
     buffer = fetchBuffer_;
     // Decoding should start from the beginning of the fetchBuffer_.
@@ -128,13 +120,12 @@ void FetchUnit::tick() {
     auto bytesRead =
         isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_, macroOp);
 
-    //    std::cerr << "Bytes read = " << (int)bytesRead << std::endl;
-
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
-      //      std::cerr << "BAIL" << std::endl;
-
-      // TODO should be minimum??
+      // TODO should be minimum?
+      // Assertion currently commented as bytesRead == 0 is used to force
+      // finishing tick on compressed instruction edge cases which are correct
+      // behaviour
       //      assert(bufferedBytes_ < isa_.getMaxInstructionSize() &&
       //             "unexpected predecode failure");
       break;
@@ -179,33 +170,19 @@ void FetchUnit::tick() {
       loopBufferState_ = LoopBufferState::FILLING;
     }
 
-    if (bytesRead > bufferedBytes_) {
-      std::cerr << "ERROR" << std::endl;
-    }
-
     assert(bytesRead <= bufferedBytes_ &&
            "Predecode consumed more bytes than were available");
     // Increment the offset, decrement available bytes
-    //    std::cerr << "180 bytes read: " << (int)bytesRead << std::endl;
 
     bufferOffset += bytesRead;
 
-    //    std::cerr << "bufferOffset becomes: " << (int)bufferOffset <<
-    //    std::endl;
-
     bufferedBytes_ -= bytesRead;
-    //    std::cerr << "179: " << (int)bufferedBytes_ << std::endl;
-
     if (!prediction.taken) {
       // Predicted as not taken; increment PC to next instruction
       pc_ += bytesRead;
-      //      std::cerr << "+bytes read" << std::endl;
-
     } else {
       // Predicted as taken; set PC to predicted target address
       pc_ = prediction.target;
-      //      std::cerr << "predict target = " << std::hex << prediction.target
-      //                << std::dec << std::endl;
     }
 
     if (pc_ >= programByteLength_) {
@@ -247,8 +224,6 @@ void FetchUnit::registerLoopBoundary(uint64_t branchAddress) {
 bool FetchUnit::hasHalted() const { return hasHalted_; }
 
 void FetchUnit::updatePC(uint64_t address) {
-  //  std::cerr << "238 pc_ = " << address << std::endl;
-
   pc_ = address;
   bufferedBytes_ = 0;
   hasHalted_ = (pc_ >= programByteLength_);
@@ -273,9 +248,6 @@ void FetchUnit::requestFromPC() {
   } else {
     // Fetch buffer is empty, so fetch from the PC
     blockAddress = pc_ & blockMask_;
-    //    std::cerr << "264 block address " << std::hex << blockAddress <<
-    //    std::dec
-    //              << std::endl;
   }
 
   instructionMemory_.requestRead({blockAddress, blockSize_});

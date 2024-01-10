@@ -202,7 +202,6 @@ void Instruction::decode() {
 
     // First operand is never MEM type, only check after the first. If register
     // contains memory address, extract reg number from capstone object
-    // TODO also extract offset for instruction address?
     else if (i > 0 && op.type == RISCV_OP_MEM) {
       //  Memory operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);

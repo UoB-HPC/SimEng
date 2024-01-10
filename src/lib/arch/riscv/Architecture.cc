@@ -20,11 +20,11 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);
 
-  cs_mode csMode = CS_MODE_RISCV64;
   constantsPool constantsPool;
 
-  // TODO if here to check if compressed instructions are allowed based off of
-  // config options
+  // TODO an 'if' clause could be added here to check if compressed instructions
+  // are allowed based off of config options which selects the corrct cs_mode
+  // and constants. Currently always rv64gc allowed
 
   constants_.alignMask = constantsPool.alignMaskCompressed;
   constants_.regWidth = constantsPool.byteLength64;
@@ -178,8 +178,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   assert(bytesAvailable >= constants_.bytesLimit &&
          "Fewer than bytes limit supplied to RISC-V decoder");
 
-  // TODO should this still be 4 bytes?? Seems to work as is
-
   // Dereference the instruction pointer to obtain the instruction word
   uint32_t insn;
   memcpy(&insn, ptr, 4);
@@ -200,20 +198,19 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
-    auto metadata =
-        success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
-
-    if (metadata.id == RISCV_INS_INVALID) {
+    if (!success || rawInsn.opcode == RISCV_INS_INVALID) {
       // Invalid decoding, potentially read over the end of the valid buffer.
       // BAIL. Do not add to cache as may be incorrect data
       return 0;
     }
 
-    if (metadata.lenBytes > bytesAvailable) {
+    if (rawInsn.size > bytesAvailable) {
       // Too many bytes read. BAIL
-      // TODO don't write to cache
       return 0;
     }
+
+    auto metadata =
+        success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
     // Cache the metadata
     metadataCache.push_front(metadata);

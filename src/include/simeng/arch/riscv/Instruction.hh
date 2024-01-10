@@ -180,7 +180,6 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
- private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -201,7 +200,7 @@ class Instruction : public simeng::Instruction {
    * `sourceRegisters` entry. */
   // TODO this name change requires updates of the docs on approval
   // developer/arch/supported/aarch64.html#aarch64-adding-execution-behaviour-operands
-  // TODO update AArch64 to keep both inline and references in docs from RISC-V
+  // TODO update AArch64 to keep both in line and references in docs from RISC-V
   // to AArch64 correct
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceRegValues;
 
