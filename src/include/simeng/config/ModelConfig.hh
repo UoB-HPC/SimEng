@@ -117,7 +117,7 @@ class ModelConfig {
   /** A string stream containing information about invalid values. */
   std::ostringstream invalid_;
 
-  // /** The default special file directory. */
+  /** The default special file directory. */
   std::string defaultSpecialFilePath_ = SIMENG_BUILD_DIR "/specialFiles/";
 };  // namespace ModelConfig
 

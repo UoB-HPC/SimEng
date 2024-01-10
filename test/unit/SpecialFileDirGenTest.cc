@@ -119,7 +119,7 @@ TEST_F(SpecialFileDirGenTest, doesntExist) {
           "CPU-Variant: 0x1, CPU-Part: 0x001, CPU-Revision: 0, Package-Count: "
           "1}}"),
       "- Special File Directory '" SIMENG_BUILD_DIR
-      "/thisDoesntExistDir/' Does not exist");
+      "/thisDoesntExistDir/' does not exist");
 }
 
 }  // namespace simeng

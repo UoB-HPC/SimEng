@@ -162,10 +162,14 @@ class floatHelp {
     N input = operands[0].get<N>();
     D result = static_cast<D>(0);
 
-    // Account for Infinity
     // Check for nan and less than 0
     if (!std::isnan(input) && (input > static_cast<N>(0))) {
       if (std::isinf(input)) {
+        // Account for Infinity
+        result = std::numeric_limits<D>::max();
+      } else if (input > std::numeric_limits<D>::max()) {
+        // Account for the source value being larger than the
+        // destination register can support
         result = std::numeric_limits<D>::max();
       } else {
         result = static_cast<D>(std::trunc(input));

@@ -903,7 +903,7 @@ void ModelConfig::postValidation() {
     invalid_
         << "\t- Special File Directory '"
         << configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()
-        << "' Does not exist\n";
+        << "' does not exist\n";
   }
 }
 
