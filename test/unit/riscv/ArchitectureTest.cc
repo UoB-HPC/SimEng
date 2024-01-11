@@ -113,16 +113,15 @@ TEST_F(RiscVArchitectureTest, getMaxInstructionSize) {
 }
 
 TEST_F(RiscVArchitectureTest, updateSystemTimerRegisters) {
-  // TODO: fix implementation
-  // RegisterFileSet regFile = config::SimInfo::getArchRegStruct();
-  // Register cycleSystemReg = {
-  //     RegisterType::SYSTEM,
-  //     static_cast<uint16_t>(arch->getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
+  RegisterFileSet regFile = config::SimInfo::getArchRegStruct();
+  Register cycleSystemReg = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(arch->getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
 
-  // uint64_t ticks = 30;
-  // EXPECT_EQ(regFile.get(cycleSystemReg), 0);
-  // arch->updateSystemTimerRegisters(&regFile, ticks);
-  // EXPECT_EQ(regFile.get(cycleSystemReg), ticks);
+  uint64_t ticks = 30;
+  EXPECT_EQ(regFile.get(cycleSystemReg), RegisterValue(0, 8));
+  arch->updateSystemTimerRegisters(&regFile, ticks);
+  EXPECT_EQ(regFile.get(cycleSystemReg), RegisterValue(ticks, 8));
 }
 
 }  // namespace riscv
