@@ -24,7 +24,39 @@ class RiscVArchitectureTest : public testing::Test {
   }
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::RV64);
+  ConfigInit configInit = ConfigInit(config::ISA::RV64, R"YAML({
+  Core: {
+    Simulation-Mode: outoforder
+  },
+  Ports: { 
+    '0': {Portname: Port 0, Instruction-Group-Support: [INT_SIMPLE, INT_MUL, FLOAT]},
+    '1': {Portname: Port 1, Instruction-Group-Support: [INT, FLOAT]},
+    '2': {Portname: Port 2, Instruction-Group-Support: [INT_SIMPLE, INT_MUL, BRANCH]},
+    '3': {Portname: Port 4, Instruction-Group-Support: [LOAD]},
+    '4': {Portname: Port 5, Instruction-Group-Support: [LOAD]},
+    '5': {Portname: Port 3, Instruction-Group-Support: [STORE]}
+  },
+  Reservation-Stations: {
+    '0': {Size: 60, Dispatch-Rate: 4, Ports: [Port 0, Port 1, Port 2, Port 4, Port 5, Port 3]}
+  },
+  Execution-Units: {
+    '0': {Pipelined: True},
+    '1': {Pipelined: True},
+    '2': {Pipelined: True},
+    '3': {Pipelined: True},
+    '4': {Pipelined: True},
+    '5': {Pipelined: True}
+  },
+  Latencies: {
+    '0': {Instruction-Groups: [INT_SIMPLE_ARTH, INT_SIMPLE_LOGICAL], Execution-Latency: 1, Execution-Throughput: 1},
+    '1': {Instruction-Groups: [INT_MUL], Execution-Latency: 5, Execution-Throughput: 1},
+    '2': {Instruction-Groups: [INT_DIV_OR_SQRT], Execution-Latency: 39, Execution-Throughput: 39},
+    '3': {Instruction-Groups: [FLOAT_SIMPLE_CMP], Execution-Latency: 5, Execution-Throughput: 1},
+    '4': {Instruction-Groups: [FLOAT_MUL], Execution-Latency: 6, Execution-Throughput: 1},
+    '5': {Instruction-Groups: [FLOAT_SIMPLE_CVT], Execution-Latency: 7, Execution-Throughput: 1},
+    '6': {Instruction-Groups: [FLOAT_DIV_OR_SQRT], Execution-Latency: 16, Execution-Throughput: 16}
+  }
+  })YAML");
 
   // addi	sp, ra, 2000
   std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};

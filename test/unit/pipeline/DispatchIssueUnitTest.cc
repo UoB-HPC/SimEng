@@ -26,7 +26,35 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
         uop2Ptr(uop2) {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64, R"YAML({
+  Ports: {
+    '0': {Portname: FLA, Instruction-Group-Support: [FP, SVE]},
+    '1': {Portname: PR, Instruction-Group-Support: [PREDICATE]},
+    '2': {Portname: EXA, Instruction-Group-Support: [INT_SIMPLE, INT_MUL, STORE_DATA]},
+    '3': {Portname: FLB, Instruction-Group-Support: [FP_SIMPLE, FP_MUL, SVE_SIMPLE, SVE_MUL]},
+    '4': {Portname: EXB, Instruction-Group-Support: [INT_SIMPLE, INT_DIV_OR_SQRT]},
+    '5': {Portname: EAGA, Instruction-Group-Support: [LOAD, STORE_ADDRESS, INT_SIMPLE_ARTH_NOSHIFT, INT_SIMPLE_LOGICAL_NOSHIFT, INT_SIMPLE_CMP]},
+    '6': {Portname: EAGB, Instruction-Group-Support: [LOAD, STORE_ADDRESS, INT_SIMPLE_ARTH_NOSHIFT, INT_SIMPLE_LOGICAL_NOSHIFT, INT_SIMPLE_CMP]},
+    '7': {Portname: BR, Instruction-Group-Support: [BRANCH]}
+  },
+  Reservation-Stations: {
+    '0': {Size: 20, Dispatch-Rate: 2, Ports: [FLA, PR, EXA]},
+    '1': {Size: 20, Dispatch-Rate: 2, Ports: [FLB, EXB]},
+    '2': {Size: 10, Dispatch-Rate: 1, Ports: [EAGA]},
+    '3': {Size: 10, Dispatch-Rate: 1, Ports: [EAGB]},
+    '4': {Size: 19, Dispatch-Rate: 1, Ports: [BR]}
+  },
+  Execution-Units: {
+    '0': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '1': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '2': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '3': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '4': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '5': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '6': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+    '7': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]}
+  }
+  })YAML");
 
   // Using AArch64 as basis: {GP, FP/SVE, PRED, COND, SYS, SME}
   const std::vector<uint16_t> physRegQuants = {96, 128, 48, 128, 64, 64};

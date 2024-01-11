@@ -26,7 +26,7 @@ class AArch64ExceptionHandlerTest : public ::testing::Test {
         archRegFileSet(physRegFileSet) {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64, "");
 
   MockCore core;
   MockMemoryInterface memory;

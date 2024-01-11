@@ -24,7 +24,53 @@ class AArch64ArchitectureTest : public testing::Test {
   }
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64, R"YAML({
+    Core: {
+      Simulation-Mode: outoforder,
+      Vector-Length: 512,
+      Streaming-Vector-Length: 128
+    },
+    Ports: { 
+      '0': {Portname: FLA, Instruction-Group-Support: [FP, SVE]},
+      '1': {Portname: PR, Instruction-Group-Support: [PREDICATE]},
+      '2': {Portname: EXA, Instruction-Group-Support: [INT_SIMPLE, INT_MUL, STORE_DATA]},
+      '3': {Portname: FLB, Instruction-Group-Support: [FP_SIMPLE, FP_MUL, SVE_SIMPLE, SVE_MUL]},
+      '4': {Portname: EXB, Instruction-Group-Support: [INT_SIMPLE, INT_DIV_OR_SQRT]},
+      '5': {Portname: EAGA, Instruction-Group-Support: [LOAD, STORE_ADDRESS, INT_SIMPLE_ARTH_NOSHIFT, INT_SIMPLE_LOGICAL_NOSHIFT, INT_SIMPLE_CMP]},
+      '6': {Portname: EAGB, Instruction-Group-Support: [LOAD, STORE_ADDRESS, INT_SIMPLE_ARTH_NOSHIFT, INT_SIMPLE_LOGICAL_NOSHIFT, INT_SIMPLE_CMP]},
+      '7': {Portname: BR, Instruction-Group-Support: [BRANCH]}
+    },
+    Reservation-Stations: {
+      '0': {Size: 20, Dispatch-Rate: 2, Ports: [FLA, PR, EXA]},
+      '1': {Size: 20, Dispatch-Rate: 2, Ports: [FLB, EXB]},
+      '2': {Size: 10, Dispatch-Rate: 1, Ports: [EAGA]},
+      '3': {Size: 10, Dispatch-Rate: 1, Ports: [EAGB]},
+      '4': {Size: 19, Dispatch-Rate: 1, Ports: [BR]},
+    },
+    Execution-Units: {
+      '0': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '1': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '2': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '3': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '4': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '5': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '6': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]},
+      '7': {Pipelined: True, Blocking-Groups: [INT_DIV_OR_SQRT, FP_DIV_OR_SQRT, SVE_DIV_OR_SQRT]}
+    },
+    Latencies: {
+      '0': {Instruction-Groups: [INT], Execution-Latency: 2, Execution-Throughput: 2},
+      '1': {Instruction-Groups: [INT_SIMPLE_ARTH_NOSHIFT, INT_SIMPLE_LOGICAL_NOSHIFT, INT_SIMPLE_CVT], Execution-Latency: 1, Execution-Throughput: 1},
+      '2': {Instruction-Groups: [INT_MUL], Execution-Latency: 5, Execution-Throughput: 1},
+      '3': {Instruction-Groups: [INT_DIV_OR_SQRT], Execution-Latency: 41, Execution-Throughput: 41},
+      '4': {Instruction-Groups: [SCALAR_SIMPLE, VECTOR_SIMPLE_LOGICAL, SVE_SIMPLE_LOGICAL, VECTOR_SIMPLE_CMP, SVE_SIMPLE_CMP], Execution-Latency: 4, Execution-Throughput: 1},
+      '5': {Instruction-Groups: [FP_DIV_OR_SQRT], Execution-Latency: 29, Execution-Throughput: 29},
+      '6': {Instruction-Groups: [VECTOR_SIMPLE, SVE_SIMPLE, SCALAR_SIMPLE_CVT, FP_MUL, SVE_MUL], Execution-Latency: 9, Execution-Throughput: 1},
+      '7': {Instruction-Groups: [SVE_DIV_OR_SQRT], Execution-Latency: 98, Execution-Throughput: 98},
+      '8': {Instruction-Groups: [PREDICATE], Execution-Latency: 3, Execution-Throughput: 1},
+      '9': {Instruction-Groups: [LOAD_SCALAR, LOAD_VECTOR, STORE_ADDRESS_SCALAR, STORE_ADDRESS_VECTOR], Execution-Latency: 3, Execution-Throughput: 1},
+      '10': {Instruction-Groups: [LOAD_SVE, STORE_ADDRESS_SVE], Execution-Latency: 6, Execution-Throughput: 1}
+    }
+  })YAML");
 
   // fdivr z1.s, p0/m, z1.s, z0.s
   std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};

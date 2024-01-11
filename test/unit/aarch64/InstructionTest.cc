@@ -17,8 +17,6 @@ class AArch64InstructionTest : public testing::Test {
   AArch64InstructionTest() {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
-
   MockArchitecture arch;
   //   InstructionMetadata metadata;
   MicroOpInfo uopInfo;

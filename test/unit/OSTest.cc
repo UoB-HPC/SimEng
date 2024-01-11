@@ -16,7 +16,6 @@ class OSTest : public testing::Test {
                                     sizeof(demoHex))) {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 

@@ -12,13 +12,24 @@ class SpecialFileDirGenTest : public testing::Test {
   SpecialFileDirGenTest() {}
 
  protected:
-  ConfigInit configInit = ConfigInit(
-      "CPU-Info: {Generate-Special-Dir: True, "
-      "Special-File-Dir-Path: " TEST_SPEC_FILE_DIR
-      ", Core-Count: 1, Socket-Count: 1, SMT: 1, BogoMIPS: 200.00, Features: "
-      "fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm "
-      "fcma dcpop sve, CPU-Implementer: 0x46, CPU-Architecture: 8, "
-      "CPU-Variant: 0x1, CPU-Part: 0x001, CPU-Revision: 0, Package-Count: 1}}");
+  ConfigInit configInit = ConfigInit(config::ISA::AArch64,
+                                     R"YAML({
+        CPU-Info: {
+          Generate-Special-Dir: True,
+          Special-File-Dir-Path: )YAML" TEST_SPEC_FILE_DIR R"YAML(,
+          Core-Count: 1,
+          Socket-Count: 1,
+          SMT: 1,
+          BogoMIPS: 200.00,
+          Features: fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm fcma dcpop sve,
+          CPU-Implementer: 0x46,
+          CPU-Architecture: 8,
+          CPU-Variant: 0x1,
+          CPU-Part: 0x001,
+          CPU-Revision: 0,
+          Package-Count: 1
+        }
+      })YAML");
 
   SpecialFileDirGen specFile;
 

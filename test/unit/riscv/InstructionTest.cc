@@ -17,8 +17,6 @@ class RiscVInstructionTest : public testing::Test {
   RiscVInstructionTest() {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::RV64);
-
   MockArchitecture arch;
   //   InstructionMetadata metadata;
   InstructionException exception;

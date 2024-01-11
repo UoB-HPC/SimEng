@@ -10,7 +10,9 @@ class ProcessTest : public testing::Test {
   ProcessTest() {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::AArch64);
+  ConfigInit configInit = ConfigInit(
+      config::ISA::AArch64,
+      R"YAML({Process-Image: {Heap-Size: 1073741824, Stack-Size: 1048576}})YAML");
 
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};

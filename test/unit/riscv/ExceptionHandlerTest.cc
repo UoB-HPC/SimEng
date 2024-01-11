@@ -26,7 +26,7 @@ class RiscVExceptionHandlerTest : public ::testing::Test {
         archRegFileSet(physRegFileSet) {}
 
  protected:
-  ConfigInit configInit = ConfigInit(config::ISA::RV64);
+  ConfigInit configInit = ConfigInit(config::ISA::RV64, "");
 
   MockCore core;
   MockMemoryInterface memory;
