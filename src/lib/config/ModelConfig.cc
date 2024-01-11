@@ -435,7 +435,8 @@ void ModelConfig::setExpectations(bool isDefault) {
                                                                             64);
 
   expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<uint8_t>(2, "Saturating-Count-Bits", true));
+      ExpectationNode::createExpectation<uint8_t>(2, "Saturating-Count-Bits",
+                                                  true));
   expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
       .setValueBounds<uint8_t>(1, 64);
 

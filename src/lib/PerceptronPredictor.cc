@@ -12,21 +12,17 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
   // Build BTB based on config options
   btb_.resize(1 << (btbBits_));
-//  std::cout << "BTB size is " << btb_.capacity() << std::endl;
   for (int i = 0; i < (1 << (btbBits_)); i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
     btb_[i].second = 0;
   }
-//  std::cout << "First perceptron:" << std::endl << "{";
-//  for (int i = 0; i < (globalHistoryLength_); i++) {
-//    std::cout << (int)btb_[0].first[i] << ", ";
-//  }
-//  std::cout << (int)btb_[0].first[globalHistoryLength_] << "}" << std::endl;
-
 
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (int)((1.93 * (globalHistoryLength_)) + 14);
+
+  // ToDo -- remove print statement
+  std::cout << "Making Perceptron Predictor" << std::endl;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -40,22 +36,24 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // bits of the instruction address
   uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
-  // Store the global history for correct hashing in update()
+  // Store the global history for correct hashing in update() --
+  // needs to be global history and not the hashed index as hashing looses information at longer
+  // global history lengths
   btbHistory_[address] = globalHistory_;
 
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
   // Determine direction prediction from perceptron, starting with the bias weight
-  int64_t weights = perceptron[globalHistoryLength_];
+  int64_t Pout = perceptron[globalHistoryLength_];
   for (int i = 0; i < globalHistoryLength_; i++) {
     bool historyTaken =
         ((globalHistory_ & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
-    weights += historyTaken ? perceptron[i] : (0 - perceptron[i]);
+    Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
   }
-  bool direction = (weights >= 0);
-
+  bool direction = (Pout >= 0);
   // Retrieve target prediction
+
   uint64_t target =
       (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
 
@@ -96,16 +94,20 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
 
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
-  int64_t weights = perceptron[globalHistoryLength_];
+  // Work out the most recent prediction
+  int64_t Pout = perceptron[globalHistoryLength_];
   for (int i = 0; i < globalHistoryLength_; i++) {
     bool historyTaken =
-        ((globalHistory_ & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
-    weights += historyTaken ? perceptron[i] : (0 - perceptron[i]);
+        ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
+    Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
   }
+  bool directionPrediction = (Pout >= 0);
 
-  bool directionPrediction = (weights >= 0);
-  uint64_t magnitude = (weights < 0) ? (0 - weights) : weights;
+  // Determine the magnitude of the dot product for training
+  uint64_t magnitude = (Pout < 0) ? (0 - Pout) : Pout;
 
+  // update the perceptron if the prediction was wrong, or the dot product's magnitude
+  // was not greater than the training threshold
   if ((directionPrediction != taken) || (magnitude < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
 

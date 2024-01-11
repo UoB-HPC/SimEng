@@ -220,10 +220,13 @@ void CoreInstance::createCore() {
   }
 
   // Construct branch predictor object
+  // todo -- remove print statements
   std::string predictorType = config_["Branch-Predictor"]["Type"].as<std::string>();
   if (predictorType == "Generic") {
+    std::cout << "Branch Predictor Type = Generic" << std::endl;
     predictor_ = std::make_unique<GenericPredictor>();
   } else if (predictorType == "Perceptron") {
+    std::cout << "Branch Predictor Type = Perceptron" << std::endl;
     predictor_ = std::make_unique<PerceptronPredictor>();
   }
 

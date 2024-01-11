@@ -50,7 +50,7 @@ class PerceptronPredictor : public BranchPredictor {
    * length perceptron and a branch target. */
   std::vector<std::pair<std::vector<int8_t>, uint64_t>> btb_;
 
-  /** The previous global history for an address. */
+  /** The previous hashed index for an address. */
   std::map<uint64_t, uint64_t> btbHistory_;
 
   /** An n-bit history of previous branch directions where n is equal to
