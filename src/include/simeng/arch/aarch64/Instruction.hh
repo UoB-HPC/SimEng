@@ -34,7 +34,7 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
     }
     case ARM64_SFT_MSL: {
       // pad in with ones instead of zeros
-      const T mask = (1 << amount) - 1;
+      const T mask = (static_cast<T>(1) << static_cast<T>(amount)) - 1;
       return (value << amount) | mask;
     }
     case ARM64_SFT_INVALID:

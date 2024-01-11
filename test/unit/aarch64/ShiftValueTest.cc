@@ -18,11 +18,11 @@ TEST(ShiftValueTest, MSL) {
   // 64-bit
   const uint64_t c = 0x00000000FFFFFFFF;
   EXPECT_EQ(simeng::arch::aarch64::shiftValue(c, ARM64_SFT_MSL, 32),
-            0xFFFFFFFF00000000);
+            0xFFFFFFFFFFFFFFFF);
 
   const uint64_t d = 0xFFFFFFFF00000000;
   EXPECT_EQ(simeng::arch::aarch64::shiftValue(d, ARM64_SFT_MSL, 63),
-            0x000000007FFFFFFF);
+            0x7FFFFFFFFFFFFFFF);
 
   EXPECT_EQ(simeng::arch::aarch64::shiftValue(d, ARM64_SFT_MSL, 0), d);
 }
