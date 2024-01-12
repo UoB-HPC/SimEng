@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/helpers/auxiliaryFunctions.hh"
 
 namespace {
 
