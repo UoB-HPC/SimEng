@@ -37,7 +37,8 @@ Instruction::Instruction(const Architecture& architecture,
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
+  return {const_cast<Register*>(sourceRegisters.data()),
+          sourceRegisters.size()};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
@@ -45,6 +46,8 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
+  // destinationRegisterCount used as there may be +n in destinationRegisters
+  // vector for any zero destinations - these can't be written to.
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
@@ -55,6 +58,7 @@ bool Instruction::isOperandReady(int index) const {
 void Instruction::renameSource(uint16_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
+
 void Instruction::renameDestination(uint16_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
@@ -95,6 +99,8 @@ span<const RegisterValue> Instruction::getData() const {
 bool Instruction::canExecute() const { return (operandsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
+  // destinationRegisterCount used as there may be +n in results vector for any
+  // zero destinations - these can't be written to.
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
@@ -185,6 +191,7 @@ void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   stallCycles_ = info.stallCycles;
   supportedPorts_ = info.ports;
 }
+
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;

@@ -365,9 +365,7 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
-  /** A special register value representing the zero register. If passed to
-   * `setSourceRegisters`/`setDestinationRegisters`, the value will be
-   * automatically supplied as zero. */
+  /** A special register value representing the zero register. */
   static const Register ZERO_REGISTER;
 
  private:
@@ -402,15 +400,6 @@ class Instruction : public simeng::Instruction {
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
-
-  /** Set the source registers of the instruction, and create a corresponding
-   * operands vector. Zero register references will be pre-supplied with a value
-   * of 0. */
-  void setSourceRegisters(const std::vector<Register>& registers);
-
-  /** Set the destination registers for the instruction, and create a
-   * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register>& registers);
 
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to

@@ -166,9 +166,7 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
-  /** A special register value representing the zero register. If passed to
-   * `setSourceRegisters`/`setDestinationRegisters`, the value will be
-   * automatically supplied as zero. */
+  /** A special register value representing the zero register. */
   static const Register ZERO_REGISTER;
 
   /** The maximum number of source registers any supported RISC-V instruction

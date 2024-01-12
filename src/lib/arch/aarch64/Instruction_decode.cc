@@ -17,6 +17,7 @@ namespace aarch64 {
 constexpr bool bit(uint32_t value, uint8_t start) {
   return (value >> start) & 1;
 }
+
 // Extract bits `start` to `start+width` of `value`
 constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
   return ((value >> start) & ((1 << width) - 1));
@@ -24,6 +25,7 @@ constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
 
 // Generate a general purpose register identifier with tag `tag`
 constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
+
 // Generate a NZCV register identifier
 constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
@@ -201,51 +203,56 @@ void Instruction::decode() {
   }
 
   bool accessesMemory = false;
+  uint16_t zrDestRegs = 0;
 
   // Extract explicit register accesses
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
-      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
-          op.reg != ARM64_REG_XZR) {
-        // Determine the data type the instruction operates on based on the
-        // register operand used
-        // Belongs to the predicate group if the destination register is a
-        // predicate
-        if (op.reg >= ARM64_REG_V0) {
-          isVectorData_ = true;
-        } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-          isSMEData_ = true;
-        } else if (op.reg >= ARM64_REG_Z0) {
-          isSVEData_ = true;
-        } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-          isScalarData_ = true;
-        } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-          isPredicate_ = true;
-        } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-          isScalarData_ = true;
-        }
+      if ((op.access & cs_ac_type::CS_AC_WRITE)) {
+        if (op.reg != ARM64_REG_WZR && op.reg != ARM64_REG_XZR) {
+          // Determine the data type the instruction operates on based on the
+          // register operand used
+          // Belongs to the predicate group if the destination register is a
+          // predicate
+          if (op.reg >= ARM64_REG_V0) {
+            isVectorData_ = true;
+          } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+            isSMEData_ = true;
+          } else if (op.reg >= ARM64_REG_Z0) {
+            isSVEData_ = true;
+          } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+            isScalarData_ = true;
+          } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+            isPredicate_ = true;
+          } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+            isScalarData_ = true;
+          }
 
-        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-            (op.reg == ARM64_REG_ZA)) {
-          // Add all Matrix register rows as destination operands
-          std::vector<Register> regs =
-              getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
-          for (int i = 0; i < regs.size(); i++) {
-            destinationRegisters.push_back(regs[i]);
+          if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
+              (op.reg == ARM64_REG_ZA)) {
+            // Add all Matrix register rows as destination operands
+            std::vector<Register> regs = getZARowVectors(
+                op.reg, architecture_.getStreamingVectorLength());
+            for (int i = 0; i < regs.size(); i++) {
+              destinationRegisters.push_back(regs[i]);
+              destinationRegisterCount++;
+              // If WRITE, also need to add to source registers to maintain
+              // unaltered row values
+              sourceRegisters.push_back(regs[i]);
+              sourceRegisterCount++;
+              operandsPending++;
+            }
+          } else {
+            // Add register writes to destinations, but skip zero-register
+            // destinations
+            destinationRegisters.push_back(csRegToRegister(op.reg));
             destinationRegisterCount++;
-            // If WRITE, also need to add to source registers to maintain
-            // unaltered row values
-            sourceRegisters.push_back(regs[i]);
-            sourceRegisterCount++;
-            operandsPending++;
           }
         } else {
-          // Add register writes to destinations, but skip zero-register
-          // destinations
-          destinationRegisters.push_back(csRegToRegister(op.reg));
-          destinationRegisterCount++;
+          // Need to allocate extra space in results vector for zero destination
+          zrDestRegs++;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
@@ -638,15 +645,17 @@ void Instruction::decode() {
   }
 
   // Allocate enough entries in results vector
-  results.resize(destinationRegisterCount + 1);
+  results.resize(destinationRegisterCount + zrDestRegs);
   // Allocate enough entries in the operands vector
-  operands.resize(sourceRegisterCount + 1);
+  operands.resize(sourceRegisterCount);
 
   // Catch zero register references and pre-complete those operands
-  for (uint16_t i = 0; i < sourceRegisterCount; i++) {
-    if (sourceRegisters[i] == Instruction::ZERO_REGISTER) {
-      operands[i] = RegisterValue(0, 8);
-      operandsPending--;
+  if (!(isSMEData_ || isSVEData_)) {
+    for (uint16_t i = 0; i < sourceRegisterCount; i++) {
+      if (sourceRegisters[i] == Instruction::ZERO_REGISTER) {
+        operands[i] = RegisterValue(0, 8);
+        operandsPending--;
+      }
     }
   }
 }
