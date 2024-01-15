@@ -37,6 +37,9 @@ set(TEST_SOURCES
 
 add_executable(unittests ${TEST_SOURCES})
 
+configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+configure_file(${capstone_SOURCE_DIR}/arch/RISCV/RISCVGenInstrInfo.inc RISCVGenInstrInfo.inc COPYONLY)
+
 target_include_directories(unittests PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(unittests PUBLIC ${PROJECT_SOURCE_DIR}/src/lib)
 target_link_libraries(unittests libsimeng)
