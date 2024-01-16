@@ -438,8 +438,8 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   EXPECT_EQ(insn.getException(), InstructionException::DataAbort);
 }
 
-// Test to check logic around branch misprediction logic
-TEST_F(AArch64InstructionTest, branchMisprediction) {
+// Test to check logic around early branch misprediction logic
+TEST_F(AArch64InstructionTest, earlyBranchMisprediction) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
   Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
   insn.setInstructionAddress(64);
@@ -467,6 +467,7 @@ TEST_F(AArch64InstructionTest, branchMisprediction) {
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 }
 
+// Test that a correct prediction (branch taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_taken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -494,6 +495,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), pred.target);
 }
 
+// Test that a correct prediction (branch not taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -521,6 +523,7 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   EXPECT_EQ(insn.getBranchAddress(), pred.target);
 }
 
+// Test that an incorrect prediction (wrong target) is handled correctly
 TEST_F(AArch64InstructionTest, incorrectPred_target) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -548,6 +551,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 100 + 0x28);
 }
 
+// Test that an incorrect prediction (wrong taken) is handled correctly
 TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());

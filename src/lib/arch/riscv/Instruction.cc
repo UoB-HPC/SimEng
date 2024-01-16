@@ -37,7 +37,7 @@ const span<Register> Instruction::getSourceRegisters() const {
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
-  return {const_cast<RegisterValue*>(operands.data()), operands.size()};
+  return {const_cast<RegisterValue*>(operands.data()), sourceRegisterCount};
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
