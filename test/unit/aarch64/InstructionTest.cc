@@ -394,7 +394,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
 
   // Supply required data
   EXPECT_FALSE(insn.hasAllData());
-  std::vector<const RegisterValue> data = {{123, 8}, {456, 8}};
+  std::vector<RegisterValue> data = {{123, 8}, {456, 8}};
   EXPECT_EQ(generatedAddresses.size(), data.size());
   for (int i = 0; i < generatedAddresses.size(); i++) {
     insn.supplyData(generatedAddresses[i].address, data[i]);
