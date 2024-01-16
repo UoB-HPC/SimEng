@@ -145,7 +145,6 @@ TEST_F(AArch64InstructionTest, validInsn) {
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());
   EXPECT_TRUE(insn.hasAllData());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_FALSE(insn.isFlushed());
   EXPECT_FALSE(insn.isMicroOp());
@@ -208,7 +207,6 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());
   EXPECT_TRUE(insn.hasAllData());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_FALSE(insn.isFlushed());
   EXPECT_FALSE(insn.isMicroOp());
@@ -251,7 +249,6 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_EQ(insn.getLatency(), 1);
   EXPECT_EQ(insn.getLSQLatency(), 1);
   EXPECT_EQ(&insn.getMetadata(), invalidMetadata.get());
-  EXPECT_EQ(insn.getMicroOpIndex(), 0);
   // Results vector resized at decode
   EXPECT_EQ(insn.getResults().size(), 0);
   EXPECT_EQ(insn.getSequenceId(), 16);
@@ -274,7 +271,6 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());
   EXPECT_TRUE(insn.hasAllData());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_FALSE(insn.isFlushed());
   EXPECT_FALSE(insn.isMicroOp());
@@ -378,7 +374,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 4};
+  RegisterValue addr = {0x480, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -420,7 +416,7 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 4};
+  RegisterValue addr = {0x480, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -451,7 +447,6 @@ TEST_F(AArch64InstructionTest, branchMisprediction) {
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
   EXPECT_FALSE(insn.isBranch());
@@ -463,7 +458,6 @@ TEST_F(AArch64InstructionTest, branchMisprediction) {
   matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_TRUE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
 
@@ -481,7 +475,6 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
@@ -509,7 +502,6 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
@@ -537,7 +529,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
@@ -565,7 +556,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_FALSE(insn.wasBranchMispredicted());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
