@@ -37,7 +37,7 @@ class AArch64InstructionTest : public testing::Test {
     cs_detail rawDetail_ldp;
     rawInsn_ldp.detail = &rawDetail_ldp;
     size_t size_ldp = 4;
-    uint64_t address_ldp = 4;
+    uint64_t address_ldp = 0;
     const uint8_t* encoding_ldp =
         reinterpret_cast<const uint8_t*>(ldpInstrBytes.data());
     cs_disasm_iter(capstoneHandle, &encoding_ldp, &size_ldp, &address_ldp,
@@ -49,7 +49,7 @@ class AArch64InstructionTest : public testing::Test {
     cs_detail rawDetail_cbz;
     rawInsn_cbz.detail = &rawDetail_cbz;
     size_t size_cbz = 4;
-    uint64_t address_cbz = 4;
+    uint64_t address_cbz = 0;
     const uint8_t* encoding_cbz =
         reinterpret_cast<const uint8_t*>(cbzInstrBytes.data());
     cs_disasm_iter(capstoneHandle, &encoding_cbz, &size_cbz, &address_cbz,
@@ -97,7 +97,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
                                    {RegisterType::VECTOR, 1},
                                    {RegisterType::VECTOR, 0}};
   const std::vector<uint16_t> ports = {1, 2, 3};
-  insn.setExecutionInfo({3, 3, ports});
+  insn.setExecutionInfo({3, 4, ports});
   insn.setInstructionAddress(0x48);
   insn.setInstructionId(11);
   insn.setSequenceId(12);
@@ -133,7 +133,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
     EXPECT_FALSE(insn.isOperandReady(i));
   }
-  EXPECT_EQ(insn.getStallCycles(), 3);
+  EXPECT_EQ(insn.getStallCycles(), 4);
   EXPECT_EQ(insn.getSupportedPorts(), ports);
 
   EXPECT_FALSE(insn.canExecute());
@@ -249,6 +249,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_EQ(insn.getLatency(), 1);
   EXPECT_EQ(insn.getLSQLatency(), 1);
   EXPECT_EQ(&insn.getMetadata(), invalidMetadata.get());
+  EXPECT_EQ(insn.getMicroOpIndex(), 0);
   // Results vector resized at decode
   EXPECT_EQ(insn.getResults().size(), 0);
   EXPECT_EQ(insn.getSequenceId(), 16);
@@ -481,8 +482,8 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // imm operand 0x28 has 4 added implicitly by dissassembler
-  pred = {true, 80 + (0x28 + 0x4)};
+  // Correct prediction
+  pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
   insn.supplyOperand(0, RegisterValue(0, 8));
@@ -508,7 +509,7 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // imm operand 0x28 has 4 added implicitly by dissassembler
+  // Correct prediction
   pred = {false, 80 + 4};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -535,8 +536,8 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // imm operand 0x28 has 4 added implicitly by dissassembler
-  pred = {true, 80 + (0x28 + 0x4)};
+  // Incorrect prediction - target is wrong
+  pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
   insn.supplyOperand(0, RegisterValue(0, 8));
@@ -544,7 +545,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   EXPECT_TRUE(matchingPred);
   EXPECT_TRUE(insn.wasBranchTaken());
   EXPECT_TRUE(insn.wasBranchMispredicted());
-  EXPECT_EQ(insn.getBranchAddress(), 100 + (0x28 + 4));
+  EXPECT_EQ(insn.getBranchAddress(), 100 + 0x28);
 }
 
 TEST_F(AArch64InstructionTest, incorrectPred_taken) {
@@ -562,8 +563,8 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // imm operand 0x28 has 4 added implicitly by dissassembler
-  pred = {true, 100 + (0x28 + 0x4)};
+  // Incorrect prediction - taken is wrong
+  pred = {true, 100 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
   insn.supplyOperand(0, RegisterValue(1, 8));
