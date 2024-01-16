@@ -92,10 +92,10 @@ class AArch64InstructionTest : public testing::Test {
 TEST_F(AArch64InstructionTest, validInsn) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
   Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {{RegisterType::VECTOR, 1}};
-  std::vector<const Register> srcRegs = {{RegisterType::PREDICATE, 0},
-                                         {RegisterType::VECTOR, 1},
-                                         {RegisterType::VECTOR, 0}};
+  std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
+  std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
+                                   {RegisterType::VECTOR, 1},
+                                   {RegisterType::VECTOR, 0}};
   const std::vector<uint16_t> ports = {1, 2, 3};
   insn.setExecutionInfo({3, 3, ports});
   insn.setInstructionAddress(0x48);
@@ -156,8 +156,8 @@ TEST_F(AArch64InstructionTest, validInsn) {
 // Test that an invalid instruction can be created - invalid due to byte stream
 TEST_F(AArch64InstructionTest, invalidInsn_1) {
   Instruction insn = Instruction(arch, *invalidMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {};
-  std::vector<const Register> srcRegs = {};
+  std::vector<Register> destRegs = {};
+  std::vector<Register> srcRegs = {};
   const std::vector<uint16_t> ports = {};
   insn.setExecutionInfo({1, 1, ports});
   insn.setInstructionAddress(0x44);
@@ -222,8 +222,8 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   Instruction insn = Instruction(arch, *invalidMetadata.get(),
                                  InstructionException::HypervisorCall);
 
-  std::vector<const Register> destRegs = {};
-  std::vector<const Register> srcRegs = {};
+  std::vector<Register> destRegs = {};
+  std::vector<Register> srcRegs = {};
   const std::vector<uint16_t> ports = {};
   insn.setExecutionInfo({1, 1, ports});
   insn.setInstructionAddress(0x43);
@@ -286,10 +286,10 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
 TEST_F(AArch64InstructionTest, renameRegs) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
   Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {{RegisterType::VECTOR, 1}};
-  std::vector<const Register> srcRegs = {{RegisterType::PREDICATE, 0},
-                                         {RegisterType::VECTOR, 1},
-                                         {RegisterType::VECTOR, 0}};
+  std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
+  std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
+                                   {RegisterType::VECTOR, 1},
+                                   {RegisterType::VECTOR, 0}};
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (int i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
@@ -299,10 +299,10 @@ TEST_F(AArch64InstructionTest, renameRegs) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
 
-  std::vector<const Register> destRegs_new = {{RegisterType::VECTOR, 24}};
-  std::vector<const Register> srcRegs_new = {{RegisterType::PREDICATE, 0},
-                                             {RegisterType::VECTOR, 97},
-                                             {RegisterType::VECTOR, 0}};
+  std::vector<Register> destRegs_new = {{RegisterType::VECTOR, 24}};
+  std::vector<Register> srcRegs_new = {{RegisterType::PREDICATE, 0},
+                                       {RegisterType::VECTOR, 97},
+                                       {RegisterType::VECTOR, 0}};
   insn.renameDestination(0, destRegs_new[0]);
   insn.renameSource(1, srcRegs_new[1]);
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs_new.size());
@@ -320,10 +320,10 @@ TEST_F(AArch64InstructionTest, renameRegs) {
 TEST_F(AArch64InstructionTest, supplyOperand) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
   Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {{RegisterType::VECTOR, 1}};
-  std::vector<const Register> srcRegs = {{RegisterType::PREDICATE, 0},
-                                         {RegisterType::VECTOR, 1},
-                                         {RegisterType::VECTOR, 0}};
+  std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
+  std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
+                                   {RegisterType::VECTOR, 1},
+                                   {RegisterType::VECTOR, 0}};
   EXPECT_FALSE(insn.canExecute());
   EXPECT_FALSE(insn.isOperandReady(0));
   EXPECT_FALSE(insn.isOperandReady(1));
@@ -357,9 +357,9 @@ TEST_F(AArch64InstructionTest, supplyOperand) {
 TEST_F(AArch64InstructionTest, supplyData) {
   // Insn is `ldp x1, x2, [x3]`
   Instruction insn = Instruction(arch, *ldpMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {{RegisterType::GENERAL, 1},
-                                          {RegisterType::GENERAL, 2}};
-  std::vector<const Register> srcRegs = {{RegisterType::GENERAL, 3}};
+  std::vector<Register> destRegs = {{RegisterType::GENERAL, 1},
+                                    {RegisterType::GENERAL, 2}};
+  std::vector<Register> srcRegs = {{RegisterType::GENERAL, 3}};
 
   // Check instruction created correctly
   EXPECT_FALSE(insn.exceptionEncountered());
@@ -410,9 +410,9 @@ TEST_F(AArch64InstructionTest, supplyData) {
 TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   // Insn is `ldp x1, x2, [x3]`
   Instruction insn = Instruction(arch, *ldpMetadata.get(), MicroOpInfo());
-  std::vector<const Register> destRegs = {{RegisterType::GENERAL, 1},
-                                          {RegisterType::GENERAL, 2}};
-  std::vector<const Register> srcRegs = {{RegisterType::GENERAL, 3}};
+  std::vector<Register> destRegs = {{RegisterType::GENERAL, 1},
+                                    {RegisterType::GENERAL, 2}};
+  std::vector<Register> srcRegs = {{RegisterType::GENERAL, 3}};
 
   // Check instruction created correctly
   EXPECT_EQ(&insn.getMetadata(), ldpMetadata.get());
