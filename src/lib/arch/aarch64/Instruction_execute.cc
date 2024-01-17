@@ -2085,11 +2085,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FRINTN_ZPmZ_D: {  // frintn zd.d, pg/m, zn.d
-        results[0] = sveFrintnPredicated<int64_t, double>(operands, VL_bits);
+        results[0] = sveFrintnPredicated<double>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FRINTN_ZPmZ_S: {  // frintn zd.s, pg/m, zn.s
-        results[0] = sveFrintnPredicated<int32_t, float>(operands, VL_bits);
+        results[0] = sveFrintnPredicated<float>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FRINTPDr: {  // frintp dd, dn

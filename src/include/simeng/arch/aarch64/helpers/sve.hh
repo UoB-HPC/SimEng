@@ -741,25 +741,37 @@ RegisterValue sveFnmsbPredicated(std::vector<RegisterValue>& operands,
 
 /** Helper function for SVE instructions with the format `frintn zd, pg/m,
  * zn`.
- * D represents the destination vector register type (e.g. zd.s would be
- * int32_t).
- * N represents the source vector register type (e.g. zn.d would be
- * double).
+ * T represents the vector type (e.g. zd.s would be float).
  * Returns correctly formatted RegisterValue. */
-template <typename D, typename N>
-RegisterValue sveFrintnPredicated(std::vector<RegisterValue>& operands,
-                                  const uint16_t VL_bits) {
-  const D* d = operands[0].getAsVector<D>();
+template <typename T>
+std::enable_if_t<std::is_floating_point_v<T>, RegisterValue>
+sveFrintnPredicated(std::vector<RegisterValue>& operands,
+                    const uint16_t VL_bits) {
+  const T* d = operands[0].getAsVector<T>();
   const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const N* n = operands[2].getAsVector<N>();
+  const T* n = operands[2].getAsVector<T>();
 
-  const uint16_t partition_num = VL_bits / (sizeof(N) * 8);
-  D out[256 / sizeof(D)] = {0};
+  bool isFloat = (sizeof(T) == sizeof(float));
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
 
   for (int i = 0; i < partition_num; i++) {
-    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(N))) * sizeof(N));
-    if (p[i / (64 / sizeof(N))] & shifted_active) {
-      out[i] = roundToNearestTiesToEven<N, D>(n[i]);
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      // Get remainder
+      T trunc = isFloat ? std::truncf(n[i]) : std::trunc(n[i]);
+      T rem = isFloat ? (std::fabsf(n[i] - trunc)) : (std::fabs(n[i] - trunc));
+      // On tie, round to even
+      if (rem == static_cast<T>(0.5)) {
+        T addand = (trunc > static_cast<T>(0.0)) ? static_cast<T>(1)
+                                                 : static_cast<T>(-1);
+        bool isEven = isFloat ? (std::fmodf(trunc, 2.0f) == 0.0f)
+                              : (std::fmod(trunc, 2.0) == 0.0);
+        out[i] = isEven ? trunc : (trunc + addand);
+      } else {
+        // Else, round to nearest
+        out[i] = isFloat ? std::roundf(n[i]) : std::round(n[i]);
+      }
     } else {
       out[i] = d[i];
     }
