@@ -30,6 +30,7 @@ class MicroDecoder {
                  const Instruction& macroOp, MacroOp& output,
                  csh capstoneHandle);
 
+ private:
   /** Detect if there's an overlap between the underlying hardware registers
    * (e.g. z5, v5, q5, d5, s5, h5, and b5). */
   bool detectOverlap(arm64_reg registerA, arm64_reg registerB);
@@ -67,7 +68,6 @@ class MicroDecoder {
                            csh capstoneHandle, bool lastMicroOp = false,
                            int microOpIndex = 0, uint8_t dataSize = 0);
 
- private:
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;
 
