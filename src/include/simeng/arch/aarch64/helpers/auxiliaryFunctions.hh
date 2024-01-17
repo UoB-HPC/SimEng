@@ -139,22 +139,6 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   return (result ^ inverse);
 }
 
-// Rounding function that rounds a double to nearest integer (64-bit). In
-// event of a tie (i.e. 7.5) it will be rounded to the nearest even number.
-template <typename IN, typename OUT>
-OUT roundToNearestTiesToEven(IN input) {
-  IN half = static_cast<IN>(0.5);
-  if (std::fabs(input - std::trunc(input)) == half) {
-    OUT truncd = static_cast<OUT>(std::trunc(input));
-    // if value is negative, then may need to -1 from truncd, else may need to
-    // +1.
-    OUT addand = (truncd > 0) ? 1 : -1;
-    return ((truncd % 2 == 0) ? truncd : (truncd + addand));
-  }
-  // Otherwise round to nearest
-  return static_cast<OUT>(std::round(input));
-}
-
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift`. Replicated from Instruction.cc */
 uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
@@ -196,20 +180,6 @@ uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
   }
 
   return extended << shift;
-}
-
-// Rounding function that rounds a float to nearest integer (32-bit). In event
-// of a tie (i.e. 7.5) it will be rounded to the nearest even number.
-int32_t floatRoundToNearestTiesToEven(float input) {
-  if (std::fabs(input - std::trunc(input)) == 0.5f) {
-    if (static_cast<int32_t>(input - 0.5f) % 2 == 0) {
-      return static_cast<int32_t>(input - 0.5f);
-    } else {
-      return static_cast<int32_t>(input + 0.5f);
-    }
-  }
-  // Otherwise round to nearest
-  return static_cast<int32_t>(std::round(input));
 }
 
 /** Calculate the corresponding NZCV values from select SVE instructions that
