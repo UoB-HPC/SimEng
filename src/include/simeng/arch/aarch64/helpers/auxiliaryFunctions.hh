@@ -103,10 +103,6 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
 
 /** Function to check if NZCV conditions hold. */
 bool conditionHolds(uint8_t cond, uint8_t nzcv) {
-  if (cond == 0b1111) {
-    return true;
-  }
-
   bool inverse = cond & 1;
   uint8_t upper = cond >> 1;
   bool n = (nzcv >> 3) & 1;
@@ -137,10 +133,10 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
       result = (n == v && !z);
       break;  // GT/LE
     default:  // 0b111, AL
-      result = true;
+      // AL returns true regardless of inverse value
+      result = (true ^ inverse);
   }
-
-  return (inverse ? !result : result);
+  return (result ^ inverse);
 }
 
 // Rounding function that rounds a double to nearest integer (64-bit). In
