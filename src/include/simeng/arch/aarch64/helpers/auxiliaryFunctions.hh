@@ -17,9 +17,11 @@ uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
 
-/** Performs a type agnostic add with carry. */
+/** Performs a type agnostic unsigned add with carry. */
 template <typename T>
-std::tuple<T, uint8_t> addWithCarry(T x, T y, bool carryIn) {
+std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
+                 std::tuple<T, uint8_t>>
+addWithCarry(T x, T y, bool carryIn) {
   T result = x + y + carryIn;
 
   bool n = (result >> (sizeof(T) * 8 - 1));
