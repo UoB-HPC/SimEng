@@ -434,7 +434,6 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
   expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(1,
                                                                             64);
-
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint8_t>(2, "Saturating-Count-Bits",
                                                   true));

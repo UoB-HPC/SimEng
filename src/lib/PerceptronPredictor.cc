@@ -85,6 +85,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
+  // Work out hash index
   uint64_t prevGlobalHistory = btbHistory_[address];
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
