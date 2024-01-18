@@ -144,7 +144,7 @@ Architecture::~Architecture() {
   SVCRval_ = 0;
 }
 
-uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
+uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by Armv9.2-a

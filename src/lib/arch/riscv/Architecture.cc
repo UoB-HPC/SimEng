@@ -144,7 +144,7 @@ Architecture::~Architecture() {
   groupExecutionInfo_.clear();
 }
 
-uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
+uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
