@@ -177,12 +177,11 @@ TEST(AArch64AuxExtendValue, extend) {
   EXPECT_EQ(extendValue(0xFFFFFFFF, ARM64_EXT_UXTW, 3), 34359738360);
   EXPECT_EQ(extendValue(0x0F0F0F0F0F0F0F01, ARM64_EXT_UXTX, 4),
             0xF0F0F0F0F0F0F010);
-  // TODO: Commenting out until extendValue function is fixed
-  // EXPECT_EQ(extendValue(133, ARM64_EXT_SXTB, 3), 64);
-  // EXPECT_EQ(extendValue(32768, ARM64_EXT_SXTH, 3), -64);
-  // EXPECT_EQ(extendValue(2147483648, ARM64_EXT_SXTW, 3), 1536);
-  // EXPECT_EQ(extendValue(0x8000000000000000, ARM64_EXT_SXTX, 3),
-  //           896);  // or if function should return a signed output: 1792
+
+  EXPECT_EQ(extendValue(133, ARM64_EXT_SXTB, 3), -984);
+  EXPECT_EQ(extendValue(32768, ARM64_EXT_SXTH, 3), -262144);
+  EXPECT_EQ(extendValue(2147483648, ARM64_EXT_SXTW, 3), -17179869184);
+  EXPECT_EQ(extendValue(0x8000000000000000, ARM64_EXT_SXTX, 3), 0);
 }
 
 /** `getNZCVfromPred` Tests */

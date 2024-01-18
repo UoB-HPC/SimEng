@@ -13,14 +13,14 @@ namespace arch {
 namespace aarch64 {
 
 /** Returns a correctly formatted nzcv value. */
-uint8_t nzcv(bool n, bool z, bool c, bool v) {
+inline uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
 
 /** Performs a type agnostic unsigned add with carry. */
 template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
-                 std::tuple<T, uint8_t>>
+inline std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>,
+                        std::tuple<T, uint8_t>>
 addWithCarry(T x, T y, bool carryIn) {
   T result = x + y + carryIn;
 
@@ -59,7 +59,7 @@ addWithCarry(T x, T y, bool carryIn) {
 /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM
  * Armv9.2-a instructions. */
 template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
+inline std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
 bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
                    bool signExtend = false) {
   size_t bits = sizeof(T) * 8;
@@ -102,7 +102,7 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
 }
 
 /** Function to check if NZCV conditions hold. */
-bool conditionHolds(uint8_t cond, uint8_t nzcv) {
+inline bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   bool inverse = cond & 1;
   uint8_t upper = cond >> 1;
   bool n = (nzcv >> 3) & 1;
@@ -141,7 +141,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift`. Replicated from Instruction.cc */
-uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
+inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
   if (extendType == ARM64_EXT_INVALID && shift == 0) {
     // Special case: an invalid shift type with a shift amount of 0 implies an
     // identity operation
@@ -182,11 +182,24 @@ uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
   return extended << shift;
 }
 
+/** Extend `value` using extension/shifting rules defined in `op`. */
+inline uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) {
+  if (op.ext == 0) {
+    if (op.shift.value == 0) {
+      return value;
+    }
+    if (op.shift.type == 1) {
+      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
+    }
+  }
+  return extendValue(value, op.ext, op.shift.value);
+}
+
 /** Calculate the corresponding NZCV values from select SVE instructions that
  * set the First(N), None(Z), !Last(C) condition flags based on the predicate
  * result, and the V flag to 0. */
-uint8_t getNZCVfromPred(std::array<uint64_t, 4> predResult, uint64_t VL_bits,
-                        int byteCount) {
+inline uint8_t getNZCVfromPred(std::array<uint64_t, 4> predResult,
+                               uint64_t VL_bits, int byteCount) {
   uint8_t N = (predResult[0] & 1);
   uint8_t Z = 1;
   // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
@@ -206,7 +219,7 @@ uint8_t getNZCVfromPred(std::array<uint64_t, 4> predResult, uint64_t VL_bits,
 
 /** Multiply `a` and `b`, and return the high 64 bits of the result.
  * https://stackoverflow.com/a/28904636 */
-uint64_t mulhi(uint64_t a, uint64_t b) {
+inline uint64_t mulhi(uint64_t a, uint64_t b) {
   uint64_t a_lo = (uint32_t)a;
   uint64_t a_hi = a >> 32;
   uint64_t b_lo = (uint32_t)b;
@@ -228,8 +241,8 @@ uint64_t mulhi(uint64_t a, uint64_t b) {
 }
 
 /** Decode the instruction pattern from OperandStr. */
-uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
-                       const uint16_t VL_) {
+inline uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
+                              const uint16_t VL_) {
   const uint16_t elements = VL_ / esize;
   const std::vector<std::string> patterns = {
       "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
@@ -289,8 +302,8 @@ uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,
  * shifting by `amount`. */
 template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount) {
+inline std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
+shiftValue(T value, uint8_t shiftType, uint8_t amount) {
   switch (shiftType) {
     case ARM64_SFT_LSL:
       return value << amount;

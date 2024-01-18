@@ -206,64 +206,6 @@ const Architecture& Instruction::getArchitecture() const {
   return architecture_;
 }
 
-/** Extend `value` according to `extendType`, and left-shift the result by
- * `shift` */
-uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
-                                  uint8_t shift) const {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
-    // Special case: an invalid shift type with a shift amount of 0 implies an
-    // identity operation
-    return value;
-  }
-
-  uint64_t extended;
-  switch (extendType) {
-    case ARM64_EXT_UXTB:
-      extended = static_cast<uint8_t>(value);
-      break;
-    case ARM64_EXT_UXTH:
-      extended = static_cast<uint16_t>(value);
-      break;
-    case ARM64_EXT_UXTW:
-      extended = static_cast<uint32_t>(value);
-      break;
-    case ARM64_EXT_UXTX:
-      extended = value;
-      break;
-    case ARM64_EXT_SXTB:
-      extended = static_cast<int8_t>(value);
-      break;
-    case ARM64_EXT_SXTH:
-      extended = static_cast<int16_t>(value);
-      break;
-    case ARM64_EXT_SXTW:
-      extended = static_cast<int32_t>(value);
-      break;
-    case ARM64_EXT_SXTX:
-      extended = value;
-      break;
-    default:
-      assert(false && "Invalid extension type");
-      return 0;
-  }
-
-  return extended << shift;
-}
-
-/** Extend `value` using extension/shifting rules defined in `op`. */
-uint64_t Instruction::extendOffset(uint64_t value,
-                                   const cs_arm64_op& op) const {
-  if (op.ext == 0) {
-    if (op.shift.value == 0) {
-      return value;
-    }
-    if (op.shift.type == 1) {
-      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
-    }
-  }
-  return extendValue(value, op.ext, op.shift.value);
-}
-
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
