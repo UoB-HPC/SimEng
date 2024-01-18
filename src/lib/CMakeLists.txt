@@ -42,11 +42,10 @@ set(SIMENG_SOURCES
     FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
+    PerceptronPredictor.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
-        ../include/simeng/PerceptronPredictor.hh
-        PerceptronPredictor.cc
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)

@@ -1,8 +1,5 @@
 #include "simeng/PerceptronPredictor.hh"
 
-// ToDo -- remove this include
-#include <iostream>
-
 namespace simeng {
 
 PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
@@ -11,8 +8,9 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
           config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
   // Build BTB based on config options
-  btb_.resize(1 << (btbBits_));
-  for (int i = 0; i < (1 << (btbBits_)); i++) {
+  uint32_t btbSize = (1 << btbBits_);
+  btb_.resize(btbSize);
+  for (int i = 0; i < btbSize; i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
     btb_[i].second = 0;
@@ -20,9 +18,6 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (int)((1.93 * (globalHistoryLength_)) + 14);
-
-  // ToDo -- remove print statement
-  std::cout << "Making Perceptron Predictor" << std::endl;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -31,7 +26,7 @@ PerceptronPredictor::~PerceptronPredictor() {
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
-                                           int64_t knownOffset) {
+                                              int64_t knownOffset) {
   // Get index via an XOR hash between the global history and the lower btbBits_
   // bits of the instruction address
   uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
@@ -44,7 +39,9 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
-  // Determine direction prediction from perceptron, starting with the bias weight
+  // Determine direction prediction from perceptron by taking its dot product
+  // with the global history
+  // Starting with the bias weight
   int64_t Pout = perceptron[globalHistoryLength_];
   for (int i = 0; i < globalHistoryLength_; i++) {
     bool historyTaken =
@@ -87,7 +84,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 }
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
-                              uint64_t targetAddress, BranchType type) {
+                                 uint64_t targetAddress, BranchType type) {
   uint64_t prevGlobalHistory = btbHistory_[address];
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
@@ -116,9 +113,7 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
           ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0) ? -1 : 1;
       int8_t product_xi_t = xi * t;
       // Make sure no overflow
-      if ((product_xi_t > 0 && perceptron[i] < 127) || (product_xi_t < 0 && perceptron[i] > -127)) {
-          perceptron[i] += product_xi_t;
-      }
+      perceptron[i] += (perceptron[i] != 127 && perceptron[i] != -127) ? product_xi_t : 0;
     }
     perceptron[globalHistoryLength_] += t;
   }

@@ -25,6 +25,7 @@ Queue-Sizes:
   Load: 130
   Store: 60
 Branch-Predictor:
+  Type: "Generic"
   BTB-Tag-Bits: 11 
   Saturating-Count-Bits: 2  
   Global-History-Length: 11 
