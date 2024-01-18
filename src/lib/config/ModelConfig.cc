@@ -888,15 +888,15 @@ void ModelConfig::postValidation() {
     invalid_ << "\t- " << prt << " has no associated reservation station\n";
 
   // Check for valid LSQ-L1-Interface Load and Store Bandwidth
-  if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 > \
-    configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
-      invalid_ << "\t- Vector-Length (bits) must be greater than \
-        Load-Bandwidth (bytes)\n"; 
-  }
-  else if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 > \
-    configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
-      invalid_ << "\t- Vector-Length (bits) must be greater than \
-        Store-Bandwidth (bytes)\n"; 
+  if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+      configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
+    invalid_ << "\t- Vector-Length (bits) must be greater than Load-Bandwidth "
+                "(bytes)\n";
+  } else if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+             configTree_["LSQ-L1-Interface"]["Store-Bandwidth"]
+                 .as<uint16_t>()) {
+    invalid_ << "\t- Vector-Length (bits) must be greater than Store-Bandwidth "
+                "(bytes)\n";
   }
 }
 
