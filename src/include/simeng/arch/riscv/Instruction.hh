@@ -172,6 +172,7 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
+ private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 3;
