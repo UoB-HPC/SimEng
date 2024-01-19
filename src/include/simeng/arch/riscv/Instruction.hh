@@ -198,10 +198,6 @@ class Instruction : public simeng::Instruction {
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  // TODO this name change requires updates of the docs on approval
-  // developer/arch/supported/aarch64.html#aarch64-adding-execution-behaviour-operands
-  // TODO update AArch64 to keep both in line and references in docs from RISC-V
-  // to AArch64 correct
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> srcRegVals;
 
   /** Extracted value of current immediate from metadata */
