@@ -150,7 +150,7 @@ void Instruction::decode() {
         if (sourceRegisters[sourceRegisterCount] ==
             Instruction::ZERO_REGISTER) {
           // Catch zero register references and pre-complete those operands
-          sourceRegValues[sourceRegisterCount] = RegisterValue(0, 8);
+          srcRegVals[sourceRegisterCount] = RegisterValue(0, 8);
         } else {
           numSourceOperandsPending++;
         }
@@ -192,7 +192,7 @@ void Instruction::decode() {
 
       if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
         // Catch zero register references and pre-complete those operands
-        sourceRegValues[sourceRegisterCount] = RegisterValue(0, 8);
+        srcRegVals[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
         numSourceOperandsPending++;
       }

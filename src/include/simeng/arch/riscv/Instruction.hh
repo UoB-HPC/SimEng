@@ -202,7 +202,7 @@ class Instruction : public simeng::Instruction {
   // developer/arch/supported/aarch64.html#aarch64-adding-execution-behaviour-operands
   // TODO update AArch64 to keep both in line and references in docs from RISC-V
   // to AArch64 correct
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceRegValues;
+  std::array<RegisterValue, MAX_SOURCE_REGISTERS> srcRegVals;
 
   /** Extracted value of current immediate from metadata */
   int64_t imm = 0;
