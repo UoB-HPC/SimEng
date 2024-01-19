@@ -416,7 +416,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of source operands that have not yet had values supplied. Used
    * to determine execution readiness. */
-  short numSrcOpsPending = 0;
+  uint16_t numSrcOpsPending = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
