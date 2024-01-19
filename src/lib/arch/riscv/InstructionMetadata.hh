@@ -89,6 +89,8 @@ struct InstructionMetadata {
 
   /** The instruction length for variable instruction length support. */
   INSTR_LENGTH len;
+
+  /** The length of the instruction encoding in bytes. */
   uint8_t lenBytes;
 
  private:
