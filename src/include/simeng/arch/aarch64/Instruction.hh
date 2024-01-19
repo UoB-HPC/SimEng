@@ -414,9 +414,9 @@ class Instruction : public simeng::Instruction {
   void setDestinationRegisters(const std::vector<Register>& registers);
 
   // Scheduling
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
-  short operandsPending = 0;
+  /** The number of source operands that have not yet had values supplied. Used
+   * to determine execution readiness. */
+  short numSrcOpsPending = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */

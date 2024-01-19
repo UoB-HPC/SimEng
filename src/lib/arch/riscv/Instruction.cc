@@ -62,7 +62,7 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
          "Attempted to provide an uninitialised RegisterValue");
 
   srcRegVals[i] = value;
-  numSourceOperandsPending--;
+  numSrcOpsPending--;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -88,7 +88,7 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool Instruction::canExecute() const { return (numSourceOperandsPending == 0); }
+bool Instruction::canExecute() const { return (numSrcOpsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};

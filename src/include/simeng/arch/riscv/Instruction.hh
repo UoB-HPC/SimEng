@@ -216,9 +216,9 @@ class Instruction : public simeng::Instruction {
   void decode();
 
   // Scheduling
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
-  uint16_t numSourceOperandsPending = 0;
+  /** The number of source operands that have not yet had values supplied. Used
+   * to determine execution readiness. */
+  uint16_t numSrcOpsPending = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */

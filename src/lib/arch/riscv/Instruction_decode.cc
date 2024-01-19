@@ -152,7 +152,7 @@ void Instruction::decode() {
           // Catch zero register references and pre-complete those operands
           srcRegVals[sourceRegisterCount] = RegisterValue(0, 8);
         } else {
-          numSourceOperandsPending++;
+          numSrcOpsPending++;
         }
 
         sourceRegisterCount++;
@@ -194,7 +194,7 @@ void Instruction::decode() {
         // Catch zero register references and pre-complete those operands
         srcRegVals[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
-        numSourceOperandsPending++;
+        numSrcOpsPending++;
       }
 
       sourceRegisterCount++;
@@ -207,7 +207,7 @@ void Instruction::decode() {
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       imm = op.mem.disp;
       sourceRegisterCount++;
-      numSourceOperandsPending++;
+      numSrcOpsPending++;
     }
 
     // First operands never immediate
