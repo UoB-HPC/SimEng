@@ -10,6 +10,8 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // Build BTB based on config options
   uint32_t btbSize = (1 << btbBits_);
   btb_.resize(btbSize);
+  // Initialise perceptron values with 0 for the global history weights, and 1 for the bias weight;
+  // and intialise the target with 0 (i.e., unknown)
   for (int i = 0; i < btbSize; i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
@@ -17,7 +19,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   }
 
   // Set up training threshold according to empirically determined formula
-  trainingThreshold_ = (int)((1.93 * (globalHistoryLength_)) + 14);
+  trainingThreshold_ = (int)((1.93 * globalHistoryLength_) + 14);
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -27,8 +29,9 @@ PerceptronPredictor::~PerceptronPredictor() {
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
                                               int64_t knownOffset) {
-  // Get index via an XOR hash between the global history and the lower btbBits_
-  // bits of the instruction address
+  // Get the hashed index for the prediction table.  XOR the global history with the
+  // non-zero bits of the address, and then keep only the btbBits_ bits of the output
+  // keep it in bounds of the prediction table.
   uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
   // Store the global history for correct hashing in update() --
@@ -44,19 +47,20 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Starting with the bias weight
   int64_t Pout = perceptron[globalHistoryLength_];
   for (int i = 0; i < globalHistoryLength_; i++) {
+    // Get branch direction for ith entry in the globalHistory_
     bool historyTaken =
         ((globalHistory_ & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
     Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
   }
   bool direction = (Pout >= 0);
-  // Retrieve target prediction
 
+  // Retrieve target prediction
   uint64_t target =
       (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
 
   BranchPrediction prediction = {direction, target};
 
-  // Ammend prediction based on branch type
+  // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
     prediction.taken = true;
   } else if (type == BranchType::Return) {
@@ -102,9 +106,9 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   bool directionPrediction = (Pout >= 0);
 
   // Determine the magnitude of the dot product for training
-  uint64_t magnitude = (Pout < 0) ? (0 - Pout) : Pout;
+  uint64_t magnitude = abs(Pout);
 
-  // update the perceptron if the prediction was wrong, or the dot product's magnitude
+  // Update the perceptron if the prediction was wrong, or the dot product's magnitude
   // was not greater than the training threshold
   if ((directionPrediction != taken) || (magnitude < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
@@ -114,7 +118,9 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
           ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0) ? -1 : 1;
       int8_t product_xi_t = xi * t;
       // Make sure no overflow
-      perceptron[i] += (perceptron[i] != 127 && perceptron[i] != -127) ? product_xi_t : 0;
+      if (!(perceptron[i] == 127 && product_xi_t == 1) && !(perceptron[i] == -127 && product_xi_t == -1)) {
+        perceptron[i] += product_xi_t;
+      }
     }
     perceptron[globalHistoryLength_] += t;
   }

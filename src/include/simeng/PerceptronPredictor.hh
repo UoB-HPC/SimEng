@@ -46,8 +46,8 @@ class PerceptronPredictor : public BranchPredictor {
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint64_t btbBits_;
 
-  /** A 2^bits length vector of pairs containing a (globalHistoryLength_ + 1)
-   * length perceptron and a branch target. */
+  /** A 2^bits length vector of pairs containing a perceptron with
+   * globalHistoryLength_ + 1 inputs, and a branch target. */
   std::vector<std::pair<std::vector<int8_t>, uint64_t>> btb_;
 
   /** The previous hashed index for an address. */
