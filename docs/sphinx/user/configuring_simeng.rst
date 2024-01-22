@@ -155,7 +155,7 @@ Saturating-Count-Bits
     Only needed for a ``Generic`` predictor.  The number of bits used in the saturating counter value.
 
 Global-History-Length
-    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.
+    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.  For ``PerceptronPredictor``, this dictates the size of the perceptrons (with each perceptron having Global-History-Length + 1 weights).
 
 RAS-entries
     The number of entries in the Return Address Stack (RAS).
