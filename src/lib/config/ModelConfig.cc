@@ -318,7 +318,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Fetch"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Fetch-Block-Size"));
   expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(std::vector<uint16_t>{
-      4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192, 16384, 32768});
+      4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768});
 
   expectations_["Fetch"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Loop-Buffer-Size"));
