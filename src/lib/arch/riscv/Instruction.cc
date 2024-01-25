@@ -10,9 +10,6 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
-                                             (uint16_t)-1};
-
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
     : architecture_(architecture),

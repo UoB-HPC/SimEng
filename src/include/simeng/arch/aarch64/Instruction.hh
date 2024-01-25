@@ -171,6 +171,9 @@ const uint8_t NZCV = 3;
 const uint8_t SYSTEM = 4;
 /** The [256-byte x (SVL / 8)] SME matrix register za. */
 const uint8_t MATRIX = 5;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -332,9 +335,6 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
-
-  /** A special register value representing the zero register. */
-  static const Register ZERO_REGISTER;
 
  private:
   /** A reference to the ISA instance this instruction belongs to. */

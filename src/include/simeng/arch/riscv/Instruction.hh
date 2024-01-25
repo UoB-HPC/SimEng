@@ -23,6 +23,9 @@ const uint8_t GENERAL = 0;
 const uint8_t FLOAT = 1;
 /** The system registers. */
 const uint8_t SYSTEM = 2;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -165,9 +168,6 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
-
-  /** A special register value representing the zero register. */
-  static const Register ZERO_REGISTER;
 
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */

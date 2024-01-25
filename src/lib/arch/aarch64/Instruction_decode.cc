@@ -99,7 +99,7 @@ Register csRegToRegister(arm64_reg reg) {
 
   // ARM64_REG_WZR and _XZR are zero registers, and don't read
   if (reg == ARM64_REG_WZR || reg == ARM64_REG_XZR) {
-    return Instruction::ZERO_REGISTER;
+    return RegisterType::ZERO_REGISTER;
   }
 
   // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
@@ -188,8 +188,6 @@ void Instruction::decode() {
     return;
   }
 
-  uint16_t sourceRegisterCount = 0;
-
   // Extract implicit writes
   for (size_t i = 0; i < metadata.implicitDestinationCount; i++) {
     destinationRegisters.push_back(csRegToRegister(
@@ -201,7 +199,6 @@ void Instruction::decode() {
     sourceRegisters.push_back(
         csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i])));
     operandsPending++;
-    sourceRegisterCount++;
   }
 
   bool accessesMemory = false;
@@ -243,7 +240,6 @@ void Instruction::decode() {
               // If WRITE, also need to add to source registers to maintain
               // unaltered row values
               sourceRegisters.push_back(regs[i]);
-              sourceRegisterCount++;
               operandsPending++;
             }
           } else {
@@ -265,14 +261,12 @@ void Instruction::decode() {
               getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
           for (int i = 0; i < regs.size(); i++) {
             sourceRegisters.push_back(regs[i]);
-            sourceRegisterCount++;
             operandsPending++;
           }
         } else {
           // Add register reads to destinations
           sourceRegisters.push_back(csRegToRegister(op.reg));
           operandsPending++;
-          sourceRegisterCount++;
         }
         if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
       }
@@ -280,7 +274,6 @@ void Instruction::decode() {
       accessesMemory = true;
       sourceRegisters.push_back(csRegToRegister(op.mem.base));
       operandsPending++;
-      sourceRegisterCount++;
 
       if (metadata.writeback) {
         // Writeback instructions modify the base address
@@ -291,7 +284,6 @@ void Instruction::decode() {
         // Register offset; add to sources
         sourceRegisters.push_back(csRegToRegister(op.mem.index));
         operandsPending++;
-        sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
       std::vector<Register> regs;
@@ -306,7 +298,6 @@ void Instruction::decode() {
         // un-updated rows
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters.push_back(regs[i]);
-          sourceRegisterCount++;
           operandsPending++;
           if (op.access & cs_ac_type::CS_AC_WRITE) {
             destinationRegisters.push_back(regs[i]);
@@ -323,25 +314,21 @@ void Instruction::decode() {
         } else if (op.access & cs_ac_type::CS_AC_READ) {
           sourceRegisters.push_back(csRegToRegister(op.sme_index.reg));
           operandsPending++;
-          sourceRegisterCount++;
         }
       }
       // Register that is base of index will always be a source operand
       sourceRegisters.push_back(csRegToRegister(op.sme_index.base));
       operandsPending++;
-      sourceRegisterCount++;
     } else if (op.type == ARM64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
         // Clear any registered operands
-        sourceRegisterCount = 0;
         destinationRegisterCount = 0;
       } else {
         sourceRegisters.push_back(
             {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
-        sourceRegisterCount++;
         operandsPending++;
       }
     } else if (op.type == ARM64_OP_REG_MSR) {
@@ -350,7 +337,6 @@ void Instruction::decode() {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
         // Clear any registered operands
-        sourceRegisterCount = 0;
         destinationRegisterCount = 0;
       } else {
         destinationRegisters.push_back(
@@ -649,12 +635,12 @@ void Instruction::decode() {
   // Allocate enough entries in results vector
   results.resize(destinationRegisterCount + zrDestRegs);
   // Allocate enough entries in the operands vector
-  operands.resize(sourceRegisterCount);
+  operands.resize(sourceRegisters.size());
 
   // Catch zero register references and pre-complete those operands
   if (!(isSMEData_)) {
-    for (uint16_t i = 0; i < sourceRegisterCount; i++) {
-      if (sourceRegisters[i] == Instruction::ZERO_REGISTER) {
+    for (uint16_t i = 0; i < sourceRegisters.size(); i++) {
+      if (sourceRegisters[i] == RegisterType::ZERO_REGISTER) {
         operands[i] = RegisterValue(0, 8);
         operandsPending--;
       }

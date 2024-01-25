@@ -649,7 +649,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(ExpectationNode::createExpectation("CPU-Info"));
 
   expectations_["CPU-Info"].addChild(ExpectationNode::createExpectation<bool>(
-      false, "Generate-Special-Dir", true));
+      true, "Generate-Special-Dir", true));
   expectations_["CPU-Info"]["Generate-Special-Dir"].setValueSet(
       std::vector{false, true});
 
