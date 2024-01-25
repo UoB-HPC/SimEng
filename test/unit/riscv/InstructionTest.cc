@@ -20,6 +20,9 @@ class RiscVInstructionTest : public testing::Test {
     cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
     cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
+    // Create instructions which cover the 3 main types: Arithmetic, Memory,
+    // Branch. This allows for full testing of the Instruction class.
+
     // div
     cs_insn rawInsn_div;
     cs_detail rawDetail_div;
@@ -91,6 +94,7 @@ class RiscVInstructionTest : public testing::Test {
 TEST_F(RiscVInstructionTest, validInsn) {
   // Insn is `div	a3, a3, a0`
   Instruction insn = Instruction(arch, *divMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 13}};
   std::vector<Register> srcRegs = {{RegisterType::GENERAL, 13},
                                    {RegisterType::GENERAL, 10}};
@@ -100,6 +104,7 @@ TEST_F(RiscVInstructionTest, validInsn) {
   insn.setInstructionId(11);
   insn.setSequenceId(12);
 
+  // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
@@ -153,6 +158,7 @@ TEST_F(RiscVInstructionTest, validInsn) {
 // Test that an invalid instruction can be created - invalid due to byte stream
 TEST_F(RiscVInstructionTest, invalidInsn_1) {
   Instruction insn = Instruction(arch, *invalidMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {};
   std::vector<Register> srcRegs = {};
   const std::vector<uint16_t> ports = {};
@@ -161,6 +167,7 @@ TEST_F(RiscVInstructionTest, invalidInsn_1) {
   insn.setInstructionId(13);
   insn.setSequenceId(14);
 
+  // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
@@ -217,7 +224,7 @@ TEST_F(RiscVInstructionTest, invalidInsn_1) {
 TEST_F(RiscVInstructionTest, invalidInsn_2) {
   Instruction insn = Instruction(arch, *invalidMetadata.get(),
                                  InstructionException::HypervisorCall);
-
+  // Define instruction's registers
   std::vector<Register> destRegs = {};
   std::vector<Register> srcRegs = {};
   const std::vector<uint16_t> ports = {};
@@ -226,6 +233,7 @@ TEST_F(RiscVInstructionTest, invalidInsn_2) {
   insn.setInstructionId(15);
   insn.setSequenceId(16);
 
+  // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
@@ -281,9 +289,11 @@ TEST_F(RiscVInstructionTest, invalidInsn_2) {
 TEST_F(RiscVInstructionTest, renameRegs) {
   // Insn is `div	a3, a3, a0`
   Instruction insn = Instruction(arch, *divMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 13}};
   std::vector<Register> srcRegs = {{RegisterType::GENERAL, 13},
                                    {RegisterType::GENERAL, 10}};
+  // Ensure registers decoded correctly
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (int i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
@@ -293,11 +303,13 @@ TEST_F(RiscVInstructionTest, renameRegs) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
 
+  // Define renamed registers
   std::vector<Register> destRegs_new = {{RegisterType::GENERAL, 24}};
   std::vector<Register> srcRegs_new = {{RegisterType::GENERAL, 13},
                                        {RegisterType::GENERAL, 97}};
   insn.renameDestination(0, destRegs_new[0]);
   insn.renameSource(1, srcRegs_new[1]);
+  // Ensure renaming functionality works as expected
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs_new.size());
   for (int i = 0; i < srcRegs_new.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs_new[i]);
@@ -313,16 +325,21 @@ TEST_F(RiscVInstructionTest, renameRegs) {
 TEST_F(RiscVInstructionTest, supplyOperand) {
   // Insn is `div	a3, a3, a0`
   Instruction insn = Instruction(arch, *divMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 13}};
   std::vector<Register> srcRegs = {{RegisterType::GENERAL, 13},
                                    {RegisterType::GENERAL, 10}};
+  // Check initial state is as expected
   EXPECT_FALSE(insn.canExecute());
   EXPECT_FALSE(insn.isOperandReady(0));
   EXPECT_FALSE(insn.isOperandReady(1));
 
+  // Define mock register values for source registers
   RegisterValue val = {0xABBACAFE, 8};
+  // Supply values for all source registers
   insn.supplyOperand(0, val);
   insn.supplyOperand(1, val);
+  // Ensure Instruction state has updated as expected
   EXPECT_TRUE(insn.canExecute());
   EXPECT_TRUE(insn.isOperandReady(0));
   EXPECT_TRUE(insn.isOperandReady(1));
@@ -331,6 +348,8 @@ TEST_F(RiscVInstructionTest, supplyOperand) {
   EXPECT_EQ(sourceVals[0], val);
   EXPECT_EQ(sourceVals[1], val);
 
+  // Ensure instruction execute updates instruction state as expected, and
+  // produces the expected result.
   EXPECT_FALSE(insn.hasExecuted());
   insn.execute();
   EXPECT_TRUE(insn.hasExecuted());
@@ -344,6 +363,7 @@ TEST_F(RiscVInstructionTest, supplyOperand) {
 TEST_F(RiscVInstructionTest, supplyData) {
   // Insn is `lbu	a5, 0(s3)`
   Instruction insn = Instruction(arch, *lbuMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 15}};
   std::vector<Register> srcRegs = {{RegisterType::GENERAL, 19}};
 
@@ -381,6 +401,7 @@ TEST_F(RiscVInstructionTest, supplyData) {
   std::vector<RegisterValue> data = {{123, 1}};
   EXPECT_EQ(generatedAddresses.size(), data.size());
   insn.supplyData(generatedAddresses[0].address, data[0]);
+  // Ensure data was supplied correctly
   auto retrievedData = insn.getData();
   for (int i = 0; i < retrievedData.size(); i++) {
     EXPECT_EQ(retrievedData[i], data[i]);
@@ -392,6 +413,7 @@ TEST_F(RiscVInstructionTest, supplyData) {
 TEST_F(RiscVInstructionTest, supplyData_dataAbort) {
   // Insn is `lbu	a5, 0(s3)`
   Instruction insn = Instruction(arch, *lbuMetadata.get());
+  // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 15}};
   std::vector<Register> srcRegs = {{RegisterType::GENERAL, 19}};
 
@@ -426,6 +448,7 @@ TEST_F(RiscVInstructionTest, earlyBranchMisprediction) {
   Instruction insn = Instruction(arch, *divMetadata.get());
   insn.setInstructionAddress(64);
 
+  // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
@@ -436,6 +459,7 @@ TEST_F(RiscVInstructionTest, earlyBranchMisprediction) {
   std::tuple<bool, uint64_t> tup = {false, insn.getInstructionAddress() + 4};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
+  // Set prediction and ensure expected state changes / outcomes are seen
   pred = {true, 0x4848};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -443,7 +467,8 @@ TEST_F(RiscVInstructionTest, earlyBranchMisprediction) {
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-
+  // Check logic of `checkEarlyBranchMisprediction` which is different for
+  // non-branch instructions
   EXPECT_FALSE(insn.isBranch());
   tup = {true, insn.getInstructionAddress() + 4};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
@@ -455,6 +480,7 @@ TEST_F(RiscVInstructionTest, correctPred_taken) {
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
   insn.setInstructionAddress(400);
 
+  // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
@@ -465,6 +491,7 @@ TEST_F(RiscVInstructionTest, correctPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
+  // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 400 - 86};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -483,6 +510,7 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
   insn.setInstructionAddress(400);
 
+  // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
@@ -493,6 +521,7 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
+  // Test a correct prediction where a branch isn't taken is handled correctly
   // imm operand 0x28 has 4 added implicitly by dissassembler
   pred = {false, 400 + 4};
   insn.setBranchPrediction(pred);
@@ -512,6 +541,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_target) {
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
   insn.setInstructionAddress(400);
 
+  // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
@@ -522,6 +552,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_target) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
+  // Test an incorrect prediction is handled correctly - target is wrong
   // imm operand 0x28 has 4 added implicitly by dissassembler
   pred = {true, 80 + (0x28 + 0x4)};
   insn.setBranchPrediction(pred);
@@ -535,12 +566,13 @@ TEST_F(RiscVInstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 400 - 86);
 }
 
-// Test that an incorrect prediction(wrong taken) is handled correctly
+// Test that an incorrect prediction (wrong taken) is handled correctly
 TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   // insn is `bgeu a5, a4, -86`
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
   insn.setInstructionAddress(400);
 
+  // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
@@ -551,6 +583,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
+  // Test an incorrect prediction is handled correctly - taken is wrong
   // imm operand 0x28 has 4 added implicitly by dissassembler
   pred = {true, 400 - 86};
   insn.setBranchPrediction(pred);

@@ -4,7 +4,6 @@
 #include <string>
 
 #include "simeng/config/SimInfo.hh"
-#include "simeng/version.hh"
 
 namespace simeng {
 class SpecialFileDirGen {

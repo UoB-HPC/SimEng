@@ -188,6 +188,8 @@ void Instruction::decode() {
     return;
   }
 
+  uint16_t sourceRegisterCount = 0;
+
   // Extract implicit writes
   for (size_t i = 0; i < metadata.implicitDestinationCount; i++) {
     destinationRegisters.push_back(csRegToRegister(

@@ -24,6 +24,8 @@ class RiscVArchitectureTest : public testing::Test {
   }
 
  protected:
+  // Setting core model to complex OoO model to more verbosely test the
+  // Architecture class.
   ConfigInit configInit = ConfigInit(config::ISA::RV64, R"YAML({
   Core: {
     Simulation-Mode: outoforder

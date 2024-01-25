@@ -64,6 +64,7 @@ TEST_F(RiscVExceptionHandlerTest, testSyscall) {
   insn->setInstructionAddress(insnAddr);
 
   // Setup register file for `uname` syscall (chosen as minimal functionality)
+  archRegFileSet.set(R0, RegisterValue(1234, 8));
   archRegFileSet.set(R7, RegisterValue(160, 8));
 
   // Create ExceptionHandler
@@ -80,6 +81,25 @@ TEST_F(RiscVExceptionHandlerTest, testSyscall) {
   EXPECT_FALSE(result.fatal);
   EXPECT_EQ(result.instructionAddress, insnAddr + 4);
   EXPECT_EQ(result.stateChange.type, ChangeType::REPLACEMENT);
+  std::vector<Register> modRegs = {R0};
+  EXPECT_EQ(result.stateChange.modifiedRegisters, modRegs);
+  std::vector<RegisterValue> modRegVals = {{0ull, 8}};
+  EXPECT_EQ(result.stateChange.modifiedRegisterValues, modRegVals);
+  std::vector<MemoryAccessTarget> modMemTargets = {{1234, 6},
+                                                   {1234 + 65, 13},
+                                                   {1234 + (65 * 2), 42},
+                                                   {1234 + (65 * 3), 35},
+                                                   {1234 + (65 * 4), 8},
+                                                   {1234 + (65 * 5), 7}};
+  EXPECT_EQ(result.stateChange.memoryAddresses, modMemTargets);
+  std::vector<RegisterValue> modMemVals = {
+      RegisterValue("Linux"),
+      RegisterValue("fedora-riscv"),
+      RegisterValue("5.5.0-0.rc5.git0.1.1.riscv64.fc32.riscv64"),
+      RegisterValue("#1 SMP Mon Jan 6 17:31:22 UTC 2020"),
+      RegisterValue("riscv64"),
+      RegisterValue("(none)")};
+  EXPECT_EQ(result.stateChange.memoryAddressValues, modMemVals);
 }
 
 // Test that `readStringThen()` operates as expected

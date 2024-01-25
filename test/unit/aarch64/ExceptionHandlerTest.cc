@@ -68,6 +68,7 @@ TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
   insn->setInstructionAddress(insnAddr);
 
   // Setup register file for `uname` syscall (chosen as minimal functionality)
+  archRegFileSet.set(R0, RegisterValue(1234, 8));
   archRegFileSet.set(R8, RegisterValue(160, 8));
 
   // Create ExceptionHandler
@@ -84,6 +85,22 @@ TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
   EXPECT_FALSE(result.fatal);
   EXPECT_EQ(result.instructionAddress, insnAddr + 4);
   EXPECT_EQ(result.stateChange.type, ChangeType::REPLACEMENT);
+  std::vector<Register> modRegs = {R0};
+  EXPECT_EQ(result.stateChange.modifiedRegisters, modRegs);
+  std::vector<RegisterValue> modRegVals = {{0ull, 8}};
+  EXPECT_EQ(result.stateChange.modifiedRegisterValues, modRegVals);
+  std::vector<MemoryAccessTarget> modMemTargets = {{1234, 6},
+                                                   {1234 + 65, 25},
+                                                   {1234 + (65 * 2), 7},
+                                                   {1234 + (65 * 3), 39},
+                                                   {1234 + (65 * 4), 8}};
+  EXPECT_EQ(result.stateChange.memoryAddresses, modMemTargets);
+  std::vector<RegisterValue> modMemVals = {
+      RegisterValue("Linux"), RegisterValue("simeng.hpc.cs.bris.ac.uk"),
+      RegisterValue("4.14.0"),
+      RegisterValue("#1 SimEng Mon Apr 29 16:28:37 UTC 2019"),
+      RegisterValue("aarch64")};
+  EXPECT_EQ(result.stateChange.memoryAddressValues, modMemVals);
 }
 
 // Test that `readStringThen()` operates as expected

@@ -55,12 +55,12 @@ TEST_F(FlatMemoryInterfaceTest, OutofBoundsRead) {
 
   auto overflowResult = entries[0];
   EXPECT_EQ(overflowResult.requestId, 1);
-  EXPECT_EQ(overflowResult.data, simeng::RegisterValue());
+  EXPECT_FALSE(overflowResult.data);
   EXPECT_EQ(overflowResult.target, target_OutOfBound1);
 
   overflowResult = entries[1];
   EXPECT_EQ(overflowResult.requestId, 2);
-  EXPECT_EQ(overflowResult.data, simeng::RegisterValue());
+  EXPECT_FALSE(overflowResult.data);
   EXPECT_EQ(overflowResult.target, target_OutOfBound2);
 }
 

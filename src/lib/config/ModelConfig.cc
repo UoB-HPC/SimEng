@@ -891,12 +891,9 @@ void ModelConfig::postValidation() {
   for (const auto& prt : portnames)
     invalid_ << "\t- " << prt << " has no associated reservation station\n";
 
-  // Ensure that given special file directory exists IF:
-  // - it is not the default path
-  // - auto-generation is False
+  // Ensure that given special file directory exists iff auto-generation is
+  // False
   if (!configTree_["CPU-Info"]["Generate-Special-Dir"].as<bool>() &&
-      (configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>() !=
-       defaultSpecialFilePath_) &&
       !std::ifstream(
            configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())
            .good()) {
