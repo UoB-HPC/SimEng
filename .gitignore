@@ -5,6 +5,8 @@
 obj
 build
 xcode-build
+cmake-build-debug
+cmake-build-release
 docs/sphinx/_build
 binaries
 install
