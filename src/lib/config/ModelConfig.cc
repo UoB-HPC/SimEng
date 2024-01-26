@@ -886,6 +886,30 @@ void ModelConfig::postValidation() {
   // Record any unlinked port names
   for (const auto& prt : portnames)
     invalid_ << "\t- " << prt << " has no associated reservation station\n";
+
+  // Ensure the L1-[Data|Instruction]-Memory:Interface-Type restrictions are
+  // enforced
+  std::string simMode =
+      configTree_["Core"]["Simulation-Mode"].as<std::string>();
+  // Currently, only outoforder core types can use non-Flat L1-Data-Memory
+  // interfaces
+  if (simMode != "outoforder") {
+    std::string l1dType =
+        configTree_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
+    if (l1dType != "Flat")
+      invalid_ << "\t- Only a Flat L1-Data-Memory Interface-Type may be used "
+                  "with the "
+               << simMode << " Simulation-Mode. Interface-Type used is "
+               << l1dType << "\n";
+  }
+
+  // Currently, only a Flat L1-Instruction-Memory:Interface-Type is supported
+  std::string l1iType =
+      configTree_["L1-Instruction-Memory"]["Interface-Type"].as<std::string>();
+  if (l1iType != "Flat")
+    invalid_ << "\t- Only a 'Flat' L1-Instruction-Memory Interface-Type is "
+                "supported. Interface-Type used is "
+             << l1iType << "\n";
 }
 
 ryml::Tree ModelConfig::getConfig() { return configTree_; }

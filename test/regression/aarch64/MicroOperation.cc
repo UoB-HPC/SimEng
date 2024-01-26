@@ -1084,7 +1084,9 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_tuple(EMULATION, "{Core: {Micro-Operations: True}}"),
         std::make_tuple(INORDER, "{Core: {Micro-Operations: True}}"),
-        std::make_tuple(OUTOFORDER, "{Core: {Micro-Operations: True}}")),
+        std::make_tuple(OUTOFORDER,
+                        "{Core: {Micro-Operations: True}, L1-Data-Memory: "
+                        "{Interface-Type: Fixed}}")),
     paramToString);
 
 }  // namespace
