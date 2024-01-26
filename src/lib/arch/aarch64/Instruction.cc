@@ -43,8 +43,10 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
-  // destinationRegisterCount used as there may be +n in destinationRegisters
-  // vector for any zero destinations - these can't be written to.
+  // The `destinationRegisterCount` is used here as the span count value because
+  // there may be n number of zero registers in the latter indexes of the
+  // `destinationRegisters` vector. These cannot be written to and hence
+  // shouldn't be included in the returned span.
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
@@ -96,8 +98,10 @@ span<const RegisterValue> Instruction::getData() const {
 bool Instruction::canExecute() const { return (operandsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
-  // destinationRegisterCount used as there may be +n in results vector for any
-  // zero destinations - these can't be written to.
+  // The `destinationRegisterCount` is used here as the span count value because
+  // there may be n number of values attributed to zero registers in the latter
+  // indexes of the `results` vector. Zero registers cannot be written to and
+  // hence shouldn't be included in the returned span.
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 

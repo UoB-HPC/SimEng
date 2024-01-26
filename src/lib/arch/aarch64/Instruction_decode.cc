@@ -324,8 +324,7 @@ void Instruction::decode() {
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
-        // Clear any registered operands
-        destinationRegisterCount = 0;
+        return;
       } else {
         sourceRegisters.push_back(
             {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
@@ -336,8 +335,7 @@ void Instruction::decode() {
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
-        // Clear any registered operands
-        destinationRegisterCount = 0;
+        return;
       } else {
         destinationRegisters.push_back(
             {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
