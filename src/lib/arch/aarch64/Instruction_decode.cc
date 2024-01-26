@@ -640,12 +640,12 @@ void Instruction::decode() {
   // Allocate enough entries in results vector
   results.resize(destinationRegisterCount + 1);
   // Allocate enough entries in the operands vector
-  srcRegVals.resize(sourceRegisterCount + 1);
+  operands.resize(sourceRegisterCount + 1);
 
   // Catch zero register references and pre-complete those operands
   for (uint16_t i = 0; i < sourceRegisterCount; i++) {
     if (sourceRegisters[i] == Instruction::ZERO_REGISTER) {
-      srcRegVals[i] = RegisterValue(0, 8);
+      operands[i] = RegisterValue(0, 8);
       numSrcOpsPending--;
     }
   }

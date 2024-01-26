@@ -198,7 +198,7 @@ class Instruction : public simeng::Instruction {
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> srcRegVals;
+  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
 
   /** Extracted value of current immediate from metadata */
   int64_t imm = 0;
