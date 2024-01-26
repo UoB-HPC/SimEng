@@ -871,10 +871,13 @@ TEST_P(Syscall, ftruncate) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
-                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
-                                           std::make_tuple(INORDER, "{}"),
-                                           std::make_tuple(OUTOFORDER, "{}")),
-                         paramToString);
+INSTANTIATE_TEST_SUITE_P(
+    AArch64, Syscall,
+    ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                      std::make_tuple(INORDER, "{}"),
+                      std::make_tuple(OUTOFORDER,
+                                      "{L1-Data-Memory: "
+                                      "{Interface-Type: Fixed}}")),
+    paramToString);
 
 }  // namespace

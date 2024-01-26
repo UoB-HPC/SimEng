@@ -649,12 +649,17 @@ bool ExceptionHandler::init() {
     auto operands = instruction_.getSourceOperands();
     auto destinationRegs = instruction_.getDestinationRegisters();
 
+    uint8_t rm = 0b110;  // Set to invalid rounding mode
+    uint64_t result = 0;
+
     ProcessStateChange stateChange;
     switch (instruction_.getMetadata().opcode) {
       case Opcode::RISCV_CSRRW:  // CSRRW rd,csr,rs1
         if (metadata.operands[1].reg == RISCV_SYSREG_FRM) {
           // Update CPP rounding mode but not floating point CSR as currently no
           // implementation
+
+          rm = operands[0].get<uint64_t>() & 0b111;  // Take the lower 3 bits
 
           switch (operands[0].get<uint64_t>()) {
             case 0:  // RNE, Round to nearest, ties to even
@@ -688,10 +693,16 @@ bool ExceptionHandler::init() {
               // implementation of Zicsr
               break;
           }
+          // Shift rounding mode to correct position, frm[5:7]
+          result = rm << 5;
         }
 
-        // Dummy logic to allow progression. Set Rd to 0
-        stateChange = {ChangeType::REPLACEMENT, {destinationRegs[0]}, {0ull}};
+        // Only update if registers should be written to
+        if (destinationRegs.size() > 0) {
+          // Dummy logic to allow progression. Set Rd to 0
+          stateChange = {
+              ChangeType::REPLACEMENT, {destinationRegs[0]}, {result}};
+        }
         break;
       default:
         printException(instruction_);
