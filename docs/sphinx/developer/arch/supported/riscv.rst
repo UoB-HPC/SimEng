@@ -60,7 +60,7 @@ The process for adding a new instruction is very similar to that of :ref:`AArch6
 Zero registers
 **************
 
-RISC-V provides a zero register ``RO`` which is always read as 0. This implementation mirrors that behaviour, and will automatically populate the relevant ``srcRegVals`` entry with a 0-value ``RegisterValue``.
+RISC-V provides a zero register ``RO`` which is always read as 0. This implementation mirrors that behaviour, and will automatically populate the relevant ``sourceValues_`` entry with a 0-value ``RegisterValue``.
 
 For instructions that write to the zero registers, the result is discarded. The number of available ``results`` entries is reduced accordingly.
 
@@ -69,7 +69,7 @@ Loads and stores
 
 In addition to an execution behaviour, memory instructions also require a new entry in the address generation behaviour table found in ``src/lib/arch/riscv/Instruction_address.cc``. These entries are responsible for describing the method used to generate the addresses that these instructions will read from or write to.
 
-Address generation is expected to generate one or more instances of ``MemoryAddressTarget``, containing an address and the number of bytes to access. The same variables as described in the :ref:`AArch64 documentation <aarch64-adding-execution-behaviour-operands>` (``srcRegVals``, ``metadata``) are available to use to generate these addresses.
+Address generation is expected to generate one or more instances of ``MemoryAddressTarget``, containing an address and the number of bytes to access. The same variables as described in the :ref:`AArch64 documentation <aarch64-adding-execution-behaviour-operands>` (``sourceValues_``, ``metadata``) are available to use to generate these addresses.
 
 Once the addresses have been generated, they should be supplied in a vector to the ``setMemoryAddresses`` helper function.
 
