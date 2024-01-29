@@ -83,7 +83,7 @@ std::string Linux::getSpecialFile(const std::string filename) {
   return filename;
 }
 
-uint64_t Linux::getStackPointer() const {
+uint64_t Linux::getInitialStackPointer() const {
   assert(processStates_.size() > 0 &&
          "Attempted to retrieve a stack pointer before creating a process");
 
