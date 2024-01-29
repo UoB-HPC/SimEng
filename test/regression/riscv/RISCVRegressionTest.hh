@@ -17,7 +17,7 @@ static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
     },
   L1-Data-Memory:
     {
-      Interface-Type: Fixed,
+      Interface-Type: Flat,
     },
   L1-Instruction-Memory:
     {
