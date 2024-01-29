@@ -605,10 +605,10 @@ TEST_P(InstLoad, ldadd) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 128);
 
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1024), 112);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 992), 64);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 960), 176);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 928), 128);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 1024), 112);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 992), 64);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 960), 176);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 928), 128);
 }
 
 TEST_P(InstLoad, ldar) {

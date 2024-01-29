@@ -301,7 +301,7 @@ TEST_P(InstSme, st1d) {
   )");
   for (int i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(
-        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        getMemoryValue<uint64_t>(process_->getInitialProcessStackPointer() - 4095 + (i * 8)),
         src[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src[i % 2]);
   }
@@ -362,7 +362,7 @@ TEST_P(InstSme, st1d) {
   )");
   for (int i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(
-        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        getMemoryValue<uint64_t>(process_->getInitialProcessStackPointer() - 4095 + (i * 8)),
         src_vert[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src_vert[i % 2]);
   }
@@ -425,7 +425,7 @@ TEST_P(InstSme, st1w) {
   )");
   for (int i = 0; i < (SVL / 32); i++) {
     EXPECT_EQ(
-        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
+        getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 4095 + (i * 4)),
         src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src[i % 4]);
   }
@@ -486,7 +486,7 @@ TEST_P(InstSme, st1w) {
   )");
   for (int i = 0; i < (SVL / 32); i++) {
     EXPECT_EQ(
-        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
+        getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 4095 + (i * 4)),
         src_vert[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src_vert[i % 4]);
   }

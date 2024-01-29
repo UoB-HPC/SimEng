@@ -108,7 +108,9 @@ uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
-uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
+uint64_t LinuxProcess::getInitialProcessStackPointer() const {
+  return stackPointer_;
+}
 
 void LinuxProcess::createStack(char** processImage) {
   // Decrement the stack pointer and populate with initial stack state
