@@ -16,16 +16,16 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     // Atomics
     address = sourceValues_[1].get<uint64_t>();
   } else if (isLoad()) {
-    address = sourceValues_[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+    address = sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
   } else {
-    address = sourceValues_[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+    address = sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;
   }
 
   // Atomics
-  if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
-      metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {  // Atomics
+  if (Opcode::RISCV_AMOADD_D <= metadata_.opcode &&
+      metadata_.opcode <= Opcode::RISCV_AMOXOR_W_RL) {  // Atomics
     // THIS IS DEPENDENT ON CAPSTONE ENCODING AND COULD BREAK IF CHANGED
-    int size = ((metadata.opcode - 182) / 4) % 2;  // 1 = Word, 0 = Double
+    int size = ((metadata_.opcode - 182) / 4) % 2;  // 1 = Word, 0 = Double
     if (size == 1) {
       // Word
       setMemoryAddresses({{address, 4}});
@@ -36,7 +36,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     return getGeneratedAddresses();
   }
 
-  switch (metadata.opcode) {
+  switch (metadata_.opcode) {
     case Opcode::RISCV_SD:
       [[fallthrough]];
     case Opcode::RISCV_LD:

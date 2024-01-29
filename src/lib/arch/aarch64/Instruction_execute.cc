@@ -83,7 +83,7 @@ void Instruction::execute() {
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
         for (size_t dest = 0; dest < getDestinationRegisters().size(); dest++) {
-          results_[dest] = memoryData[dest].zeroExtend(dataSize_, regSize);
+          results_[dest] = memoryData_[dest].zeroExtend(dataSize_, regSize);
         }
         break;
       }
@@ -99,7 +99,7 @@ void Instruction::execute() {
       }
       case MicroOpcode::STR_DATA: {
         setMemoryAddresses({{0, 0}});
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       default:
@@ -590,16 +590,16 @@ void Instruction::execute() {
         // LOAD / STORE
         const uint32_t s = sourceValues_[0].get<uint32_t>();
         const uint32_t t = sourceValues_[1].get<uint32_t>();
-        const uint32_t n = memoryData[0].get<uint32_t>();
-        if (n == s) memoryData[0] = t;
+        const uint32_t n = memoryData_[0].get<uint32_t>();
+        if (n == s) memoryData_[0] = t;
         break;
       }
       case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
         // LOAD / STORE
         const uint64_t s = sourceValues_[0].get<uint64_t>();
         const uint64_t t = sourceValues_[1].get<uint64_t>();
-        const uint64_t n = memoryData[0].get<uint64_t>();
-        if (n == s) memoryData[0] = t;
+        const uint64_t n = memoryData_[0].get<uint64_t>();
+        if (n == s) memoryData_[0] = t;
         break;
       }
       case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
@@ -2390,7 +2390,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = memoryData[index].get<uint64_t>();
+            out[i] = memoryData_[index].get<uint64_t>();
             index++;
           }
         }
@@ -2412,7 +2412,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = memoryData[index].get<uint64_t>();
+            out[i] = memoryData_[index].get<uint64_t>();
             index++;
           }
         }
@@ -2431,7 +2431,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = static_cast<int64_t>(memoryData[index].get<int32_t>());
+            out[i] = static_cast<int64_t>(memoryData_[index].get<int32_t>());
             index++;
           }
         }
@@ -2449,7 +2449,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            out[i] = static_cast<uint64_t>(memoryData[index].get<uint32_t>());
+            out[i] = static_cast<uint64_t>(memoryData_[index].get<uint32_t>());
             index++;
           }
         }
@@ -2467,7 +2467,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            out[i] = memoryData[index].get<uint32_t>();
+            out[i] = memoryData_[index].get<uint32_t>();
             index++;
           }
         }
@@ -2652,7 +2652,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
-        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2688,7 +2688,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
-        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t* row =
@@ -2716,7 +2716,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2752,7 +2752,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         for (int i = 0; i < partition_num; i++) {
           uint32_t* row =
@@ -2772,7 +2772,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2792,7 +2792,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
@@ -2810,7 +2810,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2830,7 +2830,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2849,7 +2849,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 16;
-        const uint16_t* data = memoryData[0].getAsVector<uint16_t>();
+        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
 
         uint16_t out[128] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -2864,11 +2864,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD1Onev16b: {  // ld1 {vt.16b} [xn]
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], <#imm|xm>
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
 
         // if #imm post-index, value can only be 16
         const uint64_t postIndex = (metadata_.operands[2].type == ARM64_OP_REG)
@@ -2893,7 +2893,7 @@ void Instruction::execute() {
         }
 
         if (active) {
-          uint64_t data = memoryData[0].get<uint64_t>();
+          uint64_t data = memoryData_[0].get<uint64_t>();
           for (int i = 0; i < partition_num; i++) {
             uint64_t shifted_active = p[index / 8] & 1ull << ((index % 8) * 8);
             out[i] = shifted_active ? data : 0;
@@ -2909,7 +2909,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
-        const uint64_t* data = memoryData[0].getAsVector<uint64_t>();
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         // Get mini-vector (quadword)
         uint64_t mini[2] = {0};
@@ -2933,7 +2933,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         // Get mini-vector (quadword)
         uint32_t mini[4] = {0};
@@ -2959,7 +2959,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         // Get mini-vector (quadword)
         uint32_t mini[4] = {0};
@@ -2995,7 +2995,7 @@ void Instruction::execute() {
           }
         }
         if (active) {
-          uint32_t data = memoryData[0].get<uint32_t>();
+          uint32_t data = memoryData_[0].get<uint32_t>();
           for (int i = 0; i < partition_num; i++) {
             uint64_t shifted_active = p[i / 16] & 1ull << ((i % 16) * 4);
             out[i] = shifted_active ? data : 0;
@@ -3006,7 +3006,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
         // LOAD
-        uint8_t val = memoryData[0].get<uint8_t>();
+        uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            val, val, val, val, val, val, val, val};
         results_[0] = {out, 256};
@@ -3014,7 +3014,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv16b_POST: {  // ld1r {vt.16b}, [xn], #imm
         // LOAD
-        uint8_t val = memoryData[0].get<uint8_t>();
+        uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            val, val, val, val, val, val, val, val};
         results_[0] = {out, 256};
@@ -3024,14 +3024,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
         // LOAD
-        uint64_t val = memoryData[0].get<uint64_t>();
+        uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv1d_POST: {  // ld1r {vt.1d}, [xn], #imm
         // LOAD
-        uint64_t val = memoryData[0].get<uint64_t>();
+        uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
         results_[0] = {out, 256};
         results_[1] =
@@ -3040,14 +3040,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
         // LOAD
-        uint64_t val = memoryData[0].get<uint64_t>();
+        uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
         // LOAD
-        uint64_t val = memoryData[0].get<uint64_t>();
+        uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
         results_[0] = {out, 256};
         results_[1] =
@@ -3056,14 +3056,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
         // LOAD
-        uint32_t val = memoryData[0].get<uint32_t>();
+        uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv2s_POST: {  // ld1r {vt.2s}, [xn], #imm
         // LOAD
-        uint32_t val = memoryData[0].get<uint32_t>();
+        uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
         results_[0] = {out, 256};
         results_[1] =
@@ -3072,14 +3072,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
         // LOAD
-        uint16_t val = memoryData[0].get<uint16_t>();
+        uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv4h_POST: {  // ld1r {vt.4h}, [xn], #imm
         // LOAD
-        uint16_t val = memoryData[0].get<uint16_t>();
+        uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
         results_[0] = {out, 256};
         results_[1] =
@@ -3088,14 +3088,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
         // LOAD
-        uint32_t val = memoryData[0].get<uint32_t>();
+        uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv4s_POST: {  // ld1r {vt.4s}, [xn], #imm
         // LOAD
-        uint32_t val = memoryData[0].get<uint32_t>();
+        uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
         results_[0] = {out, 256};
         results_[1] =
@@ -3104,7 +3104,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
         // LOAD
-        uint8_t val = memoryData[0].get<uint8_t>();
+        uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            0,   0,   0,   0,   0,   0,   0,   0};
         results_[0] = {out, 256};
@@ -3112,7 +3112,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv8b_POST: {  // ld1r {vt.8b}, [xn], #imm
         // LOAD
-        uint8_t val = memoryData[0].get<uint8_t>();
+        uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            0,   0,   0,   0,   0,   0,   0,   0};
         results_[0] = {out, 256};
@@ -3122,14 +3122,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
         // LOAD
-        uint16_t val = memoryData[0].get<uint16_t>();
+        uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
         results_[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv8h_POST: {  // ld1r {vt.8h}, [xn], #imm
         // LOAD
-        uint16_t val = memoryData[0].get<uint16_t>();
+        uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
         results_[0] = {out, 256};
         results_[1] =
@@ -3145,10 +3145,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Fourv4s: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
                                           // vt4.4s}, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results_[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
-        results_[2] = memoryData[2].zeroExtend(memoryData[2].size(), 256);
-        results_[3] = memoryData[3].zeroExtend(memoryData[3].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
+        results_[2] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
+        results_[3] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1Fourv16b_POST:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
@@ -3160,10 +3160,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Fourv4s_POST: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
                                                // vt4.4s}, [xn], <#imm|xm>
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results_[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
-        results_[2] = memoryData[2].zeroExtend(memoryData[2].size(), 256);
-        results_[3] = memoryData[3].zeroExtend(memoryData[3].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
+        results_[2] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
+        results_[3] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         // if #imm post-index, value can only be 64
         const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
                                        ? sourceValues_[1].get<uint64_t>()
@@ -3177,8 +3177,8 @@ void Instruction::execute() {
         [[fallthrough]];
       case Opcode::AArch64_LD1Twov4s: {  // ld1 {vt1.4s, vt2.4s}, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results_[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1Twov16b_POST:  // ld1 {vt1.16b, vt2.16b}, [xn],
@@ -3190,8 +3190,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Twov4s_POST: {  // ld1 {vt1.4s, vt2.4s}, [xn],
                                               // <#imm|xm>
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results_[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
@@ -3205,7 +3205,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3225,7 +3225,7 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        const uint32_t* data = memoryData[0].getAsVector<uint32_t>();
+        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3245,7 +3245,7 @@ void Instruction::execute() {
         const uint32_t* vt = sourceValues_[0].getAsVector<uint32_t>();
         uint32_t out[4];
         for (int i = 0; i < 4; i++) {
-          out[i] = (i == index) ? memoryData[0].get<uint32_t>() : vt[i];
+          out[i] = (i == index) ? memoryData_[0].get<uint32_t>() : vt[i];
         }
         results_[0] = {out, 256};
         break;
@@ -3256,7 +3256,7 @@ void Instruction::execute() {
         const uint64_t* vt = sourceValues_[0].getAsVector<uint64_t>();
         uint64_t out[2];
         for (int i = 0; i < 2; i++) {
-          out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+          out[i] = (i == index) ? memoryData_[0].get<uint64_t>() : vt[i];
         }
         results_[0] = {out, 256};
         break;
@@ -3267,7 +3267,7 @@ void Instruction::execute() {
         const uint64_t* vt = sourceValues_[0].getAsVector<uint64_t>();
         uint64_t out[2];
         for (int i = 0; i < 2; i++) {
-          out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+          out[i] = (i == index) ? memoryData_[0].get<uint64_t>() : vt[i];
         }
         results_[0] = {out, 256};
         results_[1] =
@@ -3282,8 +3282,8 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData[0].getAsVector<uint64_t>(),
-            memoryData[1].getAsVector<uint64_t>()};
+            memoryData_[0].getAsVector<uint64_t>(),
+            memoryData_[1].getAsVector<uint64_t>()};
         uint64_t out[2][32] = {{0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -3302,8 +3302,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s} [xn]
-        const float* region1 = memoryData[0].getAsVector<float>();
-        const float* region2 = memoryData[1].getAsVector<float>();
+        const float* region1 = memoryData_[0].getAsVector<float>();
+        const float* region2 = memoryData_[1].getAsVector<float>();
 
         // LD2 multistruct uses de-interleaving
         float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
@@ -3315,8 +3315,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
                                               // #imm
         // LOAD
-        const float* region1 = memoryData[0].getAsVector<float>();
-        const float* region2 = memoryData[1].getAsVector<float>();
+        const float* region1 = memoryData_[0].getAsVector<float>();
+        const float* region2 = memoryData_[1].getAsVector<float>();
         float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
         float t2[4] = {region1[1], region1[3], region2[1], region2[3]};
         results_[0] = {t1, 256};
@@ -3334,9 +3334,9 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData[0].getAsVector<uint64_t>(),
-            memoryData[1].getAsVector<uint64_t>(),
-            memoryData[2].getAsVector<uint64_t>()};
+            memoryData_[0].getAsVector<uint64_t>(),
+            memoryData_[1].getAsVector<uint64_t>(),
+            memoryData_[2].getAsVector<uint64_t>()};
         uint64_t out[3][32] = {{0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -3360,10 +3360,10 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData[0].getAsVector<uint64_t>(),
-            memoryData[1].getAsVector<uint64_t>(),
-            memoryData[2].getAsVector<uint64_t>(),
-            memoryData[3].getAsVector<uint64_t>()};
+            memoryData_[0].getAsVector<uint64_t>(),
+            memoryData_[1].getAsVector<uint64_t>(),
+            memoryData_[2].getAsVector<uint64_t>(),
+            memoryData_[3].getAsVector<uint64_t>()};
         uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -3386,41 +3386,41 @@ void Instruction::execute() {
         [[fallthrough]];
       case Opcode::AArch64_LDADDW: {  // ldadd ws, wt, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
-        memoryData[0] = RegisterValue(
-            memoryData[0].get<uint32_t>() + sourceValues_[0].get<uint32_t>(),
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
+        memoryData_[0] = RegisterValue(
+            memoryData_[0].get<uint32_t>() + sourceValues_[0].get<uint32_t>(),
             4);
         break;
       }
       case Opcode::AArch64_LDARB: {  // ldarb wt, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         break;
       }
       case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDARX: {  // ldar xt, [xn]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDAXRX: {  // ldaxr xd, [xn]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 256);
-        results_[1] = memoryData[1].zeroExtend(4, 256);
+        results_[0] = memoryData_[0].zeroExtend(4, 256);
+        results_[1] = memoryData_[1].zeroExtend(4, 256);
         break;
       }
       case Opcode::AArch64_LDPDi:    // ldp dt1, dt2, [xn, #imm]
@@ -3430,8 +3430,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
-        results_[1] = memoryData[1].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
+        results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         break;
       }
       case Opcode::AArch64_LDPDpost:    // ldp dt1, dt2, [xn], #imm
@@ -3441,8 +3441,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
-        results_[1] = memoryData[1].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
+        results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         results_[2] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[3].imm;
         break;
@@ -3454,28 +3454,28 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm]!
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
-        results_[1] = memoryData[1].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
+        results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         results_[2] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].mem.disp;
         break;
       }
       case Opcode::AArch64_LDPSWi: {  // ldpsw xt1, xt2, [xn {, #imm}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
-        results_[1] = memoryData[1].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
+        results_[1] = memoryData_[1].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
@@ -3483,18 +3483,18 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRBBroW: {  // ldrb wt,
                                         //  [xn, wm{, extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         break;
       }
       case Opcode::AArch64_LDRBBroX: {  // ldrb wt,
                                         //  [xn, xm{, extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         break;
       }
       case Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         break;
       }
       case Opcode::AArch64_LDRBui:    // ldr bt, [xn, #imm]
@@ -3506,7 +3506,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         break;
       }
       case Opcode::AArch64_LDRBpost:    // ldr bt, [xn], #imm
@@ -3518,7 +3518,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         break;
@@ -3532,80 +3532,81 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
         uint16_t regSize =
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
-        results_[0] = memoryData[0].zeroExtend(dataSize_, regSize);
+        results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
       }
       case Opcode::AArch64_LDRDroW: {  // ldr dt, [xn, wm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryAddresses_[0].size, 256);
         break;
       }
       case Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
+        results_[0] = memoryData_[0].zeroExtend(memoryAddresses_[0].size, 256);
         break;
       }
       case Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LDRHHpre: {  // ldrh wt, [xn, #imm]!
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
       }
       case Opcode::AArch64_LDRHHroW: {  // ldrh wt, [xn, wm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         break;
       }
       case Opcode::AArch64_LDRHHroX: {  // ldrh wt, [xn, xm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         break;
       }
       case Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         break;
       }
       case Opcode::AArch64_LDRQroX: {  // ldr qt, [xn, xm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(16, 256);
+        results_[0] = memoryData_[0].zeroExtend(16, 256);
         break;
       }
       case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
                                          // {#amount}}]
         // LOAD
         results_[0] =
-            RegisterValue(static_cast<int32_t>(memoryData[0].get<int8_t>()), 4)
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
                 .zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRSBWui: {  // ldrsb wt, [xn, #imm]
         // LOAD
         results_[0] =
-            RegisterValue(static_cast<int32_t>(memoryData[0].get<int8_t>()))
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()))
                 .zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRSBXui: {  // ldrsb xt, [xn, #imm]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int8_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int8_t>());
         break;
       }
       case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend
                                          // {#amount}}]
         // LOAD
         results_[0] =
-            RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int16_t>()),
+                          4)
                 .zeroExtend(4, 8);
         break;
       }
@@ -3613,42 +3614,44 @@ void Instruction::execute() {
                                          // {#amount}}]
         // LOAD
         results_[0] =
-            RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int16_t>()),
+                          4)
                 .zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRSHWui: {  // ldrsh wt, [xn, #imm]
         // LOAD
         results_[0] =
-            RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int16_t>()),
+                          4)
                 .zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend
                                          // {#amount}}]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         break;
       }
       case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend
                                          // {#amount}}]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         break;
       }
       case Opcode::AArch64_LDRSHXui: {  // ldrsh xt, [xn, #imm]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         break;
       }
       case Opcode::AArch64_LDRSWl: {  // ldrsw xt, #imm
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRSWpost: {  // ldrsw xt, [xn], #simm
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         break;
@@ -3656,54 +3659,54 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
                                         // {#amount}}]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         break;
       }
       case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         break;
       }
       case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 256);
+        results_[0] = memoryData_[0].zeroExtend(4, 256);
         break;
       }
       case Opcode::AArch64_LDRSroX: {  // ldr st, [xn, xm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 256);
+        results_[0] = memoryData_[0].zeroExtend(4, 256);
         break;
       }
       case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm, {extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend {#amount}}]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDR_PXI: {  // ldr pt, [xn{, #imm, mul vl}]
         // LOAD
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
-        const uint8_t* memData = memoryData[0].getAsVector<uint8_t>();
+        const uint8_t* memData = memoryData_[0].getAsVector<uint8_t>();
 
         uint64_t out[4] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3719,7 +3722,7 @@ void Instruction::execute() {
         // LOAD
         const uint16_t partition_num = VL_bits / 8;
         uint8_t out[256] = {0};
-        const uint8_t* data = memoryData[0].getAsVector<uint8_t>();
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
           out[i] = data[i];
@@ -3735,52 +3738,52 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(1, 8);
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
         break;
       }
       case Opcode::AArch64_LDURDi: {  // ldur dt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(8, 256);
+        results_[0] = memoryData_[0].zeroExtend(8, 256);
         break;
       }
       case Opcode::AArch64_LDURHHi: {  // ldurh wt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(2, 8);
+        results_[0] = memoryData_[0].zeroExtend(2, 8);
         break;
       }
       case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(16, 256);
+        results_[0] = memoryData_[0].zeroExtend(16, 256);
         break;
       }
       case Opcode::AArch64_LDURSWi: {  // ldursw xt, [xn, #imm]
         // LOAD
-        results_[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         break;
       }
       case Opcode::AArch64_LDURSi: {  // ldur sd, [<xn|sp>{, #imm}]
         // LOAD
-        results_[0] = {memoryData[0].get<float>(), 256};
+        results_[0] = {memoryData_[0].get<float>(), 256};
         break;
       }
       case Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDURXi: {  // ldur xt, [xn, #imm]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LDXRW: {  // ldxr wt, [xn]
         // LOAD
-        results_[0] = memoryData[0].zeroExtend(4, 8);
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
         break;
       }
       case Opcode::AArch64_LDXRX: {  // ldxr xt, [xn]
         // LOAD
-        results_[0] = memoryData[0];
+        results_[0] = memoryData_[0];
         break;
       }
       case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
@@ -4476,7 +4479,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = static_cast<uint8_t>(d[i]);
+            memoryData_[index] = static_cast<uint8_t>(d[i]);
             index++;
           }
         }
@@ -4492,7 +4495,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = d[i];
+            memoryData_[index] = d[i];
             index++;
           }
         }
@@ -4508,7 +4511,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = t[i];
+            memoryData_[index] = t[i];
             index++;
           }
         }
@@ -4526,7 +4529,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = d[i];
+            memoryData_[index] = d[i];
             index++;
           }
         }
@@ -4548,7 +4551,7 @@ void Instruction::execute() {
 
         const uint64_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint64_t>();
-        memoryData =
+        memoryData_ =
             sveHelp::sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
 
         break;
@@ -4577,13 +4580,14 @@ void Instruction::execute() {
             mdata[md_size] = sourceValues_[x].getAsVector<uint64_t>()[sliceNum];
             md_size++;
           } else if (md_size) {
-            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+            memoryData_[index] =
+                RegisterValue((char*)mdata.data(), md_size * 8);
             md_size = 0;
           }
         }
 
         if (md_size) {
-          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+          memoryData_[index] = RegisterValue((char*)mdata.data(), md_size * 8);
         }
         break;
       }
@@ -4603,7 +4607,7 @@ void Instruction::execute() {
 
         const uint32_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint32_t>();
-        memoryData =
+        memoryData_ =
             sveHelp::sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
 
         break;
@@ -4632,13 +4636,14 @@ void Instruction::execute() {
             mdata[md_size] = sourceValues_[x].getAsVector<uint32_t>()[sliceNum];
             md_size++;
           } else if (md_size) {
-            memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
+            memoryData_[index] =
+                RegisterValue((char*)mdata.data(), md_size * 4);
             md_size = 0;
           }
         }
 
         if (md_size) {
-          memoryData[index] = RegisterValue((char*)mdata.data(), md_size * 4);
+          memoryData_[index] = RegisterValue((char*)mdata.data(), md_size * 4);
         }
 
         break;
@@ -4653,7 +4658,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            memoryData[index] = t[i];
+            memoryData_[index] = t[i];
             index++;
           }
         }
@@ -4669,7 +4674,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            memoryData[index] = t[i];
+            memoryData_[index] = t[i];
             index++;
           }
         }
@@ -4680,7 +4685,7 @@ void Instruction::execute() {
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
@@ -4688,7 +4693,7 @@ void Instruction::execute() {
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
@@ -4696,7 +4701,7 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
@@ -4704,14 +4709,14 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1Fourv16b: {  // st1 {vt.16b, vt2.16b, vt3.16b,
                                            // vt4.16b}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
                             16 * sizeof(uint8_t));
         }
@@ -4722,7 +4727,7 @@ void Instruction::execute() {
                                                 // <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
                             16 * sizeof(uint8_t));
         }
@@ -4737,7 +4742,7 @@ void Instruction::execute() {
                                           // vt4.2d}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint64_t>(),
                             2 * sizeof(uint64_t));
         }
@@ -4747,7 +4752,7 @@ void Instruction::execute() {
                                                // vt4.2d}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint64_t>(),
                             2 * sizeof(uint64_t));
         }
@@ -4762,7 +4767,7 @@ void Instruction::execute() {
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
                             2 * sizeof(uint32_t));
         }
@@ -4777,7 +4782,7 @@ void Instruction::execute() {
                                           // vt4.4s}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
                             4 * sizeof(uint32_t));
         }
@@ -4787,7 +4792,7 @@ void Instruction::execute() {
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData[i] =
+          memoryData_[i] =
               RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
                             4 * sizeof(uint32_t));
         }
@@ -4802,8 +4807,8 @@ void Instruction::execute() {
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
-        memoryData[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
         break;
       }
       case Opcode::AArch64_ST1Twov16b_POST: {  // st1 {vt.16b, vt2.16b},
@@ -4811,8 +4816,8 @@ void Instruction::execute() {
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
-        memoryData[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
@@ -4825,8 +4830,8 @@ void Instruction::execute() {
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
-        memoryData[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
         break;
       }
       case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
@@ -4834,8 +4839,8 @@ void Instruction::execute() {
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
-        memoryData[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
@@ -4848,8 +4853,8 @@ void Instruction::execute() {
         // STORE
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
-        memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
         break;
       }
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
@@ -4857,8 +4862,8 @@ void Instruction::execute() {
         // STORE
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
-        memoryData[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
@@ -4872,7 +4877,7 @@ void Instruction::execute() {
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
@@ -4880,7 +4885,7 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData =
+        memoryData_ =
             sveHelp::sve_merge_store_data<uint64_t, uint32_t>(d, p, VL_bits);
         break;
       }
@@ -4889,20 +4894,20 @@ void Instruction::execute() {
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
+        memoryData_ = sveHelp::sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
         // STORE
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], xm
                                            // st1 {vt.h}[index], [xn], #2
         // STORE
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         uint64_t offset = 2;
         if (metadata_.operandCount == 3) {
           offset = sourceValues_[2].get<uint64_t>();
@@ -4913,14 +4918,14 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
         // STORE
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], xm
                                            // st1 {vt.s}[index], [xn], #4
         // STORE
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         uint64_t offset = 4;
         if (metadata_.operandCount == 3) {
           offset = sourceValues_[2].get<uint64_t>();
@@ -4931,14 +4936,14 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], xm
                                            // st1 {vt.d}[index], [xn], #8
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         uint64_t offset = 8;
         if (metadata_.operandCount == 3) {
           offset = sourceValues_[2].get<uint64_t>();
@@ -4949,14 +4954,14 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], xm
                                           // st1 {vt.b}[index], [xn], #1
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData[0] = t[metadata_.operands[0].vector_index];
+        memoryData_[0] = t[metadata_.operands[0].vector_index];
         uint64_t offset = 1;
         if (metadata_.operandCount == 3) {
           offset = sourceValues_[2].get<uint64_t>();
@@ -4989,15 +4994,15 @@ void Instruction::execute() {
             memData.push_back(d2[i]);
           } else if (inActiveBlock) {
             inActiveBlock = false;
-            memoryData[index] = RegisterValue(
+            memoryData_[index] = RegisterValue(
                 (char*)memData.data(), sizeof(uint64_t) * memData.size());
             index++;
           }
         }
         // Add final block if needed
         if (inActiveBlock)
-          memoryData[index] = RegisterValue((char*)memData.data(),
-                                            sizeof(uint64_t) * memData.size());
+          memoryData_[index] = RegisterValue((char*)memData.data(),
+                                             sizeof(uint64_t) * memData.size());
 
         break;
       }
@@ -5008,8 +5013,8 @@ void Instruction::execute() {
         const float* t2 = sourceValues_[1].getAsVector<float>();
         std::vector<float> m1 = {t1[0], t2[0], t1[1], t2[1]};
         std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
-        memoryData[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
-        memoryData[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
+        memoryData_[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
+        memoryData_[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
 
         uint64_t offset = 32;
         if (metadata_.operandCount == 4) {
@@ -5020,19 +5025,19 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         // TODO: Implement atomic memory access
         results_[0] = static_cast<uint64_t>(0);
         break;
@@ -5042,8 +5047,8 @@ void Instruction::execute() {
       case Opcode::AArch64_STPSi:    // stp st1, st2, [xn, #imm]
       case Opcode::AArch64_STPWi:    // stp wt1, wt2, [xn, #imm]
       case Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
-        memoryData[0] = sourceValues_[0];
-        memoryData[1] = sourceValues_[1];
+        memoryData_[0] = sourceValues_[0];
+        memoryData_[1] = sourceValues_[1];
         break;
       }
       case Opcode::AArch64_STPDpost:    // stp dt1, dt2, [xn], #imm
@@ -5051,8 +5056,8 @@ void Instruction::execute() {
       case Opcode::AArch64_STPSpost:    // stp st1, st2, [xn], #imm
       case Opcode::AArch64_STPWpost:    // stp wt1, wt2, [xn], #imm
       case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
-        memoryData[0] = sourceValues_[0];
-        memoryData[1] = sourceValues_[1];
+        memoryData_[0] = sourceValues_[0];
+        memoryData_[1] = sourceValues_[1];
         results_[0] =
             sourceValues_[2].get<uint64_t>() + metadata_.operands[3].imm;
         break;
@@ -5062,22 +5067,22 @@ void Instruction::execute() {
       case Opcode::AArch64_STPSpre:    // stp st1, st2, [xn, #imm]!
       case Opcode::AArch64_STPWpre:    // stp wt1, wt2, [xn, #imm]!
       case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
-        memoryData[0] = sourceValues_[0];
-        memoryData[1] = sourceValues_[1];
+        memoryData_[0] = sourceValues_[0];
+        memoryData_[1] = sourceValues_[1];
         results_[0] =
             sourceValues_[2].get<uint64_t>() + metadata_.operands[2].mem.disp;
         break;
       }
       case Opcode::AArch64_STRBBpost: {  // strb wd, [xn], #imm
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[2].imm;
         break;
       }
       case Opcode::AArch64_STRBBpre: {  // strb wd, [xn, #imm]!
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
@@ -5085,18 +5090,18 @@ void Instruction::execute() {
       case Opcode::AArch64_STRBBroW: {  // strb wd,
                                         //  [xn, wm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRBBroX: {  // strb wd,
                                         //  [xn, xm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRBBui: {  // strb wd, [xn, #imm]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRBui:    // str bt, [xn, #imm]
@@ -5106,7 +5111,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRSui:    // str st, [xn, #imm]
       case Opcode::AArch64_STRWui:    // str wt, [xn, #imm]
       case Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRBpost:    // str bt, [xn], #imm
@@ -5116,7 +5121,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRSpost:    // str st, [xn], #imm
       case Opcode::AArch64_STRWpost:    // str wt, [xn], #imm
       case Opcode::AArch64_STRXpost: {  // str xt, [xn], #imm
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[2].imm;
         break;
@@ -5128,31 +5133,31 @@ void Instruction::execute() {
       case Opcode::AArch64_STRSpre:    // str st, [xn, #imm]!
       case Opcode::AArch64_STRWpre:    // str wt, [xn, #imm]!
       case Opcode::AArch64_STRXpre: {  // str xt, [xn, #imm]!
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
       }
       case Opcode::AArch64_STRDroW: {  // str dt, [xn, wm{, #extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRDroX: {  // str dt, [xn, xm{, #extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRHHpost: {  // strh wt, [xn], #imm
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[2].imm;
         break;
       }
       case Opcode::AArch64_STRHHpre: {  // strh wd, [xn, #imm]!
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         results_[0] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;
         break;
@@ -5160,53 +5165,53 @@ void Instruction::execute() {
       case Opcode::AArch64_STRHHroW: {  // strh wd,
                                         //  [xn, wm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRHHroX: {  // strh wd,
                                         //  [xn, xm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRSroW: {  // str st, [xn, wm{, #extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRSroX: {  // str st, [xn, xm{, #extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRWroW: {  // str wd, [xn, wm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRXroW: {  // str xd, [xn, wm{, extend {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STR_PXI: {  // str pt, [xn{, #imm, mul vl}]
@@ -5214,25 +5219,25 @@ void Instruction::execute() {
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
         const uint8_t* p = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData[0] = RegisterValue((char*)p, partition_num);
+        memoryData_[0] = RegisterValue((char*)p, partition_num);
         break;
       }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;
         const uint8_t* z = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData[0] = RegisterValue((char*)z, partition_num);
+        memoryData_[0] = RegisterValue((char*)z, partition_num);
         break;
       }
       case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STURDi:     // stur dt, [xn, #imm]
       case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STURQi:    // stur qt, [xn, #imm]
@@ -5240,19 +5245,19 @@ void Instruction::execute() {
       case Opcode::AArch64_STURWi:    // stur wt, [xn, #imm]
       case Opcode::AArch64_STURXi: {  // stur xt, [xn, #imm]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         // TODO: Implement atomic memory access
         results_[0] = static_cast<uint64_t>(0);
         break;
       }
       case Opcode::AArch64_STXRX: {  // stxr ws, xt, [xn]
         // STORE
-        memoryData[0] = sourceValues_[0];
+        memoryData_[0] = sourceValues_[0];
         // TODO: Implement atomic memory access
         results_[0] = static_cast<uint64_t>(0);
         break;

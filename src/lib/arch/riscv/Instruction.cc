@@ -15,7 +15,7 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
     : architecture_(architecture),
-      metadata(metadata),
+      metadata_(metadata),
       exception_(metadata.getMetadataException()) {
   exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   decode();
@@ -24,7 +24,7 @@ Instruction::Instruction(const Architecture& architecture,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture), metadata_(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
 }
@@ -32,7 +32,7 @@ Instruction::Instruction(const Architecture& architecture,
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
+  return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
@@ -41,8 +41,8 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
-  return {const_cast<Register*>(destinationRegisters.data()),
-          destinationRegisterCount};
+  return {const_cast<Register*>(destinationRegisters_.data()),
+          destinationRegisterCount_};
 }
 
 bool Instruction::isOperandReady(int index) const {
@@ -50,10 +50,10 @@ bool Instruction::isOperandReady(int index) const {
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
-  sourceRegisters[i] = renamed;
+  sourceRegisters_[i] = renamed;
 }
 void Instruction::renameDestination(uint16_t i, Register renamed) {
-  destinationRegisters[i] = renamed;
+  destinationRegisters_[i] = renamed;
 }
 
 void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
@@ -63,21 +63,21 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
          "Attempted to provide an uninitialised RegisterValue");
 
   sourceValues_[i] = value;
-  sourceOperandsPending--;
+  sourceOperandsPending_--;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
-  for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].address == address && !memoryData[i]) {
+  for (size_t i = 0; i < memoryAddresses_.size(); i++) {
+    if (memoryAddresses_[i].address == address && !memoryData_[i]) {
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
         // memory faults (e.g. bus error, page fault, seg fault)
         exception_ = InstructionException::DataAbort;
         exceptionEncountered_ = true;
-        memoryData[i] = RegisterValue(0, memoryAddresses[i].size);
+        memoryData_[i] = RegisterValue(0, memoryAddresses_[i].size);
       } else {
-        memoryData[i] = data;
+        memoryData_[i] = data;
       }
       dataPending_--;
       return;
@@ -86,13 +86,14 @@ void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
 }
 
 span<const RegisterValue> Instruction::getData() const {
-  return {memoryData.data(), memoryData.size()};
+  return {memoryData_.data(), memoryData_.size()};
 }
 
-bool Instruction::canExecute() const { return (sourceOperandsPending == 0); }
+bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
+  return {const_cast<RegisterValue*>(results_.data()),
+          destinationRegisterCount_};
 }
 
 bool Instruction::isStoreAddress() const { return isStore_; }
@@ -104,13 +105,13 @@ bool Instruction::isFloat() const { return isFloat_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses = addresses;
+  memoryData_ = std::vector<RegisterValue>(addresses.size());
+  memoryAddresses_ = addresses;
   dataPending_ = addresses.size();
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
+  return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
@@ -168,7 +169,9 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   return supportedPorts_;
 }
 
-const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+const InstructionMetadata& Instruction::getMetadata() const {
+  return metadata_;
+}
 
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;

@@ -71,17 +71,17 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
-  for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].address == address && !memoryData[i]) {
+  for (size_t i = 0; i < memoryAddresses_.size(); i++) {
+    if (memoryAddresses_[i].address == address && !memoryData_[i]) {
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
         // memory faults (e.g. bus error, page fault, seg fault)
         exception_ = InstructionException::DataAbort;
         exceptionEncountered_ = true;
-        memoryData[i] = RegisterValue(0, memoryAddresses[i].size);
+        memoryData_[i] = RegisterValue(0, memoryAddresses_[i].size);
       } else {
-        memoryData[i] = data;
+        memoryData_[i] = data;
       }
       dataPending_--;
       return;
@@ -90,7 +90,7 @@ void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
 }
 
 span<const RegisterValue> Instruction::getData() const {
-  return {memoryData.data(), memoryData.size()};
+  return {memoryData_.data(), memoryData_.size()};
 }
 
 bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
@@ -107,26 +107,26 @@ bool Instruction::isBranch() const { return isBranch_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
-  memoryData.resize(addresses.size());
-  memoryAddresses = addresses;
+  memoryData_.resize(addresses.size());
+  memoryAddresses_ = addresses;
   dataPending_ = addresses.size();
 }
 
 void Instruction::setMemoryAddresses(
     std::vector<MemoryAccessTarget>&& addresses) {
   dataPending_ = addresses.size();
-  memoryData.resize(addresses.size());
-  memoryAddresses = std::move(addresses);
+  memoryData_.resize(addresses.size());
+  memoryAddresses_ = std::move(addresses);
 }
 
 void Instruction::setMemoryAddresses(MemoryAccessTarget address) {
   dataPending_ = 1;
-  memoryData.resize(1);
-  memoryAddresses.push_back(address);
+  memoryData_.resize(1);
+  memoryAddresses_.push_back(address);
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
-  return {memoryAddresses.data(), memoryAddresses.size()};
+  return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
