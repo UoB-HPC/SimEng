@@ -390,7 +390,7 @@ class Instruction : public simeng::Instruction {
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::vector<RegisterValue> operands;
+  std::vector<RegisterValue> sourceValues_;
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */

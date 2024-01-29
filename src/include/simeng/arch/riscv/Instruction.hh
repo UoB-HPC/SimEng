@@ -199,7 +199,7 @@ class Instruction : public simeng::Instruction {
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
+  std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceValues_;
 
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
