@@ -78,8 +78,7 @@ TEST_P(InstStore, sw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 64);
   EXPECT_EQ(getMemoryValue<uint64_t>(64), 0xAAADBE000000AA78);
   EXPECT_EQ(getMemoryValue<uint64_t>(69), 0x0087015400AAADBE);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()),
-            0x5400AA00);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()), 0x5400AA00);
 }
 
 TEST_P(InstStore, sd) {

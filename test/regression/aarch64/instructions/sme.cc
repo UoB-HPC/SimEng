@@ -300,9 +300,9 @@ TEST_P(InstSme, st1d) {
     st1d {za1h.d[w12, 1]}, p0, [x4]
   )");
   for (int i = 0; i < (SVL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() -
-                                       4095 + (i * 8)),
-              src[i % 2]);
+    EXPECT_EQ(
+        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        src[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src[i % 2]);
   }
 
@@ -361,9 +361,9 @@ TEST_P(InstSme, st1d) {
     st1d {za1v.d[w12, 1]}, p0, [x4]
   )");
   for (int i = 0; i < (SVL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() -
-                                       4095 + (i * 8)),
-              src_vert[i % 2]);
+    EXPECT_EQ(
+        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
+        src_vert[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + (i * 8)), src_vert[i % 2]);
   }
 
@@ -424,9 +424,9 @@ TEST_P(InstSme, st1w) {
     st1w {za1h.s[w12, 1]}, p0, [x4]
   )");
   for (int i = 0; i < (SVL / 32); i++) {
-    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() -
-                                       4095 + (i * 4)),
-              src[i % 4]);
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
+        src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src[i % 4]);
   }
 
@@ -485,9 +485,9 @@ TEST_P(InstSme, st1w) {
     st1w {za1v.s[w12, 1]}, p0, [x4]
   )");
   for (int i = 0; i < (SVL / 32); i++) {
-    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() -
-                                       4095 + (i * 4)),
-              src_vert[i % 4]);
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
+        src_vert[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src_vert[i % 4]);
   }
 

@@ -783,8 +783,8 @@ void Instruction::execute() {
       //    case Opcode::RISCV_MULH: {//MULH rd,rs1,rs2
       //      return executionNYI();
       //
-      //      const int64_t rs1 = sourceRegValues[0].get<int64_t>();
-      //      const int64_t rs2 = sourceRegValues[1].get<int64_t>();
+      //      const int64_t rs1 = operands[0].get<int64_t>();
+      //      const int64_t rs2 = operands[1].get<int64_t>();
       //      results[0] = RegisterValue(mulhiss(rs1, rs2);
       //      break;
       //    }
@@ -797,8 +797,8 @@ void Instruction::execute() {
       //    case Opcode::RISCV_MULHSU: {//MULHSU rd,rs1,rs2
       //      return executionNYI();
       //
-      //      const int64_t rs1 = sourceRegValues[0].get<int64_t>();
-      //      const uint64_t rs2 = sourceRegValues[1].get<uint64_t>();
+      //      const int64_t rs1 = operands[0].get<int64_t>();
+      //      const uint64_t rs2 = operands[1].get<uint64_t>();
       //      results[0] = RegisterValue(mulhisu(rs1, rs2);
       //      break;
       //    }
