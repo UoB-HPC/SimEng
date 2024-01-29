@@ -210,7 +210,7 @@ void Instruction::decode() {
       operandsPending++;
     }
 
-    // First operands never immediate
+    // First operand is never immediate
     else if (i > 0 && op.type == RISCV_OP_IMM) {
       imm = op.imm;
     }

@@ -15,8 +15,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
       operandCount(insn.detail->riscv.op_count) {
-  //  std::memcpy(encoding, insn.bytes, sizeof(encoding));
-
+  // Populate 'encoding' field with correct bytes dependent on whether this is a
+  // compressed instruction
   setLength(insn.size);
   std::memset(encoding, 0, 4);
   std::memcpy(encoding, insn.bytes, insn.size);
