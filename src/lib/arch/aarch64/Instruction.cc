@@ -15,7 +15,7 @@ Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          MicroOpInfo microOpInfo)
     : architecture_(architecture),
-      metadata(metadata),
+      metadata_(metadata),
       exception_(metadata.getMetadataException()) {
   exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
   isMicroOp_ = microOpInfo.isMicroOp;
@@ -29,7 +29,7 @@ Instruction::Instruction(const Architecture& architecture,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture), metadata_(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
 }
@@ -37,7 +37,7 @@ Instruction::Instruction(const Architecture& architecture,
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
+  return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
@@ -46,18 +46,18 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
-  return {const_cast<Register*>(destinationRegisters.data()),
-          destinationRegisterCount};
+  return {const_cast<Register*>(destinationRegisters_.data()),
+          destinationRegisterCount_};
 }
 bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(sourceValues_[index]);
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
-  sourceRegisters[i] = renamed;
+  sourceRegisters_[i] = renamed;
 }
 void Instruction::renameDestination(uint16_t i, Register renamed) {
-  destinationRegisters[i] = renamed;
+  destinationRegisters_[i] = renamed;
 }
 
 void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
@@ -67,7 +67,7 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
          "Attempted to provide an uninitialised RegisterValue");
 
   sourceValues_[i] = value;
-  sourceOperandsPending--;
+  sourceOperandsPending_--;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -93,10 +93,11 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool Instruction::canExecute() const { return (sourceOperandsPending == 0); }
+bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
+  return {const_cast<RegisterValue*>(results_.data()),
+          destinationRegisterCount_};
 }
 
 bool Instruction::isStoreAddress() const { return isStoreAddress_; }
@@ -194,7 +195,9 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   return supportedPorts_;
 }
 
-const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+const InstructionMetadata& Instruction::getMetadata() const {
+  return metadata_;
+}
 
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;

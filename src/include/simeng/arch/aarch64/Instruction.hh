@@ -376,17 +376,17 @@ class Instruction : public simeng::Instruction {
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata;
+  const InstructionMetadata& metadata_;
 
   /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
+  std::vector<Register> sourceRegisters_;
   /** The number of source registers this instruction reads from. */
-  uint16_t sourceRegisterCount = 0;
+  uint16_t sourceRegisterCount_ = 0;
 
   /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
+  std::vector<Register> destinationRegisters_;
   /** The number of destination registers this instruction writes to. */
-  uint16_t destinationRegisterCount = 0;
+  uint16_t destinationRegisterCount_ = 0;
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
@@ -394,7 +394,7 @@ class Instruction : public simeng::Instruction {
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results;
+  std::vector<RegisterValue> results_;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
@@ -416,7 +416,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short sourceOperandsPending = 0;
+  short sourceOperandsPending_ = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
