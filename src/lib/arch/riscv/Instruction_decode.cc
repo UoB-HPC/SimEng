@@ -152,7 +152,7 @@ void Instruction::decode() {
           // Catch zero register references and pre-complete those operands
           sourceValues_[sourceRegisterCount] = RegisterValue(0, 8);
         } else {
-          operandsPending++;
+          sourceOperandsPending++;
         }
 
         sourceRegisterCount++;
@@ -194,7 +194,7 @@ void Instruction::decode() {
         // Catch zero register references and pre-complete those operands
         sourceValues_[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
-        operandsPending++;
+        sourceOperandsPending++;
       }
 
       sourceRegisterCount++;
@@ -206,7 +206,7 @@ void Instruction::decode() {
       //  Memory operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
-      operandsPending++;
+      sourceOperandsPending++;
     }
   }
 

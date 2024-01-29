@@ -216,7 +216,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short operandsPending = 0;
+  short sourceOperandsPending = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
