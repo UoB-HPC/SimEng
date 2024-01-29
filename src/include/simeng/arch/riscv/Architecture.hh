@@ -58,11 +58,11 @@ class Architecture : public arch::Architecture {
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, Instruction> decodeCache;
+  static std::unordered_map<uint32_t, Instruction> decodeCache_;
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  static std::forward_list<InstructionMetadata> metadataCache;
+  static std::forward_list<InstructionMetadata> metadataCache_;
 
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
@@ -76,7 +76,7 @@ class Architecture : public arch::Architecture {
   std::unordered_map<uint16_t, executionInfo> opcodeExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
-  csh capstoneHandle;
+  csh capstoneHandle_;
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;

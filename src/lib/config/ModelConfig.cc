@@ -814,7 +814,7 @@ void ModelConfig::postValidation() {
     if (isa_ == ISA::AArch64) {
       groupInheritance = arch::aarch64::groupInheritance;
     } else if (isa_ == ISA::RV64) {
-      groupInheritance = arch::riscv::groupInheritance;
+      groupInheritance = arch::riscv::groupInheritance_;
     }
     while (blockingGroups.size()) {
       // Determine if there's any inheritance
