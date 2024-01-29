@@ -87,9 +87,9 @@ TEST_P(InstCompressed, swsp) {
       addi t6, t6, 0xAA  # 0x15400AA
       c.swsp t6, 4(sp)
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()),
             0x000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
             0x15400AA000000AA);
 }
 
@@ -103,9 +103,9 @@ TEST_P(InstCompressed, sdsp) {
       addi t6, t6, 0xAA  # 0x15400AA
       c.sdsp t6, 8(sp)
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
             0x00000000000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() + 8),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8),
             0x00000000015400AA);
 }
 
@@ -121,9 +121,9 @@ TEST_P(InstCompressed, fsdsp) {
       fmv.d.x f8, t6
       c.fsdsp f8, 8(sp)
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
             0x00000000000000AA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() + 8),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8),
             0x00000000015400AA);
 }
 
@@ -199,9 +199,9 @@ TEST_P(InstCompressed, addi4spn) {
     c.addi4spn x9, x2, 12
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8),
-            process_->getInitialStackPointer() + 4);
+            process_->getStackPointer() + 4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9),
-            process_->getInitialStackPointer() + 12);
+            process_->getStackPointer() + 12);
 }
 
 TEST_P(InstCompressed, sw) {
@@ -433,9 +433,9 @@ TEST_P(InstCompressed, addi16sp) {
     mv x9, x2
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8),
-            process_->getInitialStackPointer());
+            process_->getStackPointer());
   EXPECT_EQ(getGeneralRegister<uint64_t>(9),
-            process_->getInitialStackPointer() + 16);
+            process_->getStackPointer() + 16);
 }
 
 TEST_P(InstCompressed, slli) {

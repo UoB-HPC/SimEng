@@ -34,9 +34,9 @@ TEST_P(SmokeTest, stack) {
     str w0, [sp, -4]
     str w1, [sp, -8]
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 4),
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4),
             7u);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 8),
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8),
             42u);
 }
 

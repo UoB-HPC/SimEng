@@ -134,7 +134,7 @@ class Linux {
   void createProcess(const LinuxProcess& process);
 
   /** Retrieve the initial stack pointer. */
-  uint64_t getInitialStackPointer() const;
+  uint64_t getStackPointer() const;
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
