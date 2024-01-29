@@ -201,7 +201,7 @@ class Instruction : public simeng::Instruction {
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
 
   /** Extracted value of current immediate from metadata */
-  int64_t imm = 0;
+  int64_t imm_ = 0;
 
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */

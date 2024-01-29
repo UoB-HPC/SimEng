@@ -37,13 +37,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     assert(metadata.operands[1].type == RISCV_OP_MEM &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
-    address = operands[0].get<uint64_t>() + imm;
+    address = operands[0].get<uint64_t>() + imm_;
   } else {
     assert((metadata.operands[1].type == RISCV_OP_MEM) &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
 
-    address = operands[1].get<uint64_t>() + imm;
+    address = operands[1].get<uint64_t>() + imm_;
   }
 
   // Atomics

@@ -205,14 +205,14 @@ void Instruction::decode() {
     else if (i > 0 && op.type == RISCV_OP_MEM) {
       //  Memory operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
-      imm = op.mem.disp;
+      imm_ = op.mem.disp;
       sourceRegisterCount++;
       operandsPending++;
     }
 
     // First operand is never immediate
     else if (i > 0 && op.type == RISCV_OP_IMM) {
-      imm = op.imm;
+      imm_ = op.imm;
     }
   }
 
