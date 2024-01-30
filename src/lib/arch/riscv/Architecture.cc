@@ -21,11 +21,6 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   fesetround(FE_TONEAREST);
 
   constantsPool constantsPool;
-
-  // TODO an 'if' clause could be added here to check if compressed instructions
-  // are allowed based off of config options which selects the corrct cs_mode
-  // and constants. Currently always rv64gc allowed
-
   constants_.alignMask = constantsPool.alignMaskCompressed;
   constants_.regWidth = constantsPool.byteLength64;
   constants_.bytesLimit = constantsPool.bytesLimitCompressed;
