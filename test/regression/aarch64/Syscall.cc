@@ -441,7 +441,7 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operation
   const char refRead[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  char* dataRead = processMemory_ + process_->getStackPointer() - 64;
+  char* dataRead = processMemory_ + process_->getInitialStackPointer() - 64;
   for (int i = 0; i < strlen(refRead); i++) {
     EXPECT_EQ(dataRead[i], refRead[i]) << "at index i=" << i << '\n';
   }
