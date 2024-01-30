@@ -592,10 +592,10 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  const char reference[] = SIMENG_SOURCE_DIR "/Default";
-
+  std::string cwd = std::filesystem::current_path();
+  std::string reference = cwd + std::string("/Default");
   // Copy path to heap
-  initialHeapData_.resize(strlen(path) + strlen(reference) + 1);
+  initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
 
   RUN_RISCV(R"(
@@ -614,10 +614,10 @@ TEST_P(Syscall, readlinkat) {
     ecall
   )");
 
-  EXPECT_EQ(getGeneralRegister<int64_t>(10), strlen(reference));
+  EXPECT_EQ(getGeneralRegister<int64_t>(10), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
-  for (int i = 0; i < strlen(reference); i++) {
-    EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
+  for (int i = 0; i < reference.size(); i++) {
+    EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
 }
 
