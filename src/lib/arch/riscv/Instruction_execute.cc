@@ -457,7 +457,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -470,7 +470,7 @@ void Instruction::execute() {
         branchTaken_ = true;
       } else {
         // Increase by instruction size to account for compressed instructions
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -482,7 +482,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -494,7 +494,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -506,7 +506,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -518,7 +518,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
         branchTaken_ = true;
       } else {
-        branchAddress_ = instructionAddress_ + metadata.lenBytes;
+        branchAddress_ = instructionAddress_ + metadata.getInsnLength();
         branchTaken_ = false;
       }
       break;
@@ -526,14 +526,16 @@ void Instruction::execute() {
     case Opcode::RISCV_JAL: {                       // JAL rd,imm
       branchAddress_ = instructionAddress_ + imm_;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + metadata.lenBytes, 8);
+      results[0] =
+          RegisterValue(instructionAddress_ + metadata.getInsnLength(), 8);
       break;
     }
     case Opcode::RISCV_JALR: {  // JALR rd,rs1,imm
       branchAddress_ =
           (operands[0].get<uint64_t>() + imm_) & ~1;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = RegisterValue(instructionAddress_ + metadata.lenBytes, 8);
+      results[0] =
+          RegisterValue(instructionAddress_ + metadata.getInsnLength(), 8);
       break;
     }
       // TODO EBREAK

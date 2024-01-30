@@ -15,8 +15,6 @@ namespace Opcode {
 #include "RISCVGenInstrInfo.inc"
 }  // namespace Opcode
 
-enum class INSTR_LENGTH { IL_16B, IL_32B, IL_INVALID };
-
 /** A simplified RISC-V-only version of the Capstone instruction structure. */
 struct InstructionMetadata {
  public:
@@ -32,10 +30,13 @@ struct InstructionMetadata {
     return metadataException_;
   }
 
-  /* Returns a bool stating whether an exception has been encountered */
+  /* Returns a bool stating whether an exception has been encountered. */
   bool getMetadataExceptionEncountered() const {
     return metadataExceptionEncountered_;
   }
+
+  /* Returns the length of the instruction in bytes. */
+  uint8_t getInsnLength() const { return insnLengthBytes_; }
 
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
@@ -87,12 +88,6 @@ struct InstructionMetadata {
   /** The number of explicit operands. */
   uint8_t operandCount;
 
-  /** The instruction length for variable instruction length support. */
-  INSTR_LENGTH len;
-
-  /** The length of the instruction encoding in bytes. */
-  uint8_t lenBytes;
-
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
@@ -128,8 +123,8 @@ struct InstructionMetadata {
   /** Whether an exception has been encountered. */
   bool metadataExceptionEncountered_ = false;
 
-  /** Set the byte length of instruction */
-  void setLength(uint8_t size);
+  /** The length of the instruction encoding in bytes. */
+  uint8_t insnLengthBytes_;
 };
 
 }  // namespace riscv

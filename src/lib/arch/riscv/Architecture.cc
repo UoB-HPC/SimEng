@@ -218,7 +218,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     iter = decodeCache.insert({insn, newInsn}).first;
   }
 
-  if (iter->second.getMetadata().lenBytes > bytesAvailable) {
+  if (iter->second.getMetadata().getInsnLength() > bytesAvailable) {
     // If cached but too many bytes read. BAIL
     return 0;
   }
@@ -231,7 +231,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   uop->setInstructionAddress(instructionAddress);
 
-  return iter->second.getMetadata().lenBytes;
+  return iter->second.getMetadata().getInsnLength();
 }
 
 executionInfo Architecture::getExecutionInfo(Instruction& insn) const {

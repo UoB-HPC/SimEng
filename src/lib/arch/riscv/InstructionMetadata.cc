@@ -17,9 +17,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount(insn.detail->riscv.op_count) {
   // Populate 'encoding' field with correct bytes dependent on whether this is a
   // compressed instruction
-  setLength(insn.size);
+  insnLengthBytes_ = insn.size;
   std::memset(encoding, 0, 4);
-  std::memcpy(encoding, insn.bytes, insn.size);
+  std::memcpy(encoding, insn.bytes, insnLengthBytes_);
 
   // Copy printed output
   std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
@@ -43,12 +43,12 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
       implicitDestinationCount(0),
-      operandCount(0),
-      len(INSTR_LENGTH::IL_INVALID) {
+      operandCount(0) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
+  insnLengthBytes_ = 0;
 }
 
 void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
@@ -474,21 +474,8 @@ void InstructionMetadata::createMemOpPosOne() {
   operandCount = 2;
 }
 
-void InstructionMetadata::setLength(uint8_t size) {
-  lenBytes = size;
-  switch (size) {
-    case 2:
-      len = INSTR_LENGTH::IL_16B;
-      break;
-    case 4:
-      len = INSTR_LENGTH::IL_32B;
-      break;
-    default:
-      len = INSTR_LENGTH::IL_INVALID;
-  }
-}
 void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
-  if (len != INSTR_LENGTH::IL_16B) {
+  if (insnLengthBytes_ != 2) {
     return;
   }
 
