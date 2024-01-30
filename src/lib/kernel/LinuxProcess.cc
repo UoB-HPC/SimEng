@@ -66,7 +66,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
-  commandLine_.push_back("\0");
+  commandLine_.push_back("Default\0");
 
   isValid_ = true;
 
