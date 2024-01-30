@@ -14,26 +14,26 @@ namespace kernel {
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
-  uint64_t dev;        // offset =   0
-  uint64_t ino;        // offset =   8
-  uint32_t mode;       // offset =  16
-  uint32_t nlink;      // offset =  20
-  uint32_t uid;        // offset =  24
-  uint32_t gid;        // offset =  28
-  uint64_t rdev;       // offset =  32
-  uint64_t padding1;   // offset =  40
-  int64_t size;        // offset =  48
-  int32_t blksize;     // offset =  56
-  uint32_t padding2;   // offset =  60
-  int64_t blocks;      // offset =  64
-  int64_t atime;       // offset =  72
-  uint64_t atimensec;  // offset =  80
-  int64_t mtime;       // offset =  88
-  uint64_t mtimensec;  // offset =  96
-  int64_t ctime;       // offset = 104
-  uint64_t ctimensec;  // offset = 112
-  uint32_t padding3;   // offset = 116
-  uint32_t padding4;   // offset = 124
+  uint64_t dev = 0;        // offset =   0
+  uint64_t ino = 0;        // offset =   8
+  uint32_t mode = 0;       // offset =  16
+  uint32_t nlink = 0;      // offset =  20
+  uint32_t uid = 0;        // offset =  24
+  uint32_t gid = 0;        // offset =  28
+  uint64_t rdev = 0;       // offset =  32
+  uint64_t padding1 = 0;   // offset =  40
+  int64_t size = 0;        // offset =  48
+  int32_t blksize = 0;     // offset =  56
+  uint32_t padding2 = 0;   // offset =  60
+  int64_t blocks = 0;      // offset =  64
+  int64_t atime = 0;       // offset =  72
+  uint64_t atimensec = 0;  // offset =  80
+  int64_t mtime = 0;       // offset =  88
+  uint64_t mtimensec = 0;  // offset =  96
+  int64_t ctime = 0;       // offset = 104
+  uint64_t ctimensec = 0;  // offset = 112
+  uint32_t padding3 = 0;   // offset = 116
+  uint32_t padding4 = 0;   // offset = 124
 };
 
 /** Fixed-width definition of `termios`.
