@@ -357,7 +357,7 @@ bool ExceptionHandler::init() {
       }
       case 93: {  // exit
         auto exitCode = registerFileSet.get(R0).get<uint64_t>();
-        std::cout << "[SimEng:ExceptionHandler] Received exit syscall: "
+        std::cout << "\n[SimEng:ExceptionHandler] Received exit syscall: "
                      "terminating with exit code "
                   << exitCode << std::endl;
         return fatal();
