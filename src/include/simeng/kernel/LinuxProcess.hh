@@ -40,7 +40,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  *
  * The constructed process follows a typical layout:
  *
- * |---------------| <- start/top of stack
+ * |---------------| <- start/bottom of stack
  * |     Stack     |    stack grows downwards
  * |-v-----------v-|
  * |               |
@@ -76,7 +76,7 @@ class LinuxProcess {
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
 
-  /** Get the address of the top of the stack. */
+  /** Get the address of the bottom of the stack. */
   uint64_t getStackStart() const;
 
   /** Get the address of the start of the mmap region. */
@@ -134,7 +134,7 @@ class LinuxProcess {
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
 
-  /** The address of the head/bottom of the stack */
+  /** The address of the head/top of the stack */
   uint64_t stackPointer_;
 
   /** The process image size. */

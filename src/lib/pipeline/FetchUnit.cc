@@ -172,11 +172,11 @@ void FetchUnit::tick() {
 
     assert(bytesRead <= bufferedBytes_ &&
            "Predecode consumed more bytes than were available");
+
     // Increment the offset, decrement available bytes
-
     bufferOffset += bytesRead;
-
     bufferedBytes_ -= bytesRead;
+
     if (!prediction.taken) {
       // Predicted as not taken; increment PC to next instruction
       pc_ += bytesRead;
