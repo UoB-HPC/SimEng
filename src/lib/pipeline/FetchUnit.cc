@@ -61,7 +61,6 @@ void FetchUnit::tick() {
   uint8_t bufferOffset;
 
   // Check if more instruction data is required
-  // TODO Unsure of whether this should be minimum instruction size instead
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
     // Calculate the address of the next fetch block
     uint64_t blockAddress;
@@ -98,7 +97,6 @@ void FetchUnit::tick() {
     std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
                 blockSize_ - bufferOffset);
 
-    // TODO can bufferedBytes_ go above the block size?
     bufferedBytes_ += blockSize_ - bufferOffset;
 
     buffer = fetchBuffer_;
@@ -110,6 +108,7 @@ void FetchUnit::tick() {
     bufferOffset = 0;
   }
 
+  // Potentially a redundant check considering the above
   // Check we have enough data to begin decoding
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) return;
 
