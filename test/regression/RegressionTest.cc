@@ -5,6 +5,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/PerceptronPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
@@ -94,7 +95,15 @@ void RegressionTest::run(const char* source, const char* triple,
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::GenericPredictor predictor = simeng::GenericPredictor();
+  simeng::PerceptronPredictor predictor = simeng::PerceptronPredictor();
+  std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
+  std::string predictorType = simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"].as<std::string>();
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<simeng::GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<simeng::PerceptronPredictor>();
+  }
+
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -106,13 +115,13 @@ void RegressionTest::run(const char* source, const char* triple,
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          *architecture_, *predictor_);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator);
+          entryPoint, *architecture_, *predictor_, *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
