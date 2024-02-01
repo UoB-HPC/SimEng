@@ -38,7 +38,7 @@ Static Prediction
 
 Perceptron Predictor
 --------------------
-The ``PerceptronPredictor`` has the same overal structure as the ``GenericPredictor`` but replaces the saturating counter as a means for direction prediction with a perceptron.  The ``PerceptronPredictor`` contains the following logic.
+The ``PerceptronPredictor`` has the same overall structure as the ``GenericPredictor`` but replaces the saturating counter as a means for direction prediction with a perceptron.  The ``PerceptronPredictor`` contains the following logic.
 
 Global History
     For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.

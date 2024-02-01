@@ -11,7 +11,8 @@ namespace simeng {
 
 /** A Perceptron branch predictor implementing the branch predictor described in
  * Jimenez and Lin ("Dynamic branch prediction with perceptrons", IEEE High-
- * Performance Computer Architecture Symposium Proceedings (2001), 197-206.
+ * Performance Computer Architecture Symposium Proceedings (2001), 197-206 --
+ * https://www.cs.utexas.edu/~lin/papers/hpca01.pdf).
  * The following predictors have been included:
  *
  * - Static predictor based on pre-allocated branch type.
@@ -43,11 +44,27 @@ class PerceptronPredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
-  /** The bitlength of the BTB index; BTB will have 2^bits entries. */
+  /** Returns the dot product of a perceptron and a history vector.  Used to determine
+   * a direction prediction */
+  int64_t getDotProduct(std::vector<int8_t> perceptron, uint64_t history) {
+    int64_t Pout = perceptron[globalHistoryLength_];
+    for (int i = 0; i < globalHistoryLength_; i++) {
+      // Get branch direction for ith entry in the history
+      bool historyTaken =
+          ((history & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
+      Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
+    }
+    return Pout;
+  }
+
+  /** The length in bits of the BTB index; BTB will have 2^bits entries. */
   uint64_t btbBits_;
 
   /** A 2^bits length vector of pairs containing a perceptron with
-   * globalHistoryLength_ + 1 inputs, and a branch target. */
+   * globalHistoryLength_ + 1 inputs, and a branch target.
+   * The perceptrons are used to provide a branch direction prediction by
+   * taking a dot product with the global history, as described
+   * in Jiminez and Lin */
   std::vector<std::pair<std::vector<int8_t>, uint64_t>> btb_;
 
   /** The previous hashed index for an address. */
