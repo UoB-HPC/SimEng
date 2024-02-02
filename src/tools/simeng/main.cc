@@ -99,6 +99,11 @@ int main(int argc, char** argv) {
   else
     std::cout << "False";
   std::cout << std::endl;
+  std::cout << "[SimEng] Special File directory used: "
+            << simeng::config::SimInfo::getConfig()["CPU-Info"]
+                                                   ["Special-File-Dir-Path"]
+                                                       .as<std::string>()
+            << std::endl;
   std::cout << "[SimEng] Number of Cores: "
             << simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"]
                    .as<uint16_t>()

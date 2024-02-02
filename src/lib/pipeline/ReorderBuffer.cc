@@ -155,12 +155,12 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   return n;
 }
 
-void ReorderBuffer::flush(uint64_t afterSeqId) {
+void ReorderBuffer::flush(uint64_t afterInsnId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
-  // than `afterSeqId`
+  // than `afterInsnId`
   while (!buffer_.empty()) {
     auto& uop = buffer_.back();
-    if (uop->getInstructionId() <= afterSeqId) {
+    if (uop->getInstructionId() <= afterInsnId) {
       break;
     }
 
@@ -193,7 +193,7 @@ unsigned int ReorderBuffer::getFreeSpace() const {
 
 bool ReorderBuffer::shouldFlush() const { return shouldFlush_; }
 uint64_t ReorderBuffer::getFlushAddress() const { return pc_; }
-uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
+uint64_t ReorderBuffer::getFlushInsnId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;

@@ -10,8 +10,6 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
-
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
     : architecture_(architecture),
@@ -36,7 +34,7 @@ const span<Register> Instruction::getSourceRegisters() const {
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
-  return {const_cast<RegisterValue*>(operands.data()), operands.size()};
+  return {const_cast<RegisterValue*>(operands.data()), sourceRegisterCount};
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {

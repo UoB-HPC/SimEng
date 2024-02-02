@@ -199,10 +199,6 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
   }
 }
 
-void DispatchIssueUnit::setRegisterReady(Register reg) {
-  scoreboard_[reg.type][reg.tag] = true;
-}
-
 void DispatchIssueUnit::purgeFlushed() {
   for (size_t i = 0; i < reservationStations_.size(); i++) {
     // Search the ready queues for flushed instructions and remove them

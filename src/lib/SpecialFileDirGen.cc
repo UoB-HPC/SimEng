@@ -5,7 +5,9 @@
 namespace simeng {
 
 SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
-    : coreCount_(config["CPU-Info"]["Core-Count"].as<uint64_t>()),
+    : specialFilesDir_(
+          config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
+      coreCount_(config["CPU-Info"]["Core-Count"].as<uint64_t>()),
       socketCount_(config["CPU-Info"]["Socket-Count"].as<uint64_t>()),
       smt_(config["CPU-Info"]["SMT"].as<uint64_t>()),
       bogoMIPS_(config["CPU-Info"]["BogoMIPS"].as<float>()),
@@ -23,12 +25,12 @@ void SpecialFileDirGen::RemoveExistingSFDir() {
     const std::string rm_input = "rm -r " + specialFilesDir_;
     system(rm_input.c_str());
   }
-  const std::string mk_input = "mkdir " + specialFilesDir_;
-  system(mk_input.c_str());
   return;
 }
 
 void SpecialFileDirGen::GenerateSFDir() {
+  // Create root special files directory
+  system(("mkdir -p " + specialFilesDir_).c_str());
   // Define frequently accessed root directories in special file tree
   const std::string proc_dir = specialFilesDir_ + "/proc/";
   const std::string online_dir = specialFilesDir_ + "/sys/devices/system/cpu/";
