@@ -24,7 +24,7 @@ class FlatMemoryInterfaceTest : public testing::Test {
   simeng::FlatMemoryInterface memory;
 };
 
-// Test that we can read data and it completes after a number of cycles.
+// Test that we can read data and it completes after zero cycles.
 TEST_F(FlatMemoryInterfaceTest, FixedReadData) {
   // Read a 32-bit value
   memory.requestRead(target, 1);
@@ -35,7 +35,7 @@ TEST_F(FlatMemoryInterfaceTest, FixedReadData) {
   EXPECT_EQ(entries[0].target, target);
 }
 
-// Test that we can write data and it completes after a number of cycles.
+// Test that we can write data and it completes after zero cycles.
 TEST_F(FlatMemoryInterfaceTest, FixedWriteData) {
   // Write a 32-bit value to memory
   memory.requestWrite(target, value);

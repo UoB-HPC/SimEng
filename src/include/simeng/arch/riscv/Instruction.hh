@@ -25,7 +25,7 @@ const uint8_t FLOAT = 1;
 const uint8_t SYSTEM = 2;
 
 /** A special register value representing the zero register. */
-const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64

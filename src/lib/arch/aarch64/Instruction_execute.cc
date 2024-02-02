@@ -10,11 +10,9 @@
 #include "simeng/arch/aarch64/helpers/conditional.hh"
 #include "simeng/arch/aarch64/helpers/divide.hh"
 #include "simeng/arch/aarch64/helpers/float.hh"
-#include "simeng/arch/aarch64/helpers/load.hh"
 #include "simeng/arch/aarch64/helpers/logical.hh"
 #include "simeng/arch/aarch64/helpers/multiply.hh"
 #include "simeng/arch/aarch64/helpers/neon.hh"
-#include "simeng/arch/aarch64/helpers/store.hh"
 #include "simeng/arch/aarch64/helpers/sve.hh"
 
 namespace simeng {
