@@ -215,7 +215,7 @@ endif()
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
-    DEPENDS unittests regression-aarch64 regression-riscv
+    DEPENDS unittests regression-aarch64 regression-riscv integrationtests
   )
 endif()
 

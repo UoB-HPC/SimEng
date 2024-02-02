@@ -8,7 +8,6 @@ namespace simeng {
 /** Mock implementation of the `Instruction` interface. */
 class MockInstruction : public Instruction {
  public:
-  MOCK_CONST_METHOD0(getException, InstructionException());
   MOCK_CONST_METHOD0(getSourceRegisters, const span<Register>());
   MOCK_CONST_METHOD0(getSourceOperands, const span<RegisterValue>());
   MOCK_CONST_METHOD0(getDestinationRegisters, const span<Register>());
@@ -22,6 +21,7 @@ class MockInstruction : public Instruction {
   MOCK_METHOD0(generateAddresses, span<const MemoryAccessTarget>());
   MOCK_METHOD2(supplyData, void(uint64_t address, const RegisterValue& data));
   MOCK_CONST_METHOD0(getGeneratedAddresses, span<const MemoryAccessTarget>());
+  MOCK_CONST_METHOD0(hasAllData, bool());
   MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
@@ -33,9 +33,9 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isStoreData, bool());
   MOCK_CONST_METHOD0(isLoad, bool());
   MOCK_CONST_METHOD0(isBranch, bool());
-  MOCK_CONST_METHOD0(isASIMD, bool());
-  MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
+
+  MOCK_CONST_METHOD0(getLSQLatency, uint16_t());
 
   MOCK_METHOD0(getSupportedPorts, const std::vector<uint16_t>&());
 
@@ -54,7 +54,13 @@ class MockInstruction : public Instruction {
 
   void setLatency(uint16_t cycles) { latency_ = cycles; }
 
+  void setLSQLatency(uint16_t cycles) { lsqExecutionLatency_ = cycles; }
+
   void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
+
+  void setIsMicroOp(bool isMicroOp) { isMicroOp_ = isMicroOp; }
+
+  void setIsLastMicroOp(bool isLastOp) { isLastMicroOp_ = isLastOp; }
 };
 
 }  // namespace simeng

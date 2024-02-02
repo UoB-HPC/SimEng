@@ -171,8 +171,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);

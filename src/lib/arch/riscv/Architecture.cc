@@ -235,7 +235,7 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
-  if (!systemRegisterMap_.count(reg)) return 0;
+  if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
 }
 

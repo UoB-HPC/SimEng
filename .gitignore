@@ -5,6 +5,8 @@
 obj
 build
 xcode-build
+cmake-build-debug
+cmake-build-release
 docs/sphinx/_build
 binaries
 install
@@ -12,6 +14,7 @@ install-debug
 capstone.pc
 version.hh
 **/specialFiles/
+.cache
 
 CMakeCache.txt
 CPackConfig.cmake

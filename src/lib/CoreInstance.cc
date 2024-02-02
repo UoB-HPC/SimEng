@@ -5,16 +5,20 @@ namespace simeng {
 CoreInstance::CoreInstance(std::string executablePath,
                            std::vector<std::string> executableArgs,
                            ryml::ConstNodeRef config)
-    : config_(config) {
+    : config_(config),
+      kernel_(kernel::Linux(
+          config_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())) {
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
                            ryml::ConstNodeRef config)
-    : config_(config) {
-  source_ = assembledSource;
-  sourceSize_ = sourceSize;
-  assembledSource_ = true;
+    : config_(config),
+      kernel_(kernel::Linux(
+          config_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())),
+      source_(assembledSource),
+      sourceSize_(sourceSize),
+      assembledSource_(true) {
   // Pass an empty string for executablePath and empty vector of strings for
   // executableArgs.
   generateCoreModel("", std::vector<std::string>{});

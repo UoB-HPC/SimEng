@@ -4,7 +4,6 @@
 #include <string>
 
 #include "simeng/config/SimInfo.hh"
-#include "simeng/version.hh"
 
 namespace simeng {
 class SpecialFileDirGen {
@@ -22,7 +21,7 @@ class SpecialFileDirGen {
 
  private:
   /** Path to the root of the SimEng special files directory. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
+  const std::string specialFilesDir_;
 
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */

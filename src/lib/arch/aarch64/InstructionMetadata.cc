@@ -1463,6 +1463,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_STRXui:
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_PFALSE:
+      operands[0].access = CS_AC_WRITE;
+      break;
     case Opcode::AArch64_STR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_STR_ZXI:
