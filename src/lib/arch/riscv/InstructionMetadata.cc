@@ -48,7 +48,7 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
-  insnLengthBytes_ = 0;
+  insnLengthBytes_ = 4;
 }
 
 void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {

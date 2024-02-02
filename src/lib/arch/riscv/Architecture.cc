@@ -193,17 +193,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
-    if (!success || rawInsn.opcode == RISCV_INS_INVALID) {
-      // Invalid decoding, potentially read over the end of the valid buffer.
-      // BAIL. Do not add to cache as may be incorrect data
-      return 0;
-    }
-
-    if (rawInsn.size > bytesAvailable) {
-      // Too many bytes read. BAIL
-      return 0;
-    }
-
     auto metadata =
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
@@ -216,11 +205,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
     // Cache the instruction
     iter = decodeCache.insert({insn, newInsn}).first;
-  }
-
-  if (iter->second.getMetadata().getInsnLength() > bytesAvailable) {
-    // If cached but too many bytes read. BAIL
-    return 0;
   }
 
   output.resize(1);

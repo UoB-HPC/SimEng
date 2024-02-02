@@ -113,6 +113,7 @@ void FetchUnit::tick() {
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();
+
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
 
@@ -121,12 +122,8 @@ void FetchUnit::tick() {
 
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
-      // TODO should be minimum?
-      // Assertion currently commented as bytesRead == 0 is used to force
-      // finishing tick on compressed instruction edge cases which are correct
-      // behaviour
-      //      assert(bufferedBytes_ < isa_.getMaxInstructionSize() &&
-      //             "unexpected predecode failure");
+      assert(bufferedBytes_ < isa_.getMaxInstructionSize() &&
+             "unexpected predecode failure");
       break;
     }
 
@@ -158,6 +155,7 @@ void FetchUnit::tick() {
           // loopBoundaryAddress_ has been fetched whilst filling the loop
           // buffer. Stop filling as loop body has been recorded and begin to
           // supply decode unit with instructions from the loop buffer
+
           loopBufferState_ = LoopBufferState::SUPPLYING;
           bufferedBytes_ = 0;
           break;
@@ -198,8 +196,11 @@ void FetchUnit::tick() {
       break;
     }
 
-    // Too few bytes remaining in buffer to continue
-    if (bufferedBytes_ == 0) {
+    // Too few bytes remaining in buffer to continue.
+    // Don't attempt to predecode if not enough bytes for largest instruction
+    // encoding. Potentially misses ability to predecode compressed instruction
+    // but prevents messy handling logic
+    if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
       break;
     }
   }
