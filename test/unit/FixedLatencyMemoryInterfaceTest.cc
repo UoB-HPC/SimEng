@@ -5,10 +5,15 @@ namespace {
 
 class FixedLatencyMemoryInterfaceTest : public testing::Test {
  public:
-  FixedLatencyMemoryInterfaceTest(const uint16_t latency)
-      : memory(memoryData.data(), memorySize, latency) {}
+  FixedLatencyMemoryInterfaceTest() {}
 
  protected:
+  // Function to construct the FixedLatencyMemoryInterface with a given latency.
+  simeng::FixedLatencyMemoryInterface getMemInterface(const uint16_t latency) {
+    return simeng::FixedLatencyMemoryInterface(memoryData.data(), memorySize,
+                                               latency);
+  }
+
   static constexpr uint16_t memorySize = 4;
   std::array<char, memorySize> memoryData = {(char)0xFE, (char)0xCA, (char)0xBA,
                                              (char)0xAB};
@@ -21,28 +26,11 @@ class FixedLatencyMemoryInterfaceTest : public testing::Test {
 
   const std::string writeOverflowStr =
       "Attempted to write beyond memory limit.";
-
-  simeng::FixedLatencyMemoryInterface memory;
-};
-
-// Test class definition for a fixed latency memory interface with a latency of
-// 2 cycles
-class FixedLatencyMemoryInterfaceTest_2
-    : public FixedLatencyMemoryInterfaceTest {
- public:
-  FixedLatencyMemoryInterfaceTest_2() : FixedLatencyMemoryInterfaceTest(2) {}
-};
-
-// Test class definition for a fixed latency memory interface with a latency of
-// 4 cycles
-class FixedLatencyMemoryInterfaceTest_4
-    : public FixedLatencyMemoryInterfaceTest {
- public:
-  FixedLatencyMemoryInterfaceTest_4() : FixedLatencyMemoryInterfaceTest(4) {}
 };
 
 // Test that we can read data and it completes after two cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest_2, FixedReadData) {
+TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData_2cycles) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
   // Read a 32-bit value
   memory.requestRead(target, 1);
   EXPECT_TRUE(memory.hasPendingRequests());
@@ -63,7 +51,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_2, FixedReadData) {
 }
 
 // Test that we can write data and it completes after two cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest_2, FixedWriteData) {
+TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData_2cycles) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
   // Write a 32-bit value to memory
   memory.requestWrite(target, value);
   EXPECT_TRUE(memory.hasPendingRequests());
@@ -79,7 +68,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_2, FixedWriteData) {
 }
 
 // Test that we can read data and it completes after four cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest_4, FixedReadData) {
+TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData_4cycles) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(4);
   // Read a 32-bit value
   memory.requestRead(target, 1);
   EXPECT_TRUE(memory.hasPendingRequests());
@@ -108,7 +98,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_4, FixedReadData) {
 }
 
 // Test that we can write data and it completes after four cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest_4, FixedWriteData) {
+TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData_4cycles) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(4);
   // Write a 32-bit value to memory
   memory.requestWrite(target, value);
   EXPECT_TRUE(memory.hasPendingRequests());
@@ -132,7 +123,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_4, FixedWriteData) {
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest_2, OutofBoundsRead) {
+TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
   // Create a target such that address + size will overflow
   memory.requestRead(target_OutOfBound1, 1);
 
@@ -162,7 +154,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_2, OutofBoundsRead) {
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest_2, OutofBoundsWrite_1) {
+TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_1) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
   // Create a target such that address + size will overflow
   memory.requestWrite(target_OutOfBound1, value);
 
@@ -175,7 +168,8 @@ TEST_F(FixedLatencyMemoryInterfaceTest_2, OutofBoundsWrite_1) {
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest_2, OutofBoundsWrite_2) {
+TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_2) {
+  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
   // Create a regular out-of-bounds target
   memory.requestWrite(target_OutOfBound2, value_oversized);
 
