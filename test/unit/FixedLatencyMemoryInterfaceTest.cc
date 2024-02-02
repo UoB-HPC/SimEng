@@ -3,17 +3,13 @@
 
 namespace {
 
-class FixedLatencyMemoryInterfaceTest : public testing::Test {
+class FixedLatencyMemoryInterfaceTest
+    : public testing::TestWithParam<uint16_t> {
  public:
-  FixedLatencyMemoryInterfaceTest() {}
+  FixedLatencyMemoryInterfaceTest()
+      : memory(memoryData.data(), memorySize, GetParam()) {}
 
  protected:
-  // Function to construct the FixedLatencyMemoryInterface with a given latency.
-  simeng::FixedLatencyMemoryInterface getMemInterface(const uint16_t latency) {
-    return simeng::FixedLatencyMemoryInterface(memoryData.data(), memorySize,
-                                               latency);
-  }
-
   static constexpr uint16_t memorySize = 4;
   std::array<char, memorySize> memoryData = {(char)0xFE, (char)0xCA, (char)0xBA,
                                              (char)0xAB};
@@ -26,18 +22,22 @@ class FixedLatencyMemoryInterfaceTest : public testing::Test {
 
   const std::string writeOverflowStr =
       "Attempted to write beyond memory limit.";
+
+  simeng::FixedLatencyMemoryInterface memory;
 };
 
-// Test that we can read data and it completes after two cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData_2cycles) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
+// Test that we can read data and it completes after n cycles.
+TEST_P(FixedLatencyMemoryInterfaceTest, FixedReadData) {
   // Read a 32-bit value
   memory.requestRead(target, 1);
   EXPECT_TRUE(memory.hasPendingRequests());
 
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  // Tick n-1 times - request should still be pending
+  uint16_t latency = GetParam();
+  for (int n = 0; n < latency - 1; n++) {
+    memory.tick();
+    EXPECT_TRUE(memory.hasPendingRequests());
+  }
 
   // Tick again - request should have completed
   memory.tick();
@@ -50,71 +50,18 @@ TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData_2cycles) {
   EXPECT_EQ(entries[0].target, target);
 }
 
-// Test that we can write data and it completes after two cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData_2cycles) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
+// Test that we can write data and it completes after n cycles.
+TEST_P(FixedLatencyMemoryInterfaceTest, FixedWriteData) {
   // Write a 32-bit value to memory
   memory.requestWrite(target, value);
   EXPECT_TRUE(memory.hasPendingRequests());
 
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
-  EXPECT_EQ(reinterpret_cast<uint32_t*>(memoryData.data())[0], 0xDEADBEEF);
-}
-
-// Test that we can read data and it completes after four cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedReadData_4cycles) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(4);
-  // Read a 32-bit value
-  memory.requestRead(target, 1);
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
-  memory.tick();
-  EXPECT_FALSE(memory.hasPendingRequests());
-
-  auto entries = memory.getCompletedReads();
-  EXPECT_EQ(entries.size(), 1);
-  EXPECT_EQ(entries[0].requestId, 1);
-  EXPECT_EQ(entries[0].data, simeng::RegisterValue(0xABBACAFE, 4));
-  EXPECT_EQ(entries[0].target, target);
-}
-
-// Test that we can write data and it completes after four cycles.
-TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData_4cycles) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(4);
-  // Write a 32-bit value to memory
-  memory.requestWrite(target, value);
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  // Tick n-1 times - request should still be pending
+  uint16_t latency = GetParam();
+  for (int n = 0; n < latency - 1; n++) {
+    memory.tick();
+    EXPECT_TRUE(memory.hasPendingRequests());
+  }
 
   // Tick again - request should have completed
   memory.tick();
@@ -123,19 +70,21 @@ TEST_F(FixedLatencyMemoryInterfaceTest, FixedWriteData_4cycles) {
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
+TEST_P(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
   // Create a target such that address + size will overflow
   memory.requestRead(target_OutOfBound1, 1);
 
   // Create a regular out-of-bounds target
   memory.requestRead(target_OutOfBound2, 2);
 
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  // Tick n-1 times - request shouldn't have completed
+  uint16_t latency = GetParam();
+  for (int n = 0; n < latency - 1; n++) {
+    memory.tick();
+    EXPECT_TRUE(memory.hasPendingRequests());
+  }
 
-  // Tick twice - request should have completed
+  // Tick again - request should have completed
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
 
@@ -154,31 +103,39 @@ TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsRead) {
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_1) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
+TEST_P(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_1) {
   // Create a target such that address + size will overflow
   memory.requestWrite(target_OutOfBound1, value);
 
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  // Tick n-1 times - request shouldn't have completed
+  uint16_t latency = GetParam();
+  for (int n = 0; n < latency - 1; n++) {
+    memory.tick();
+    EXPECT_TRUE(memory.hasPendingRequests());
+  }
 
-  // Tick twice - simulation should have come to a stop
+  // Tick again - simulation should have come to a stop
   ASSERT_DEATH(memory.tick(), writeOverflowStr);
 }
 
 // Test that out-of-bounds memory writes are correctly handled.
-TEST_F(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_2) {
-  simeng::FixedLatencyMemoryInterface memory = getMemInterface(2);
+TEST_P(FixedLatencyMemoryInterfaceTest, OutofBoundsWrite_2) {
   // Create a regular out-of-bounds target
   memory.requestWrite(target_OutOfBound2, value_oversized);
 
-  // Tick once - request shouldn't have completed
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
+  // Tick n-1 times - request shouldn't have completed
+  uint16_t latency = GetParam();
+  for (int n = 0; n < latency - 1; n++) {
+    memory.tick();
+    EXPECT_TRUE(memory.hasPendingRequests());
+  }
 
-  // Tick twice - simulation should have come to a stop
+  // Tick again - simulation should have come to a stop
   ASSERT_DEATH(memory.tick(), writeOverflowStr);
 }
+
+INSTANTIATE_TEST_SUITE_P(FixedLatencyMemoryInterfaceTests,
+                         FixedLatencyMemoryInterfaceTest,
+                         ::testing::Values<uint16_t>(2, 4));
 
 }  // namespace
