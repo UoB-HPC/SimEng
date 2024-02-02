@@ -16,7 +16,7 @@ void RISCVRegressionTest::run(const char* source) {
 
 void RISCVRegressionTest::generateConfig() const {
   // Re-generate the default config for the rv64 ISA
-  simeng::config::SimInfo::generateDefault(simeng::config::ISA::RV64);
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::RV64, true);
 
   // Add the base additional RISCV test suite config options
   simeng::config::SimInfo::addToConfig(RISCV_ADDITIONAL_CONFIG);
