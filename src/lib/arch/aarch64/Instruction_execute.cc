@@ -1653,14 +1653,22 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FDIVR_ZPmZ_D: {  // fdivr zdn.d, pg/m, zdn.d, zm.d
         results[0] = sveLogicOpPredicated_3vecs<double>(
-            operands, VL_bits,
-            [](double x, double y) -> double { return (y / x); });
+            operands, VL_bits, [](double x, double y) -> double {
+              if (x == 0)
+                return std::nan(0);
+              else
+                return (y / x);
+            });
         break;
       }
       case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
         results[0] = sveLogicOpPredicated_3vecs<float>(
-            operands, VL_bits,
-            [](float x, float y) -> float { return (y / x); });
+            operands, VL_bits, [](float x, float y) -> float {
+              if (x == 0)
+                return std::nanf(0);
+              else
+                return (y / x);
+            });
         break;
       }
       case Opcode::AArch64_FDIVSrr: {  // fdiv sd, sn, sm
@@ -1669,13 +1677,22 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zdn.d, pg/m, zdn.d, zm.d
         results[0] = sveLogicOpPredicated_3vecs<double>(
-            operands, VL_bits,
-            [](double x, double y) -> double { return (x / y); });
+            operands, VL_bits, [](double x, double y) -> double {
+              if (y == 0)
+                return std::nan(0);
+              else
+                return (x / y);
+            });
         break;
       }
       case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
         results[0] = vecLogicOp_3vecs<double, 2>(
-            operands, [](double x, double y) -> double { return x / y; });
+            operands, [](double x, double y) -> double {
+              if (y == 0)
+                return std::nanf(0);
+              else
+                return x / y;
+            });
         break;
       }
       case Opcode::AArch64_FDUP_ZI_D: {  // fdup zd.d, #imm
