@@ -93,6 +93,7 @@ void RegisterAliasTable::commit(Register physical) {
   auto oldTag = historyTable_[physical.type][physical.tag];
   freeQueues_[physical.type].push(oldTag);
 }
+
 void RegisterAliasTable::rewind(Register physical) {
   assert(physical.renamed &&
          "Attempted to rewind a physical register which hasn't been subject to "
@@ -103,9 +104,6 @@ void RegisterAliasTable::rewind(Register physical) {
   mappingTable_[physical.type][destinationTag] =
       historyTable_[physical.type][physical.tag];
   // Add the rewound physical tag back to the free queue
-  freeQueues_[physical.type].push(physical.tag);
-}
-void RegisterAliasTable::free(Register physical) {
   freeQueues_[physical.type].push(physical.tag);
 }
 

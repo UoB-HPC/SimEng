@@ -165,7 +165,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc_; }
-uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfter_; }
+uint64_t ExecuteUnit::getFlushInsnId() const { return flushAfter_; }
 
 void ExecuteUnit::purgeFlushed() {
   if (pipeline_.size() == 0) {

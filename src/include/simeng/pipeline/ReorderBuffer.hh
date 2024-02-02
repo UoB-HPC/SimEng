@@ -59,7 +59,7 @@ class ReorderBuffer {
   unsigned int commit(unsigned int maxCommitSize);
 
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
-  void flush(uint64_t afterSeqId);
+  void flush(uint64_t afterInsnId);
 
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;
@@ -75,9 +75,9 @@ class ReorderBuffer {
    * discovered memory order violation. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
+  /** Retrieve the instruction ID associated with the most recently discovered
    * memory order violation. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;

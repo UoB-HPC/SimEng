@@ -8,9 +8,6 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
-                                             (uint16_t)-1};
-
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          MicroOpInfo microOpInfo)
@@ -37,7 +34,8 @@ Instruction::Instruction(const Architecture& architecture,
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
+  return {const_cast<Register*>(sourceRegisters.data()),
+          sourceRegisters.size()};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
@@ -45,6 +43,10 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
+  // The `destinationRegisterCount` is used here as the span count value because
+  // there may be n number of zero registers in the latter indexes of the
+  // `destinationRegisters` vector. These cannot be written to and hence
+  // shouldn't be included in the returned span.
   return {const_cast<Register*>(destinationRegisters.data()),
           destinationRegisterCount};
 }
@@ -55,6 +57,7 @@ bool Instruction::isOperandReady(int index) const {
 void Instruction::renameSource(uint16_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
+
 void Instruction::renameDestination(uint16_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
@@ -95,6 +98,10 @@ span<const RegisterValue> Instruction::getData() const {
 bool Instruction::canExecute() const { return (operandsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
+  // The `destinationRegisterCount` is used here as the span count value because
+  // there may be n number of values attributed to zero registers in the latter
+  // indexes of the `results` vector. Zero registers cannot be written to and
+  // hence shouldn't be included in the returned span.
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
@@ -185,6 +192,7 @@ void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   stallCycles_ = info.stallCycles;
   supportedPorts_ = info.ports;
 }
+
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;
@@ -197,64 +205,6 @@ const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;
-}
-
-/** Extend `value` according to `extendType`, and left-shift the result by
- * `shift` */
-uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
-                                  uint8_t shift) const {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
-    // Special case: an invalid shift type with a shift amount of 0 implies an
-    // identity operation
-    return value;
-  }
-
-  uint64_t extended;
-  switch (extendType) {
-    case ARM64_EXT_UXTB:
-      extended = static_cast<uint8_t>(value);
-      break;
-    case ARM64_EXT_UXTH:
-      extended = static_cast<uint16_t>(value);
-      break;
-    case ARM64_EXT_UXTW:
-      extended = static_cast<uint32_t>(value);
-      break;
-    case ARM64_EXT_UXTX:
-      extended = value;
-      break;
-    case ARM64_EXT_SXTB:
-      extended = static_cast<int8_t>(value);
-      break;
-    case ARM64_EXT_SXTH:
-      extended = static_cast<int16_t>(value);
-      break;
-    case ARM64_EXT_SXTW:
-      extended = static_cast<int32_t>(value);
-      break;
-    case ARM64_EXT_SXTX:
-      extended = value;
-      break;
-    default:
-      assert(false && "Invalid extension type");
-      return 0;
-  }
-
-  return extended << shift;
-}
-
-/** Extend `value` using extension/shifting rules defined in `op`. */
-uint64_t Instruction::extendOffset(uint64_t value,
-                                   const cs_arm64_op& op) const {
-  if (op.ext == 0) {
-    if (op.shift.value == 0) {
-      return value;
-    }
-    if (op.shift.type == 1) {
-      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
-    }
-  }
-  return extendValue(value, op.ext, op.shift.value);
 }
 
 }  // namespace aarch64

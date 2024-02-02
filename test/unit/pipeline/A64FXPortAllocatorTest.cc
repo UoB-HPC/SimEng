@@ -8,19 +8,29 @@
 namespace simeng {
 namespace pipeline {
 
-std::vector<uint64_t> rsFreeEntries = {20, 20, 10, 10, 19};
+class A64FXPortAllocatorTest : public testing::Test {
+ public:
+  A64FXPortAllocatorTest() : portAllocator(portArrangement) {
+    portAllocator.setRSSizeGetter(
+        [this](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+  }
 
-void rsSizes(std::vector<uint64_t>& sizeVec) { sizeVec = rsFreeEntries; }
+  void rsSizes(std::vector<uint64_t>& sizeVec) const {
+    sizeVec = rsFreeEntries;
+  }
 
-// Representation of the A64FX port layout
-const std::vector<std::vector<uint16_t>> portArrangement = {{0}, {1}, {2}, {3},
-                                                            {4}, {5}, {6}, {7}};
+ protected:
+  // Representation of the A64FX reservation station layout
+  std::vector<uint64_t> rsFreeEntries = {20, 20, 10, 10, 19};
+  // Representation of the A64FX port layout
+  const std::vector<std::vector<uint16_t>> portArrangement = {
+      {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};
+
+  A64FXPortAllocator portAllocator;
+};
 
 // Tests correct allocation for RSE0/RSE1/BR attribute groups
-TEST(A64FXPortAllocatorTest, singlePortAllocation) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, singlePortAllocation) {
   // Allocate in blocks of 4 to simulate dispatch width of 4 and test dispatch
   // slot logic
 
@@ -57,10 +67,7 @@ TEST(A64FXPortAllocatorTest, singlePortAllocation) {
 }
 
 // Tests correct allocation when for RSX
-TEST(A64FXPortAllocatorTest, RSX) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, RSX) {
   rsFreeEntries = {10, 10, 10, 10, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
@@ -83,10 +90,7 @@ TEST(A64FXPortAllocatorTest, RSX) {
 }
 
 // Tests correct allocation when for RSE/RSA
-TEST(A64FXPortAllocatorTest, RSEA) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, RSEA) {
   rsFreeEntries = {20, 20, 10, 10, 19};
   // RSE
   portAllocator.tick();
@@ -120,10 +124,7 @@ TEST(A64FXPortAllocatorTest, RSEA) {
 }
 
 // Test correct allocation for Table 1 condition
-TEST(A64FXPortAllocator, table1) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, table1) {
   rsFreeEntries = {20, 0, 0, 0, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
@@ -146,10 +147,7 @@ TEST(A64FXPortAllocator, table1) {
 }
 
 // Test correct allocation for Table 2 condition
-TEST(A64FXPortAllocator, table2) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, table2) {
   rsFreeEntries = {20, 20, 0, 0, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
@@ -172,10 +170,7 @@ TEST(A64FXPortAllocator, table2) {
 }
 
 // Test correct allocation for Table 3 condition
-TEST(A64FXPortAllocator, table3) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, table3) {
   rsFreeEntries = {0, 0, 10, 10, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
@@ -198,10 +193,7 @@ TEST(A64FXPortAllocator, table3) {
 }
 
 // Test correct allocation for Table 5  condition
-TEST(A64FXPortAllocator, table5) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, table5) {
   rsFreeEntries = {9, 9, 10, 9, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
@@ -223,11 +215,8 @@ TEST(A64FXPortAllocator, table5) {
   rsFreeEntries[1]--;
 }
 
-// Test correct allocation for Table 6  condition
-TEST(A64FXPortAllocator, table6) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+// Test correct allocation for Table 6 condition
+TEST_F(A64FXPortAllocatorTest, table6) {
   rsFreeEntries = {20, 0, 10, 0, 19};
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4}), 2);
@@ -250,10 +239,7 @@ TEST(A64FXPortAllocator, table6) {
 }
 
 // Test adherence to the dispatch slot logic
-TEST(A64FXPortAllocator, dispatchSlots) {
-  auto portAllocator = A64FXPortAllocator(portArrangement);
-  portAllocator.setRSSizeGetter(
-      [](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+TEST_F(A64FXPortAllocatorTest, dispatchSlots) {
   rsFreeEntries = {10, 10, 10, 10, 19};
 
   // With less than 4 instructions dispatched in a cycle, the next cycle should

@@ -51,7 +51,7 @@ class SimInfo {
       getInstance()->modelConfig_.reGenerateDefault(ISA::RV64, force);
 
     // Update config path to be the default string
-    getInstance()->setConfigPath(DEFAULT_STR);
+    getInstance()->configFilePath_ = DEFAULT_STR;
 
     // Replace the validated config with the new default config
     getInstance()->validatedConfig_ = getInstance()->modelConfig_.getConfig();
@@ -61,11 +61,6 @@ class SimInfo {
 
   /** A getter function to retrieve the config file path. */
   static std::string getConfigPath() { return getInstance()->configFilePath_; }
-
-  /** A setter function to set the config file path. */
-  static void setConfigPath(std::string path) {
-    getInstance()->configFilePath_ = path;
-  }
 
   /** A getter function to retrieve the simulation mode of the current SimEng
    * instance. */

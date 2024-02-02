@@ -145,6 +145,7 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
 }
 
 void A64FXPortAllocator::issued(uint16_t port) {}
+
 void A64FXPortAllocator::deallocate(uint16_t port) { issued(port); };
 
 uint8_t A64FXPortAllocator::attributeMapping(

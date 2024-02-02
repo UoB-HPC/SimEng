@@ -23,6 +23,9 @@ const uint8_t GENERAL = 0;
 const uint8_t FLOAT = 1;
 /** The system registers. */
 const uint8_t SYSTEM = 2;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -42,7 +45,6 @@ struct executionInfo {
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
-  EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
   AliasNotYetImplemented,
   MisalignedPC,
@@ -167,11 +169,6 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
-  /** A special register value representing the zero register. If passed to
-   * `setSourceRegisters`/`setDestinationRegisters`, the value will be
-   * automatically supplied as zero. */
-  static const Register ZERO_REGISTER;
-
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
@@ -180,6 +177,7 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
+ private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 

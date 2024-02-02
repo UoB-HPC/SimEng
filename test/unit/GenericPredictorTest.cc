@@ -157,4 +157,42 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   predictor.update(0x1F, true, 0xBA, BranchType::Conditional);
 }
 
+// Test Flush of RAS functionality
+TEST_F(GenericPredictorTest, flush) {
+  simeng::config::SimInfo::addToConfig(
+      "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
+      "Global-History-Length: 10, RAS-entries: 10, Fallback-Static-Predictor: "
+      "Always-Taken}}");
+  auto predictor = simeng::GenericPredictor();
+  // Add some entries to the RAS
+  auto prediction = predictor.predict(8, BranchType::SubroutineCall, 8);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 16);
+  prediction = predictor.predict(24, BranchType::SubroutineCall, 8);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 32);
+  prediction = predictor.predict(40, BranchType::SubroutineCall, 8);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 48);
+
+  // Start getting entries from RAS
+  prediction = predictor.predict(52, BranchType::Return, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 44);
+  prediction = predictor.predict(36, BranchType::Return, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 28);
+
+  // Flush address
+  predictor.flush(36);
+
+  // Continue getting entries from RAS
+  prediction = predictor.predict(20, BranchType::Return, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 28);
+  prediction = predictor.predict(16, BranchType::Return, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 12);
+}
+
 }  // namespace simeng

@@ -30,8 +30,7 @@ struct ReservationStation {
   uint16_t capacity;
   /** Number of instructions that can be dispatched to this unit per cycle. */
   uint16_t dispatchRate;
-  /** Current number of non-stalled instructions
-   * in reservation station */
+  /** Current number of instructions in reservation station */
   uint16_t currentSize;
   /** Issue ports belonging to reservation station */
   std::vector<ReservationStationPort> ports;
@@ -74,9 +73,6 @@ class DispatchIssueUnit {
    * instruction. */
   void forwardOperands(const span<Register>& destinations,
                        const span<RegisterValue>& values);
-
-  /** Set the scoreboard entry for the provided register as ready. */
-  void setRegisterReady(Register reg);
 
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();

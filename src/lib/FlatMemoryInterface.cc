@@ -1,6 +1,5 @@
 #include "simeng/FlatMemoryInterface.hh"
 
-#include <cassert>
 #include <iostream>
 
 namespace simeng {
@@ -25,8 +24,12 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
-  assert(target.address + target.size <= size_ &&
-         "Attempted to write beyond memory limit");
+  if (target.address + target.size > size_) {
+    std::cerr << "[SimEng:FlatLatencyMemoryInterface] Attempted to write "
+                 "beyond memory limit."
+              << std::endl;
+    exit(1);
+  }
 
   auto ptr = memory_ + target.address;
   // Copy the data from the RegisterValue to memory
