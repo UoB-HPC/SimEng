@@ -50,7 +50,7 @@ TEST_F(ProcessTest, createProcess_hex) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(
       span(reinterpret_cast<char*>(demoHex), sizeof(demoHex)));
   EXPECT_TRUE(proc.isValid());
-  EXPECT_EQ(proc.getPath(), "\0");
+  EXPECT_EQ(proc.getPath(), "Default\0");
 }
 
 // Tests get{Heap, Stack, Mmap}Start() functions
