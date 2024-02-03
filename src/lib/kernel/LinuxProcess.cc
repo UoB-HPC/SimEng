@@ -79,7 +79,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  char* unwrappedProcImgPtr = (char*)malloc(size_ * sizeof(char));
+  char* unwrappedProcImgPtr = (char*)calloc(size_, sizeof(char));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
 
   createStack(&unwrappedProcImgPtr);
