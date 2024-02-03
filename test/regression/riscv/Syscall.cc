@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <unistd.h>
 
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -593,8 +593,11 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  std::string cwd = std::filesystem::current_path();
-  std::string reference = cwd + std::string("/Default");
+  // Get current directory and append the default program's comannd line
+  // argument 0 value
+  char cwd[LINUX_PATH_MAX];
+  getcwd(cwd, LINUX_PATH_MAX);
+  std::string reference = std::string(cwd) + std::string("/Default");
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
