@@ -152,9 +152,9 @@ Architecture::~Architecture() {
   groupExecutionInfo_.clear();
 }
 
-uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
-                                uint64_t instructionAddress,
-                                MacroOp& output) const {
+int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
+                               uint64_t instructionAddress,
+                               MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed ISA is supported
   if (instructionAddress & constants_.alignMask) {
@@ -177,9 +177,30 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uint32_t insn;
   memcpy(&insn, ptr, 4);
 
+  // Predecode bytes to determine whether we have a compressed instruction.
+  // This will allow continuation if a compressed instruction is in the last 2
+  // bytes of a fetch block, but will request more data if only half of a
+  // non-compressed instruction is present
+  uint8_t predictedBytes = 0;
+  if ((insn & 0b11) != 0b11) {
+    // 2 byte - compressed
+    predictedBytes = 2;
+    insn = insn & 0xFFFF;
+  } else {
+    // 4 byte
+    predictedBytes = 4;
+    if (bytesAvailable < 4) {
+      // Not enough bytes available, bail
+      return -1;
+    }
+  }
+
+  bool success;
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
+    std::cerr << "size  " << decodeCache.size() << std::endl;
+
     // No decoding present. Generate a fresh decoding, and add to cache
     cs_insn rawInsn;
     cs_detail rawDetail;
@@ -190,7 +211,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-    bool success =
+    success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
     auto metadata =
@@ -203,9 +224,48 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     Instruction newInsn(*this, metadataCache.front());
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
+
+    if (newInsn.getMetadata().opcode == Opcode::RISCV_INSTRUCTION_LIST_END) {
+      // Often incorrect predicted number of bytes when using garbage data.
+      // Update `insn` so cache can be used properly
+      predictedBytes = 4;
+      memcpy(&insn, ptr, 4);
+    }
+
+    //    if (newInsn.getMetadata().getInsnLength() == 2) {
+    //      std::cerr << std::hex << "insn=" << insn << std::dec << std::endl;
+    //      std::cerr << std::hex
+    //                << "encoding=" << (int)newInsn.getMetadata().encoding[0]
+    //                << " "
+    //                << (int)newInsn.getMetadata().encoding[1] << " "
+    //                << (int)newInsn.getMetadata().encoding[2] << " "
+    //                << (int)newInsn.getMetadata().encoding[3] << std::dec
+    //                << std::endl;
+    //    }
+
     // Cache the instruction
     iter = decodeCache.insert({insn, newInsn}).first;
   }
+  //  else if (predictedBytes == 2) {
+  //    std::cerr << "cached compressed instruction = " << std::hex << insn
+  //              << std::dec << std::endl;
+  //  }
+
+  //  if ((predictedBytes != iter->second.getMetadata().getInsnLength())) {
+  //    //&& iter->second.getMetadata().opcode != 450) {
+  //    std::cerr << "" << std::endl;
+  //    std::cerr << "CONTRADICION pred=" << (int)predictedBytes << " ACtual "
+  //              << (int)iter->second.getMetadata().getInsnLength() << " insns"
+  //              << std::endl;
+  //    std::cerr << "opcode=" << (int)iter->second.getMetadata().opcode << " "
+  //              << iter->second.getMetadata().operandStr << std::endl;
+  //    std::cerr << std::hex << "insn=" << insn << std::dec << std::endl;
+  //    std::cerr << std::hex
+  //              << "encoding=" << (int)iter->second.getMetadata().encoding[0]
+  //              << " " << (int)iter->second.getMetadata().encoding[1] << " "
+  //              << (int)iter->second.getMetadata().encoding[2] << std::dec
+  //              << std::endl;
+  //  }
 
   output.resize(1);
   auto& uop = output[0];

@@ -127,6 +127,13 @@ void FetchUnit::tick() {
       break;
     }
 
+    // Expected predecode failure, bail and wait for more data
+    if (bytesRead < 0) {
+      //      std::cerr << "Early expected bail" << std::endl;
+
+      break;
+    }
+
     // Create branch prediction after identifying instruction type
     // (e.g. RET, BL, etc).
     BranchPrediction prediction = {false, 0};
@@ -200,7 +207,7 @@ void FetchUnit::tick() {
     // Don't attempt to predecode if not enough bytes for largest instruction
     // encoding. Potentially misses ability to predecode compressed instruction
     // but prevents messy handling logic
-    if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
+    if (bufferedBytes_ == 0) {
       break;
     }
   }
