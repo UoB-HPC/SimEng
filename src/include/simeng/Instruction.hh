@@ -256,7 +256,7 @@ class Instruction {
 
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
-  int microOpIndex_;
+  int microOpIndex_ = 0;
 };
 
 }  // namespace simeng

@@ -649,9 +649,13 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_.addChild(ExpectationNode::createExpectation("CPU-Info"));
 
   expectations_["CPU-Info"].addChild(ExpectationNode::createExpectation<bool>(
-      false, "Generate-Special-Dir", true));
+      true, "Generate-Special-Dir", true));
   expectations_["CPU-Info"]["Generate-Special-Dir"].setValueSet(
       std::vector{false, true});
+
+  expectations_["CPU-Info"].addChild(
+      ExpectationNode::createExpectation<std::string>(
+          defaultSpecialFilePath_, "Special-File-Dir-Path", true));
 
   expectations_["CPU-Info"].addChild(
       ExpectationNode::createExpectation<uint64_t>(1, "Core-Count", true));
@@ -886,6 +890,18 @@ void ModelConfig::postValidation() {
   // Record any unlinked port names
   for (const auto& prt : portnames)
     invalid_ << "\t- " << prt << " has no associated reservation station\n";
+
+  // Ensure that given special file directory exists iff auto-generation is
+  // False
+  if (!configTree_["CPU-Info"]["Generate-Special-Dir"].as<bool>() &&
+      !std::ifstream(
+           configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>())
+           .good()) {
+    invalid_
+        << "\t- Special File Directory '"
+        << configTree_["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()
+        << "' does not exist\n";
+  }
 
   // Ensure the L1-[Data|Instruction]-Memory:Interface-Type restrictions are
   // enforced

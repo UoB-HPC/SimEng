@@ -130,6 +130,9 @@ struct linux_dirent64 {
    to Linux system calls. */
 class Linux {
  public:
+  Linux(const std::string specialFiledirPath)
+      : specialFilesDir_(specialFiledirPath) {}
+
   /** Create a new Linux process running above this kernel. */
   void createProcess(const LinuxProcess& process);
 
@@ -252,7 +255,7 @@ class Linux {
   std::unordered_map<std::string, const std::string> specialPathTranslations_;
 
   /** Path to the root of the replacement special files. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
+  const std::string specialFilesDir_;
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;

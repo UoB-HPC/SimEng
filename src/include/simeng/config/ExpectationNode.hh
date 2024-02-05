@@ -453,7 +453,7 @@ class ExpectationNode {
     if (definedSet_) {
       // Check for value in set
       bool foundInSet = false;
-      for (int i = 0; i < expectedSet_.size(); i++) {
+      for (size_t i = 0; i < expectedSet_.size(); i++) {
         if (getByType<T>(expectedSet_[i]) == nodeVal) {
           foundInSet = true;
           break;
@@ -462,7 +462,7 @@ class ExpectationNode {
       if (!foundInSet) {
         // Construct a human readable output denoted expected set failure
         retStr << nodeVal << " not in set {";
-        for (int i = 0; i < expectedSet_.size(); i++) {
+        for (size_t i = 0; i < expectedSet_.size(); i++) {
           retStr << getByType<T>(expectedSet_[i]);
           if (i < expectedSet_.size() - 1) retStr << ", ";
         }

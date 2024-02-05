@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "InstructionMetadata.hh"
+#include "simeng/arch/aarch64/helpers/auxiliaryFunctions.hh"
 
 namespace simeng {
 namespace arch {

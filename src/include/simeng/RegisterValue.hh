@@ -131,4 +131,16 @@ class RegisterValue {
   alignas(8) char value[MAX_LOCAL_BYTES];
 };
 
+inline bool operator==(const RegisterValue& lhs, const RegisterValue& rhs) {
+  if (lhs.size() == rhs.size()) {
+    auto lhV = lhs.getAsVector<char>();
+    auto rhV = rhs.getAsVector<char>();
+    for (size_t i = 0; i < lhs.size(); i++) {
+      if (lhV[i] != rhV[i]) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 }  // namespace simeng

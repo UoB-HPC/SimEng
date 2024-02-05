@@ -17,6 +17,7 @@ namespace aarch64 {
 constexpr bool bit(uint32_t value, uint8_t start) {
   return (value >> start) & 1;
 }
+
 // Extract bits `start` to `start+width` of `value`
 constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
   return ((value >> start) & ((1 << width) - 1));
@@ -24,6 +25,7 @@ constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
 
 // Generate a general purpose register identifier with tag `tag`
 constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
+
 // Generate a NZCV register identifier
 constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
@@ -97,7 +99,7 @@ Register csRegToRegister(arm64_reg reg) {
 
   // ARM64_REG_WZR and _XZR are zero registers, and don't read
   if (reg == ARM64_REG_WZR || reg == ARM64_REG_XZR) {
-    return Instruction::ZERO_REGISTER;
+    return RegisterType::ZERO_REGISTER;
   }
 
   // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
@@ -197,55 +199,58 @@ void Instruction::decode() {
     sourceRegisters_.push_back(
         csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i])));
     sourceOperandsPending_++;
-    sourceRegisterCount_++;
   }
 
   bool accessesMemory = false;
+  uint16_t zrDestRegs = 0;
 
   // Extract explicit register accesses
   for (size_t i = 0; i < metadata_.operandCount; i++) {
     const auto& op = metadata_.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
-      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
-          op.reg != ARM64_REG_XZR) {
-        // Determine the data type the instruction operates on based on the
-        // register operand used
-        // Belongs to the predicate group if the destination register is a
-        // predicate
-        if (op.reg >= ARM64_REG_V0) {
-          isVectorData_ = true;
-        } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-          isSMEData_ = true;
-        } else if (op.reg >= ARM64_REG_Z0) {
-          isSVEData_ = true;
-        } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-          isScalarData_ = true;
-        } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-          isPredicate_ = true;
-        } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-          isScalarData_ = true;
-        }
+      if ((op.access & cs_ac_type::CS_AC_WRITE)) {
+        if (op.reg != ARM64_REG_WZR && op.reg != ARM64_REG_XZR) {
+          // Determine the data type the instruction operates on based on the
+          // register operand used
+          // Belongs to the predicate group if the destination register is a
+          // predicate
+          if (op.reg >= ARM64_REG_V0) {
+            isVectorData_ = true;
+          } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+            isSMEData_ = true;
+          } else if (op.reg >= ARM64_REG_Z0) {
+            isSVEData_ = true;
+          } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+            isScalarData_ = true;
+          } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+            isPredicate_ = true;
+          } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+            isScalarData_ = true;
+          }
 
-        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-            (op.reg == ARM64_REG_ZA)) {
-          // Add all Matrix register rows as destination operands
-          std::vector<Register> regs =
-              getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
-          for (int i = 0; i < regs.size(); i++) {
-            destinationRegisters_.push_back(regs[i]);
+          if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
+              (op.reg == ARM64_REG_ZA)) {
+            // Add all Matrix register rows as destination operands
+            std::vector<Register> regs = getZARowVectors(
+                op.reg, architecture_.getStreamingVectorLength());
+            for (int i = 0; i < regs.size(); i++) {
+              destinationRegisters_.push_back(regs[i]);
+              destinationRegisterCount_++;
+              // If WRITE, also need to add to source registers to maintain
+              // unaltered row values
+              sourceRegisters_.push_back(regs[i]);
+              sourceOperandsPending_++;
+            }
+          } else {
+            // Add register writes to destinations, but skip zero-register
+            // destinations
+            destinationRegisters_.push_back(csRegToRegister(op.reg));
             destinationRegisterCount_++;
-            // If WRITE, also need to add to source registers to maintain
-            // unaltered row values
-            sourceRegisters_.push_back(regs[i]);
-            sourceRegisterCount_++;
-            sourceOperandsPending_++;
           }
         } else {
-          // Add register writes to destinations, but skip zero-register
-          // destinations
-          destinationRegisters_.push_back(csRegToRegister(op.reg));
-          destinationRegisterCount_++;
+          // Need to allocate extra space in results vector for zero destination
+          zrDestRegs++;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
@@ -256,14 +261,12 @@ void Instruction::decode() {
               getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
           for (int i = 0; i < regs.size(); i++) {
             sourceRegisters_.push_back(regs[i]);
-            sourceRegisterCount_++;
             sourceOperandsPending_++;
           }
         } else {
           // Add register reads to destinations
           sourceRegisters_.push_back(csRegToRegister(op.reg));
           sourceOperandsPending_++;
-          sourceRegisterCount_++;
         }
         if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
       }
@@ -271,7 +274,6 @@ void Instruction::decode() {
       accessesMemory = true;
       sourceRegisters_.push_back(csRegToRegister(op.mem.base));
       sourceOperandsPending_++;
-      sourceRegisterCount_++;
 
       if (metadata_.writeback) {
         // Writeback instructions modify the base address
@@ -282,7 +284,6 @@ void Instruction::decode() {
         // Register offset; add to sources
         sourceRegisters_.push_back(csRegToRegister(op.mem.index));
         sourceOperandsPending_++;
-        sourceRegisterCount_++;
       }
     } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
       std::vector<Register> regs;
@@ -297,7 +298,6 @@ void Instruction::decode() {
         // un-updated rows
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters_.push_back(regs[i]);
-          sourceRegisterCount_++;
           sourceOperandsPending_++;
           if (op.access & cs_ac_type::CS_AC_WRITE) {
             destinationRegisters_.push_back(regs[i]);
@@ -314,25 +314,20 @@ void Instruction::decode() {
         } else if (op.access & cs_ac_type::CS_AC_READ) {
           sourceRegisters_.push_back(csRegToRegister(op.sme_index.reg));
           sourceOperandsPending_++;
-          sourceRegisterCount_++;
         }
       }
       // Register that is base of index will always be a source operand
       sourceRegisters_.push_back(csRegToRegister(op.sme_index.base));
       sourceOperandsPending_++;
-      sourceRegisterCount_++;
     } else if (op.type == ARM64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
-        // Clear any registered operands
-        sourceRegisterCount_ = 0;
-        destinationRegisterCount_ = 0;
+        return;
       } else {
         sourceRegisters_.push_back(
             {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
-        sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
     } else if (op.type == ARM64_OP_REG_MSR) {
@@ -340,9 +335,7 @@ void Instruction::decode() {
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
-        // Clear any registered operands
-        sourceRegisterCount_ = 0;
-        destinationRegisterCount_ = 0;
+        return;
       } else {
         destinationRegisters_.push_back(
             {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
@@ -643,15 +636,17 @@ void Instruction::decode() {
   }
 
   // Allocate enough entries in results vector
-  results_.resize(destinationRegisterCount_ + 1);
+  results_.resize(destinationRegisterCount_ + zrDestRegs);
   // Allocate enough entries in the operands vector
-  sourceValues_.resize(sourceRegisterCount_ + 1);
+  sourceValues_.resize(sourceRegisters_.size());
 
   // Catch zero register references and pre-complete those operands
-  for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
-    if (sourceRegisters_[i] == Instruction::ZERO_REGISTER) {
-      sourceValues_[i] = RegisterValue(0, 8);
-      sourceOperandsPending_--;
+  if (!(isSMEData_)) {
+    for (uint16_t i = 0; i < sourceRegisters_.size(); i++) {
+      if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
+        sourceValues_[i] = RegisterValue(0, 8);
+        sourceOperandsPending_--;
+      }
     }
   }
 }

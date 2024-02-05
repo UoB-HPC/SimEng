@@ -52,7 +52,7 @@ Register csRegToRegister(unsigned int reg) {
 
   if (reg == RISCV_REG_X0) {
     // Zero register
-    return Instruction::ZERO_REGISTER;
+    return RegisterType::ZERO_REGISTER;
   }
 
   assert(false && "Decoding failed due to unknown register identifier");
@@ -148,7 +148,7 @@ void Instruction::decode() {
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
         if (sourceRegisters_[sourceRegisterCount_] ==
-            Instruction::ZERO_REGISTER) {
+            RegisterType::ZERO_REGISTER) {
           // Catch zero register references and pre-complete those operands
           sourceValues_[sourceRegisterCount_] = RegisterValue(0, 8);
         } else {
@@ -157,7 +157,7 @@ void Instruction::decode() {
 
         sourceRegisterCount_++;
       } else {
-        if (csRegToRegister(op.reg) != Instruction::ZERO_REGISTER) {
+        if (csRegToRegister(op.reg) != RegisterType::ZERO_REGISTER) {
           destinationRegisters_[destinationRegisterCount_] =
               csRegToRegister(op.reg);
 
@@ -191,7 +191,7 @@ void Instruction::decode() {
       sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
       if (sourceRegisters_[sourceRegisterCount_] ==
-          Instruction::ZERO_REGISTER) {
+          RegisterType::ZERO_REGISTER) {
         // Catch zero register references and pre-complete those operands
         sourceValues_[sourceRegisterCount_] = RegisterValue(0, 8);
       } else {

@@ -13,38 +13,6 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/** Apply the shift specified by `shiftType` to the unsigned integer `value`,
- * shifting by `amount`. */
-template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount) {
-  switch (shiftType) {
-    case ARM64_SFT_LSL:
-      return value << amount;
-    case ARM64_SFT_LSR:
-      return value >> amount;
-    case ARM64_SFT_ASR:
-      return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
-      // Assuming sizeof(T) is a power of 2.
-      const auto mask = sizeof(T) * 8 - 1;
-      assert((amount <= mask) && "Rotate amount exceeds type width");
-      amount &= mask;
-      return (value >> amount) | (value << ((-amount) & mask));
-    }
-    case ARM64_SFT_MSL: {
-      // pad in with ones instead of zeros
-      const auto mask = (1 << amount) - 1;
-      return (value << amount) | mask;
-    }
-    case ARM64_SFT_INVALID:
-      return value;
-    default:
-      assert(false && "Unknown shift type");
-      return 0;
-  }
-}
-
 /** Get the size of the data to be accessed from/to memory. */
 inline uint8_t getDataSize(cs_arm64_op op) {
   // Check from top of the range downwards
@@ -203,6 +171,9 @@ const uint8_t NZCV = 3;
 const uint8_t SYSTEM = 4;
 /** The [256-byte x (SVL / 8)] SME matrix register za. */
 const uint8_t MATRIX = 5;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -222,7 +193,6 @@ struct ExecutionInfo {
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
-  EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
   AliasNotYetImplemented,
   MisalignedPC,
@@ -366,11 +336,6 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
-  /** A special register value representing the zero register. If passed to
-   * `setSourceRegisters`/`setDestinationRegisters`, the value will be
-   * automatically supplied as zero. */
-  static const Register ZERO_REGISTER;
-
  private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -403,15 +368,6 @@ class Instruction : public simeng::Instruction {
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
-
-  /** Set the source registers of the instruction, and create a corresponding
-   * operands vector. Zero register references will be pre-supplied with a value
-   * of 0. */
-  void setSourceRegisters(const std::vector<Register>& registers);
-
-  /** Set the destination registers for the instruction, and create a
-   * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register>& registers);
 
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
@@ -499,14 +455,6 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData_;
-
-  // Execution helpers
-  /** Extend `value` according to `extendType`, and left-shift the result by
-   * `shift` */
-  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
-
-  /** Extend `value` using extension/shifting rules defined in `op`. */
-  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
 };
 
 }  // namespace aarch64

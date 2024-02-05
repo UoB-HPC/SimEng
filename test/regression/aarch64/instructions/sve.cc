@@ -4065,7 +4065,7 @@ TEST_P(InstSve, frintn) {
   initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   std::vector<float> fsrcA = {1.0f,  -42.5f,   -0.125f, 0.0f,
-                              40.5f, -684.72f, -0.15f,  107.86f};
+                              41.5f, -684.72f, -0.15f,  107.86f};
   std::vector<float> fsrcB = {-34.5f,  -0.917f, 0.0f,    80.72f,
                               -125.5f, -0.01f,  701.90f, 7.5f};
   fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
@@ -4084,18 +4084,19 @@ TEST_P(InstSve, frintn) {
     ptrue p0.s
     whilelo p1.s, xzr, x2
 
-    dup z0.s, #15
-    dup z1.s, #13
+    fdup z0.s, #2.0
+    fdup z1.s, #3.0
     ld1w {z2.s}, p0/z, [x0, x1, lsl #2]
 
     frintn z0.s, p0/m, z2.s
     frintn z1.s, p1/m, z2.s
   )");
-  std::vector<int32_t> results32A = {1, -42, 0, 0, 40, -685, 0, 108};
-  std::vector<int32_t> results32B = {-34, -1, 0, 81, -126, 0, 702, 8};
-  CHECK_NEON(0, int32_t,
-             fillNeonCombined<int32_t>(results32A, results32B, VL / 8));
-  CHECK_NEON(1, int32_t, fillNeonCombined<int32_t>(results32A, {13}, VL / 8));
+  std::vector<float> results32A = {1.0f,  -42.0f,  0.0f, 0.0f,
+                                   42.0f, -685.0f, 0.0f, 108.0f};
+  std::vector<float> results32B = {-34.0f,  -1.0f, 0.0f,   81.0f,
+                                   -126.0f, 0.0f,  702.0f, 8.0f};
+  CHECK_NEON(0, float, fillNeonCombined<float>(results32A, results32B, VL / 8));
+  CHECK_NEON(1, float, fillNeonCombined<float>(results32A, {3.0}, VL / 8));
 
   // 64-bit
   initialHeapData_.resize(VL / 8);
@@ -4118,18 +4119,18 @@ TEST_P(InstSve, frintn) {
     ptrue p0.d
     whilelo p1.d, xzr, x2
 
-    dup z0.d, #15
-    dup z1.d, #13
+    fdup z0.d, #2.0
+    fdup z1.d, #3.0
     ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
 
     frintn z0.d, p0/m, z2.d
     frintn z1.d, p1/m, z2.d
   )");
-  std::vector<int64_t> results64A = {1, -42, 0, 0};
-  std::vector<int64_t> results64B = {40, -685, -4, 108};
-  CHECK_NEON(0, int64_t,
-             fillNeonCombined<int64_t>(results64A, results64B, VL / 8));
-  CHECK_NEON(1, int64_t, fillNeonCombined<int64_t>(results64A, {13}, VL / 8));
+  std::vector<double> results64A = {1.0, -42.0, 0.0, 0.0};
+  std::vector<double> results64B = {40.0, -685.0, -4.0, 108.0};
+  CHECK_NEON(0, double,
+             fillNeonCombined<double>(results64A, results64B, VL / 8));
+  CHECK_NEON(1, double, fillNeonCombined<double>(results64A, {3.0}, VL / 8));
 }
 
 TEST_P(InstSve, fsqrt) {

@@ -48,9 +48,9 @@ class ExecuteUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
+  /** Retrieve the instruction ID associated with the most recently discovered
    * misprediction. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Purge flushed instructions from the internal pipeline and clear any active
    * stall, if applicable. */
