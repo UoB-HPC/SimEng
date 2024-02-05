@@ -365,7 +365,7 @@ TEST_F(AArch64InstructionTest, supplyOperand) {
   insn.execute();
   EXPECT_TRUE(insn.hasExecuted());
   auto results = insn.getResults();
-  float vals[4] = {1.f, 1.f, std::nanf(0), std::nanf(0)};
+  float vals[4] = {1.f, 1.f, std::nanf(""), std::nanf("")};
   RegisterValue refRes = {vals, 256};
   EXPECT_EQ(results.size(), 1);
   EXPECT_EQ(results[0], refRes);
