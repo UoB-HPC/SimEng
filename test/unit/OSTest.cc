@@ -62,13 +62,15 @@ TEST_F(OSTest, processElf_stackPointer) {
       kernel::alignToBoundary(cmdLineSize + envStringsSize + 1, 32) -
       kernel::alignToBoundary(stackFrameSize, 32);
   EXPECT_EQ(os.getInitialStackPointer(), stackPointer);
-  EXPECT_EQ(os.getInitialStackPointer(), proc_elf.getStackPointer());
+  EXPECT_EQ(os.getInitialStackPointer(),
+            proc_elf.getInitialProcessStackPointer());
 }
 
 TEST_F(OSTest, processHex_stackPointer) {
   os.createProcess(proc_hex);
   EXPECT_EQ(os.getInitialStackPointer(), 1074790240);
-  EXPECT_EQ(os.getInitialStackPointer(), proc_hex.getStackPointer());
+  EXPECT_EQ(os.getInitialStackPointer(),
+            proc_hex.getInitialProcessStackPointer());
 }
 
 // createProcess

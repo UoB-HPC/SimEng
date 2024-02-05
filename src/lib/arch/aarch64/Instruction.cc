@@ -34,7 +34,8 @@ Instruction::Instruction(const Architecture& architecture,
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisters_.size()};
+  return {const_cast<Register*>(sourceRegisters_.data()),
+          sourceRegisters_.size()};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
