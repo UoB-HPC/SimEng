@@ -539,8 +539,8 @@ TEST_P(InstFloat, fcvtzu) {
   dheap[1] = -42.76;
   dheap[2] = -0.125;
   dheap[3] = 321.5;
-  dheap[4] = std::nan(0);
-  dheap[5] = -std::nan(0);
+  dheap[4] = std::nan("");
+  dheap[5] = -std::nan("");
   dheap[6] = INFINITY;
   dheap[7] = -INFINITY;
   dheap[8] = 4294967296.0;            // uint32_max + 1
@@ -654,8 +654,8 @@ TEST_P(InstFloat, fcvtzu) {
   fheap[1] = -42.76f;
   fheap[2] = -0.125f;
   fheap[3] = 321.5f;
-  fheap[4] = std::nanf(0);
-  fheap[5] = -std::nanf(0);
+  fheap[4] = std::nanf("");
+  fheap[5] = -std::nanf("");
   fheap[6] = INFINITY;
   fheap[7] = -INFINITY;
   fheap[8] = 4294967296.0;            // uint32_max + 1
