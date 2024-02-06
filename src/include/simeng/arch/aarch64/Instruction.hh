@@ -345,11 +345,10 @@ class Instruction : public simeng::Instruction {
 
   /** A vector of source registers. */
   std::vector<Register> sourceRegisters_;
-  /** The number of source registers this instruction reads from. */
-  uint16_t sourceRegisterCount_ = 0;
 
   /** A vector of destination registers. */
   std::vector<Register> destinationRegisters_;
+
   /** The number of destination registers this instruction writes to. */
   uint16_t destinationRegisterCount_ = 0;
 

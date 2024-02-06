@@ -169,7 +169,6 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
- private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 3;
