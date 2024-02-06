@@ -927,33 +927,32 @@ void ModelConfig::postValidation() {
                 "supported. Interface-Type used is "
              << l1iType << "\n";
 
-  // Ensure LSQ-L1-Interface Load/Store Bandwidth is large enough to accomodate
-  // a full vector load of the specified Vector-Length parameter
-  if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
-      configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
-    invalid_ << "\t- Vector-Length (bits) must be greater than Load-Bandwidth "
-                "(bytes)\n";
-  }
-  if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
-      configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
-    invalid_ << "\t- Vector-Length (bits) must be greater than Store-Bandwidth "
-                "(bytes)\n";
-  }
-
-  // Ensure LSQ-L1-Interface Load/Store Bandwidth is also large enough to
-  // accomodate a full vector load of the specified Streaming-Vector-Length
-  // parameter when streaming mode is enabled
-  if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
-      configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
-    invalid_ << "\t- Streaming-Vector-Length (bits) must be greater than "
-                "Load-Bandwidth "
-                "(bytes)\n";
-  }
-  if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
-      configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
-    invalid_ << "\t- Streaming-Vector-Length (bits) must be greater than "
-                "Store-Bandwidth "
-                "(bytes)\n";
+  if (isa_ == ISA::AArch64) {
+    // Ensure LSQ-L1-Interface Load/Store Bandwidth is large enough to accomodate
+    // a full vector load of the specified Vector-Length parameter
+    if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
+      invalid_ << "\t- Load-Bandwidth (bytes) must be greater than Vector-Length (bits). "
+                  "The current Load-Bandwidth is set to " << configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>() << " bytes, when it must be at least " << configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
+    if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
+      invalid_ << "\t- Store-Bandwidth (bytes) must be greater than Vector-Length (bits). "
+                  "The current Store-Bandwidth is set to " << configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>() << " bytes, when it must be at least " << configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
+    // Ensure LSQ-L1-Interface Load/Store Bandwidth is also large enough to
+    // accomodate a full vector load of the specified Streaming-Vector-Length
+    // parameter when streaming mode is enabled
+    if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
+      invalid_ << "\t- Load-Bandwidth (bytes) must be greater than Streaming-Vector-Length (bits). "
+                  "The current Load-Bandwidth is set to " << configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>() << " bytes, when it must be at least " << configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
+    if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
+      invalid_ << "\t- Store-Bandwidth (bytes) must be greater than Streaming-Vector-Length (bits). "
+                  "The current Store-Bandwidth is set to " << configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>() << " bytes, when it must be at least " << configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
   }
 }
 
