@@ -319,6 +319,26 @@ RegisterValue vecFmla_3vecs(std::vector<RegisterValue>& operands) {
   return {out, 256};
 }
 
+/** Helper function for NEON instructions with the format `fdiv vd, vn, vm`.
+ * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, int I>
+std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
+    std::vector<RegisterValue>& operands) {
+  const T* n = operands[0].getAsVector<T>();
+  const T* m = operands[1].getAsVector<T>();
+  T out[16 / sizeof(T)] = {0};
+  for (int i = 0; i < I; i++) {
+    if (m[i] == 0)
+      out[i] = sizeof(T) == 8 ? std::nan("") : std::nanf("");
+    else
+      out[i] = n[i] / m[i];
+  }
+  return {out, 256};
+}
+
 /** Helper function for NEON instructions with the format `fmla vd,
  *  vn, vm[index]`.
  * T represents the type of operands (e.g. for vn.2d, T = double).
