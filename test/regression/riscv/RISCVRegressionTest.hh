@@ -4,7 +4,7 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
-static constexpr const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
+static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
 {
   Core:
     {
