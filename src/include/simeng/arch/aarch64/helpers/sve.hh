@@ -577,6 +577,36 @@ RegisterValue sveFcvtzsPredicated(std::vector<RegisterValue>& operands,
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `<fdiv, fdivr>
+ * zd, pg/m, zn, zm`.
+ * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * Reversed represents whether the opcode is fdivr and thus the input operands
+ * should be reversed.
+ * Returns correctly formatted RegisterValue. */
+template <typename T, bool Reversed = false>
+std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
+    std::vector<RegisterValue>& operands, const uint16_t VL_bits) {
+  const uint64_t* p = operands[0].getAsVector<uint64_t>();
+  const T* dn = operands[1].getAsVector<T>();
+  const T* m = operands[2].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      const T op1 = Reversed ? m[i] : dn[i];
+      const T op2 = Reversed ? dn[i] : m[i];
+      if (op2 == 0)
+        out[i] = sizeof(T) == 8 ? std::nan("") : std::nanf("");
+      else
+        out[i] = op1 / op2;
+    } else
+      out[i] = dn[i];
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `fmad zd, pg/m, zn,
  * zm`.
  * T represents the type of operands (e.g. for zn.d, T = double).
