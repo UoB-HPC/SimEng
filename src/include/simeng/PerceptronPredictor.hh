@@ -44,18 +44,9 @@ class PerceptronPredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
-  /** Returns the dot product of a perceptron and a history vector.  Used to determine
-   * a direction prediction */
-  int64_t getDotProduct(std::vector<int8_t> perceptron, uint64_t history) {
-    int64_t Pout = perceptron[globalHistoryLength_];
-    for (int i = 0; i < globalHistoryLength_; i++) {
-      // Get branch direction for ith entry in the history
-      bool historyTaken =
-          ((history & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
-      Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
-    }
-    return Pout;
-  }
+  /** Returns the dot product of a perceptron and a history vector.  Used to
+   * determine a direction prediction */
+  int64_t getDotProduct(std::vector<int8_t> perceptron, uint64_t history);
 
   /** The length in bits of the BTB index; BTB will have 2^bits entries. */
   uint64_t btbBits_;

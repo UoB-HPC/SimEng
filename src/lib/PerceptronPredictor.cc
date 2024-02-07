@@ -10,8 +10,8 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // Build BTB based on config options
   uint32_t btbSize = (1 << btbBits_);
   btb_.resize(btbSize);
-  // Initialise perceptron values with 0 for the global history weights, and 1 for the bias weight;
-  // and initialise the target with 0 (i.e., unknown)
+  // Initialise perceptron values with 0 for the global history weights, and 1
+  // for the bias weight; and initialise the target with 0 (i.e., unknown)
   for (int i = 0; i < btbSize; i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
@@ -29,14 +29,15 @@ PerceptronPredictor::~PerceptronPredictor() {
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
                                               int64_t knownOffset) {
-  // Get the hashed index for the prediction table.  XOR the global history with the
-  // non-zero bits of the address, and then keep only the btbBits_ bits of the output
-  // to keep it in bounds of the prediction table.
-  uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+  // Get the hashed index for the prediction table.  XOR the global history with
+  // the non-zero bits of the address, and then keep only the btbBits_ bits of
+  // the output to keep it in bounds of the prediction table.
+  uint64_t hashedIndex =
+      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
   // Store the global history for correct hashing in update() --
-  // needs to be global history and not the hashed index as hashing loses information at longer
-  // global history lengths
+  // needs to be global history and not the hashed index as hashing loses
+  // information at longer global history lengths
   btbHistory_[address] = globalHistory_;
 
   // Retrieve the perceptron from the BTB
@@ -93,17 +94,20 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   int64_t Pout = getDotProduct(perceptron, prevGlobalHistory);
   bool directionPrediction = (Pout >= 0);
 
-  // Update the perceptron if the prediction was wrong, or the dot product's magnitude
-  // was not greater than the training threshold
+  // Update the perceptron if the prediction was wrong, or the dot product's
+  // magnitude was not greater than the training threshold
   if ((directionPrediction != taken) || (abs(Pout) < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
 
     for (int i = 0; i < globalHistoryLength_; i++) {
       int8_t xi =
-          ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0) ? -1 : 1;
+          ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0)
+              ? -1
+              : 1;
       int8_t product_xi_t = xi * t;
       // Make sure no overflow (+-127)
-      if (!(perceptron[i] == 127 && product_xi_t == 1) && !(perceptron[i] == -127 && product_xi_t == -1)) {
+      if (!(perceptron[i] == 127 && product_xi_t == 1) &&
+          !(perceptron[i] == -127 && product_xi_t == -1)) {
         perceptron[i] += product_xi_t;
       }
     }
@@ -139,6 +143,18 @@ void PerceptronPredictor::flush(uint64_t address) {
     }
     rasHistory_.erase(it);
   }
+}
+
+int64_t PerceptronPredictor::getDotProduct(std::vector<int8_t> perceptron,
+                                           uint64_t history) {
+  int64_t Pout = perceptron[globalHistoryLength_];
+  for (int i = 0; i < globalHistoryLength_; i++) {
+    // Get branch direction for ith entry in the history
+    bool historyTaken =
+        ((history & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
+    Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
+  }
+  return Pout;
 }
 
 }  // namespace simeng

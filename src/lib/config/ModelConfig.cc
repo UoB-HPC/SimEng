@@ -425,8 +425,7 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation("Branch-Predictor"));
 
   expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<std::string>(
-          "Perceptron", "Type"));
+      ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
   expectations_["Branch-Predictor"]["Type"].setValueSet(
       std::vector<std::string>{"Generic", "Perceptron"});
 
@@ -435,14 +434,13 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(1,
                                                                             64);
   // Saturating counter bits are relevant to the GenericPredictor only
-  if (!isDefault) {
-    if (configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
-      expectations_["Branch-Predictor"].addChild(
-          ExpectationNode::createExpectation<uint8_t>(2,
-                                                      "Saturating-Count-Bits"));
-      expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
-          .setValueBounds<uint8_t>(1, 64);
-    }
+  if (!isDefault &&
+      configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<uint8_t>(2,
+                                                    "Saturating-Count-Bits"));
+    expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
+        .setValueBounds<uint8_t>(1, 64);
   }
 
   expectations_["Branch-Predictor"].addChild(
@@ -456,14 +454,13 @@ void ModelConfig::setExpectations(bool isDefault) {
       1, UINT16_MAX);
 
   // The fallback predictor is relevant to the GenericPredictor only
-  if (!isDefault) {
-    if (configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
+  if (!isDefault &&
+      configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
     expectations_["Branch-Predictor"].addChild(
         ExpectationNode::createExpectation<std::string>(
             "Always-Taken", "Fallback-Static-Predictor"));
     expectations_["Branch-Predictor"]["Fallback-Static-Predictor"].setValueSet(
         std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
-    }
   }
 
   // L1-Data-Memory

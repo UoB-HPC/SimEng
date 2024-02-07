@@ -219,7 +219,8 @@ void CoreInstance::createCore() {
     arch_ = std::make_unique<arch::aarch64::Architecture>(kernel_);
   }
 
-  std::string predictorType = config_["Branch-Predictor"]["Type"].as<std::string>();
+  std::string predictorType =
+      config_["Branch-Predictor"]["Type"].as<std::string>();
   if (predictorType == "Generic") {
     predictor_ = std::make_unique<GenericPredictor>();
   } else if (predictorType == "Perceptron") {

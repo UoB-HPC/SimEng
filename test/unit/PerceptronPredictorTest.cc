@@ -68,8 +68,8 @@ TEST_F(PerceptronPredictorTest, RAS) {
   EXPECT_EQ(prediction.target, 12);
 }
 
-// Tests that the PerceptronPredictor will predict a previously encountered branch
-// correctly, when no address aliasing has occurred
+// Tests that the PerceptronPredictor will predict a previously encountered
+// branch correctly, when no address aliasing has occurred
 TEST_F(PerceptronPredictorTest, Hit) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: {Type: Perceptron, BTB-Tag-Bits: 11, "

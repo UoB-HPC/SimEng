@@ -95,9 +95,10 @@ void RegressionTest::run(const char* source, const char* triple,
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::PerceptronPredictor predictor = simeng::PerceptronPredictor();
   std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
-  std::string predictorType = simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"].as<std::string>();
+  std::string predictorType =
+      simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"]
+          .as<std::string>();
   if (predictorType == "Generic") {
     predictor_ = std::make_unique<simeng::GenericPredictor>();
   } else if (predictorType == "Perceptron") {
