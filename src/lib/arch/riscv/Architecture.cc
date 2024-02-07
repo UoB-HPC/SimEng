@@ -11,11 +11,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-std::unordered_map<uint32_t, Instruction> Architecture::decodeCache_;
-std::forward_list<InstructionMetadata> Architecture::metadataCache_;
-
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
-    : linux_(kernel) {
+    : arch::Architecture(kernel) {
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);
@@ -209,14 +206,16 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return 4;
 }
 
-ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
+ExecutionInfo Architecture::getExecutionInfo(
+    const simeng::Instruction& insn) const {
+  auto insn_new = reinterpret_cast<const arch::riscv::Instruction&>(insn);
   // Assume no opcode-based override
-  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
-  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn_new.getGroup());
+  if (opcodeExecutionInfo_.find(insn_new.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
     // Replace with overrided values
     ExecutionInfo overrideInfo =
-        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+        opcodeExecutionInfo_.at(insn_new.getMetadata().opcode);
     if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
     if (overrideInfo.stallCycles != 0)
       exeInfo.stallCycles = overrideInfo.stallCycles;

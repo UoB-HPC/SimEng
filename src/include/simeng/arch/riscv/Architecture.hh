@@ -6,7 +6,6 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
 
@@ -19,7 +18,9 @@ class Architecture : public arch::Architecture {
  public:
   Architecture(kernel::Linux& kernel,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
+
   ~Architecture();
+
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
@@ -53,33 +54,18 @@ class Architecture : public arch::Architecture {
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution
    * information. */
-  ExecutionInfo getExecutionInfo(Instruction& insn) const;
+  ExecutionInfo getExecutionInfo(
+      const simeng::Instruction& insn) const override;
 
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, Instruction> decodeCache_;
+  mutable std::unordered_map<uint32_t, Instruction> decodeCache_;
+
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  static std::forward_list<InstructionMetadata> metadataCache_;
-
-  /** A mapping from system register encoding to a zero-indexed tag. */
-  std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
-
-  /** A map to hold the relationship between aarch64 instruction groups and
-   * user-defined execution information. */
-  std::unordered_map<uint16_t, ExecutionInfo> groupExecutionInfo_;
-
-  /** A map to hold the relationship between aarch64 instruction opcode and
-   * user-defined execution information. */
-  std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
-
-  /** A Capstone decoding library handle, for decoding instructions. */
-  csh capstoneHandle_;
-
-  /** A reference to a Linux kernel object to forward syscalls to. */
-  kernel::Linux& linux_;
+  mutable std::forward_list<InstructionMetadata> metadataCache_;
 
   /** System Register of Processor Cycle Counter. */
   simeng::Register cycleSystemReg_;

@@ -7,6 +7,7 @@
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/kernel/Linux.hh"
 
 namespace simeng {
 
@@ -59,6 +60,8 @@ class ExceptionHandler {
  * ISA should provide a derived implementation of this class. */
 class Architecture {
  public:
+  Architecture(kernel::Linux& kernel) : linux_(kernel) {}
+
   virtual ~Architecture(){};
 
   /** Attempt to pre-decode from `bytesAvailable` bytes of instruction memory.
@@ -90,6 +93,31 @@ class Architecture {
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
+
+ protected:
+  /** A Capstone decoding library handle, for decoding instructions. */
+  csh capstoneHandle_;
+
+  /** A reference to a Linux kernel object to forward syscalls to. */
+  kernel::Linux& linux_;
+
+  /** A mapping from system register encoding to a zero-indexed tag. */
+  std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
+
+  /** A map to hold the relationship between instruction groups and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, ExecutionInfo> groupExecutionInfo_;
+
+  /** A map to hold the relationship between instruction opcode and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
+
+ private:
+  /** Retrieve an ExecutionInfo object for the requested instruction. If a
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
+  virtual ExecutionInfo getExecutionInfo(const Instruction& insn) const = 0;
 };
 
 }  // namespace arch

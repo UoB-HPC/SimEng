@@ -8,6 +8,7 @@ namespace simeng {
 /** Mock implementation of the `Architecture` interface. */
 class MockArchitecture : public arch::Architecture {
  public:
+  MockArchitecture(kernel::Linux& kernel) : arch::Architecture(kernel) {}
   MOCK_CONST_METHOD4(predecode,
                      uint8_t(const void* ptr, uint16_t bytesAvailable,
                              uint64_t instructionAddress, MacroOp& output));
@@ -21,6 +22,7 @@ class MockArchitecture : public arch::Architecture {
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
   MOCK_CONST_METHOD2(updateSystemTimerRegisters,
                      void(RegisterFileSet* regFile, const uint64_t iterations));
+  MOCK_CONST_METHOD1(getExecutionInfo, ExecutionInfo(const Instruction& insn));
 };
 
 }  // namespace simeng

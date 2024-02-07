@@ -7,7 +7,6 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/aarch64/MicroDecoder.hh"
-#include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
 
@@ -59,12 +58,6 @@ class Architecture : public arch::Architecture {
    * configuration. */
   uint64_t getStreamingVectorLength() const;
 
-  /** Retrieve an ExecutionInfo object for the requested instruction. If a
-   * opcode-based override has been defined for the latency and/or
-   * port information, return that instead of the group-defined execution
-   * information. */
-  ExecutionInfo getExecutionInfo(Instruction& insn) const;
-
   /** Returns the current value of SVCRval_. */
   uint64_t getSVCRval() const;
 
@@ -72,34 +65,22 @@ class Architecture : public arch::Architecture {
   void setSVCRval(const uint64_t newVal) const;
 
  private:
+  /** Retrieve an ExecutionInfo object for the requested instruction. If a
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
+  virtual ExecutionInfo getExecutionInfo(
+      const simeng::Instruction& insn) const override;
+
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, Instruction> decodeCache_;
+  mutable std::unordered_map<uint32_t, Instruction> decodeCache_;
+
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  static std::forward_list<InstructionMetadata> metadataCache_;
-
-  /** A copy of the value of the SVCR system register. */
-  static uint64_t SVCRval_;
-
-  /** A mapping from system register encoding to a zero-indexed tag. */
-  std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
-
-  /** A map to hold the relationship between aarch64 instruction groups and
-   * user-defined execution information. */
-  std::unordered_map<uint16_t, ExecutionInfo> groupExecutionInfo_;
-
-  /** A map to hold the relationship between aarch64 instruction opcode and
-   * user-defined execution information. */
-  std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
-
-  /** A Capstone decoding library handle, for decoding instructions. */
-  csh capstoneHandle_;
-
-  /** A reference to a Linux kernel object to forward syscalls to. */
-  kernel::Linux& linux_;
+  mutable std::forward_list<InstructionMetadata> metadataCache_;
 
   /** A reference to a micro decoder object to split macro operations. */
   std::unique_ptr<MicroDecoder> microDecoder_;
@@ -110,6 +91,9 @@ class Architecture : public arch::Architecture {
   /** The streaming vector length used by the SME extension in bits. */
   uint64_t SVL_;
 
+  /** A copy of the value of the SVCR system register. */
+  mutable uint64_t SVCRval_;
+
   /** System Register of Virtual Counter Timer. */
   simeng::Register VCTreg_;
 
@@ -119,6 +103,8 @@ class Architecture : public arch::Architecture {
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
+
+  friend class MicroDecoder;
 };
 
 }  // namespace aarch64
