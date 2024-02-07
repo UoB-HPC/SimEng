@@ -130,8 +130,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        opcodeExecutionInfo_.try_emplace(
-            opcode, simeng::arch::aarch64::ExecutionInfo{0, 0, {}});
+        opcodeExecutionInfo_.try_emplace(opcode, ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }

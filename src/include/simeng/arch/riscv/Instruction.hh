@@ -28,19 +28,6 @@ const uint8_t SYSTEM = 2;
 const Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
 }  // namespace RegisterType
 
-/** A struct holding user-defined execution information for a aarch64
- * instruction. */
-struct executionInfo {
-  /** The latency for the instruction. */
-  uint16_t latency = 1;
-
-  /** The execution throughput for the instruction. */
-  uint16_t stallCycles = 1;
-
-  /** The ports that support the instruction. */
-  std::vector<uint16_t> ports = {};
-};
-
 /** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
@@ -158,7 +145,7 @@ class Instruction : public simeng::Instruction {
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const executionInfo& info);
+  void setExecutionInfo(const ExecutionInfo& info);
 
   /** Get this instruction's supported set of ports. */
   const std::vector<uint16_t>& getSupportedPorts() override;

@@ -149,7 +149,7 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
-void Instruction::setExecutionInfo(const executionInfo& info) {
+void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   if (isLoad_ || isStore_) {
     lsqExecutionLatency_ = info.latency;
   } else {

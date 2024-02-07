@@ -176,19 +176,6 @@ const uint8_t MATRIX = 5;
 const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
 
-/** A struct holding user-defined execution information for a aarch64
- * instruction. */
-struct ExecutionInfo {
-  /** The latency for the instruction. */
-  uint16_t latency = 1;
-
-  /** The execution throughput for the instruction. */
-  uint16_t stallCycles = 1;
-
-  /** The ports that support the instruction. */
-  std::vector<uint16_t> ports = {};
-};
-
 /** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,

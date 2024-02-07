@@ -40,7 +40,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
 
-  // Instantiate an executionInfo entry for each group in the InstructionGroup
+  // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_[i] = {1, 1, {}};
@@ -131,8 +131,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        opcodeExecutionInfo_.try_emplace(
-            opcode, simeng::arch::riscv::executionInfo{0, 0, {}});
+        opcodeExecutionInfo_.try_emplace(opcode, ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
@@ -210,13 +209,13 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return 4;
 }
 
-executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
+ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
   // Assume no opcode-based override
-  executionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
   if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
     // Replace with overrided values
-    executionInfo overrideInfo =
+    ExecutionInfo overrideInfo =
         opcodeExecutionInfo_.at(insn.getMetadata().opcode);
     if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
     if (overrideInfo.stallCycles != 0)

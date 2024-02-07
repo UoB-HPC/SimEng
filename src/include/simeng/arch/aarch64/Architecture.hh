@@ -20,7 +20,9 @@ class Architecture : public arch::Architecture {
  public:
   Architecture(kernel::Linux& kernel,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
+
   ~Architecture();
+
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
@@ -46,16 +48,16 @@ class Architecture : public arch::Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
+  /** Updates System registers of any system-based timers. */
+  void updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                  const uint64_t iterations) const override;
+
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
   /** Returns the current streaming vector length set by the provided
    * configuration. */
   uint64_t getStreamingVectorLength() const;
-
-  /** Updates System registers of any system-based timers. */
-  void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                  const uint64_t iterations) const override;
 
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
