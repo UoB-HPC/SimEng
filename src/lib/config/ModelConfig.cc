@@ -485,13 +485,29 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Load-Bandwidth"));
-  expectations_["LSQ-L1-Interface"]["Load-Bandwidth"].setValueBounds<uint16_t>(
-      1, UINT16_MAX);
+  // AArch64 requires a vector length of at least 128, requiring a minimum of 16
+  // byte load bandwidths
+  // For RV64, the the minimum required load bandwidth is 8 bytes
+  if (isa_ == ISA::AArch64) {
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
+        .setValueBounds<uint16_t>(16, UINT16_MAX);
+  } else if (isa_ == ISA::RV64) {
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
+        .setValueBounds<uint16_t>(8, UINT16_MAX);
+  }
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Store-Bandwidth"));
-  expectations_["LSQ-L1-Interface"]["Store-Bandwidth"].setValueBounds<uint16_t>(
-      1, UINT16_MAX);
+  // AArch64 requires a vector length of at least 128, requiring a minimum of 16
+  // byte store bandwidths
+  // For RV64, the the minimum required store bandwidth is 8 bytes
+  if (isa_ == ISA::AArch64) {
+    expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
+        .setValueBounds<uint16_t>(16, UINT16_MAX);
+  } else if (isa_ == ISA::RV64) {
+    expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
+        .setValueBounds<uint16_t>(8, UINT16_MAX);
+  }
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(
