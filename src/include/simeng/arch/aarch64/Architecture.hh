@@ -29,12 +29,6 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 
-  /** Retrieve an ExecutionInfo object for the requested instruction. If a
-   * opcode-based override has been defined for the latency and/or
-   * port information, return that instead of the group-defined execution
-   * information. */
-  virtual ExecutionInfo getExecutionInfo(const Instruction& insn) const;
-
   /** Returns a zero-indexed register tag for a system register encoding.
    * Returns -1 in the case that the system register has no mapping. */
   int32_t getSystemRegisterTag(uint16_t reg) const override;
@@ -56,6 +50,12 @@ class Architecture : public arch::Architecture {
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
+
+  /** Retrieve an ExecutionInfo object for the requested instruction. If a
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
+  virtual ExecutionInfo getExecutionInfo(const Instruction& insn) const;
 
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;

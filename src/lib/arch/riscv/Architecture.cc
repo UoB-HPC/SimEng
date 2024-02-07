@@ -134,6 +134,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     }
   }
 }
+
 Architecture::~Architecture() {
   cs_close(&capstoneHandle_);
   decodeCache_.clear();
@@ -206,34 +207,18 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return 4;
 }
 
-ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
-  // Assume no opcode-based override
-  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
-  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
-      opcodeExecutionInfo_.end()) {
-    // Replace with overrided values
-    ExecutionInfo overrideInfo =
-        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
-    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
-    if (overrideInfo.stallCycles != 0)
-      exeInfo.stallCycles = overrideInfo.stallCycles;
-    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
-  }
-  return exeInfo;
-}
-
-std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
-}
-
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
   if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
+}
+
+std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+    MemoryInterface& memory) const {
+  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 
 ProcessStateChange Architecture::getInitialState() const {
@@ -254,6 +239,22 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);
+}
+
+ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
+  // Assume no opcode-based override
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+      opcodeExecutionInfo_.end()) {
+    // Replace with overrided values
+    ExecutionInfo overrideInfo =
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
+    if (overrideInfo.stallCycles != 0)
+      exeInfo.stallCycles = overrideInfo.stallCycles;
+    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+  }
+  return exeInfo;
 }
 
 }  // namespace riscv
