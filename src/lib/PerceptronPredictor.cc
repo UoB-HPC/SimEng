@@ -145,7 +145,7 @@ void PerceptronPredictor::flush(uint64_t address) {
   }
 }
 
-int64_t PerceptronPredictor::getDotProduct(std::vector<int8_t> perceptron,
+int64_t PerceptronPredictor::getDotProduct(const std::vector<int8_t> perceptron,
                                            uint64_t history) {
   int64_t Pout = perceptron[globalHistoryLength_];
   for (int i = 0; i < globalHistoryLength_; i++) {

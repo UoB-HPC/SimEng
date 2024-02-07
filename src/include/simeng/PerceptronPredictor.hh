@@ -46,7 +46,7 @@ class PerceptronPredictor : public BranchPredictor {
  private:
   /** Returns the dot product of a perceptron and a history vector.  Used to
    * determine a direction prediction */
-  int64_t getDotProduct(std::vector<int8_t> perceptron, uint64_t history);
+  int64_t getDotProduct(const std::vector<int8_t> perceptron, uint64_t history);
 
   /** The length in bits of the BTB index; BTB will have 2^bits entries. */
   uint64_t btbBits_;
