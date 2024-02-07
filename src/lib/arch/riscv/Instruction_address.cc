@@ -15,14 +15,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   uint64_t address;
   if (isLoad() && isStoreAddress() && isAtomic()) {
     // Atomics
-    // Metadata operand[2] corresponds to instruction sourceRegValues[1]
+    // Metadata operands[2] corresponds to instruction sourceRegValues[1]
     assert(metadata.operands[2].type == RISCV_OP_REG &&
            "metadata operand not of correct type during RISC-V address "
            "generation");
     address = operands[1].get<uint64_t>();
   } else if (isLoad() && isAtomic()) {
     // Load reserved
-    // Metadata operand[1] corresponds to instruction sourceRegValues[0]
+    // Metadata operands[1] corresponds to instruction sourceRegValues[0]
     assert(metadata.operands[1].type == RISCV_OP_REG &&
            "metadata operand not of correct type during RISC-V address "
            "generation");

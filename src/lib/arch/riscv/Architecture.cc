@@ -191,8 +191,10 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   }
 #endif
 
+  // Check the 2 least significant bits
   if ((insn & 0b11) != 0b11) {
     // 2 byte - compressed
+    // Only use relevant bytes
     insn = insn & 0xFFFF;
   } else {
     // 4 byte
@@ -202,7 +204,6 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     }
   }
 
-  bool success;
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
@@ -216,7 +217,7 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-    success =
+    bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
     auto metadata =
@@ -244,9 +245,8 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     iter = decodeCache.insert({insn, newInsn}).first;
   }
 
-  assert(
-      predictedBytes == iter->second.getMetadata().getInsnLength() &&
-      "[SimEng::predecode] Predicted bytes doesn't march disassembled bytes");
+  assert(predictedBytes == iter->second.getMetadata().getInsnLength() &&
+         "[SimEng:predecode] Predicted bytes don't match disassembled bytes");
 
   output.resize(1);
   auto& uop = output[0];
