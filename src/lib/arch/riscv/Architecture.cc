@@ -135,12 +135,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   }
 }
 
-Architecture::~Architecture() {
-  cs_close(&capstoneHandle_);
-  decodeCache_.clear();
-  metadataCache_.clear();
-  groupExecutionInfo_.clear();
-}
+Architecture::~Architecture() { cs_close(&capstoneHandle_); }
 
 uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 uint64_t instructionAddress,
