@@ -206,16 +206,14 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return 4;
 }
 
-ExecutionInfo Architecture::getExecutionInfo(
-    const simeng::Instruction& insn) const {
-  auto insn_new = reinterpret_cast<const arch::riscv::Instruction&>(insn);
+ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
   // Assume no opcode-based override
-  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn_new.getGroup());
-  if (opcodeExecutionInfo_.find(insn_new.getMetadata().opcode) !=
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
     // Replace with overrided values
     ExecutionInfo overrideInfo =
-        opcodeExecutionInfo_.at(insn_new.getMetadata().opcode);
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
     if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
     if (overrideInfo.stallCycles != 0)
       exeInfo.stallCycles = overrideInfo.stallCycles;

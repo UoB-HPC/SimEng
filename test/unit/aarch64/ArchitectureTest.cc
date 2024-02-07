@@ -214,6 +214,25 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
   }
 }
 
+TEST_F(AArch64ArchitectureTest, getExecutionInfo) {
+  MacroOp insn;
+  uint64_t bytes = arch->predecode(validInstrBytes.data(),
+                                   validInstrBytes.size(), 0x4, insn);
+  // Insn[0] = fdivr z1.s, p0/m, z1.s, z0.s
+  Instruction* aarch64Insn = reinterpret_cast<Instruction*>(insn[0].get());
+  EXPECT_EQ(bytes, 4);
+  EXPECT_EQ(aarch64Insn->getInstructionAddress(), 0x4);
+  EXPECT_EQ(aarch64Insn->exceptionEncountered(), false);
+
+  ExecutionInfo info = arch->getExecutionInfo(*aarch64Insn);
+
+  // Latencies and Port numbers from a64fx.yaml
+  EXPECT_EQ(info.latency, 98);
+  EXPECT_EQ(info.stallCycles, 98);
+  std::vector<uint16_t> ports = {0};
+  EXPECT_EQ(info.ports, ports);
+}
+
 TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
   EXPECT_EQ(arch->getSVCRval(), 0);
   arch->setSVCRval(3);

@@ -111,13 +111,6 @@ class Architecture {
   /** A map to hold the relationship between instruction opcode and
    * user-defined execution information. */
   std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
-
- private:
-  /** Retrieve an ExecutionInfo object for the requested instruction. If a
-   * opcode-based override has been defined for the latency and/or
-   * port information, return that instead of the group-defined execution
-   * information. */
-  virtual ExecutionInfo getExecutionInfo(const Instruction& insn) const = 0;
 };
 
 }  // namespace arch
