@@ -34,6 +34,27 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["Execution-Units"].num_children() +
               config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
           {1, nullptr}),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
+                 isa, branchPredictor),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
+      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
+                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
+                  physicalRegisterStructures_.size()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities_),
+      writebackUnit_(
+          completionSlots_, registerFileSet_,
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
+      reorderBuffer_(
+          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
+          loadStoreQueue_,
+          [this](auto instruction) { raiseException(instruction); },
+          [this](auto branchAddress) {
+            fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<uint32_t>(),
           config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
@@ -52,27 +73,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
-      reorderBuffer_(
-          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
-          loadStoreQueue_,
-          [this](auto instruction) { raiseException(instruction); },
-          [this](auto branchAddress) {
-            fetchUnit_.registerLoopBoundary(branchAddress);
-          },
-          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
-          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
-      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
-      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
-                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures_.size()),
-      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_),
-      writebackUnit_(
-          completionSlots_, registerFileSet_,
-          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
