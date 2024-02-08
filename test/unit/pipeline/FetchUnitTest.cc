@@ -6,7 +6,6 @@
 #include "gtest/gtest.h"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/Architecture.hh"
-// #include "simeng/kernel/Linux.hh"
 #include "simeng/pipeline/FetchUnit.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
