@@ -50,9 +50,8 @@ TEST(ConfigTest, Default) {
       "'Conditional-Count': 1\n  'Matrix-Count': 1\n'Pipeline-Widths':\n  "
       "Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': 1\n'Queue-Sizes':\n  ROB: "
       "32\n  Load: 16\n  Store: 16\n'Branch-Predictor':\n  Type: Perceptron\n  "
-      "'BTB-Tag-Bits': 8\n "
-      " 'Global-History-Length': 8\n  "
-      "'RAS-entries': 8\n'L1-Data-Memory':\n  'Interface-Type': "
+      "'BTB-Tag-Bits': 8\n  'Global-History-Length': 8\n  'RAS-entries': "
+      "8\n'L1-Data-Memory':\n  'Interface-Type': "
       "Flat\n'L1-Instruction-Memory':\n  'Interface-Type': "
       "Flat\n'LSQ-L1-Interface':\n  'Access-Latency': 4\n  Exclusive: 0\n  "
       "'Load-Bandwidth': 32\n  'Store-Bandwidth': 32\n  "
@@ -69,8 +68,8 @@ TEST(ConfigTest, Default) {
       "  - 6343\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n   "
       " 'Instruction-Group-Nums':\n      - 87\n'CPU-Info':\n  "
       "'Generate-Special-Dir': 1\n  'Special-File-Dir-Path': " SIMENG_BUILD_DIR
-      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
-      "SMT: 1\n  BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
+      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  SMT: 1\n  "
+      "BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
       "'CPU-Architecture': 0\n  'CPU-Variant': 0x0\n  'CPU-Part': 0x0\n  "
       "'CPU-Revision': 0\n  'Package-Count': 1\n";
   EXPECT_EQ(emittedConfig, expectedValues);
@@ -123,8 +122,8 @@ TEST(ConfigTest, Default) {
       "  - 450\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n    "
       "'Instruction-Group-Nums':\n      - 24\n'CPU-Info':\n  "
       "'Generate-Special-Dir': 1\n  'Special-File-Dir-Path': " SIMENG_BUILD_DIR
-      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  "
-      "SMT: 1\n  BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
+      "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  SMT: 1\n  "
+      "BogoMIPS: 0\n  Features: ''\n  'CPU-Implementer': 0x0\n  "
       "'CPU-Architecture': 0\n  'CPU-Variant': 0x0\n  'CPU-Part': 0x0\n  "
       "'CPU-Revision': 0\n  'Package-Count': 1\n";
   EXPECT_EQ(emittedConfig, expectedValues);
