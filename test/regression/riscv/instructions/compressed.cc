@@ -8,6 +8,7 @@ namespace {
 using InstCompressed = RISCVRegressionTest;
 
 TEST_P(InstCompressed, lwsp) {
+  //  Load word from mem[stack pointer + imm]
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xDEADBEEF;
@@ -29,6 +30,7 @@ TEST_P(InstCompressed, lwsp) {
 }
 
 TEST_P(InstCompressed, ldsp) {
+  //  Load double word from mem[stack pointer + imm]
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xDEADBEEF;
@@ -50,7 +52,8 @@ TEST_P(InstCompressed, ldsp) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFEEBDAED12345678);
 }
 
-TEST_P(InstCompressed, flwsp) {
+TEST_P(InstCompressed, fldsp) {
+  //  Load double precision float from mem[stack pointer + imm]
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 1.0;
@@ -78,6 +81,7 @@ TEST_P(InstCompressed, flwsp) {
 }
 
 TEST_P(InstCompressed, swsp) {
+  //  Store word at mem[stack pointer + imm]
   RUN_RISCV_COMP(R"(
       li t6, 0xAA
       c.swsp t6, 0(sp)
@@ -93,6 +97,7 @@ TEST_P(InstCompressed, swsp) {
 }
 
 TEST_P(InstCompressed, sdsp) {
+  //  Store double word at mem[stack pointer + imm]
   RUN_RISCV_COMP(R"(
       li t6, 0xAA
       c.sdsp t6, 0(sp)
@@ -109,6 +114,7 @@ TEST_P(InstCompressed, sdsp) {
 }
 
 TEST_P(InstCompressed, fsdsp) {
+  //  Store double precision float at mem[stack pointer + imm]
   RUN_RISCV_COMP(R"(
       li t6, 0xAA
       fmv.d.x f8, t6
@@ -127,6 +133,7 @@ TEST_P(InstCompressed, fsdsp) {
 }
 
 TEST_P(InstCompressed, lw) {
+  // Compressed load word
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xDEADBEEF;
@@ -147,6 +154,7 @@ TEST_P(InstCompressed, lw) {
 }
 
 TEST_P(InstCompressed, ld) {
+  // Compressed store word
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xDEADBEEF;
@@ -168,6 +176,7 @@ TEST_P(InstCompressed, ld) {
 }
 
 TEST_P(InstCompressed, fld) {
+  // Compressed load double precision float
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 1.0;
@@ -193,6 +202,7 @@ TEST_P(InstCompressed, fld) {
 }
 
 TEST_P(InstCompressed, addi4spn) {
+  // Add immediate to stack pointer
   RUN_RISCV_COMP(R"(
     c.addi4spn x8, x2, 4
     c.addi4spn x9, x2, 12
@@ -202,6 +212,7 @@ TEST_P(InstCompressed, addi4spn) {
 }
 
 TEST_P(InstCompressed, sw) {
+  // Compressed store word
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0x12345678;
@@ -228,6 +239,7 @@ TEST_P(InstCompressed, sw) {
 }
 
 TEST_P(InstCompressed, sd) {
+  // Compressed store double word
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0x12345678;
@@ -254,6 +266,7 @@ TEST_P(InstCompressed, sd) {
 }
 
 TEST_P(InstCompressed, fsd) {
+  // Compressed store double precision float
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
   heap[0] = 1.0;
@@ -291,6 +304,7 @@ TEST_P(InstCompressed, fsd) {
 }
 
 TEST_P(InstCompressed, j) {
+  // Compressed jump
   // Labels needed as LLVM eagerly uses compressed instructions e.g. addi ->
   // c.addi causing manual jump offsets to be confusing
   RUN_RISCV_COMP(R"(
@@ -313,6 +327,7 @@ TEST_P(InstCompressed, j) {
 }
 
 TEST_P(InstCompressed, jalr) {
+  // Compressed jump to address in rs1, save pc+2 in link register
   RUN_RISCV_COMP(R"(
     li x8, 12
     c.jalr x8
@@ -337,6 +352,7 @@ TEST_P(InstCompressed, jalr) {
 }
 
 TEST_P(InstCompressed, beqz) {
+  // Compressed branch if rs1 equal to zero
   RUN_RISCV_COMP(R"(
     addi x8, x8, 2
     c.beqz x8, b1
@@ -358,6 +374,7 @@ TEST_P(InstCompressed, beqz) {
 }
 
 TEST_P(InstCompressed, bnez) {
+  // Compressed branch if rs1 not equal to zero
   RUN_RISCV_COMP(R"(
     addi x8, x8, 0
     c.bnez x8, b1
@@ -377,6 +394,7 @@ TEST_P(InstCompressed, bnez) {
 }
 
 TEST_P(InstCompressed, li) {
+  // Compressed load immediate
   RUN_RISCV_COMP(R"(
     addi a5, a5, 12
     c.li a5, 0
@@ -391,6 +409,8 @@ TEST_P(InstCompressed, li) {
 }
 
 TEST_P(InstCompressed, lui) {
+  // Compressed load immediate into bits 17-12, clear bottom 12 and sign extend
+  // high bits
   RUN_RISCV_COMP(R"(
       c.lui t3, 4
       c.lui t4, 0xFFFFC
@@ -400,6 +420,7 @@ TEST_P(InstCompressed, lui) {
 }
 
 TEST_P(InstCompressed, addi) {
+  // Compressed add immediate
   RUN_RISCV_COMP(R"(
     c.addi t3, 3
     c.addi t4, 6
@@ -412,6 +433,7 @@ TEST_P(InstCompressed, addi) {
 }
 
 TEST_P(InstCompressed, addiw) {
+  // Compressed add immediate. Produces 32 bit result and sign extends
   RUN_RISCV_COMP(R"(
     addi t3, t3, 91
     slli t3, t3, 28
@@ -424,6 +446,7 @@ TEST_P(InstCompressed, addiw) {
 }
 
 TEST_P(InstCompressed, addi16sp) {
+  // Add immediate (multiple of 16) to stack pointer
   RUN_RISCV_COMP(R"(
     mv x8, sp
     c.addi16sp x2, 16
@@ -556,6 +579,8 @@ TEST_P(InstCompressed, subw) {
 }
 
 TEST_P(InstCompressed, nop) {
+  // Ensure that a nop doesn't change the state of the processor
+  // Check initial architectural state
   RUN_RISCV_COMP(R"(
     li x8, 1234
   )");
@@ -603,6 +628,7 @@ TEST_P(InstCompressed, nop) {
     c.nop
   )");
 
+  // Ensure state hasn't changed except the number of ticks
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 199840);
@@ -639,6 +665,7 @@ TEST_P(InstCompressed, nop) {
 }
 
 TEST_P(InstCompressed, ebreak) {
+  // Currently not implemented so ensure this produces an exception
   std::stringstream buffer;
   std::streambuf* sbuf = std::cout.rdbuf();  // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());           // Redirect cout to buffer

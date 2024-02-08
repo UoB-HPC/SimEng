@@ -1,7 +1,6 @@
 #include "simeng/arch/riscv/Architecture.hh"
 
 #include <algorithm>
-#include <bitset>
 #include <cassert>
 #include <iostream>
 #include <queue>

@@ -852,6 +852,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     default:
+      // Unimplemented compressed instruction, raise exception
+      aliasNYI();
       break;
   }
 }
