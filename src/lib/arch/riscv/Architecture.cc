@@ -153,9 +153,9 @@ Architecture::~Architecture() {
   groupExecutionInfo_.clear();
 }
 
-int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
-                               uint64_t instructionAddress,
-                               MacroOp& output) const {
+uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
+                                uint64_t instructionAddress,
+                                MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed ISA is supported
   if (instructionAddress & constants_.alignMask) {

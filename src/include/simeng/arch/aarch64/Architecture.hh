@@ -24,8 +24,9 @@ class Architecture : public arch::Architecture {
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
-  int8_t predecode(const void* ptr, uint8_t bytesAvailable,
-                   uint64_t instructionAddress, MacroOp& output) const override;
+  uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
+                    uint64_t instructionAddress,
+                    MacroOp& output) const override;
 
   /** Returns a zero-indexed register tag for a system register encoding.
    * Returns -1 in the case that the system register has no mapping. */

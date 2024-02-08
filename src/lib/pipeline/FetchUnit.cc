@@ -196,7 +196,7 @@ void FetchUnit::tick() {
       break;
     }
 
-    // Too few bytes remaining in buffer to continue.
+    // Too few bytes remaining in buffer to continue
     if (bufferedBytes_ == 0) {
       break;
     }
