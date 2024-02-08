@@ -43,12 +43,12 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
       implicitDestinationCount(0),
-      operandCount(0) {
+      operandCount(0),
+      insnLengthBytes_(bytes) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
-  insnLengthBytes_ = 4;
 }
 
 void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {

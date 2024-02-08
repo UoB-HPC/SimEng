@@ -1,6 +1,7 @@
 #include "simeng/arch/riscv/Architecture.hh"
 
 #include <algorithm>
+#include <bitset>
 #include <cassert>
 #include <iostream>
 #include <queue>
@@ -173,55 +174,63 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   assert(bytesAvailable >= constants_.bytesLimit &&
          "Fewer than bytes limit supplied to RISC-V decoder");
 
-  // Dereference the instruction pointer to obtain the instruction word
-  uint32_t insn;
-  memcpy(&insn, ptr, 4);
+  // Get the first byte
+  uint8_t firstByte = *(uint8_t*)ptr;
+
+  uint32_t insn = 0;
+  size_t size = 4;
 
   // Predecode bytes to determine whether we have a compressed instruction.
   // This will allow continuation if a compressed instruction is in the last 2
   // bytes of a fetch block, but will request more data if only half of a
   // non-compressed instruction is present
 
-#ifndef NDEBUG
-  uint8_t predictedBytes = 0;
-  if ((insn & 0b11) != 0b11) {
-    predictedBytes = 2;
-  } else {
-    predictedBytes = 4;
-  }
-#endif
-
-  // Check the 2 least significant bits
-  if ((insn & 0b11) != 0b11) {
+  // Check the 2 least significant bits as these determine instruction length
+  if ((firstByte & 0b11) != 0b11) {
     // 2 byte - compressed
     // Only use relevant bytes
-    insn = insn & 0xFFFF;
+    // Dereference the instruction pointer to obtain the instruction word
+    memcpy(&insn, ptr, 2);
+    size = 2;
   } else {
     // 4 byte
     if (bytesAvailable < 4) {
       // Not enough bytes available, bail
       return -1;
     }
+    // Dereference the instruction pointer to obtain the instruction word
+    memcpy(&insn, ptr, 4);
   }
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
+#ifndef NDEBUG
+    // Struct not initialised which can cause issues but can be slow
+    cs_insn* rawInsnPointer = (cs_insn*)calloc(1, sizeof(cs_insn));
+    cs_insn rawInsn = *rawInsnPointer;
+    assert(rawInsn.size == 0 && "rawInsn not initialised correctly");
+#else
     cs_insn rawInsn;
+#endif
+
     cs_detail rawDetail;
     rawInsn.detail = &rawDetail;
+    // Size requires initialisation in case of capstone failure which won't
+    // update this value
+    rawInsn.size = size;
 
-    size_t size = 4;
     uint64_t address = 0;
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
+    // size now contains size of next instruction in the buffer
 
-    auto metadata =
-        success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
+    auto metadata = success ? InstructionMetadata(rawInsn)
+                            : InstructionMetadata(encoding, rawInsn.size);
 
     // Cache the metadata
     metadataCache.push_front(metadata);
@@ -231,21 +240,13 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
 
-    if (newInsn.getMetadata().opcode == Opcode::RISCV_INSTRUCTION_LIST_END) {
-      // Often incorrect predicted number of bytes when using garbage data. That
-      // doesn't get disassembled as invalid. Update `insn` so cache can be used
-      // properly
-#ifndef NDEBUG
-      predictedBytes = 4;
-#endif
-      memcpy(&insn, ptr, 4);
-    }
-
     // Cache the instruction
     iter = decodeCache.insert({insn, newInsn}).first;
   }
 
-  assert(predictedBytes == iter->second.getMetadata().getInsnLength() &&
+  assert(((insn & 0b11) != 0b11
+              ? iter->second.getMetadata().getInsnLength() == 2
+              : iter->second.getMetadata().getInsnLength() == 4) &&
          "[SimEng:predecode] Predicted bytes don't match disassembled bytes");
 
   output.resize(1);
