@@ -349,14 +349,16 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(32,
                                                      "GeneralPurpose-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["GeneralPurpose-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(
             32, "FloatingPoint/SVE-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["FloatingPoint/SVE-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(17, "Predicate-Count",
@@ -377,14 +379,16 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(32,
                                                      "GeneralPurpose-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["GeneralPurpose-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(32,
                                                      "FloatingPoint-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["FloatingPoint-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
   }
 
   // Pipeline-Widths
@@ -485,27 +489,22 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Load-Bandwidth"));
-  // AArch64 requires a vector length of at least 128, requiring a minimum of 16
-  // byte load bandwidths
-  // For RV64, the the minimum required load bandwidth is 8 bytes
-  if (isa_ == ISA::AArch64) {
-    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
-        .setValueBounds<uint16_t>(16, UINT16_MAX);
-  } else if (isa_ == ISA::RV64) {
-    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
-        .setValueBounds<uint16_t>(8, UINT16_MAX);
-  }
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Store-Bandwidth"));
+
   // AArch64 requires a vector length of at least 128, requiring a minimum of 16
-  // byte store bandwidths
-  // For RV64, the the minimum required store bandwidth is 8 bytes
+  // byte load/store bandwidths
+  // For RV64, the the minimum required load/store bandwidth is 8 bytes
   if (isa_ == ISA::AArch64) {
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
+        .setValueBounds<uint16_t>(16, UINT16_MAX);
     expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
         .setValueBounds<uint16_t>(16, UINT16_MAX);
   } else if (isa_ == ISA::RV64) {
     expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
+        .setValueBounds<uint16_t>(8, UINT16_MAX);
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
         .setValueBounds<uint16_t>(8, UINT16_MAX);
   }
 
