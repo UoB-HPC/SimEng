@@ -91,7 +91,7 @@ class Architecture : public arch::Architecture {
   uint64_t SVL_;
 
   /** A copy of the value of the SVCR system register. */
-  mutable uint64_t SVCRval_;
+  mutable uint64_t SVCRval_ = 0;
 
   /** System Register of Virtual Counter Timer. */
   simeng::Register VCTreg_;
