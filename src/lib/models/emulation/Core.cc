@@ -6,21 +6,17 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-// TODO: Expose as config option
 /** The number of bytes fetched each cycle. */
-const uint16_t FETCH_SIZE = 4;
-const unsigned int clockFrequency = 2.5 * 1e9;
+const uint8_t FETCH_SIZE = 4;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
            const arch::Architecture& isa)
-    : instructionMemory_(instructionMemory),
-      dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
-      isa_(isa),
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
+      instructionMemory_(instructionMemory),
+      architecturalRegisterFileSet_(registerFileSet_),
       pc_(entryPoint),
-      registerFileSet_(config::SimInfo::getArchRegStruct()),
-      architecturalRegisterFileSet_(registerFileSet_) {
+      programByteLength_(programByteLength) {
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
@@ -293,7 +289,7 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency / 1e9);
+  return ticks_ / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

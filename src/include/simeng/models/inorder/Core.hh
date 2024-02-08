@@ -52,8 +52,15 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   void handleException();
 
+  /** Process the active exception handler. */
+  void processExceptionHandler();
+
+  /** Handle requesting/execution of a load instruction. */
+  void handleLoad(const std::shared_ptr<Instruction>& instruction);
+
   /** Load and supply memory data requested by an instruction. */
   void loadData(const std::shared_ptr<Instruction>& instruction);
+
   /** Store data supplied by an instruction to memory. */
   void storeData(const std::shared_ptr<Instruction>& instruction);
 
@@ -64,30 +71,15 @@ class Core : public simeng::Core {
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();
 
-  /** Process the active exception handler. */
-  void processExceptionHandler();
-
   /** Apply changes to the process state. */
   void applyStateChange(const arch::ProcessStateChange& change);
-
-  /** Handle requesting/execution of a load instruction. */
-  void handleLoad(const std::shared_ptr<Instruction>& instruction);
-
-  /** The process memory. */
-  MemoryInterface& dataMemory_;
-
-  /** A reference to the core's architecture. */
-  const arch::Architecture& isa_;
-
-  /** The core's register file set. */
-  RegisterFileSet registerFileSet_;
 
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
-  /** The process memory. */
-  span<char> processMemory;
+  /** The previously generated addresses. */
+  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
@@ -98,9 +90,6 @@ class Core : public simeng::Core {
   /** The buffer between execute and writeback. */
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
-
-  /** The previously generated addresses. */
-  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
@@ -118,20 +107,11 @@ class Core : public simeng::Core {
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
 
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
-
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
-
-  /** Whether the core has halted. */
-  bool hasHalted_ = false;
-
-  /** The active exception handler. */
-  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace inorder

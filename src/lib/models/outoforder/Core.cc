@@ -6,8 +6,8 @@
 #include <sstream>
 #include <string>
 
-// Temporary; until config options are available
-#include "simeng/arch/aarch64/Instruction.hh"
+// // Temporary; until config options are available
+// #include "simeng/arch/aarch64/Instruction.hh"
 namespace simeng {
 namespace models {
 namespace outoforder {
@@ -17,14 +17,12 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
-    : isa_(isa),
+    : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
-      registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(config::SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
-      dataMemory_(dataMemory),
       fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(),
                            {}),
       decodeToRenameBuffer_(
@@ -76,7 +74,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups

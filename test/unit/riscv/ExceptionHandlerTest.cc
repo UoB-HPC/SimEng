@@ -23,18 +23,20 @@ class RiscVExceptionHandlerTest : public ::testing::Test {
                    .as<std::string>()),
         arch(kernel),
         physRegFileSet(config::SimInfo::getArchRegStruct()),
-        archRegFileSet(physRegFileSet) {}
+        archRegFileSet(physRegFileSet),
+        core(memory, arch, config::SimInfo::getArchRegStruct()) {}
 
  protected:
   ConfigInit configInit = ConfigInit(config::ISA::RV64, "");
 
-  MockCore core;
   MockMemoryInterface memory;
   kernel::Linux kernel;
   Architecture arch;
 
   RegisterFileSet physRegFileSet;
   ArchitecturalRegisterFileSet archRegFileSet;
+
+  MockCore core;
 
   // addi	sp, ra, 2000 --- Just need a valid instruction to hijack
   std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};

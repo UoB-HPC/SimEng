@@ -9,22 +9,19 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
-// TODO: Replace with config options
-const unsigned int blockSize = 16;
-const unsigned int clockFrequency = 2.5 * 1e9;
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor)
-    : dataMemory_(dataMemory),
-      isa_(isa),
-      registerFileSet_(config::SimInfo::getArchRegStruct()),
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, blockSize, isa, branchPredictor),
+                 entryPoint,
+                 config::SimInfo::getConfig()["Fetch"]["Fetch-Block-Size"]
+                     .as<uint16_t>(),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -146,7 +143,7 @@ uint64_t Core::getInstructionsRetiredCount() const {
 
 uint64_t Core::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
+  return ticks_ / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

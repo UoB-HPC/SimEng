@@ -60,30 +60,9 @@ class Core : public simeng::Core {
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 
-  /** A memory interface to access data. */
-  MemoryInterface& dataMemory_;
-
-  /** The previously generated addresses. */
-  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
-
-  /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
-
-  /** The currently used ISA. */
-  const arch::Architecture& isa_;
-
-  /** The current program counter. */
-  uint64_t pc_ = 0;
-
-  /** The core's register file set. */
-  RegisterFileSet registerFileSet_;
-
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
-
-  /** Whether or not the core has halted. */
-  bool hasHalted_ = false;
 
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
@@ -91,14 +70,17 @@ class Core : public simeng::Core {
   /** An internal buffer for storing one or more uops. */
   std::queue<std::shared_ptr<Instruction>> microOps_;
 
-  /** The active exception handler. */
-  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+  /** The previously generated addresses. */
+  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
+
+  /** The current program counter. */
+  uint64_t pc_ = 0;
+
+  /** The length of the available instruction memory. */
+  uint64_t programByteLength_ = 0;
 
   /** Is the core waiting on a data read? */
-  unsigned int pendingReads_ = 0;
-
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
+  uint64_t pendingReads_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;

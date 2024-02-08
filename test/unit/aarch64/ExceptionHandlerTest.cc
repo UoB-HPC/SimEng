@@ -23,18 +23,20 @@ class AArch64ExceptionHandlerTest : public ::testing::Test {
                    .as<std::string>()),
         arch(kernel),
         physRegFileSet(config::SimInfo::getArchRegStruct()),
-        archRegFileSet(physRegFileSet) {}
+        archRegFileSet(physRegFileSet),
+        core(memory, arch, config::SimInfo::getArchRegStruct()) {}
 
  protected:
   ConfigInit configInit = ConfigInit(config::ISA::AArch64, "");
 
-  MockCore core;
   MockMemoryInterface memory;
   kernel::Linux kernel;
   Architecture arch;
 
   RegisterFileSet physRegFileSet;
   ArchitecturalRegisterFileSet archRegFileSet;
+
+  MockCore core;
 
   // fdivr z1.s, p0/m, z1.s, z0.s --- Just need a valid instruction to hijack
   const std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
