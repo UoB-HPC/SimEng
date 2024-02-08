@@ -325,48 +325,6 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accordance with the ProcessStateChange type
-  switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(
-            change.modifiedRegisters[i],
-            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
-                    .get<uint64_t>() +
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    case arch::ChangeType::DECREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(
-            change.modifiedRegisters[i],
-            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
-                    .get<uint64_t>() -
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    default: {  // arch::ChangeType::REPLACEMENT
-      // If type is ChangeType::REPLACEMENT, set new values
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                                   change.modifiedRegisterValues[i]);
-      }
-      break;
-    }
-  }
-
-  // Update memory
-  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
-  // required for memory changes
-  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
-  }
-}
-
 void Core::flushIfNeeded() {
   // Check for flush
   bool euFlush = false;

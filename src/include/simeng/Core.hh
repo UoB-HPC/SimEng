@@ -6,6 +6,7 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/arch/ProcessStateChange.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -51,6 +52,47 @@ class Core {
   virtual std::map<std::string, std::string> getStats() const = 0;
 
  protected:
+  /** Apply changes to the process state. */
+  void applyStateChange(const arch::ProcessStateChange& change) const {
+    auto& regFile = const_cast<ArchitecturalRegisterFileSet&>(
+        getArchitecturalRegisterFileSet());
+    // Update registers in accordance with the ProcessStateChange type
+    switch (change.type) {
+      case arch::ChangeType::INCREMENT: {
+        for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+          regFile.set(change.modifiedRegisters[i],
+                      regFile.get(change.modifiedRegisters[i]).get<uint64_t>() +
+                          change.modifiedRegisterValues[i].get<uint64_t>());
+        }
+        break;
+      }
+      case arch::ChangeType::DECREMENT: {
+        for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+          regFile.set(change.modifiedRegisters[i],
+                      regFile.get(change.modifiedRegisters[i]).get<uint64_t>() -
+                          change.modifiedRegisterValues[i].get<uint64_t>());
+        }
+        break;
+      }
+      default: {  // arch::ChangeType::REPLACEMENT
+        // If type is ChangeType::REPLACEMENT, set new values
+        for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+          regFile.set(change.modifiedRegisters[i],
+                      change.modifiedRegisterValues[i]);
+        }
+        break;
+      }
+    }
+
+    // Update memory
+    // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+    // required for memory changes
+    for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+      dataMemory_.requestWrite(change.memoryAddresses[i],
+                               change.memoryAddressValues[i]);
+    }
+  }
+
   /** A memory interface to access data. */
   MemoryInterface& dataMemory_;
 

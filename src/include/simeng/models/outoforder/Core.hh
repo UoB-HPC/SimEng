@@ -63,9 +63,6 @@ class Core : public simeng::Core {
   /** Process the active exception handler. */
   void processExceptionHandler();
 
-  /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
-
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 

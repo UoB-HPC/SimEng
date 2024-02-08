@@ -71,9 +71,6 @@ class Core : public simeng::Core {
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();
 
-  /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
-
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;

@@ -54,9 +54,6 @@ class Core : public simeng::Core {
   /** Process an active exception handler. */
   void processExceptionHandler();
 
-  /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
-
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 
