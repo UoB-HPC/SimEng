@@ -8,12 +8,12 @@ namespace arch {
 namespace aarch64 {
 
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
-    : arch::Architecture(kernel) {
-  microDecoder_ = std::make_unique<MicroDecoder>();
-  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
-  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
-  vctModulo_ = (config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
-               (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6);
+    : arch::Architecture(kernel),
+      microDecoder_(std::make_unique<MicroDecoder>()),
+      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
+      SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
+      vctModulo_((config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
+                 (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6)) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle_) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
