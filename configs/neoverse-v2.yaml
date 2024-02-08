@@ -283,13 +283,13 @@ CPU-Info:
   # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (TX2 true value is 4)
   SMT: 1
   # Below are the values needed to generate /proc/cpuinfo
-  BogoMIPS: 400.00
-  Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics cpuid asimdrdm
-  CPU-Implementer: "0x43"
+  BogoMIPS: 2000.00
+  Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 sm3 sm4 asimddp sha512 sve asimdfhm dit uscat ilrcpc flagm ssbs paca pacg dcpodp svei8mm svebf16 i8mm bf16 dgh rng
+  CPU-Implementer: "0x41"
   CPU-Architecture: 8
   CPU-Variant: "0x1"
-  CPU-Part: "0x0af"
-  CPU-Revision: 2
+  CPU-Part: "0xd40"
+  CPU-Revision: 1
   # Package-Count is used to generate 
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
