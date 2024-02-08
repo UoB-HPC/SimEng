@@ -161,66 +161,6 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
-void Core::flushIfNeeded() {
-  // Check for flush
-  bool euFlush = false;
-  uint64_t targetAddress = 0;
-  uint64_t lowestInsnId = 0;
-  for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
-      euFlush = true;
-      lowestInsnId = eu.getFlushInsnId();
-      targetAddress = eu.getFlushAddress();
-    }
-  }
-  if (euFlush || reorderBuffer_.shouldFlush()) {
-    // Flush was requested in an out-of-order stage.
-    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
-    // Rename/Dispatch)
-
-    if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
-      // If the reorder buffer found an older instruction to flush up to, do
-      // that instead
-      lowestInsnId = reorderBuffer_.getFlushInsnId();
-      targetAddress = reorderBuffer_.getFlushAddress();
-    }
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.fill({});
-    fetchToDecodeBuffer_.stall(false);
-
-    decodeToRenameBuffer_.fill(nullptr);
-    decodeToRenameBuffer_.stall(false);
-
-    renameToDispatchBuffer_.fill(nullptr);
-    renameToDispatchBuffer_.stall(false);
-
-    // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer_.flush(lowestInsnId);
-    decodeUnit_.purgeFlushed();
-    dispatchIssueUnit_.purgeFlushed();
-    loadStoreQueue_.purgeFlushed();
-    for (auto& eu : executionUnits_) {
-      eu.purgeFlushed();
-    }
-
-    flushes_++;
-  } else if (decodeUnit_.shouldFlush()) {
-    // Flush was requested at decode stage
-    // Update PC and wipe Fetch/Decode buffer.
-    targetAddress = decodeUnit_.getFlushAddress();
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.fill({});
-    fetchToDecodeBuffer_.stall(false);
-
-    flushes_++;
-  }
-}
-
 bool Core::hasHalted() const {
   if (hasHalted_) {
     return true;
@@ -254,6 +194,74 @@ bool Core::hasHalted() const {
   if (exceptionHandler_ != nullptr) return false;
 
   return true;
+}
+
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return mappedRegisterFileSet_;
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return reorderBuffer_.getInstructionsCommittedCount();
+}
+
+uint64_t Core::getSystemTimer() const {
+  // TODO: This will need to be changed if we start supporting DVFS.
+  return ticks_ / (clockFrequency_ / 1e9);
+}
+
+std::map<std::string, std::string> Core::getStats() const {
+  auto retired = reorderBuffer_.getInstructionsCommittedCount();
+  auto ipc = retired / static_cast<float>(ticks_);
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
+
+  auto branchStalls = fetchUnit_.getBranchStalls();
+
+  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
+
+  auto allocationStalls = renameUnit_.getAllocationStalls();
+  auto robStalls = renameUnit_.getROBStalls();
+  auto lqStalls = renameUnit_.getLoadQueueStalls();
+  auto sqStalls = renameUnit_.getStoreQueueStalls();
+
+  auto rsStalls = dispatchIssueUnit_.getRSStalls();
+  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
+  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
+  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
+
+  uint64_t totalBranchesExecuted = 0;
+  uint64_t totalBranchMispredicts = 0;
+
+  // Sum up the branch stats reported across the execution units.
+  for (auto& eu : executionUnits_) {
+    totalBranchesExecuted += eu.getBranchExecutedCount();
+    totalBranchMispredicts += eu.getBranchMispredictedCount();
+  }
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(retired)},
+          {"ipc", ipcStr.str()},
+          {"flushes", std::to_string(flushes_)},
+          {"fetch.branchStalls", std::to_string(branchStalls)},
+          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
+          {"rename.allocationStalls", std::to_string(allocationStalls)},
+          {"rename.robStalls", std::to_string(robStalls)},
+          {"rename.lqStalls", std::to_string(lqStalls)},
+          {"rename.sqStalls", std::to_string(sqStalls)},
+          {"dispatch.rsStalls", std::to_string(rsStalls)},
+          {"issue.frontendStalls", std::to_string(frontendStalls)},
+          {"issue.backendStalls", std::to_string(backendStalls)},
+          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.missrate", branchMissRateStr.str()},
+          {"lsq.loadViolations",
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -359,72 +367,64 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
-    const {
-  return mappedRegisterFileSet_;
-}
-
-uint64_t Core::getInstructionsRetiredCount() const {
-  return reorderBuffer_.getInstructionsCommittedCount();
-}
-
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
-}
-
-std::map<std::string, std::string> Core::getStats() const {
-  auto retired = reorderBuffer_.getInstructionsCommittedCount();
-  auto ipc = retired / static_cast<float>(ticks_);
-  std::ostringstream ipcStr;
-  ipcStr << std::setprecision(2) << ipc;
-
-  auto branchStalls = fetchUnit_.getBranchStalls();
-
-  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
-
-  auto allocationStalls = renameUnit_.getAllocationStalls();
-  auto robStalls = renameUnit_.getROBStalls();
-  auto lqStalls = renameUnit_.getLoadQueueStalls();
-  auto sqStalls = renameUnit_.getStoreQueueStalls();
-
-  auto rsStalls = dispatchIssueUnit_.getRSStalls();
-  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
-  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
-  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
-
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
+void Core::flushIfNeeded() {
+  // Check for flush
+  bool euFlush = false;
+  uint64_t targetAddress = 0;
+  uint64_t lowestInsnId = 0;
+  for (const auto& eu : executionUnits_) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
+      euFlush = true;
+      lowestInsnId = eu.getFlushInsnId();
+      targetAddress = eu.getFlushAddress();
+    }
   }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+  if (euFlush || reorderBuffer_.shouldFlush()) {
+    // Flush was requested in an out-of-order stage.
+    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
+    // Rename/Dispatch)
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+    if (reorderBuffer_.shouldFlush() &&
+        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
+      // If the reorder buffer found an older instruction to flush up to, do
+      // that instead
+      lowestInsnId = reorderBuffer_.getFlushInsnId();
+      targetAddress = reorderBuffer_.getFlushAddress();
+    }
+
+    fetchUnit_.flushLoopBuffer();
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
+
+    decodeToRenameBuffer_.fill(nullptr);
+    decodeToRenameBuffer_.stall(false);
+
+    renameToDispatchBuffer_.fill(nullptr);
+    renameToDispatchBuffer_.stall(false);
+
+    // Flush everything younger than the bad instruction from the ROB
+    reorderBuffer_.flush(lowestInsnId);
+    decodeUnit_.purgeFlushed();
+    dispatchIssueUnit_.purgeFlushed();
+    loadStoreQueue_.purgeFlushed();
+    for (auto& eu : executionUnits_) {
+      eu.purgeFlushed();
+    }
+
+    flushes_++;
+  } else if (decodeUnit_.shouldFlush()) {
+    // Flush was requested at decode stage
+    // Update PC and wipe Fetch/Decode buffer.
+    targetAddress = decodeUnit_.getFlushAddress();
+
+    fetchUnit_.flushLoopBuffer();
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
+
+    flushes_++;
+  }
 }
 
 }  // namespace outoforder

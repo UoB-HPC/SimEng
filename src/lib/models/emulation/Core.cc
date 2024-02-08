@@ -158,6 +158,27 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
+bool Core::hasHalted() const { return hasHalted_; }
+
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return architecturalRegisterFileSet_;
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
+}
+
+uint64_t Core::getSystemTimer() const {
+  return ticks_ / (clockFrequency_ / 1e9);
+}
+
+std::map<std::string, std::string> Core::getStats() const {
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(instructionsExecuted_)},
+          {"branch.executed", std::to_string(branchesExecuted_)}};
+};
+
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
@@ -276,27 +297,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
                              change.memoryAddressValues[i]);
   }
 }
-
-bool Core::hasHalted() const { return hasHalted_; }
-
-const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
-    const {
-  return architecturalRegisterFileSet_;
-}
-
-uint64_t Core::getInstructionsRetiredCount() const {
-  return instructionsExecuted_;
-}
-
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency_ / 1e9);
-}
-
-std::map<std::string, std::string> Core::getStats() const {
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-};
 
 }  // namespace emulation
 }  // namespace models

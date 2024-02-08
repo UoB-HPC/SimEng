@@ -220,6 +220,19 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
+void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
+  loadData(instruction);
+  if (instruction->exceptionEncountered()) {
+    raiseException(instruction);
+    return;
+  }
+
+  forwardOperands(instruction->getDestinationRegisters(),
+                  instruction->getResults());
+  // Manually add the instruction to the writeback input buffer
+  completionSlots_[0].getTailSlots()[0] = instruction;
+}
+
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
@@ -344,19 +357,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
-}
-
-void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
-  loadData(instruction);
-  if (instruction->exceptionEncountered()) {
-    raiseException(instruction);
-    return;
-  }
-
-  forwardOperands(instruction->getDestinationRegisters(),
-                  instruction->getResults());
-  // Manually add the instruction to the writeback input buffer
-  completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
 }  // namespace inorder
