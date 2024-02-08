@@ -196,7 +196,7 @@ int8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // 4 byte
     if (bytesAvailable < 4) {
       // Not enough bytes available, bail
-      return -1;
+      return 0;
     }
     // Dereference the instruction pointer to obtain the instruction word
     memcpy(&insn, ptr, 4);
