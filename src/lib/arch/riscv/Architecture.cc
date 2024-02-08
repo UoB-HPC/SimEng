@@ -309,8 +309,6 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   regFile->set(cycleSystemReg_, iterations);
 }
 
-archConstants Architecture::getConstants() const { return constants_; }
-
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

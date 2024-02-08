@@ -19,6 +19,7 @@ typedef enum riscv_sysreg {
 
 } riscv_sysreg;
 
+// A struct of RISC-V specific constants
 struct constantsPool {
   const uint8_t alignMask = 0x3;
   const uint8_t alignMaskCompressed = 0x1;

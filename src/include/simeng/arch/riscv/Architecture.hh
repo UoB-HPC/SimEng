@@ -54,9 +54,6 @@ class Architecture : public arch::Architecture {
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
 
-  /** Return a struct contains constants */
-  archConstants getConstants() const;
-
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or

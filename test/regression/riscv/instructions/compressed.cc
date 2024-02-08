@@ -580,7 +580,7 @@ TEST_P(InstCompressed, subw) {
 
 TEST_P(InstCompressed, nop) {
   // Ensure that a nop doesn't change the state of the processor
-  // Check initial architectural state
+  // Load a register and check initial architectural state
   RUN_RISCV_COMP(R"(
     li x8, 1234
   )");
@@ -620,6 +620,7 @@ TEST_P(InstCompressed, nop) {
 
   numTicks_ = 0;
 
+  // Run some no operations
   RUN_RISCV_COMP(R"(
     c.nop
     c.nop
