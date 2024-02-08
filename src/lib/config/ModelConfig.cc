@@ -346,17 +346,17 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Register-Set
   expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
   if (isa_ == ISA::AArch64) {
-    expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
-                                                     "GeneralPurpose-Count"));
     // TODO: Reduce to 32 once renaming issue has been sorted
+    expectations_["Register-Set"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(38,
+                                                     "GeneralPurpose-Count"));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
 
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(
-            32, "FloatingPoint/SVE-Count"));
-    // TODO: Reduce to 32 once renaming issue has been sorted
+            38, "FloatingPoint/SVE-Count"));
     expectations_["Register-Set"]["FloatingPoint/SVE-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
 
