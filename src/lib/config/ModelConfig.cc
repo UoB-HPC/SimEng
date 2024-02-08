@@ -433,15 +433,6 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
   expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(1,
                                                                             64);
-  // Saturating counter bits are relevant to the GenericPredictor only
-  if (!isDefault &&
-      configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
-    expectations_["Branch-Predictor"].addChild(
-        ExpectationNode::createExpectation<uint8_t>(2,
-                                                    "Saturating-Count-Bits"));
-    expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
-        .setValueBounds<uint8_t>(1, 64);
-  }
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint16_t>(8, "Global-History-Length"));
@@ -453,9 +444,16 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"]["RAS-entries"].setValueBounds<uint16_t>(
       1, UINT16_MAX);
 
-  // The fallback predictor is relevant to the GenericPredictor only
+  // The saturating counter bits and the fallback predictor
+  // are relevant to the GenericPredictor only
   if (!isDefault &&
       configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<uint8_t>(2,
+                                                    "Saturating-Count-Bits"));
+    expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
+        .setValueBounds<uint8_t>(1, 64);
+
     expectations_["Branch-Predictor"].addChild(
         ExpectationNode::createExpectation<std::string>(
             "Always-Taken", "Fallback-Static-Predictor"));
