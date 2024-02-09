@@ -108,7 +108,7 @@ void FetchUnit::tick() {
     bufferOffset = 0;
   }
 
-  // Check we have enough data to begin decoding
+  // Check we have enough data to begin decoding as read may not have completed
   if (bufferedBytes_ < isa_.getMinInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();

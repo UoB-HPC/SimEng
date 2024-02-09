@@ -182,37 +182,44 @@ void Instruction::decode() {
            */
         }
       }
-    }
+    } else if (i > 0) {
+      // First operand is never of MEM or IMM type, every register operand after
+      // the first is a source register
+      if (op.type == RISCV_OP_REG) {
+        //  Second or third register operand
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
-    // For all instructions, every register operand after the first is a source
-    // register
-    else if (i > 0 && op.type == RISCV_OP_REG) {
-      //  Second or third operand
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+        if (sourceRegisters[sourceRegisterCount] ==
+            RegisterType::ZERO_REGISTER) {
+          // Catch zero register references and pre-complete those operands
+          operands[sourceRegisterCount] = RegisterValue(0, 8);
+        } else {
+          operandsPending++;
+        }
 
-      if (sourceRegisters[sourceRegisterCount] == RegisterType::ZERO_REGISTER) {
-        // Catch zero register references and pre-complete those operands
-        operands[sourceRegisterCount] = RegisterValue(0, 8);
-      } else {
+        sourceRegisterCount++;
+      } else if (op.type == RISCV_OP_MEM) {
+        // Memory operand
+        // Extract reg number from capstone object
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
+        sourceImm_ = op.mem.disp;
+        sourceRegisterCount++;
         operandsPending++;
+      } else if (op.type == RISCV_OP_IMM) {
+        // Immediate operand
+        sourceImm_ = op.imm;
+      } else {
+        // Something has gone wrong
+        assert(
+            false &&
+            "[SimEng:Instruction_decode] Unexpected register type in non-first "
+            "operand position");
       }
-
-      sourceRegisterCount++;
-    }
-
-    // First operand is never MEM type, only check after the first. If register
-    // contains memory address, extract reg number from capstone object
-    else if (i > 0 && op.type == RISCV_OP_MEM) {
-      //  Memory operand
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
-      sourceImm_ = op.mem.disp;
-      sourceRegisterCount++;
-      operandsPending++;
-    }
-
-    // First operand is never immediate
-    else if (i > 0 && op.type == RISCV_OP_IMM) {
-      sourceImm_ = op.imm;
+    } else {
+      // Something has gone wrong
+      assert(false &&
+             "[SimEng:Instruction_decode] Unexpected register type in first "
+             "operand position");
     }
   }
 
@@ -295,12 +302,12 @@ void Instruction::decode() {
     case Opcode::RISCV_BGE:
     case Opcode::RISCV_BGEU:
       branchType_ = BranchType::Conditional;
-      knownOffset_ = metadata.operands[2].imm;
+      knownOffset_ = sourceImm_;
       break;
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
       branchType_ = BranchType::Unconditional;
-      knownOffset_ = metadata.operands[1].imm;
+      knownOffset_ = sourceImm_;
       break;
   }
 }
