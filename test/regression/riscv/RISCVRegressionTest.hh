@@ -71,7 +71,7 @@ inline std::string paramToString(
  * an illegal instruction exception instead of running into the heap. This
  * specifically targets the compressed extension allowing for the above macro to
  * ignore it, otherwise LLVM eagerly emits compressed instructions for
- * non-compressed assembly*/
+ * non-compressed assembly. */
 #define RUN_RISCV_COMP(source)                   \
   {                                              \
     std::string sourceWithTerminator = source;   \

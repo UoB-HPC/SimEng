@@ -177,7 +177,6 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
- private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -198,7 +197,8 @@ class Instruction : public simeng::Instruction {
    * `sourceRegisters` entry. */
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
 
-  /** Extracted value of current immediate from metadata */
+  /** The immediate source operand for which there is only ever one. Remains 0
+   * if unused. */
   int64_t imm_ = 0;
 
   /** An array of generated output results. Each entry corresponds to a
