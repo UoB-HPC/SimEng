@@ -82,7 +82,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
-            process_->getInitialProcessStackPointer());
+            process_->getInitialStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
             processMemory_ + process_->getHeapStart());
 

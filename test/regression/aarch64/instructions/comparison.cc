@@ -36,7 +36,7 @@ TEST_P(InstComparison, casal) {
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(0)),
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(3)), 100);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()),
             89);
 
   // 64-bit
@@ -69,7 +69,7 @@ TEST_P(InstComparison, casal) {
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(0)),
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(3)), 101);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialProcessStackPointer()),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()),
             76);
 }
 

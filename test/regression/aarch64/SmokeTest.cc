@@ -34,12 +34,10 @@ TEST_P(SmokeTest, stack) {
     str w0, [sp, -4]
     str w1, [sp, -8]
   )");
-  EXPECT_EQ(
-      getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 4),
-      7u);
-  EXPECT_EQ(
-      getMemoryValue<uint32_t>(process_->getInitialProcessStackPointer() - 8),
-      42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 4),
+            7u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 8),
+            42u);
 }
 
 // Test that we can store values to the heap

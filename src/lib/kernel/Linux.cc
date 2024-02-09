@@ -28,7 +28,7 @@ void Linux::createProcess(const LinuxProcess& process) {
        .path = process.getPath(),
        .startBrk = process.getHeapStart(),
        .currentBrk = process.getHeapStart(),
-       .initialStackPointer = process.getInitialProcessStackPointer(),
+       .initialStackPointer = process.getInitialStackPointer(),
        .mmapRegion = process.getMmapStart(),
        .pageSize = process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
