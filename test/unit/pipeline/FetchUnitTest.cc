@@ -41,6 +41,7 @@ class PipelineFetchUnitTest : public testing::Test {
 
  protected:
   const uint8_t insnMaxSizeBytes = 4;
+  const uint8_t insnMinSizeBytes = 2;
   const uint8_t blockSize = 16;
 
   PipelineBuffer<MacroOp> output;
@@ -100,11 +101,12 @@ TEST_F(PipelineFetchUnitTest, TickStalled) {
 TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   MacroOp mOp = {uopPtr};
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-  // Set PC to 14, so there will not be enough data to start decoding
+  // Set PC to 15, so there will not be enough data to start decoding
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
-  fetchUnit.updatePC(14);
+  fetchUnit.updatePC(15);
   fetchUnit.tick();
 
   // Expect a block starting at address 16 to be requested when we fetch again
@@ -120,7 +122,8 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
 
   // Tick 4 times to process all 16 bytes of fetched data
@@ -130,6 +133,7 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   // Tick a 5th time to ensure all buffered bytes have been used
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
@@ -140,6 +144,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
   const uint8_t pc = 16;
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
 
   MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
@@ -158,7 +163,8 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
 
   // Tick 4 times to process all 16 bytes of fetched data
@@ -169,6 +175,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
@@ -176,6 +183,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
 // Tests that halting functionality triggers correctly
 TEST_F(PipelineFetchUnitTest, halted) {
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   EXPECT_FALSE(fetchUnit.hasHalted());
   fetchUnit.tick();
   EXPECT_FALSE(fetchUnit.hasHalted());
@@ -190,6 +198,7 @@ TEST_F(PipelineFetchUnitTest, halted) {
 
   MemoryAccessTarget target = {1008, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
   fetchUnit.requestFromPC();
 
@@ -202,7 +211,8 @@ TEST_F(PipelineFetchUnitTest, halted) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
   // Tick 4 times to process all 16 bytes of fetched data
   for (int i = 0; i < 4; i++) {
@@ -217,9 +227,11 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   const uint8_t pc = 16;
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
 
   MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
 
   // Request block from memory
@@ -237,7 +249,8 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
 
   // For first tick, process instruction as non-branch
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
   fetchUnit.tick();
@@ -246,7 +259,8 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   // & a new memory block is requested
   EXPECT_CALL(memory, getCompletedReads()).Times(0);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(true));
   BranchType bType = BranchType::Unconditional;
@@ -261,6 +275,7 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 
@@ -268,6 +283,7 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   // (pred.target)
   target = {pred.target, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
   fetchUnit.requestFromPC();
 }
