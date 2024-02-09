@@ -31,7 +31,7 @@ Branch Target Buffer (BTB)
     If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be taken. If the supplied branch type is ``Conditional`` and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
 
 Return Address Stack (RAS)
-    Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by its corresponding Return instruction.
+    Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction's corresponding Return instruction.
 
 Static Prediction
     Based on the chosen static prediction method of "always taken" or "always not taken", the n-bit saturating counter value in the initial entries of the BTB structure are filled with the weakest variant of taken or not-taken respectively.
@@ -51,4 +51,4 @@ Branch Target Buffer (BTB)
     If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be taken. If the supplied branch type is ``Conditional`` and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
 
 Return Address Stack (RAS)
-    Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by its corresponding Return instruction.
+    Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction's corresponding Return instruction.
