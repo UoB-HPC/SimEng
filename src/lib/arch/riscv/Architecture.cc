@@ -304,6 +304,10 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
+uint8_t Architecture::getMinInstructionSize() const {
+  return constants_.bytesLimit;
+}
+
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);

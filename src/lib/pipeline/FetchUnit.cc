@@ -110,7 +110,7 @@ void FetchUnit::tick() {
 
   // Potentially a redundant check considering the above
   // Check we have enough data to begin decoding
-  if (bufferedBytes_ < isa_.getMaxInstructionSize()) return;
+  if (bufferedBytes_ < isa_.getMinInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();
 

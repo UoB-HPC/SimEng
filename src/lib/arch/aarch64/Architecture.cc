@@ -1,3 +1,5 @@
+#include "simeng/arch/aarch64/Architecture.hh"
+
 #include <algorithm>
 #include <cassert>
 
@@ -262,6 +264,8 @@ ProcessStateChange Architecture::getInitialState() const {
 }
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
+
+uint8_t Architecture::getMinInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
 

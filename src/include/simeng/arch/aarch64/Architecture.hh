@@ -46,6 +46,9 @@ class Architecture : public arch::Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
+  /** Returns the minimum size of a valid instruction in bytes. */
+  uint8_t getMinInstructionSize() const override;
+
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 

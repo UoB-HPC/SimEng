@@ -87,6 +87,9 @@ class Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
+  /** Returns the minimum size of a valid instruction in bytes. */
+  virtual uint8_t getMinInstructionSize() const = 0;
+
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
