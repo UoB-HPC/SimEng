@@ -199,7 +199,7 @@ class Instruction : public simeng::Instruction {
 
   /** The immediate source operand for which there is only ever one. Remains 0
    * if unused. */
-  int64_t imm_ = 0;
+  int64_t sourceImm_ = 0;
 
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */

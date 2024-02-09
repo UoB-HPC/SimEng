@@ -913,6 +913,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << std::setfill('0') << std::setw(16)
             << insn.getInstructionAddress() << ": ";
 
+  // TODO only print 2 bytes if compressed
   auto& metadata = insn.getMetadata();
   for (uint8_t byte : metadata.encoding) {
     std::cout << std::setfill('0') << std::setw(2)
