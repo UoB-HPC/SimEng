@@ -23,7 +23,7 @@ class Architecture : public arch::Architecture {
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
-  uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
+  uint8_t predecode(const void* ptr, uint16_t bytesAvailable,
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 

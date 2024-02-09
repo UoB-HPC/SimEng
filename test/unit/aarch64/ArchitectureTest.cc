@@ -32,6 +32,10 @@ class AArch64ArchitectureTest : public testing::Test {
       Vector-Length: 512,
       Streaming-Vector-Length: 128
     },
+    LSQ-L1-Interface: {
+      Load-Bandwidth: 64,
+      Store-Bandwidth: 64
+    },
     Ports: { 
       '0': {Portname: Port 0, Instruction-Group-Support: [FP, SVE]},
       '1': {Portname: Port 1, Instruction-Group-Support: [PREDICATE]},

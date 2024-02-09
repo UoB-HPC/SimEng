@@ -8,7 +8,7 @@ namespace emulation {
 
 // TODO: Expose as config option
 /** The number of bytes fetched each cycle. */
-const uint8_t FETCH_SIZE = 4;
+const uint16_t FETCH_SIZE = 4;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,

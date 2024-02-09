@@ -115,7 +115,7 @@ class FetchUnit {
   uint8_t* fetchBuffer_;
 
   /** The amount of data currently in the fetch buffer. */
-  uint8_t bufferedBytes_ = 0;
+  uint16_t bufferedBytes_ = 0;
 };
 
 }  // namespace pipeline
