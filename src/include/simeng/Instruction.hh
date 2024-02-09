@@ -13,8 +13,7 @@ using InstructionException = short;
 
 namespace simeng {
 
-/** A struct holding user-defined execution information for an
- * instruction. */
+/** A struct holding user-defined execution information for an instruction. */
 struct ExecutionInfo {
   /** The latency for the instruction. */
   uint16_t latency = 1;
@@ -31,8 +30,6 @@ struct ExecutionInfo {
 class Instruction {
  public:
   virtual ~Instruction(){};
-
-  // ------ Abstract Functions ------
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
@@ -66,12 +63,12 @@ class Instruction {
   /** Generate memory addresses this instruction wishes to access. */
   virtual span<const memory::MemoryAccessTarget> generateAddresses() = 0;
 
-  /** Provide data from a requested memory address. */
-  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
-
   /** Retrieve previously generated memory addresses. */
   virtual span<const memory::MemoryAccessTarget> getGeneratedAddresses()
       const = 0;
+
+  /** Provide data from a requested memory address. */
+  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;
@@ -114,8 +111,6 @@ class Instruction {
 
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
-
-  // ------ Defined Functions ------
 
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }

@@ -57,10 +57,6 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
-  /** Retrieve the identifier for the first exception that occurred during
-   * processing this instruction. */
-  virtual InstructionException getException() const;
-
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
 
@@ -73,9 +69,6 @@ class Instruction : public simeng::Instruction {
    * renamed. */
   const span<Register> getDestinationRegisters() const override;
 
-  /** Check whether the operand at index `i` has had a value supplied. */
-  bool isOperandReady(int index) const override;
-
   /** Override the specified source register with a renamed physical register.
    */
   void renameSource(uint16_t i, Register renamed) override;
@@ -87,12 +80,8 @@ class Instruction : public simeng::Instruction {
   /** Provide a value for the operand at the specified index. */
   virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
-  /** Check whether all operand values have been supplied, and the instruction
-   * is ready to execute. */
-  bool canExecute() const override;
-
-  /** Execute the instruction. */
-  void execute() override;
+  /** Check whether the operand at index `i` has had a value supplied. */
+  bool isOperandReady(int index) const override;
 
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
@@ -111,7 +100,8 @@ class Instruction : public simeng::Instruction {
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
-   * instruction. */
+   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * the instruction was mispredicted, and the correct target address. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Retrieve branch type. */
@@ -134,21 +124,22 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
-  /** Is this an atomic instruction? */
-  bool isAtomic() const;
-
-  /** Is this a floating point operation? */
-  bool isFloat() const;
-
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
+
+  /** Check whether all operand values have been supplied, and the instruction
+   * is ready to execute. */
+  bool canExecute() const override;
+
+  /** Execute the instruction. */
+  void execute() override;
+
+  /** Get this instruction's supported set of ports. */
+  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
   void setExecutionInfo(const ExecutionInfo& info);
-
-  /** Get this instruction's supported set of ports. */
-  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -156,14 +147,43 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
+  /** Retrieve the identifier for the first exception that occurred during
+   * processing this instruction. */
+  InstructionException getException() const;
+
+ private:
+  /** Process the instruction's metadata to determine source/destination
+   * registers. */
+  void decode();
+
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses);
+
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
+
+  /** Generate an ExecutionNotYetImplemented exception. */
+  void executionNYI();
+
+  /** Is this an atomic instruction? */
+  bool isAtomic() const;
+
+  /** Is this a floating point operation? */
+  bool isFloat() const;
+
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 3;
+
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
- private:
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -172,11 +192,13 @@ class Instruction : public simeng::Instruction {
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters_;
+
   /** The number of source registers this instruction reads from. */
   uint8_t sourceRegisterCount_ = 0;
 
   /** An array of destination registers. */
   std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters_;
+
   /** The number of destination registers this instruction writes to. */
   uint8_t destinationRegisterCount_ = 0;
 
@@ -188,31 +210,22 @@ class Instruction : public simeng::Instruction {
    * `destinationRegisters` entry. */
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results_;
 
+  /** The memory addresses this instruction accesses, as a vector of {offset,
+   * width} pairs. */
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
+
+  /** A vector of memory values, that were either loaded memory, or are prepared
+   * for sending to memory (according to instruction type). Each entry
+   * corresponds to a `memoryAddresses` entry. */
+  std::vector<RegisterValue> memoryData_;
+
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  // Decoding
-  /** Process the instruction's metadata to determine source/destination
-   * registers. */
-  void decode();
-
-  // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
   short sourceOperandsPending_ = 0;
 
-  // Execution
-  /** Generate an ExecutionNotYetImplemented exception. */
-  void executionNYI();
-
-  /** For instructions with a valid rm field, extract the rm value and change
-   * the CPP rounding mode accordingly, then call the function "operation"
-   * before reverting the CPP rounding mode to its initial value. "Operation"
-   * should contain the entire execution logic of the instruction
-   */
-  void setStaticRoundingModeThen(std::function<void(void)> operation);
-
-  // Metadata
   /** Is this a store operation? */
   bool isStore_ = false;
   /** Is this a load operation? */
@@ -235,21 +248,6 @@ class Instruction : public simeng::Instruction {
   bool isFloat_ = false;
   /** Is this a floating point <-> integer convert operation? */
   bool isConvert_ = false;
-
-  // Memory
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
-
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
 };
 
 }  // namespace riscv

@@ -13,6 +13,67 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+class Architecture;
+struct InstructionMetadata;
+
+namespace RegisterType {
+/** The 64-bit general purpose register set: [w|x]0-31. */
+const uint8_t GENERAL = 0;
+/** The 128|2048 bit vector register set: [v|z]0-31. */
+const uint8_t VECTOR = 1;
+/** The 32 bit predicate register set: p0-15. */
+const uint8_t PREDICATE = 2;
+/** The 4-bit NZCV condition flag register. */
+const uint8_t NZCV = 3;
+/** The system registers. */
+const uint8_t SYSTEM = 4;
+/** The [256-byte x (SVL / 8)] SME matrix register za. */
+const uint8_t MATRIX = 5;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
+}  // namespace RegisterType
+
+/** The various exceptions that can be raised by an individual instruction. */
+enum class InstructionException {
+  None = 0,
+  EncodingUnallocated,
+  ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
+  MisalignedPC,
+  DataAbort,
+  SupervisorCall,
+  HypervisorCall,
+  SecureMonitorCall,
+  NoAvailablePort,
+  UnmappedSysReg,
+  StreamingModeUpdate,
+  ZAregisterStatusUpdate,
+  SMZAUpdate,
+  ZAdisabled,
+  SMdisabled
+};
+
+/** The opcodes of simeng aarch64 micro-operations. */
+namespace MicroOpcode {
+const uint8_t OFFSET_IMM = 0;
+const uint8_t OFFSET_REG = 1;
+const uint8_t LDR_ADDR = 2;
+const uint8_t STR_ADDR = 3;
+const uint8_t STR_DATA = 4;
+// INVALID is the default value reserved for non-micro-operation instructions
+const uint8_t INVALID = 255;
+}  // namespace MicroOpcode
+
+/** A struct to group micro-operation information together. */
+struct MicroOpInfo {
+  bool isMicroOp = false;
+  uint8_t microOpcode = MicroOpcode::INVALID;
+  uint8_t dataSize = 0;
+  bool isLastMicroOp = true;
+  int microOpIndex = 0;
+};
+
 /** Get the size of the data to be accessed from/to memory. */
 inline uint8_t getDataSize(cs_arm64_op op) {
   // Check from top of the range downwards
@@ -155,67 +216,6 @@ inline uint8_t getDataSize(cs_arm64_op op) {
   return 0;
 }
 
-class Architecture;
-struct InstructionMetadata;
-
-namespace RegisterType {
-/** The 64-bit general purpose register set: [w|x]0-31. */
-const uint8_t GENERAL = 0;
-/** The 128|2048 bit vector register set: [v|z]0-31. */
-const uint8_t VECTOR = 1;
-/** The 32 bit predicate register set: p0-15. */
-const uint8_t PREDICATE = 2;
-/** The 4-bit NZCV condition flag register. */
-const uint8_t NZCV = 3;
-/** The system registers. */
-const uint8_t SYSTEM = 4;
-/** The [256-byte x (SVL / 8)] SME matrix register za. */
-const uint8_t MATRIX = 5;
-
-/** A special register value representing the zero register. */
-const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
-}  // namespace RegisterType
-
-/** The various exceptions that can be raised by an individual instruction. */
-enum class InstructionException {
-  None = 0,
-  EncodingUnallocated,
-  ExecutionNotYetImplemented,
-  AliasNotYetImplemented,
-  MisalignedPC,
-  DataAbort,
-  SupervisorCall,
-  HypervisorCall,
-  SecureMonitorCall,
-  NoAvailablePort,
-  UnmappedSysReg,
-  StreamingModeUpdate,
-  ZAregisterStatusUpdate,
-  SMZAUpdate,
-  ZAdisabled,
-  SMdisabled
-};
-
-/** The opcodes of simeng aarch64 micro-operations. */
-namespace MicroOpcode {
-const uint8_t OFFSET_IMM = 0;
-const uint8_t OFFSET_REG = 1;
-const uint8_t LDR_ADDR = 2;
-const uint8_t STR_ADDR = 3;
-const uint8_t STR_DATA = 4;
-// INVALID is the default value reserved for non-micro-operation instructions
-const uint8_t INVALID = 255;
-}  // namespace MicroOpcode
-
-/** A struct to group micro-operation information together. */
-struct MicroOpInfo {
-  bool isMicroOp = false;
-  uint8_t microOpcode = MicroOpcode::INVALID;
-  uint8_t dataSize = 0;
-  bool isLastMicroOp = true;
-  int microOpIndex = 0;
-};
-
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -230,10 +230,6 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
-  /** Retrieve the identifier for the first exception that occurred during
-   * processing this instruction. */
-  virtual InstructionException getException() const;
-
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
 
@@ -246,9 +242,6 @@ class Instruction : public simeng::Instruction {
    * renamed. */
   const span<Register> getDestinationRegisters() const override;
 
-  /** Check whether the operand at index `i` has had a value supplied. */
-  bool isOperandReady(int index) const override;
-
   /** Override the specified source register with a renamed physical register.
    */
   void renameSource(uint16_t i, Register renamed) override;
@@ -260,12 +253,8 @@ class Instruction : public simeng::Instruction {
   /** Provide a value for the operand at the specified index. */
   virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
-  /** Check whether all operand values have been supplied, and the instruction
-   * is ready to execute. */
-  bool canExecute() const override;
-
-  /** Execute the instruction. */
-  void execute() override;
+  /** Check whether the operand at index `i` has had a value supplied. */
+  bool isOperandReady(int index) const override;
 
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
@@ -284,7 +273,8 @@ class Instruction : public simeng::Instruction {
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
-   * instruction. */
+   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * the instruction was mispredicted, and the correct target address. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Retrieve branch type. */
@@ -310,12 +300,19 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
-  /** Set this instruction's execution information including it's execution
-   * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const ExecutionInfo& info);
+  /** Check whether all operand values have been supplied, and the instruction
+   * is ready to execute. */
+  bool canExecute() const override;
+
+  /** Execute the instruction. */
+  void execute() override;
 
   /** Get this instruction's supported set of ports. */
   const std::vector<uint16_t>& getSupportedPorts() override;
+
+  /** Set this instruction's execution information including it's execution
+   * latency and throughput, and the set of ports which support it. */
+  void setExecutionInfo(const ExecutionInfo& info);
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -323,7 +320,43 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
+  /** Retrieve the identifier for the first exception that occurred during
+   * processing this instruction. */
+  InstructionException getException() const;
+
  private:
+  /** Process the instruction's metadata to determine source/destination
+   * registers. */
+  void decode();
+
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses);
+  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
+  void setMemoryAddresses(memory::MemoryAccessTarget address);
+
+  /** Generate an ExecutionNotYetImplemented exception. */
+  void executionNYI();
+
+  /** Generate an EncodingUnallocated exception. */
+  void executionINV();
+
+  /** Generate an StreamingModeUpdate exception. */
+  void streamingModeUpdated();
+
+  /** Generate an ZAregisterStatusUpdate exception. */
+  void zaRegisterStatusUpdated();
+
+  /** Generate an SMZAupdate exception. */
+  void SMZAupdated();
+
+  /** Generate a ZAdisabled exception. */
+  void ZAdisabled();
+
+  /** Generate a SMdisabled exception. */
+  void SMdisabled();
+
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
@@ -347,48 +380,28 @@ class Instruction : public simeng::Instruction {
    * `destinationRegisters` entry. */
   std::vector<RegisterValue> results_;
 
+  /** The memory addresses this instruction accesses, as a vector of {offset,
+   * width} pairs. */
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
+
+  /** A vector of memory values, that were either loaded memory, or are prepared
+   * for sending to memory (according to instruction type). Each entry
+   * corresponds to a `memoryAddresses` entry. */
+  std::vector<RegisterValue> memoryData_;
+
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  // Decoding
-  /** Process the instruction's metadata to determine source/destination
-   * registers. */
-  void decode();
-
-  // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short sourceOperandsPending_ = 0;
+  uint16_t sourceOperandsPending_ = 0;
 
-  // Execution
-  /** Generate an ExecutionNotYetImplemented exception. */
-  void executionNYI();
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t microOpcode_ = MicroOpcode::INVALID;
 
-  // Execution
-  /** Generate an EncodingUnallocated exception. */
-  void executionINV();
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t dataSize_ = 0;
 
-  // Execution
-  /** Generate an StreamingModeUpdate exception. */
-  void streamingModeUpdated();
-
-  // Execution
-  /** Generate an ZAregisterStatusUpdate exception. */
-  void zaRegisterStatusUpdated();
-
-  // Execution
-  /** Generate an SMZAupdate exception. */
-  void SMZAupdated();
-
-  // Execution
-  /** Generate a ZAdisabled exception. */
-  void ZAdisabled();
-
-  // Execution
-  /** Generate a SMdisabled exception. */
-  void SMdisabled();
-
-  // Instruction Identifiers
   /** Operates on scalar values */
   bool isScalarData_ = false;
   /** Operates on vector values. */
@@ -419,29 +432,6 @@ class Instruction : public simeng::Instruction {
   bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t microOpcode_ = MicroOpcode::INVALID;
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
-  uint8_t dataSize_ = 0;
-
-  // Memory
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
-
-  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
-
-  void setMemoryAddresses(memory::MemoryAccessTarget address);
-
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
 };
 
 }  // namespace aarch64
