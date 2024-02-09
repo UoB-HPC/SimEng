@@ -4,7 +4,7 @@
 
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
-#include "simeng/memory/MemoryInterface.hh"
+#include "simeng/memory/MemoryAccessTarget.hh"
 
 namespace simeng {
 
