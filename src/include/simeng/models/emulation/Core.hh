@@ -7,7 +7,6 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/span.hh"
 

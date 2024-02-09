@@ -1,5 +1,11 @@
 #pragma once
 
+#include <vector>
+
+#include "simeng/MemoryInterface.hh"
+#include "simeng/Register.hh"
+#include "simeng/RegisterValue.hh"
+
 namespace simeng {
 
 namespace arch {
