@@ -115,23 +115,18 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
-          while (iLength > 0) {
-            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+          while (totalRead > 0) {
+            uint8_t len =
+                totalRead > 128 ? 128 : static_cast<uint8_t>(totalRead);
             stateChange.memoryAddresses.push_back({iDst, len});
             stateChange.memoryAddressValues.push_back({iSrc, len});
             iDst += len;
             iSrc += len;
-            iLength -= len;
+            totalRead -= len;
           }
           return concludeSyscall(stateChange);
         });
