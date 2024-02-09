@@ -2,7 +2,6 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
@@ -26,10 +25,10 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator,
+  Core(memory::MemoryInterface& instructionMemory,
+       memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+       uint64_t entryPoint, const arch::Architecture& isa,
+       BranchPredictor& branchPredictor, pipeline::PortAllocator& portAllocator,
        ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks

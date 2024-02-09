@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "simeng/MemoryInterface.hh"
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 namespace simeng {
 
@@ -22,7 +22,7 @@ struct ProcessStateChange {
   /** Values to set modified registers to */
   std::vector<RegisterValue> modifiedRegisterValues;
   /** Memory address/width pairs to modify */
-  std::vector<MemoryAccessTarget> memoryAddresses;
+  std::vector<memory::MemoryAccessTarget> memoryAddresses;
   /** Values to write to memory */
   std::vector<RegisterValue> memoryAddressValues;
 };

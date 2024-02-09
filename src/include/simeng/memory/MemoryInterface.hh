@@ -5,6 +5,8 @@
 
 namespace simeng {
 
+namespace memory {
+
 /** The available memory interface types. */
 enum class MemInterfaceType {
   Flat,     // A zero access latency interface
@@ -74,4 +76,5 @@ class MemoryInterface {
   virtual void tick() = 0;
 };
 
+}  // namespace memory
 }  // namespace simeng

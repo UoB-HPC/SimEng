@@ -13,9 +13,10 @@ namespace models {
 namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const arch::Architecture& isa,
+           BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
     : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),

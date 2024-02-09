@@ -6,7 +6,6 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/span.hh"
 
@@ -20,9 +19,9 @@ class Core : public simeng::Core {
   /** Construct an emulation-style core, providing memory interfaces for
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa);
+  Core(memory::MemoryInterface& instructionMemory,
+       memory::MemoryInterface& dataMemory, uint64_t entryPoint,
+       uint64_t programByteLength, const arch::Architecture& isa);
 
   /** Tick the core. */
   void tick() override;
@@ -54,7 +53,7 @@ class Core : public simeng::Core {
   void processExceptionHandler();
 
   /** A memory interface to access instructions. */
-  MemoryInterface& instructionMemory_;
+  memory::MemoryInterface& instructionMemory_;
 
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
@@ -67,7 +66,7 @@ class Core : public simeng::Core {
   std::queue<std::shared_ptr<Instruction>> microOps_;
 
   /** The previously generated addresses. */
-  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
+  std::vector<simeng::memory::MemoryAccessTarget> previousAddresses_;
 
   /** The current program counter. */
   uint64_t pc_ = 0;

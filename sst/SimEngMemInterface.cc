@@ -11,7 +11,7 @@ using namespace SST::SSTSimEng;
 
 SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
                                        uint64_t max_addr, bool debug)
-    : simeng::MemoryInterface() {
+    : simeng::memory::MemoryInterface() {
   this->sstMem_ = mem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
@@ -149,7 +149,7 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
   return requests;
 }
 
-void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
+void SimEngMemInterface::requestRead(const memory::MemoryAccessTarget& target,
                                      uint64_t requestId) {
   uint64_t addrStart = target.address;
   uint64_t size = unsigned(target.size);
@@ -183,7 +183,7 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
   }
 }
 
-void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
+void SimEngMemInterface::requestWrite(const memory::MemoryAccessTarget& target,
                                       const RegisterValue& data) {
   uint64_t addrStart = target.address;
   uint64_t size = unsigned(target.size);
@@ -209,8 +209,9 @@ bool SimEngMemInterface::hasPendingRequests() const {
   return aggregationMap_.size() > 0;
 };
 
-const span<MemoryReadResult> SimEngMemInterface::getCompletedReads() const {
-  return {const_cast<MemoryReadResult*>(completedReadRequests_.data()),
+const span<memory::MemoryReadResult> SimEngMemInterface::getCompletedReads()
+    const {
+  return {const_cast<memory::MemoryReadResult*>(completedReadRequests_.data()),
           completedReadRequests_.size()};
 };
 

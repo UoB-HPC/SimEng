@@ -1,8 +1,10 @@
-#include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/FixedLatencyMemoryInterface.hh"
 
 #include <iostream>
 
 namespace simeng {
+
+namespace memory {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(char* memory,
                                                          size_t size,
@@ -78,4 +80,5 @@ bool FixedLatencyMemoryInterface::hasPendingRequests() const {
   return !pendingRequests_.empty();
 }
 
+}  // namespace memory
 }  // namespace simeng

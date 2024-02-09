@@ -5,9 +5,9 @@
 #include <string>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/arch/ProcessStateChange.hh"
 #include "simeng/config/SimInfo.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 namespace simeng {
 
@@ -20,7 +20,7 @@ class ExceptionHandler;
 /** An abstract core model. */
 class Core {
  public:
-  Core(MemoryInterface& dataMemory, const arch::Architecture& isa,
+  Core(memory::MemoryInterface& dataMemory, const arch::Architecture& isa,
        const std::vector<RegisterFileStructure>& regFileStructure)
       : dataMemory_(dataMemory),
         isa_(isa),
@@ -94,7 +94,7 @@ class Core {
   }
 
   /** A memory interface to access data. */
-  MemoryInterface& dataMemory_;
+  memory::MemoryInterface& dataMemory_;
 
   /** The currently used ISA. */
   const arch::Architecture& isa_;

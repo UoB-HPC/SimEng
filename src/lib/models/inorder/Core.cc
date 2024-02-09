@@ -9,9 +9,10 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const arch::Architecture& isa,
+           BranchPredictor& branchPredictor)
     : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),

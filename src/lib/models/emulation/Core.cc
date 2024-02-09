@@ -9,9 +9,9 @@ namespace emulation {
 /** The number of bytes fetched each cycle. */
 const uint8_t FETCH_SIZE = 4;
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa)
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t entryPoint,
+           uint64_t programByteLength, const arch::Architecture& isa)
     : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
       instructionMemory_(instructionMemory),
       architecturalRegisterFileSet_(registerFileSet_),

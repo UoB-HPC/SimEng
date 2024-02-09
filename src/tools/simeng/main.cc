@@ -6,13 +6,14 @@
 
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/config/SimInfo.hh"
+#include "simeng/memory/MemoryInterface.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
-uint64_t simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
-                  simeng::MemoryInterface& instructionMemory) {
+uint64_t simulate(simeng::Core& core,
+                  simeng::memory::MemoryInterface& dataMemory,
+                  simeng::memory::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
@@ -78,9 +79,9 @@ int main(int argc, char** argv) {
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
-  std::shared_ptr<simeng::MemoryInterface> dataMemory =
+  std::shared_ptr<simeng::memory::MemoryInterface> dataMemory =
       coreInstance->getDataMemory();
-  std::shared_ptr<simeng::MemoryInterface> instructionMemory =
+  std::shared_ptr<simeng::memory::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
 
   // Output general simulation details

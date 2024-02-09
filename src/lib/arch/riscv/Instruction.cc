@@ -102,13 +102,14 @@ bool Instruction::isAtomic() const { return isAtomic_; }
 bool Instruction::isFloat() const { return isFloat_; }
 
 void Instruction::setMemoryAddresses(
-    const std::vector<MemoryAccessTarget>& addresses) {
+    const std::vector<memory::MemoryAccessTarget>& addresses) {
   memoryData_ = std::vector<RegisterValue>(addresses.size());
   memoryAddresses_ = addresses;
   dataPending_ = addresses.size();
 }
 
-span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
   return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 

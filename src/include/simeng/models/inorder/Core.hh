@@ -4,7 +4,7 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/FlatMemoryInterface.hh"
+#include "simeng/memory/FlatMemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
 #include "simeng/pipeline/FetchUnit.hh"
@@ -20,9 +20,10 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor);
+  Core(memory::MemoryInterface& instructionMemory,
+       memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+       uint64_t entryPoint, const arch::Architecture& isa,
+       BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -76,7 +77,7 @@ class Core : public simeng::Core {
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
   /** The previously generated addresses. */
-  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
+  std::queue<simeng::memory::MemoryAccessTarget> previousAddresses_;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;

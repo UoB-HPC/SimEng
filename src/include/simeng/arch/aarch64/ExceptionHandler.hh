@@ -16,7 +16,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** Create an exception handler with references to the instruction that caused
    * the exception, along with the core model object and process memory. */
   ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
-                   const Core& core, MemoryInterface& memory,
+                   const Core& core, memory::MemoryInterface& memory,
                    kernel::Linux& linux);
 
   /** Progress handling of the exception, by calling and returning the result of
@@ -78,7 +78,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   const Core& core_;
 
   /** The process memory. */
-  MemoryInterface& memory_;
+  memory::MemoryInterface& memory_;
 
   /** The Linux kernel to forward syscalls to. */
   kernel::Linux& linux_;

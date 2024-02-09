@@ -212,7 +212,7 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
 
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
+    memory::MemoryInterface& memory) const {
   return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 

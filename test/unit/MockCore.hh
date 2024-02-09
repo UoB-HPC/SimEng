@@ -8,7 +8,7 @@ namespace simeng {
 /** Mock implementation of the `Core` interface. */
 class MockCore : public Core {
  public:
-  MockCore(MemoryInterface& dataMemory, const arch::Architecture& isa,
+  MockCore(memory::MemoryInterface& dataMemory, const arch::Architecture& isa,
            const std::vector<RegisterFileStructure>& regFileStructure)
       : Core(dataMemory, isa, regFileStructure) {}
   MOCK_METHOD0(tick, void());

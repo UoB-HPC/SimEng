@@ -167,9 +167,9 @@ TEST_F(ReorderBufferTest, CommitLoad) {
 
 // Tests that the reorder buffer correctly triggers a store upon commit
 TEST_F(ReorderBufferTest, CommitStore) {
-  std::vector<MemoryAccessTarget> addresses = {{0, 1}};
-  span<const MemoryAccessTarget> addressesSpan = {addresses.data(),
-                                                  addresses.size()};
+  std::vector<memory::MemoryAccessTarget> addresses = {{0, 1}};
+  span<const memory::MemoryAccessTarget> addressesSpan = {addresses.data(),
+                                                          addresses.size()};
 
   std::vector<RegisterValue> data = {static_cast<uint8_t>(1)};
   span<const RegisterValue> dataSpan = {data.data(), data.size()};
@@ -298,8 +298,8 @@ TEST_F(ReorderBufferTest, violatingLoad) {
   const uint64_t ldSize = 4;
 
   // Init Store
-  const MemoryAccessTarget strTarget = {strAddr, strSize};
-  span<const MemoryAccessTarget> strTargetSpan = {&strTarget, 1};
+  const memory::MemoryAccessTarget strTarget = {strAddr, strSize};
+  span<const memory::MemoryAccessTarget> strTargetSpan = {&strTarget, 1};
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(strTargetSpan));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
   ON_CALL(*uop, isStoreData()).WillByDefault(Return(true));
@@ -308,8 +308,8 @@ TEST_F(ReorderBufferTest, violatingLoad) {
   lsq.addStore(uopPtr);
   reorderBuffer.reserve(uopPtr);
   // Init load
-  const MemoryAccessTarget ldTarget = {ldAddr, ldSize};
-  span<const MemoryAccessTarget> ldTargetSpan = {&ldTarget, 1};
+  const memory::MemoryAccessTarget ldTarget = {ldAddr, ldSize};
+  span<const memory::MemoryAccessTarget> ldTargetSpan = {&ldTarget, 1};
   ON_CALL(*uop2, getGeneratedAddresses()).WillByDefault(Return(ldTargetSpan));
   ON_CALL(*uop2, isLoad()).WillByDefault(Return(true));
   uopPtr2->setSequenceId(1);
