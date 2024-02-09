@@ -112,6 +112,10 @@ class Instruction {
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
 
+  /** Set this instruction's execution information including it's execution
+   * latency and throughput, and the set of ports which support it. */
+  virtual void setExecutionInfo(const ExecutionInfo& info) = 0;
+
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
 
@@ -207,6 +211,31 @@ class Instruction {
   int getMicroOpIndex() const { return microOpIndex_; }
 
  protected:
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses) {
+    memoryData_.resize(addresses.size());
+    memoryAddresses_ = addresses;
+    dataPending_ = addresses.size();
+  }
+
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses) {
+    dataPending_ = addresses.size();
+    memoryData_.resize(addresses.size());
+    memoryAddresses_ = std::move(addresses);
+  }
+
+  /** Set the accessed memory addresses, and create a corresponding memory data
+   * vector. */
+  void setMemoryAddresses(memory::MemoryAccessTarget address) {
+    dataPending_ = 1;
+    memoryData_.resize(1);
+    memoryAddresses_.push_back(address);
+  }
+
   // Instruction Info
   /** This instruction's instruction ID used to group micro-operations together
    * by macro-op; a higher ID represents a chronologically newer instruction. */
@@ -241,6 +270,15 @@ class Instruction {
   bool canCommit_ = false;
 
   // Memory
+  /** The memory addresses this instruction accesses, as a vector of {offset,
+   * width} pairs. */
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
+
+  /** A vector of memory values, that were either loaded memory, or are prepared
+   * for sending to memory (according to instruction type). Each entry
+   * corresponds to a `memoryAddresses` entry. */
+  std::vector<RegisterValue> memoryData_;
+
   /** The number of data items that still need to be supplied. */
   uint8_t dataPending_ = 0;
 

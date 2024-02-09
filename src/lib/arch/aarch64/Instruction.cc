@@ -112,26 +112,6 @@ bool Instruction::isStoreData() const { return isStoreData_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData_.resize(addresses.size());
-  memoryAddresses_ = addresses;
-  dataPending_ = addresses.size();
-}
-
-void Instruction::setMemoryAddresses(
-    std::vector<memory::MemoryAccessTarget>&& addresses) {
-  dataPending_ = addresses.size();
-  memoryData_.resize(addresses.size());
-  memoryAddresses_ = std::move(addresses);
-}
-
-void Instruction::setMemoryAddresses(memory::MemoryAccessTarget address) {
-  dataPending_ = 1;
-  memoryData_.resize(1);
-  memoryAddresses_.push_back(address);
-}
-
 span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
     const {
   return {memoryAddresses_.data(), memoryAddresses_.size()};

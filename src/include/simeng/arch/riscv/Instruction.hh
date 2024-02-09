@@ -78,7 +78,7 @@ class Instruction : public simeng::Instruction {
   void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
+  void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
@@ -139,7 +139,7 @@ class Instruction : public simeng::Instruction {
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const ExecutionInfo& info);
+  void setExecutionInfo(const ExecutionInfo& info) override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -155,11 +155,6 @@ class Instruction : public simeng::Instruction {
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
-
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
 
   /** For instructions with a valid rm field, extract the rm value and change
    * the CPP rounding mode accordingly, then call the function "operation"
@@ -210,22 +205,14 @@ class Instruction : public simeng::Instruction {
    * `destinationRegisters` entry. */
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results_;
 
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
-
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short sourceOperandsPending_ = 0;
+  uint16_t sourceOperandsPending_ = 0;
 
+  // Instruction identifiers
   /** Is this a store operation? */
   bool isStore_ = false;
   /** Is this a load operation? */

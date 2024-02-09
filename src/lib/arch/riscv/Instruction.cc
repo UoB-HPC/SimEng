@@ -101,13 +101,6 @@ bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isAtomic() const { return isAtomic_; }
 bool Instruction::isFloat() const { return isFloat_; }
 
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData_ = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses_ = addresses;
-  dataPending_ = addresses.size();
-}
-
 span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
     const {
   return {memoryAddresses_.data(), memoryAddresses_.size()};

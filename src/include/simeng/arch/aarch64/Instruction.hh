@@ -251,7 +251,7 @@ class Instruction : public simeng::Instruction {
   void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
+  void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
@@ -312,7 +312,7 @@ class Instruction : public simeng::Instruction {
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const ExecutionInfo& info);
+  void setExecutionInfo(const ExecutionInfo& info) override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -328,13 +328,6 @@ class Instruction : public simeng::Instruction {
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
-
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
-  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
-  void setMemoryAddresses(memory::MemoryAccessTarget address);
 
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
@@ -380,15 +373,6 @@ class Instruction : public simeng::Instruction {
    * `destinationRegisters` entry. */
   std::vector<RegisterValue> results_;
 
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
-
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
@@ -402,6 +386,7 @@ class Instruction : public simeng::Instruction {
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t dataSize_ = 0;
 
+  // Instruction identifiers
   /** Operates on scalar values */
   bool isScalarData_ = false;
   /** Operates on vector values. */
