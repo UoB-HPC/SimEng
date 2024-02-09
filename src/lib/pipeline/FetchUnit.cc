@@ -98,7 +98,6 @@ void FetchUnit::tick() {
                 blockSize_ - bufferOffset);
 
     bufferedBytes_ += blockSize_ - bufferOffset;
-
     buffer = fetchBuffer_;
     // Decoding should start from the beginning of the fetchBuffer_.
     bufferOffset = 0;
@@ -112,7 +111,6 @@ void FetchUnit::tick() {
   if (bufferedBytes_ < isa_.getMinInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();
-
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
 
@@ -154,7 +152,6 @@ void FetchUnit::tick() {
           // loopBoundaryAddress_ has been fetched whilst filling the loop
           // buffer. Stop filling as loop body has been recorded and begin to
           // supply decode unit with instructions from the loop buffer
-
           loopBufferState_ = LoopBufferState::SUPPLYING;
           bufferedBytes_ = 0;
           break;

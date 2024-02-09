@@ -306,7 +306,8 @@ TEST_P(InstCompressed, fsd) {
 TEST_P(InstCompressed, j) {
   // Compressed jump
   // Labels needed as LLVM eagerly uses compressed instructions e.g. addi ->
-  // c.addi causing manual jump offsets to be confusing
+  // c.addi causing manual jump offsets to become seemingly misaligned with the
+  // values used in the tests
   RUN_RISCV_COMP(R"(
     c.j jump              #c.j 0xc
     jumpa:
