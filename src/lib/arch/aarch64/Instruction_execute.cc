@@ -470,6 +470,11 @@ void Instruction::execute() {
         results_[0] = asrv_3gpr<int64_t>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_AUTIASP: {  // autiasp xd, sp
+        // Pointer Authentication not enabled, return address in destination
+        results[0] = operands[0].get<uint64_t>();
+        break;
+      }
       case Opcode::AArch64_B: {  // b label
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
@@ -588,6 +593,22 @@ void Instruction::execute() {
         const uint64_t t = sourceValues_[1].get<uint64_t>();
         const uint64_t n = memoryData_[0].get<uint64_t>();
         if (n == s) memoryData_[0] = t;
+        break;
+      }
+      case Opcode::AArch64_CASAW: {  // casa ws, wt, [xn|sp]
+        // LOAD / STORE
+        const uint32_t s = operands[0].get<uint32_t>();
+        const uint32_t t = operands[1].get<uint32_t>();
+        const uint32_t n = memoryData[0].get<uint32_t>();
+        if (n == s) memoryData[0] = t;
+        break;
+      }
+      case Opcode::AArch64_CASAX: {  // casa xs, xt, [xn|sp]
+        // LOAD / STORE
+        const uint64_t s = operands[0].get<uint64_t>();
+        const uint64_t t = operands[1].get<uint64_t>();
+        const uint64_t n = memoryData[0].get<uint64_t>();
+        if (n == s) memoryData[0] = t;
         break;
       }
       case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
@@ -3909,6 +3930,10 @@ void Instruction::execute() {
         results_[0] = vecMoviShift_imm<uint16_t, 8>(metadata_, true);
         break;
       }
+      case Opcode::AArch64_NEGv2i32: {  // neg vd.2s, vn.2s
+        results[0] = vecFneg_2ops<int32_t, 2>(operands);
+        break;
+      }
       case Opcode::AArch64_NEGv2i64: {  // neg vd.2d, vn.2d
         results_[0] = vecFneg_2ops<int64_t, 2>(sourceValues_);
         break;
@@ -3979,6 +4004,11 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
+        break;
+      }
+      case Opcode::AArch64_PACIASP: {  // paciasp xd, sp
+        // Pointer Authentication not enabled, return address in destination
+        results[0] = operands[0].get<uint64_t>();
         break;
       }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
@@ -5283,6 +5313,11 @@ void Instruction::execute() {
       case Opcode::AArch64_SVC: {  // svc #imm
         exceptionEncountered_ = true;
         exception_ = InstructionException::SupervisorCall;
+        break;
+      }
+      case Opcode::AArch64_SWPLW: {  // swpl ws, wt, [xn|sp]
+        results[0] = memoryData[0].zeroExtend(4, 8);
+        memoryData[0] = operands[0].get<uint32_t>();
         break;
       }
       case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d

@@ -190,12 +190,22 @@ void Instruction::decode() {
 
   // Extract implicit writes
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
+    // std::cerr << "D:" << metadata.implicitDestinations[i] << " = "
+    //           << csRegToRegister(
+    //                  static_cast<arm64_reg>(metadata.implicitDestinations[i]))
+    //                  .tag
+    //           << std::endl;
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
         static_cast<arm64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
   }
   // Extract implicit reads
   for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
+    // std::cerr << "S:" << metadata.implicitSources[i] << " = "
+    //           << csRegToRegister(
+    //                  static_cast<arm64_reg>(metadata.implicitSources[i]))
+    //                  .tag
+    //           << std::endl;
     sourceRegisters_[sourceOperandsPending_] =
         csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i]));
     sourceRegisterCount_++;
@@ -481,9 +491,13 @@ void Instruction::decode() {
       setInstructionType(InsnType::isLoad);
     }
 
-    // CASAL* are considered to be both a load and a store
+    // CASAL* SWPL* are considered to be both a load and a store
     if (metadata_.opcode == Opcode::AArch64_CASALW ||
-        metadata_.opcode == Opcode::AArch64_CASALX) {
+        metadata_.opcode == Opcode::AArch64_CASALX ||
+        metadata_.opcode == Opcode::AArch64_CASAW ||
+        metadata_.opcode == Opcode::AArch64_CASAX ||
+        metadata_.opcode == Opcode::AArch64_SWPLW ||
+        metadata_.opcode == Opcode::AArch64_SWPLX) {
       setInstructionType(InsnType::isLoad);
     }
 

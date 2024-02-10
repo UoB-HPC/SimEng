@@ -2000,6 +2000,29 @@ TEST_P(InstNeon, fneg) {
 }
 
 TEST_P(InstNeon, neg) {
+  // 32-bit
+  initialHeapData_.resize(16);
+  int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  heap32[0] = 1;
+  heap32[1] = -42;
+  heap32[2] = 0;
+  heap32[3] = 321;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d0, [x0]
+    ldr d1, [x0, #8]
+    neg v2.2s, v0.2s
+    neg v3.2s, v1.2s
+  )");
+  CHECK_NEON(2, int32_t, {-1, 42});
+  CHECK_NEON(3, int32_t, {0, -321});
+
+  // 64-bit
   initialHeapData_.resize(32);
   int64_t* heap64 = reinterpret_cast<int64_t*>(initialHeapData_.data());
   heap64[0] = 1;

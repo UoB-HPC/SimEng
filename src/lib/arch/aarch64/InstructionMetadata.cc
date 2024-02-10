@@ -98,6 +98,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_CASALW:
       [[fallthrough]];
     case Opcode::AArch64_CASALX:
+      [[fallthrough]];
+    case Opcode::AArch64_CASAW:
+      [[fallthrough]];
+    case Opcode::AArch64_CASAX:
       operandCount = 3;
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
@@ -1748,6 +1752,32 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_PACIASP: {
+      // Ensure that there's only one implicit destination register
+      uint16_t destination = ARM64_REG_SP;
+      for (int i = 0; i < implicitDestinationCount; i++)
+        if (implicitDestinations[i] != ARM64_REG_SP)
+          destination = implicitDestinations[i];
+      implicitDestinationCount = 1;
+      std::memcpy(implicitDestinations, insn.detail->regs_write,
+                  sizeof(uint16_t) * implicitDestinationCount);
+      implicitDestinations[0] = destination;
+
+      // Ensure that the implicit source register is the SP and the destination
+      // register
+      implicitSourceCount = 2;
+      std::memcpy(implicitSources, insn.detail->regs_read,
+                  sizeof(uint16_t) * implicitSourceCount);
+      implicitSources[0] = destination;
+      implicitSources[1] = ARM64_REG_SP;
+      break;
+    }
+    case Opcode::AArch64_SWPLW: {
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_WRITE;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
   }
 
   revertAliasing();
@@ -2331,7 +2361,8 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
-      if (opcode == Opcode::AArch64_NEGv2i64) {
+      if (opcode == Opcode::AArch64_NEGv2i32 ||
+          opcode == Opcode::AArch64_NEGv2i64) {
         // No alias present, trying to alias self.
         return;
       }
