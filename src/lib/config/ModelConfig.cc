@@ -383,6 +383,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(38,
                                                      "GeneralPurpose-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
 
@@ -391,6 +392,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(38,
                                                      "FloatingPoint-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["FloatingPoint-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
   }
