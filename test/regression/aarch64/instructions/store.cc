@@ -907,6 +907,42 @@ TEST_P(InstStore, sturh) {
             128u);
 }
 
+TEST_P(InstStore, swpl) {
+  // 32-bit
+  initialHeapData_.resize(16);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 0xDEADBEEF;
+  heap32[1] = 0x12345678;
+  heap32[2] = 0xABCDEFAB;
+  heap32[3] = 0x98765432;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov w1, #3
+    mov w2, #16
+
+    swpl w1, w3, [x0]
+    add x0, x0, #4
+    swpl wzr, w4, [x0]
+    add x0, x0, #4
+    swpl w2, wzr, [x0]
+    add x0, x0, #4
+    swpl wzr, wzr, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 3ul);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 16ul);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xDEADBEEFul);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x12345678ul);
+
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart()), 3ul);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart() + 4), 0ul);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart() + 8), 16ul);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart() + 12), 0ul);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstStore,
                          ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
