@@ -913,11 +913,13 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << std::setfill('0') << std::setw(16)
             << insn.getInstructionAddress() << ": ";
 
-  // TODO only print 2 bytes if compressed
   auto& metadata = insn.getMetadata();
-  for (uint8_t byte : metadata.encoding) {
+  for (uint8_t byteIndex = 0; byteIndex < insn.getMetadata().getInsnLength();
+       byteIndex++) {
     std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(byte) << " ";
+              << static_cast<unsigned int>(
+                     insn.getMetadata().encoding[byteIndex])
+              << " ";
   }
   std::cout << std::dec << "    ";
   if (exception == InstructionException::EncodingUnallocated) {
