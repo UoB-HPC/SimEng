@@ -205,14 +205,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
-#ifndef NDEBUG
-    // Struct not initialised which can cause issues but can be slow
+    // Ensure cs_insn doesn't contain garbage data
     cs_insn* rawInsnPointer = (cs_insn*)calloc(1, sizeof(cs_insn));
     cs_insn rawInsn = *rawInsnPointer;
     assert(rawInsn.size == 0 && "rawInsn not initialised correctly");
-#else
-    cs_insn rawInsn;
-#endif
 
     cs_detail rawDetail;
     rawInsn.detail = &rawDetail;
@@ -230,6 +226,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     auto metadata = success ? InstructionMetadata(rawInsn)
                             : InstructionMetadata(encoding, rawInsn.size);
+
+    free(rawInsnPointer);
 
     // Cache the metadata
     metadataCache.push_front(metadata);
