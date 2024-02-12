@@ -107,10 +107,18 @@ const span<RegisterValue> Instruction::getResults() const {
           destinationRegisterCount_};
 }
 
-bool Instruction::isStoreAddress() const { return isStoreAddress_; }
-bool Instruction::isStoreData() const { return isStoreData_; }
-bool Instruction::isLoad() const { return isLoad_; }
-bool Instruction::isBranch() const { return isBranch_; }
+bool Instruction::isStoreAddress() const {
+  return isInstruction(InsnIdentifier::isStoreAddressMask);
+}
+bool Instruction::isStoreData() const {
+  return isInstruction(InsnIdentifier::isStoreDataMask);
+}
+bool Instruction::isLoad() const {
+  return isInstruction(InsnIdentifier::isLoadMask);
+}
+bool Instruction::isBranch() const {
+  return isInstruction(InsnIdentifier::isBranchMask);
+}
 
 span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
     const {
@@ -140,34 +148,37 @@ uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
   // Set base
   uint16_t base = InstructionGroups::INT;
-  if (isScalarData_)
+  if (isInstruction(InsnIdentifier::isScalarDataMask))
     base = InstructionGroups::SCALAR;
-  else if (isVectorData_)
+  else if (isInstruction(InsnIdentifier::isVectorDataMask))
     base = InstructionGroups::VECTOR;
-  else if (isSVEData_)
+  else if (isInstruction(InsnIdentifier::isSVEDataMask))
     base = InstructionGroups::SVE;
-  else if (isSMEData_)
+  else if (isInstruction(InsnIdentifier::isSMEDataMask))
     base = InstructionGroups::SME;
 
-  if (isLoad_) return base + 10;
-  if (isStoreAddress_) return base + 11;
-  if (isStoreData_) return base + 12;
-  if (isBranch_) return InstructionGroups::BRANCH;
-  if (isPredicate_) return InstructionGroups::PREDICATE;
-  if (isDivideOrSqrt_) return base + 9;
-  if (isMultiply_) return base + 8;
-  if (isConvert_) return base + 7;
-  if (isCompare_) return base + 6;
-  if (isLogical_) {
-    if (isNoShift_) return base + 5;
-    return base + 4;
+  if (isInstruction(InsnIdentifier::isLoadMask)) return base + 10;
+  if (isInstruction(InsnIdentifier::isStoreAddressMask)) return base + 11;
+  if (isInstruction(InsnIdentifier::isStoreDataMask)) return base + 12;
+  if (isInstruction(InsnIdentifier::isBranchMask))
+    return InstructionGroups::BRANCH;
+  if (isInstruction(InsnIdentifier::isPredicateMask))
+    return InstructionGroups::PREDICATE;
+  if (isInstruction(InsnIdentifier::isDivideOrSqrtMask)) return base + 9;
+  if (isInstruction(InsnIdentifier::isMultiplyMask)) return base + 8;
+  if (isInstruction(InsnIdentifier::isConvertMask)) return base + 7;
+  if (isInstruction(InsnIdentifier::isCompareMask)) return base + 6;
+  if (isInstruction(InsnIdentifier::isLogicalMask)) {
+    if (isInstruction(InsnIdentifier::isShiftMask)) return base + 4;
+    return base + 5;
   }
-  if (isNoShift_) return base + 3;
-  return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
+  if (isInstruction(InsnIdentifier::isShiftMask)) return base + 2;
+  return base + 3;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isLoad_ || isStoreAddress_) {
+  if (isInstruction(InsnIdentifier::isLoadMask) ||
+      isInstruction(InsnIdentifier::isStoreAddressMask)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

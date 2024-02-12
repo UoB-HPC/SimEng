@@ -216,6 +216,40 @@ inline uint8_t getDataSize(cs_arm64_op op) {
   return 0;
 }
 
+// AArch64 Instruction Identifier Masks
+enum class InsnIdentifier {
+  /** Operates on scalar values */
+  isScalarDataMask = 0b00000000000000000000000000000001,
+  /** Operates on vector values. */
+  isVectorDataMask = 0b00000000000000000000000000000010,
+  /** Uses Z registers as source and/or destination operands. */
+  isSVEDataMask = 0b00000000000000000000000000000100,
+  /** Uses ZA register or tiles of ZA as destination. */
+  isSMEDataMask = 0b00000000000000000000000000001000,
+  /** Has a shift operand. */
+  isShiftMask = 0b00000000000000000000000000010000,
+  /** Is a logical operation. */
+  isLogicalMask = 0b00000000000000000000000000100000,
+  /** Is a compare operation. */
+  isCompareMask = 0b00000000000000000000000001000000,
+  /** Is a convert operation. */
+  isConvertMask = 0b00000000000000000000000010000000,
+  /** Is a multiply operation. */
+  isMultiplyMask = 0b00000000000000000000000100000000,
+  /** Is a divide or square root operation */
+  isDivideOrSqrtMask = 0b00000000000000000000001000000000,
+  /** Writes to a predicate register */
+  isPredicateMask = 0b00000000000000000000010000000000,
+  /** Is a load operation. */
+  isLoadMask = 0b00000000000000000000100000000000,
+  /** Is a store address operation. */
+  isStoreAddressMask = 0b00000000000000000001000000000000,
+  /** Is a store data operation. */
+  isStoreDataMask = 0b00000000000000000010000000000000,
+  /** Is a branch operation. */
+  isBranchMask = 0b00000000000000000100000000000000
+};
+
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -329,6 +363,16 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
+  /** Update the instruction's identifier with an additional field. */
+  void setInstructionIdentifier(InsnIdentifier identifier) {
+    instructionIdentifier_ |= static_cast<uint32_t>(identifier);
+  }
+
+  /** Test whether this instruction had the given identifier set. */
+  constexpr bool isInstruction(InsnIdentifier identifier) const {
+    return (instructionIdentifier_ & static_cast<uint32_t>(identifier));
+  }
+
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
@@ -386,37 +430,10 @@ class Instruction : public simeng::Instruction {
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t dataSize_ = 0;
 
-  // Instruction identifiers
-  /** Operates on scalar values */
-  bool isScalarData_ = false;
-  /** Operates on vector values. */
-  bool isVectorData_ = false;
-  /** Uses Z registers as source and/or destination operands. */
-  bool isSVEData_ = false;
-  /** Uses ZA register or tiles of ZA as destination. */
-  bool isSMEData_ = false;
-  /** Doesn't have a shift operand. */
-  bool isNoShift_ = true;
-  /** Is a logical operation. */
-  bool isLogical_ = false;
-  /** Is a compare operation. */
-  bool isCompare_ = false;
-  /** Is a convert operation. */
-  bool isConvert_ = false;
-  /** Is a multiply operation. */
-  bool isMultiply_ = false;
-  /** Is a divide or square root operation */
-  bool isDivideOrSqrt_ = false;
-  /** Writes to a predicate register */
-  bool isPredicate_ = false;
-  /** Is a load operation. */
-  bool isLoad_ = false;
-  /** Is a store address operation. */
-  bool isStoreAddress_ = false;
-  /** Is a store data operation. */
-  bool isStoreData_ = false;
-  /** Is a branch operation. */
-  bool isBranch_ = false;
+  /** Used to denote what type of instruction this is. Utilises the constants in
+   * the `InsnIdentifier` namespace allow each bit to represent a unique
+   * identifier such as `isLoad` or `isMultiply` etc. */
+  uint32_t instructionIdentifier_ = 0;
 };
 
 }  // namespace aarch64
