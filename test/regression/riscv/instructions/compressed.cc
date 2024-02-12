@@ -201,16 +201,6 @@ TEST_P(InstCompressed, fld) {
   EXPECT_EQ(getFPRegister<double>(11), 123456);
 }
 
-TEST_P(InstCompressed, addi4spn) {
-  // Add immediate to stack pointer
-  RUN_RISCV_COMP(R"(
-    c.addi4spn x8, x2, 4
-    c.addi4spn x9, x2, 12
-  )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(8), process_->getStackPointer() + 4);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getStackPointer() + 12);
-}
-
 TEST_P(InstCompressed, sw) {
   // Compressed store word
   initialHeapData_.resize(16);
@@ -325,6 +315,19 @@ TEST_P(InstCompressed, j) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 8);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 14);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+}
+
+TEST_P(InstCompressed, jr) {
+  // Compressed jump to address in register
+  RUN_RISCV_COMP(R"(
+    c.addi x9, 8
+    c.jr x9
+    c.addi x8, 4
+    c.j end
+    c.addi x8, 5
+    end:
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 5);
 }
 
 TEST_P(InstCompressed, jalr) {
@@ -457,7 +460,18 @@ TEST_P(InstCompressed, addi16sp) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getStackPointer() + 16);
 }
 
+TEST_P(InstCompressed, addi4spn) {
+  // Add immediate to stack pointer
+  RUN_RISCV_COMP(R"(
+    c.addi4spn x8, x2, 4
+    c.addi4spn x9, x2, 12
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), process_->getStackPointer() + 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getStackPointer() + 12);
+}
+
 TEST_P(InstCompressed, slli) {
+  // Compressed shift left logical by immediate. rs1 = rd
   RUN_RISCV_COMP(R"(
       addi t4, t4, 6
       c.slli t4, 5
@@ -466,6 +480,7 @@ TEST_P(InstCompressed, slli) {
 }
 
 TEST_P(InstCompressed, srli) {
+  // Compressed shift right logical by immediate. rs1 = rd
   RUN_RISCV_COMP(R"(
       addi x8, x8, -4
       c.srli x8, 61
@@ -474,6 +489,7 @@ TEST_P(InstCompressed, srli) {
 }
 
 TEST_P(InstCompressed, srai) {
+  // Compressed shift right arithmetic by immediate. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x8, x8, -4
     add t0, t0, x8
@@ -486,6 +502,7 @@ TEST_P(InstCompressed, srai) {
 }
 
 TEST_P(InstCompressed, andi) {
+  // Compressed AND with sign extended immediate. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x9, x9, 3
     addi t4, t4, 5
@@ -497,7 +514,19 @@ TEST_P(InstCompressed, andi) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 1);
 }
 
+TEST_P(InstCompressed, mv) {
+  // Compressed move
+  RUN_RISCV_COMP(R"(
+     addi x8, x8, 3
+     addi x9, x9, 6
+     c.mv x8, x9
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 6u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 6u);
+}
+
 TEST_P(InstCompressed, add) {
+  // Compressed add. rs1 = rd
   RUN_RISCV_COMP(R"(
      addi x8, x8, 3
      addi x9, x9, 6
@@ -508,6 +537,7 @@ TEST_P(InstCompressed, add) {
 }
 
 TEST_P(InstCompressed, and) {
+  // Compressed AND. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x8, x8, 3
     addi x9, x9, 5
@@ -517,6 +547,7 @@ TEST_P(InstCompressed, and) {
 }
 
 TEST_P(InstCompressed, or) {
+  // Compressed OR. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x8, x8, 3
     addi x9, x9, 5
@@ -526,6 +557,7 @@ TEST_P(InstCompressed, or) {
 }
 
 TEST_P(InstCompressed, xor) {
+  // Compressed XOR. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x8, x8, 3
     addi x9, x9, 5
@@ -535,6 +567,7 @@ TEST_P(InstCompressed, xor) {
 }
 
 TEST_P(InstCompressed, sub) {
+  // Compressed subtract. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x8, x8, 3
     addi x9, x9, 6
@@ -547,6 +580,8 @@ TEST_P(InstCompressed, sub) {
 }
 
 TEST_P(InstCompressed, addw) {
+  // Compressed add word. Adds rd and rs2 then sign extends lower 32 bits. rs1 =
+  // rd
   RUN_RISCV_COMP(R"(
     addi x9, x9, -7
     addi x8, x8, 3
@@ -560,6 +595,8 @@ TEST_P(InstCompressed, addw) {
 }
 
 TEST_P(InstCompressed, subw) {
+  // Compressed subtract word. Subtracts rs2 from rd then sign extends lower 32
+  // bits. rs1 = rd
   RUN_RISCV_COMP(R"(
     addi x9, x9, 3
     addi x10, x10, 6
