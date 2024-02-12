@@ -518,7 +518,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_LDSP: {
-      // TODO valid for RV64 only. Make this check
+      // TODO valid for RV64 only. Make this check once RV32 implemented
       // ld rd, offset[8:3](x2)
       // offset is immediate scaled by 8. Capstone does scaling for us
 
@@ -601,7 +601,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_SDSP: {
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // sd rs2, offset[8:3](x2)
 
       opcode = Opcode::RISCV_SD;
@@ -647,7 +647,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_LD: {
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // ld rd ′ , offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_LD;
@@ -686,7 +686,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_SD: {
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // sd rs2 ′ , offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_SD;
@@ -747,7 +747,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       break;
     }
     case Opcode::RISCV_C_FLDSP:
-      // TODO RV32DC/RV64DC-only
+      // TODO RV32DC/RV64DC-only once RV32 implemented
       // fld rd, offset[8:3](x2)
       opcode = Opcode::RISCV_FLD;
 
@@ -777,7 +777,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_ADDIW:
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // addiw rd, rd, imm[5:0]
       // C.ADDIW rd, imm, _ -> addiw rd, rd, imm
 
@@ -824,7 +824,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_ADDW:
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // addw rd ′ , rd ′ , rs2 ′
       // C.ADDW rd, rs2, _ -> addw rd, rd, rs2
       opcode = Opcode::RISCV_ADDW;
@@ -894,7 +894,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_FSD:
-      // TODO rv64dc ONLY, make check for this
+      // TODO rv64dc ONLY, make check for this once RV32 implemented
       // fsd rs2 ′, offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_FSD;
@@ -903,7 +903,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_FLD:
-      // TODO rv64dc ONLY, make check for this
+      // TODO rv64dc ONLY, make check for this once RV32 implemented
       // fld rd ′, offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_FLD;
@@ -912,7 +912,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_FSDSP:
-      // TODO rv64dc ONLY, make check for this
+      // TODO rv64dc ONLY, make check for this once RV32 implemented
       // fsd rs2, offset[8:3](x2)
 
       opcode = Opcode::RISCV_FSD;
@@ -921,7 +921,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       break;
     case Opcode::RISCV_C_SUBW:
-      // TODO rv64 ONLY, make check for this
+      // TODO rv64 ONLY, make check for this once RV32 implemented
       // subw rd ′ , rd ′ , rs2 ′
       // C.SUBW rd, rs2, _ -> subw rd, rd, rs2
 
