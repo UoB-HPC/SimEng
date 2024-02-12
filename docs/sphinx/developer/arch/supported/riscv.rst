@@ -1,7 +1,7 @@
 RISCV
 =======
 
-SimEng provides an almost complete implementation of the rv64imafd architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.
+SimEng provides an almost complete implementation of the rv64imafdc architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
@@ -56,6 +56,8 @@ Adding execution behaviour
 **************************
 
 The process for adding a new instruction is very similar to that of :ref:`AArch64 <aarch64-adding-instructions>`, by adding a new, uniquely identified entry to ``src/lib/arch/riscv/Instruction_execute.cc``.
+
+Compressed instructions are treated in the same way as pseudoinstructions. By design they can be expanded to full instructions from the base and floating point extensions. A new case should be added to the switch statement in ``InstructionMetadata`` to perform the relevant adjustment to the metadata. The instruction can then be allowed to flow through the pipeline - no new execute case is necessary.
 
 Zero registers
 **************
