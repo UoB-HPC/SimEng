@@ -346,14 +346,16 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Register-Set
   expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
   if (isa_ == ISA::AArch64) {
-    // TODO: Reduce to 32 once renaming issue has been sorted
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(38,
                                                      "GeneralPurpose-Count"));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
 
-    // TODO: Reduce to 32 once renaming issue has been sorted
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(
             38, "FloatingPoint/SVE-Count"));
@@ -376,15 +378,19 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint16_t>(
         1, UINT16_MAX);
   } else if (isa_ == ISA::RV64) {
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
+        ExpectationNode::createExpectation<uint16_t>(38,
                                                      "GeneralPurpose-Count"));
     // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["GeneralPurpose-Count"]
         .setValueBounds<uint16_t>(38, UINT16_MAX);
 
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
+        ExpectationNode::createExpectation<uint16_t>(38,
                                                      "FloatingPoint-Count"));
     // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["FloatingPoint-Count"]
