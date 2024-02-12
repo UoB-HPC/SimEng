@@ -94,12 +94,24 @@ const span<RegisterValue> Instruction::getResults() const {
           destinationRegisterCount_};
 }
 
-bool Instruction::isStoreAddress() const { return isStore_; }
-bool Instruction::isStoreData() const { return isStore_; }
-bool Instruction::isLoad() const { return isLoad_; }
-bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isAtomic() const { return isAtomic_; }
-bool Instruction::isFloat() const { return isFloat_; }
+bool Instruction::isStoreAddress() const {
+  return isInstruction(InsnIdentifier::isStoreMask);
+}
+bool Instruction::isStoreData() const {
+  return isInstruction(InsnIdentifier::isStoreMask);
+}
+bool Instruction::isLoad() const {
+  return isInstruction(InsnIdentifier::isLoadMask);
+}
+bool Instruction::isBranch() const {
+  return isInstruction(InsnIdentifier::isBranchMask);
+}
+bool Instruction::isAtomic() const {
+  return isInstruction(InsnIdentifier::isAtomicMask);
+}
+bool Instruction::isFloat() const {
+  return isInstruction(InsnIdentifier::isFloatMask);
+}
 
 span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
     const {
@@ -135,16 +147,19 @@ uint16_t Instruction::getGroup() const {
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
-  if (isDivide_) return base + 7;
-  if (isMultiply_) return base + 6;
-  if (isShift_ || isConvert_) return base + 5;
-  if (isLogical_) return base + 4;
-  if (isCompare_) return base + 3;
+  if (isInstruction(InsnIdentifier::isDivideMask)) return base + 7;
+  if (isInstruction(InsnIdentifier::isMultiplyMask)) return base + 6;
+  if (isInstruction(InsnIdentifier::isShiftMask) ||
+      isInstruction(InsnIdentifier::isConvertMask))
+    return base + 5;
+  if (isInstruction(InsnIdentifier::isLogicalMask)) return base + 4;
+  if (isInstruction(InsnIdentifier::isCompareMask)) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isLoad_ || isStore_) {
+  if (isInstruction(InsnIdentifier::isLoadMask) ||
+      isInstruction(InsnIdentifier::isStoreMask)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

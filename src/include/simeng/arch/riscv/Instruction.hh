@@ -44,6 +44,32 @@ enum class InstructionException {
   PipelineFlush
 };
 
+// RISC-V Instruction Identifier Masks
+enum class InsnIdentifier {
+  /** Is this a store operation? */
+  isStoreMask = 0b0000000000000001,
+  /** Is this a load operation? */
+  isLoadMask = 0b0000000000000010,
+  /** Is this a branch operation? */
+  isBranchMask = 0b0000000000000100,
+  /** Is this a multiply operation? */
+  isMultiplyMask = 0b0000000000001000,
+  /** Is this a divide operation? */
+  isDivideMask = 0b0000000000010000,
+  /** Is this a shift operation? */
+  isShiftMask = 0b0000000000100000,
+  /** Is this an atomic instruction? */
+  isAtomicMask = 0b0000000001000000,
+  /** Is this a logical instruction? */
+  isLogicalMask = 0b0000000010000000,
+  /** Is this a compare instruction? */
+  isCompareMask = 0b0000000100000000,
+  /** Is this a floating point operation? */
+  isFloatMask = 0b0000001000000000,
+  /** Is this a floating point <-> integer convert operation? */
+  isConvertMask = 0b0000010000000000,
+};
+
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -156,6 +182,16 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
+  /** Update the instruction's identifier with an additional field. */
+  void setInstructionIdentifier(InsnIdentifier identifier) {
+    instructionIdentifier_ |= static_cast<uint16_t>(identifier);
+  }
+
+  /** Test whether this instruction had the given identifier set. */
+  constexpr bool isInstruction(InsnIdentifier identifier) const {
+    return (instructionIdentifier_ & static_cast<uint16_t>(identifier));
+  }
+
   /** For instructions with a valid rm field, extract the rm value and change
    * the CPP rounding mode accordingly, then call the function "operation"
    * before reverting the CPP rounding mode to its initial value. "Operation"
@@ -212,29 +248,10 @@ class Instruction : public simeng::Instruction {
    * determine execution readiness. */
   uint16_t sourceOperandsPending_ = 0;
 
-  // Instruction identifiers
-  /** Is this a store operation? */
-  bool isStore_ = false;
-  /** Is this a load operation? */
-  bool isLoad_ = false;
-  /** Is this a branch operation? */
-  bool isBranch_ = false;
-  /** Is this a multiply operation? */
-  bool isMultiply_ = false;
-  /** Is this a divide operation? */
-  bool isDivide_ = false;
-  /** Is this a shift operation? */
-  bool isShift_ = false;
-  /** Is this an atomic instruction? */
-  bool isAtomic_ = false;
-  /** Is this a logical instruction? */
-  bool isLogical_ = false;
-  /** Is this a compare instruction? */
-  bool isCompare_ = false;
-  /** Is this a floating point operation? */
-  bool isFloat_ = false;
-  /** Is this a floating point <-> integer convert operation? */
-  bool isConvert_ = false;
+  /** Used to denote what type of instruction this is. Utilises the constants in
+   * the `InsnIdentifier` namespace allow each bit to represent a unique
+   * identifier such as `isLoad` or `isMultiply` etc. */
+  uint16_t instructionIdentifier_ = 0;
 };
 
 }  // namespace riscv
