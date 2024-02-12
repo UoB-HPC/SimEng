@@ -20,14 +20,24 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);
 
-  constantsPool constantsPool;
-  constants_.alignMask = constantsPool.alignMaskCompressed;
-  constants_.regWidth = constantsPool.byteLength64;
-  constants_.bytesLimit = constantsPool.bytesLimitCompressed;
+  cs_err n;
 
-  cs_err n = cs_open(CS_ARCH_RISCV,
-                     static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
-                     &capstoneHandle);
+  regWidth = constantsPool::byteLength64;
+
+  if (config["Core"]["Compressed"].as<bool>()) {
+    alignMask = constantsPool::alignMaskCompressed;
+    minInsnLength = constantsPool::bytesLimitCompressed;
+
+    n = cs_open(CS_ARCH_RISCV,
+                static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
+                &capstoneHandle);
+  } else {
+    alignMask = constantsPool::alignMask;
+    minInsnLength = constantsPool::bytesLimit;
+
+    n = cs_open(CS_ARCH_RISCV, static_cast<cs_mode>(CS_MODE_RISCV64),
+                &capstoneHandle);
+  }
 
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
@@ -156,8 +166,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
-  // 2-byte when Compressed ISA is supported
-  if (instructionAddress & constants_.alignMask) {
+  // 2-byte when Compressed extension is supported
+  if (instructionAddress & alignMask) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
     metadataCache.emplace_front(metadata);
@@ -170,7 +180,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= constants_.bytesLimit &&
+  assert(bytesAvailable >= minInsnLength &&
          "Fewer than bytes limit supplied to RISC-V decoder");
 
   // Get the first byte
@@ -302,9 +312,7 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-uint8_t Architecture::getMinInstructionSize() const {
-  return constants_.bytesLimit;
-}
+uint8_t Architecture::getMinInstructionSize() const { return minInsnLength; }
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {

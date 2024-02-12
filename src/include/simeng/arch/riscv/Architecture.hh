@@ -14,12 +14,6 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-struct archConstants {
-  uint8_t alignMask;
-  uint8_t bytesLimit; /* Minimum bytes the decoder needs to process */
-  uint8_t regWidth;   /* Register width in bytes */
-};
-
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
@@ -93,8 +87,14 @@ class Architecture : public arch::Architecture {
   /** System Register of Processor Cycle Counter. */
   simeng::Register cycleSystemReg_;
 
-  /** A struct contains constants */
-  archConstants constants_;
+  /** A mask used to determine if an address has the correct byte alignment */
+  uint8_t alignMask;
+
+  /** Register width in bytes */
+  uint8_t regWidth = constantsPool::byteLength64;
+
+  /** Minimum number of bytes that can represent an instruction */
+  uint8_t minInsnLength;
 };
 
 }  // namespace riscv

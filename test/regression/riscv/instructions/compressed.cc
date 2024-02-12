@@ -719,7 +719,7 @@ TEST_P(InstCompressed, ebreak) {
                         "not-yet-implemented exception"));
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler]    0x0000000000000000: 02 "
-                        "90 00 00     c.ebreak "));
+                        "90     c.ebreak"));
   buffer.str(std::string());
 }
 
