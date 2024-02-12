@@ -169,10 +169,6 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return instructionsExecuted_;
 }
 
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency_ / 1e9);
-}
-
 std::map<std::string, std::string> Core::getStats() const {
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(instructionsExecuted_)},

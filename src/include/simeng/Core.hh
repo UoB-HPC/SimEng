@@ -27,8 +27,7 @@ class Core {
         registerFileSet_(regFileStructure),
         clockFrequency_(
             config::SimInfo::getConfig()["Core"]["Clock-Frequency-GHz"]
-                .as<float>() *
-            1e9) {}
+                .as<float>()) {}
 
   virtual ~Core() {}
 
@@ -45,11 +44,14 @@ class Core {
   /** Retrieve the number of instructions retired. */
   virtual uint64_t getInstructionsRetiredCount() const = 0;
 
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  virtual uint64_t getSystemTimer() const = 0;
-
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+
+  /** Retrieve the simulated nanoseconds elapsed since the core started. */
+  uint64_t getSystemTimer() const {
+    // TODO: This will need to be changed if we start supporting DVFS.
+    return (ticks_ / clockFrequency_);
+  }
 
  protected:
   /** Apply changes to the process state. */
@@ -111,8 +113,8 @@ class Core {
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
 
-  /** Clock frequency of core in Hz */
-  uint64_t clockFrequency_ = 0;
+  /** Clock frequency of core in GHz */
+  float clockFrequency_ = 0.0f;
 };
 
 }  // namespace simeng

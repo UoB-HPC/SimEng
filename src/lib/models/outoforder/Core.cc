@@ -6,13 +6,10 @@
 #include <sstream>
 #include <string>
 
-// // Temporary; until config options are available
-// #include "simeng/arch/aarch64/Instruction.hh"
 namespace simeng {
 namespace models {
 namespace outoforder {
 
-// TODO: System register count has to match number of supported system registers
 Core::Core(memory::MemoryInterface& instructionMemory,
            memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
            uint64_t entryPoint, const arch::Architecture& isa,
@@ -204,11 +201,6 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 
 uint64_t Core::getInstructionsRetiredCount() const {
   return reorderBuffer_.getInstructionsCommittedCount();
-}
-
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

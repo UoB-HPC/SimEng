@@ -40,9 +40,6 @@ class Core : public simeng::Core {
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
 
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  uint64_t getSystemTimer() const override;
-
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
