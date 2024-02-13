@@ -44,7 +44,6 @@ void FetchUnit::tick() {
       auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
                                       loopBuffer_.front().instructionSize,
                                       loopBuffer_.front().address, macroOp);
-
       assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling
@@ -61,7 +60,7 @@ void FetchUnit::tick() {
 
   // Pointer to the instruction data to decode from
   const uint8_t* buffer;
-  uint8_t bufferOffset;
+  uint16_t bufferOffset;
 
   // Check if more instruction data is required
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {

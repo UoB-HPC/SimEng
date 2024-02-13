@@ -324,7 +324,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Fetch"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Fetch-Block-Size"));
   expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(std::vector<uint16_t>{
-      4, 8, 16, 32, 64, 128, 256, 512, 1024, 4096, 8192, 16384, 32768});
+      4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768});
 
   expectations_["Fetch"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Loop-Buffer-Size"));
@@ -352,17 +352,21 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Register-Set
   expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
   if (isa_ == ISA::AArch64) {
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
+        ExpectationNode::createExpectation<uint16_t>(38,
                                                      "GeneralPurpose-Count"));
     expectations_["Register-Set"]["GeneralPurpose-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(
-            32, "FloatingPoint/SVE-Count"));
+            38, "FloatingPoint/SVE-Count"));
     expectations_["Register-Set"]["FloatingPoint/SVE-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(17, "Predicate-Count",
@@ -380,17 +384,23 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint16_t>(
         1, UINT16_MAX);
   } else if (isa_ == ISA::RV64) {
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
+        ExpectationNode::createExpectation<uint16_t>(38,
                                                      "GeneralPurpose-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["GeneralPurpose-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
 
+    // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
+    // ConfigTest.
     expectations_["Register-Set"].addChild(
-        ExpectationNode::createExpectation<uint16_t>(32,
+        ExpectationNode::createExpectation<uint16_t>(38,
                                                      "FloatingPoint-Count"));
+    // TODO: Reduce to 32 once renaming issue has been sorted
     expectations_["Register-Set"]["FloatingPoint-Count"]
-        .setValueBounds<uint16_t>(32, UINT16_MAX);
+        .setValueBounds<uint16_t>(38, UINT16_MAX);
   }
 
   // Pipeline-Widths
@@ -491,13 +501,24 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Load-Bandwidth"));
-  expectations_["LSQ-L1-Interface"]["Load-Bandwidth"].setValueBounds<uint16_t>(
-      1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Store-Bandwidth"));
-  expectations_["LSQ-L1-Interface"]["Store-Bandwidth"].setValueBounds<uint16_t>(
-      1, UINT16_MAX);
+
+  // AArch64 requires a vector length of at least 128, requiring a minimum of 16
+  // byte load/store bandwidths
+  // For RV64, the the minimum required load/store bandwidth is 8 bytes
+  if (isa_ == ISA::AArch64) {
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
+        .setValueBounds<uint16_t>(16, UINT16_MAX);
+    expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
+        .setValueBounds<uint16_t>(16, UINT16_MAX);
+  } else if (isa_ == ISA::RV64) {
+    expectations_["LSQ-L1-Interface"]["Store-Bandwidth"]
+        .setValueBounds<uint16_t>(8, UINT16_MAX);
+    expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
+        .setValueBounds<uint16_t>(8, UINT16_MAX);
+  }
 
   expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<uint16_t>(
@@ -932,6 +953,56 @@ void ModelConfig::postValidation() {
     invalid_ << "\t- Only a 'Flat' L1-Instruction-Memory Interface-Type is "
                 "supported. Interface-Type used is "
              << l1iType << "\n";
+
+  if (isa_ == ISA::AArch64) {
+    // Ensure LSQ-L1-Interface Load/Store Bandwidth is large enough to
+    // accomodate a full vector load of the specified Vector-Length parameter
+    if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
+      invalid_
+          << "\t- Load-Bandwidth (bytes) must be greater than Vector-Length "
+             "(bits). "
+             "The current Load-Bandwidth is set to "
+          << configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()
+          << " bytes, when it must be at least "
+          << configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
+    if (configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
+      invalid_
+          << "\t- Store-Bandwidth (bytes) must be greater than Vector-Length "
+             "(bits). "
+             "The current Store-Bandwidth is set to "
+          << configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()
+          << " bytes, when it must be at least "
+          << configTree_["Core"]["Vector-Length"].as<uint16_t>() / 8 << "\n";
+    }
+    // Ensure LSQ-L1-Interface Load/Store Bandwidth is also large enough to
+    // accomodate a full vector load of the specified Streaming-Vector-Length
+    // parameter when streaming mode is enabled
+    if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()) {
+      invalid_
+          << "\t- Load-Bandwidth (bytes) must be greater than "
+             "Streaming-Vector-Length (bits). "
+             "The current Load-Bandwidth is set to "
+          << configTree_["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>()
+          << " bytes, when it must be at least "
+          << configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8
+          << "\n";
+    }
+    if (configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8 >
+        configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()) {
+      invalid_
+          << "\t- Store-Bandwidth (bytes) must be greater than "
+             "Streaming-Vector-Length (bits). "
+             "The current Store-Bandwidth is set to "
+          << configTree_["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>()
+          << " bytes, when it must be at least "
+          << configTree_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8
+          << "\n";
+    }
+  }
 }
 
 ryml::Tree ModelConfig::getConfig() { return configTree_; }

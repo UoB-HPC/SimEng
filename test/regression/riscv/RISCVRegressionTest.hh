@@ -13,7 +13,7 @@ static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
   Register-Set:
     {
       GeneralPurpose-Count: 154,
-      Floating-Point-Count: 90,
+      FloatingPoint-Count: 90,
     },
   L1-Data-Memory:
     {
