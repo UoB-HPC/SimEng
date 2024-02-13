@@ -133,7 +133,7 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   // Tick a 5th time to ensure all buffered bytes have been used
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
-  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
@@ -175,7 +175,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
-  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
@@ -275,7 +275,7 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
-  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 
@@ -451,6 +451,239 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   output.fill({});
   fetchUnit.tick();
   EXPECT_EQ(output.getTailSlots()[0], mOp2);
+}
+
+// Tests that a compressed instruction held at the end of the fetch buffer is
+// allowed to be predecoded in the same cycle as being fetched
+TEST_F(PipelineFetchUnitTest, compressedInstructionAtEndOfBuffer) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+  // Buffer will contain valid compressed instruction so predecode returns
+  // 2 bytes read
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, 2, 0xE, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(2)));
+
+  // Fetch the data, only 2 bytes will be copied to fetch buffer. Should allow
+  // continuation to predecode
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Set PC to 14, buffered bytes = 0
+  fetchUnit.updatePC(14);
+  // Tick. Fetch data and predecode
+  fetchUnit.tick();
+
+  // Buffer should now be empty as all bytes predecoded
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
+
+  // Expect a block starting at address 16 to be requested when we fetch again
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
+      .Times(1);
+  fetchUnit.requestFromPC();
+
+  // Tick again, expecting that decoding will now resume
+  MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
+  span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
+  ON_CALL(isa, predecode(_, _, _, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  // Completed reads called again as more data is requested
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  // Output of width 1 so only 1 call to predecode
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  fetchUnit.tick();
+
+  // Initially 0 bytes, 16 bytes added, 4 bytes predecoded leaving 12 bytes left
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 12);
+}
+
+// Test that invalid half byte held at the end of the buffer is not successfully
+// predecoded and that more data is fetched subsequently allowing progression
+TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+  // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, 2, 0xE, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+
+  // getMaxInstructionSize called for second time in assertion
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Set PC to 14, buffered bytes = 0
+  fetchUnit.updatePC(14);
+  // Tick
+  fetchUnit.tick();
+
+  // No data consumed
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+
+  // Expect that memory is requested even though there is data in the buffer as
+  // bufferedBytes < maxInstructionSize
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
+      .Times(1);
+  fetchUnit.requestFromPC();
+
+  // Tick again expecting buffer to be filled and a word is predecoded
+  MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
+  span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
+  ON_CALL(isa, predecode(_, _, _, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  fetchUnit.tick();
+
+  // Initially 2 bytes, 16 bytes added, 4 bytes predecoded leaving 14 bytes left
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 14);
+}
+
+// Ensure progression with valid 2 bytes at end of buffer when next read doesn't
+// complete
+TEST_F(PipelineFetchUnitTest, validCompressed_ReadsDontComplete) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+  // Buffer will contain valid 6 bytes so predecode returns 4 bytes read on
+  // first tick
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, 6, 0xA, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+
+  // Fetch the data, only last 6 bytes from block. Should allow continuation to
+  // predecode
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Set PC to 10, buffered bytes = 0
+  fetchUnit.updatePC(10);
+  // Tick and predecode 4 bytes
+  fetchUnit.tick();
+
+  // Ensure 4 bytes consumed
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  EXPECT_EQ(fetchUnit.pc_, 14);
+
+  // Expect that memory is requested even though there is data in the buffer as
+  // bufferedBytes < maxInstructionSize
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
+      .Times(1);
+  fetchUnit.requestFromPC();
+
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  EXPECT_EQ(fetchUnit.pc_, 14);
+
+  // Memory doesn't complete reads in next cycle but buffered bytes should be
+  // predecoded
+  ON_CALL(memory, getCompletedReads())
+      .WillByDefault(Return(span<MemoryReadResult>{nullptr, 0}));
+  ON_CALL(isa, predecode(_, 2, 0xE, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(2)));
+
+  // Path through fetch as follows:
+  // More data required as bufferedBytes_ < maxInsnSize so getCompletedReads
+  // Doesn't complete so buffer doesn't get added to
+  // Buffer still has some valid data so predecode should be called
+
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(2);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Tick
+  fetchUnit.tick();
+
+  // Ensure 2 bytes are consumed
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
+  EXPECT_EQ(fetchUnit.pc_, 16);
+}
+
+// If invalid 2 bytes and no load then repeated calls to
+// predecode
+// Should there be a way to prevent repeated predecode of the same invalid byte
+
+// TODO is this correct/desired behaviour????
+// Test that invalid half byte held at the end of the buffer is not successfully
+// predecoded and should be retried when reads don't complete
+TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+  // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, 2, 0xE, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+
+  // getMaxInstructionSize called for second time in assertion
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Set PC to 14, buffered bytes = 0
+  fetchUnit.updatePC(14);
+  // Tick
+  fetchUnit.tick();
+
+  // No data consumed
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  EXPECT_EQ(fetchUnit.pc_, 14);
+
+  // Expect that memory is requested even though there is data in the buffer as
+  // bufferedBytes < maxInstructionSize
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
+      .Times(1);
+  fetchUnit.requestFromPC();
+
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  EXPECT_EQ(fetchUnit.pc_, 14);
+
+  // Memory doesn't complete reads in next cycle but buffered bytes should
+  // attempt to be predecoded
+  ON_CALL(memory, getCompletedReads())
+      .WillByDefault(Return(span<MemoryReadResult>{nullptr, 0}));
+  // Predecode still returns no bytes read
+  ON_CALL(isa, predecode(_, 2, 0xE, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+
+  // getMaxInsnSize called again in assertion
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(2);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  // Tick
+  fetchUnit.tick();
+
+  // Ensure 2 bytes are consumed
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  EXPECT_EQ(fetchUnit.pc_, 14);
 }
 
 }  // namespace pipeline
