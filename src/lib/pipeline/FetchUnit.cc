@@ -25,9 +25,6 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {
-  std::cout << "tick pc=" << pc_ << " bufferedBytes=" << (int)bufferedBytes_
-            << std::endl;
-
   if (output_.isStalled()) {
     return;
   }
@@ -64,8 +61,6 @@ void FetchUnit::tick() {
 
   // Check if more instruction data is required
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
-    std::cout << "more data required" << std::endl;
-
     // Calculate the address of the next fetch block
     uint64_t blockAddress;
     if (bufferedBytes_ > 0) {
@@ -79,8 +74,6 @@ void FetchUnit::tick() {
       bufferOffset = pc_ - blockAddress;
     }
 
-    std::cout << "get completed read" << std::endl;
-
     // Find fetched memory that matches the desired block
     const auto& fetched = instructionMemory_.getCompletedReads();
 
@@ -92,20 +85,14 @@ void FetchUnit::tick() {
     }
     if (fetchIndex == fetched.size() &&
         bufferedBytes_ < isa_.getMinInstructionSize()) {
-      std::cout << "need to wait" << std::endl;
-
       // Need to wait for fetched instructions
       return;
     } else if (fetchIndex == fetched.size()) {
-      std::cout << "new case" << std::endl;
-
       // There is minimal data already in the buffer which may be predecodable
       // and no new data has been supplied
 
       // Do nothing and allow continuation
     } else {
-      std::cout << "Move data into fetch buffer" << std::endl;
-
       // Data has been successfully read, move into fetch buffer
       // TODO: Handle memory faults
       assert(fetched[fetchIndex].data && "Memory read failed");
@@ -127,16 +114,12 @@ void FetchUnit::tick() {
     bufferOffset = 0;
   }
 
-  std::cout << "get min size" << std::endl;
-
   // Check we have enough data to begin decoding as read may not have completed
   if (bufferedBytes_ < isa_.getMinInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
-
-    std::cout << "predecode" << std::endl;
 
     auto bytesRead =
         isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_, macroOp);
@@ -228,9 +211,6 @@ void FetchUnit::tick() {
   }
 
   instructionMemory_.clearCompletedReads();
-
-  std::cout << "end of tick, bufferedBytes=" << (int)bufferedBytes_
-            << " pc=" << pc_ << std::endl;
 }
 
 void FetchUnit::registerLoopBoundary(uint64_t branchAddress) {
