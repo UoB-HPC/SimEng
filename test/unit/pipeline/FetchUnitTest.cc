@@ -622,11 +622,6 @@ TEST_F(PipelineFetchUnitTest, validCompressed_ReadsDontComplete) {
   EXPECT_EQ(fetchUnit.pc_, 16);
 }
 
-// If invalid 2 bytes and no load then repeated calls to
-// predecode
-// Should there be a way to prevent repeated predecode of the same invalid byte
-
-// TODO is this correct/desired behaviour????
 // Test that invalid half byte held at the end of the buffer is not successfully
 // predecoded and should be retried when reads don't complete
 TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
