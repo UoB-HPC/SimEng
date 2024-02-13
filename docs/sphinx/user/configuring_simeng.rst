@@ -149,7 +149,7 @@ Type
     The type of branch predictor that is used, the options are ``Generic``, and ``Perceptron``.  Both types of predictor use a branch target buffer with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` is a saturating counter, and in ``Perceptron`` it is a perceptron.
 
 BTB-Tag-Bits
-        The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
+    The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
 
 Saturating-Count-Bits
     Only needed for a ``Generic`` predictor.  The number of bits used in the saturating counter value.
