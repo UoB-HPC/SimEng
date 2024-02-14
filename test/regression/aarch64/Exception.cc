@@ -57,6 +57,12 @@ TEST_P(Exception, not_yet_implemented) {
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
+// Test for InstructionException::AliasNotYetImplemented omitted. Obtaining an
+// instruction encoding that will consistently trigger an AliasNotYetImplemented
+// exception is not feasible due to the continual updates to our alias reversion
+// support and the difficulty of generating the bytes for an instruction alias
+// not yet supported.
+
 // Test that branching to an address that is misaligned raises an exception.
 TEST_P(Exception, misaligned_pc) {
   RUN_AARCH64(R"(
