@@ -70,6 +70,14 @@ enum class InsnIdentifier {
   isConvertMask = 0b0000010000000000,
 };
 
+/** The maximum number of source registers any supported RISC-V instruction
+ * can have. */
+const uint8_t MAX_SOURCE_REGISTERS = 3;
+
+/** The maximum number of destination registers any supported RISC-V
+ * instruction can have. */
+const uint8_t MAX_DESTINATION_REGISTERS = 1;
+
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -206,14 +214,6 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a floating point operation? */
   bool isFloat() const;
-
-  /** The maximum number of source registers any supported RISC-V instruction
-   * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 3;
-
-  /** The maximum number of destination registers any supported RISC-V
-   * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;

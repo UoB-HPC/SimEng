@@ -27,8 +27,6 @@ Instruction::Instruction(const Architecture& architecture,
   exceptionEncountered_ = true;
 }
 
-InstructionException Instruction::getException() const { return exception_; }
-
 const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }
@@ -41,10 +39,6 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters_.data()),
           destinationRegisterCount_};
-}
-
-bool Instruction::isOperandReady(int index) const {
-  return static_cast<bool>(sourceValues_[index]);
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
@@ -62,6 +56,20 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
 
   sourceValues_[i] = value;
   sourceOperandsPending_--;
+}
+
+bool Instruction::isOperandReady(int index) const {
+  return static_cast<bool>(sourceValues_[index]);
+}
+
+const span<RegisterValue> Instruction::getResults() const {
+  return {const_cast<RegisterValue*>(results_.data()),
+          destinationRegisterCount_};
+}
+
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
+  return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -87,37 +95,6 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData_.data(), memoryData_.size()};
 }
 
-bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
-
-const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results_.data()),
-          destinationRegisterCount_};
-}
-
-bool Instruction::isStoreAddress() const {
-  return isInstruction(InsnIdentifier::isStoreMask);
-}
-bool Instruction::isStoreData() const {
-  return isInstruction(InsnIdentifier::isStoreMask);
-}
-bool Instruction::isLoad() const {
-  return isInstruction(InsnIdentifier::isLoadMask);
-}
-bool Instruction::isBranch() const {
-  return isInstruction(InsnIdentifier::isBranchMask);
-}
-bool Instruction::isAtomic() const {
-  return isInstruction(InsnIdentifier::isAtomicMask);
-}
-bool Instruction::isFloat() const {
-  return isInstruction(InsnIdentifier::isFloatMask);
-}
-
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses_.data(), memoryAddresses_.size()};
-}
-
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   assert(
       !executed_ &&
@@ -136,6 +113,22 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 BranchType Instruction::getBranchType() const { return branchType_; }
 
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
+
+bool Instruction::isStoreAddress() const {
+  return isInstruction(InsnIdentifier::isStoreMask);
+}
+
+bool Instruction::isStoreData() const {
+  return isInstruction(InsnIdentifier::isStoreMask);
+}
+
+bool Instruction::isLoad() const {
+  return isInstruction(InsnIdentifier::isLoadMask);
+}
+
+bool Instruction::isBranch() const {
+  return isInstruction(InsnIdentifier::isBranchMask);
+}
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
@@ -157,6 +150,16 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
+bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
+
+const std::vector<uint16_t>& Instruction::getSupportedPorts() {
+  if (supportedPorts_.size() == 0) {
+    exception_ = InstructionException::NoAvailablePort;
+    exceptionEncountered_ = true;
+  }
+  return supportedPorts_;
+}
+
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   if (isInstruction(InsnIdentifier::isLoadMask) ||
       isInstruction(InsnIdentifier::isStoreMask)) {
@@ -168,20 +171,22 @@ void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   supportedPorts_ = info.ports;
 }
 
-const std::vector<uint16_t>& Instruction::getSupportedPorts() {
-  if (supportedPorts_.size() == 0) {
-    exception_ = InstructionException::NoAvailablePort;
-    exceptionEncountered_ = true;
-  }
-  return supportedPorts_;
-}
-
 const InstructionMetadata& Instruction::getMetadata() const {
   return metadata_;
 }
 
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;
+}
+
+InstructionException Instruction::getException() const { return exception_; }
+
+bool Instruction::isAtomic() const {
+  return isInstruction(InsnIdentifier::isAtomicMask);
+}
+
+bool Instruction::isFloat() const {
+  return isInstruction(InsnIdentifier::isFloatMask);
 }
 
 }  // namespace riscv
