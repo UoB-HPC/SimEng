@@ -42,6 +42,7 @@ set(SIMENG_SOURCES
     FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
+    PerceptronPredictor.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
