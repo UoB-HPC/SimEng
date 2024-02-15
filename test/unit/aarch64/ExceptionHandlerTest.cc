@@ -315,8 +315,8 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
       tar2, RegisterValue(dataVec.data() + ptr + 128, length - 128),
       uopPtr->getSequenceId()};
 
-  // Confirm that internal dataBuffer is empty
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  // Confirm that internal dataBuffer_ is empty
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Initial call to readBufferThen - expect resumeHandling to be updated to
   // readBufferThen and a memory read request to have occurred
@@ -328,7 +328,7 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   });
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Can now call tick() - on call, emulate no reads completed
   ON_CALL(memory, getCompletedReads())
@@ -337,7 +337,7 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   outcome = handler.tick();
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Call tick() again, simulating completed read + new read requested as still
   // data to fetch
@@ -355,9 +355,9 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   outcome = handler.tick();
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 128);
-  for (int i = 0; i < handler.dataBuffer.size(); i++) {
-    EXPECT_EQ(handler.dataBuffer[i], 'q');
+  EXPECT_EQ(handler.dataBuffer_.size(), 128);
+  for (int i = 0; i < handler.dataBuffer_.size(); i++) {
+    EXPECT_EQ(handler.dataBuffer_[i], 'q');
   }
 
   // One final call to tick() to get last bits of data from memory and call
@@ -369,9 +369,9 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   outcome = handler.tick();
   EXPECT_TRUE(outcome);
   EXPECT_EQ(retVal, 10);
-  EXPECT_EQ(handler.dataBuffer.size(), length);
+  EXPECT_EQ(handler.dataBuffer_.size(), length);
   for (int i = 0; i < length; i++) {
-    EXPECT_EQ(handler.dataBuffer[i], static_cast<unsigned char>('q'));
+    EXPECT_EQ(handler.dataBuffer_[i], static_cast<unsigned char>('q'));
   }
 }
 

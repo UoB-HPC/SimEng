@@ -59,7 +59,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
                       bool firstCall = true);
 
   /** A data buffer used for reading data from memory. */
-  std::vector<uint8_t> dataBuffer;
+  std::vector<uint8_t> dataBuffer_;
 
   /** Performs a readlinkat syscall using the path supplied. */
   void readLinkAt(span<char> path);
@@ -75,7 +75,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   const Instruction& instruction_;
 
   /** The core model object. */
-  const Core& core;
+  const Core& core_;
 
   /** The process memory. */
   MemoryInterface& memory_;

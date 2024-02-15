@@ -848,9 +848,9 @@ void ModelConfig::postValidation() {
     // user defined set
     std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance;
     if (isa_ == ISA::AArch64) {
-      groupInheritance = arch::aarch64::groupInheritance;
+      groupInheritance = arch::aarch64::groupInheritance_;
     } else if (isa_ == ISA::RV64) {
-      groupInheritance = arch::riscv::groupInheritance;
+      groupInheritance = arch::riscv::groupInheritance_;
     }
     while (blockingGroups.size()) {
       // Determine if there's any inheritance

@@ -11,8 +11,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
-std::forward_list<InstructionMetadata> Architecture::metadataCache;
+std::unordered_map<uint32_t, Instruction> Architecture::decodeCache_;
+std::forward_list<InstructionMetadata> Architecture::metadataCache_;
 
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     : linux_(kernel) {
@@ -20,7 +20,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);
 
-  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
+  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle_);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
                  "to error "
@@ -28,7 +28,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     exit(1);
   }
 
-  cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+  cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
   for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
@@ -66,9 +66,9 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       uint8_t distance = 1;
       while (groups.size()) {
         // Determine if there's any inheritance
-        if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+        if (groupInheritance_.find(groups.front()) != groupInheritance_.end()) {
           std::vector<uint16_t> inheritedGroups =
-              groupInheritance.at(groups.front());
+              groupInheritance_.at(groups.front());
           for (int k = 0; k < inheritedGroups.size(); k++) {
             // Determine if this group has inherited latency values from a
             // smaller distance
@@ -112,9 +112,10 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         groups.push(group);
         while (groups.size()) {
           // Determine if there's any inheritance
-          if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+          if (groupInheritance_.find(groups.front()) !=
+              groupInheritance_.end()) {
             std::vector<uint16_t> inheritedGroups =
-                groupInheritance.at(groups.front());
+                groupInheritance_.at(groups.front());
             for (int k = 0; k < inheritedGroups.size(); k++) {
               groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
               groups.push(inheritedGroups[k]);
@@ -138,9 +139,9 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   }
 }
 Architecture::~Architecture() {
-  cs_close(&capstoneHandle);
-  decodeCache.clear();
-  metadataCache.clear();
+  cs_close(&capstoneHandle_);
+  decodeCache_.clear();
+  metadataCache_.clear();
   groupExecutionInfo_.clear();
 }
 
@@ -151,10 +152,10 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   if (instructionAddress & 0x3) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
-    metadataCache.emplace_front(metadata);
+    metadataCache_.emplace_front(metadata);
     output.resize(1);
     auto& uop = output[0];
-    uop = std::make_shared<Instruction>(*this, metadataCache.front(),
+    uop = std::make_shared<Instruction>(*this, metadataCache_.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
     // Return non-zero value to avoid fatal error
@@ -169,8 +170,8 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   memcpy(&insn, ptr, 4);
 
   // Try to find the decoding in the decode cache
-  auto iter = decodeCache.find(insn);
-  if (iter == decodeCache.end()) {
+  auto iter = decodeCache_.find(insn);
+  if (iter == decodeCache_.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
     cs_insn rawInsn;
     cs_detail rawDetail;
@@ -182,20 +183,20 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
     bool success =
-        cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
+        cs_disasm_iter(capstoneHandle_, &encoding, &size, &address, &rawInsn);
 
     auto metadata =
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
     // Cache the metadata
-    metadataCache.push_front(metadata);
+    metadataCache_.push_front(metadata);
 
     // Create an instruction using the metadata
-    Instruction newInsn(*this, metadataCache.front());
+    Instruction newInsn(*this, metadataCache_.front());
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
     // Cache the instruction
-    iter = decodeCache.insert({insn, newInsn}).first;
+    iter = decodeCache_.insert({insn, newInsn}).first;
   }
 
   output.resize(1);

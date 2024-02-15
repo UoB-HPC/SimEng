@@ -341,24 +341,24 @@ class Instruction : public simeng::Instruction {
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata;
+  const InstructionMetadata& metadata_;
 
   /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
+  std::vector<Register> sourceRegisters_;
 
   /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
+  std::vector<Register> destinationRegisters_;
 
   /** The number of destination registers this instruction writes to. */
-  uint16_t destinationRegisterCount = 0;
+  uint16_t destinationRegisterCount_ = 0;
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::vector<RegisterValue> operands;
+  std::vector<RegisterValue> sourceValues_;
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results;
+  std::vector<RegisterValue> results_;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
@@ -371,7 +371,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short operandsPending = 0;
+  short sourceOperandsPending_ = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
@@ -448,12 +448,12 @@ class Instruction : public simeng::Instruction {
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
-  std::vector<MemoryAccessTarget> memoryAddresses;
+  std::vector<MemoryAccessTarget> memoryAddresses_;
 
   /** A vector of memory values, that were either loaded memory, or are prepared
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
+  std::vector<RegisterValue> memoryData_;
 };
 
 }  // namespace aarch64

@@ -35,7 +35,7 @@ const uint16_t NONE = 24;
 
 static constexpr uint8_t NUM_GROUPS = 25;
 
-const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
     {InstructionGroups::ALL,
      {InstructionGroups::INT, InstructionGroups::FLOAT, InstructionGroups::LOAD,
       InstructionGroups::STORE, InstructionGroups::BRANCH}},
