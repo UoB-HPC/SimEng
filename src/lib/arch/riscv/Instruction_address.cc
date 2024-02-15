@@ -12,7 +12,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   uint64_t address;
-  if (isLoad() && isStoreAddress() && isAtomic()) {
+  if (isLoad() && isStoreAddress() &&
+      isInstruction(InsnIdentifier::isAtomicMask)) {
     // Atomics
     address = sourceValues_[1].get<uint64_t>();
   } else if (isLoad()) {

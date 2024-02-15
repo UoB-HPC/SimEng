@@ -364,7 +364,7 @@ class Instruction : public simeng::Instruction {
   void decode();
 
   /** Update the instruction's identifier with an additional field. */
-  void setInstructionIdentifier(InsnIdentifier identifier) {
+  constexpr void setInstructionIdentifier(InsnIdentifier identifier) {
     instructionIdentifier_ |= static_cast<uint32_t>(identifier);
   }
 
@@ -431,7 +431,7 @@ class Instruction : public simeng::Instruction {
   uint8_t dataSize_ = 0;
 
   /** Used to denote what type of instruction this is. Utilises the constants in
-   * the `InsnIdentifier` namespace allow each bit to represent a unique
+   * the `InsnIdentifier` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint32_t instructionIdentifier_ = 0;
 };

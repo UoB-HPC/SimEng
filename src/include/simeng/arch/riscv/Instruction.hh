@@ -191,7 +191,7 @@ class Instruction : public simeng::Instruction {
   void decode();
 
   /** Update the instruction's identifier with an additional field. */
-  void setInstructionIdentifier(InsnIdentifier identifier) {
+  constexpr void setInstructionIdentifier(InsnIdentifier identifier) {
     instructionIdentifier_ |= static_cast<uint16_t>(identifier);
   }
 
@@ -208,12 +208,6 @@ class Instruction : public simeng::Instruction {
 
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
-
-  /** Is this an atomic instruction? */
-  bool isAtomic() const;
-
-  /** Is this a floating point operation? */
-  bool isFloat() const;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -249,7 +243,7 @@ class Instruction : public simeng::Instruction {
   uint16_t sourceOperandsPending_ = 0;
 
   /** Used to denote what type of instruction this is. Utilises the constants in
-   * the `InsnIdentifier` namespace allow each bit to represent a unique
+   * the `InsnIdentifier` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint16_t instructionIdentifier_ = 0;
 };

@@ -133,7 +133,7 @@ bool Instruction::isBranch() const {
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
-  if (isFloat()) {
+  if (isInstruction(InsnIdentifier::isFloatMask)) {
     base = InstructionGroups::FLOAT;
   }
 
@@ -180,14 +180,6 @@ const Architecture& Instruction::getArchitecture() const {
 }
 
 InstructionException Instruction::getException() const { return exception_; }
-
-bool Instruction::isAtomic() const {
-  return isInstruction(InsnIdentifier::isAtomicMask);
-}
-
-bool Instruction::isFloat() const {
-  return isInstruction(InsnIdentifier::isFloatMask);
-}
 
 }  // namespace riscv
 }  // namespace arch

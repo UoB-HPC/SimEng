@@ -144,7 +144,7 @@ void Instruction::decode() {
       // destination register
       if ((isBranch() && metadata_.opcode != Opcode::RISCV_JAL &&
            metadata_.opcode != Opcode::RISCV_JALR) ||
-          (isStoreAddress() && !isAtomic())) {
+          (isStoreAddress() && !isInstruction(InsnIdentifier::isAtomicMask))) {
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
         if (sourceRegisters_[sourceRegisterCount_] ==
