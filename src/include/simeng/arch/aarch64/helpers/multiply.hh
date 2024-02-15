@@ -10,7 +10,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T madd_4ops(std::vector<RegisterValue>& operands) {
+T madd_4ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   const T a = operands[2].get<T>();
@@ -24,7 +24,7 @@ T madd_4ops(std::vector<RegisterValue>& operands) {
  * int32_t or uint32_t).
  * Returns single value of type D. */
 template <typename D, typename N>
-D maddl_4ops(std::vector<RegisterValue>& operands) {
+D maddl_4ops(srcOperandContainer<RegisterValue>& operands) {
   const D n = static_cast<D>(operands[0].get<N>());
   const D m = static_cast<D>(operands[1].get<N>());
   const D a = operands[2].get<D>();
@@ -35,7 +35,7 @@ D maddl_4ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T mul_3ops(std::vector<RegisterValue>& operands) {
+T mul_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   return (n * m);
@@ -45,7 +45,7 @@ T mul_3ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T msub_4ops(std::vector<RegisterValue>& operands) {
+T msub_4ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   const T a = operands[2].get<T>();

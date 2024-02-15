@@ -32,13 +32,12 @@ Instruction::Instruction(const Architecture& architecture,
 }
 
 const span<Register> Instruction::getSourceRegisters() const {
-  return {const_cast<Register*>(sourceRegisters_.data()),
-          sourceRegisters_.size()};
+  return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }
 
 const span<RegisterValue> Instruction::getSourceOperands() const {
   return {const_cast<RegisterValue*>(sourceValues_.data()),
-          sourceValues_.size()};
+          sourceRegisterCount_};
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {

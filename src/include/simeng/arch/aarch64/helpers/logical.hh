@@ -10,7 +10,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = int64_t).
  * Returns single value of type T. */
 template <typename T>
-T asrv_3gpr(std::vector<RegisterValue>& operands) {
+T asrv_3gpr(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<typename std::make_unsigned<T>::type>();
   return n >> (m % (sizeof(T) * 8));
@@ -22,7 +22,7 @@ T asrv_3gpr(std::vector<RegisterValue>& operands) {
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> bicShift_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T x = operands[0].get<T>();
   const T y = ~shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
@@ -41,7 +41,7 @@ std::tuple<T, uint8_t> bicShift_3ops(
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> logicOp_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV,
     std::function<T(T, T)> func) {
   const T n = operands[0].get<T>();
@@ -59,7 +59,7 @@ std::tuple<T, uint8_t> logicOp_imm(
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> logicOpShift_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV,
     std::function<T(T, T)> func) {
   const T n = operands[0].get<T>();
@@ -76,7 +76,8 @@ std::tuple<T, uint8_t> logicOpShift_3ops(
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type uint64_t. */
 template <typename T>
-uint64_t logicalShiftLR_3ops(std::vector<RegisterValue>& operands, bool isLSL) {
+uint64_t logicalShiftLR_3ops(srcOperandContainer<RegisterValue>& operands,
+                             bool isLSL) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>() & ((sizeof(T) * 8) - 1);
   uint64_t result = static_cast<uint64_t>(isLSL ? n << m : n >> m);
@@ -87,7 +88,7 @@ uint64_t logicalShiftLR_3ops(std::vector<RegisterValue>& operands, bool isLSL) {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T rorv_3ops(std::vector<RegisterValue>& operands) {
+T rorv_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
 

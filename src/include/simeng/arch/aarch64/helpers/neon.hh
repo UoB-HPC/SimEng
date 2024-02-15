@@ -12,7 +12,7 @@ namespace aarch64 {
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecAdd_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecAdd_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -28,7 +28,7 @@ RegisterValue vecAdd_3ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecAddp_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecAddp_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -49,7 +49,7 @@ RegisterValue vecAddp_3ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecBic_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecBic_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -67,7 +67,7 @@ RegisterValue vecBic_3ops(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecBicShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* d = operands[0].getAsVector<T>();
   T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
@@ -86,7 +86,7 @@ RegisterValue vecBicShift_imm(
  * (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <int I>
-RegisterValue vecBitwiseInsert(std::vector<RegisterValue>& operands,
+RegisterValue vecBitwiseInsert(srcOperandContainer<RegisterValue>& operands,
                                bool isBif) {
   const uint64_t* d = operands[0].getAsVector<uint64_t>();
   const uint64_t* n = operands[1].getAsVector<uint64_t>();
@@ -105,7 +105,7 @@ RegisterValue vecBitwiseInsert(std::vector<RegisterValue>& operands,
  * (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <int I>
-RegisterValue vecBsl(std::vector<RegisterValue>& operands) {
+RegisterValue vecBsl(srcOperandContainer<RegisterValue>& operands) {
   const uint64_t* d = operands[0].getAsVector<uint64_t>();
   const uint64_t* n = operands[1].getAsVector<uint64_t>();
   const uint64_t* m = operands[2].getAsVector<uint64_t>();
@@ -123,8 +123,8 @@ RegisterValue vecBsl(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
-                         std::function<bool(T, T)> func) {
+RegisterValue vecCompare(srcOperandContainer<RegisterValue>& operands,
+                         bool cmpToZero, std::function<bool(T, T)> func) {
   const T* n = operands[0].getAsVector<T>();
   const T* m;
   if (!cmpToZero) m = operands[1].getAsVector<T>();
@@ -143,7 +143,7 @@ RegisterValue vecCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecCountPerByte(std::vector<RegisterValue>& operands) {
+RegisterValue vecCountPerByte(srcOperandContainer<RegisterValue>& operands) {
   const uint8_t* n = operands[0].getAsVector<uint8_t>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -163,7 +163,7 @@ RegisterValue vecCountPerByte(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecDup_gprOrIndex(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool useGpr) {
   int index = useGpr ? 0 : metadata.operands[1].vector_index;
   T element =
@@ -181,7 +181,7 @@ RegisterValue vecDup_gprOrIndex(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecExtVecs_index(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
@@ -204,7 +204,7 @@ RegisterValue vecExtVecs_index(
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
+RegisterValue vecFabd(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -220,7 +220,7 @@ RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFabs_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecFabs_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -238,8 +238,8 @@ RegisterValue vecFabs_2ops(std::vector<RegisterValue>& operands) {
  * updated (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename C, int I>
-RegisterValue vecFCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
-                          std::function<bool(T, T)> func) {
+RegisterValue vecFCompare(srcOperandContainer<RegisterValue>& operands,
+                          bool cmpToZero, std::function<bool(T, T)> func) {
   const T* n = operands[0].getAsVector<T>();
   const T* m;
   if (!cmpToZero) m = operands[1].getAsVector<T>();
@@ -259,7 +259,8 @@ RegisterValue vecFCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtl(std::vector<RegisterValue>& operands, bool isFcvtl2) {
+RegisterValue vecFcvtl(srcOperandContainer<RegisterValue>& operands,
+                       bool isFcvtl2) {
   const N* n = operands[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtl2 ? I : 0); i < (isFcvtl2 ? (I * 2) : I); i++) {
@@ -275,7 +276,8 @@ RegisterValue vecFcvtl(std::vector<RegisterValue>& operands, bool isFcvtl2) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtn(std::vector<RegisterValue>& operands, bool isFcvtn2) {
+RegisterValue vecFcvtn(srcOperandContainer<RegisterValue>& operands,
+                       bool isFcvtn2) {
   const N* n = operands[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtn2 ? (I / 2) : 0); i < I; i++) {
@@ -291,7 +293,7 @@ RegisterValue vecFcvtn(std::vector<RegisterValue>& operands, bool isFcvtn2) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtzs(std::vector<RegisterValue>& operands) {
+RegisterValue vecFcvtzs(srcOperandContainer<RegisterValue>& operands) {
   const N* n = operands[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   // TODO: Handle NaNs, denorms, and saturation
@@ -308,7 +310,7 @@ RegisterValue vecFcvtzs(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFmla_3vecs(std::vector<RegisterValue>& operands) {
+RegisterValue vecFmla_3vecs(srcOperandContainer<RegisterValue>& operands) {
   const T* d = operands[0].getAsVector<T>();
   const T* n = operands[1].getAsVector<T>();
   const T* m = operands[2].getAsVector<T>();
@@ -326,7 +328,7 @@ RegisterValue vecFmla_3vecs(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
-    std::vector<RegisterValue>& operands) {
+    srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -347,7 +349,7 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmlaIndexed_3vecs(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* d = operands[0].getAsVector<T>();
   const T* n = operands[1].getAsVector<T>();
@@ -367,7 +369,7 @@ RegisterValue vecFmlaIndexed_3vecs(
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFmls_3vecs(std::vector<RegisterValue>& operands) {
+RegisterValue vecFmls_3vecs(srcOperandContainer<RegisterValue>& operands) {
   const T* d = operands[0].getAsVector<T>();
   const T* n = operands[1].getAsVector<T>();
   const T* m = operands[2].getAsVector<T>();
@@ -386,7 +388,7 @@ RegisterValue vecFmls_3vecs(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmlsIndexed_3vecs(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* d = operands[0].getAsVector<T>();
   const T* n = operands[1].getAsVector<T>();
@@ -407,7 +409,7 @@ RegisterValue vecFmlsIndexed_3vecs(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmulIndexed_vecs(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   int index = metadata.operands[2].vector_index;
   const T* n = operands[0].getAsVector<T>();
@@ -425,7 +427,7 @@ RegisterValue vecFmulIndexed_vecs(
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFneg_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecFneg_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -440,7 +442,7 @@ RegisterValue vecFneg_2ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFsqrt_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecFsqrt_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -455,7 +457,7 @@ RegisterValue vecFsqrt_2ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFrsqrte_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecFrsqrte_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -471,7 +473,7 @@ RegisterValue vecFrsqrte_2ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFrsqrts_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecFrsqrts_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -489,7 +491,7 @@ RegisterValue vecFrsqrts_3ops(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecIns_2Index(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* d = operands[0].getAsVector<T>();
   const T* n = operands[1].getAsVector<T>();
@@ -511,7 +513,7 @@ RegisterValue vecIns_2Index(
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename R, int I>
 RegisterValue vecInsIndex_gpr(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* d = operands[0].getAsVector<T>();
   const T n = operands[1].get<R>();
@@ -531,7 +533,7 @@ RegisterValue vecInsIndex_gpr(
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecLogicOp_2vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecLogicOp_2vecs(srcOperandContainer<RegisterValue>& operands,
                                std::function<T(T)> func) {
   const T* n = operands[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
@@ -548,7 +550,7 @@ RegisterValue vecLogicOp_2vecs(std::vector<RegisterValue>& operands,
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecLogicOp_3vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecLogicOp_3vecs(srcOperandContainer<RegisterValue>& operands,
                                std::function<T(T, T)> func) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
@@ -565,7 +567,7 @@ RegisterValue vecLogicOp_3vecs(std::vector<RegisterValue>& operands,
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecUMaxP(std::vector<RegisterValue>& operands) {
+RegisterValue vecUMaxP(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 
@@ -582,7 +584,7 @@ RegisterValue vecUMaxP(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecUMinP(std::vector<RegisterValue>& operands) {
+RegisterValue vecUMinP(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 
@@ -599,7 +601,7 @@ RegisterValue vecUMinP(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecMaxnmp_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecMaxnmp_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
@@ -616,7 +618,7 @@ RegisterValue vecMaxnmp_2ops(std::vector<RegisterValue>& operands) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecMinv_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecMinv_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
@@ -669,7 +671,7 @@ RegisterValue vecMoviShift_imm(
  * updated (e.g. for vd.8b I = 8).
  * Returns correctly formated RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecScvtf_2vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecScvtf_2vecs(srcOperandContainer<RegisterValue>& operands,
                              std::function<D(N)> func) {
   const N* n = operands[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
@@ -686,7 +688,7 @@ RegisterValue vecScvtf_2vecs(std::vector<RegisterValue>& operands,
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecShlShift_vecImm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* n = operands[0].getAsVector<T>();
   int64_t shift = metadata.operands[2].imm;
@@ -706,7 +708,7 @@ RegisterValue vecShlShift_vecImm(
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
 RegisterValue vecShllShift_vecImm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool isShll2) {
   const N* n = operands[0].getAsVector<N>();
   uint64_t shift = metadata.operands[2].imm;
@@ -729,7 +731,7 @@ RegisterValue vecShllShift_vecImm(
  */
 template <typename Ta, typename Tb, int I>
 RegisterValue vecShrnShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     bool shrn2 = false) {
   const Ta* n = operands[0].getAsVector<Ta>();
@@ -751,7 +753,7 @@ RegisterValue vecShrnShift_imm(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecSshrShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T* n = operands[1].getAsVector<T>();
   uint64_t shift = metadata.operands[2].imm;
@@ -768,7 +770,7 @@ RegisterValue vecSshrShift_imm(
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecSumElems_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue vecSumElems_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   T out = 0;
   for (int i = 0; i < I; i++) {
@@ -784,7 +786,8 @@ RegisterValue vecSumElems_2ops(std::vector<RegisterValue>& operands) {
  * updated (i.e. for vd.4s I = 4).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecXtn(std::vector<RegisterValue>& operands, bool isXtn2) {
+RegisterValue vecXtn(srcOperandContainer<RegisterValue>& operands,
+                     bool isXtn2) {
   const D* d;
   if (isXtn2) d = operands[0].getAsVector<D>();
   const N* n = operands[isXtn2 ? 1 : 0].getAsVector<N>();
@@ -811,7 +814,7 @@ RegisterValue vecXtn(std::vector<RegisterValue>& operands, bool isXtn2) {
  * Returns correctly formatted RegisterValue. */
 template <int I>
 RegisterValue vecTbl(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   // Vd and Vm are only valid in format 8b or 16b
   assert(I == 8 || I == 16);
@@ -862,7 +865,7 @@ RegisterValue vecTbl(
  * It is only valid for T to be a same or smaller width than V.
  * Returns correctly formatted RegisterValue. */
 template <typename T, int V, int I>
-RegisterValue vecRev(std::vector<RegisterValue>& operands) {
+RegisterValue vecRev(srcOperandContainer<RegisterValue>& operands) {
   const T* source = operands[0].getAsVector<T>();
   int element_size = (sizeof(T) * 8);
   int datasize = I * element_size;
@@ -890,7 +893,7 @@ RegisterValue vecRev(std::vector<RegisterValue>& operands) {
  * I represents the number of operands (e.g. for vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecTrn1(std::vector<RegisterValue>& operands) {
+RegisterValue vecTrn1(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 
@@ -909,7 +912,7 @@ RegisterValue vecTrn1(std::vector<RegisterValue>& operands) {
  * I represents the number of operands (e.g. for Vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecTrn2(std::vector<RegisterValue>& operands) {
+RegisterValue vecTrn2(srcOperandContainer<RegisterValue>& operands) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 
@@ -928,7 +931,8 @@ RegisterValue vecTrn2(std::vector<RegisterValue>& operands) {
  * I represents the number of operands (e.g. for Vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecUzp(std::vector<RegisterValue>& operands, bool isUzp1) {
+RegisterValue vecUzp(srcOperandContainer<RegisterValue>& operands,
+                     bool isUzp1) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 
@@ -949,7 +953,8 @@ RegisterValue vecUzp(std::vector<RegisterValue>& operands, bool isUzp1) {
  * for vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecZip(std::vector<RegisterValue>& operands, bool isZip2) {
+RegisterValue vecZip(srcOperandContainer<RegisterValue>& operands,
+                     bool isZip2) {
   const T* n = operands[0].getAsVector<T>();
   const T* m = operands[1].getAsVector<T>();
 

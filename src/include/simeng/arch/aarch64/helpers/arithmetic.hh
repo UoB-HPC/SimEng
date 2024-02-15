@@ -10,7 +10,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T add_3ops(std::vector<RegisterValue>& operands) {
+T add_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   return (n + m);
@@ -20,7 +20,8 @@ T add_3ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
-std::tuple<T, uint8_t> addCarry_3ops(std::vector<RegisterValue>& operands) {
+std::tuple<T, uint8_t> addCarry_3ops(
+    srcOperandContainer<RegisterValue>& operands) {
   const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
   const T n = operands[1].get<T>();
   const T m = operands[2].get<T>();
@@ -33,7 +34,7 @@ std::tuple<T, uint8_t> addCarry_3ops(std::vector<RegisterValue>& operands) {
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> addExtend_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m = extendValue(operands[1].get<T>(), metadata.operands[2].ext,
@@ -48,7 +49,7 @@ std::tuple<T, uint8_t> addExtend_3ops(
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> addShift_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m = shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
@@ -63,7 +64,7 @@ std::tuple<T, uint8_t> addShift_3ops(
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> addShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
@@ -77,7 +78,7 @@ std::tuple<T, uint8_t> addShift_imm(
  * T represents the type of operands (e.g. for xn, T = int64_t).
  * Returns single value of type T. */
 template <typename T>
-T clz_reg(std::vector<RegisterValue>& operands) {
+T clz_reg(srcOperandContainer<RegisterValue>& operands) {
   T x = operands[0].get<T>();
   uint8_t i;
   for (i = 0; i < (sizeof(T) * 8); i++) {
@@ -94,7 +95,7 @@ T clz_reg(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for xd, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T movkShift_imm(std::vector<RegisterValue>& operands,
+T movkShift_imm(srcOperandContainer<RegisterValue>& operands,
                 const simeng::arch::aarch64::InstructionMetadata& metadata) {
   // Clear 16-bit region offset by `shift` and replace with immediate
   uint8_t shift = metadata.operands[1].shift.value;
@@ -123,7 +124,7 @@ uint64_t movnShift_imm(
  * int32_t or uint32_t).
  * Returns single value of type D. */
 template <typename D, typename N>
-D msubl_4ops(std::vector<RegisterValue>& operands) {
+D msubl_4ops(srcOperandContainer<RegisterValue>& operands) {
   const N n = operands[0].get<N>();
   const N m = operands[1].get<N>();
   const D a = operands[2].get<D>();
@@ -134,7 +135,7 @@ D msubl_4ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T sbc(std::vector<RegisterValue>& operands) {
+T sbc(srcOperandContainer<RegisterValue>& operands) {
   auto nzcv = operands[0].get<uint8_t>();
   const T x = operands[1].get<T>();
   const T y = operands[2].get<T>();
@@ -149,7 +150,7 @@ T sbc(std::vector<RegisterValue>& operands) {
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> subExtend_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m =
@@ -164,7 +165,7 @@ std::tuple<T, uint8_t> subExtend_3ops(
  * Returns single value of type T. */
 template <typename T>
 std::tuple<T, uint8_t> subShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
@@ -180,7 +181,7 @@ std::tuple<T, uint8_t> subShift_imm(
  * Returns tuple of [resulting value, nzcv]. */
 template <typename T>
 std::tuple<T, uint8_t> subShift_3ops(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV) {
   const T n = operands[0].get<T>();
   const T m = shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,

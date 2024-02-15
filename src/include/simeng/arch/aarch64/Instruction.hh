@@ -5,6 +5,7 @@
 
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
+#include "simeng/arch/aarch64/Container.hh"
 #include "simeng/arch/aarch64/InstructionGroups.hh"
 
 struct cs_arm64_op;
@@ -401,21 +402,24 @@ class Instruction : public simeng::Instruction {
   const InstructionMetadata& metadata_;
 
   /** A vector of source registers. */
-  std::vector<Register> sourceRegisters_;
+  srcOperandContainer<Register> sourceRegisters_;
+
+  /** The number of source registers this instruction reads from. */
+  uint16_t sourceRegisterCount_ = 0;
 
   /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters_;
+  destOperandContainer<Register> destinationRegisters_;
 
   /** The number of destination registers this instruction writes to. */
   uint16_t destinationRegisterCount_ = 0;
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::vector<RegisterValue> sourceValues_;
+  srcOperandContainer<RegisterValue> sourceValues_;
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results_;
+  destOperandContainer<RegisterValue> results_;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;

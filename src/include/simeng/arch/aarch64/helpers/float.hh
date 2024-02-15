@@ -12,7 +12,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fabd_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue fabd_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   return {std::fabs(n - m), 256};
@@ -22,7 +22,7 @@ RegisterValue fabd_3ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fabs_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue fabs_2ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   return {std::fabs(n), 256};
 }
@@ -32,7 +32,7 @@ RegisterValue fabs_2ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for sn T = float).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t fccmp(std::vector<RegisterValue>& operands,
+uint8_t fccmp(srcOperandContainer<RegisterValue>& operands,
               const simeng::arch::aarch64::InstructionMetadata& metadata) {
   if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
     T a = operands[1].get<T>();
@@ -55,7 +55,7 @@ uint8_t fccmp(std::vector<RegisterValue>& operands,
  * T represents the type of operands (e.g. for sn T = float).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t fcmp(std::vector<RegisterValue>& operands, bool useImm) {
+uint8_t fcmp(srcOperandContainer<RegisterValue>& operands, bool useImm) {
   T a = operands[0].get<T>();
   // Dont need to fetch imm as will always be 0.0
   T b = useImm ? 0 : operands[1].get<T>();
@@ -74,7 +74,7 @@ uint8_t fcmp(std::vector<RegisterValue>& operands, bool useImm) {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fmaxnm_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue fmaxnm_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   return {std::fmax(n, m), 256};
@@ -84,7 +84,7 @@ RegisterValue fmaxnm_3ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fminnm_3ops(std::vector<RegisterValue>& operands) {
+RegisterValue fminnm_3ops(srcOperandContainer<RegisterValue>& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   return {std::fmin(n, m), 256};
@@ -95,7 +95,7 @@ RegisterValue fminnm_3ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fnmsub_4ops(std::vector<RegisterValue>& operands) {
+RegisterValue fnmsub_4ops(srcOperandContainer<RegisterValue>& operands) {
   T n = operands[0].get<T>();
   T m = operands[1].get<T>();
   T a = operands[2].get<T>();
@@ -107,7 +107,7 @@ RegisterValue fnmsub_4ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fnmadd_4ops(std::vector<RegisterValue>& operands) {
+RegisterValue fnmadd_4ops(srcOperandContainer<RegisterValue>& operands) {
   T n = operands[0].get<T>();
   T m = operands[1].get<T>();
   T a = operands[2].get<T>();
@@ -118,7 +118,7 @@ RegisterValue fnmadd_4ops(std::vector<RegisterValue>& operands) {
  * T represents the type of operands (e.g. for dd T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue frintpScalar_2ops(std::vector<RegisterValue>& operands) {
+RegisterValue frintpScalar_2ops(srcOperandContainer<RegisterValue>& operands) {
   T n = operands[0].get<T>();
 
   // Merge always = false due to assumption that FPCR.nep bit = 0
@@ -141,7 +141,7 @@ RegisterValue frintpScalar_2ops(std::vector<RegisterValue>& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N>
 RegisterValue scvtf_FixedPoint(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   N n = operands[0].get<N>();
   const uint8_t fbits = metadata.operands[2].imm;
@@ -156,7 +156,7 @@ RegisterValue scvtf_FixedPoint(
  * N represents the source register type (e.g. for Sd, N = float).
  * Returns single value of type D. */
 template <typename D, typename N>
-D fcvtzu_integer(std::vector<RegisterValue>& operands) {
+D fcvtzu_integer(srcOperandContainer<RegisterValue>& operands) {
   N input = operands[0].get<N>();
   D result = static_cast<D>(0);
 

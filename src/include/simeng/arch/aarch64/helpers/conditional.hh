@@ -11,7 +11,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t ccmn_imm(std::vector<RegisterValue>& operands,
+uint8_t ccmn_imm(srcOperandContainer<RegisterValue>& operands,
                  const simeng::arch::aarch64::InstructionMetadata& metadata) {
   if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
     uint8_t nzcv;
@@ -27,7 +27,7 @@ uint8_t ccmn_imm(std::vector<RegisterValue>& operands,
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t ccmp_imm(std::vector<RegisterValue>& operands,
+uint8_t ccmp_imm(srcOperandContainer<RegisterValue>& operands,
                  const simeng::arch::aarch64::InstructionMetadata& metadata) {
   if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
     uint8_t nzcv;
@@ -43,7 +43,7 @@ uint8_t ccmp_imm(std::vector<RegisterValue>& operands,
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t ccmp_reg(std::vector<RegisterValue>& operands,
+uint8_t ccmp_reg(srcOperandContainer<RegisterValue>& operands,
                  const simeng::arch::aarch64::InstructionMetadata& metadata) {
   if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
     uint8_t nzcv;
@@ -59,7 +59,7 @@ uint8_t ccmp_reg(std::vector<RegisterValue>& operands,
  * Returns tuple of type [bool branch taken, uint64_t address]. */
 template <typename T>
 std::tuple<bool, uint64_t> condBranch_cmpToZero(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     uint64_t instructionAddress, std::function<bool(T)> func) {
   bool branchTaken;
@@ -79,7 +79,7 @@ std::tuple<bool, uint64_t> condBranch_cmpToZero(
  * T represents the type of operands (e.g. for xd, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T cs_4ops(std::vector<RegisterValue>& operands,
+T cs_4ops(srcOperandContainer<RegisterValue>& operands,
           const simeng::arch::aarch64::InstructionMetadata& metadata,
           std::function<T(T)> func) {
   if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
@@ -94,7 +94,7 @@ T cs_4ops(std::vector<RegisterValue>& operands,
  * Returns tuple of type [bool branch taken, uint64_t address]. */
 template <typename T>
 std::tuple<bool, uint64_t> tbnz_tbz(
-    std::vector<RegisterValue>& operands,
+    srcOperandContainer<RegisterValue>& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     uint64_t instructionAddress, bool isNZ) {
   bool branchTaken;
