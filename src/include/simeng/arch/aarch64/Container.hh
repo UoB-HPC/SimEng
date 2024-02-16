@@ -12,11 +12,11 @@ const uint8_t MAX_SOURCE_REGISTERS = 6;
  */
 const uint8_t MAX_DESTINATION_REGISTERS = 5;
 
-/** The maximum number of source operands a SME instruction can have in addition
- * to any ZA operands. */
+/** The maximum number of source operands an SME instruction can have in
+ * addition to any ZA operands. */
 const uint8_t ADDITIONAL_SME_SOURCE_REGISTERS = 8;
 
-/** The maximum number of destination operands a SME instruction can have in
+/** The maximum number of destination operands an SME instruction can have in
  * addition to any ZA operands. */
 const uint8_t ADDITIONAL_SME_DESTINATION_REGISTERS = 0;
 
@@ -26,8 +26,8 @@ const uint8_t ADDITIONAL_SME_DESTINATION_REGISTERS = 0;
 template <typename T>
 class srcOperandContainer {
  public:
-  /** Tells container it it handling SME operands - stop using fixed size array
-   * and insead use vector. */
+  /** Tells container it is handling SME operands - stop using a fixed size
+   * array and insead use a vector. */
   constexpr void makeSME(const uint16_t numSMERows) {
     // Ensure that std::array is currently in use
     if (std::holds_alternative<std::array<T, MAX_SOURCE_REGISTERS>>(var_)) {
@@ -77,8 +77,8 @@ class srcOperandContainer {
 template <typename T>
 class destOperandContainer {
  public:
-  /** Tells container it it handling SME operands - stop using fixed size array
-   * and insead use vector. */
+  /** Tells container it is handling SME operands - stop using a fixed size
+   * array and insead use a vector. */
   constexpr void makeSME(const uint16_t numSMERows) {
     // Ensure that std::array is currently in use
     if (std::holds_alternative<std::array<T, MAX_DESTINATION_REGISTERS>>(
