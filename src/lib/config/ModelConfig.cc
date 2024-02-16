@@ -253,21 +253,43 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Early check on [Core][ISA] as its value is needed to inform the
   // expectations of other config options
   if (!isDefault) {
-    ValidationResult result = expectations_["Core"]["ISA"].validateConfigNode(
-        configTree_["Core"]["ISA"]);
-    std::string ISA = configTree_["Core"]["ISA"].as<std::string>();
-    if (!result.valid) {
-      std::cerr << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
-                << "\" passed in config file due to \"" << result.message
-                << "\" error. Cannot continue with config validation. Exiting."
+    // Ensure the key "Core" exists before querying the associated YAML node
+    if (configTree_.rootref().has_child(ryml::to_csubstr("Core"))) {
+      // Ensure the key "Core:ISA" exists before querying the associated YAML
+      // node
+      if (configTree_["Core"].has_child(ryml::to_csubstr("ISA"))) {
+        ValidationResult result =
+            expectations_["Core"]["ISA"].validateConfigNode(
+                configTree_["Core"]["ISA"]);
+        std::string ISA = configTree_["Core"]["ISA"].as<std::string>();
+        if (!result.valid) {
+          std::cerr
+              << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
+              << "\" passed in config file due to \"" << result.message
+              << "\" error. Cannot continue with config validation. Exiting."
+              << std::endl;
+          exit(1);
+        }
+        // Set isa_
+        if (ISA == "AArch64") {
+          isa_ = ISA::AArch64;
+        } else if (ISA == "rv64") {
+          isa_ = ISA::RV64;
+        }
+      } else {
+        std::cerr
+            << "[SimEng:ModelConfig] Attempted to access config key "
+               "\"Core:ISA\" but it doesn't exist. Cannot continue with config "
+               "validation. Exiting."
+            << std::endl;
+        exit(1);
+      }
+    } else {
+      std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                   "\"Core\" but it doesn't exist. Cannot continue with config "
+                   "validation. Exiting."
                 << std::endl;
       exit(1);
-    }
-    // Set isa_
-    if (ISA == "AArch64") {
-      isa_ = ISA::AArch64;
-    } else if (ISA == "rv64") {
-      isa_ = ISA::RV64;
     }
   }
   createGroupMapping();
@@ -295,20 +317,43 @@ void ModelConfig::setExpectations(bool isDefault) {
   // value
   uint64_t tFreqUpperBound = clockFreqUpperBound * 1000;
   if (!isDefault) {
-    ValidationResult result =
-        expectations_["Core"]["Clock-Frequency-GHz"].validateConfigNode(
-            configTree_["Core"]["Clock-Frequency-GHz"]);
-    float clockFreq = configTree_["Core"]["Clock-Frequency-GHz"].as<float>();
-    if (!result.valid) {
-      std::cerr
-          << "[SimEng:ModelConfig] Invalid Clock-Frequency-GHz value of \""
-          << clockFreq << "\" passed in config file due to \"" << result.message
-          << "\" error. Cannot continue with config validation. Exiting."
-          << std::endl;
+    // Ensure the key "Core" exists before querying the associated YAML node
+    if (configTree_.rootref().has_child(ryml::to_csubstr("Core"))) {
+      // Ensure the key "Core:Clock-Frequency-GHz" exists before querying the
+      // associated YAML node
+      if (configTree_["Core"].has_child(
+              ryml::to_csubstr("Clock-Frequency-GHz"))) {
+        ValidationResult result =
+            expectations_["Core"]["Clock-Frequency-GHz"].validateConfigNode(
+                configTree_["Core"]["Clock-Frequency-GHz"]);
+        float clockFreq =
+            configTree_["Core"]["Clock-Frequency-GHz"].as<float>();
+        if (!result.valid) {
+          std::cerr
+              << "[SimEng:ModelConfig] Invalid Clock-Frequency-GHz value of \""
+              << clockFreq << "\" passed in config file due to \""
+              << result.message
+              << "\" error. Cannot continue with config validation. Exiting."
+              << std::endl;
+          exit(1);
+        }
+
+        tFreqUpperBound = clockFreq * 1000;
+      } else {
+        std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                     "\"Core:Clock-Frequency-GHz\" but it doesn't exist. "
+                     "Cannot continue with config "
+                     "validation. Exiting."
+                  << std::endl;
+        exit(1);
+      }
+    } else {
+      std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                   "\"Core\" but it doesn't exist. Cannot continue with config "
+                   "validation. Exiting."
+                << std::endl;
       exit(1);
     }
-
-    tFreqUpperBound = clockFreq * 1000;
   }
 
   expectations_["Core"].addChild(
@@ -478,19 +523,44 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // The saturating counter bits and the fallback predictor
   // are relevant to the GenericPredictor only
-  if (!isDefault &&
-      configTree_["Branch-Predictor"]["Type"].as<std::string>() == "Generic") {
-    expectations_["Branch-Predictor"].addChild(
-        ExpectationNode::createExpectation<uint8_t>(2,
-                                                    "Saturating-Count-Bits"));
-    expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
-        .setValueBounds<uint8_t>(1, 64);
+  if (!isDefault) {
+    // Ensure the key "Branch-Predictor" exists before querying the associated
+    // YAML node
+    if (configTree_.rootref().has_child(ryml::to_csubstr("Branch-Predictor"))) {
+      // Ensure the key "Branch-Predictor:Type" exists before querying the
+      // associated YAML node
+      if (configTree_["Branch-Predictor"].has_child(ryml::to_csubstr("Type"))) {
+        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+            "Generic") {
+          expectations_["Branch-Predictor"].addChild(
+              ExpectationNode::createExpectation<uint8_t>(
+                  2, "Saturating-Count-Bits"));
+          expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
+              .setValueBounds<uint8_t>(1, 64);
 
-    expectations_["Branch-Predictor"].addChild(
-        ExpectationNode::createExpectation<std::string>(
-            "Always-Taken", "Fallback-Static-Predictor"));
-    expectations_["Branch-Predictor"]["Fallback-Static-Predictor"].setValueSet(
-        std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
+          expectations_["Branch-Predictor"].addChild(
+              ExpectationNode::createExpectation<std::string>(
+                  "Always-Taken", "Fallback-Static-Predictor"));
+          expectations_["Branch-Predictor"]["Fallback-Static-Predictor"]
+              .setValueSet(
+                  std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
+        }
+      } else {
+        std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                     "\"Branch-Predictor:Type\" but it doesn't exist. "
+                     "Cannot continue with config "
+                     "validation. Exiting."
+                  << std::endl;
+        exit(1);
+      }
+    } else {
+      std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                   "\"Branch-Predictor\" but it doesn't exist. Cannot continue "
+                   "with config "
+                   "validation. Exiting."
+                << std::endl;
+      exit(1);
+    }
   }
 
   // L1-Data-Memory
