@@ -186,6 +186,21 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   int64_t dirfd = Linux::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
+#ifdef __MACH__
+  // Convert Linux flags to suitable MACOS equivalent
+  int64_t newFlags = 0;
+  if (flag & 0x100) newFlags |= AT_SYMLINK_NOFOLLOW;
+
+  if (flag & 0x800)
+    std::cerr
+        << "[SimEng:Linux] WARNING: Tried to call fstatat with the unsupported "
+           "AT_NO_AUTOMOUNT flag on a MACOS system"
+        << std::endl;
+
+  if ((flag & 0x1000) && filename == "") newFlags |= AT_FDONLY;
+  flag = newFlags;
+#endif
+
   // Pass call through to host
   struct ::stat statbuf;
   int64_t retval = ::fstatat(dirfd, new_pathname.c_str(), &statbuf, flag);
