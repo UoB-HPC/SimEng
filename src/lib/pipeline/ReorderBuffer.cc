@@ -30,6 +30,9 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   insn->setInstructionId(insnId_);
   if (insn->isLastMicroOp()) insnId_++;
 
+  std::cerr << "Add insn to ROB id = " << insn->getInstructionId() << " ";
+  insn->printInstructionInfo();
+
   buffer_.push_back(insn);
 }
 
@@ -71,7 +74,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
-  std::cerr << "commit" << std::endl;
+  //  std::cerr << "commit" << std::endl;
 
   shouldFlush_ = false;
   size_t maxCommits =
@@ -102,6 +105,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     const auto& destinations = uop->getDestinationRegisters();
     for (int i = 0; i < destinations.size(); i++) {
+      std::cerr << "rat commit physical reg=" << destinations[i].tag
+                << std::endl;
+
       rat_.commit(destinations[i]);
     }
 
@@ -159,6 +165,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
                           0};
       }
     }
+    std::cerr << "buffer pop" << std::endl;
+
     buffer_.pop_front();
   }
 

@@ -706,6 +706,9 @@ bool ExceptionHandler::init() {
           RegisterValue r[]{RegisterValue(result, 8)};
           span<RegisterValue> res{r, std::size(r)};
           instruction_.setResults(res);
+          // Send instruction through writeback for resolution of renamed
+          // registers
+          stateChange = {ChangeType::WRITEBACK, {}, {}};
           // Dummy logic to allow progression. Set Rd to 0
           //          stateChange = {
           //              ChangeType::REPLACEMENT, {destinationRegs[0]},

@@ -42,12 +42,15 @@ const span<Register> Instruction::getDestinationRegisters() const {
           destinationRegisterCount};
 }
 
-bool Instruction::isOperandReady(int index) const {
+bool Instruction::isSourceOperandReady(int index) const {
+  // TODO casting registerValue to bool seems bad
   return static_cast<bool>(operands[index]);
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
   sourceRegisters[i] = renamed;
+  std::cerr << "renamed source " << renamed << " renamed = " << renamed.renamed
+            << std::endl;
 }
 void Instruction::renameDestination(uint16_t i, Register renamed) {
   destinationRegisters[i] = renamed;
@@ -116,6 +119,9 @@ void Instruction::setMemoryAddresses(
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
+}
+void Instruction::printInstructionInfo() {
+  std::cerr << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {

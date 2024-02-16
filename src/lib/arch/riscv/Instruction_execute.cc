@@ -179,6 +179,9 @@ void Instruction::execute() {
 
   // Implementation of rv64iamfd according to the v. 20191213 unprivileged spec
 
+  std::cerr << "execute insn ";
+  printInstructionInfo();
+
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm

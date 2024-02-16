@@ -136,7 +136,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (int i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
-    EXPECT_FALSE(insn.isOperandReady(i));
+    EXPECT_FALSE(insn.isSourceOperandReady(i));
   }
   EXPECT_EQ(insn.getStallCycles(), 4);
   EXPECT_EQ(insn.getSupportedPorts(), ports);
@@ -200,7 +200,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (int i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
-    EXPECT_FALSE(insn.isOperandReady(i));
+    EXPECT_FALSE(insn.isSourceOperandReady(i));
   }
   EXPECT_EQ(insn.getStallCycles(), 1);
   EXPECT_EQ(insn.getSupportedPorts(), ports);
@@ -266,7 +266,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (int i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
-    EXPECT_FALSE(insn.isOperandReady(i));
+    EXPECT_FALSE(insn.isSourceOperandReady(i));
   }
   EXPECT_EQ(insn.getStallCycles(), 1);
   EXPECT_EQ(insn.getSupportedPorts(), ports);
@@ -336,9 +336,9 @@ TEST_F(AArch64InstructionTest, supplyOperand) {
                                    {RegisterType::VECTOR, 0}};
   // Check initial state is as expected
   EXPECT_FALSE(insn.canExecute());
-  EXPECT_FALSE(insn.isOperandReady(0));
-  EXPECT_FALSE(insn.isOperandReady(1));
-  EXPECT_FALSE(insn.isOperandReady(2));
+  EXPECT_FALSE(insn.isSourceOperandReady(0));
+  EXPECT_FALSE(insn.isSourceOperandReady(1));
+  EXPECT_FALSE(insn.isSourceOperandReady(2));
 
   // Define mock register values for source registers
   RegisterValue vec = {0xABBACAFE01234567, 256};
@@ -350,9 +350,9 @@ TEST_F(AArch64InstructionTest, supplyOperand) {
   insn.supplyOperand(2, vec);
   // Ensure Instruction state has updated as expected
   EXPECT_TRUE(insn.canExecute());
-  EXPECT_TRUE(insn.isOperandReady(0));
-  EXPECT_TRUE(insn.isOperandReady(1));
-  EXPECT_TRUE(insn.isOperandReady(2));
+  EXPECT_TRUE(insn.isSourceOperandReady(0));
+  EXPECT_TRUE(insn.isSourceOperandReady(1));
+  EXPECT_TRUE(insn.isSourceOperandReady(2));
   auto sourceVals = insn.getSourceOperands();
   EXPECT_EQ(sourceVals.size(), 3);
   EXPECT_EQ(sourceVals[0], pred);
@@ -396,10 +396,10 @@ TEST_F(AArch64InstructionTest, supplyData) {
   }
 
   // Supply needed operands
-  EXPECT_FALSE(insn.isOperandReady(0));
+  EXPECT_FALSE(insn.isSourceOperandReady(0));
   RegisterValue addr = {0x480, 8};
   insn.supplyOperand(0, addr);
-  EXPECT_TRUE(insn.isOperandReady(0));
+  EXPECT_TRUE(insn.isSourceOperandReady(0));
 
   // Generate memory addresses
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
@@ -440,10 +440,10 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   EXPECT_EQ(insn.getGroup(), InstructionGroups::LOAD_INT);
 
   // Supply needed operands
-  EXPECT_FALSE(insn.isOperandReady(0));
+  EXPECT_FALSE(insn.isSourceOperandReady(0));
   RegisterValue addr = {0x480, 8};
   insn.supplyOperand(0, addr);
-  EXPECT_TRUE(insn.isOperandReady(0));
+  EXPECT_TRUE(insn.isSourceOperandReady(0));
 
   // Generate memory addresses
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);

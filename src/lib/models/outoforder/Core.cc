@@ -113,6 +113,8 @@ void Core::tick() {
   if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
+    std::cerr << "tick process exception handler" << std::endl;
+
     processExceptionHandler();
     return;
   }
@@ -265,6 +267,7 @@ bool Core::hasHalted() const {
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
+  assert(instruction && "raise null");
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }
@@ -331,13 +334,38 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  completionSlots_[completionSlots_.size() - 1].getTailSlots()[0] =
-      std::move(exceptionGeneratingInstruction_);
+  std::cerr << "apply state change" << std::endl;
 
-  return;
+  // TODO THIS COULD BE DANGEROUS. APPLY STATE CHANGE NOT ONLY USED DURING
+  // EXCEPTION HANDLING
+  if (change.type != arch::ChangeType::WRITEBACK &&
+      exceptionGeneratingInstruction_) {
+    std::cerr << "APPLY FLUSH FROM ROB" << std::endl;
+
+    // Flush instruction from ROB
+    reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId() -
+                         1);
+  }
 
   // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
+    case arch::ChangeType::WRITEBACK: {
+      // Place the exception generating instruction in a completion slot so can
+      // pass through writeback in next cycle. Results held in internal results
+      // array
+      assert(exceptionGeneratingInstruction_ &&
+             "exception generating instruction is NULL");
+      std::cerr << "writeback state change" << std::endl;
+
+      // Forwards operands to update dispatch scoreboard as this didn't happen
+      // in execute
+      dispatchIssueUnit_.forwardOperands(
+          exceptionGeneratingInstruction_->getDestinationRegisters(),
+          exceptionGeneratingInstruction_->getResults());
+
+      completionSlots_[completionSlots_.size() - 1].getTailSlots()[0] =
+          std::move(exceptionGeneratingInstruction_);
+    }
     case arch::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(
@@ -346,6 +374,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
                     .get<uint64_t>() +
                 change.modifiedRegisterValues[i].get<uint64_t>());
       }
+
       break;
     }
     case arch::ChangeType::DECREMENT: {
@@ -356,6 +385,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
                     .get<uint64_t>() -
                 change.modifiedRegisterValues[i].get<uint64_t>());
       }
+
       break;
     }
     default: {  // arch::ChangeType::REPLACEMENT
@@ -364,6 +394,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
                                    change.modifiedRegisterValues[i]);
       }
+
       break;
     }
   }

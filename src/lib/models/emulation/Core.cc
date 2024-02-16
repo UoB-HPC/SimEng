@@ -67,6 +67,8 @@ void Core::tick() {
 
   // Fetch
 
+  std::cerr << "fetch" << std::endl;
+
   // Determine if new uops are needed to be fetched
   if (!microOps_.size()) {
     // Find fetched memory that matches the current PC
@@ -100,15 +102,19 @@ void Core::tick() {
   auto& uop = microOps_.front();
 
   if (uop->exceptionEncountered()) {
+    std::cerr << "preissue handle exception" << std::endl;
+
     handleException(uop);
     return;
   }
+
+  std::cerr << "issue" << std::endl;
 
   // Issue
   auto registers = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
-    if (!uop->isOperandReady(i)) {
+    if (!uop->isSourceOperandReady(i)) {
       uop->supplyOperand(i, registerFileSet_.get(reg));
     }
   }
@@ -166,6 +172,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
+    std::cerr << "post execute handle exception" << std::endl;
+
     handleException(uop);
     return;
   }

@@ -25,6 +25,8 @@ class Instruction {
 
   void setExceptionEncounteredFalse();
 
+  virtual void printInstructionInfo() = 0;
+
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
 
@@ -49,7 +51,7 @@ class Instruction {
   virtual void supplyOperand(uint16_t i, const RegisterValue& value) = 0;
 
   /** Check whether the operand at index `i` has had a value supplied. */
-  virtual bool isOperandReady(int i) const = 0;
+  virtual bool isSourceOperandReady(int i) const = 0;
 
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */

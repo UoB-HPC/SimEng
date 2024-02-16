@@ -25,7 +25,7 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {
-  std::cerr << "fetch" << std::endl;
+  //  std::cerr << "fetch" << std::endl;
 
   if (output_.isStalled()) {
     return;
@@ -60,6 +60,8 @@ void FetchUnit::tick() {
   // Pointer to the instruction data to decode from
   const uint8_t* buffer;
   uint16_t bufferOffset;
+
+  std::cerr << "fetch from pc_=" << pc_ << std::endl;
 
   // Check if more instruction data is required
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
