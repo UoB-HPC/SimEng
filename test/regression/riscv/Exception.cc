@@ -48,6 +48,17 @@ TEST_P(Exception, not_yet_implemented) {
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
+// Test for InstructionException::AliasNotYetImplemented omitted. Obtaining an
+// instruction encoding that will consistently trigger an AliasNotYetImplemented
+// exception is not feasible due to the continual updates to our alias reversion
+// support and the difficulty of generating the bytes for an instruction alias
+// not yet supported.
+
+// Test for InstructionException::MisalignedPC omitted. As defined by the ISA,
+// RISCV implemented branch instructions use branch offsets that are restricted
+// to be multiples of 2. Therefore, it is currently not possible to trigger a
+// MisalignedPC exception.
+
 // Test that trying to load data from an address outside the bounds of the
 // process image raises a data abort exception
 TEST_P(Exception, data_abort) {
