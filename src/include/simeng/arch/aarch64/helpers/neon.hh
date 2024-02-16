@@ -569,8 +569,9 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
   const T* m = sourceValues[1].getAsVector<T>();
 
   T out[I];
-  for (int i = 0; i < I; i++) {
-    out[i] = std::max(n[i], m[i]);
+  for (int i = 0; i < I / 2; i++) {
+    out[i] = std::max(n[2 * i], n[(2 * i) + 1]);
+    out[i + (I / 2)] = std::max(m[2 * i], m[(2 * i) + 1]);
   }
   return {out, 256};
 }
@@ -586,8 +587,9 @@ RegisterValue vecUMinP(srcValContainer& sourceValues) {
   const T* m = sourceValues[1].getAsVector<T>();
 
   T out[I];
-  for (int i = 0; i < I; i++) {
-    out[i] = std::min(n[i], m[i]);
+  for (int i = 0; i < I / 2; i++) {
+    out[i] = std::min(n[2 * i], n[(2 * i) + 1]);
+    out[i + (I / 2)] = std::min(m[2 * i], m[(2 * i) + 1]);
   }
   return {out, 256};
 }
