@@ -1752,24 +1752,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_AUTIASP:
+      [[fallthrough]];
     case Opcode::AArch64_PACIASP: {
-      // Ensure that there's only one implicit destination register
-      uint16_t destination = ARM64_REG_SP;
-      for (int i = 0; i < implicitDestinationCount; i++)
-        if (implicitDestinations[i] != ARM64_REG_SP)
-          destination = implicitDestinations[i];
-      implicitDestinationCount = 1;
-      std::memcpy(implicitDestinations, insn.detail->regs_write,
-                  sizeof(uint16_t) * implicitDestinationCount);
-      implicitDestinations[0] = destination;
-
-      // Ensure that the implicit source register is the SP and the destination
-      // register
-      implicitSourceCount = 2;
-      std::memcpy(implicitSources, insn.detail->regs_read,
-                  sizeof(uint16_t) * implicitSourceCount);
-      implicitSources[0] = destination;
-      implicitSources[1] = ARM64_REG_SP;
+      // Pointer Authentication currently unsupported, remove operands as to
+      // force instructions to safely act as a nop
+      implicitSourceCount = 0;
+      implicitDestinationCount = 0;
+      operandCount = 0;
       break;
     }
     case Opcode::AArch64_SWPLW: {

@@ -471,8 +471,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_AUTIASP: {  // autiasp xd, sp
-        // Pointer Authentication not enabled, return address in destination
-        results[0] = operands[0].get<uint64_t>();
+        // Pointer Authentication not supported, do nothing
         break;
       }
       case Opcode::AArch64_B: {  // b label
@@ -597,18 +596,18 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CASAW: {  // casa ws, wt, [xn|sp]
         // LOAD / STORE
-        const uint32_t s = operands[0].get<uint32_t>();
-        const uint32_t t = operands[1].get<uint32_t>();
-        const uint32_t n = memoryData[0].get<uint32_t>();
-        if (n == s) memoryData[0] = t;
+        const uint32_t s = sourceValues_[0].get<uint32_t>();
+        const uint32_t t = sourceValues_[1].get<uint32_t>();
+        const uint32_t n = memoryData_[0].get<uint32_t>();
+        if (n == s) memoryData_[0] = t;
         break;
       }
       case Opcode::AArch64_CASAX: {  // casa xs, xt, [xn|sp]
         // LOAD / STORE
-        const uint64_t s = operands[0].get<uint64_t>();
-        const uint64_t t = operands[1].get<uint64_t>();
-        const uint64_t n = memoryData[0].get<uint64_t>();
-        if (n == s) memoryData[0] = t;
+        const uint64_t s = sourceValues_[0].get<uint64_t>();
+        const uint64_t t = sourceValues_[1].get<uint64_t>();
+        const uint64_t n = memoryData_[0].get<uint64_t>();
+        if (n == s) memoryData_[0] = t;
         break;
       }
       case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
@@ -690,15 +689,15 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMEQv8i8: {  // cmeq vd.8b, vn.8b, vm.8b
-        results_[0] = vecCompare<int8_t, 8>(
+        results_[0] = vecCompare<uint8_t, 8>(
             sourceValues_, false,
-            [](int8_t x, int8_t y) -> bool { return (x == y); });
+            [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMEQv8i8rz: {  // cmeq vd.8b, vn.8b, #0
-        results_[0] = vecCompare<int8_t, 8>(
+        results_[0] = vecCompare<uint8_t, 8>(
             sourceValues_, true,
-            [](int8_t x, int8_t y) -> bool { return (x == y); });
+            [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMHIv4i32: {  // cmhi vd.4s, vn.4s, vm.4s
@@ -708,9 +707,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMHSv16i8: {  // cmhs vd.16b, vn.16b, vm.16b
-        results_[0] = vecCompare<int8_t, 16>(
+        results_[0] = vecCompare<uint8_t, 16>(
             sourceValues_, false,
-            [](int8_t x, int8_t y) -> bool { return (x >= y); });
+            [](uint8_t x, uint8_t y) -> bool { return (x >= y); });
         break;
       }
       case Opcode::AArch64_CMPEQ_PPzZI_B: {  // cmpeq pd.b, pg/z, zn.b, #imm
@@ -874,33 +873,33 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMPNE_PPzZZ_B: {  // cmpne pd.b, pg/z, zn.b, zm.b
-        auto [output, nzcv] = sveCmpPredicated_toPred<int8_t>(
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint8_t>(
             sourceValues_, metadata_, VL_bits, false,
-            [](int8_t x, int8_t y) -> bool { return x != y; });
+            [](uint8_t x, uint8_t y) -> bool { return x != y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_CMPNE_PPzZZ_D: {  // cmpne pd.d, pg/z, zn.d, zm.d
-        auto [output, nzcv] = sveCmpPredicated_toPred<int64_t>(
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint64_t>(
             sourceValues_, metadata_, VL_bits, false,
-            [](int64_t x, int64_t y) -> bool { return x != y; });
+            [](uint64_t x, uint64_t y) -> bool { return x != y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_CMPNE_PPzZZ_H: {  // cmpne pd.h, pg/z, zn.h, zm.h
-        auto [output, nzcv] = sveCmpPredicated_toPred<int16_t>(
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint16_t>(
             sourceValues_, metadata_, VL_bits, false,
-            [](int16_t x, int16_t y) -> bool { return x != y; });
+            [](uint16_t x, uint16_t y) -> bool { return x != y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_CMPNE_PPzZZ_S: {  // cmpne pd.s, pg/z, zn.s, zm.s
-        auto [output, nzcv] = sveCmpPredicated_toPred<int32_t>(
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint32_t>(
             sourceValues_, metadata_, VL_bits, false,
-            [](int32_t x, int32_t y) -> bool { return x != y; });
+            [](uint32_t x, uint32_t y) -> bool { return x != y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
@@ -3931,7 +3930,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_NEGv2i32: {  // neg vd.2s, vn.2s
-        results[0] = vecFneg_2ops<int32_t, 2>(operands);
+        results_[0] = vecFneg_2ops<int32_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_NEGv2i64: {  // neg vd.2d, vn.2d
@@ -4007,8 +4006,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PACIASP: {  // paciasp xd, sp
-        // Pointer Authentication not enabled, return address in destination
-        results[0] = operands[0].get<uint64_t>();
+        // Pointer Authentication not supported, do nothing
         break;
       }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
@@ -5316,8 +5314,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_SWPLW: {  // swpl ws, wt, [xn|sp]
-        results[0] = memoryData[0].zeroExtend(4, 8);
-        memoryData[0] = operands[0].get<uint32_t>();
+        results_[0] = memoryData_[0].zeroExtend(4, 8);
+        memoryData_[0] = sourceValues_[0].get<uint32_t>();
         break;
       }
       case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d
