@@ -65,7 +65,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
-  // Leave program command string empty
+  // Set program command string to a relative path of "Default"
   commandLine_.push_back("Default\0");
 
   isValid_ = true;

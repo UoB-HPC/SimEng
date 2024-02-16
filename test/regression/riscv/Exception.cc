@@ -34,7 +34,7 @@ TEST_P(Exception, encoding_unallocated) {
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
-// Test that a instruction with no implemented execution logic raises a
+// Test that an instruction with no implemented execution logic raises a
 // not-yet-implemented exception
 TEST_P(Exception, not_yet_implemented) {
   // RISCV capstone has no undefined instruction opcode like aarch64, use a

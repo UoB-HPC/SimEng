@@ -34,10 +34,10 @@ TEST_P(Exception, illegal_instruction) {
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
-// Test that a instruction with no implemented execution logic raises a
+// Test that an instruction with no implemented execution logic raises a
 // not-yet-implemented exception
 TEST_P(Exception, not_yet_implemented) {
-  // Initialise heap with a instruction with no execution logic, namely with
+  // Initialise heap with an instruction with no execution logic, namely with
   // capstone undefined AArch64 opcode AArch64_UDF
   initialHeapData_.resize(4);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
