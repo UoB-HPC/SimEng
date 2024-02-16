@@ -719,15 +719,15 @@ TEST_P(InstNeon, cmeq) {
 TEST_P(InstNeon, cmhs) {
   // cmhs vd.16b, vn.16b, vm.16b
   initialHeapData_.resize(32);
-  int8_t* heap = reinterpret_cast<int8_t*>(initialHeapData_.data());
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
 
   // v0
   heap[0] = 0;
   heap[1] = 0x7F;
   heap[2] = INT8_MAX;
   heap[3] = 1;
-  heap[4] = -128;
-  heap[5] = -1;
+  heap[4] = 128;
+  heap[5] = 1;
   heap[6] = 0xAA;
   heap[7] = 0xBB;
   heap[8] = 0xCC;
@@ -743,7 +743,7 @@ TEST_P(InstNeon, cmhs) {
   heap[16] = INT8_MAX;
   heap[17] = 0x7F;
   heap[18] = 0;
-  heap[19] = -128;
+  heap[19] = 128;
   heap[20] = 1;
   heap[21] = 0;
   heap[22] = 0xAA;
@@ -771,10 +771,10 @@ TEST_P(InstNeon, cmhs) {
   )");
 
   CHECK_NEON(2, uint8_t,
-             {0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+             {0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
               0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
   CHECK_NEON(3, uint8_t,
-             {0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
+             {0xFF, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
               0x00, 0xFF, 0xFF, 0xFF, 0xFF});
 }
 
