@@ -17,8 +17,8 @@ namespace aarch64 {
 class Architecture;
 struct InstructionMetadata;
 
-// Type aliases - used to improve readability of source and destination operand
-// containers.
+// operandContainer type aliases - used to improve readability of source and
+// destination operand containers.
 using srcRegContainer = operandContainer<Register, MAX_SOURCE_REGISTERS>;
 using srcValContainer = operandContainer<RegisterValue, MAX_SOURCE_REGISTERS>;
 using destRegContainer = operandContainer<Register, MAX_DESTINATION_REGISTERS>;
