@@ -17,7 +17,7 @@ class MockArchitecture : public arch::Architecture {
   MOCK_CONST_METHOD3(handleException,
                      std::shared_ptr<arch::ExceptionHandler>(
                          const std::shared_ptr<Instruction>& instruction,
-                         const Core& core, MemoryInterface& memory));
+                         const Core& core, memory::MemoryInterface& memory));
   MOCK_CONST_METHOD0(getInitialState, arch::ProcessStateChange());
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
   MOCK_CONST_METHOD2(updateSystemTimerRegisters,

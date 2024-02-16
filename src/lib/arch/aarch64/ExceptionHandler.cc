@@ -15,7 +15,7 @@ namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, kernel::Linux& linux_)
+    memory::MemoryInterface& memory, kernel::Linux& linux_)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
       core_(core),
       memory_(memory),
@@ -836,7 +836,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   auto completedReads = memory_.getCompletedReads();
   auto response =
       std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](const MemoryReadResult& response) {
+                   [&](const memory::MemoryReadResult& response) {
                      return response.requestId == instruction_.getSequenceId();
                    });
   if (response == completedReads.end()) {

@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #include "simeng/Instruction.hh"
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/MemoryInterface.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
@@ -19,7 +19,7 @@ enum accessType { LOAD = 0, STORE };
 /** A requestQueue_ entry. */
 struct requestEntry {
   /** The memory address(es) to be accessed. */
-  std::queue<simeng::MemoryAccessTarget> reqAddresses;
+  std::queue<simeng::memory::MemoryAccessTarget> reqAddresses;
   /** The instruction sending the request(s). */
   std::shared_ptr<Instruction> insn;
 };
@@ -32,7 +32,7 @@ class LoadStoreQueue {
    * for both load and store instructions, supplying completion slots for loads
    * and an operand forwarding handler. */
   LoadStoreQueue(
-      unsigned int maxCombinedSpace, MemoryInterface& memory,
+      unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
@@ -47,7 +47,7 @@ class LoadStoreQueue {
    * operand forwarding handler. */
   LoadStoreQueue(
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
-      MemoryInterface& memory,
+      memory::MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
@@ -149,7 +149,7 @@ class LoadStoreQueue {
   unsigned int getCombinedSpace() const;
 
   /** A pointer to process memory. */
-  MemoryInterface& memory_;
+  memory::MemoryInterface& memory_;
 
   /** The load instruction associated with the most recently discovered memory
    * order violation. */

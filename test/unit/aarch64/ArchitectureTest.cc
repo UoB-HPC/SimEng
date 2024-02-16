@@ -147,7 +147,7 @@ TEST_F(AArch64ArchitectureTest, handleException) {
   std::unique_ptr<CoreInstance> coreInstance =
       std::make_unique<CoreInstance>(executablePath, executableArgs);
   const Core& core = *coreInstance->getCore();
-  MemoryInterface& memInt = *coreInstance->getDataMemory();
+  memory::MemoryInterface& memInt = *coreInstance->getDataMemory();
   auto exceptionHandler = arch->handleException(insn[0], core, memInt);
 
   bool tickRes = exceptionHandler->tick();

@@ -10,7 +10,7 @@ namespace aarch64 {
 
 void generateContiguousAddresses(
     uint64_t baseAddr, uint16_t numVecElems, uint8_t size,
-    std::vector<simeng::MemoryAccessTarget>& addresses) {
+    std::vector<simeng::memory::MemoryAccessTarget>& addresses) {
   for (uint16_t i = 0; i < numVecElems; i++) {
     addresses.push_back({baseAddr + (i * size), size});
   }
@@ -18,7 +18,8 @@ void generateContiguousAddresses(
 
 void generatePredicatedContiguousAddressBlocks(
     uint64_t baseAddr, uint16_t numVecElems, uint8_t elemSize, uint8_t predSize,
-    const uint64_t* pred, std::vector<simeng::MemoryAccessTarget>& addresses) {
+    const uint64_t* pred,
+    std::vector<simeng::memory::MemoryAccessTarget>& addresses) {
   bool recordingBlock = false;
   uint64_t currAddr = 0;
   uint16_t currSize = 0;
@@ -45,13 +46,13 @@ void generatePredicatedContiguousAddressBlocks(
   if (recordingBlock) addresses.push_back({currAddr, currSize});
 }
 
-span<const MemoryAccessTarget> Instruction::generateAddresses() {
+span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
   assert((isLoad() || isStoreAddress()) &&
          "generateAddresses called on non-load-or-store instruction");
   if (isMicroOp_) {
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp,
             1, dataSize_, addresses);
@@ -60,7 +61,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case MicroOpcode::STR_ADDR: {
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[0].mem.disp,
             1, dataSize_, addresses);
@@ -351,7 +352,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
                                     // lsl #3]
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         uint64_t offset = sourceValues_[2].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(2);
 
         uint64_t addr = base + (offset * 8);
@@ -370,7 +371,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[3].mem.disp);
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(2);
 
         uint64_t addr = base + (offset * partition_num * 8);
@@ -389,7 +390,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[4].mem.disp);
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(3);
 
         uint64_t addr = base + (offset * partition_num * 8);
@@ -409,7 +410,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[5].mem.disp);
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(4);
 
         uint64_t addr = base + (offset * partition_num * 8);
@@ -514,7 +515,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_LDRWpre:    // ldr wt, [xn, #imm]!
       case Opcode::AArch64_LDRXui:     // ldr xt, [xn, #imm]
       case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp,
             1, dataSize_, addresses);
@@ -528,7 +529,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_LDRSpost:    // ldr st, [xn], #imm
       case Opcode::AArch64_LDRWpost:    // ldr wt, [xn], #imm
       case Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[0].get<uint64_t>(), 1,
                                     dataSize_, addresses);
         setMemoryAddresses(addresses);
@@ -654,7 +655,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_LDPWpre:    // ldp wt1, wt2, [xn, #imm!]
       case Opcode::AArch64_LDPXi:      // ldp xt1, xt2, [xn, #imm]
       case Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm!]
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].mem.disp,
             2, dataSize_, addresses);
@@ -666,7 +667,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_LDPSpost:    // ldp st1, st2, [xn], #imm
       case Opcode::AArch64_LDPWpost:    // ldp wt1, wt2, [xn], #imm
       case Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[0].get<uint64_t>(), 2,
                                     dataSize_, addresses);
         setMemoryAddresses(addresses);
@@ -821,7 +822,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t offset = sourceValues_[3].get<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(base + offset, partition_num,
@@ -837,7 +838,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
         uint64_t addr = base + (offset * partition_num);
 
@@ -853,7 +854,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t* offset = sourceValues_[3].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
 
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
@@ -872,7 +873,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t* offset = sourceValues_[3].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -893,7 +894,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t* offset = sourceValues_[3].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -913,7 +914,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t offset = sourceValues_[3].get<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(
@@ -929,7 +930,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(
@@ -947,7 +948,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[3].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num * 2);
 
         uint64_t addr = base + (offset * partition_num * 8);
@@ -970,7 +971,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         if (metadata_.operands[2].mem.index)
           m = sourceValues_[partition_num + 3].get<uint64_t>() << 3;
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks((n + m), partition_num, 8, 8,
@@ -991,7 +992,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         if (metadata_.operands[2].mem.index)
           m = sourceValues_[partition_num + 3].get<uint64_t>() << 2;
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks((n + m), partition_num, 4, 4,
@@ -1006,7 +1007,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t offset = sourceValues_[3].get<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(
@@ -1021,7 +1022,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[2].get<uint64_t>();
         const uint64_t offset = sourceValues_[3].get<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(
@@ -1038,7 +1039,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         generatePredicatedContiguousAddressBlocks(
@@ -1055,7 +1056,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1076,7 +1077,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset = static_cast<int64_t>(
             static_cast<int32_t>(metadata_.operands[2].mem.disp));
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1096,7 +1097,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const uint64_t* offset = sourceValues_[2].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1117,7 +1118,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const uint64_t* offset = sourceValues_[2].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1139,7 +1140,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1161,7 +1162,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1182,7 +1183,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t n = sourceValues_[1].get<uint64_t>();
         const uint64_t* m = sourceValues_[2].getAsVector<uint64_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1203,7 +1204,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t n = sourceValues_[1].get<uint64_t>();
         const uint32_t* m = sourceValues_[2].getAsVector<uint32_t>();
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1224,7 +1225,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
 
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
         for (int i = 0; i < partition_num; i++) {
@@ -1240,7 +1241,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn], <#imm|xm>
         const uint64_t base = sourceValues_[4].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(4);
 
         for (int i = 0; i < 4; i++) {
@@ -1267,7 +1268,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1Fourv4s_POST: {  // st1 {vt.4s, vt2.4s, vt3.4s,
                                                // vt4.4s}, [xn], <#imm|xm>
         const uint64_t base = sourceValues_[4].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(4);
 
         for (int i = 0; i < 4; i++) {
@@ -1291,7 +1292,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s}, [xn],
                                               // <#imm|xm>
         const uint64_t base = sourceValues_[2].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(2);
 
         for (int i = 0; i < 2; i++) {
@@ -1327,7 +1328,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
                                               // #imm
         const uint64_t base = sourceValues_[2].get<uint64_t>();
-        std::vector<MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(2);
 
         for (int i = 0; i < 2; i++) {
@@ -1367,7 +1368,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_STPWpre:    // stp wt1, wt2, [xn, #imm]!
       case Opcode::AArch64_STPXi:      // stp xt1, xt2, [xn, #imm]
       case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[2].get<uint64_t>() + metadata_.operands[2].mem.disp,
             2, dataSize_, addresses);
@@ -1379,7 +1380,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_STPSpost:    // stp st1, st2, [xn], #imm
       case Opcode::AArch64_STPWpost:    // stp wt1, wt2, [xn], #imm
       case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[2].get<uint64_t>(), 2,
                                     dataSize_, addresses);
         setMemoryAddresses(addresses);
@@ -1441,7 +1442,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_STRWpre:    // str wt, [xn, #imm]!
       case Opcode::AArch64_STRXui:     // str xt, [xn, #imm]
       case Opcode::AArch64_STRXpre: {  // str xt, [xn, #imm]!
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp,
             1, dataSize_, addresses);
@@ -1455,7 +1456,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_STRSpost:    // str st, [xn], #imm
       case Opcode::AArch64_STRWpost:    // str wt, [xn], #imm
       case Opcode::AArch64_STRXpost: {  // str xt, [xn], #imm
-        std::vector<simeng::MemoryAccessTarget> addresses;
+        std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[1].get<uint64_t>(), 1,
                                     dataSize_, addresses);
         setMemoryAddresses(addresses);

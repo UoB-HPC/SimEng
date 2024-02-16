@@ -10,14 +10,15 @@ namespace simeng {
 namespace pipeline {
 
 /** Check whether requests `a` and `b` overlap. */
-bool requestsOverlap(MemoryAccessTarget a, MemoryAccessTarget b) {
+bool requestsOverlap(memory::MemoryAccessTarget a,
+                     memory::MemoryAccessTarget b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
   return !(a.address + a.size <= b.address || b.address + b.size <= a.address);
 }
 
 LoadStoreQueue::LoadStoreQueue(
-    unsigned int maxCombinedSpace, MemoryInterface& memory,
+    unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
@@ -39,7 +40,7 @@ LoadStoreQueue::LoadStoreQueue(
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
-    MemoryInterface& memory,
+    memory::MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
@@ -122,8 +123,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                              .reqAddresses;
     // Store load addresses temporarily so that conflictions are
     // only registered once on most recent (program order) store
-    std::list<simeng::MemoryAccessTarget> temp_load_addr(ld_addresses.begin(),
-                                                         ld_addresses.end());
+    std::list<simeng::memory::MemoryAccessTarget> temp_load_addr(
+        ld_addresses.begin(), ld_addresses.end());
 
     // Detect reordering conflicts
     if (storeQueue_.size() > 0) {
@@ -437,7 +438,7 @@ void LoadStoreQueue::tick() {
         // request[Load|Store]Queue_ entry
         auto& addressQueue = itInsn->reqAddresses;
         while (addressQueue.size()) {
-          const simeng::MemoryAccessTarget req =
+          const simeng::memory::MemoryAccessTarget req =
               addressQueue.front();  // Speculatively increment count of this
                                      // request type
           reqCounts[isStore]++;

@@ -6,8 +6,6 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
-#include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/span.hh"
 
@@ -21,9 +19,9 @@ class Core : public simeng::Core {
   /** Construct an emulation-style core, providing memory interfaces for
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa);
+  Core(memory::MemoryInterface& instructionMemory,
+       memory::MemoryInterface& dataMemory, uint64_t entryPoint,
+       uint64_t programByteLength, const arch::Architecture& isa);
 
   /** Tick the core. */
   void tick() override;
@@ -38,9 +36,6 @@ class Core : public simeng::Core {
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
 
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  uint64_t getSystemTimer() const override;
-
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
@@ -54,36 +49,12 @@ class Core : public simeng::Core {
   /** Process an active exception handler. */
   void processExceptionHandler();
 
-  /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
-
   /** A memory interface to access instructions. */
-  MemoryInterface& instructionMemory_;
-
-  /** A memory interface to access data. */
-  MemoryInterface& dataMemory_;
-
-  /** The previously generated addresses. */
-  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
-
-  /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
-
-  /** The currently used ISA. */
-  const arch::Architecture& isa_;
-
-  /** The current program counter. */
-  uint64_t pc_ = 0;
-
-  /** The core's register file set. */
-  RegisterFileSet registerFileSet_;
+  memory::MemoryInterface& instructionMemory_;
 
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
-
-  /** Whether or not the core has halted. */
-  bool hasHalted_ = false;
 
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
@@ -91,14 +62,17 @@ class Core : public simeng::Core {
   /** An internal buffer for storing one or more uops. */
   std::queue<std::shared_ptr<Instruction>> microOps_;
 
-  /** The active exception handler. */
-  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+  /** The previously generated addresses. */
+  std::vector<simeng::memory::MemoryAccessTarget> previousAddresses_;
+
+  /** The current program counter. */
+  uint64_t pc_ = 0;
+
+  /** The length of the available instruction memory. */
+  uint64_t programByteLength_ = 0;
 
   /** Is the core waiting on a data read? */
-  unsigned int pendingReads_ = 0;
-
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
+  uint64_t pendingReads_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;

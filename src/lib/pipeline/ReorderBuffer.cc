@@ -70,7 +70,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   return;
 }
 
-unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
+unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());

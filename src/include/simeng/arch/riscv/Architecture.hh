@@ -37,7 +37,7 @@ class Architecture : public arch::Architecture {
    * the exception is resolved, and results then obtained. */
   std::shared_ptr<arch::ExceptionHandler> handleException(
       const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-      MemoryInterface& memory) const override;
+      memory::MemoryInterface& memory) const override;
 
   /** Retrieve the initial process state. */
   ProcessStateChange getInitialState() const override;

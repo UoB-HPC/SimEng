@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/MemoryInterface.hh"
 #include "simeng/span.hh"
 
 using namespace simeng;
@@ -27,7 +27,7 @@ namespace SST {
 namespace SSTSimEng {
 
 /** A memory interface used by SimEng to communicate with SST's memory model. */
-class SimEngMemInterface : public MemoryInterface {
+class SimEngMemInterface : public memory::MemoryInterface {
  public:
   SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
                      bool debug);
@@ -39,17 +39,18 @@ class SimEngMemInterface : public MemoryInterface {
    * Construct an AggregatedReadRequest and use it to generate
    * SST::StandardMem::Read request(s). These request(s) are then sent to SST.
    */
-  void requestRead(const MemoryAccessTarget& target, uint64_t requestId = 0);
+  void requestRead(const memory::MemoryAccessTarget& target,
+                   uint64_t requestId = 0);
 
   /**
    * Construct an AggregatedWriteRequest and use it to generate
    * SST::StandardMem::Write request(s). These request(s) are then sent to SST.
    */
-  void requestWrite(const MemoryAccessTarget& target,
+  void requestWrite(const memory::MemoryAccessTarget& target,
                     const RegisterValue& data);
 
   /** Retrieve all completed read requests. */
-  const span<MemoryReadResult> getCompletedReads() const;
+  const span<memory::MemoryReadResult> getCompletedReads() const;
 
   /** Clear the completed reads. */
   void clearCompletedReads();
@@ -103,11 +104,12 @@ class SimEngMemInterface : public MemoryInterface {
    * struct for AggregateWriteRequest and AggregateReadRequest.
    */
   struct SimEngMemoryRequest {
-    /** MemoryAccessTarget from SimEng memory instruction. */
-    const MemoryAccessTarget target;
+    /** memory::MemoryAccessTarget from SimEng memory instruction. */
+    const memory::MemoryAccessTarget target;
 
-    SimEngMemoryRequest() : target(MemoryAccessTarget()){};
-    SimEngMemoryRequest(const MemoryAccessTarget& target) : target(target){};
+    SimEngMemoryRequest() : target(memory::MemoryAccessTarget()){};
+    SimEngMemoryRequest(const memory::MemoryAccessTarget& target)
+        : target(target){};
   };
 
   /**
@@ -122,7 +124,7 @@ class SimEngMemInterface : public MemoryInterface {
     const RegisterValue data;
 
     AggregateWriteRequest() : SimEngMemoryRequest(), data(RegisterValue()){};
-    AggregateWriteRequest(const MemoryAccessTarget& target,
+    AggregateWriteRequest(const memory::MemoryAccessTarget& target,
                           const RegisterValue& data)
         : SimEngMemoryRequest(target), data(data){};
   };
@@ -148,7 +150,8 @@ class SimEngMemInterface : public MemoryInterface {
     int aggregateCount_ = 0;
 
     AggregateReadRequest() : SimEngMemoryRequest(), id_(0){};
-    AggregateReadRequest(const MemoryAccessTarget& target, const uint64_t id)
+    AggregateReadRequest(const memory::MemoryAccessTarget& target,
+                         const uint64_t id)
         : SimEngMemoryRequest(target), id_(id) {}
   };
 
@@ -170,7 +173,7 @@ class SimEngMemInterface : public MemoryInterface {
   uint64_t maxAddrMemory_;
 
   /** A vector containing all completed read requests. */
-  std::vector<MemoryReadResult> completedReadRequests_;
+  std::vector<memory::MemoryReadResult> completedReadRequests_;
 
   /**
    * This map is used to store unique ids of SST::StandardMem::Read requests and
