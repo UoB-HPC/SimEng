@@ -10,12 +10,13 @@ namespace arch {
 namespace aarch64 {
 
 /** Helper function for SVE instructions with the format `add zd, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveAdd_3ops(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveAdd_3ops(srcValContainer& sourceValues,
+                          const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -26,14 +27,14 @@ RegisterValue sveAdd_3ops(srcValContainer& operands, const uint16_t VL_bits) {
 }
 
 /** Helper function for SVE instructions with the format `add zd, zn, #imm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveAdd_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   const T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -46,16 +47,16 @@ RegisterValue sveAdd_imm(
 
 /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
  * const`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveAddPredicated_const(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   bool isFP = std::is_floating_point<T>::value;
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* d = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* d = sourceValues[1].getAsVector<T>();
   const auto con = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -72,14 +73,14 @@ RegisterValue sveAddPredicated_const(
 
 /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
  * zm`.
- * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveAddPredicated_vecs(srcValContainer& operands,
+RegisterValue sveAddPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* d = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* d = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -94,13 +95,13 @@ RegisterValue sveAddPredicated_vecs(srcValContainer& operands,
 }
 
 /** Helper function for NEON instructions with the format `addv dd, pg, zn`.
- * T represents the type of operands (e.g. for zn.s, T = uint32_t).
+ * T represents the type of sourceValues (e.g. for zn.s, T = uint32_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveAddvPredicated(srcValContainer& operands,
+RegisterValue sveAddvPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   uint64_t out = 0;
@@ -115,15 +116,15 @@ RegisterValue sveAddvPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `adr zd, [zn, zm{,
  * lsl #<1,2,3>}]`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveAdr_packedOffsets(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -137,21 +138,21 @@ RegisterValue sveAdr_packedOffsets(
 
 /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
  *le, lo, ls, lt, ne> pd, pg/z, zn, <zm, #imm>`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns tuple of type [pred result (array of 4 uint64_t), nzcv]. */
 template <typename T>
 std::tuple<std::array<uint64_t, 4>, uint8_t> sveCmpPredicated_toPred(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool cmpToImm, std::function<bool(T, T)> func) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
   const T* m;
   T imm;
   if (cmpToImm)
     imm = static_cast<T>(metadata.operands[3].imm);
   else
-    m = operands[2].getAsVector<T>();
+    m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
@@ -184,12 +185,12 @@ uint64_t sveCnt_gpr(const simeng::arch::aarch64::InstructionMetadata& metadata,
 }
 
 /** Helper function for SVE instructions with the format `cntp xd, pg, pn`.
- * T represents the type of operands (e.g. for pn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
  * Returns single value of type uint64_t. */
 template <typename T>
-uint64_t sveCntp(srcValContainer& operands, const uint16_t VL_bits) {
-  const uint64_t* pg = operands[0].getAsVector<uint64_t>();
-  const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+uint64_t sveCntp(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t* pg = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* pn = sourceValues[1].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   uint64_t count = 0;
@@ -205,17 +206,17 @@ uint64_t sveCntp(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE instructions with the format `fcm<ge, lt,...> pd,
  * pg/z, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns an array of 4 uint64_t elements. */
 template <typename T>
 std::array<uint64_t, 4> sveComparePredicated_vecsToPred(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool cmpToZero, std::function<bool(T, T)> func) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
   const T* m;
-  if (!cmpToZero) m = operands[2].getAsVector<T>();
+  if (!cmpToZero) m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0};
@@ -232,14 +233,14 @@ std::array<uint64_t, 4> sveComparePredicated_vecsToPred(
 
 /** Helper function for SVE instructions with the format `cpy zd, pg/z, #imm{,
  * shift}`.
- * T represents the type of operands (e.g. for zd.d, T = int64_t).
+ * T represents the type of sourceValues (e.g. for zd.d, T = int64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveCpy_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
   const int16_t imm = metadata.operands[2].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -262,10 +263,10 @@ RegisterValue sveCpy_imm(
  * Returns single value of type uint64_t. */
 template <typename T>
 int64_t sveDec_scalar(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const int64_t n = operands[0].get<int64_t>();
+  const int64_t n = sourceValues[0].get<int64_t>();
   const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
   const uint16_t elems =
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
@@ -274,11 +275,11 @@ int64_t sveDec_scalar(
 
 /** Helper function for SVE instructions with the format `dup zd, <#imm{,
  * shift}, <w,x>n>`.
- * T represents the type of operands (e.g. for zd.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zd.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveDup_immOrScalar(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool useImm) {
   bool isFP = std::is_floating_point<T>::value;
@@ -287,7 +288,7 @@ RegisterValue sveDup_immOrScalar(
     imm = isFP ? metadata.operands[1].fp
                : static_cast<int8_t>(metadata.operands[1].imm);
   else
-    imm = operands[0].get<T>();
+    imm = sourceValues[0].get<T>();
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
 
@@ -298,16 +299,16 @@ RegisterValue sveDup_immOrScalar(
 }
 
 /** Helper function for SVE instructions with the format `dup zd, zn[#imm]`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveDup_vecIndexed(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const uint16_t index =
       static_cast<uint16_t>(metadata.operands[1].vector_index);
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -323,14 +324,14 @@ RegisterValue sveDup_vecIndexed(
 
 /** Helper function for SVE instructions with the format `fabs zd,
  * pg/z, zn`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFabsPredicated(srcValContainer& operands,
+RegisterValue sveFabsPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -348,14 +349,14 @@ RegisterValue sveFabsPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fadda rd,
  * pg, rn, zm`.
- * T represents the type of operands (e.g. for zm.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zm.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFaddaPredicated(srcValContainer& operands,
+RegisterValue sveFaddaPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T n = operands[1].get<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T n = sourceValues[1].get<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -372,16 +373,16 @@ RegisterValue sveFaddaPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fcadd zdn, pg/m,
  * zdn, zm, #imm`.
- * T represents the type of operands (e.g. for zm.d, T = double).
+ * T represents the type of sourceValues (e.g. for zm.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveFcaddPredicated(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* dn = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* dn = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
   const uint32_t imm = metadata.operands[4].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -417,17 +418,17 @@ RegisterValue sveFcaddPredicated(
 
 /** Helper function for SVE instructions with the format `fcmla zda, pg/m,
  * zn, zm, #imm`.
- * T represents the type of operands (e.g. for zm.d, T = double).
+ * T represents the type of sourceValues (e.g. for zm.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveFcmlaPredicated(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* da = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* da = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
   const uint32_t imm = metadata.operands[4].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -467,15 +468,15 @@ RegisterValue sveFcmlaPredicated(
 
 /** Helper function for SVE instructions with the format `fcpy zd, pg/m,
  * #const`.
- * T represents the type of operands (e.g. for zd.d, T = double).
+ * T represents the type of sourceValues (e.g. for zd.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveFcpy_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* dn = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
+  const T* dn = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
   const T imm = metadata.operands[2].fp;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -499,11 +500,11 @@ RegisterValue sveFcpy_imm(
  * N represents the source vector register type (e.g. zn.d would be double).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N>
-RegisterValue sveFcvtPredicated(srcValContainer& operands,
+RegisterValue sveFcvtPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const D* d = operands[0].getAsVector<D>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const N* n = operands[2].getAsVector<N>();
+  const D* d = sourceValues[0].getAsVector<D>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const N* n = sourceValues[2].getAsVector<N>();
 
   // Stores size of largest type out of D and N
   int lts = std::max(sizeof(D), sizeof(N));
@@ -540,11 +541,11 @@ RegisterValue sveFcvtPredicated(srcValContainer& operands,
  * N represents the source vector register type (e.g. zn.d would be double).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N>
-RegisterValue sveFcvtzsPredicated(srcValContainer& operands,
+RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
-  const D* d = operands[0].getAsVector<D>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const N* n = operands[2].getAsVector<N>();
+  const D* d = sourceValues[0].getAsVector<D>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const N* n = sourceValues[2].getAsVector<N>();
 
   // Stores size of largest type out of D and N
   int lts = std::max(sizeof(D), sizeof(N));
@@ -578,16 +579,16 @@ RegisterValue sveFcvtzsPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `<fdiv, fdivr>
  * zd, pg/m, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
- * Reversed represents whether the opcode is fdivr and thus the input operands
- * should be reversed.
- * Returns correctly formatted RegisterValue. */
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
+ * Reversed represents whether the opcode is fdivr and thus the input
+ * sourceValues should be reversed. Returns correctly formatted RegisterValue.
+ */
 template <typename T, bool Reversed = false>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
-    srcValContainer& operands, const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* dn = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+    srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* dn = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -608,15 +609,15 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
 
 /** Helper function for SVE instructions with the format `fmad zd, pg/m, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFmadPredicated_vecs(srcValContainer& operands,
+RegisterValue sveFmadPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -632,15 +633,15 @@ RegisterValue sveFmadPredicated_vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fmls zd, pg/m, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFmlsPredicated_vecs(srcValContainer& operands,
+RegisterValue sveFmlsPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -656,15 +657,15 @@ RegisterValue sveFmlsPredicated_vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fmsb zd, pg/m, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFmsbPredicated_vecs(srcValContainer& operands,
+RegisterValue sveFmsbPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -679,12 +680,13 @@ RegisterValue sveFmsbPredicated_vecs(srcValContainer& operands,
 }
 
 /** Helper function for SVE instructions with the format `fmul zd, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFmul_3ops(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveFmul_3ops(srcValContainer& sourceValues,
+                           const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -695,14 +697,14 @@ RegisterValue sveFmul_3ops(srcValContainer& operands, const uint16_t VL_bits) {
 }
 
 /** Helper function for SVE instructions with the format `fneg zd, pg/m, zn`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFnegPredicated(srcValContainer& operands,
+RegisterValue sveFnegPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -719,15 +721,15 @@ RegisterValue sveFnegPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fnmls zd, pg/m, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFnmlsPredicated(srcValContainer& operands,
+RegisterValue sveFnmlsPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -744,15 +746,15 @@ RegisterValue sveFnmlsPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fnmsb zdn, pg/m, zm,
  * za`.
- * T represents the type of operands (e.g. for zdn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFnmsbPredicated(srcValContainer& operands,
+RegisterValue sveFnmsbPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* m = operands[2].getAsVector<T>();
-  const T* a = operands[3].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* m = sourceValues[2].getAsVector<T>();
+  const T* a = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -773,10 +775,10 @@ RegisterValue sveFnmsbPredicated(srcValContainer& operands,
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue>
-sveFrintnPredicated(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+sveFrintnPredicated(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -807,14 +809,14 @@ sveFrintnPredicated(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE instructions with the format `fsqrt zd,
  * pg/m, zn`.
- * T represents the type of operands (e.g. for zn.d, T = double).
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& operands,
+RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& sourceValues,
                                        const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -834,10 +836,10 @@ RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& operands,
  * Returns single value of type int64_t. */
 template <typename T>
 int64_t sveInc_gprImm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const int64_t n = operands[0].get<int64_t>();
+  const int64_t n = sourceValues[0].get<int64_t>();
   const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
   const uint16_t elems =
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
@@ -847,14 +849,14 @@ int64_t sveInc_gprImm(
 
 /** Helper function for SVE instructions with the format `inc<b, d, h, w>
  * zdn{, pattern{, #imm}}`.
- * T represents the type of operands (e.g. for zdn.d, T = int64_t).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = int64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveInc_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -869,12 +871,12 @@ RegisterValue sveInc_imm(
 }
 
 /** Helper function for SVE instructions with the format `incp xdn, pm`.
- * T represents the type of operands (e.g. for pm.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pm.d, T = uint64_t).
  * Returns single value of type uint64_t. */
 template <typename T>
-uint64_t sveIncp_gpr(srcValContainer& operands, const uint16_t VL_bits) {
-  const uint64_t dn = operands[0].get<uint64_t>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
+uint64_t sveIncp_gpr(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t dn = sourceValues[0].get<uint64_t>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   uint64_t count = 0;
@@ -895,14 +897,14 @@ uint64_t sveIncp_gpr(srcValContainer& operands, const uint16_t VL_bits) {
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N = int8_t>
 RegisterValue sveIndex(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool op1isImm, bool op2isImm) {
   const int op2Index = op1isImm ? 0 : 1;
   const auto n = op1isImm ? static_cast<int8_t>(metadata.operands[1].imm)
-                          : static_cast<N>(operands[0].get<N>());
+                          : static_cast<N>(sourceValues[0].get<N>());
   const auto m = op2isImm ? static_cast<int8_t>(metadata.operands[2].imm)
-                          : static_cast<N>(operands[op2Index].get<N>());
+                          : static_cast<N>(sourceValues[op2Index].get<N>());
 
   const uint16_t partition_num = VL_bits / (sizeof(D) * 8);
   D out[256 / sizeof(D)] = {0};
@@ -915,15 +917,15 @@ RegisterValue sveIndex(
 
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * pd, pg/z, pn, pm`.
- * T represents the type of operands (e.g. for pn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 std::array<uint64_t, 4> sveLogicOp_preds(
-    srcValContainer& operands, const uint16_t VL_bits,
+    srcValContainer& sourceValues, const uint16_t VL_bits,
     std::function<uint64_t(uint64_t, uint64_t)> func) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const uint64_t* n = operands[1].getAsVector<uint64_t>();
-  const uint64_t* m = operands[2].getAsVector<uint64_t>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[2].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0};
@@ -941,15 +943,15 @@ std::array<uint64_t, 4> sveLogicOp_preds(
 
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * zd, pg/m, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveLogicOpPredicated_3vecs(srcValContainer& operands,
+RegisterValue sveLogicOpPredicated_3vecs(srcValContainer& sourceValues,
                                          const uint16_t VL_bits,
                                          std::function<T(T, T)> func) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* dn = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* dn = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -965,14 +967,14 @@ RegisterValue sveLogicOpPredicated_3vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * zd, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveLogicOpUnPredicated_3vecs(srcValContainer& operands,
+RegisterValue sveLogicOpUnPredicated_3vecs(srcValContainer& sourceValues,
                                            const uint16_t VL_bits,
                                            std::function<T(T, T)> func) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -983,14 +985,14 @@ RegisterValue sveLogicOpUnPredicated_3vecs(srcValContainer& operands,
 }
 
 /** Helper function for SVE instructions with the format `lsl sz, zn, #imm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveLsl_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   const T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1004,14 +1006,14 @@ RegisterValue sveLsl_imm(
 
 /** Helper function for SVE instructions with the format `max zdn, zdn,
  * #imm`.
- * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveMax_vecImm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1025,15 +1027,15 @@ RegisterValue sveMax_vecImm(
 
 /** Helper function for SVE instructions with the format `max zdn, zdn,
  * #imm`.
- * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveMaxPredicated_vecs(srcValContainer& operands,
+RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1050,15 +1052,15 @@ RegisterValue sveMaxPredicated_vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fmla zd, pg/m, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveMlaPredicated_vecs(srcValContainer& operands,
+RegisterValue sveMlaPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
-  const T* m = operands[3].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
+  const T* m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1074,16 +1076,16 @@ RegisterValue sveMlaPredicated_vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `fmla zda, zn,
  * zm[index]`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveMlaIndexed_vecs(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
   const size_t index = static_cast<size_t>(metadata.operands[2].vector_index);
 
   const uint16_t elemsPer128 = 128 / (sizeof(T) * 8);
@@ -1102,14 +1104,14 @@ RegisterValue sveMlaIndexed_vecs(
 
 /** Helper function for SVE instructions with the format `movprfx zd,
  * pg/z, zn`.
- * T represents the type of operands (e.g. for zd.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zd.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveMovprfxPredicated_destToZero(srcValContainer& operands,
+RegisterValue sveMovprfxPredicated_destToZero(srcValContainer& sourceValues,
                                               const uint16_t VL_bits) {
   // TODO: Adopt hint logic of the MOVPRFX instruction
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1127,15 +1129,15 @@ RegisterValue sveMovprfxPredicated_destToZero(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `movprfx zd,
  * pg/m, zn`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveMovprfxPredicated_destUnchanged(srcValContainer& operands,
+RegisterValue sveMovprfxPredicated_destUnchanged(srcValContainer& sourceValues,
                                                  const uint16_t VL_bits) {
   // TODO: Adopt hint logic of the MOVPRFX instruction
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1153,22 +1155,22 @@ RegisterValue sveMovprfxPredicated_destUnchanged(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `mul zdn, pg/m, zdn,
  * <zm, #imm>`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveMulPredicated(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool useImm) {
   bool isFP = std::is_floating_point<T>::value;
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
   const T* m;
   T imm;
   if (useImm)
     imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
   else
-    m = operands[2].getAsVector<T>();
+    m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1185,17 +1187,17 @@ RegisterValue sveMulPredicated(
 
 /** Helper function for SVE instructions with the format `mulh zdn, pg/m, zdn,
  * zm`.
- * T represents the type of operands (e.g. for zn.s, T = int32_t).
+ * T represents the type of sourceValues (e.g. for zn.s, T = int32_t).
  * TT represents the type twice the length of T (e.g. for T = int8_t, TT =
  * int16_T).
  * Returns correctly formatted RegisterValue. */
 // TODO : Support for int64_t mulh operations.
 template <typename T, typename TT>
-RegisterValue sveMulhPredicated(srcValContainer& operands,
+RegisterValue sveMulhPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1226,12 +1228,13 @@ RegisterValue sveMulhPredicated(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `orr zd, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveOrr_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveOrr_3vecs(srcValContainer& sourceValues,
+                           const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1244,16 +1247,16 @@ RegisterValue sveOrr_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE2 instructions with the format `psel pd, pn,
  * pm.t[wa, #imm]`.
- * T represents the type of operands (e.g. for pm.d, T =
+ * T represents the type of sourceValues (e.g. for pm.d, T =
  * uint64_t). Returns an array of 4 uint64_t elements. */
 template <typename T>
 std::array<uint64_t, 4> svePsel(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const uint64_t* pn = operands[0].getAsVector<uint64_t>();
-  const uint64_t* pm = operands[1].getAsVector<uint64_t>();
-  const uint32_t wa = operands[2].get<uint32_t>();
+  const uint64_t* pn = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* pm = sourceValues[1].getAsVector<uint64_t>();
+  const uint32_t wa = sourceValues[2].get<uint32_t>();
   const uint32_t imm = metadata.operands[2].sme_index.disp;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1271,7 +1274,7 @@ std::array<uint64_t, 4> svePsel(
 
 /** Helper function for SVE instructions with the format `ptrue pd{,
  * pattern}.
- * T represents the type of operands (e.g. for pd.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pd.d, T = uint64_t).
  * Returns an array of 4 uint64_t elements. */
 template <typename T>
 std::array<uint64_t, 4> svePtrue(
@@ -1299,9 +1302,9 @@ std::array<uint64_t, 4> svePtrue(
  * pn.b`.
  * If `isHI` = false, then PUNPKLO is performed.
  * Returns an array of 4 uint64_t elements. */
-std::array<uint64_t, 4> svePunpk(srcValContainer& operands,
+std::array<uint64_t, 4> svePunpk(srcValContainer& sourceValues,
                                  const uint16_t VL_bits, bool isHi) {
-  const uint64_t* n = operands[0].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[0].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / 8;
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
@@ -1317,12 +1320,12 @@ std::array<uint64_t, 4> svePunpk(srcValContainer& operands,
 }
 
 /** Helper function for SVE instructions with the format `rev pd, pn`.
- * T represents the type of operands (e.g. for pd.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pd.d, T = uint64_t).
  * Returns an array of 4 uint64_t elements. */
 template <typename T>
-std::array<uint64_t, 4> sveRev_predicates(srcValContainer& operands,
+std::array<uint64_t, 4> sveRev_predicates(srcValContainer& sourceValues,
                                           const uint16_t VL_bits) {
-  const uint64_t* n = operands[0].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[0].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
@@ -1342,11 +1345,12 @@ std::array<uint64_t, 4> sveRev_predicates(srcValContainer& operands,
 }
 
 /** Helper function for SVE instructions with the format `rev zd, zn`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveRev_vecs(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue sveRev_vecs(srcValContainer& sourceValues,
+                          const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1361,13 +1365,14 @@ RegisterValue sveRev_vecs(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE instructions with the format `sel zd, pg, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveSel_zpzz(srcValContainer& operands, const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+RegisterValue sveSel_zpzz(srcValContainer& sourceValues,
+                          const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1382,12 +1387,12 @@ RegisterValue sveSel_zpzz(srcValContainer& operands, const uint16_t VL_bits) {
 }
 
 /** Helper function for SVE instructions with the format `sminv rd, pg, zn`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveSminv(srcValContainer& operands, const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* n = operands[1].getAsVector<T>();
+RegisterValue sveSminv(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out = std::numeric_limits<T>::max();
@@ -1401,12 +1406,13 @@ RegisterValue sveSminv(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE instructions with the format `Sub zd, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveSub_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveSub_3vecs(srcValContainer& sourceValues,
+                           const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1419,14 +1425,14 @@ RegisterValue sveSub_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
 
 /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveSubrPredicated_3vecs(srcValContainer& operands,
+RegisterValue sveSubrPredicated_3vecs(srcValContainer& sourceValues,
                                       const uint16_t VL_bits) {
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* dn = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* dn = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1444,16 +1450,16 @@ RegisterValue sveSubrPredicated_3vecs(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
  * #imm`.
- * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveSubPredicated_imm(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   bool isFP = std::is_floating_point<T>::value;
-  const uint64_t* p = operands[0].getAsVector<uint64_t>();
-  const T* dn = operands[1].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* dn = sourceValues[1].getAsVector<T>();
   const auto imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1477,11 +1483,11 @@ RegisterValue sveSubPredicated_imm(
  * variant used (i.e. sxtw requires int32_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename C>
-RegisterValue sveSxtPredicated(srcValContainer& operands,
+RegisterValue sveSxtPredicated(srcValContainer& sourceValues,
                                const uint16_t VL_bits) {
-  const T* d = operands[0].getAsVector<T>();
-  const uint64_t* p = operands[1].getAsVector<uint64_t>();
-  const T* n = operands[2].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1499,12 +1505,13 @@ RegisterValue sveSxtPredicated(srcValContainer& operands,
 }
 
 /** Helper function for SVE instructions with the format `trn1 zd, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveTrn1_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveTrn1_3vecs(srcValContainer& sourceValues,
+                            const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1517,12 +1524,13 @@ RegisterValue sveTrn1_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
 }
 
 /** Helper function for SVE instructions with the format `trn2 zd, zn, zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveTrn2_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue sveTrn2_3vecs(srcValContainer& sourceValues,
+                            const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1541,9 +1549,9 @@ RegisterValue sveTrn2_3vecs(srcValContainer& operands, const uint16_t VL_bits) {
  * N represents the type of the source register (e.g. <u>int8_t for zn.b).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N>
-RegisterValue sveUnpk_vecs(srcValContainer& operands, const uint16_t VL_bits,
-                           bool isHi) {
-  const N* n = operands[0].getAsVector<N>();
+RegisterValue sveUnpk_vecs(srcValContainer& sourceValues,
+                           const uint16_t VL_bits, bool isHi) {
+  const N* n = sourceValues[0].getAsVector<N>();
 
   const uint16_t partition_num = VL_bits / (sizeof(D) * 8);
   D out[256 / sizeof(D)] = {0};
@@ -1561,10 +1569,10 @@ RegisterValue sveUnpk_vecs(srcValContainer& operands, const uint16_t VL_bits,
  * N represents the type of the operation (e.g. for UQDECH, N = 16u).
  * Returns single value of type uint64_t. */
 template <typename D, uint64_t N>
-uint64_t sveUqdec(srcValContainer& operands,
+uint64_t sveUqdec(srcValContainer& sourceValues,
                   const simeng::arch::aarch64::InstructionMetadata& metadata,
                   const uint16_t VL_bits) {
-  const D d = operands[0].get<D>();
+  const D d = sourceValues[0].get<D>();
   const uint8_t imm = metadata.operands[1].imm;
   const uint16_t count = sveGetPattern(metadata.operandStr, N, VL_bits);
 
@@ -1580,13 +1588,13 @@ uint64_t sveUqdec(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `uzp<1,2> zd, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveUzp_vecs(srcValContainer& operands, const uint16_t VL_bits,
+RegisterValue sveUzp_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
                           bool isUzp1) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1605,14 +1613,14 @@ RegisterValue sveUzp_vecs(srcValContainer& operands, const uint16_t VL_bits,
 
 /** Helper function for SVE instructions with the format `whilelo pd,
  * <w,x>n, <w,x>m`.
- * T represents the type of operands n and m (e.g. for wn, T = uint32_t).
+ * T represents the type of sourceValues n and m (e.g. for wn, T = uint32_t).
  * P represents the type of operand p (e.g. for pd.b, P = uint8_t).
  * Returns tuple of type [pred results (array of 4 uint64_t), nzcv]. */
 template <typename T, typename P>
 std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
-    srcValContainer& operands, const uint16_t VL_bits, bool calcNZCV) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
+    srcValContainer& sourceValues, const uint16_t VL_bits, bool calcNZCV) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(P) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
@@ -1635,13 +1643,13 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
 
 /** Helper function for SVE instructions with the format `zip<1,2> pd, pn,
  * pm`.
- * T represents the type of operands (e.g. for pn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
  * Returns an array of 4 uint64_t elements. */
 template <typename T>
-std::array<uint64_t, 4> sveZip_preds(srcValContainer& operands,
+std::array<uint64_t, 4> sveZip_preds(srcValContainer& sourceValues,
                                      const uint16_t VL_bits, bool isZip2) {
-  const uint64_t* n = operands[0].getAsVector<uint64_t>();
-  const uint64_t* m = operands[1].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[1].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
@@ -1671,13 +1679,13 @@ std::array<uint64_t, 4> sveZip_preds(srcValContainer& operands,
 
 /** Helper function for SVE instructions with the format `zip<1,2> zd, zn,
  * zm`.
- * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveZip_vecs(srcValContainer& operands, const uint16_t VL_bits,
+RegisterValue sveZip_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
                           bool isZip2) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};

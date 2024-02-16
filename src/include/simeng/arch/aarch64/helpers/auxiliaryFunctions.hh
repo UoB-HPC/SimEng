@@ -240,18 +240,18 @@ inline uint64_t mulhi(uint64_t a, uint64_t b) {
   return multhi;
 }
 
-/** Decode the instruction pattern from OperandStr. */
-inline uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
-                              const uint16_t VL_) {
+/** Decode the instruction pattern from sourceValuestr. */
+inline uint16_t sveGetPattern(const std::string sourceValuestr,
+                              const uint8_t esize, const uint16_t VL_) {
   const uint16_t elements = VL_ / esize;
   const std::vector<std::string> patterns = {
       "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
       "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
 
-  // If no pattern present in operandStr then same behaviour as ALL
+  // If no pattern present in sourceValuestr then same behaviour as ALL
   std::string pattern = "all";
   for (uint8_t i = 0; i < patterns.size(); i++) {
-    if (operandStr.find(patterns[i]) != std::string::npos) {
+    if (sourceValuestr.find(patterns[i]) != std::string::npos) {
       pattern = patterns[i];
       // Don't break when pattern found as vl1 will be found in vl128 etc
     }

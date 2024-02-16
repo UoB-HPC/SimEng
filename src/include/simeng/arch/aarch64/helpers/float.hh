@@ -9,34 +9,34 @@ namespace arch {
 namespace aarch64 {
 
 /** Helper function for instructions with the format `fabd rd, rn, rm`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fabd_3ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
+RegisterValue fabd_3ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
   return {std::fabs(n - m), 256};
 }
 
 /** Helper function for instructions with the format `fabs rd, rn`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fabs_2ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
+RegisterValue fabs_2ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
   return {std::fabs(n), 256};
 }
 
 /** Helper function for instructions with the format `fccmp rn, rm, #nzcv,
  * cc`.
- * T represents the type of operands (e.g. for sn T = float).
+ * T represents the type of sourceValues (e.g. for sn T = float).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t fccmp(srcValContainer& operands,
+uint8_t fccmp(srcValContainer& sourceValues,
               const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
-    T a = operands[1].get<T>();
-    T b = operands[2].get<T>();
+  if (conditionHolds(metadata.cc, sourceValues[0].get<uint8_t>())) {
+    T a = sourceValues[1].get<T>();
+    T b = sourceValues[2].get<T>();
     if (std::isnan(a) || std::isnan(b)) {
       // TODO: Raise exception if NaNs are signalling or fcmpe
       return nzcv(false, false, true, true);
@@ -52,13 +52,13 @@ uint8_t fccmp(srcValContainer& operands,
 }
 
 /** Helper function for instructions with the format `fcmp rn, <rm, #imm>`.
- * T represents the type of operands (e.g. for sn T = float).
+ * T represents the type of sourceValues (e.g. for sn T = float).
  * Returns single value of type uint8_t. */
 template <typename T>
-uint8_t fcmp(srcValContainer& operands, bool useImm) {
-  T a = operands[0].get<T>();
+uint8_t fcmp(srcValContainer& sourceValues, bool useImm) {
+  T a = sourceValues[0].get<T>();
   // Dont need to fetch imm as will always be 0.0
-  T b = useImm ? 0 : operands[1].get<T>();
+  T b = useImm ? 0 : sourceValues[1].get<T>();
   if (std::isnan(a) || std::isnan(b)) {
     // TODO: Raise exception if NaNs are signalling or fcmpe
     return nzcv(false, false, true, true);
@@ -71,55 +71,55 @@ uint8_t fcmp(srcValContainer& operands, bool useImm) {
 }
 
 /** Helper function for instructions with the format `fmaxnm rd, rn, rm`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fmaxnm_3ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
+RegisterValue fmaxnm_3ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
   return {std::fmax(n, m), 256};
 }
 
 /** Helper function for instructions with the format `fmaxnm rd, rn, rm`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fminnm_3ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
+RegisterValue fminnm_3ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
   return {std::fmin(n, m), 256};
 }
 
 /** Helper function for NEON instructions with the format `fnmsub rd, rn, rm,
  * ra`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fnmsub_4ops(srcValContainer& operands) {
-  T n = operands[0].get<T>();
-  T m = operands[1].get<T>();
-  T a = operands[2].get<T>();
+RegisterValue fnmsub_4ops(srcValContainer& sourceValues) {
+  T n = sourceValues[0].get<T>();
+  T m = sourceValues[1].get<T>();
+  T a = sourceValues[2].get<T>();
   return {std::fma(n, m, -a), 256};
 }
 
 /** Helper function for NEON instructions with the format `fnmadd rd, rn, rm,
  * ra`.
- * T represents the type of operands (e.g. for sd T = float).
+ * T represents the type of sourceValues (e.g. for sd T = float).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue fnmadd_4ops(srcValContainer& operands) {
-  T n = operands[0].get<T>();
-  T m = operands[1].get<T>();
-  T a = operands[2].get<T>();
+RegisterValue fnmadd_4ops(srcValContainer& sourceValues) {
+  T n = sourceValues[0].get<T>();
+  T m = sourceValues[1].get<T>();
+  T a = sourceValues[2].get<T>();
   return {std::fma(-n, m, -a), 256};
 }
 
 /** Helper function for NEON instructions with the format `frintp rd, rn`.
- * T represents the type of operands (e.g. for dd T = double).
+ * T represents the type of sourceValues (e.g. for dd T = double).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue frintpScalar_2ops(srcValContainer& operands) {
-  T n = operands[0].get<T>();
+RegisterValue frintpScalar_2ops(srcValContainer& sourceValues) {
+  T n = sourceValues[0].get<T>();
 
   // Merge always = false due to assumption that FPCR.nep bit = 0
   // (In SimEng the value of this register is not manually set)
@@ -141,9 +141,9 @@ RegisterValue frintpScalar_2ops(srcValContainer& operands) {
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N>
 RegisterValue scvtf_FixedPoint(
-    srcValContainer& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  N n = operands[0].get<N>();
+  N n = sourceValues[0].get<N>();
   const uint8_t fbits = metadata.operands[2].imm;
 
   D out = static_cast<D>(n) / std::pow(2, fbits);
@@ -156,8 +156,8 @@ RegisterValue scvtf_FixedPoint(
  * N represents the source register type (e.g. for Sd, N = float).
  * Returns single value of type D. */
 template <typename D, typename N>
-D fcvtzu_integer(srcValContainer& operands) {
-  N input = operands[0].get<N>();
+D fcvtzu_integer(srcValContainer& sourceValues) {
+  N input = sourceValues[0].get<N>();
   D result = static_cast<D>(0);
 
   // Check for nan and less than 0

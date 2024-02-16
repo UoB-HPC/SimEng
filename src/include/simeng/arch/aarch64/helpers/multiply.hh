@@ -7,13 +7,13 @@ namespace arch {
 namespace aarch64 {
 
 /** Helper function for instructions with the format `madd rd, rn, rm, ra`.
- * T represents the type of operands (e.g. for xn, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T madd_4ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
-  const T a = operands[2].get<T>();
+T madd_4ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
+  const T a = sourceValues[2].get<T>();
   return (a + (n * m));
 }
 
@@ -24,31 +24,31 @@ T madd_4ops(srcValContainer& operands) {
  * int32_t or uint32_t).
  * Returns single value of type D. */
 template <typename D, typename N>
-D maddl_4ops(srcValContainer& operands) {
-  const D n = static_cast<D>(operands[0].get<N>());
-  const D m = static_cast<D>(operands[1].get<N>());
-  const D a = operands[2].get<D>();
+D maddl_4ops(srcValContainer& sourceValues) {
+  const D n = static_cast<D>(sourceValues[0].get<N>());
+  const D m = static_cast<D>(sourceValues[1].get<N>());
+  const D a = sourceValues[2].get<D>();
   return (a + (n * m));
 }
 
 /** Helper function for instructions with the format `mul rd, rn, rm`.
- * T represents the type of operands (e.g. for xn, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T mul_3ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
+T mul_3ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
   return (n * m);
 }
 
 /** Helper function for instructions with the format `msub rd, rn, rm, ra`.
- * T represents the type of operands (e.g. for xn, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T msub_4ops(srcValContainer& operands) {
-  const T n = operands[0].get<T>();
-  const T m = operands[1].get<T>();
-  const T a = operands[2].get<T>();
+T msub_4ops(srcValContainer& sourceValues) {
+  const T n = sourceValues[0].get<T>();
+  const T m = sourceValues[1].get<T>();
+  const T a = sourceValues[2].get<T>();
   return (a - (n * m));
 }
 
