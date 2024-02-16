@@ -69,8 +69,8 @@ void DispatchIssueUnit::tick() {
       continue;
     }
 
-    std::cerr << "dispatch uop = ";
-    uop->printInstructionInfo();
+    //    std::cerr << "dispatch uop = ";
+    //    uop->printInstructionInfo();
 
     const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
@@ -106,19 +106,20 @@ void DispatchIssueUnit::tick() {
     for (uint16_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
 
-      std::cerr << "resgister read tag " << (int)reg.tag << std::endl;
+      //      std::cerr << "resgister read tag " << (int)reg.tag << std::endl;
 
       if (!uop->isSourceOperandReady(i)) {
-        std::cerr << "source operand isn;t ready" << std::endl;
+        //        std::cerr << "source operand isn;t ready" << std::endl;
 
         // The operand hasn't already been supplied
         if (scoreboard_[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value
-          std::cerr << "SUPPLY THE OPERANDD" << std::endl;
+          //          std::cerr << "SUPPLY THE OPERANDD" << std::endl;
 
           uop->supplyOperand(i, registerFileSet_.get(reg));
         } else {
-          std::cerr << "OPERAND NOT READY YET, ADD TO DEP MATRIX" << std::endl;
+          //          std::cerr << "OPERAND NOT READY YET, ADD TO DEP MATRIX" <<
+          //          std::endl;
 
           // This register isn't ready yet. Register this uop to the dependency
           // matrix for a more efficient lookup later
@@ -164,8 +165,8 @@ void DispatchIssueUnit::issue() {
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
-      std::cerr << "issue uop ";
-      uop->printInstructionInfo();
+      //      std::cerr << "issue uop ";
+      //      uop->printInstructionInfo();
 
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();

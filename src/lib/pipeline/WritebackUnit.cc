@@ -36,8 +36,9 @@ void WritebackUnit::tick() {
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file
       registerFileSet_.set(destinations[i], results[i]);
-      std::cerr << "write to physical reg " << (int)destinations[i].tag
-                << " value of " << results[i].get<uint64_t>() << std::endl;
+      //      std::cerr << "write to physical reg " << (int)destinations[i].tag
+      //                << " value of " << results[i].get<uint64_t>() <<
+      //                std::endl;
     }
     if (uop->isMicroOp()) {
       uop->setWaitingCommit();

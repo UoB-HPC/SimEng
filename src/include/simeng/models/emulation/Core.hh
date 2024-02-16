@@ -94,6 +94,8 @@ class Core : public simeng::Core {
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
+  std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
+
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
 

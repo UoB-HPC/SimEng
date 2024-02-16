@@ -67,7 +67,7 @@ void Core::tick() {
 
   // Fetch
 
-  std::cerr << "fetch" << std::endl;
+  //  std::cerr << "fetch" << std::endl;
 
   // Determine if new uops are needed to be fetched
   if (!microOps_.size()) {
@@ -102,13 +102,13 @@ void Core::tick() {
   auto& uop = microOps_.front();
 
   if (uop->exceptionEncountered()) {
-    std::cerr << "preissue handle exception" << std::endl;
+    //    std::cerr << "preissue handle exception" << std::endl;
 
     handleException(uop);
     return;
   }
 
-  std::cerr << "issue" << std::endl;
+  //  std::cerr << "issue" << std::endl;
 
   // Issue
   auto registers = uop->getSourceRegisters();
@@ -172,7 +172,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
-    std::cerr << "post execute handle exception" << std::endl;
+    //    std::cerr << "post execute handle exception" << std::endl;
 
     handleException(uop);
     return;
@@ -212,6 +212,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
   exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
+  exceptionGeneratingInstruction_ = instruction;
   processExceptionHandler();
 }
 
@@ -252,6 +253,20 @@ void Core::processExceptionHandler() {
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
+    case arch::ChangeType::WRITEBACK: {
+      // Writeback
+      auto results = exceptionGeneratingInstruction_->getResults();
+      auto destinations =
+          exceptionGeneratingInstruction_->getDestinationRegisters();
+
+      for (size_t i = 0; i < results.size(); i++) {
+        auto reg = destinations[i];
+        registerFileSet_.set(reg, results[i]);
+      }
+
+      instructionsExecuted_++;
+      break;
+    }
     case arch::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(

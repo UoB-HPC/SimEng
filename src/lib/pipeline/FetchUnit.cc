@@ -61,7 +61,7 @@ void FetchUnit::tick() {
   const uint8_t* buffer;
   uint16_t bufferOffset;
 
-  std::cerr << "fetch from pc_=" << pc_ << std::endl;
+  //  std::cerr << "fetch from pc_=" << pc_ << std::endl;
 
   // Check if more instruction data is required
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {

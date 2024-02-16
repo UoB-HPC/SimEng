@@ -49,8 +49,9 @@ bool Instruction::isSourceOperandReady(int index) const {
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
   sourceRegisters[i] = renamed;
-  std::cerr << "renamed source " << renamed << " renamed = " << renamed.renamed
-            << std::endl;
+  //  std::cerr << "renamed source " << renamed << " renamed = " <<
+  //  renamed.renamed
+  //            << std::endl;
 }
 void Instruction::renameDestination(uint16_t i, Register renamed) {
   destinationRegisters[i] = renamed;
@@ -100,7 +101,7 @@ void Instruction::setResults(span<RegisterValue> resultsInput) {
          "[SimEng:Instruction] More results than size of array");
   uint8_t n = 0;
   for (auto result : resultsInput) {
-    std::cerr << "result = " << result.get<uint64_t>() << std::endl;
+    //    std::cerr << "result = " << result.get<uint64_t>() << std::endl;
 
     results[n] = result;
     n++;

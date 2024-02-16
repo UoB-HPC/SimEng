@@ -106,14 +106,14 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
-  std::cerr << "---- core tick ----" << std::endl;
+  //  std::cerr << "---- core tick ----" << std::endl;
 
   ticks_++;
 
   if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
-    std::cerr << "tick process exception handler" << std::endl;
+    //    std::cerr << "tick process exception handler" << std::endl;
 
     processExceptionHandler();
     return;
@@ -334,13 +334,13 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  std::cerr << "apply state change" << std::endl;
+  //  std::cerr << "apply state change" << std::endl;
 
   // TODO THIS COULD BE DANGEROUS. APPLY STATE CHANGE NOT ONLY USED DURING
   // EXCEPTION HANDLING
   if (change.type != arch::ChangeType::WRITEBACK &&
       exceptionGeneratingInstruction_) {
-    std::cerr << "APPLY FLUSH FROM ROB" << std::endl;
+    //    std::cerr << "APPLY FLUSH FROM ROB" << std::endl;
 
     // Flush instruction from ROB
     reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId() -
@@ -355,7 +355,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       // array
       assert(exceptionGeneratingInstruction_ &&
              "exception generating instruction is NULL");
-      std::cerr << "writeback state change" << std::endl;
+      //      std::cerr << "writeback state change" << std::endl;
 
       // Forwards operands to update dispatch scoreboard as this didn't happen
       // in execute

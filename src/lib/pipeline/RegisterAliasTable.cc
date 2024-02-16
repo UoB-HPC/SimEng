@@ -52,8 +52,9 @@ Register RegisterAliasTable::getMapping(Register architectural) const {
 
   auto tag = mappingTable_[architectural.type][architectural.tag];
 
-  std::cerr << "mapping table for arch reg " << (int)architectural.tag << " = "
-            << tag << std::endl;
+  //  std::cerr << "mapping table for arch reg " << (int)architectural.tag << "
+  //  = "
+  //            << tag << std::endl;
   return {architectural.type, tag, true};
 }
 
@@ -79,8 +80,8 @@ Register RegisterAliasTable::allocate(Register architectural) {
   auto tag = freeQueue.front();
   freeQueue.pop();
 
-  std::cerr << "rat.allocate arch reg " << (int)architectural.tag << " to "
-            << (int)tag << std::endl;
+  //  std::cerr << "rat.allocate arch reg " << (int)architectural.tag << " to "
+  //            << (int)tag << std::endl;
 
   // Keep the old physical register in the history table
   historyTable_[architectural.type][tag] =
@@ -98,7 +99,7 @@ void RegisterAliasTable::commit(Register physical) {
   // Find the register previously mapped to the same architectural register and
   // free it
   auto oldTag = historyTable_[physical.type][physical.tag];
-  std::cerr << "rat.commit old tag = " << (int)oldTag << std::endl;
+  //  std::cerr << "rat.commit old tag = " << (int)oldTag << std::endl;
   // TODO never update mapping table??
 
   freeQueues_[physical.type].push(oldTag);

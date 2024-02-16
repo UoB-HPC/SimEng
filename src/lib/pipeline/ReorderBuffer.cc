@@ -30,8 +30,8 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   insn->setInstructionId(insnId_);
   if (insn->isLastMicroOp()) insnId_++;
 
-  std::cerr << "Add insn to ROB id = " << insn->getInstructionId() << " ";
-  insn->printInstructionInfo();
+  //  std::cerr << "Add insn to ROB id = " << insn->getInstructionId() << " ";
+  //  insn->printInstructionInfo();
 
   buffer_.push_back(insn);
 }
@@ -87,26 +87,27 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    std::cerr << "attempting commit of id=" << uop->getInstructionId()
-              << std::endl;
+    //    std::cerr << "attempting commit of id=" << uop->getInstructionId()
+    //              << std::endl;
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
-      std::cerr << "EXCEPTION ENCOUNTERED" << std::endl;
+      //      std::cerr << "EXCEPTION ENCOUNTERED" << std::endl;
 
+      // Don't remove from ROB immediately as may need to send through writeback
+      // and commit successfully later
       raiseException_(uop);
       uop->setExceptionEncounteredFalse();
       uop->setNotCommitReady();
 
-      // Need to send back through writeback
       return n;
     }
 
     const auto& destinations = uop->getDestinationRegisters();
     for (int i = 0; i < destinations.size(); i++) {
-      std::cerr << "rat commit physical reg=" << destinations[i].tag
-                << std::endl;
+      //      std::cerr << "rat commit physical reg=" << destinations[i].tag
+      //                << std::endl;
 
       rat_.commit(destinations[i]);
     }
@@ -165,7 +166,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
                           0};
       }
     }
-    std::cerr << "buffer pop" << std::endl;
+    //    std::cerr << "buffer pop" << std::endl;
 
     buffer_.pop_front();
   }

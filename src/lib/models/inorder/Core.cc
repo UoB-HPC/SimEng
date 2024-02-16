@@ -180,18 +180,20 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  exceptionGenerated_ = false;
-
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-
-  processExceptionHandler();
+  std::cerr << "handle exception inorder" << std::endl;
 
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
   decodeUnit_.purgeFlushed();
   completionSlots_[0].fill(nullptr);
+
+  exceptionGenerated_ = false;
+
+  exceptionHandler_ =
+      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
+
+  processExceptionHandler();
 }
 
 void Core::processExceptionHandler() {
@@ -312,6 +314,18 @@ void Core::readRegisters() {
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
+    case arch::ChangeType::WRITEBACK: {
+      forwardOperands(
+          exceptionGeneratingInstruction_->getDestinationRegisters(),
+          exceptionGeneratingInstruction_->getResults());
+
+      assert(completionSlots_[0].getTailSlots()[0] == nullptr &&
+             "Don't overwrite what is there");
+      completionSlots_[0].getTailSlots()[0] =
+          std::move(exceptionGeneratingInstruction_);
+
+      break;
+    }
     case arch::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(

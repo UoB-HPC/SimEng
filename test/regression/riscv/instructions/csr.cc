@@ -20,15 +20,10 @@ TEST_P(InstCSR, basicCsr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0b101010);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstCSR,
-    ::testing::Values(
-        //    std::make_tuple(EMULATION, "{}")
-        //            ,
-        //                      std::make_tuple(INORDER, "{}"),
-        std::make_tuple(OUTOFORDER, "{}")),
-    //            "{Ports: {'0': {Portname: 0, Instruction-Group-Support: [INT,
-    //            " "LOAD, STORE, BRANCH]}}}")),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstCSR,
+                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                                           std::make_tuple(INORDER, "{}"),
+                                           std::make_tuple(OUTOFORDER, "{}")),
+                         paramToString);
 
 }  // namespace
