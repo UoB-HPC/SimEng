@@ -25,6 +25,8 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {
+  std::cerr << "fetch" << std::endl;
+
   if (output_.isStalled()) {
     return;
   }

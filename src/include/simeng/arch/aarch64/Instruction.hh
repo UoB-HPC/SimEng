@@ -283,6 +283,8 @@ class Instruction : public simeng::Instruction {
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
 
+  void setResults(span<RegisterValue> resultsInput) override;
+
   /** Generate memory addresses this instruction wishes to access. */
   span<const MemoryAccessTarget> generateAddresses() override;
 

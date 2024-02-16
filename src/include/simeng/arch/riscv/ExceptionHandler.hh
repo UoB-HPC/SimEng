@@ -72,7 +72,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool fatal();
 
   /** The instruction generating an exception. */
-  const Instruction& instruction_;
+  Instruction& instruction_;
 
   /** The core model object. */
   const Core& core;

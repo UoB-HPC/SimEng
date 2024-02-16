@@ -14,6 +14,8 @@ WritebackUnit::WritebackUnit(
       flagMicroOpCommits_(flagMicroOpCommits) {}
 
 void WritebackUnit::tick() {
+  std::cerr << "writeback" << std::endl;
+
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
     auto& uop = completionSlots_[slot].getHeadSlots()[0];
 
@@ -21,7 +23,12 @@ void WritebackUnit::tick() {
       continue;
     }
 
+    std::cerr << "writeback id = " << uop->getSequenceId() << std::endl;
+
     auto& results = uop->getResults();
+    std::cerr << "writeback results = " << results[0].get<uint64_t>()
+              << std::endl;
+
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file

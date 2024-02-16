@@ -34,7 +34,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(
           config["Execution-Units"].num_children() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
+              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>() + 1,
           {1, nullptr}),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<uint32_t>(),
@@ -106,6 +106,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
+  std::cerr << "---- core tick ----" << std::endl;
+
   ticks_++;
 
   if (hasHalted_) return;
@@ -155,6 +157,9 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
+    // TODO why do we request from PC when we know we will flush later. Would it
+    // be quicker to stall. Flush (and no other unit) never ticked until
+    // exception complete. Process exceptionHandler only flushes loop buffer
     fetchUnit_.requestFromPC();
     return;
   }
@@ -277,6 +282,8 @@ void Core::handleException() {
   // Flush everything younger than the exception-generating instruction.
   // This must happen prior to handling the exception to ensure the commit state
   // is up-to-date with the register mapping table
+  // TODO THIS BASICALLY JUST EMPTIES THE ROB, exceptionGeneratingInstruction
+  // has already been removed (in current form)
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
@@ -285,6 +292,7 @@ void Core::handleException() {
     eu.purgeFlushed();
   }
 
+  // TODO possible change here
   exceptionGenerated_ = false;
   exceptionHandler_ =
       isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
@@ -306,6 +314,7 @@ void Core::processExceptionHandler() {
     return;
   }
 
+  // TODO don't need to get the state change
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
@@ -314,6 +323,7 @@ void Core::processExceptionHandler() {
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
+    // TODO won't need to apply state change
     applyStateChange(result.stateChange);
   }
 
@@ -321,6 +331,11 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
+  completionSlots_[completionSlots_.size() - 1].getTailSlots()[0] =
+      std::move(exceptionGeneratingInstruction_);
+
+  return;
+
   // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
     case arch::ChangeType::INCREMENT: {

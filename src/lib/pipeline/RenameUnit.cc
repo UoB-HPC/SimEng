@@ -18,6 +18,8 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       freeRegistersAvailable_(registerTypes) {}
 
 void RenameUnit::tick() {
+  std::cerr << "rename" << std::endl;
+
   if (output_.isStalled()) {
     input_.stall(true);
     return;

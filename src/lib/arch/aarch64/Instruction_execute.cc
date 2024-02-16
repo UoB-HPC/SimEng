@@ -5735,6 +5735,9 @@ void Instruction::execute() {
   }
 #endif
 }
+void Instruction::setResults(span<RegisterValue> resultsInput) {
+  // TODO implement this
+}
 
 }  // namespace aarch64
 }  // namespace arch

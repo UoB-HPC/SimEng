@@ -699,9 +699,17 @@ bool ExceptionHandler::init() {
 
         // Only update if registers should be written to
         if (destinationRegs.size() > 0) {
+          std::cerr << "handler opcode = "
+                    << instruction_.getMetadata().mnemonic
+                    << " id =  " << instruction_.getSequenceId() << std::endl;
+
+          RegisterValue r[]{RegisterValue(result, 8)};
+          span<RegisterValue> res{r, std::size(r)};
+          instruction_.setResults(res);
           // Dummy logic to allow progression. Set Rd to 0
-          stateChange = {
-              ChangeType::REPLACEMENT, {destinationRegs[0]}, {result}};
+          //          stateChange = {
+          //              ChangeType::REPLACEMENT, {destinationRegs[0]},
+          //              {result}};
         }
         break;
       default:

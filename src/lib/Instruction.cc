@@ -44,6 +44,7 @@ bool Instruction::isFlushed() const { return flushed_; }
 bool Instruction::hasExecuted() const { return executed_; }
 
 void Instruction::setCommitReady() { canCommit_ = true; }
+void Instruction::setNotCommitReady() { canCommit_ = false; }
 bool Instruction::canCommit() const { return canCommit_; }
 
 bool Instruction::hasAllData() const { return (dataPending_ == 0); }
@@ -54,8 +55,14 @@ uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
 bool Instruction::isMicroOp() const { return isMicroOp_; }
 bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
+
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
 bool Instruction::isWaitingCommit() const { return waitingCommit_; }
+
 int Instruction::getMicroOpIndex() const { return microOpIndex_; }
+
+void Instruction::setExceptionEncounteredFalse() {
+  exceptionEncountered_ = false;
+}
 
 }  // namespace simeng

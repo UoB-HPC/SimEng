@@ -56,6 +56,8 @@ DispatchIssueUnit::DispatchIssueUnit(
 }
 
 void DispatchIssueUnit::tick() {
+  std::cerr << "dispatch tick" << std::endl;
+
   input_.stall(false);
 
   // Reset the array
@@ -134,6 +136,8 @@ void DispatchIssueUnit::tick() {
 }
 
 void DispatchIssueUnit::issue() {
+  std::cerr << "dispatch issue" << std::endl;
+
   int issued = 0;
   // Check the ready queues, and issue an instruction from each if the
   // corresponding port isn't blocked

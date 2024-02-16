@@ -71,6 +71,8 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
+  std::cerr << "commit" << std::endl;
+
   shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
@@ -82,12 +84,20 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
+    std::cerr << "attempting commit of id=" << uop->getInstructionId()
+              << std::endl;
+
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
+      std::cerr << "EXCEPTION ENCOUNTERED" << std::endl;
+
       raiseException_(uop);
-      buffer_.pop_front();
-      return n + 1;
+      uop->setExceptionEncounteredFalse();
+      uop->setNotCommitReady();
+
+      // Need to send back through writeback
+      return n;
     }
 
     const auto& destinations = uop->getDestinationRegisters();

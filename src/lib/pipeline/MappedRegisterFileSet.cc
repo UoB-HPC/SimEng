@@ -12,6 +12,7 @@ const RegisterValue& MappedRegisterFileSet::get(Register reg) const {
 }
 
 void MappedRegisterFileSet::set(Register reg, const RegisterValue& value) {
+  assert(!reg.renamed && "renamed register passed to set");
   return ArchitecturalRegisterFileSet::set(rat_.getMapping(reg), value);
 }
 

@@ -92,6 +92,18 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
+void Instruction::setResults(span<RegisterValue> resultsInput) {
+  assert(resultsInput.size() <= results.size() &&
+         "[SimEng:Instruction] More results than size of array");
+  uint8_t n = 0;
+  for (auto result : resultsInput) {
+    std::cerr << "result = " << result.get<uint64_t>() << std::endl;
+
+    results[n] = result;
+    n++;
+  }
+}
+
 bool Instruction::isStoreAddress() const { return isStore_; }
 bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }

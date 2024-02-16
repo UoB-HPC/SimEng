@@ -23,6 +23,8 @@ class Instruction {
    * instruction. */
   bool exceptionEncountered() const;
 
+  void setExceptionEncounteredFalse();
+
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
 
@@ -63,12 +65,18 @@ class Instruction {
   /** Mark the instruction as ready to commit. */
   void setCommitReady();
 
+  /** Mark the instruction as NOT ready to commit. */
+  void setNotCommitReady();
+
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
   bool canCommit() const;
 
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
+
+  /** Set results array */
+  virtual void setResults(span<RegisterValue> resultsInput) = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
   virtual span<const MemoryAccessTarget> generateAddresses() = 0;

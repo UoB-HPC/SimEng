@@ -380,6 +380,8 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
+  std::cerr << "lsq" << std::endl;
+
   tickCounter_++;
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
