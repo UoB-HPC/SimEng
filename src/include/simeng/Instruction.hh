@@ -13,6 +13,19 @@ using InstructionException = short;
 
 namespace simeng {
 
+/** A struct holding user-defined execution information for an
+ * instruction. */
+struct ExecutionInfo {
+  /** The latency for the instruction. */
+  uint16_t latency = 1;
+
+  /** The execution throughput for the instruction. */
+  uint16_t stallCycles = 1;
+
+  /** The ports that support the instruction. */
+  std::vector<uint16_t> ports = {};
+};
+
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {

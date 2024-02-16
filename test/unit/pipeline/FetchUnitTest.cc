@@ -29,6 +29,9 @@ class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
       : output(1, {}),
+        linux(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                  .as<std::string>()),
+        isa(linux),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
         fetchUnit(output, memory, 1024, 0, blockSize, isa, predictor),
@@ -45,6 +48,7 @@ class PipelineFetchUnitTest : public testing::Test {
 
   PipelineBuffer<MacroOp> output;
   MockMemoryInterface memory;
+  kernel::Linux linux;
   MockArchitecture isa;
   MockBranchPredictor predictor;
 

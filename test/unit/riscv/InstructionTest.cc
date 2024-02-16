@@ -1,5 +1,4 @@
 #include "../ConfigInit.hh"
-#include "../MockArchitecture.hh"
 #include "arch/riscv/InstructionMetadata.hh"
 #include "gmock/gmock.h"
 #include "simeng/arch/riscv/Instruction.hh"

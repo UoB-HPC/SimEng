@@ -8,6 +8,7 @@ namespace simeng {
 /** Mock implementation of the `Architecture` interface. */
 class MockArchitecture : public arch::Architecture {
  public:
+  MockArchitecture(kernel::Linux& kernel) : arch::Architecture(kernel) {}
   MOCK_CONST_METHOD4(predecode,
                      uint8_t(const void* ptr, uint16_t bytesAvailable,
                              uint64_t instructionAddress, MacroOp& output));

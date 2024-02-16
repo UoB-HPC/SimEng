@@ -7,12 +7,8 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-std::unordered_map<uint32_t, Instruction> Architecture::decodeCache_;
-std::forward_list<InstructionMetadata> Architecture::metadataCache_;
-uint64_t Architecture::SVCRval_;
-
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
-    : linux_(kernel),
+    : arch::Architecture(kernel),
       microDecoder_(std::make_unique<MicroDecoder>()),
       VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
       SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
@@ -40,8 +36,8 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 
-  // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
-  // namespace.
+  // Instantiate an ExecutionInfo entry for each group in the
+  // InstructionGroup namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_[i] = {1, 1, {}};
   }
@@ -56,8 +52,8 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       uint16_t group = port_node["Instruction-Group-Nums"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
-      // Set zero inheritance distance for latency assignment as it's explicitly
-      // defined
+      // Set zero inheritance distance for latency assignment as it's
+      // explicitly defined
       inheritanceDistance[group] = 0;
       // Add inherited support for those appropriate groups
       std::queue<uint16_t> groups;
@@ -127,23 +123,17 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       ryml::ConstNodeRef opcode_node =
           config["Ports"][i]["Instruction-Opcode-Support"];
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
-        // If latency information hasn't been defined, set to zero as to inform
-        // later access to use group defined latencies instead
+        // If latency information hasn't been defined, set to zero as to
+        // inform later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        opcodeExecutionInfo_.try_emplace(
-            opcode, simeng::arch::aarch64::ExecutionInfo{0, 0, {}});
+        opcodeExecutionInfo_.try_emplace(opcode, ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
   }
 }
-Architecture::~Architecture() {
-  cs_close(&capstoneHandle_);
-  decodeCache_.clear();
-  metadataCache_.clear();
-  groupExecutionInfo_.clear();
-  SVCRval_ = 0;
-}
+
+Architecture::~Architecture() { cs_close(&capstoneHandle_); }
 
 uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 uint64_t instructionAddress,
@@ -212,33 +202,18 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return 4;
 }
 
-ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
-  // Assume no opcode-based override
-  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
-  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
-      opcodeExecutionInfo_.end()) {
-    // Replace with overrided values
-    ExecutionInfo overrideInfo =
-        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
-    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
-    if (overrideInfo.stallCycles != 0)
-      exeInfo.stallCycles = overrideInfo.stallCycles;
-    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
-  }
-  return exeInfo;
-}
-
-std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
-}
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
   if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
+}
+
+std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+    MemoryInterface& memory) const {
+  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 
 ProcessStateChange Architecture::getInitialState() const {
@@ -264,10 +239,6 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-uint64_t Architecture::getVectorLength() const { return VL_; }
-
-uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
-
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   // Update the Processor Cycle Counter to total cycles completed.
@@ -277,6 +248,26 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
     regFile->set(VCTreg_, regFile->get(VCTreg_).get<uint64_t>() + 1);
   }
 }
+
+ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
+  // Assume no opcode-based override
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+      opcodeExecutionInfo_.end()) {
+    // Replace with overrided values
+    ExecutionInfo overrideInfo =
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
+    if (overrideInfo.stallCycles != 0)
+      exeInfo.stallCycles = overrideInfo.stallCycles;
+    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+  }
+  return exeInfo;
+}
+
+uint64_t Architecture::getVectorLength() const { return VL_; }
+
+uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
 
 /** The SVCR value is stored in Architecture to allow the value to be
  * retrieved within execution pipeline. This prevents adding an implicit
