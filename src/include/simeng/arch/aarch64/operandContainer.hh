@@ -42,8 +42,8 @@ class operandContainer {
     // Otherwise, makeSME already called - do nothing
   }
 
-  /** Resize the vector to be the same size as `numRegs` if makeSME() has been
-   * called. */
+  /** Resize the vector to be the same size as `numRegs`. Primarily used to
+   * ensure any unused vector indexes introduced in makeSME() are removed. */
   constexpr void resize(uint16_t numRegs) {
     if (std::holds_alternative<std::vector<T>>(var_)) {
       std::get<std::vector<T>>(var_).resize(numRegs);

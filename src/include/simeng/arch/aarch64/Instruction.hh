@@ -5,8 +5,8 @@
 
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
-#include "simeng/arch/aarch64/Container.hh"
 #include "simeng/arch/aarch64/InstructionGroups.hh"
+#include "simeng/arch/aarch64/operandContainer.hh"
 
 struct cs_arm64_op;
 
@@ -17,6 +17,8 @@ namespace aarch64 {
 class Architecture;
 struct InstructionMetadata;
 
+// Type aliases - used to improve readability of source and destination operand
+// containers.
 using srcRegContainer = operandContainer<Register, MAX_SOURCE_REGISTERS>;
 using srcValContainer = operandContainer<RegisterValue, MAX_SOURCE_REGISTERS>;
 using destRegContainer = operandContainer<Register, MAX_DESTINATION_REGISTERS>;
@@ -225,13 +227,16 @@ inline uint8_t getDataSize(cs_arm64_op op) {
 
 // AArch64 Instruction Identifier Masks
 enum class InsnIdentifier {
-  /** Operates on scalar values */
+  /** Writes scalar values to one or more registers and/or memory locations. */
   isScalarDataMask = 0b00000000000000000000000000000001,
-  /** Operates on vector values. */
+  /** Writes NEON vector values to one or more registers and/or memory
+     locations. */
   isVectorDataMask = 0b00000000000000000000000000000010,
-  /** Uses Z registers as source and/or destination operands. */
+  /** Writes SVE vector values to one or more registers and/or memory locations.
+   */
   isSVEDataMask = 0b00000000000000000000000000000100,
-  /** Uses ZA register or tiles of ZA as destination. */
+  /** Writes SME matrix values to one or more registers and/or memory locations.
+   */
   isSMEDataMask = 0b00000000000000000000000000001000,
   /** Has a shift operand. */
   isShiftMask = 0b00000000000000000000000000010000,
