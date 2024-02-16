@@ -103,7 +103,7 @@ TEST_P(InstComparison, casa) {
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(0)),
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(3)), 100);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()), 89);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()), 89);
 
   // 64-bit
   initialHeapData_.resize(16);
@@ -135,7 +135,7 @@ TEST_P(InstComparison, casa) {
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(0)),
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(3)), 101);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()), 76);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()), 76);
 }
 
 // Test that NZCV flags are set correctly by the 32-bit cmn instruction

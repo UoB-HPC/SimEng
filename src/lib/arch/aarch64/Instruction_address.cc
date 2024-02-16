@@ -92,11 +92,11 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_CASAW: {  // casa ws, wt, [xn|sp]
-        setMemoryAddresses({{operands[2].get<uint64_t>(), 4}});
+        setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 4}});
         break;
       }
       case Opcode::AArch64_CASAX: {  // casa xs, xt, [xn|sp]
-        setMemoryAddresses({{operands[2].get<uint64_t>(), 8}});
+        setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1_MXIPXX_V_D:    // ld1d {zatv.d[ws, #imm]}, pg/z,
@@ -1614,7 +1614,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_SWPLW: {  // swpl ws, wt, [xn|sp]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+        setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 4}});
         break;
       }
       default:

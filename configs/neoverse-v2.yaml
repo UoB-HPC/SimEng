@@ -7,6 +7,7 @@ Core:
   Clock-Frequency-GHz: 2.5
   Timer-Frequency-MHz: 200
   Micro-Operations: True
+  Vector-Length: 128
 Fetch:
   Fetch-Block-Size: 128
   Loop-Buffer-Size: 64
@@ -27,11 +28,10 @@ Queue-Sizes:
   Load: 64
   Store: 36
 Branch-Predictor:
+  Type: "Perceptron"
   BTB-Tag-Bits: 11
-  Saturating-Count-Bits: 2
-  Global-History-Length: 10
-  RAS-entries: 5
-  Fallback-Static-Predictor: "Always-Taken"
+  Global-History-Length: 19
+  RAS-entries: 8
 L1-Data-Memory:
   Interface-Type: Flat
 L1-Instruction-Memory:
