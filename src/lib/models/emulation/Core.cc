@@ -204,12 +204,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   } else {
     for (size_t i = 0; i < results.size(); i++) {
       auto reg = destinations[i];
-      // std::cerr << unsigned(reg.type) << ":" << reg.tag << std::endl;
-      // std::cerr << "\t = 0x" << std::hex;
-      // for (size_t j = results[i].size(); j > 0; j--)
-      //   std::cerr << unsigned(results[i].getAsVector<uint8_t>()[j - 1])
-      //             << std::dec;
-      // std::cerr << std::endl;
       registerFileSet_.set(reg, results[i]);
     }
   }
