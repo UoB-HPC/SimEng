@@ -11,7 +11,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T orrShift_3ops(srcOperandContainer<RegisterValue>& operands,
+T orrShift_3ops(srcValContainer& operands,
                 const simeng::arch::aarch64::InstructionMetadata& metadata) {
   const T n = operands[0].get<T>();
   const T m = shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,

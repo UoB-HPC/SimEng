@@ -11,7 +11,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T bfm_2imms(srcOperandContainer<RegisterValue>& operands,
+T bfm_2imms(srcValContainer& operands,
             const simeng::arch::aarch64::InstructionMetadata& metadata,
             bool signExtend, bool zeroDestReg) {
   uint8_t r = metadata.operands[2].imm;
@@ -32,7 +32,7 @@ T bfm_2imms(srcOperandContainer<RegisterValue>& operands,
  * Returns single value of type T. */
 template <typename T>
 T extrLSB_registers(
-    srcOperandContainer<RegisterValue>& operands,
+    srcValContainer& operands,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   T n = operands[0].get<T>();
   T m = operands[1].get<T>();
@@ -45,7 +45,7 @@ T extrLSB_registers(
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns single value of type uint64_t. */
 template <typename T>
-uint64_t rbit(srcOperandContainer<RegisterValue>& operands,
+uint64_t rbit(srcValContainer& operands,
               const simeng::arch::aarch64::InstructionMetadata& metadata) {
   int width = sizeof(T) * 8;
 
@@ -67,8 +67,7 @@ uint64_t rbit(srcOperandContainer<RegisterValue>& operands,
  * T represents the type of operands (e.g. for xn, T = uint64_t).
  * Returns array of uint8_t with number of elements = bytes in T. */
 template <typename T>
-std::array<uint8_t, sizeof(T)> rev(
-    srcOperandContainer<RegisterValue>& operands) {
+std::array<uint8_t, sizeof(T)> rev(srcValContainer& operands) {
   auto bytes = operands[0].getAsVector<uint8_t>();
   std::array<uint8_t, sizeof(T)> reversed;
   // Copy `bytes` backwards onto `reversed`

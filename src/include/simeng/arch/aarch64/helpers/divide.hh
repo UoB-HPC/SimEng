@@ -10,7 +10,7 @@ namespace aarch64 {
  * T represents the type of operands (e.g. for xd, T = uint64_t).
  * Returns single value of type T. */
 template <typename T>
-T div_3ops(srcOperandContainer<RegisterValue>& operands) {
+T div_3ops(srcValContainer& operands) {
   const T n = operands[0].get<T>();
   const T m = operands[1].get<T>();
   if (m == 0) return 0;

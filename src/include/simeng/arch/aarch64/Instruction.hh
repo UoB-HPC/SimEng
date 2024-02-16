@@ -17,6 +17,12 @@ namespace aarch64 {
 class Architecture;
 struct InstructionMetadata;
 
+using srcRegContainer = operandContainer<Register, MAX_SOURCE_REGISTERS>;
+using srcValContainer = operandContainer<RegisterValue, MAX_SOURCE_REGISTERS>;
+using destRegContainer = operandContainer<Register, MAX_DESTINATION_REGISTERS>;
+using destValContainer =
+    operandContainer<RegisterValue, MAX_DESTINATION_REGISTERS>;
+
 namespace RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
 const uint8_t GENERAL = 0;
@@ -402,24 +408,24 @@ class Instruction : public simeng::Instruction {
   const InstructionMetadata& metadata_;
 
   /** A vector of source registers. */
-  srcOperandContainer<Register> sourceRegisters_;
+  srcRegContainer sourceRegisters_;
 
   /** The number of source registers this instruction reads from. */
   uint16_t sourceRegisterCount_ = 0;
 
   /** A vector of destination registers. */
-  destOperandContainer<Register> destinationRegisters_;
+  destRegContainer destinationRegisters_;
 
   /** The number of destination registers this instruction writes to. */
   uint16_t destinationRegisterCount_ = 0;
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  srcOperandContainer<RegisterValue> sourceValues_;
+  srcValContainer sourceValues_;
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  destOperandContainer<RegisterValue> results_;
+  destValContainer results_;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
