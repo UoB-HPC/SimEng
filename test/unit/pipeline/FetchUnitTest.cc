@@ -480,6 +480,7 @@ TEST_F(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
 
   // Buffer should now be empty as all bytes predecoded
   EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
 
   // Expect a block starting at address 16 to be requested when we fetch again
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
@@ -488,11 +489,12 @@ TEST_F(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
   fetchUnit.requestFromPC();
 
   // Tick again, expecting that decoding will now resume
+  MacroOp mOp2 = {uopPtr2};
   MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
   span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
   ON_CALL(isa, predecode(_, _, _, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
 
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   // Completed reads called again as more data is requested
@@ -505,6 +507,7 @@ TEST_F(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
 
   // Initially 0 bytes, 16 bytes added, 4 bytes predecoded leaving 12 bytes left
   EXPECT_EQ(fetchUnit.bufferedBytes_, 12);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
 }
 
 // Test that invalid half byte held at the end of the buffer is not successfully
@@ -515,9 +518,8 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
-  MacroOp mOp = {uopPtr};
-  ON_CALL(isa, predecode(_, 2, 0xE, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+  // TODO is this correct way to not change output
+  ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInstructionSize called for second time in assertion
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
@@ -532,6 +534,8 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
 
   // No data consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
+  // TODO ensure this is correct
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
 
   // Expect that memory is requested even though there is data in the buffer as
   // bufferedBytes < maxInstructionSize
@@ -541,6 +545,7 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
   fetchUnit.requestFromPC();
 
   // Tick again expecting buffer to be filled and a word is predecoded
+  MacroOp mOp = {uopPtr};
   MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
   span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
@@ -556,6 +561,7 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
 
   // Initially 2 bytes, 16 bytes added, 4 bytes predecoded leaving 14 bytes left
   EXPECT_EQ(fetchUnit.bufferedBytes_, 14);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
 }
 
 // Ensure progression with valid 2 bytes at end of buffer when next read doesn't
@@ -586,6 +592,7 @@ TEST_F(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
   // Ensure 4 bytes consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
   EXPECT_EQ(fetchUnit.pc_, 14);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
 
   // Expect that memory is requested even though there is data in the buffer as
   // bufferedBytes < maxInstructionSize
@@ -599,10 +606,11 @@ TEST_F(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
 
   // Memory doesn't complete reads in next cycle but buffered bytes should be
   // predecoded
+  MacroOp mOp2 = {uopPtr2};
   ON_CALL(memory, getCompletedReads())
       .WillByDefault(Return(span<MemoryReadResult>{nullptr, 0}));
   ON_CALL(isa, predecode(_, 2, 0xE, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(2)));
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(2)));
 
   // Path through fetch as follows:
   // More data required as bufferedBytes_ < maxInsnSize so getCompletedReads
@@ -620,6 +628,7 @@ TEST_F(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
   // Ensure 2 bytes are consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
   EXPECT_EQ(fetchUnit.pc_, 16);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
 }
 
 // Test that invalid half byte held at the end of the buffer is not successfully
@@ -630,9 +639,8 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
-  MacroOp mOp = {uopPtr};
-  ON_CALL(isa, predecode(_, 2, 0xE, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+  // TODO is this correct way to not change output
+  ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInstructionSize called for second time in assertion
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
@@ -648,6 +656,8 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   // No data consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
   EXPECT_EQ(fetchUnit.pc_, 14);
+  // TODO ensure this is correct
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
 
   // Expect that memory is requested even though there is data in the buffer as
   // bufferedBytes < maxInstructionSize
@@ -664,8 +674,7 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   ON_CALL(memory, getCompletedReads())
       .WillByDefault(Return(span<MemoryReadResult>{nullptr, 0}));
   // Predecode still returns no bytes read
-  ON_CALL(isa, predecode(_, 2, 0xE, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(0)));
+  ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInsnSize called again in assertion
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
@@ -679,6 +688,8 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   // Ensure 2 bytes are not consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
   EXPECT_EQ(fetchUnit.pc_, 14);
+  // TODO ensure this is correct
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
 }
 
 }  // namespace pipeline
