@@ -90,9 +90,6 @@ class Architecture : public arch::Architecture {
   /** A mask used to determine if an address has the correct byte alignment */
   uint8_t alignMask;
 
-  /** Register width in bytes */
-  uint8_t regWidth = constantsPool::byteLength64;
-
   /** Minimum number of bytes that can represent an instruction */
   uint8_t minInsnLength;
 };

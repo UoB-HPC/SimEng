@@ -22,8 +22,8 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
 
   cs_err n;
 
-  regWidth = constantsPool::byteLength64;
-
+  // Check whether compressed instructions in use. Initialise variables and
+  // Capstone accordingly
   if (config["Core"]["Compressed"].as<bool>()) {
     alignMask = constantsPool::alignMaskCompressed;
     minInsnLength = constantsPool::bytesLimitCompressed;
@@ -215,7 +215,9 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   auto iter = decodeCache.find(insn);
   if (iter == decodeCache.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
-    // Ensure cs_insn doesn't contain garbage data
+    // Calloc memory to ensure rawInsn is initialised with zeros. Errors can
+    // occur otherwise as Capstone doesn't update variables for invalid
+    // instructions
     cs_insn* rawInsnPointer = (cs_insn*)calloc(1, sizeof(cs_insn));
     cs_insn rawInsn = *rawInsnPointer;
     assert(rawInsn.size == 0 && "rawInsn not initialised correctly");
@@ -232,7 +234,8 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
 
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
-    // size now contains size of next instruction in the buffer
+    // After cs_diasm_iter is called, size and address updated to contain the
+    // size/address of next instruction in the buffer
 
     auto metadata = success ? InstructionMetadata(rawInsn)
                             : InstructionMetadata(encoding, rawInsn.size);
