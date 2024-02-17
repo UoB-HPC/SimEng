@@ -453,14 +453,14 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   EXPECT_EQ(output.getTailSlots()[0], mOp2);
 }
 
-// Tests that a compressed instruction held at the end of the fetch buffer is
+// Tests that a min sized instruction held at the end of the fetch buffer is
 // allowed to be predecoded in the same cycle as being fetched
-TEST_F(PipelineFetchUnitTest, compressedInstructionAtEndOfBuffer) {
+TEST_F(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
   ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-  // Buffer will contain valid compressed instruction so predecode returns
+  // Buffer will contain valid min size instruction so predecode returns
   // 2 bytes read
   MacroOp mOp = {uopPtr};
   ON_CALL(isa, predecode(_, 2, 0xE, _))
@@ -560,7 +560,7 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
 
 // Ensure progression with valid 2 bytes at end of buffer when next read doesn't
 // complete
-TEST_F(PipelineFetchUnitTest, validCompressed_ReadsDontComplete) {
+TEST_F(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
   ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
