@@ -914,12 +914,10 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << insn.getInstructionAddress() << ": ";
 
   auto& metadata = insn.getMetadata();
-  for (uint8_t byteIndex = 0; byteIndex < insn.getMetadata().getInsnLength();
+  for (uint8_t byteIndex = 0; byteIndex < metadata.getInsnLength();
        byteIndex++) {
     std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(
-                     insn.getMetadata().encoding[byteIndex])
-              << " ";
+              << static_cast<unsigned int>(metadata.encoding[byteIndex]) << " ";
   }
   std::cout << std::dec << "    ";
   if (exception == InstructionException::EncodingUnallocated) {

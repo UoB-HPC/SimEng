@@ -210,15 +210,14 @@ void Instruction::decode() {
         sourceImm_ = op.imm;
       } else {
         // Something has gone wrong
-        assert(
-            false &&
-            "[SimEng:Instruction_decode] Unexpected register type in non-first "
-            "operand position");
+        assert(false &&
+               "Unexpected register type in non-first "
+               "operand position");
       }
     } else {
       // Something has gone wrong
       assert(false &&
-             "[SimEng:Instruction_decode] Unexpected register type in first "
+             "Unexpected register type in first "
              "operand position");
     }
   }

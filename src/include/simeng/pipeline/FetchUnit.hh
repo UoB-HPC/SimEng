@@ -120,8 +120,8 @@ class FetchUnit {
   /** Let the following PipelineFetchUnitTest derived classes be a friend of
    * this class to allow proper testing of 'tick' function. */
   friend class PipelineFetchUnitTest_invalidHalfWordAtEndOfBuffer_Test;
-  friend class PipelineFetchUnitTest_compressedInstructionAtEndOfBuffer_Test;
-  friend class PipelineFetchUnitTest_validCompressed_ReadsDontComplete_Test;
+  friend class PipelineFetchUnitTest_minSizeInstructionAtEndOfBuffer_Test;
+  friend class PipelineFetchUnitTest_validMinSize_ReadsDontComplete_Test;
   friend class PipelineFetchUnitTest_invalidHalfWord_readsDontComplete_Test;
 };
 

@@ -486,8 +486,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // rs1=zero is reserved
       assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
-             "[SimEng:convertCompressedInstruction] C.JR has rs1=x0 which is "
-             "reserved");
+             "C.JR has rs1=x0 which is reserved");
 
       opcode = Opcode::RISCV_JALR;
 
@@ -510,8 +509,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rs2 = zero corresponds to C.JR
       assert((operands[1].type == RISCV_OP_REG &&
               operands[1].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.MV has rs2=x0 which is "
-             "invalid");
+             "C.MV has rs2=x0 which is invalid");
 
       opcode = Opcode::RISCV_ADD;
 
@@ -526,8 +524,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rd = zero is reserved
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.LDSP has rd=x0 which is "
-             "reserved");
+             "C.LDSP has rd=x0 which is reserved");
 
       opcode = Opcode::RISCV_LD;
 
@@ -541,8 +538,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // nzuimm = zero is reserved
       assert((operands[2].type == RISCV_OP_IMM && operands[2].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.ADDI4SPN has nzuimm=0 "
-             "which is reserved");
+             "C.ADDI4SPN has nzuimm=0 which is reserved");
 
       opcode = Opcode::RISCV_ADDI;
       // All operands correct
@@ -554,8 +550,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rd = zero encodes hints
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.LI has rd=x0 which is "
-             "invalid");
+             "C.LI has rd=x0 which is invalid");
 
       opcode = Opcode::RISCV_ADDI;
 
@@ -569,8 +564,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // nzimm = zero is reserved
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.ADDI16SP has nzimm=0 "
-             "which is reserved");
+             "C.ADDI16SP has nzimm=0 which is reserved");
 
       opcode = Opcode::RISCV_ADDI;
 
@@ -590,14 +584,12 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // shamt = zero is reserved for hints
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.SLLI has shamt=0 "
-             "which is reserved for hints");
+             "C.SLLI has shamt=0 which is reserved for hints");
 
       // rd = zero encodes hints
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.SLLI has rd=x0 which is "
-             "reserved for hints");
+             "C.SLLI has rd=x0 which is reserved for hints");
 
       opcode = Opcode::RISCV_SLLI;
 
@@ -636,17 +628,14 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rs2 = zero corresponds to C.JALR and C.EBREAK
       assert((operands[1].type == RISCV_OP_REG &&
               operands[1].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.ADD has rs2=x0 which is "
-             "invalid");
+             "C.ADD has rs2=x0 which is invalid");
 
       // rs2 = zero AND rd = zero are reserved for hints
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO &&
               operands[1].type == RISCV_OP_REG &&
               operands[1].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.ADD has rs2=x0 and rd=x0 "
-             "which is "
-             "reserved for hints");
+             "C.ADD has rs2=x0 and rd=x0 which is reserved for hints");
 
       opcode = Opcode::RISCV_ADD;
 
@@ -671,13 +660,11 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rd = zero encodes C.NOP
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.ADDI has rd=x0 which is "
-             "invalid");
+             "C.ADDI has rd=x0 which is invalid");
 
       // nzimm = zero is reserved for hints
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.ADDI has nzimm=0 "
-             "which is reserved for hints");
+             "C.ADDI has nzimm=0 which is reserved for hints");
 
       opcode = Opcode::RISCV_ADDI;
 
@@ -724,19 +711,16 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // nzimm = zero is reserved
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.LUI has nzimm=0 "
-             "which is reserved");
+             "C.LUI has nzimm=0 which is reserved");
 
       // rd = zero is reserved for hints
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.LUI has rd=x0 which is "
-             "reserved for hints");
+             "C.LUI has rd=x0 which is reserved for hints");
 
       // rd = x2 encodes C.ADDI16SP
       assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 3) &&
-             "[SimEng:convertCompressedInstruction] C.LUI has rd=x2 which is "
-             "invalid");
+             "C.LUI has rd=x2 which is invalid");
 
       opcode = Opcode::RISCV_LUI;
       // all operands correct
@@ -747,8 +731,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rd = zero is reserved
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.LWSP has rd=x0 which is "
-             "reserved");
+             "C.LWSP has rd=x0 which is reserved");
 
       opcode = Opcode::RISCV_LW;
 
@@ -796,8 +779,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rd = zero is reserved
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.ADDIW has rd=x0 which is "
-             "reserved");
+             "C.ADDIW has rd=x0 which is reserved");
 
       opcode = Opcode::RISCV_ADDIW;
 
@@ -826,8 +808,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // shamt = zero is reserved for hints
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.SRLI has shamt=0 "
-             "which is reserved for hints");
+             "C.SRLI has shamt=0 which is reserved for hints");
 
       opcode = Opcode::RISCV_SRLI;
 
@@ -867,8 +848,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // rs1=zero corresponds to C.EBREAK instruction
       assert((operands[0].type == RISCV_OP_REG &&
               operands[0].reg != RISCV_REG_ZERO) &&
-             "[SimEng:convertCompressedInstruction] C.JALR has rs1=x0 which is "
-             "invalid");
+             "C.JALR has rs1=x0 which is invalid");
 
       opcode = Opcode::RISCV_JALR;
 
@@ -897,8 +877,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // shamt = zero is reserved for hints
       assert((operands[1].type == RISCV_OP_IMM && operands[1].imm != 0) &&
-             "[SimEng:convertCompressedInstruction] C.SRAI has shamt=0 "
-             "which is reserved for hints");
+             "C.SRAI has shamt=0 which is reserved for hints");
 
       opcode = Opcode::RISCV_SRAI;
 

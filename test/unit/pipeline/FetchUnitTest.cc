@@ -676,7 +676,7 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   // Tick
   fetchUnit.tick();
 
-  // Ensure 2 bytes are consumed
+  // Ensure 2 bytes are not consumed
   EXPECT_EQ(fetchUnit.bufferedBytes_, 2);
   EXPECT_EQ(fetchUnit.pc_, 14);
 }

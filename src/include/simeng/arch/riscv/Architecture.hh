@@ -88,10 +88,10 @@ class Architecture : public arch::Architecture {
   simeng::Register cycleSystemReg_;
 
   /** A mask used to determine if an address has the correct byte alignment */
-  uint8_t alignMask;
+  uint8_t addressAlignmentMask_;
 
   /** Minimum number of bytes that can represent an instruction */
-  uint8_t minInsnLength;
+  uint8_t minInsnLength_;
 };
 
 }  // namespace riscv

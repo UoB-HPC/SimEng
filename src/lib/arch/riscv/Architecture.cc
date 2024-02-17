@@ -25,15 +25,15 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   // Check whether compressed instructions in use. Initialise variables and
   // Capstone accordingly
   if (config["Core"]["Compressed"].as<bool>()) {
-    alignMask = constantsPool::alignMaskCompressed;
-    minInsnLength = constantsPool::bytesLimitCompressed;
+    addressAlignmentMask_ = constantsPool::addressAlignMaskCompressed;
+    minInsnLength_ = constantsPool::minInstWidthBytesCompressed;
 
     n = cs_open(CS_ARCH_RISCV,
                 static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
                 &capstoneHandle);
   } else {
-    alignMask = constantsPool::alignMask;
-    minInsnLength = constantsPool::bytesLimit;
+    addressAlignmentMask_ = constantsPool::addressAlignMask;
+    minInsnLength_ = constantsPool::minInstWidthBytes;
 
     n = cs_open(CS_ARCH_RISCV, static_cast<cs_mode>(CS_MODE_RISCV64),
                 &capstoneHandle);
@@ -167,7 +167,7 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed extension is supported
-  if (instructionAddress & alignMask) {
+  if (instructionAddress & addressAlignmentMask_) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
     metadataCache.emplace_front(metadata);
@@ -180,14 +180,14 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= minInsnLength &&
+  assert(bytesAvailable >= minInsnLength_ &&
          "Fewer than bytes limit supplied to RISC-V decoder");
 
   // Get the first byte
-  uint8_t firstByte = *(uint8_t*)ptr;
+  uint8_t firstByte = ((uint8_t*)ptr)[0];
 
-  uint32_t insn = 0;
-  size_t size = 4;
+  uint32_t insnEncoding = 0;
+  size_t insnSize = 4;
 
   // Predecode bytes to determine whether we have a compressed instruction.
   // This will allow continuation if a compressed instruction is in the last 2
@@ -199,8 +199,8 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     // 2 byte - compressed
     // Only use relevant bytes
     // Dereference the instruction pointer to obtain the instruction word
-    memcpy(&insn, ptr, 2);
-    size = 2;
+    memcpy(&insnEncoding, ptr, 2);
+    insnSize = 2;
   } else {
     // 4 byte
     if (bytesAvailable < 4) {
@@ -208,11 +208,11 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
       return 0;
     }
     // Dereference the instruction pointer to obtain the instruction word
-    memcpy(&insn, ptr, 4);
+    memcpy(&insnEncoding, ptr, 4);
   }
 
   // Try to find the decoding in the decode cache
-  auto iter = decodeCache.find(insn);
+  auto iter = decodeCache.find(insnEncoding);
   if (iter == decodeCache.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
     // Calloc memory to ensure rawInsn is initialised with zeros. Errors can
@@ -226,14 +226,14 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     rawInsn.detail = &rawDetail;
     // Size requires initialisation in case of capstone failure which won't
     // update this value
-    rawInsn.size = size;
+    rawInsn.size = insnSize;
 
     uint64_t address = 0;
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-    bool success =
-        cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
+    bool success = cs_disasm_iter(capstoneHandle, &encoding, &insnSize,
+                                  &address, &rawInsn);
     // After cs_diasm_iter is called, size and address updated to contain the
     // size/address of next instruction in the buffer
 
@@ -251,13 +251,13 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
 
     // Cache the instruction
-    iter = decodeCache.insert({insn, newInsn}).first;
+    iter = decodeCache.insert({insnEncoding, newInsn}).first;
   }
 
-  assert(((insn & 0b11) != 0b11
+  assert(((insnEncoding & 0b11) != 0b11
               ? iter->second.getMetadata().getInsnLength() == 2
               : iter->second.getMetadata().getInsnLength() == 4) &&
-         "[SimEng:predecode] Predicted bytes don't match disassembled bytes");
+         "Predicted number of bytes don't match disassembled number of bytes");
 
   output.resize(1);
   auto& uop = output[0];
@@ -315,7 +315,7 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-uint8_t Architecture::getMinInstructionSize() const { return minInsnLength; }
+uint8_t Architecture::getMinInstructionSize() const { return minInsnLength_; }
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
