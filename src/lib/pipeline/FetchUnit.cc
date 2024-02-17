@@ -85,14 +85,10 @@ void FetchUnit::tick() {
     }
     if (fetchIndex == fetched.size() &&
         bufferedBytes_ < isa_.getMinInstructionSize()) {
-      // Need to wait for fetched instructions
+      // Relevant data has not been fetched and not enough data already in the
+      // buffer. Need to wait for fetched instructions
       return;
-    } else if (fetchIndex == fetched.size()) {
-      // There is minimal data already in the buffer which may be predecodable
-      // and no new data has been supplied
-
-      // Do nothing and allow continuation
-    } else {
+    } else if (fetchIndex != fetched.size()) {
       // Data has been successfully read, move into fetch buffer
       // TODO: Handle memory faults
       assert(fetched[fetchIndex].data && "Memory read failed");
@@ -107,6 +103,11 @@ void FetchUnit::tick() {
       buffer = fetchBuffer_;
       // Decoding should start from the beginning of the fetchBuffer_.
       bufferOffset = 0;
+    } else {
+      // Relevant data has not been fetched but there is minimal data already in
+      // the buffer. Attempt to predecode
+
+      // Do nothing and allow continuation
     }
   } else {
     // There is already enough data in the fetch buffer, so use that
