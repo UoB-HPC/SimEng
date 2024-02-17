@@ -5,22 +5,13 @@
 
 using namespace simeng::arch::riscv;
 
-void RISCVRegressionTest::run(const char* source) {
+void RISCVRegressionTest::run(const char* source, const char* extensions) {
   // Initialise LLVM
   LLVMInitializeRISCVTargetInfo();
   LLVMInitializeRISCVTargetMC();
   LLVMInitializeRISCVAsmParser();
 
-  RegressionTest::run(source, "riscv64", "+m,+a,+f,+d");
-}
-
-void RISCVRegressionTest::runCompressed(const char* source) {
-  // Initialise LLVM
-  LLVMInitializeRISCVTargetInfo();
-  LLVMInitializeRISCVTargetMC();
-  LLVMInitializeRISCVAsmParser();
-
-  RegressionTest::run(source, "riscv64", "+m,+a,+f,+d,+c");
+  RegressionTest::run(source, "riscv64", extensions);
 }
 
 void RISCVRegressionTest::generateConfig() const {

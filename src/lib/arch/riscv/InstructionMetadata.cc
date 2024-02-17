@@ -64,10 +64,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // ADDI _, _, _-> ADDI x0, x0, 0
         // reg set to 1 to reflect capstones 1 indexed output
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type = RISCV_OP_REG;
-        operands[1].reg = 1;
+        operands[1].reg = RISCV_REG_ZERO;
 
         operands[2].type = RISCV_OP_IMM;
         operands[2].imm = 0;
@@ -145,7 +145,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // sltz Rd, Rs is pseudo of SLT Rd, Rs, x0
         // SLT Rd, Rs, _ -> SLT Rd, Rs, x0
         operands[2].type = RISCV_OP_REG;
-        operands[2].reg = 1;
+        operands[2].reg = RISCV_REG_ZERO;
 
         operandCount = 3;
       } else if (operandCount == 2 && strcmp(mnemonic, "sgtz") == 0) {
@@ -160,7 +160,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // ret is pseudo of JALR x0, x1, 0
         // JALR _, _, _ -> JALR x0, x1, 0
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type = RISCV_OP_REG;
         operands[1].reg = 2;
@@ -173,7 +173,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // jr Rs is pseudo of JALR x0, Rs, 0
         // JALR Rs, _, _ -> JALR x0, Rs, 0
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1] = insn.detail->riscv.operands[0];
 
@@ -211,7 +211,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // j offset is pseudo of JAL x0, offset
         // JAL offset, _ -> JAL x0, offset
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type = RISCV_OP_IMM;
         operands[1].imm = insn.detail->riscv.operands[0].imm;
@@ -267,10 +267,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // flags) CSRRS Rs, _, _ -> CSRRS Rs, fflags, zero
         operands[1].type =
             RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
-        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+        operands[1].imm = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operands[2].type = RISCV_OP_REG;
-        operands[2].reg = 1;
+        operands[2].reg = RISCV_REG_ZERO;
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "rdinstret") == 0) {
@@ -290,10 +290,10 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
         operands[1].type =
             RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
-        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+        operands[1].imm = RISCV_SYSREG_FRM;  // frm address
 
         operands[2].type = RISCV_OP_REG;
-        operands[2].reg = 1;
+        operands[2].reg = RISCV_REG_ZERO;
 
         operandCount = 3;
       }
@@ -307,11 +307,11 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[2] = operands[0];
 
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type =
             RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
-        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+        operands[1].imm = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
       } else if (operandCount == 2 && strcmp(mnemonic, "fsflags") == 0) {
@@ -322,7 +322,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
 
         operands[1].type =
             RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
-        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+        operands[1].imm = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
@@ -338,11 +338,11 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[2] = operands[0];
 
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 1;
+        operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type =
             RISCV_OP_IMM;  // TODO needs to become reg when Capstone updated
-        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+        operands[1].imm = RISCV_SYSREG_FRM;  // frm address
 
         operandCount = 3;
       } else if (operandCount == 2 && strcmp(mnemonic, "fsrm") == 0) {
@@ -351,7 +351,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[2] = operands[1];
 
         operands[1].type = RISCV_OP_IMM;
-        operands[1].reg = RISCV_SYSREG_FRM;
+        operands[1].imm = RISCV_SYSREG_FRM;
 
         operandCount = 3;
       }
@@ -433,7 +433,7 @@ void InstructionMetadata::includeZeroRegisterPosOne() {
   operands[2] = operands[1];
 
   operands[1].type = RISCV_OP_REG;
-  operands[1].reg = 1;
+  operands[1].reg = RISCV_REG_ZERO;
 
   operandCount = 3;
 }
@@ -444,7 +444,7 @@ void InstructionMetadata::includeZeroRegisterPosZero() {
   operands[1] = operands[0];
 
   operands[0].type = RISCV_OP_REG;
-  operands[0].reg = 1;
+  operands[0].reg = RISCV_REG_ZERO;
 
   operandCount = 3;
 }
@@ -492,7 +492,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       opcode = Opcode::RISCV_JALR;
 
       operands[0].type = RISCV_OP_REG;
-      operands[0].reg = 1;
+      operands[0].reg = RISCV_REG_ZERO;
 
       operands[1] = insn.detail->riscv.operands[0];
 
@@ -508,7 +508,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.MV rd, rs2, _ -> ADD rd, zero, rs2
 
       // rs2 = zero corresponds to C.JR
-      assert((operands[1].type == RISCV_OP_REG && operands[1].reg != 1) &&
+      assert((operands[1].type == RISCV_OP_REG &&
+              operands[1].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.MV has rs2=x0 which is "
              "invalid");
 
@@ -523,7 +524,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // offset is immediate scaled by 8. Capstone does scaling for us
 
       // rd = zero is reserved
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.LDSP has rd=x0 which is "
              "reserved");
 
@@ -550,7 +552,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.LI rd, imm, _ -> addi rd, zero, imm
 
       // rd = zero encodes hints
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.LI has rd=x0 which is "
              "invalid");
 
@@ -591,7 +594,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
              "which is reserved for hints");
 
       // rd = zero encodes hints
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.SLLI has rd=x0 which is "
              "reserved for hints");
 
@@ -630,13 +634,16 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.ADD rd, rs2, _ -> add rd, rd, rs2
 
       // rs2 = zero corresponds to C.JALR and C.EBREAK
-      assert((operands[1].type == RISCV_OP_REG && operands[1].reg != 1) &&
+      assert((operands[1].type == RISCV_OP_REG &&
+              operands[1].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.ADD has rs2=x0 which is "
              "invalid");
 
       // rs2 = zero AND rd = zero are reserved for hints
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1 &&
-              operands[1].type == RISCV_OP_REG && operands[1].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO &&
+              operands[1].type == RISCV_OP_REG &&
+              operands[1].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.ADD has rs2=x0 and rd=x0 "
              "which is "
              "reserved for hints");
@@ -662,7 +669,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.ADDI rd, imm, _ -> addi rd, rd, imm
 
       // rd = zero encodes C.NOP
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.ADDI has rd=x0 which is "
              "invalid");
 
@@ -720,7 +728,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
              "which is reserved");
 
       // rd = zero is reserved for hints
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.LUI has rd=x0 which is "
              "reserved for hints");
 
@@ -736,7 +745,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // lw rd, offset[7:2](x2)
 
       // rd = zero is reserved
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.LWSP has rd=x0 which is "
              "reserved");
 
@@ -771,7 +781,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       operands[1] = operands[0];
 
       operands[0].type = RISCV_OP_REG;
-      operands[0].reg = 1;
+      operands[0].reg = RISCV_REG_ZERO;
 
       operandCount = 2;
 
@@ -784,7 +794,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // "The immediate can be zero for C.ADDIW, where this corresponds to
       // [pseudoinstruction] sext.w rd" - Spec page 106
       // rd = zero is reserved
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.ADDIW has rd=x0 which is "
              "reserved");
 
@@ -854,7 +865,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.JALR rs1, _, _ -> jalr x1, rs1, 0
 
       // rs1=zero corresponds to C.EBREAK instruction
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "[SimEng:convertCompressedInstruction] C.JALR has rs1=x0 which is "
              "invalid");
 
@@ -941,10 +953,10 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       // Duplicate implementation of nop pseudoinstruction
       operands[0].type = RISCV_OP_REG;
-      operands[0].reg = 1;
+      operands[0].reg = RISCV_REG_ZERO;
 
       operands[1].type = RISCV_OP_REG;
-      operands[1].reg = 1;
+      operands[1].reg = RISCV_REG_ZERO;
 
       operands[2].type = RISCV_OP_IMM;
       operands[2].imm = 0;

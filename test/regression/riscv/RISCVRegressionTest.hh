@@ -57,27 +57,27 @@ inline std::string paramToString(
  * the calling function if a fatal error occurs. Four bytes containing zeros
  * are appended to the source to ensure that the program will terminate with
  * an illegal instruction exception instead of running into the heap. */
-#define RUN_RISCV(source)                      \
-  {                                            \
-    std::string sourceWithTerminator = source; \
-    sourceWithTerminator += "\n.word 0";       \
-    run(sourceWithTerminator.c_str());         \
-  }                                            \
+#define RUN_RISCV(source)                             \
+  {                                                   \
+    std::string sourceWithTerminator = source;        \
+    sourceWithTerminator += "\n.word 0";              \
+    run(sourceWithTerminator.c_str(), "+m,+a,+f,+d"); \
+  }                                                   \
   if (HasFatalFailure()) return
 
 /** A helper macro to run a snippet of RISCV assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros
  * are appended to the source to ensure that the program will terminate with
  * an illegal instruction exception instead of running into the heap. This
- * specifically targets the compressed extension allowing for the above macro to
- * ignore it, otherwise LLVM eagerly emits compressed instructions for
+ * specifically targets the compressed extension allowing for the RUN_RISCV
+ * macro to ignore it, otherwise LLVM eagerly emits compressed instructions for
  * non-compressed assembly. */
-#define RUN_RISCV_COMP(source)                   \
-  {                                              \
-    std::string sourceWithTerminator = source;   \
-    sourceWithTerminator += "\n.word 0";         \
-    runCompressed(sourceWithTerminator.c_str()); \
-  }                                              \
+#define RUN_RISCV_COMP(source)                           \
+  {                                                      \
+    std::string sourceWithTerminator = source;           \
+    sourceWithTerminator += "\n.word 0";                 \
+    run(sourceWithTerminator.c_str(), "+m,+a,+f,+d,+c"); \
+  }                                                      \
   if (HasFatalFailure()) return
 
 /** The test fixture for all RISCV regression tests. */
@@ -86,11 +86,7 @@ class RISCVRegressionTest : public RegressionTest {
   virtual ~RISCVRegressionTest() {}
 
   /** Run the assembly code in `source`. */
-  void run(const char* source);
-
-  /** Run the assembly code in `source` with compressed extension in the target
-   * ISA. */
-  void runCompressed(const char* source);
+  void run(const char* source, const char* extensions);
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
