@@ -5,10 +5,6 @@ namespace {
 using InstCSR = RISCVRegressionTest;
 
 TEST_P(InstCSR, basicCsr) {
-  std::cerr << "NEW TEST" << std::endl;
-  std::cerr << "" << std::endl;
-  std::cerr << "" << std::endl;
-
   RUN_RISCV(R"(
       addi x8, x9, 1
       li x8, 1

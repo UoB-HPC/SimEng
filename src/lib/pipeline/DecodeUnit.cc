@@ -11,8 +11,6 @@ DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
     : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
-  //  std::cerr << "decode" << std::endl;
-
   // Stall if output buffer is stalled
   if (output_.isStalled()) {
     input_.stall(true);

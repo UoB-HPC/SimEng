@@ -106,15 +106,11 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
-  //  std::cerr << "---- core tick ----" << std::endl;
-
   ticks_++;
 
   if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
-    //    std::cerr << "tick process exception handler" << std::endl;
-
     processExceptionHandler();
     return;
   }
@@ -159,9 +155,6 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
-    // TODO why do we request from PC when we know we will flush later. Would it
-    // be quicker to stall. Flush (and no other unit) never ticked until
-    // exception complete. Process exceptionHandler only flushes loop buffer
     fetchUnit_.requestFromPC();
     return;
   }
@@ -267,7 +260,7 @@ bool Core::hasHalted() const {
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
-  assert(instruction && "raise null");
+  assert(instruction && "Raised exception on null instruction");
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }
@@ -295,7 +288,6 @@ void Core::handleException() {
     eu.purgeFlushed();
   }
 
-  // TODO possible change here
   exceptionGenerated_ = false;
   exceptionHandler_ =
       isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
@@ -317,7 +309,6 @@ void Core::processExceptionHandler() {
     return;
   }
 
-  // TODO don't need to get the state change
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
@@ -326,7 +317,6 @@ void Core::processExceptionHandler() {
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
-    // TODO won't need to apply state change
     applyStateChange(result.stateChange);
   }
 
@@ -334,14 +324,8 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  //  std::cerr << "apply state change" << std::endl;
-
-  // TODO THIS COULD BE DANGEROUS. APPLY STATE CHANGE NOT ONLY USED DURING
-  // EXCEPTION HANDLING
   if (change.type != arch::ChangeType::WRITEBACK &&
       exceptionGeneratingInstruction_) {
-    //    std::cerr << "APPLY FLUSH FROM ROB" << std::endl;
-
     // Flush instruction from ROB
     reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId() -
                          1);
@@ -354,8 +338,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       // pass through writeback in next cycle. Results held in internal results
       // array
       assert(exceptionGeneratingInstruction_ &&
-             "exception generating instruction is NULL");
-      //      std::cerr << "writeback state change" << std::endl;
+             "Exception generating instruction is NULL");
 
       // Forwards operands to update dispatch scoreboard as this didn't happen
       // in execute
@@ -374,7 +357,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
                     .get<uint64_t>() +
                 change.modifiedRegisterValues[i].get<uint64_t>());
       }
-
       break;
     }
     case arch::ChangeType::DECREMENT: {
@@ -385,7 +367,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
                     .get<uint64_t>() -
                 change.modifiedRegisterValues[i].get<uint64_t>());
       }
-
       break;
     }
     default: {  // arch::ChangeType::REPLACEMENT
@@ -394,7 +375,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
                                    change.modifiedRegisterValues[i]);
       }
-
       break;
     }
   }

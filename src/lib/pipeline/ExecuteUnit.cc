@@ -26,8 +26,6 @@ ExecuteUnit::ExecuteUnit(
       blockingGroups_(blockingGroups) {}
 
 void ExecuteUnit::tick() {
-  //  std::cerr << "execute" << std::endl;
-
   tickCounter_++;
   shouldFlush_ = false;
 
@@ -135,9 +133,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->exceptionEncountered()) {
-    std::cerr << "Execute exception encountered, don't forward results"
-              << std::endl;
-
     // Exception; don't forward results, don't pass uop forward
     raiseException_(uop);
     return;

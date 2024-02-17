@@ -180,8 +180,6 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  std::cerr << "handle exception inorder" << std::endl;
-
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
@@ -319,8 +317,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
           exceptionGeneratingInstruction_->getDestinationRegisters(),
           exceptionGeneratingInstruction_->getResults());
 
-      assert(completionSlots_[0].getTailSlots()[0] == nullptr &&
-             "Don't overwrite what is there");
       completionSlots_[0].getTailSlots()[0] =
           std::move(exceptionGeneratingInstruction_);
 

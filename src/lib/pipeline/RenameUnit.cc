@@ -18,8 +18,6 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       freeRegistersAvailable_(registerTypes) {}
 
 void RenameUnit::tick() {
-  //  std::cerr << "rename" << std::endl;
-
   if (output_.isStalled()) {
     input_.stall(true);
     return;
@@ -37,8 +35,6 @@ void RenameUnit::tick() {
     if (uop == nullptr) {
       continue;
     }
-    //    std::cerr << "rename uop=";
-    //    uop->printInstructionInfo();
 
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
@@ -77,9 +73,6 @@ void RenameUnit::tick() {
     // Count the number of each type of destination registers needed, and ensure
     // enough free registers exist to allocate them.
     for (const auto& reg : destinationRegisters) {
-      //      std::cerr << "destination reg to rename = " << (int)reg.tag <<
-      //      std::endl;
-
       // Check whether renaming is allowed, otherwise we need to serialize
       if (!rat_.canRename(reg.type)) {
         serialize = true;
@@ -107,16 +100,7 @@ void RenameUnit::tick() {
     auto& sourceRegisters = uop->getSourceRegisters();
     for (size_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
-      //      std::cerr << "rename source = " << (int)reg.tag
-      //                << " isSourceOperandReady " <<
-      //                uop->isSourceOperandReady(i)
-      //                << std::endl;
-
       if (!uop->isSourceOperandReady(i)) {
-        //        std::cerr << "Not ready so rename source to "
-        //                  //                  << (int)rat_.getMapping(reg).tag
-        //                  << std::endl;
-
         uop->renameSource(i, rat_.getMapping(reg));
       }
     }

@@ -56,8 +56,6 @@ DispatchIssueUnit::DispatchIssueUnit(
 }
 
 void DispatchIssueUnit::tick() {
-  //  std::cerr << "dispatch tick" << std::endl;
-
   input_.stall(false);
 
   // Reset the array
@@ -68,9 +66,6 @@ void DispatchIssueUnit::tick() {
     if (uop == nullptr) {
       continue;
     }
-
-    //    std::cerr << "dispatch uop = ";
-    //    uop->printInstructionInfo();
 
     const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
@@ -106,21 +101,12 @@ void DispatchIssueUnit::tick() {
     for (uint16_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
 
-      //      std::cerr << "resgister read tag " << (int)reg.tag << std::endl;
-
       if (!uop->isSourceOperandReady(i)) {
-        //        std::cerr << "source operand isn;t ready" << std::endl;
-
         // The operand hasn't already been supplied
         if (scoreboard_[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value
-          //          std::cerr << "SUPPLY THE OPERANDD" << std::endl;
-
           uop->supplyOperand(i, registerFileSet_.get(reg));
         } else {
-          //          std::cerr << "OPERAND NOT READY YET, ADD TO DEP MATRIX" <<
-          //          std::endl;
-
           // This register isn't ready yet. Register this uop to the dependency
           // matrix for a more efficient lookup later
           dependencyMatrix_[reg.type][reg.tag].push_back({uop, port, i});
@@ -148,8 +134,6 @@ void DispatchIssueUnit::tick() {
 }
 
 void DispatchIssueUnit::issue() {
-  //  std::cerr << "dispatch issue" << std::endl;
-
   int issued = 0;
   // Check the ready queues, and issue an instruction from each if the
   // corresponding port isn't blocked
@@ -165,9 +149,6 @@ void DispatchIssueUnit::issue() {
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
-      //      std::cerr << "issue uop ";
-      //      uop->printInstructionInfo();
-
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
 
