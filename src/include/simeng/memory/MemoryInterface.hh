@@ -1,9 +1,12 @@
 #pragma once
 
 #include "simeng/RegisterValue.hh"
+#include "simeng/memory/MemoryReadResult.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
+
+namespace memory {
 
 /** The available memory interface types. */
 enum class MemInterfaceType {
@@ -11,34 +14,6 @@ enum class MemInterfaceType {
   Fixed,    // A fixed, non-zero, access latency interface
   External  // An interface generated outside of the standard SimEng
             // instantiation
-};
-
-/** A generic memory access target; describes a region of memory to access. */
-struct MemoryAccessTarget {
-  /** The address to access. */
-  uint64_t address;
-  /** The number of bytes to access at `address`. */
-  uint16_t size;
-
-  /** Check for equality of two access targets. */
-  bool operator==(const MemoryAccessTarget& other) const {
-    return (address == other.address && size == other.size);
-  };
-
-  /** Check for inequality of two access targets. */
-  bool operator!=(const MemoryAccessTarget& other) const {
-    return !(other == *this);
-  }
-};
-
-/** A structure used for the result of memory read operations. */
-struct MemoryReadResult {
-  /** The memory access that was requested. */
-  MemoryAccessTarget target;
-  /** The data returned by the request. */
-  RegisterValue data;
-  /** The request identifier provided by the requester. */
-  uint64_t requestId;
 };
 
 /** An abstract memory interface. Describes a connection to a memory system to
@@ -74,4 +49,5 @@ class MemoryInterface {
   virtual void tick() = 0;
 };
 
+}  // namespace memory
 }  // namespace simeng

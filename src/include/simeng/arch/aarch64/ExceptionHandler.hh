@@ -16,7 +16,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** Create an exception handler with references to the instruction that caused
    * the exception, along with the core model object and process memory. */
   ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
-                   const Core& core, MemoryInterface& memory,
+                   const Core& core, memory::MemoryInterface& memory,
                    kernel::Linux& linux);
 
   /** Progress handling of the exception, by calling and returning the result of
@@ -59,7 +59,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
                       bool firstCall = true);
 
   /** A data buffer used for reading data from memory. */
-  std::vector<uint8_t> dataBuffer;
+  std::vector<uint8_t> dataBuffer_;
 
   /** Performs a readlinkat syscall using the path supplied. */
   void readLinkAt(span<char> path);
@@ -75,10 +75,10 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   const Instruction& instruction_;
 
   /** The core model object. */
-  const Core& core;
+  const Core& core_;
 
   /** The process memory. */
-  MemoryInterface& memory_;
+  memory::MemoryInterface& memory_;
 
   /** The Linux kernel to forward syscalls to. */
   kernel::Linux& linux_;

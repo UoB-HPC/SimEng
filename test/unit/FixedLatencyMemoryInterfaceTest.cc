@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/FixedLatencyMemoryInterface.hh"
 
 namespace {
 
@@ -16,14 +16,14 @@ class FixedLatencyMemoryInterfaceTest
 
   simeng::RegisterValue value = {0xDEADBEEF, 4};
   simeng::RegisterValue value_oversized = {0xDEADBEEFDEADBEEF, 8};
-  simeng::MemoryAccessTarget target = {0, 4};
-  simeng::MemoryAccessTarget target_OutOfBound1 = {1000, 4};
-  simeng::MemoryAccessTarget target_OutOfBound2 = {0, 8};
+  simeng::memory::MemoryAccessTarget target = {0, 4};
+  simeng::memory::MemoryAccessTarget target_OutOfBound1 = {1000, 4};
+  simeng::memory::MemoryAccessTarget target_OutOfBound2 = {0, 8};
 
   const std::string writeOverflowStr =
       "Attempted to write beyond memory limit.";
 
-  simeng::FixedLatencyMemoryInterface memory;
+  simeng::memory::FixedLatencyMemoryInterface memory;
 };
 
 // Test that we can read data and it completes after n cycles.

@@ -2,7 +2,6 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
@@ -26,10 +25,10 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator,
+  Core(memory::MemoryInterface& instructionMemory,
+       memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+       uint64_t entryPoint, const arch::Architecture& isa,
+       BranchPredictor& branchPredictor, pipeline::PortAllocator& portAllocator,
        ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -47,11 +46,12 @@ class Core : public simeng::Core {
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
 
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  uint64_t getSystemTimer() const override;
-
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+ protected:
+  /** Apply changes to the process state. */
+  void applyStateChange(const arch::ProcessStateChange& change) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -63,29 +63,18 @@ class Core : public simeng::Core {
   /** Process the active exception handler. */
   void processExceptionHandler();
 
-  /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
-
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
-
-  const arch::Architecture& isa_;
 
   const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
 
   const std::vector<uint16_t> physicalRegisterQuantities_;
-
-  /** The core's register file set. */
-  RegisterFileSet registerFileSet_;
 
   /** The core's register alias table. */
   pipeline::RegisterAliasTable registerAliasTable_;
 
   /** The mapped register file set. */
   pipeline::MappedRegisterFileSet mappedRegisterFileSet_;
-
-  /** The process memory. */
-  MemoryInterface& dataMemory_;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
@@ -106,14 +95,8 @@ class Core : public simeng::Core {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
 
-  /** The core's load/store queue. */
-  pipeline::LoadStoreQueue loadStoreQueue_;
-
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
-
-  /** The core's reorder buffer. */
-  pipeline::ReorderBuffer reorderBuffer_;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   pipeline::DecodeUnit decodeUnit_;
@@ -133,34 +116,28 @@ class Core : public simeng::Core {
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
 
+  /** The core's reorder buffer. */
+  pipeline::ReorderBuffer reorderBuffer_;
+
+  /** The core's load/store queue. */
+  pipeline::LoadStoreQueue loadStoreQueue_;
+
   /** The port allocator unit; allocates a port that an instruction will be
    * issued from based on a defined algorithm. */
   pipeline::PortAllocator& portAllocator_;
 
-  /** Clock frequency of core */
-  unsigned int clockFrequency_ = 2.5 * 1e9;
-
   /** Core commit width; maximum number of instruction that can be committed per
    * cycle. */
-  unsigned int commitWidth_ = 6;
+  uint64_t commitWidth_ = 0;
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
-
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
 
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
-
-  /** Whether the core has halted. */
-  bool hasHalted_ = false;
-
-  /** The active exception handler. */
-  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace outoforder

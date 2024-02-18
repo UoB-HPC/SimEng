@@ -99,7 +99,7 @@ const uint16_t NONE = 87;
 /** The number of aarch64 instruction groups. */
 static constexpr uint8_t NUM_GROUPS = 88;
 
-const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
     {InstructionGroups::ALL,
      {InstructionGroups::INT, InstructionGroups::FP, InstructionGroups::SVE,
       InstructionGroups::PREDICATE, InstructionGroups::SME,

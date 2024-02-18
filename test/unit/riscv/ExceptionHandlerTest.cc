@@ -23,18 +23,20 @@ class RiscVExceptionHandlerTest : public ::testing::Test {
                    .as<std::string>()),
         arch(kernel),
         physRegFileSet(config::SimInfo::getArchRegStruct()),
-        archRegFileSet(physRegFileSet) {}
+        archRegFileSet(physRegFileSet),
+        core(memory, arch, config::SimInfo::getArchRegStruct()) {}
 
  protected:
   ConfigInit configInit = ConfigInit(config::ISA::RV64, "");
 
-  MockCore core;
   MockMemoryInterface memory;
   kernel::Linux kernel;
   Architecture arch;
 
   RegisterFileSet physRegFileSet;
   ArchitecturalRegisterFileSet archRegFileSet;
+
+  MockCore core;
 
   // addi	sp, ra, 2000 --- Just need a valid instruction to hijack
   std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
@@ -85,12 +87,13 @@ TEST_F(RiscVExceptionHandlerTest, testSyscall) {
   EXPECT_EQ(result.stateChange.modifiedRegisters, modRegs);
   std::vector<RegisterValue> modRegVals = {{0ull, 8}};
   EXPECT_EQ(result.stateChange.modifiedRegisterValues, modRegVals);
-  std::vector<MemoryAccessTarget> modMemTargets = {{1234, 6},
-                                                   {1234 + 65, 13},
-                                                   {1234 + (65 * 2), 42},
-                                                   {1234 + (65 * 3), 35},
-                                                   {1234 + (65 * 4), 8},
-                                                   {1234 + (65 * 5), 7}};
+  std::vector<memory::MemoryAccessTarget> modMemTargets = {
+      {1234, 6},
+      {1234 + 65, 13},
+      {1234 + (65 * 2), 42},
+      {1234 + (65 * 3), 35},
+      {1234 + (65 * 4), 8},
+      {1234 + (65 * 5), 7}};
   EXPECT_EQ(result.stateChange.memoryAddresses, modMemTargets);
   std::vector<RegisterValue> modMemVals = {
       RegisterValue("Linux"),
@@ -118,18 +121,20 @@ TEST_F(RiscVExceptionHandlerTest, readStringThen) {
   uint64_t addr = 1024;
   int maxLen = kernel::Linux::LINUX_PATH_MAX;
 
-  MemoryAccessTarget target1 = {addr, 1};
-  MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
-  span<MemoryReadResult> res1Span = span<MemoryReadResult>(&res1, 1);
+  memory::MemoryAccessTarget target1 = {addr, 1};
+  memory::MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
+  span<memory::MemoryReadResult> res1Span =
+      span<memory::MemoryReadResult>(&res1, 1);
 
-  MemoryAccessTarget target2 = {addr + 1, 1};
-  MemoryReadResult res2 = {target2, RegisterValue(static_cast<int>('\0'), 1),
-                           1};
-  span<MemoryReadResult> res2Span = span<MemoryReadResult>(&res2, 1);
+  memory::MemoryAccessTarget target2 = {addr + 1, 1};
+  memory::MemoryReadResult res2 = {target2,
+                                   RegisterValue(static_cast<int>('\0'), 1), 1};
+  span<memory::MemoryReadResult> res2Span =
+      span<memory::MemoryReadResult>(&res2, 1);
 
   // On first call to readStringThen, expect return of false and retVal to still
   // be 0, and buffer to be filled with `q`
-  MemoryAccessTarget tar = {addr, 1};
+  memory::MemoryAccessTarget tar = {addr, 1};
   EXPECT_CALL(memory, requestRead(tar, 0)).Times(1);
   bool outcome =
       handler.readStringThen(buffer, addr, maxLen, [&retVal](auto length) {
@@ -145,7 +150,7 @@ TEST_F(RiscVExceptionHandlerTest, readStringThen) {
   // ResumeHandling (called on tick()) should now be set to `readStringThen()`
   // so call this for our second pass.
   ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<MemoryReadResult>()));
+      .WillByDefault(Return(span<memory::MemoryReadResult>()));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   outcome = handler.tick();
   // No memory reads completed yet so again expect to return false and no change
@@ -237,13 +242,14 @@ TEST_F(RiscVExceptionHandlerTest, readStringThen_maxLenReached) {
   uint64_t addr = 1024;
   int maxLen = 1;
 
-  MemoryAccessTarget target1 = {addr, 1};
-  MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
-  span<MemoryReadResult> res1Span = span<MemoryReadResult>(&res1, 1);
+  memory::MemoryAccessTarget target1 = {addr, 1};
+  memory::MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
+  span<memory::MemoryReadResult> res1Span =
+      span<memory::MemoryReadResult>(&res1, 1);
 
   // On first call to readStringThen, expect return of false and retVal to still
   // be 0, and buffer to be filled with `q`
-  MemoryAccessTarget tar = {addr, 1};
+  memory::MemoryAccessTarget tar = {addr, 1};
   EXPECT_CALL(memory, requestRead(tar, 0)).Times(1);
   bool outcome =
       handler.readStringThen(buffer, addr, maxLen, [&retVal](auto length) {
@@ -259,7 +265,7 @@ TEST_F(RiscVExceptionHandlerTest, readStringThen_maxLenReached) {
   // ResumeHandling (called on tick()) should now be set to `readStringThen()`
   // so call this for our second pass.
   ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<MemoryReadResult>()));
+      .WillByDefault(Return(span<memory::MemoryReadResult>()));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   outcome = handler.tick();
   // No memory reads completed yet so again expect to return false and no change
@@ -305,17 +311,18 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   std::vector<char> dataVec2(length, 'q');
   // Initialise the two required targets (128-bytes per read request in
   // readBufferThen())
-  MemoryAccessTarget tar1 = {ptr, 128};
-  MemoryAccessTarget tar2 = {ptr + 128, static_cast<uint16_t>(length - 128)};
+  memory::MemoryAccessTarget tar1 = {ptr, 128};
+  memory::MemoryAccessTarget tar2 = {ptr + 128,
+                                     static_cast<uint16_t>(length - 128)};
   // Initialise "responses" from the MockMemory
-  MemoryReadResult res1 = {tar1, RegisterValue(dataVec.data() + ptr, 128),
-                           uopPtr->getSequenceId()};
-  MemoryReadResult res2 = {
+  memory::MemoryReadResult res1 = {
+      tar1, RegisterValue(dataVec.data() + ptr, 128), uopPtr->getSequenceId()};
+  memory::MemoryReadResult res2 = {
       tar2, RegisterValue(dataVec.data() + ptr + 128, length - 128),
       uopPtr->getSequenceId()};
 
-  // Confirm that internal dataBuffer is empty
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  // Confirm that internal dataBuffer_ is empty
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Initial call to readBufferThen - expect resumeHandling to be updated to
   // readBufferThen and a memory read request to have occurred
@@ -327,26 +334,26 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   });
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Can now call tick() - on call, emulate no reads completed
   ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<MemoryReadResult>()));
+      .WillByDefault(Return(span<memory::MemoryReadResult>()));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   outcome = handler.tick();
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 0);
+  EXPECT_EQ(handler.dataBuffer_.size(), 0);
 
   // Call tick() again, simulating completed read + new read requested as still
   // data to fetch
   ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<MemoryReadResult>(&res1, 1)));
+      .WillByDefault(Return(span<memory::MemoryReadResult>(&res1, 1)));
   // Make sure clearCompletedReads() alters functionality of getCompletedReads()
   ON_CALL(memory, clearCompletedReads())
       .WillByDefault(::testing::InvokeWithoutArgs([&]() {
         ON_CALL(memory, getCompletedReads())
-            .WillByDefault(Return(span<MemoryReadResult>()));
+            .WillByDefault(Return(span<memory::MemoryReadResult>()));
       }));
   EXPECT_CALL(memory, getCompletedReads()).Times(2);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
@@ -354,23 +361,23 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   outcome = handler.tick();
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
-  EXPECT_EQ(handler.dataBuffer.size(), 128);
-  for (int i = 0; i < handler.dataBuffer.size(); i++) {
-    EXPECT_EQ(handler.dataBuffer[i], 'q');
+  EXPECT_EQ(handler.dataBuffer_.size(), 128);
+  for (int i = 0; i < handler.dataBuffer_.size(); i++) {
+    EXPECT_EQ(handler.dataBuffer_[i], 'q');
   }
 
   // One final call to tick() to get last bits of data from memory and call
   // then()
   ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<MemoryReadResult>(&res2, 1)));
+      .WillByDefault(Return(span<memory::MemoryReadResult>(&res2, 1)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
   outcome = handler.tick();
   EXPECT_TRUE(outcome);
   EXPECT_EQ(retVal, 10);
-  EXPECT_EQ(handler.dataBuffer.size(), length);
+  EXPECT_EQ(handler.dataBuffer_.size(), length);
   for (int i = 0; i < length; i++) {
-    EXPECT_EQ(handler.dataBuffer[i], static_cast<unsigned char>('q'));
+    EXPECT_EQ(handler.dataBuffer_[i], static_cast<unsigned char>('q'));
   }
 }
 

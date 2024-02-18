@@ -176,19 +176,6 @@ const uint8_t MATRIX = 5;
 const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
 
-/** A struct holding user-defined execution information for a aarch64
- * instruction. */
-struct ExecutionInfo {
-  /** The latency for the instruction. */
-  uint16_t latency = 1;
-
-  /** The execution throughput for the instruction. */
-  uint16_t stallCycles = 1;
-
-  /** The ports that support the instruction. */
-  std::vector<uint16_t> ports = {};
-};
-
 /** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
@@ -286,10 +273,10 @@ class Instruction : public simeng::Instruction {
   void setResults(span<RegisterValue> resultsInput) override;
 
   /** Generate memory addresses this instruction wishes to access. */
-  span<const MemoryAccessTarget> generateAddresses() override;
+  span<const memory::MemoryAccessTarget> generateAddresses() override;
 
   /** Retrieve previously generated memory addresses. */
-  span<const MemoryAccessTarget> getGeneratedAddresses() const override;
+  span<const memory::MemoryAccessTarget> getGeneratedAddresses() const override;
 
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
@@ -344,24 +331,24 @@ class Instruction : public simeng::Instruction {
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata;
+  const InstructionMetadata& metadata_;
 
   /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
+  std::vector<Register> sourceRegisters_;
 
   /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
+  std::vector<Register> destinationRegisters_;
 
   /** The number of destination registers this instruction writes to. */
-  uint16_t destinationRegisterCount = 0;
+  uint16_t destinationRegisterCount_ = 0;
 
   /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::vector<RegisterValue> operands;
+  std::vector<RegisterValue> sourceValues_;
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results;
+  std::vector<RegisterValue> results_;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
@@ -374,7 +361,7 @@ class Instruction : public simeng::Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short operandsPending = 0;
+  short sourceOperandsPending_ = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
@@ -443,20 +430,21 @@ class Instruction : public simeng::Instruction {
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
-  void setMemoryAddresses(const std::vector<MemoryAccessTarget>& addresses);
+  void setMemoryAddresses(
+      const std::vector<memory::MemoryAccessTarget>& addresses);
 
-  void setMemoryAddresses(std::vector<MemoryAccessTarget>&& addresses);
+  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
 
-  void setMemoryAddresses(MemoryAccessTarget address);
+  void setMemoryAddresses(memory::MemoryAccessTarget address);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
-  std::vector<MemoryAccessTarget> memoryAddresses;
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
 
   /** A vector of memory values, that were either loaded memory, or are prepared
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
+  std::vector<RegisterValue> memoryData_;
 };
 
 }  // namespace aarch64

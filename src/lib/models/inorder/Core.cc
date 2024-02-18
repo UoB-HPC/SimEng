@@ -9,22 +9,20 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
-// TODO: Replace with config options
-const unsigned int blockSize = 16;
-const unsigned int clockFrequency = 2.5 * 1e9;
-
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
-    : dataMemory_(dataMemory),
-      isa_(isa),
-      registerFileSet_(config::SimInfo::getArchRegStruct()),
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const arch::Architecture& isa,
+           BranchPredictor& branchPredictor)
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, blockSize, isa, branchPredictor),
+                 entryPoint,
+                 config::SimInfo::getConfig()["Fetch"]["Fetch-Block-Size"]
+                     .as<uint16_t>(),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -144,11 +142,6 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return writebackUnit_.getInstructionsWrittenCount();
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
-}
-
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
@@ -221,6 +214,19 @@ void Core::processExceptionHandler() {
   }
 
   exceptionHandler_ = nullptr;
+}
+
+void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
+  loadData(instruction);
+  if (instruction->exceptionEncountered()) {
+    raiseException(instruction);
+    return;
+  }
+
+  forwardOperands(instruction->getDestinationRegisters(),
+                  instruction->getResults());
+  // Manually add the instruction to the writeback input buffer
+  completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
@@ -308,7 +314,6 @@ void Core::readRegisters() {
     }
   }
 }
-
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers in accordance with the ProcessStateChange type
   switch (change.type) {
@@ -357,19 +362,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
-}
-
-void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
-  loadData(instruction);
-  if (instruction->exceptionEncountered()) {
-    raiseException(instruction);
-    return;
-  }
-
-  forwardOperands(instruction->getDestinationRegisters(),
-                  instruction->getResults());
-  // Manually add the instruction to the writeback input buffer
-  completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
 }  // namespace inorder

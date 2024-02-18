@@ -95,7 +95,7 @@ TEST_F(RenameUnitTest, tick) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(false));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(false));
 
@@ -104,7 +104,7 @@ TEST_F(RenameUnitTest, tick) {
   EXPECT_CALL(*uop, isStoreAddress()).Times(1);
   EXPECT_CALL(*uop, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop, getSourceRegisters()).Times(1);
-  EXPECT_CALL(*uop, isOperandReady(_)).Times(2);
+  EXPECT_CALL(*uop, isSourceOperandReady(_)).Times(2);
   EXPECT_CALL(*uop, renameSource(_, _)).Times(2);
   EXPECT_CALL(*uop, renameDestination(0, _)).Times(1);
   renameUnit.tick();
@@ -169,7 +169,7 @@ TEST_F(RenameUnitTest, noFreeRegs) {
   std::array<Register, 1> destRegs = {r0};
   ON_CALL(*uop, getDestinationRegisters())
       .WillByDefault(Return(span<Register>(destRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(false));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(false));
 
@@ -228,7 +228,7 @@ TEST_F(RenameUnitTest, loadUop) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(true));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(false));
 
@@ -237,7 +237,7 @@ TEST_F(RenameUnitTest, loadUop) {
   EXPECT_CALL(*uop, isStoreAddress()).Times(1);
   EXPECT_CALL(*uop, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop, getSourceRegisters()).Times(1);
-  EXPECT_CALL(*uop, isOperandReady(_)).Times(2);
+  EXPECT_CALL(*uop, isSourceOperandReady(_)).Times(2);
   EXPECT_CALL(*uop, renameSource(_, _)).Times(2);
   EXPECT_CALL(*uop, renameDestination(0, _)).Times(1);
   renameUnit.tick();
@@ -277,7 +277,7 @@ TEST_F(RenameUnitTest, loadUopQueueFull) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(true));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(false));
 
@@ -314,7 +314,7 @@ TEST_F(RenameUnitTest, storeUop) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(false));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
 
@@ -323,7 +323,7 @@ TEST_F(RenameUnitTest, storeUop) {
   EXPECT_CALL(*uop, isStoreAddress()).Times(1);
   EXPECT_CALL(*uop, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop, getSourceRegisters()).Times(1);
-  EXPECT_CALL(*uop, isOperandReady(_)).Times(2);
+  EXPECT_CALL(*uop, isSourceOperandReady(_)).Times(2);
   EXPECT_CALL(*uop, renameSource(_, _)).Times(2);
   EXPECT_CALL(*uop, renameDestination(0, _)).Times(1);
   renameUnit.tick();
@@ -363,7 +363,7 @@ TEST_F(RenameUnitTest, storeUopQueueFull) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(false));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(true));
 
@@ -406,7 +406,7 @@ TEST_F(RenameUnitTest, serializedDest) {
       .WillByDefault(Return(span<Register>(destRegs)));
   ON_CALL(*uop, getSourceRegisters())
       .WillByDefault(Return(span<Register>(srcRegs)));
-  ON_CALL(*uop, isOperandReady(_)).WillByDefault(Return(false));
+  ON_CALL(*uop, isSourceOperandReady(_)).WillByDefault(Return(false));
   ON_CALL(*uop, isLoad()).WillByDefault(Return(false));
   ON_CALL(*uop, isStoreAddress()).WillByDefault(Return(false));
 
@@ -436,7 +436,7 @@ TEST_F(RenameUnitTest, serializedDest) {
   EXPECT_CALL(*uop, isStoreAddress()).Times(1);
   EXPECT_CALL(*uop, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop, getSourceRegisters()).Times(1);
-  EXPECT_CALL(*uop, isOperandReady(_)).Times(2);
+  EXPECT_CALL(*uop, isSourceOperandReady(_)).Times(2);
   EXPECT_CALL(*uop, renameSource(_, _)).Times(2);
   renameUnit.tick();
 

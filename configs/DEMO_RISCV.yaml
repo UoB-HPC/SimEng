@@ -26,11 +26,10 @@ Queue-Sizes:
   Load: 64
   Store: 36
 Branch-Predictor:
+  Type: "Perceptron"
   BTB-Tag-Bits: 11
-  Saturating-Count-Bits: 2
-  Global-History-Length: 10
-  RAS-entries: 5
-  Fallback-Static-Predictor: "Always-Taken"
+  Global-History-Length: 19
+  RAS-entries: 1
 L1-Data-Memory:
   Interface-Type: Fixed
 L1-Instruction-Memory:

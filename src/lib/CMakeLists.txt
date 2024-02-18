@@ -14,9 +14,11 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
+    config/ModelConfig.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
-    config/ModelConfig.cc
+    memory/FixedLatencyMemoryInterface.cc
+    memory/FlatMemoryInterface.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -38,10 +40,9 @@ set(SIMENG_SOURCES
     CMakeLists.txt
     CoreInstance.cc
     Elf.cc
-    FixedLatencyMemoryInterface.cc
-    FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
+    PerceptronPredictor.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc

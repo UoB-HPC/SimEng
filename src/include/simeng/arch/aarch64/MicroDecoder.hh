@@ -76,11 +76,11 @@ class MicroDecoder {
    * their respective micro-operations, to reduce the overhead of future
    * splitting. */
   static std::unordered_map<uint32_t, std::vector<Instruction>>
-      microDecodeCache;
+      microDecodeCache_;
 
   /** A cache for newly created instruction metadata. Ensures metadata values
    * persist for a micro-operations' life cycle. */
-  static std::forward_list<InstructionMetadata> microMetadataCache;
+  static std::forward_list<InstructionMetadata> microMetadataCache_;
 
   // Default objects
   /** Default capstone instruction structure. */

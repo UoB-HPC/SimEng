@@ -129,9 +129,9 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
   uop->setExceptionEncountered(false);
   EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs)));
-  EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
+  EXPECT_CALL(*uop, isSourceOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
-  EXPECT_CALL(*uop, isOperandReady(1)).WillOnce(Return(false));
+  EXPECT_CALL(*uop, isSourceOperandReady(1)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(1, RegisterValue(0, 8)));
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs)));
@@ -372,7 +372,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   uop->setExceptionEncountered(false);
   EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_1)));
-  EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
+  EXPECT_CALL(*uop, isSourceOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_1)));
@@ -392,7 +392,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   uop->setExceptionEncountered(false);
   EXPECT_CALL(*uop2, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_2)));
-  EXPECT_CALL(*uop2, isOperandReady(0)).WillOnce(Return(false));
+  EXPECT_CALL(*uop2, isSourceOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop2, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_2)));
   // Expected call to port allocator during tick()
@@ -466,7 +466,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   uop->setExceptionEncountered(false);
   EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_1)));
-  EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
+  EXPECT_CALL(*uop, isSourceOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_1)));
@@ -483,7 +483,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   uop->setExceptionEncountered(false);
   EXPECT_CALL(*uop2, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs_2)));
-  EXPECT_CALL(*uop2, isOperandReady(0)).WillOnce(Return(false));
+  EXPECT_CALL(*uop2, isSourceOperandReady(0)).WillOnce(Return(false));
   EXPECT_CALL(*uop2, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_2)));
   // Expected call to port allocator during tick()

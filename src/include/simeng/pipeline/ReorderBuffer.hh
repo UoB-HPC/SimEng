@@ -57,7 +57,7 @@ class ReorderBuffer {
 
   /** Commit and remove up to `maxCommitSize` instructions. */
   // TODO is return value ever used?? Only in tests !?
-  unsigned int commit(unsigned int maxCommitSize);
+  unsigned int commit(uint64_t maxCommitSize);
 
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
   void flush(uint64_t afterInsnId);

@@ -2,12 +2,13 @@
 
 #include <string>
 
-#include "simeng/FixedLatencyMemoryInterface.hh"
-#include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/PerceptronPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/memory/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/FlatMemoryInterface.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -62,17 +63,18 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
   // processImage is passed as argument.
-  simeng::FlatMemoryInterface instructionMemory(processMemory_,
-                                                processMemorySize_);
+  simeng::memory::FlatMemoryInterface instructionMemory(processMemory_,
+                                                        processMemorySize_);
 
-  std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
-                                                    processMemorySize_);
+  std::unique_ptr<simeng::memory::FlatMemoryInterface> flatDataMemory =
+      std::make_unique<simeng::memory::FlatMemoryInterface>(processMemory_,
+                                                            processMemorySize_);
 
-  std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
-  std::unique_ptr<simeng::MemoryInterface> dataMemory;
+  std::unique_ptr<simeng::memory::FixedLatencyMemoryInterface>
+      fixedLatencyDataMemory =
+          std::make_unique<simeng::memory::FixedLatencyMemoryInterface>(
+              processMemory_, processMemorySize_, 4);
+  std::unique_ptr<simeng::memory::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
   simeng::kernel::Linux kernel(
@@ -82,7 +84,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
-            process_->getStackPointer());
+            process_->getInitialStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
             processMemory_ + process_->getHeapStart());
 
@@ -94,7 +96,16 @@ void RegressionTest::run(const char* source, const char* triple,
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::GenericPredictor predictor = simeng::GenericPredictor();
+  std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
+  std::string predictorType =
+      simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"]
+          .as<std::string>();
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<simeng::GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<simeng::PerceptronPredictor>();
+  }
+
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -106,13 +117,13 @@ void RegressionTest::run(const char* source, const char* triple,
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          *architecture_, *predictor_);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator);
+          entryPoint, *architecture_, *predictor_, *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

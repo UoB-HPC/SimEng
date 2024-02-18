@@ -29,6 +29,9 @@ class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
       : output(1, {}),
+        linux(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                  .as<std::string>()),
+        isa(linux),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
         fetchUnit(output, memory, 1024, 0, blockSize, isa, predictor),
@@ -45,11 +48,12 @@ class PipelineFetchUnitTest : public testing::Test {
 
   PipelineBuffer<MacroOp> output;
   MockMemoryInterface memory;
+  kernel::Linux linux;
   MockArchitecture isa;
   MockBranchPredictor predictor;
 
-  MemoryReadResult fetchBuffer;
-  span<MemoryReadResult> completedReads;
+  memory::MemoryReadResult fetchBuffer;
+  span<memory::MemoryReadResult> completedReads;
 
   FetchUnit fetchUnit;
 
@@ -108,13 +112,14 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   fetchUnit.tick();
 
   // Expect a block starting at address 16 to be requested when we fetch again
-  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
+  EXPECT_CALL(memory,
+              requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
       .Times(1);
   fetchUnit.requestFromPC();
 
   // Tick again, expecting that decoding will now resume
-  MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
-  span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
+  memory::MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
+  span<memory::MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
   ON_CALL(isa, predecode(_, _, _, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
@@ -141,7 +146,7 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
 
-  MemoryAccessTarget target = {pc, blockSize};
+  memory::MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
 
@@ -150,9 +155,9 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
   fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
-  MemoryReadResult memReadResult = {target, RegisterValue(0xFFFF, blockSize),
-                                    1};
-  span<MemoryReadResult> nextBlock = {&memReadResult, 1};
+  memory::MemoryReadResult memReadResult = {
+      target, RegisterValue(0xFFFF, blockSize), 1};
+  span<memory::MemoryReadResult> nextBlock = {&memReadResult, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
   ON_CALL(isa, predecode(_, _, _, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
@@ -188,15 +193,15 @@ TEST_F(PipelineFetchUnitTest, halted) {
   fetchUnit.updatePC(1008);
   EXPECT_FALSE(fetchUnit.hasHalted());
 
-  MemoryAccessTarget target = {1008, blockSize};
+  memory::MemoryAccessTarget target = {1008, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
   fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
-  MemoryReadResult memReadResult = {target, RegisterValue(0xFFFF, blockSize),
-                                    1};
-  span<MemoryReadResult> nextBlock = {&memReadResult, 1};
+  memory::MemoryReadResult memReadResult = {
+      target, RegisterValue(0xFFFF, blockSize), 1};
+  span<memory::MemoryReadResult> nextBlock = {&memReadResult, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
   ON_CALL(isa, predecode(_, _, _, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
@@ -218,7 +223,7 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
 
-  MemoryAccessTarget target = {pc, blockSize};
+  memory::MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
 
@@ -227,9 +232,9 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
-  MemoryReadResult memReadResult = {target, RegisterValue(0xFFFF, blockSize),
-                                    1};
-  span<MemoryReadResult> nextBlock = {&memReadResult, 1};
+  memory::MemoryReadResult memReadResult = {
+      target, RegisterValue(0xFFFF, blockSize), 1};
+  span<memory::MemoryReadResult> nextBlock = {&memReadResult, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
   ON_CALL(isa, predecode(_, _, _, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
@@ -275,9 +280,9 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
 // Tests the functionality of the supplying from the Loop Buffer
 TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
   // Set instructions to be fetched from memory
-  MemoryReadResult memReadResult = {
+  memory::MemoryReadResult memReadResult = {
       {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<MemoryReadResult> nextBlock = {&memReadResult, 1};
+  span<memory::MemoryReadResult> nextBlock = {&memReadResult, 1};
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
@@ -364,12 +369,12 @@ TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
 // taken branch at the loopBoundaryAddress_
 TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // Set instructions to be fetched from memory
-  MemoryReadResult memReadResultA = {
+  memory::MemoryReadResult memReadResultA = {
       {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<MemoryReadResult> nextBlockA = {&memReadResultA, 1};
-  MemoryReadResult memReadResultB = {
+  span<memory::MemoryReadResult> nextBlockA = {&memReadResultA, 1};
+  memory::MemoryReadResult memReadResultB = {
       {0x10, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<MemoryReadResult> nextBlockB = {&memReadResultB, 1};
+  span<memory::MemoryReadResult> nextBlockB = {&memReadResultB, 1};
   EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockA));
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
@@ -414,7 +419,7 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
 
   // Set the expectation for the next block to be fetched after the Loop Buffer
   // state has been reset
-  const MemoryAccessTarget target = {0x10, blockSize};
+  const memory::MemoryAccessTarget target = {0x10, blockSize};
   EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockB));
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
 

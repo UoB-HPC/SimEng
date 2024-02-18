@@ -6,30 +6,15 @@
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
-#include "simeng/MemoryInterface.hh"
+#include "simeng/arch/ProcessStateChange.hh"
+#include "simeng/kernel/Linux.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 namespace simeng {
 
 using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 
 namespace arch {
-
-/** The types of changes that can be made to values within the process state. */
-enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT, WRITEBACK };
-
-/** A structure describing a set of changes to the process state. */
-struct ProcessStateChange {
-  /** Type of changes to be made */
-  ChangeType type;
-  /** Registers to modify */
-  std::vector<Register> modifiedRegisters;
-  /** Values to set modified registers to */
-  std::vector<RegisterValue> modifiedRegisterValues;
-  /** Memory address/width pairs to modify */
-  std::vector<MemoryAccessTarget> memoryAddresses;
-  /** Values to write to memory */
-  std::vector<RegisterValue> memoryAddressValues;
-};
 
 /** The result from a handled exception. */
 struct ExceptionResult {
@@ -59,6 +44,8 @@ class ExceptionHandler {
  * ISA should provide a derived implementation of this class. */
 class Architecture {
  public:
+  Architecture(kernel::Linux& kernel) : linux_(kernel) {}
+
   virtual ~Architecture(){};
 
   /** Attempt to pre-decode from `bytesAvailable` bytes of instruction memory.
@@ -79,7 +66,7 @@ class Architecture {
    * obtained. */
   virtual std::shared_ptr<ExceptionHandler> handleException(
       const std::shared_ptr<Instruction>& instruction, const Core& core,
-      MemoryInterface& memory) const = 0;
+      memory::MemoryInterface& memory) const = 0;
 
   /** Retrieve the initial process state. */
   virtual ProcessStateChange getInitialState() const = 0;
@@ -90,6 +77,24 @@ class Architecture {
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
+
+ protected:
+  /** A Capstone decoding library handle, for decoding instructions. */
+  csh capstoneHandle_;
+
+  /** A reference to a Linux kernel object to forward syscalls to. */
+  kernel::Linux& linux_;
+
+  /** A mapping from system register encoding to a zero-indexed tag. */
+  std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
+
+  /** A map to hold the relationship between instruction groups and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, ExecutionInfo> groupExecutionInfo_;
+
+  /** A map to hold the relationship between instruction opcode and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
 };
 
 }  // namespace arch

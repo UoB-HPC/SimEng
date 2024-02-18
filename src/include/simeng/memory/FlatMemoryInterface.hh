@@ -2,9 +2,11 @@
 
 #include <vector>
 
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 namespace simeng {
+
+namespace memory {
 
 /** A memory interface to a flat memory system. */
 class FlatMemoryInterface : public MemoryInterface {
@@ -42,4 +44,5 @@ class FlatMemoryInterface : public MemoryInterface {
   std::vector<MemoryReadResult> completedReads_;
 };
 
+}  // namespace memory
 }  // namespace simeng
