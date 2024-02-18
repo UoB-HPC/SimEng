@@ -522,7 +522,11 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
   ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInstructionSize called for second time in assertion
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  } else {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  }
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
@@ -643,7 +647,11 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInstructionSize called for second time in assertion
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  } else {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  }
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
@@ -677,7 +685,11 @@ TEST_F(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
   ON_CALL(isa, predecode(_, 2, 0xE, _)).WillByDefault(Return(0));
 
   // getMaxInsnSize called again in assertion
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  } else {
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  }
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMinInstructionSize()).Times(2);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
