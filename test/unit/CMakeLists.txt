@@ -32,6 +32,7 @@ set(TEST_SOURCES
     ProcessTest.cc
     RegisterFileSetTest.cc
     RegisterValueTest.cc
+    PerceptronPredictorTest.cc
     SpecialFileDirGenTest.cc
     )
 

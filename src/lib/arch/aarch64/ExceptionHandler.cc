@@ -15,9 +15,9 @@ namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, kernel::Linux& linux_)
+    memory::MemoryInterface& memory, kernel::Linux& linux_)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
-      core(core),
+      core_(core),
       memory_(memory),
       linux_(linux_) {
   resumeHandling_ = [this]() { return init(); };
@@ -27,7 +27,7 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
   InstructionException exception = instruction_.getException();
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
@@ -109,7 +109,7 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
 
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
+          int64_t totalRead = linux_.getdents64(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -117,23 +117,18 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
-          while (iLength > 0) {
-            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          while (totalRead > 0) {
+            uint8_t len =
+                totalRead > 128 ? 128 : static_cast<uint8_t>(totalRead);
             stateChange.memoryAddresses.push_back({iDst, len});
             stateChange.memoryAddressValues.push_back({iSrc, len});
             iDst += len;
             iSrc += len;
-            iLength -= len;
+            totalRead -= len;
           }
           return concludeSyscall(stateChange);
         });
@@ -151,7 +146,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_.read(fd, dataBuffer.data(), count);
+          int64_t totalRead = linux_.read(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -169,7 +164,7 @@ bool ExceptionHandler::init() {
           bytesRemaining -= iLength;
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -186,7 +181,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          int64_t retval = linux_.write(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -210,7 +205,7 @@ bool ExceptionHandler::init() {
         // generates the memory write requests.
         auto invokeKernel = [=]() {
           // The iov structure has been read into `dataBuffer`
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
 
           // Allocate buffers to hold the data read by the kernel
           std::vector<std::vector<uint8_t>> buffers(iovcnt);
@@ -281,8 +276,8 @@ bool ExceptionHandler::init() {
         // Create the final handler in the chain, which invokes the kernel
         std::function<bool()> last = [=]() {
           // Rebuild the iovec structures using pointers to `dataBuffer` data
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+          uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
           for (int64_t i = 0; i < iovcnt; i++) {
             iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
 
@@ -292,7 +287,7 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
+          int64_t retval = linux_.writev(fd, dataBuffer_.data(), iovcnt);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -301,7 +296,7 @@ bool ExceptionHandler::init() {
         // Build the chain of buffer loads backwards through the iov buffers
         for (int64_t i = iovcnt - 1; i >= 0; i--) {
           last = [=]() {
-            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
             uint64_t ptr = iovdata[i * 2 + 0];
             uint64_t len = iovdata[i * 2 + 1];
             return readBufferThen(ptr, len, last);
@@ -397,7 +392,7 @@ bool ExceptionHandler::init() {
       }
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
+        uint64_t systemTimer = core_.getSystemTimer();
 
         uint64_t seconds;
         uint64_t nanoseconds;
@@ -502,7 +497,7 @@ bool ExceptionHandler::init() {
       case 169: {  // gettimeofday
         uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
         uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
+        uint64_t systemTimer = core_.getSystemTimer();
 
         kernel::timeval tv;
         kernel::timeval tz;
@@ -788,7 +783,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
     return;
   }
 
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
   const auto dirfd = registerFileSet.get(R0).get<int64_t>();
   const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
@@ -841,7 +836,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   auto completedReads = memory_.getCompletedReads();
   auto response =
       std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](const MemoryReadResult& response) {
+                   [&](const memory::MemoryReadResult& response) {
                      return response.requestId == instruction_.getSequenceId();
                    });
   if (response == completedReads.end()) {
@@ -852,7 +847,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   assert(response->data && "unhandled failed read in exception handler");
   uint8_t bytesRead = response->target.size;
   const uint8_t* data = response->data.getAsVector<uint8_t>();
-  dataBuffer.insert(dataBuffer.end(), data, data + bytesRead);
+  dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
   memory_.clearCompletedReads();
 
   // If there is more data, rerun this function for next chunk

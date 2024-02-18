@@ -148,20 +148,23 @@ The Branch-Prediction section contains those options to parameterise the branch 
 
 The current options include:
 
+Type
+    The type of branch predictor that is used, the options are ``Generic``, and ``Perceptron``.  Both types of predictor use a branch target buffer with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` is a saturating counter, and in ``Perceptron`` it is a perceptron.
+
 BTB-Tag-Bits
-    The number of bits used to denote an entry in the Branch Target Buffer (BTB). For example, a ``bits`` value of 12 could denote 4096 entries with the calculation 1 << ``bits``.
+    The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
 
 Saturating-Count-Bits
-    The number of bits used in the saturating counter value.
+    Only needed for a ``Generic`` predictor.  The number of bits used in the saturating counter value.
 
 Global-History-Length
-    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.
+    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.  For ``PerceptronPredictor``, this dictates the size of the perceptrons (with each perceptron having Global-History-Length + 1 weights).
 
 RAS-entries
     The number of entries in the Return Address Stack (RAS).
 
 Fallback-Static-Predictor
-    The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
+    Only needed for a ``Generic`` predictor.  The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
 .. _l1dcnf:
 

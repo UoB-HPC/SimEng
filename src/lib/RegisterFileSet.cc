@@ -4,17 +4,6 @@
 
 namespace simeng {
 
-std::ostream& operator<<(std::ostream& os, Register const& reg) {
-  return os << reg.tag;
-}
-
-bool Register::operator==(const Register& other) const {
-  return (other.type == type && other.tag == tag);
-}
-bool Register::operator!=(const Register& other) const {
-  return !(other == *this);
-}
-
 RegisterFileSet::RegisterFileSet(
     std::vector<RegisterFileStructure> registerFileStructures)
     : registerFiles(registerFileStructures.size()) {

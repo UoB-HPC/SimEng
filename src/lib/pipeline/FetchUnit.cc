@@ -4,7 +4,7 @@ namespace simeng {
 namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
-                     MemoryInterface& instructionMemory,
+                     memory::MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
                      uint16_t blockSize, const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)

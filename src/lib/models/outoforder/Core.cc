@@ -6,25 +6,21 @@
 #include <sstream>
 #include <string>
 
-// Temporary; until config options are available
-#include "simeng/arch/aarch64/Instruction.hh"
 namespace simeng {
 namespace models {
 namespace outoforder {
 
-// TODO: System register count has to match number of supported system registers
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const arch::Architecture& isa,
+           BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
-    : isa_(isa),
+    : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
-      registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(config::SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
-      dataMemory_(dataMemory),
       fetchToDecodeBuffer_(config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(),
                            {}),
       decodeToRenameBuffer_(
@@ -36,6 +32,27 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["Execution-Units"].num_children() +
               config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
           {1, nullptr}),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
+                 isa, branchPredictor),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
+      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
+                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
+                  physicalRegisterStructures_.size()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities_),
+      writebackUnit_(
+          completionSlots_, registerFileSet_,
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
+      reorderBuffer_(
+          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
+          loadStoreQueue_,
+          [this](auto instruction) { raiseException(instruction); },
+          [this](auto branchAddress) {
+            fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<uint32_t>(),
           config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
@@ -54,29 +71,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
-      reorderBuffer_(
-          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
-          loadStoreQueue_,
-          [this](auto instruction) { raiseException(instruction); },
-          [this](auto branchAddress) {
-            fetchUnit_.registerLoopBoundary(branchAddress);
-          },
-          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
-          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
-      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
-      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
-                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures_.size()),
-      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_),
-      writebackUnit_(
-          completionSlots_, registerFileSet_,
-          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
@@ -164,66 +159,6 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
-void Core::flushIfNeeded() {
-  // Check for flush
-  bool euFlush = false;
-  uint64_t targetAddress = 0;
-  uint64_t lowestInsnId = 0;
-  for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
-      euFlush = true;
-      lowestInsnId = eu.getFlushInsnId();
-      targetAddress = eu.getFlushAddress();
-    }
-  }
-  if (euFlush || reorderBuffer_.shouldFlush()) {
-    // Flush was requested in an out-of-order stage.
-    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
-    // Rename/Dispatch)
-
-    if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
-      // If the reorder buffer found an older instruction to flush up to, do
-      // that instead
-      lowestInsnId = reorderBuffer_.getFlushInsnId();
-      targetAddress = reorderBuffer_.getFlushAddress();
-    }
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.fill({});
-    fetchToDecodeBuffer_.stall(false);
-
-    decodeToRenameBuffer_.fill(nullptr);
-    decodeToRenameBuffer_.stall(false);
-
-    renameToDispatchBuffer_.fill(nullptr);
-    renameToDispatchBuffer_.stall(false);
-
-    // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer_.flush(lowestInsnId);
-    decodeUnit_.purgeFlushed();
-    dispatchIssueUnit_.purgeFlushed();
-    loadStoreQueue_.purgeFlushed();
-    for (auto& eu : executionUnits_) {
-      eu.purgeFlushed();
-    }
-
-    flushes_++;
-  } else if (decodeUnit_.shouldFlush()) {
-    // Flush was requested at decode stage
-    // Update PC and wipe Fetch/Decode buffer.
-    targetAddress = decodeUnit_.getFlushAddress();
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.fill({});
-    fetchToDecodeBuffer_.stall(false);
-
-    flushes_++;
-  }
-}
-
 bool Core::hasHalted() const {
   if (hasHalted_) {
     return true;
@@ -257,6 +192,69 @@ bool Core::hasHalted() const {
   if (exceptionHandler_ != nullptr) return false;
 
   return true;
+}
+
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return mappedRegisterFileSet_;
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return reorderBuffer_.getInstructionsCommittedCount();
+}
+
+std::map<std::string, std::string> Core::getStats() const {
+  auto retired = reorderBuffer_.getInstructionsCommittedCount();
+  auto ipc = retired / static_cast<float>(ticks_);
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
+
+  auto branchStalls = fetchUnit_.getBranchStalls();
+
+  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
+
+  auto allocationStalls = renameUnit_.getAllocationStalls();
+  auto robStalls = renameUnit_.getROBStalls();
+  auto lqStalls = renameUnit_.getLoadQueueStalls();
+  auto sqStalls = renameUnit_.getStoreQueueStalls();
+
+  auto rsStalls = dispatchIssueUnit_.getRSStalls();
+  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
+  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
+  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
+
+  uint64_t totalBranchesExecuted = 0;
+  uint64_t totalBranchMispredicts = 0;
+
+  // Sum up the branch stats reported across the execution units.
+  for (auto& eu : executionUnits_) {
+    totalBranchesExecuted += eu.getBranchExecutedCount();
+    totalBranchMispredicts += eu.getBranchMispredictedCount();
+  }
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(retired)},
+          {"ipc", ipcStr.str()},
+          {"flushes", std::to_string(flushes_)},
+          {"fetch.branchStalls", std::to_string(branchStalls)},
+          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
+          {"rename.allocationStalls", std::to_string(allocationStalls)},
+          {"rename.robStalls", std::to_string(robStalls)},
+          {"rename.lqStalls", std::to_string(lqStalls)},
+          {"rename.sqStalls", std::to_string(sqStalls)},
+          {"dispatch.rsStalls", std::to_string(rsStalls)},
+          {"issue.frontendStalls", std::to_string(frontendStalls)},
+          {"issue.backendStalls", std::to_string(backendStalls)},
+          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.missrate", branchMissRateStr.str()},
+          {"lsq.loadViolations",
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -320,114 +318,64 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accordance with the ProcessStateChange type
-  switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(
-            change.modifiedRegisters[i],
-            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
-                    .get<uint64_t>() +
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    case arch::ChangeType::DECREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(
-            change.modifiedRegisters[i],
-            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
-                    .get<uint64_t>() -
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    default: {  // arch::ChangeType::REPLACEMENT
-      // If type is ChangeType::REPLACEMENT, set new values
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                                   change.modifiedRegisterValues[i]);
-      }
-      break;
+void Core::flushIfNeeded() {
+  // Check for flush
+  bool euFlush = false;
+  uint64_t targetAddress = 0;
+  uint64_t lowestInsnId = 0;
+  for (const auto& eu : executionUnits_) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
+      euFlush = true;
+      lowestInsnId = eu.getFlushInsnId();
+      targetAddress = eu.getFlushAddress();
     }
   }
+  if (euFlush || reorderBuffer_.shouldFlush()) {
+    // Flush was requested in an out-of-order stage.
+    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
+    // Rename/Dispatch)
 
-  // Update memory
-  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
-  // required for memory changes
-  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
+    if (reorderBuffer_.shouldFlush() &&
+        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
+      // If the reorder buffer found an older instruction to flush up to, do
+      // that instead
+      lowestInsnId = reorderBuffer_.getFlushInsnId();
+      targetAddress = reorderBuffer_.getFlushAddress();
+    }
+
+    fetchUnit_.flushLoopBuffer();
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
+
+    decodeToRenameBuffer_.fill(nullptr);
+    decodeToRenameBuffer_.stall(false);
+
+    renameToDispatchBuffer_.fill(nullptr);
+    renameToDispatchBuffer_.stall(false);
+
+    // Flush everything younger than the bad instruction from the ROB
+    reorderBuffer_.flush(lowestInsnId);
+    decodeUnit_.purgeFlushed();
+    dispatchIssueUnit_.purgeFlushed();
+    loadStoreQueue_.purgeFlushed();
+    for (auto& eu : executionUnits_) {
+      eu.purgeFlushed();
+    }
+
+    flushes_++;
+  } else if (decodeUnit_.shouldFlush()) {
+    // Flush was requested at decode stage
+    // Update PC and wipe Fetch/Decode buffer.
+    targetAddress = decodeUnit_.getFlushAddress();
+
+    fetchUnit_.flushLoopBuffer();
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
+
+    flushes_++;
   }
-}
-
-const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
-    const {
-  return mappedRegisterFileSet_;
-}
-
-uint64_t Core::getInstructionsRetiredCount() const {
-  return reorderBuffer_.getInstructionsCommittedCount();
-}
-
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
-}
-
-std::map<std::string, std::string> Core::getStats() const {
-  auto retired = reorderBuffer_.getInstructionsCommittedCount();
-  auto ipc = retired / static_cast<float>(ticks_);
-  std::ostringstream ipcStr;
-  ipcStr << std::setprecision(2) << ipc;
-
-  auto branchStalls = fetchUnit_.getBranchStalls();
-
-  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
-
-  auto allocationStalls = renameUnit_.getAllocationStalls();
-  auto robStalls = renameUnit_.getROBStalls();
-  auto lqStalls = renameUnit_.getLoadQueueStalls();
-  auto sqStalls = renameUnit_.getStoreQueueStalls();
-
-  auto rsStalls = dispatchIssueUnit_.getRSStalls();
-  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
-  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
-  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
-
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
-
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 }  // namespace outoforder

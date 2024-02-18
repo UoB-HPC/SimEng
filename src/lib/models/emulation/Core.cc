@@ -6,21 +6,17 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-// TODO: Expose as config option
 /** The number of bytes fetched each cycle. */
-const uint16_t FETCH_SIZE = 4;
-const unsigned int clockFrequency = 2.5 * 1e9;
+const uint8_t FETCH_SIZE = 4;
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa)
-    : instructionMemory_(instructionMemory),
-      dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
-      isa_(isa),
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t entryPoint,
+           uint64_t programByteLength, const arch::Architecture& isa)
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
+      instructionMemory_(instructionMemory),
+      architecturalRegisterFileSet_(registerFileSet_),
       pc_(entryPoint),
-      registerFileSet_(config::SimInfo::getArchRegStruct()),
-      architecturalRegisterFileSet_(registerFileSet_) {
+      programByteLength_(programByteLength) {
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
@@ -162,6 +158,23 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
+bool Core::hasHalted() const { return hasHalted_; }
+
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return architecturalRegisterFileSet_;
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
+}
+
+std::map<std::string, std::string> Core::getStats() const {
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(instructionsExecuted_)},
+          {"branch.executed", std::to_string(branchesExecuted_)}};
+};
+
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
@@ -240,67 +253,6 @@ void Core::processExceptionHandler() {
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
 }
-
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accordance with the ProcessStateChange type
-  switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    case arch::ChangeType::DECREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    default: {  // arch::ChangeType::REPLACEMENT
-      // If type is ChangeType::REPLACEMENT, set new values
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(change.modifiedRegisters[i],
-                             change.modifiedRegisterValues[i]);
-      }
-      break;
-    }
-  }
-
-  // Update memory
-  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
-  // required for memory changes
-  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
-  }
-}
-
-bool Core::hasHalted() const { return hasHalted_; }
-
-const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
-    const {
-  return architecturalRegisterFileSet_;
-}
-
-uint64_t Core::getInstructionsRetiredCount() const {
-  return instructionsExecuted_;
-}
-
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency / 1e9);
-}
-
-std::map<std::string, std::string> Core::getStats() const {
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-};
 
 }  // namespace emulation
 }  // namespace models

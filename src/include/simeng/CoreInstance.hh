@@ -5,15 +5,16 @@
 #include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
-#include "simeng/FixedLatencyMemoryInterface.hh"
-#include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/PerceptronPredictor.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
+#include "simeng/memory/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/FlatMemoryInterface.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -51,10 +52,11 @@ class CoreInstance {
   ~CoreInstance();
 
   /** Set the SimEng L1 instruction cache memory. */
-  void setL1InstructionMemory(std::shared_ptr<simeng::MemoryInterface> memRef);
+  void setL1InstructionMemory(
+      std::shared_ptr<simeng::memory::MemoryInterface> memRef);
 
   /** Set the SimEng L1 data cache memory. */
-  void setL1DataMemory(std::shared_ptr<simeng::MemoryInterface> memRef);
+  void setL1DataMemory(std::shared_ptr<simeng::memory::MemoryInterface> memRef);
 
   /** Construct the core and all its associated simulation objects after the
    * process and memory interfaces have been instantiated. */
@@ -64,10 +66,10 @@ class CoreInstance {
   std::shared_ptr<simeng::Core> getCore() const;
 
   /** Getter for the create data memory object. */
-  std::shared_ptr<simeng::MemoryInterface> getDataMemory() const;
+  std::shared_ptr<simeng::memory::MemoryInterface> getDataMemory() const;
 
   /** Getter for the create instruction memory object. */
-  std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
+  std::shared_ptr<simeng::memory::MemoryInterface> getInstructionMemory() const;
 
   /** Getter for a shared pointer to the created process image. */
   std::shared_ptr<char> getProcessImage() const;
@@ -94,10 +96,10 @@ class CoreInstance {
   void createProcessMemory();
 
   /** Construct the SimEng L1 instruction cache memory. */
-  void createL1InstructionMemory(const simeng::MemInterfaceType type);
+  void createL1InstructionMemory(const memory::MemInterfaceType type);
 
   /** Construct the SimEng L1 data cache memory. */
-  void createL1DataMemory(const simeng::MemInterfaceType type);
+  void createL1DataMemory(const memory::MemInterfaceType type);
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
@@ -145,10 +147,10 @@ class CoreInstance {
   std::shared_ptr<simeng::Core> core_ = nullptr;
 
   /** Reference to the SimEng data memory object. */
-  std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;
+  std::shared_ptr<simeng::memory::MemoryInterface> dataMemory_ = nullptr;
 
   /** Reference to the SimEng instruction memory object. */
-  std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
+  std::shared_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
 };
 
 }  // namespace simeng

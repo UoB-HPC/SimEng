@@ -110,7 +110,7 @@ TEST_F(ProcessTest, getStackPointer) {
       proc.getStackStart() -
       kernel::alignToBoundary(cmdLineSize + envStringsSize + 1, 32) -
       kernel::alignToBoundary(stackFrameSize, 32);
-  EXPECT_EQ(proc.getStackPointer(), stackPointer);
+  EXPECT_EQ(proc.getInitialStackPointer(), stackPointer);
 }
 
 }  // namespace simeng

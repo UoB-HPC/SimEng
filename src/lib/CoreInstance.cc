@@ -38,34 +38,34 @@ void CoreInstance::generateCoreModel(std::string executablePath,
   // as they must be set manually prior to the core's creation.
 
   // Convert Data-Memory's Interface-Type value from a string to
-  // simeng::MemInterfaceType
+  // memory::MemInterfaceType
   std::string dType_string =
       config_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
-  MemInterfaceType dType = MemInterfaceType::Flat;
+  memory::MemInterfaceType dType = memory::MemInterfaceType::Flat;
   if (dType_string == "Fixed") {
-    dType = MemInterfaceType::Fixed;
+    dType = memory::MemInterfaceType::Fixed;
   } else if (dType_string == "External") {
-    dType = MemInterfaceType::External;
+    dType = memory::MemInterfaceType::External;
   }
   // Create data memory if appropriate
-  if (dType == MemInterfaceType::External) {
+  if (dType == memory::MemInterfaceType::External) {
     setDataMemory_ = true;
   } else {
     createL1DataMemory(dType);
   }
 
   // Convert Instruction-Memory's Interface-Type value from a string to
-  // simeng::MemInterfaceType
+  // memory::MemInterfaceType
   std::string iType_string =
       config_["L1-Instruction-Memory"]["Interface-Type"].as<std::string>();
-  MemInterfaceType iType = MemInterfaceType::Flat;
+  memory::MemInterfaceType iType = memory::MemInterfaceType::Flat;
   if (iType_string == "Fixed") {
-    iType = MemInterfaceType::Fixed;
+    iType = memory::MemInterfaceType::Fixed;
   } else if (iType_string == "External") {
-    iType = MemInterfaceType::External;
+    iType = memory::MemInterfaceType::External;
   }
   // Create instruction memory if appropriate
-  if (iType == MemInterfaceType::External) {
+  if (iType == memory::MemInterfaceType::External) {
     setInstructionMemory_ = true;
   } else {
     createL1InstructionMemory(iType);
@@ -135,15 +135,16 @@ void CoreInstance::createProcessMemory() {
   return;
 }
 
-void CoreInstance::createL1InstructionMemory(const MemInterfaceType type) {
+void CoreInstance::createL1InstructionMemory(
+    const memory::MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
-  if (type == MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<FlatMemoryInterface>(
+  if (type == memory::MemInterfaceType::Flat) {
+    instructionMemory_ = std::make_shared<memory::FlatMemoryInterface>(
         processMemory_.get(), processMemorySize_);
-  } else if (type == MemInterfaceType::Fixed) {
+  } else if (type == memory::MemInterfaceType::Fixed) {
     uint16_t accessLat =
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>();
-    instructionMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
+    instructionMemory_ = std::make_shared<memory::FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr
@@ -157,7 +158,7 @@ void CoreInstance::createL1InstructionMemory(const MemInterfaceType type) {
 }
 
 void CoreInstance::setL1InstructionMemory(
-    std::shared_ptr<MemoryInterface> memRef) {
+    std::shared_ptr<memory::MemoryInterface> memRef) {
   assert(setInstructionMemory_ &&
          "setL1InstructionMemory(...) called but the interface was created by "
          "the CoreInstance class.");
@@ -166,15 +167,15 @@ void CoreInstance::setL1InstructionMemory(
   return;
 }
 
-void CoreInstance::createL1DataMemory(const MemInterfaceType type) {
+void CoreInstance::createL1DataMemory(const memory::MemInterfaceType type) {
   // Create a L1D cache instance based on type supplied
-  if (type == MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<FlatMemoryInterface>(processMemory_.get(),
-                                                        processMemorySize_);
-  } else if (type == MemInterfaceType::Fixed) {
+  if (type == memory::MemInterfaceType::Flat) {
+    dataMemory_ = std::make_shared<memory::FlatMemoryInterface>(
+        processMemory_.get(), processMemorySize_);
+  } else if (type == memory::MemInterfaceType::Fixed) {
     uint16_t accessLat =
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>();
-    dataMemory_ = std::make_shared<FixedLatencyMemoryInterface>(
+    dataMemory_ = std::make_shared<memory::FixedLatencyMemoryInterface>(
         processMemory_.get(), processMemorySize_, accessLat);
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
@@ -186,7 +187,8 @@ void CoreInstance::createL1DataMemory(const MemInterfaceType type) {
   return;
 }
 
-void CoreInstance::setL1DataMemory(std::shared_ptr<MemoryInterface> memRef) {
+void CoreInstance::setL1DataMemory(
+    std::shared_ptr<memory::MemoryInterface> memRef) {
   assert(setDataMemory_ &&
          "setL1DataMemory(...) called but the interface was created by the "
          "CoreInstance class.");
@@ -219,8 +221,13 @@ void CoreInstance::createCore() {
     arch_ = std::make_unique<arch::aarch64::Architecture>(kernel_);
   }
 
-  // Construct branch predictor object
-  predictor_ = std::make_unique<GenericPredictor>();
+  std::string predictorType =
+      config_["Branch-Predictor"]["Type"].as<std::string>();
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<PerceptronPredictor>();
+  }
 
   // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
@@ -286,7 +293,7 @@ std::shared_ptr<Core> CoreInstance::getCore() const {
   return core_;
 }
 
-std::shared_ptr<MemoryInterface> CoreInstance::getDataMemory() const {
+std::shared_ptr<memory::MemoryInterface> CoreInstance::getDataMemory() const {
   if (setDataMemory_ && (dataMemory_ == nullptr)) {
     std::cerr << "[SimEng:CoreInstance] `External` data memory object not set."
               << std::endl;
@@ -295,7 +302,8 @@ std::shared_ptr<MemoryInterface> CoreInstance::getDataMemory() const {
   return dataMemory_;
 }
 
-std::shared_ptr<MemoryInterface> CoreInstance::getInstructionMemory() const {
+std::shared_ptr<memory::MemoryInterface> CoreInstance::getInstructionMemory()
+    const {
   if (setInstructionMemory_ && (instructionMemory_ == nullptr)) {
     std::cerr
         << "`[SimEng:CoreInstance] External` instruction memory object not set."

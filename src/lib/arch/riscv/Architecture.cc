@@ -11,11 +11,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
-std::forward_list<InstructionMetadata> Architecture::metadataCache;
-
 Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
-    : linux_(kernel) {
+    : arch::Architecture(kernel) {
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
   fesetround(FE_TONEAREST);
@@ -30,13 +27,13 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
 
     n = cs_open(CS_ARCH_RISCV,
                 static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
-                &capstoneHandle);
+                &capstoneHandle_);
   } else {
     addressAlignmentMask_ = constantsPool::addressAlignMask;
     minInsnLength_ = constantsPool::minInstWidthBytes;
 
     n = cs_open(CS_ARCH_RISCV, static_cast<cs_mode>(CS_MODE_RISCV64),
-                &capstoneHandle);
+                &capstoneHandle_);
   }
 
   if (n != CS_ERR_OK) {
@@ -46,7 +43,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     exit(1);
   }
 
-  cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+  cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
   for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
@@ -58,7 +55,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
 
-  // Instantiate an executionInfo entry for each group in the InstructionGroup
+  // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_[i] = {1, 1, {}};
@@ -84,9 +81,9 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       uint8_t distance = 1;
       while (groups.size()) {
         // Determine if there's any inheritance
-        if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+        if (groupInheritance_.find(groups.front()) != groupInheritance_.end()) {
           std::vector<uint16_t> inheritedGroups =
-              groupInheritance.at(groups.front());
+              groupInheritance_.at(groups.front());
           for (int k = 0; k < inheritedGroups.size(); k++) {
             // Determine if this group has inherited latency values from a
             // smaller distance
@@ -130,9 +127,10 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         groups.push(group);
         while (groups.size()) {
           // Determine if there's any inheritance
-          if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+          if (groupInheritance_.find(groups.front()) !=
+              groupInheritance_.end()) {
             std::vector<uint16_t> inheritedGroups =
-                groupInheritance.at(groups.front());
+                groupInheritance_.at(groups.front());
             for (int k = 0; k < inheritedGroups.size(); k++) {
               groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
               groups.push(inheritedGroups[k]);
@@ -148,19 +146,14 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        opcodeExecutionInfo_.try_emplace(
-            opcode, simeng::arch::riscv::executionInfo{0, 0, {}});
+        opcodeExecutionInfo_.try_emplace(opcode, ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
   }
 }
-Architecture::~Architecture() {
-  cs_close(&capstoneHandle);
-  decodeCache.clear();
-  metadataCache.clear();
-  groupExecutionInfo_.clear();
-}
+
+Architecture::~Architecture() { cs_close(&capstoneHandle_); }
 
 uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
                                 uint64_t instructionAddress,
@@ -170,10 +163,10 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   if (instructionAddress & addressAlignmentMask_) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
-    metadataCache.emplace_front(metadata);
+    metadataCache_.emplace_front(metadata);
     output.resize(1);
     auto& uop = output[0];
-    uop = std::make_shared<Instruction>(*this, metadataCache.front(),
+    uop = std::make_shared<Instruction>(*this, metadataCache_.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
     // Return non-zero value to avoid fatal error
@@ -212,8 +205,8 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   }
 
   // Try to find the decoding in the decode cache
-  auto iter = decodeCache.find(insnEncoding);
-  if (iter == decodeCache.end()) {
+  auto iter = decodeCache_.find(insnEncoding);
+  if (iter == decodeCache_.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
     // Calloc memory to ensure rawInsn is initialised with zeros. Errors can
     // occur otherwise as Capstone doesn't update variables for invalid
@@ -232,7 +225,7 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-    bool success = cs_disasm_iter(capstoneHandle, &encoding, &insnSize,
+    bool success = cs_disasm_iter(capstoneHandle_, &encoding, &insnSize,
                                   &address, &rawInsn);
     // After cs_diasm_iter is called, size and address updated to contain the
     // size/address of next instruction in the buffer
@@ -243,15 +236,15 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
     free(rawInsnPointer);
 
     // Cache the metadata
-    metadataCache.push_front(metadata);
+    metadataCache_.push_front(metadata);
 
     // Create an instruction using the metadata
-    Instruction newInsn(*this, metadataCache.front());
+    Instruction newInsn(*this, metadataCache_.front());
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
 
     // Cache the instruction
-    iter = decodeCache.insert({insnEncoding, newInsn}).first;
+    iter = decodeCache_.insert({insnEncoding, newInsn}).first;
   }
 
   assert(((insnEncoding & 0b11) != 0b11
@@ -270,34 +263,18 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
   return iter->second.getMetadata().getInsnLength();
 }
 
-executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
-  // Assume no opcode-based override
-  executionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
-  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
-      opcodeExecutionInfo_.end()) {
-    // Replace with overrided values
-    executionInfo overrideInfo =
-        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
-    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
-    if (overrideInfo.stallCycles != 0)
-      exeInfo.stallCycles = overrideInfo.stallCycles;
-    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
-  }
-  return exeInfo;
-}
-
-std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
-}
-
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
   if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
+}
+
+std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+    memory::MemoryInterface& memory) const {
+  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 
 ProcessStateChange Architecture::getInitialState() const {
@@ -320,6 +297,22 @@ uint8_t Architecture::getMinInstructionSize() const { return minInsnLength_; }
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   regFile->set(cycleSystemReg_, iterations);
+}
+
+ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
+  // Assume no opcode-based override
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+      opcodeExecutionInfo_.end()) {
+    // Replace with overrided values
+    ExecutionInfo overrideInfo =
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
+    if (overrideInfo.stallCycles != 0)
+      exeInfo.stallCycles = overrideInfo.stallCycles;
+    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+  }
+  return exeInfo;
 }
 
 }  // namespace riscv

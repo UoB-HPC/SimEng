@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "simeng/Instruction.hh"
+#include "simeng/RegisterFileSet.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {

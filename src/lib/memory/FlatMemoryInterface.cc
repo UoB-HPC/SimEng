@@ -1,8 +1,10 @@
-#include "simeng/FlatMemoryInterface.hh"
+#include "simeng/memory/FlatMemoryInterface.hh"
 
 #include <iostream>
 
 namespace simeng {
+
+namespace memory {
 
 FlatMemoryInterface::FlatMemoryInterface(char* memory, size_t size)
     : memory_(memory), size_(size) {}
@@ -47,4 +49,5 @@ bool FlatMemoryInterface::hasPendingRequests() const { return false; }
 
 void FlatMemoryInterface::tick() {}
 
+}  // namespace memory
 }  // namespace simeng

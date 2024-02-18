@@ -95,7 +95,7 @@ class LinuxProcess {
   uint64_t getEntryPoint() const;
 
   /** Get the initial stack pointer. */
-  uint64_t getStackPointer() const;
+  uint64_t getInitialStackPointer() const;
 
   /** Get the path of the executable. */
   std::string getPath() const;

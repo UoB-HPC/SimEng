@@ -3,9 +3,11 @@
 #include <queue>
 #include <vector>
 
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 namespace simeng {
+
+namespace memory {
 
 /** A fixed-latency memory interface request. */
 struct FixedLatencyMemoryInterfaceRequest {
@@ -86,4 +88,5 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   }
 };
 
+}  // namespace memory
 }  // namespace simeng

@@ -23,13 +23,14 @@ namespace kernel {
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
-                            .path = process.getPath(),
-                            .startBrk = process.getHeapStart(),
-                            .currentBrk = process.getHeapStart(),
-                            .initialStackPointer = process.getStackPointer(),
-                            .mmapRegion = process.getMmapStart(),
-                            .pageSize = process.getPageSize()});
+  processStates_.push_back(
+      {.pid = 0,  // TODO: create unique PIDs
+       .path = process.getPath(),
+       .startBrk = process.getHeapStart(),
+       .currentBrk = process.getHeapStart(),
+       .initialStackPointer = process.getInitialStackPointer(),
+       .mmapRegion = process.getMmapStart(),
+       .pageSize = process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);

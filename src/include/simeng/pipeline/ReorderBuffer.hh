@@ -56,7 +56,7 @@ class ReorderBuffer {
   void commitMicroOps(uint64_t insnId);
 
   /** Commit and remove up to `maxCommitSize` instructions. */
-  unsigned int commit(unsigned int maxCommitSize);
+  unsigned int commit(uint64_t maxCommitSize);
 
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
   void flush(uint64_t afterInsnId);
