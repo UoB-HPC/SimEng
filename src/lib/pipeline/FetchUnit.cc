@@ -83,6 +83,9 @@ void FetchUnit::tick() {
         break;
       }
     }
+    // Decide how to progress based on status of fetched data and buffer. Allow
+    // progression if minimal data is in the buffer no matter state of fetched
+    // data
     if (fetchIndex == fetched.size() &&
         bufferedBytes_ < isa_.getMinInstructionSize()) {
       // Relevant data has not been fetched and not enough data already in the
@@ -103,11 +106,6 @@ void FetchUnit::tick() {
       buffer = fetchBuffer_;
       // Decoding should start from the beginning of the fetchBuffer_.
       bufferOffset = 0;
-    } else {
-      // Relevant data has not been fetched but there is minimal data already in
-      // the buffer. Attempt to predecode
-
-      // Do nothing and allow continuation
     }
   } else {
     // There is already enough data in the fetch buffer, so use that
