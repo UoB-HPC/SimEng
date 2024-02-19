@@ -163,7 +163,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[0].reg = RISCV_REG_ZERO;
 
         operands[1].type = RISCV_OP_REG;
-        operands[1].reg = 2;
+        operands[1].reg = RISCV_REG_RA;
 
         operands[2].type = RISCV_OP_IMM;
         operands[2].imm = 0;
@@ -185,7 +185,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // jalr Rs is pseudo of JALR x1, Rs, 0
         // JALR Rs, _, _ -> JALR x1, Rs, 0
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 2;
+        operands[0].reg = RISCV_REG_RA;
 
         operands[1] = insn.detail->riscv.operands[0];
 
@@ -201,7 +201,7 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // jal offset is pseudo of JAL x1, offset
         // JAL offset, _ -> JAL x1, offset
         operands[0].type = RISCV_OP_REG;
-        operands[0].reg = 2;
+        operands[0].reg = RISCV_REG_RA;
 
         operands[1].type = RISCV_OP_IMM;
         operands[1].imm = insn.detail->riscv.operands[0].imm;
@@ -485,7 +485,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.JR rs1, _, _ -> JALR x0, rs1, 0
 
       // rs1=zero is reserved
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 1) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_ZERO) &&
              "C.JR has rs1=x0 which is reserved");
 
       opcode = Opcode::RISCV_JALR;
@@ -719,7 +720,8 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
              "C.LUI has rd=x0 which is reserved for hints");
 
       // rd = x2 encodes C.ADDI16SP
-      assert((operands[0].type == RISCV_OP_REG && operands[0].reg != 3) &&
+      assert((operands[0].type == RISCV_OP_REG &&
+              operands[0].reg != RISCV_REG_SP) &&
              "C.LUI has rd=x2 which is invalid");
 
       opcode = Opcode::RISCV_LUI;
@@ -854,7 +856,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       operands[1] = operands[0];
 
-      operands[0].reg = 2;
+      operands[0].reg = RISCV_REG_RA;
 
       operands[2].type = RISCV_OP_IMM;
       operands[2].imm = 0;
