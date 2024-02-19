@@ -1581,7 +1581,7 @@ TEST_P(Syscall, getrandom) {
            getMemoryValue<uint8_t>(heapStart + 8 + i));
   }
 
-  // check that the returned bytes aren't all equal to -1.
+  // Check that the returned bytes aren't all equal to -1.
   // heap was initialised to -1 so check bytes have changed
   bool allUnchanged = true;
   for (size_t i = 0; i < 16; i++) {

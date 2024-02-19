@@ -13,10 +13,10 @@ namespace Opcode {
 #include "AArch64GenInstrInfo.inc"
 }  // namespace Opcode
 
-// Test that an invalid capstone instruction id raises an illegal instruction
-// exception
-TEST_P(Exception, illegal_instruction) {
-  // Initialise heap with an illegal instruction
+// Test that an invalid capstone instruction id raises an unallocated
+// instruction encoding exception
+TEST_P(Exception, encoding_unallocated) {
+  // Initialise heap with an unallocated instruction encoding
   initialHeapData_.resize(4);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xDEADBEEF;
@@ -30,7 +30,8 @@ TEST_P(Exception, illegal_instruction) {
     br x20
   )");
   const char err[] =
-      "\n[SimEng:ExceptionHandler] Encountered illegal instruction exception";
+      "\n[SimEng:ExceptionHandler] Encountered unallocated instruction "
+      "encoding exception";
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 

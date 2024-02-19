@@ -103,7 +103,8 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
 /** A helper macro to run a snippet of Armv9.2-a assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros are
  * appended to the source to ensure that the program will terminate with an
- * illegal instruction exception instead of running into the heap. */
+ * unallocated instruction encoding exception instead of running into the heap.
+ */
 #define RUN_AARCH64(source)                    \
   {                                            \
     std::string sourceWithTerminator = source; \

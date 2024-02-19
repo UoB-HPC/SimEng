@@ -421,8 +421,9 @@ TEST_F(RiscVExceptionHandlerTest, printException) {
   std::cout.rdbuf(buffer.rdbuf());           // Redirect cout to buffer
   handler_0.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "encoding unallocated exception"));
+  EXPECT_THAT(buffer.str(),
+              HasSubstr("[SimEng:ExceptionHandler] Encountered "
+                        "unallocated instruction encoding exception"));
   buffer.str(std::string());
   uops.clear();
 

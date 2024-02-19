@@ -30,7 +30,8 @@ TEST_P(Exception, encoding_unallocated) {
     jalr a0, t0, 0
   )");
   const char err[] =
-      "\n[SimEng:ExceptionHandler] Encountered encoding unallocated exception";
+      "\n[SimEng:ExceptionHandler] Encountered unallocated instruction "
+      "encoding exception";
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
@@ -119,8 +120,8 @@ TEST_P(Exception, no_available_port) {
     // updates to other core archetypes are carried out such that they can now
     // raise an InstructionException::NoAvailablePort exception
     err =
-        "\n[SimEng:ExceptionHandler] Encountered encoding unallocated "
-        "exception";
+        "\n[SimEng:ExceptionHandler] Encountered unallocated instruction "
+        "encoding exception";
   }
   EXPECT_EQ(stdout_.substr(0, err.size()), err.c_str());
 }
