@@ -115,38 +115,31 @@ BranchType Instruction::getBranchType() const { return branchType_; }
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 bool Instruction::isStoreAddress() const {
-  return isInstruction(InsnIdentifier::isStoreMask);
+  return isInsnOneOf(InsnType::isStore);
 }
 
-bool Instruction::isStoreData() const {
-  return isInstruction(InsnIdentifier::isStoreMask);
-}
+bool Instruction::isStoreData() const { return isInsnOneOf(InsnType::isStore); }
 
-bool Instruction::isLoad() const {
-  return isInstruction(InsnIdentifier::isLoadMask);
-}
+bool Instruction::isLoad() const { return isInsnOneOf(InsnType::isLoad); }
 
-bool Instruction::isBranch() const {
-  return isInstruction(InsnIdentifier::isBranchMask);
-}
+bool Instruction::isBranch() const { return isInsnOneOf(InsnType::isBranch); }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
-  if (isInstruction(InsnIdentifier::isFloatMask)) {
+  if (isInsnOneOf(InsnType::isFloat)) {
     base = InstructionGroups::FLOAT;
   }
 
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
-  if (isInstruction(InsnIdentifier::isDivideMask)) return base + 7;
-  if (isInstruction(InsnIdentifier::isMultiplyMask)) return base + 6;
-  if (isInstruction(InsnIdentifier::isShiftMask) ||
-      isInstruction(InsnIdentifier::isConvertMask))
+  if (isInsnOneOf(InsnType::isDivide)) return base + 7;
+  if (isInsnOneOf(InsnType::isMultiply)) return base + 6;
+  if (isInsnOneOf(InsnType::isShift) || isInsnOneOf(InsnType::isConvert))
     return base + 5;
-  if (isInstruction(InsnIdentifier::isLogicalMask)) return base + 4;
-  if (isInstruction(InsnIdentifier::isCompareMask)) return base + 3;
+  if (isInsnOneOf(InsnType::isLogical)) return base + 4;
+  if (isInsnOneOf(InsnType::isCompare)) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
@@ -161,8 +154,7 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isInstruction(InsnIdentifier::isLoadMask) ||
-      isInstruction(InsnIdentifier::isStoreMask)) {
+  if (isInsnOneOf(InsnType::isLoad) || isInsnOneOf(InsnType::isStore)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

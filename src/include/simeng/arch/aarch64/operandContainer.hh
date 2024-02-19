@@ -50,6 +50,11 @@ class operandContainer {
     }
   }
 
+  /** Get the size of the currently active data structure. */
+  [[nodiscard]] constexpr size_t size() const {
+    return std::visit([](auto&& arg) -> size_t { return arg.size(); }, var_);
+  }
+
   [[nodiscard]] constexpr const T& operator[](size_t idx) const {
     return std::visit([=](auto&& arg) -> const T& { return (arg[idx]); }, var_);
   }

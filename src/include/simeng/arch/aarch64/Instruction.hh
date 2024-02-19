@@ -226,40 +226,40 @@ inline uint8_t getDataSize(cs_arm64_op op) {
 }
 
 // AArch64 Instruction Identifier Masks
-enum class InsnIdentifier {
+enum class InsnType : uint32_t {
   /** Writes scalar values to one or more registers and/or memory locations. */
-  isScalarDataMask = 0b00000000000000000000000000000001,
+  isScalarData = 1 << 0,
   /** Writes NEON vector values to one or more registers and/or memory
      locations. */
-  isVectorDataMask = 0b00000000000000000000000000000010,
+  isVectorData = 1 << 1,
   /** Writes SVE vector values to one or more registers and/or memory locations.
    */
-  isSVEDataMask = 0b00000000000000000000000000000100,
+  isSVEData = 1 << 2,
   /** Writes SME matrix values to one or more registers and/or memory locations.
    */
-  isSMEDataMask = 0b00000000000000000000000000001000,
+  isSMEData = 1 << 3,
   /** Has a shift operand. */
-  isShiftMask = 0b00000000000000000000000000010000,
+  isShift = 1 << 4,
   /** Is a logical operation. */
-  isLogicalMask = 0b00000000000000000000000000100000,
+  isLogical = 1 << 5,
   /** Is a compare operation. */
-  isCompareMask = 0b00000000000000000000000001000000,
+  isCompare = 1 << 6,
   /** Is a convert operation. */
-  isConvertMask = 0b00000000000000000000000010000000,
+  isConvert = 1 << 7,
   /** Is a multiply operation. */
-  isMultiplyMask = 0b00000000000000000000000100000000,
+  isMultiply = 1 << 8,
   /** Is a divide or square root operation */
-  isDivideOrSqrtMask = 0b00000000000000000000001000000000,
+  isDivideOrSqrt = 1 << 9,
   /** Writes to a predicate register */
-  isPredicateMask = 0b00000000000000000000010000000000,
+  isPredicate = 1 << 10,
   /** Is a load operation. */
-  isLoadMask = 0b00000000000000000000100000000000,
+  isLoad = 1 << 11,
   /** Is a store address operation. */
-  isStoreAddressMask = 0b00000000000000000001000000000000,
+  isStoreAddress = 1 << 12,
   /** Is a store data operation. */
-  isStoreDataMask = 0b00000000000000000010000000000000,
+  isStoreData = 1 << 13,
   /** Is a branch operation. */
-  isBranchMask = 0b00000000000000000100000000000000
+  isBranch = 1 << 14
 };
 
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
@@ -376,13 +376,24 @@ class Instruction : public simeng::Instruction {
   void decode();
 
   /** Update the instruction's identifier with an additional field. */
-  constexpr void setInstructionIdentifier(InsnIdentifier identifier) {
-    instructionIdentifier_ |= static_cast<uint32_t>(identifier);
+  constexpr void setInstructionType(InsnType identifier) {
+    instructionIdentifier_ |=
+        static_cast<std::underlying_type_t<InsnType>>(identifier);
   }
 
-  /** Test whether this instruction had the given identifier set. */
-  constexpr bool isInstruction(InsnIdentifier identifier) const {
-    return (instructionIdentifier_ & static_cast<uint32_t>(identifier));
+  /** Test whether this instruction has one or more of the given
+   * identifiers set. */
+  template <typename... Types>
+  constexpr bool isInsnOneOf(Types... identifiers) const {
+    // Ensure only correct type is used (InsnType)
+    static_assert(
+        (std::is_same_v<std::decay_t<Types>, InsnType> && ...),
+        "isInsnOneOf() can only be passed arguments of type `InsnType`.");
+    // Perform bitwise AND on `instructionIdentifier_` and each identifer from
+    // `identifiers` parameter pack; boolean OR-ing the results
+    return ((instructionIdentifier_ &
+             static_cast<std::underlying_type_t<InsnType>>(identifiers)) ||
+            ...);
   }
 
   /** Generate an ExecutionNotYetImplemented exception. */
@@ -446,7 +457,7 @@ class Instruction : public simeng::Instruction {
   uint8_t dataSize_ = 0;
 
   /** Used to denote what type of instruction this is. Utilises the constants in
-   * the `InsnIdentifier` namespace allowing each bit to represent a unique
+   * the `InsnType` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint32_t instructionIdentifier_ = 0;
 };

@@ -80,7 +80,7 @@ void Instruction::decode() {
     case Opcode::RISCV_BGEU:
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
-      setInstructionIdentifier(InsnIdentifier::isBranchMask);
+      setInstructionType(InsnType::isBranch);
       break;
       // Identify loads/stores
     case Opcode::RISCV_LR_D:
@@ -91,7 +91,7 @@ void Instruction::decode() {
     case Opcode::RISCV_LR_W_AQ:
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL:
-      setInstructionIdentifier(InsnIdentifier::isAtomicMask);
+      setInstructionType(InsnType::isAtomic);
       [[fallthrough]];
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
@@ -102,7 +102,7 @@ void Instruction::decode() {
     case Opcode::RISCV_LD:
     case Opcode::RISCV_FLW:
     case Opcode::RISCV_FLD:
-      setInstructionIdentifier(InsnIdentifier::isLoadMask);
+      setInstructionType(InsnType::isLoad);
       break;
     case Opcode::RISCV_SC_D:
     case Opcode::RISCV_SC_D_AQ:
@@ -112,7 +112,7 @@ void Instruction::decode() {
     case Opcode::RISCV_SC_W_AQ:
     case Opcode::RISCV_SC_W_RL:
     case Opcode::RISCV_SC_W_AQ_RL:
-      setInstructionIdentifier(InsnIdentifier::isAtomicMask);
+      setInstructionType(InsnType::isAtomic);
       [[fallthrough]];
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
@@ -120,16 +120,16 @@ void Instruction::decode() {
     case Opcode::RISCV_SD:
     case Opcode::RISCV_FSW:
     case Opcode::RISCV_FSD:
-      setInstructionIdentifier(InsnIdentifier::isStoreMask);
+      setInstructionType(InsnType::isStore);
       break;
   }
 
   if (Opcode::RISCV_AMOADD_D <= metadata_.opcode &&
       metadata_.opcode <= Opcode::RISCV_AMOXOR_W_RL) {
     // Atomics: both load and store
-    setInstructionIdentifier(InsnIdentifier::isLoadMask);
-    setInstructionIdentifier(InsnIdentifier::isStoreMask);
-    setInstructionIdentifier(InsnIdentifier::isAtomicMask);
+    setInstructionType(InsnType::isLoad);
+    setInstructionType(InsnType::isStore);
+    setInstructionType(InsnType::isAtomic);
   }
 
   // Extract explicit register accesses, ignore immediates until execute
@@ -144,7 +144,7 @@ void Instruction::decode() {
       // destination register
       if ((isBranch() && metadata_.opcode != Opcode::RISCV_JAL &&
            metadata_.opcode != Opcode::RISCV_JALR) ||
-          (isStoreAddress() && !isInstruction(InsnIdentifier::isAtomicMask))) {
+          (isStoreAddress() && !isInsnOneOf(InsnType::isAtomic))) {
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
         if (sourceRegisters_[sourceRegisterCount_] ==
@@ -218,7 +218,7 @@ void Instruction::decode() {
       (Opcode::RISCV_SRL <= metadata_.opcode &&
        metadata_.opcode <= Opcode::RISCV_SRLW)) {
     // Shift instructions
-    setInstructionIdentifier(InsnIdentifier::isShiftMask);
+    setInstructionType(InsnType::isShift);
   }
 
   if ((Opcode::RISCV_XOR <= metadata_.opcode &&
@@ -230,7 +230,7 @@ void Instruction::decode() {
       (Opcode::RISCV_FSGNJN_D <= metadata_.opcode &&
        metadata_.opcode <= Opcode::RISCV_FSGNJ_S)) {
     // Logical instructions
-    setInstructionIdentifier(InsnIdentifier::isLogicalMask);
+    setInstructionType(InsnType::isLogical);
   }
 
   if ((Opcode::RISCV_SLT <= metadata_.opcode &&
@@ -242,7 +242,7 @@ void Instruction::decode() {
       (Opcode::RISCV_FMAX_D <= metadata_.opcode &&
        metadata_.opcode <= Opcode::RISCV_FMIN_S)) {
     // Compare instructions
-    setInstructionIdentifier(InsnIdentifier::isCompareMask);
+    setInstructionType(InsnType::isCompare);
   }
 
   if ((Opcode::RISCV_MUL <= metadata_.opcode &&
@@ -254,7 +254,7 @@ void Instruction::decode() {
       (Opcode::RISCV_FNMADD_D <= metadata_.opcode &&
        metadata_.opcode <= Opcode::RISCV_FNMSUB_S)) {
     // Multiply instructions
-    setInstructionIdentifier(InsnIdentifier::isMultiplyMask);
+    setInstructionType(InsnType::isMultiply);
   }
 
   if ((Opcode::RISCV_REM <= metadata_.opcode &&
@@ -266,7 +266,7 @@ void Instruction::decode() {
       (Opcode::RISCV_FSQRT_D <= metadata_.opcode &&
        metadata_.opcode <= Opcode::RISCV_FSQRT_S)) {
     // Divide instructions
-    setInstructionIdentifier(InsnIdentifier::isDivideMask);
+    setInstructionType(InsnType::isDivide);
   }
 
   if ((metadata_.opcode >= Opcode::RISCV_FADD_D &&
@@ -274,10 +274,10 @@ void Instruction::decode() {
       (metadata_.opcode >= Opcode::RISCV_FEQ_D &&
        metadata_.opcode <= Opcode::RISCV_FSW)) {
     // Floating point operation
-    setInstructionIdentifier(InsnIdentifier::isFloatMask);
+    setInstructionType(InsnType::isFloat);
     if ((metadata_.opcode >= Opcode::RISCV_FCVT_D_L &&
          metadata_.opcode <= Opcode::RISCV_FCVT_W_S)) {
-      setInstructionIdentifier(InsnIdentifier::isConvertMask);
+      setInstructionType(InsnType::isConvert);
     }
   }
 

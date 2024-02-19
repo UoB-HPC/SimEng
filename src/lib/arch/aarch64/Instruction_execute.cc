@@ -78,11 +78,11 @@ void Instruction::execute() {
   if (isMicroOp_) {
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         for (size_t dest = 0; dest < getDestinationRegisters().size(); dest++) {
           results_[dest] = memoryData_[dest].zeroExtend(dataSize_, regSize);
         }
@@ -3328,11 +3328,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPSi:    // ldp st1, st2, [xn, #imm]
       case Opcode::AArch64_LDPWi:    // ldp wt1, wt2, [xn, #imm]
       case Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         break;
@@ -3342,11 +3342,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPSpost:    // ldp st1, st2, [xn], #imm
       case Opcode::AArch64_LDPWpost:    // ldp wt1, wt2, [xn], #imm
       case Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         results_[2] =
@@ -3358,11 +3358,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDPSpre:    // ldp st1, st2, [xn, #imm]!
       case Opcode::AArch64_LDPWpre:    // ldp wt1, wt2, [xn, #imm]!
       case Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm]!
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         results_[2] =
@@ -3413,11 +3413,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRSui:    // ldr st, [xn, #imm]
       case Opcode::AArch64_LDRWui:    // ldr wt, [xn, #imm]
       case Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         break;
       }
@@ -3428,11 +3428,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRSpost:    // ldr st, [xn], #imm
       case Opcode::AArch64_LDRWpost:    // ldr wt, [xn], #imm
       case Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
@@ -3445,11 +3445,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LDRSpre:    // ldr st, [xn, #imm]!
       case Opcode::AArch64_LDRWpre:    // ldr wt, [xn, #imm]!
       case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
-        uint16_t regSize = (isInstruction(InsnIdentifier::isScalarDataMask) ||
-                            isInstruction(InsnIdentifier::isVectorDataMask) ||
-                            isInstruction(InsnIdentifier::isSVEDataMask))
-                               ? 256
-                               : 8;
+        uint16_t regSize =
+            (isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                         InsnType::isSVEData))
+                ? 256
+                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
@@ -5914,7 +5914,7 @@ void Instruction::execute() {
   // to 16 bytes. Thus upper 240 bytes must be ignored by being set to 0.
   for (int i = 0; i < destinationRegisterCount_; i++) {
     if ((destinationRegisters_[i].type == RegisterType::VECTOR) &&
-        !isInstruction(InsnIdentifier::isSVEDataMask)) {
+        !isInsnOneOf(InsnType::isSVEData)) {
       if (results_[i].size() != 256)
         std::cerr << "[SimEng:Instruction_execute] " << metadata_.mnemonic
                   << " opcode: " << metadata_.opcode

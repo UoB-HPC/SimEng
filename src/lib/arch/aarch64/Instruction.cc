@@ -120,50 +120,44 @@ BranchType Instruction::getBranchType() const { return branchType_; }
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 bool Instruction::isStoreAddress() const {
-  return isInstruction(InsnIdentifier::isStoreAddressMask);
+  return isInsnOneOf(InsnType::isStoreAddress);
 }
 
 bool Instruction::isStoreData() const {
-  return isInstruction(InsnIdentifier::isStoreDataMask);
+  return isInsnOneOf(InsnType::isStoreData);
 }
 
-bool Instruction::isLoad() const {
-  return isInstruction(InsnIdentifier::isLoadMask);
-}
+bool Instruction::isLoad() const { return isInsnOneOf(InsnType::isLoad); }
 
-bool Instruction::isBranch() const {
-  return isInstruction(InsnIdentifier::isBranchMask);
-}
+bool Instruction::isBranch() const { return isInsnOneOf(InsnType::isBranch); }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
   // Set base
   uint16_t base = InstructionGroups::INT;
-  if (isInstruction(InsnIdentifier::isScalarDataMask))
+  if (isInsnOneOf(InsnType::isScalarData))
     base = InstructionGroups::SCALAR;
-  else if (isInstruction(InsnIdentifier::isVectorDataMask))
+  else if (isInsnOneOf(InsnType::isVectorData))
     base = InstructionGroups::VECTOR;
-  else if (isInstruction(InsnIdentifier::isSVEDataMask))
+  else if (isInsnOneOf(InsnType::isSVEData))
     base = InstructionGroups::SVE;
-  else if (isInstruction(InsnIdentifier::isSMEDataMask))
+  else if (isInsnOneOf(InsnType::isSMEData))
     base = InstructionGroups::SME;
 
-  if (isInstruction(InsnIdentifier::isLoadMask)) return base + 10;
-  if (isInstruction(InsnIdentifier::isStoreAddressMask)) return base + 11;
-  if (isInstruction(InsnIdentifier::isStoreDataMask)) return base + 12;
-  if (isInstruction(InsnIdentifier::isBranchMask))
-    return InstructionGroups::BRANCH;
-  if (isInstruction(InsnIdentifier::isPredicateMask))
-    return InstructionGroups::PREDICATE;
-  if (isInstruction(InsnIdentifier::isDivideOrSqrtMask)) return base + 9;
-  if (isInstruction(InsnIdentifier::isMultiplyMask)) return base + 8;
-  if (isInstruction(InsnIdentifier::isConvertMask)) return base + 7;
-  if (isInstruction(InsnIdentifier::isCompareMask)) return base + 6;
-  if (isInstruction(InsnIdentifier::isLogicalMask)) {
-    if (isInstruction(InsnIdentifier::isShiftMask)) return base + 4;
+  if (isInsnOneOf(InsnType::isLoad)) return base + 10;
+  if (isInsnOneOf(InsnType::isStoreAddress)) return base + 11;
+  if (isInsnOneOf(InsnType::isStoreData)) return base + 12;
+  if (isInsnOneOf(InsnType::isBranch)) return InstructionGroups::BRANCH;
+  if (isInsnOneOf(InsnType::isPredicate)) return InstructionGroups::PREDICATE;
+  if (isInsnOneOf(InsnType::isDivideOrSqrt)) return base + 9;
+  if (isInsnOneOf(InsnType::isMultiply)) return base + 8;
+  if (isInsnOneOf(InsnType::isConvert)) return base + 7;
+  if (isInsnOneOf(InsnType::isCompare)) return base + 6;
+  if (isInsnOneOf(InsnType::isLogical)) {
+    if (isInsnOneOf(InsnType::isShift)) return base + 4;
     return base + 5;
   }
-  if (isInstruction(InsnIdentifier::isShiftMask)) return base + 2;
+  if (isInsnOneOf(InsnType::isShift)) return base + 2;
   return base + 3;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
@@ -178,8 +172,7 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isInstruction(InsnIdentifier::isLoadMask) ||
-      isInstruction(InsnIdentifier::isStoreAddressMask)) {
+  if (isInsnOneOf(InsnType::isLoad) || isInsnOneOf(InsnType::isStoreAddress)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

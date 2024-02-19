@@ -216,17 +216,17 @@ void Instruction::decode() {
           // Belongs to the predicate group if the destination register is a
           // predicate
           if (op.reg >= ARM64_REG_V0) {
-            setInstructionIdentifier(InsnIdentifier::isVectorDataMask);
+            setInstructionType(InsnType::isVectorData);
           } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-            setInstructionIdentifier(InsnIdentifier::isSMEDataMask);
+            setInstructionType(InsnType::isSMEData);
           } else if (op.reg >= ARM64_REG_Z0) {
-            setInstructionIdentifier(InsnIdentifier::isSVEDataMask);
+            setInstructionType(InsnType::isSVEData);
           } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-            setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+            setInstructionType(InsnType::isScalarData);
           } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-            setInstructionIdentifier(InsnIdentifier::isPredicateMask);
+            setInstructionType(InsnType::isPredicate);
           } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-            setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+            setInstructionType(InsnType::isScalarData);
           }
 
           if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
@@ -278,8 +278,7 @@ void Instruction::decode() {
           sourceOperandsPending_++;
         }
         if (op.shift.value > 0)
-          setInstructionIdentifier(
-              InsnIdentifier::isShiftMask);  // Identify shift operands
+          setInstructionType(InsnType::isShift);  // Identify shift operands
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
@@ -305,7 +304,7 @@ void Instruction::decode() {
            op.sme_index.reg < ARM64_REG_V0) ||
           (op.sme_index.reg == ARM64_REG_ZA)) {
         // Set instruction group
-        setInstructionIdentifier(InsnIdentifier::isSMEDataMask);
+        setInstructionType(InsnType::isSMEData);
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
         // Update operands structure sizes
@@ -330,7 +329,7 @@ void Instruction::decode() {
       } else {
         // SME_INDEX can also be for predicate
         // Set instruction group
-        setInstructionIdentifier(InsnIdentifier::isPredicateMask);
+        setInstructionType(InsnType::isPredicate);
         if (op.access & cs_ac_type::CS_AC_WRITE) {
           destinationRegisters_[destinationRegisterCount_] =
               csRegToRegister(op.sme_index.reg);
@@ -381,12 +380,12 @@ void Instruction::decode() {
   // Identify branches
   for (size_t i = 0; i < metadata_.groupCount; i++) {
     if (metadata_.groups[i] == ARM64_GRP_JUMP) {
-      setInstructionIdentifier(InsnIdentifier::isBranchMask);
+      setInstructionType(InsnType::isBranch);
     }
   }
 
   // Identify branch type
-  if (isInstruction(InsnIdentifier::isBranchMask)) {
+  if (isInsnOneOf(InsnType::isBranch)) {
     switch (metadata_.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
@@ -460,61 +459,61 @@ void Instruction::decode() {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
-          setInstructionIdentifier(InsnIdentifier::isStoreAddressMask);
+          setInstructionType(InsnType::isStoreAddress);
         }
         if (microOpcode_ != MicroOpcode::STR_ADDR) {
-          setInstructionIdentifier(InsnIdentifier::isStoreDataMask);
+          setInstructionType(InsnType::isStoreData);
         }
       } else {
-        setInstructionIdentifier(InsnIdentifier::isLoadMask);
+        setInstructionType(InsnType::isLoad);
       }
     } else {
       if (microOpcode_ != MicroOpcode::STR_DATA) {
-        setInstructionIdentifier(InsnIdentifier::isStoreAddressMask);
+        setInstructionType(InsnType::isStoreAddress);
       }
       if (microOpcode_ != MicroOpcode::STR_ADDR) {
-        setInstructionIdentifier(InsnIdentifier::isStoreDataMask);
+        setInstructionType(InsnType::isStoreData);
       }
     }
 
     // LDADD* are considered to be both a load and a store
     if (metadata_.id >= ARM64_INS_LDADD && metadata_.id <= ARM64_INS_LDADDLH) {
-      setInstructionIdentifier(InsnIdentifier::isLoadMask);
+      setInstructionType(InsnType::isLoad);
     }
 
     // CASAL* are considered to be both a load and a store
     if (metadata_.opcode == Opcode::AArch64_CASALW ||
         metadata_.opcode == Opcode::AArch64_CASALX) {
-      setInstructionIdentifier(InsnIdentifier::isLoadMask);
+      setInstructionType(InsnType::isLoad);
     }
 
-    if (isInstruction(InsnIdentifier::isStoreDataMask)) {
+    if (isInsnOneOf(InsnType::isStoreData)) {
       // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata_.operands[0].reg &&
           metadata_.operands[0].reg <= ARM64_REG_Z31) {
-        setInstructionIdentifier(InsnIdentifier::isSVEDataMask);
+        setInstructionType(InsnType::isSVEData);
       } else if ((metadata_.operands[0].reg <= ARM64_REG_S31 &&
                   metadata_.operands[0].reg >= ARM64_REG_Q0) ||
                  (metadata_.operands[0].reg <= ARM64_REG_H31 &&
                   metadata_.operands[0].reg >= ARM64_REG_B0)) {
-        setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+        setInstructionType(InsnType::isScalarData);
       } else if (metadata_.operands[0].reg >= ARM64_REG_V0) {
-        setInstructionIdentifier(InsnIdentifier::isVectorDataMask);
+        setInstructionType(InsnType::isVectorData);
       } else if ((metadata_.operands[0].reg >= ARM64_REG_ZAB0 &&
                   metadata_.operands[0].reg < ARM64_REG_V0) ||
                  metadata_.operands[0].reg == ARM64_REG_ZA) {
-        setInstructionIdentifier(InsnIdentifier::isSMEDataMask);
+        setInstructionType(InsnType::isSMEData);
       }
     }
   } else if (microOpcode_ == MicroOpcode::STR_DATA) {
     // Edge case for identifying store data micro-operation
-    setInstructionIdentifier(InsnIdentifier::isStoreDataMask);
+    setInstructionType(InsnType::isStoreData);
   }
   if (metadata_.opcode == Opcode::AArch64_LDRXl ||
       metadata_.opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
-    setInstructionIdentifier(InsnIdentifier::isLoadMask);
+    setInstructionType(InsnType::isLoad);
   }
 
   if ((264 <= metadata_.opcode && metadata_.opcode <= 267) ||    // AND
@@ -527,21 +526,21 @@ void Instruction::decode() {
       (771 <= metadata_.opcode && metadata_.opcode <= 774) ||  // ORR/ORN
       (3748 <= metadata_.opcode &&
        metadata_.opcode <= 3771)) {  // ORR/ORN (pt.2)
-    setInstructionIdentifier(InsnIdentifier::isLogicalMask);
+    setInstructionType(InsnType::isLogical);
   }
 
   if ((1252 <= metadata_.opcode && metadata_.opcode <= 1259) ||
       (1314 <= metadata_.opcode && metadata_.opcode <= 1501) ||
       (1778 <= metadata_.opcode && metadata_.opcode <= 1799) ||
       (1842 <= metadata_.opcode && metadata_.opcode <= 1969)) {
-    setInstructionIdentifier(InsnIdentifier::isCompareMask);
+    setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
     if (sourceRegisterCount_ != 0) {
-      if (!(isInstruction(InsnIdentifier::isScalarDataMask) ||
-            isInstruction(InsnIdentifier::isVectorDataMask)) &&
+      if (!(isInsnOneOf(InsnType::isScalarData) ||
+            isInsnOneOf(InsnType::isVectorData)) &&
           sourceRegisters_[0].type == RegisterType::VECTOR) {
-        setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+        setInstructionType(InsnType::isScalarData);
       }
     }
   }
@@ -554,13 +553,12 @@ void Instruction::decode() {
       (4063 <= metadata_.opcode && metadata_.opcode <= 4097) ||
       (898 <= metadata_.opcode && metadata_.opcode <= 904) ||
       (5608 <= metadata_.opcode && metadata_.opcode <= 5642)) {
-    setInstructionIdentifier(InsnIdentifier::isConvertMask);
+    setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
-    if (!(isInstruction(InsnIdentifier::isScalarDataMask) ||
-          isInstruction(InsnIdentifier::isVectorDataMask) ||
-          isInstruction(InsnIdentifier::isSVEDataMask))) {
-      setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+    if (!(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
+                      InsnType::isSVEData))) {
+      setInstructionType(InsnType::isScalarData);
     }
   }
 
@@ -576,7 +574,7 @@ void Instruction::decode() {
       (2640 <= metadata_.opcode && metadata_.opcode <= 2661) ||
       (2665 <= metadata_.opcode && metadata_.opcode <= 2675) ||
       (6066 <= metadata_.opcode && metadata_.opcode <= 6068)) {
-    setInstructionIdentifier(InsnIdentifier::isDivideOrSqrtMask);
+    setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
@@ -642,34 +640,32 @@ void Instruction::decode() {
       (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
       (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
       (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
-    setInstructionIdentifier(InsnIdentifier::isMultiplyMask);
+    setInstructionType(InsnType::isMultiply);
   }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught predicate assignment due to lacking destination register
   if (metadata_.opcode == Opcode::AArch64_PTEST_PP) {
-    setInstructionIdentifier(InsnIdentifier::isPredicateMask);
+    setInstructionType(InsnType::isPredicate);
   }
   // Uncaught float data assignment for FMOV move to general instructions
   if (((430 <= metadata_.opcode && metadata_.opcode <= 432) ||
        (2409 <= metadata_.opcode && metadata_.opcode <= 2429)) &&
-      !(isInstruction(InsnIdentifier::isScalarDataMask) ||
-        isInstruction(InsnIdentifier::isVectorDataMask))) {
-    setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+      !(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData))) {
+    setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
   if ((4341 <= metadata_.opcode && metadata_.opcode <= 4350) ||
       (5795 <= metadata_.opcode && metadata_.opcode <= 5802)) {
-    setInstructionIdentifier(InsnIdentifier::isVectorDataMask);
+    setInstructionType(InsnType::isVectorData);
   }
   // Uncaught float data assignment for FCVT convert to general instructions
   if ((1976 <= metadata_.opcode && metadata_.opcode <= 2186) &&
-      !(isInstruction(InsnIdentifier::isScalarDataMask) ||
-        isInstruction(InsnIdentifier::isVectorDataMask))) {
-    setInstructionIdentifier(InsnIdentifier::isScalarDataMask);
+      !(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData))) {
+    setInstructionType(InsnType::isScalarData);
   }
 
-  if (!(isInstruction(InsnIdentifier::isSMEDataMask))) {
+  if (!(isInsnOneOf(InsnType::isSMEData))) {
     // Catch zero register references and pre-complete those operands - not
     // applicable to SME instructions
     for (uint16_t i = 0; i < sourceRegisterCount_; i++) {

@@ -45,29 +45,29 @@ enum class InstructionException {
 };
 
 // RISC-V Instruction Identifier Masks
-enum class InsnIdentifier {
+enum class InsnType : uint16_t {
   /** Is this a store operation? */
-  isStoreMask = 0b0000000000000001,
+  isStore = 1 << 0,
   /** Is this a load operation? */
-  isLoadMask = 0b0000000000000010,
+  isLoad = 1 << 1,
   /** Is this a branch operation? */
-  isBranchMask = 0b0000000000000100,
+  isBranch = 1 << 2,
   /** Is this a multiply operation? */
-  isMultiplyMask = 0b0000000000001000,
+  isMultiply = 1 << 3,
   /** Is this a divide operation? */
-  isDivideMask = 0b0000000000010000,
+  isDivide = 1 << 4,
   /** Is this a shift operation? */
-  isShiftMask = 0b0000000000100000,
+  isShift = 1 << 5,
   /** Is this an atomic instruction? */
-  isAtomicMask = 0b0000000001000000,
+  isAtomic = 1 << 6,
   /** Is this a logical instruction? */
-  isLogicalMask = 0b0000000010000000,
+  isLogical = 1 << 7,
   /** Is this a compare instruction? */
-  isCompareMask = 0b0000000100000000,
+  isCompare = 1 << 8,
   /** Is this a floating point operation? */
-  isFloatMask = 0b0000001000000000,
+  isFloat = 1 << 9,
   /** Is this a floating point <-> integer convert operation? */
-  isConvertMask = 0b0000010000000000,
+  isConvert = 1 << 10,
 };
 
 /** The maximum number of source registers any supported RISC-V instruction
@@ -191,13 +191,24 @@ class Instruction : public simeng::Instruction {
   void decode();
 
   /** Update the instruction's identifier with an additional field. */
-  constexpr void setInstructionIdentifier(InsnIdentifier identifier) {
-    instructionIdentifier_ |= static_cast<uint16_t>(identifier);
+  constexpr void setInstructionType(InsnType identifier) {
+    instructionIdentifier_ |=
+        static_cast<std::underlying_type_t<InsnType>>(identifier);
   }
 
-  /** Test whether this instruction had the given identifier set. */
-  constexpr bool isInstruction(InsnIdentifier identifier) const {
-    return (instructionIdentifier_ & static_cast<uint16_t>(identifier));
+  /** Test whether this instruction has one or more of the given
+   * identifiers set. */
+  template <typename... Types>
+  constexpr bool isInsnOneOf(Types... identifiers) const {
+    // Ensure only correct type is used (InsnType)
+    static_assert(
+        (std::is_same_v<std::decay_t<Types>, InsnType> && ...),
+        "isInsnOneOf() can only be passed arguments of type `InsnType`.");
+    // Perform bitwise AND on `instructionIdentifier_` and each identifer from
+    // `identifiers` parameter pack; boolean OR-ing the results
+    return ((instructionIdentifier_ &
+             static_cast<std::underlying_type_t<InsnType>>(identifiers)) ||
+            ...);
   }
 
   /** For instructions with a valid rm field, extract the rm value and change
@@ -243,7 +254,7 @@ class Instruction : public simeng::Instruction {
   uint16_t sourceOperandsPending_ = 0;
 
   /** Used to denote what type of instruction this is. Utilises the constants in
-   * the `InsnIdentifier` namespace allowing each bit to represent a unique
+   * the `InsnType` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint16_t instructionIdentifier_ = 0;
 };
