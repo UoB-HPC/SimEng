@@ -85,9 +85,13 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
+      // Don't remove from ROB immediately as may need to send through writeback
+      // and commit successfully later
       raiseException_(uop);
-      buffer_.pop_front();
-      return n + 1;
+      uop->setExceptionEncounteredFalse();
+      uop->setNotCommitReady();
+
+      return n;
     }
 
     const auto& destinations = uop->getDestinationRegisters();
@@ -153,6 +157,11 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   }
 
   return n;
+}
+
+void ReorderBuffer::flushIncluding(uint64_t InsnId) {
+  flush(insnId_);
+  buffer_.pop_back();
 }
 
 void ReorderBuffer::flush(uint64_t afterInsnId) {

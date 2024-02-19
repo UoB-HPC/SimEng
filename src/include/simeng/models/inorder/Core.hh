@@ -43,6 +43,10 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+ protected:
+  /** Apply changes to the process state. */
+  void applyStateChange(const arch::ProcessStateChange& change) override;
+
  private:
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(const std::shared_ptr<Instruction>& instruction);

@@ -12,6 +12,7 @@ class MockCore : public Core {
            const std::vector<RegisterFileStructure>& regFileStructure)
       : Core(dataMemory, isa, regFileStructure) {}
   MOCK_METHOD0(tick, void());
+  MOCK_METHOD1(applyStateChange, void(const arch::ProcessStateChange& change));
   MOCK_CONST_METHOD0(hasHalted, bool());
   MOCK_CONST_METHOD0(getArchitecturalRegisterFileSet,
                      const ArchitecturalRegisterFileSet&());

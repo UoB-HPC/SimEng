@@ -104,7 +104,7 @@ void Core::tick() {
   auto registers = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
-    if (!uop->isOperandReady(i)) {
+    if (!uop->isSourceOperandReady(i)) {
       uop->supplyOperand(i, registerFileSet_.get(reg));
     }
   }
@@ -217,6 +217,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
   exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
+  exceptionGeneratingInstruction_ = instruction;
   processExceptionHandler();
 }
 
@@ -252,6 +253,59 @@ void Core::processExceptionHandler() {
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
+}
+void Core::applyStateChange(const arch::ProcessStateChange& change) {
+  // Update registers in accordance with the ProcessStateChange type
+  switch (change.type) {
+    case arch::ChangeType::WRITEBACK: {
+      // Writeback
+      auto results = exceptionGeneratingInstruction_->getResults();
+      auto destinations =
+          exceptionGeneratingInstruction_->getDestinationRegisters();
+
+      for (size_t i = 0; i < results.size(); i++) {
+        auto reg = destinations[i];
+        registerFileSet_.set(reg, results[i]);
+      }
+
+      instructionsExecuted_++;
+      break;
+    }
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(change.modifiedRegisters[i],
+                             change.modifiedRegisterValues[i]);
+      }
+      break;
+    }
+  }
+
+  // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
+  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    dataMemory_.requestWrite(change.memoryAddresses[i],
+                             change.memoryAddressValues[i]);
+  }
 }
 
 }  // namespace emulation

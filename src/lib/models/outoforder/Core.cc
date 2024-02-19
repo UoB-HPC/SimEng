@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#include "simeng/Core.hh"
+
 namespace simeng {
 namespace models {
 namespace outoforder {
@@ -256,8 +258,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"lsq.loadViolations",
            std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
-
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
+  assert(instruction && "Raised exception on null instruction");
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }
@@ -275,6 +277,8 @@ void Core::handleException() {
   // Flush everything younger than the exception-generating instruction.
   // This must happen prior to handling the exception to ensure the commit state
   // is up-to-date with the register mapping table
+  // TODO THIS BASICALLY JUST EMPTIES THE ROB, exceptionGeneratingInstruction
+  // has already been removed (in current form)
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
@@ -316,6 +320,71 @@ void Core::processExceptionHandler() {
   }
 
   exceptionHandler_ = nullptr;
+}
+
+void Core::applyStateChange(const arch::ProcessStateChange& change) {
+  if (change.type != arch::ChangeType::WRITEBACK &&
+      exceptionGeneratingInstruction_) {
+    // Flush instruction from ROB
+    reorderBuffer_.flushIncluding(
+        exceptionGeneratingInstruction_->getInstructionId());
+  }
+
+  // Update registers in accordance with the ProcessStateChange type
+  switch (change.type) {
+    case arch::ChangeType::WRITEBACK: {
+      // Place the exception generating instruction in a completion slot so can
+      // pass through writeback in next cycle. Results held in internal results
+      // array
+      assert(exceptionGeneratingInstruction_ &&
+             "Exception generating instruction is NULL");
+
+      // Forwards operands to update dispatch scoreboard as this didn't happen
+      // in execute
+      dispatchIssueUnit_.forwardOperands(
+          exceptionGeneratingInstruction_->getDestinationRegisters(),
+          exceptionGeneratingInstruction_->getResults());
+
+      completionSlots_[completionSlots_.size() - 1].getTailSlots()[0] =
+          std::move(exceptionGeneratingInstruction_);
+    }
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(
+            change.modifiedRegisters[i],
+            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+                    .get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(
+            change.modifiedRegisters[i],
+            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+                    .get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                   change.modifiedRegisterValues[i]);
+      }
+      break;
+    }
+  }
+
+  // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
+  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    dataMemory_.requestWrite(change.memoryAddresses[i],
+                             change.memoryAddressValues[i]);
+  }
 }
 
 void Core::flushIfNeeded() {

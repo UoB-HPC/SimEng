@@ -35,6 +35,7 @@ void RenameUnit::tick() {
     if (uop == nullptr) {
       continue;
     }
+
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
       robStalls_++;
@@ -99,7 +100,7 @@ void RenameUnit::tick() {
     auto& sourceRegisters = uop->getSourceRegisters();
     for (size_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
-      if (!uop->isOperandReady(i)) {
+      if (!uop->isSourceOperandReady(i)) {
         uop->renameSource(i, rat_.getMapping(reg));
       }
     }

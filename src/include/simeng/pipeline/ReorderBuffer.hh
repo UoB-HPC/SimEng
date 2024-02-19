@@ -56,10 +56,15 @@ class ReorderBuffer {
   void commitMicroOps(uint64_t insnId);
 
   /** Commit and remove up to `maxCommitSize` instructions. */
+  // TODO is return value ever used?? Only in tests !?
   unsigned int commit(uint64_t maxCommitSize);
 
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
   void flush(uint64_t afterInsnId);
+
+  /** Flush all instructions with a sequence ID greater than or equal to
+   * `afterSeqId`. */
+  void flushIncluding(uint64_t InsnId);
 
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;

@@ -42,6 +42,9 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
   return {const_cast<RegisterValue*>(sourceValues_.data()),
           sourceValues_.size()};
 }
+void Instruction::printInstructionInfo() {
+  std::cerr << metadata_.mnemonic << " " << metadata_.operandStr << std::endl;
+}
 
 const span<Register> Instruction::getDestinationRegisters() const {
   // The `destinationRegisterCount` is used here as the span count value because
@@ -51,7 +54,7 @@ const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters_.data()),
           destinationRegisterCount_};
 }
-bool Instruction::isOperandReady(int index) const {
+bool Instruction::isSourceOperandReady(int index) const {
   return static_cast<bool>(sourceValues_[index]);
 }
 

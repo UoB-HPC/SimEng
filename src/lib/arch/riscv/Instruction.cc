@@ -43,7 +43,8 @@ const span<Register> Instruction::getDestinationRegisters() const {
           destinationRegisterCount_};
 }
 
-bool Instruction::isOperandReady(int index) const {
+bool Instruction::isSourceOperandReady(int index) const {
+  // TODO casting registerValue to bool seems bad
   return static_cast<bool>(sourceValues_[index]);
 }
 
@@ -94,6 +95,16 @@ const span<RegisterValue> Instruction::getResults() const {
           destinationRegisterCount_};
 }
 
+void Instruction::setResults(span<RegisterValue> resultsInput) {
+  assert(resultsInput.size() <= results_.size() &&
+         "[SimEng:Instruction] More results than size of array");
+  uint8_t n = 0;
+  for (auto result : resultsInput) {
+    results_[n] = result;
+    n++;
+  }
+}
+
 bool Instruction::isStoreAddress() const { return isStore_; }
 bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
@@ -106,6 +117,9 @@ void Instruction::setMemoryAddresses(
   memoryData_ = std::vector<RegisterValue>(addresses.size());
   memoryAddresses_ = addresses;
   dataPending_ = addresses.size();
+}
+void Instruction::printInstructionInfo() {
+  std::cerr << metadata_.mnemonic << " " << metadata_.operandStr << std::endl;
 }
 
 span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()

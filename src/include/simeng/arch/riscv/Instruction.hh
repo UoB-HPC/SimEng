@@ -74,7 +74,7 @@ class Instruction : public simeng::Instruction {
   const span<Register> getDestinationRegisters() const override;
 
   /** Check whether the operand at index `i` has had a value supplied. */
-  bool isOperandReady(int index) const override;
+  bool isSourceOperandReady(int index) const override;
 
   /** Override the specified source register with a renamed physical register.
    */
@@ -96,6 +96,8 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
+
+  void setResults(span<RegisterValue> resultsInput) override;
 
   /** Generate memory addresses this instruction wishes to access. */
   span<const memory::MemoryAccessTarget> generateAddresses() override;
@@ -155,6 +157,7 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
+  void printInstructionInfo() override;
 
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */

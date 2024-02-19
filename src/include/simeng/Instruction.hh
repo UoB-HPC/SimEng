@@ -36,6 +36,10 @@ class Instruction {
    * instruction. */
   bool exceptionEncountered() const;
 
+  void setExceptionEncounteredFalse();
+
+  virtual void printInstructionInfo() = 0;
+
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
 
@@ -60,7 +64,7 @@ class Instruction {
   virtual void supplyOperand(uint16_t i, const RegisterValue& value) = 0;
 
   /** Check whether the operand at index `i` has had a value supplied. */
-  virtual bool isOperandReady(int i) const = 0;
+  virtual bool isSourceOperandReady(int i) const = 0;
 
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */
@@ -76,12 +80,18 @@ class Instruction {
   /** Mark the instruction as ready to commit. */
   void setCommitReady();
 
+  /** Mark the instruction as NOT ready to commit. */
+  void setNotCommitReady();
+
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
   bool canCommit() const;
 
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
+
+  /** Set results array */
+  virtual void setResults(span<RegisterValue> resultsInput) = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
   virtual span<const memory::MemoryAccessTarget> generateAddresses() = 0;

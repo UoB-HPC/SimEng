@@ -91,6 +91,7 @@ void RegisterAliasTable::commit(Register physical) {
   // Find the register previously mapped to the same architectural register and
   // free it
   auto oldTag = historyTable_[physical.type][physical.tag];
+
   freeQueues_[physical.type].push(oldTag);
 }
 

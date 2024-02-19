@@ -66,6 +66,7 @@ void Instruction::execute() {
   assert(
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
+  // TODO potentially better suited as a function based on frequency of usage
   // 0th bit of SVCR register determines if streaming-mode is enabled.
   const bool SMenabled = architecture_.getSVCRval() & 1;
   // 1st bit of SVCR register determines if ZA register is enabled.
@@ -5901,6 +5902,9 @@ void Instruction::execute() {
     }
   }
 #endif
+}
+void Instruction::setResults(span<RegisterValue> resultsInput) {
+  // TODO implement this
 }
 
 }  // namespace aarch64

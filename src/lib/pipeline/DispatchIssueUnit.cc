@@ -101,7 +101,7 @@ void DispatchIssueUnit::tick() {
     for (uint16_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
 
-      if (!uop->isOperandReady(i)) {
+      if (!uop->isSourceOperandReady(i)) {
         // The operand hasn't already been supplied
         if (scoreboard_[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value

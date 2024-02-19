@@ -39,6 +39,10 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+ protected:
+  /** Apply changes to the process state. */
+  void applyStateChange(const arch::ProcessStateChange& change) override;
+
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -70,6 +74,8 @@ class Core : public simeng::Core {
 
   /** The length of the available instruction memory. */
   uint64_t programByteLength_ = 0;
+
+  std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
 
   /** Is the core waiting on a data read? */
   uint64_t pendingReads_ = 0;
