@@ -326,8 +326,8 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   if (change.type != arch::ChangeType::WRITEBACK &&
       exceptionGeneratingInstruction_) {
     // Flush instruction from ROB
-    reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId() -
-                         1);
+    reorderBuffer_.flushIncluding(
+        exceptionGeneratingInstruction_->getInstructionId());
   }
 
   // Update registers in accordance with the ProcessStateChange type

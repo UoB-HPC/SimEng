@@ -159,6 +159,11 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   return n;
 }
 
+void ReorderBuffer::flushIncluding(uint64_t InsnId) {
+  flush(insnId_);
+  buffer_.pop_back();
+}
+
 void ReorderBuffer::flush(uint64_t afterInsnId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterInsnId`

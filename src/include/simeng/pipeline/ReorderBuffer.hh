@@ -62,6 +62,10 @@ class ReorderBuffer {
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
   void flush(uint64_t afterInsnId);
 
+  /** Flush all instructions with a sequence ID greater than or equal to
+   * `afterSeqId`. */
+  void flushIncluding(uint64_t InsnId);
+
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;
 
