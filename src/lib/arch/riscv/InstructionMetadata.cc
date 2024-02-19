@@ -725,7 +725,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
              "C.LUI has rd=x2 which is invalid");
 
       opcode = Opcode::RISCV_LUI;
-      // all operands correct
+      // All operands correct
       break;
     case Opcode::RISCV_C_LWSP: {
       // lw rd, offset[7:2](x2)
