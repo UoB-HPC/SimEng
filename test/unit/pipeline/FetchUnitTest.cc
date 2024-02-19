@@ -591,7 +591,7 @@ TEST_P(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
 
 // When min and max instruction sizes are different, ensure progression with
 // valid min sized instruction at end of buffer when next read doesn't complete.
-TEST_P(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
+TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
   // In the case that min and max are the same, memory is never requested as
   // there is enough data in the buffer. In this case, the test isn't relevant
   if (insnMinSizeBytes < insnMaxSizeBytes) {
@@ -667,7 +667,7 @@ TEST_P(PipelineFetchUnitTest, validMinSize_ReadsDontComplete) {
 
 // Test that minimum bytes held at the end of the buffer is not successfully
 // predecoded and should be re-tried when reads don't complete
-TEST_P(PipelineFetchUnitTest, invalidHalfWord_readsDontComplete) {
+TEST_P(PipelineFetchUnitTest, invalidHalfWordreadsDontComplete) {
   // In the case where min and max are the same, predecode will never return 0
   // so the test is only relevent in the case where they are different
   if (insnMinSizeBytes < insnMaxSizeBytes) {

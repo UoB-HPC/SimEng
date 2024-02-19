@@ -227,8 +227,6 @@ uint8_t Architecture::predecode(const void* ptr, uint16_t bytesAvailable,
 
     bool success = cs_disasm_iter(capstoneHandle_, &encoding, &insnSize,
                                   &address, &rawInsn);
-    // After cs_diasm_iter is called, size and address updated to contain the
-    // size/address of next instruction in the buffer
 
     auto metadata = success ? InstructionMetadata(rawInsn)
                             : InstructionMetadata(encoding, rawInsn.size);
