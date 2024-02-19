@@ -172,7 +172,7 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isInsnOneOf(InsnType::isLoad) || isInsnOneOf(InsnType::isStoreAddress)) {
+  if (isInsnOneOf(InsnType::isLoad, InsnType::isStoreAddress)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;
