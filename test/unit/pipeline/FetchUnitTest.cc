@@ -110,7 +110,9 @@ TEST_P(PipelineFetchUnitTest, FetchUnaligned) {
   ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-  assert(insnMinSizeBytes > 1 && "min insn size too small to set PC correctly");
+  // Min instruction size needs to be more than 1 to set PC correctly for this
+  // test
+  EXPECT_GT(insnMinSizeBytes, 1);
   uint64_t setPC = (blockSize - insnMinSizeBytes) + 1;
   // Set PC so that there will not be enough data to start decoding
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
