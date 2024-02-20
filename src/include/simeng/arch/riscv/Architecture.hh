@@ -22,8 +22,8 @@ class Architecture : public arch::Architecture {
   ~Architecture();
 
   /** Pre-decode instruction memory into a macro-op of `Instruction`
-   * instances. Returns the number of bytes consumed to produce it (always 4),
-   * and writes into the supplied macro-op vector. */
+   * instances. Returns the number of bytes consumed to produce it (0 if
+   * failure), and writes into the supplied macro-op vector. */
   uint8_t predecode(const void* ptr, uint16_t bytesAvailable,
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
@@ -44,6 +44,9 @@ class Architecture : public arch::Architecture {
 
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
+
+  /** Returns the minimum size of a valid instruction in bytes. */
+  uint8_t getMinInstructionSize() const override;
 
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
@@ -68,6 +71,12 @@ class Architecture : public arch::Architecture {
 
   /** System Register of Processor Cycle Counter. */
   simeng::Register cycleSystemReg_;
+
+  /** A mask used to determine if an address has the correct byte alignment */
+  uint8_t addressAlignmentMask_;
+
+  /** Minimum number of bytes that can represent an instruction */
+  uint8_t minInsnLength_;
 };
 
 }  // namespace riscv

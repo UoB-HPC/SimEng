@@ -52,6 +52,9 @@ Vector-Length (Only in use when ISA is ``AArch64``)
 Streaming-Vector-Length (Only in use when ISA is ``AArch64``)
     The vector length used by instructions belonging to Arm's Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.
 
+Compressed (Only in use when ISA is ``rv64``)
+    Enables the RISC-V compressed extension. If set to false and compressed instructions are supplied, a misaligned program counter exception is usually thrown.
+
 Fetch
 -----
 

@@ -6,6 +6,7 @@ using InstJump = RISCVRegressionTest;
 
 TEST_P(InstJump, jalr) {
   RUN_RISCV(R"(
+    li t1, 4
     jalr t0, t1, 12
     addi t6, t6, 10
     jalr ra, t1, 20
@@ -16,8 +17,8 @@ TEST_P(InstJump, jalr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 10);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 3);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 12);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 8);
 }
 
 TEST_P(InstJump, jalrAlias) {

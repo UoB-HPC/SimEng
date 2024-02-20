@@ -117,6 +117,13 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint16_t bufferedBytes_ = 0;
+
+  /** Let the following PipelineFetchUnitTest derived classes be a friend of
+   * this class to allow proper testing of 'tick' function. */
+  friend class PipelineFetchUnitTest_invalidMinBytesAtEndOfBuffer_Test;
+  friend class PipelineFetchUnitTest_minSizeInstructionAtEndOfBuffer_Test;
+  friend class PipelineFetchUnitTest_validMinSizeReadsDontComplete_Test;
+  friend class PipelineFetchUnitTest_invalidMinBytesreadsDontComplete_Test;
 };
 
 }  // namespace pipeline

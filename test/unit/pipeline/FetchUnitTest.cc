@@ -25,7 +25,8 @@ using ::testing::SetArgReferee;
 namespace simeng {
 namespace pipeline {
 
-class PipelineFetchUnitTest : public testing::Test {
+class PipelineFetchUnitTest
+    : public testing::TestWithParam<std::pair<uint8_t, uint8_t>> {
  public:
   PipelineFetchUnitTest()
       : output(1, {}),
@@ -43,7 +44,9 @@ class PipelineFetchUnitTest : public testing::Test {
   }
 
  protected:
-  const uint8_t insnMaxSizeBytes = 4;
+  const uint8_t insnMinSizeBytes = GetParam().first;
+  const uint8_t insnMaxSizeBytes = GetParam().second;
+  // TODO make this parameterisable and update all tests accordingly
   const uint8_t blockSize = 16;
 
   PipelineBuffer<MacroOp> output;
@@ -65,7 +68,7 @@ class PipelineFetchUnitTest : public testing::Test {
 
 // Tests that ticking a fetch unit attempts to predecode from the correct
 // program counter and generates output correctly.
-TEST_F(PipelineFetchUnitTest, Tick) {
+TEST_P(PipelineFetchUnitTest, Tick) {
   MacroOp macroOp = {uopPtr};
 
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
@@ -83,7 +86,7 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 }
 
 // Tests that ticking a fetch unit does nothing if the output has stalled
-TEST_F(PipelineFetchUnitTest, TickStalled) {
+TEST_P(PipelineFetchUnitTest, TickStalled) {
   output.stall(true);
 
   // Anticipate testing instruction type; return true for branch
@@ -101,14 +104,19 @@ TEST_F(PipelineFetchUnitTest, TickStalled) {
 
 // Tests that the fetch unit will handle instructions that straddle fetch block
 // boundaries by automatically requesting the next block of data.
-TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
+TEST_P(PipelineFetchUnitTest, FetchUnaligned) {
   MacroOp mOp = {uopPtr};
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-  // Set PC to 14, so there will not be enough data to start decoding
+  // Min instruction size needs to be more than 1 to set PC correctly for this
+  // test
+  EXPECT_GT(insnMinSizeBytes, 1);
+  uint64_t setPC = (blockSize - insnMinSizeBytes) + 1;
+  // Set PC so that there will not be enough data to start decoding
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
-  fetchUnit.updatePC(14);
+  fetchUnit.updatePC(setPC);
   fetchUnit.tick();
 
   // Expect a block starting at address 16 to be requested when we fetch again
@@ -125,7 +133,8 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
 
   // Tick 4 times to process all 16 bytes of fetched data
@@ -135,16 +144,18 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   // Tick a 5th time to ensure all buffered bytes have been used
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
 
 // Tests that a properly aligned PC (to the fetch block boundary) is correctly
 // fetched
-TEST_F(PipelineFetchUnitTest, fetchAligned) {
+TEST_P(PipelineFetchUnitTest, fetchAligned) {
   const uint8_t pc = 16;
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
 
   memory::MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
@@ -163,7 +174,8 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
 
   // Tick 4 times to process all 16 bytes of fetched data
@@ -174,13 +186,15 @@ TEST_F(PipelineFetchUnitTest, fetchAligned) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 }
 
 // Tests that halting functionality triggers correctly
-TEST_F(PipelineFetchUnitTest, halted) {
+TEST_P(PipelineFetchUnitTest, halted) {
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
   EXPECT_FALSE(fetchUnit.hasHalted());
   fetchUnit.tick();
   EXPECT_FALSE(fetchUnit.hasHalted());
@@ -195,6 +209,7 @@ TEST_F(PipelineFetchUnitTest, halted) {
 
   memory::MemoryAccessTarget target = {1008, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
   fetchUnit.requestFromPC();
 
@@ -207,7 +222,8 @@ TEST_F(PipelineFetchUnitTest, halted) {
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(4);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(8);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(4);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(4);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(4);
   // Tick 4 times to process all 16 bytes of fetched data
   for (int i = 0; i < 4; i++) {
@@ -218,13 +234,15 @@ TEST_F(PipelineFetchUnitTest, halted) {
 
 // Tests that fetching a branch instruction (predicted taken) mid block causes a
 // branch stall + discards the remaining fetched instructions
-TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
+TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   const uint8_t pc = 16;
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
 
   memory::MemoryAccessTarget target = {pc, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
 
   // Request block from memory
@@ -242,7 +260,8 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
 
   // For first tick, process instruction as non-branch
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
   fetchUnit.tick();
@@ -251,7 +270,8 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   // & a new memory block is requested
   EXPECT_CALL(memory, getCompletedReads()).Times(0);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(true));
   BranchType bType = BranchType::Unconditional;
@@ -266,6 +286,7 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(0);
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.tick();
 
@@ -273,12 +294,13 @@ TEST_F(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   // (pred.target)
   target = {pred.target, blockSize};
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
   fetchUnit.requestFromPC();
 }
 
 // Tests the functionality of the supplying from the Loop Buffer
-TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
+TEST_P(PipelineFetchUnitTest, supplyFromLoopBuffer) {
   // Set instructions to be fetched from memory
   memory::MemoryReadResult memReadResult = {
       {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
@@ -367,7 +389,7 @@ TEST_F(PipelineFetchUnitTest, supplyFromLoopBuffer) {
 
 // Tests the functionality of idling the supply to the Loop Buffer one of not
 // taken branch at the loopBoundaryAddress_
-TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
+TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // Set instructions to be fetched from memory
   memory::MemoryReadResult memReadResultA = {
       {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
@@ -441,6 +463,289 @@ TEST_F(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   fetchUnit.tick();
   EXPECT_EQ(output.getTailSlots()[0], mOp2);
 }
+
+// Tests that a min sized instruction held at the end of the fetch buffer is
+// allowed to be predecoded in the same cycle as being fetched
+TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+  ON_CALL(isa, getMinInstructionSize()).WillByDefault(Return(insnMinSizeBytes));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+  // Buffer will contain valid min size instruction so predecode returns
+  // min bytes read
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(insnMinSizeBytes)));
+
+  // Fetch the data, only min bytes will be copied to fetch buffer. Should allow
+  // continuation to predecode
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  uint64_t setPC = blockSize - insnMinSizeBytes;
+  // Fetch a single minimum sized instruction, buffered bytes = 0
+  fetchUnit.updatePC(setPC);
+  // Tick. Fetch data and predecode
+  fetchUnit.tick();
+
+  // Buffer should now be empty as all bytes predecoded
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
+
+  // Expect a block starting at address 16 to be requested when we fetch again
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  EXPECT_CALL(memory,
+              requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
+      .Times(1);
+  fetchUnit.requestFromPC();
+
+  // Tick again, expecting that decoding will now resume
+  MacroOp mOp2 = {uopPtr2};
+  memory::MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
+  span<memory::MemoryReadResult> nextBlock = {&nextBlockValue, 1};
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
+  ON_CALL(isa, predecode(_, _, _, _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(insnMaxSizeBytes)));
+
+  EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+  // Completed reads called again as more data is requested
+  EXPECT_CALL(memory, getCompletedReads()).Times(1);
+  EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+  // Output of width 1 so only 1 call to predecode
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+  fetchUnit.tick();
+
+  // Initially 0 bytes, 16 bytes added, max bytes predecoded leaving (16 - max)
+  // bytes left
+  EXPECT_EQ(fetchUnit.bufferedBytes_, 16 - insnMaxSizeBytes);
+  EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
+}
+
+// Test that invalid min number of bytes held at the end of the buffer is not
+// successfully predecoded and that more data is fetched subsequently allowing
+// progression as a full instruction is now present in the buffer
+TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
+  // This is only relevant if min and max size are different. Otherwise, there
+  // won't be any progression as the fetch unit will be caught in an infinite
+  // loop
+  if (insnMinSizeBytes < insnMaxSizeBytes) {
+    ON_CALL(isa, getMaxInstructionSize())
+        .WillByDefault(Return(insnMaxSizeBytes));
+    ON_CALL(isa, getMinInstructionSize())
+        .WillByDefault(Return(insnMinSizeBytes));
+    ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+    // Buffer will contain invalid min bytes so predecode returns 0 bytes read
+    ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
+        .WillByDefault(Return(0));
+
+    // getMaxInstructionSize called for second time in assertion
+    if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    } else {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+    }
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    uint64_t setPC = blockSize - insnMinSizeBytes;
+    // Fetch a single minimum sized instruction, buffered bytes = 0
+    fetchUnit.updatePC(setPC);
+    // Tick
+    fetchUnit.tick();
+
+    // No data consumed
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
+
+    // Expect that memory is requested even though there is data in the buffer
+    // as bufferedBytes < maxInstructionSize
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory,
+                requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
+        .Times(1);
+    fetchUnit.requestFromPC();
+
+    // Tick again expecting buffer to be filled and a word is predecoded
+    MacroOp mOp = {uopPtr};
+    memory::MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
+    span<memory::MemoryReadResult> nextBlock = {&nextBlockValue, 1};
+    ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
+    ON_CALL(isa, predecode(_, _, _, _))
+        .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(insnMaxSizeBytes)));
+
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    fetchUnit.tick();
+
+    // Initially min bytes, 16 bytes added, max bytes predecoded
+    EXPECT_EQ(fetchUnit.bufferedBytes_,
+              (insnMinSizeBytes + 16) - insnMaxSizeBytes);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
+  }
+}
+
+// When min and max instruction sizes are different, ensure progression with
+// valid min sized instruction at end of buffer when next read doesn't complete.
+TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
+  // In the case that min and max are the same, memory is never requested as
+  // there is enough data in the buffer. In this case, the test isn't relevant
+  if (insnMinSizeBytes < insnMaxSizeBytes) {
+    ON_CALL(isa, getMaxInstructionSize())
+        .WillByDefault(Return(insnMaxSizeBytes));
+    ON_CALL(isa, getMinInstructionSize())
+        .WillByDefault(Return(insnMinSizeBytes));
+    ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+    // Buffer will contain valid max and min sized instruction, predecode
+    // returns max bytes read on first tick
+    MacroOp mOp = {uopPtr};
+    ON_CALL(isa, predecode(_, insnMaxSizeBytes + insnMinSizeBytes,
+                           0x10 - (insnMaxSizeBytes + insnMinSizeBytes), _))
+        .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(insnMaxSizeBytes)));
+
+    // Fetch the data, only last max + min bytes from block. Should allow
+    // continuation to predecode
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    uint64_t setPC = blockSize - (insnMaxSizeBytes + insnMinSizeBytes);
+    // Fetch a minimum and maximum sized instruction, buffered bytes = 0
+    fetchUnit.updatePC(setPC);
+    // Tick and predecode max bytes
+    fetchUnit.tick();
+
+    // Ensure max bytes consumed
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
+
+    // Expect that memory is requested even though there is data in the buffer
+    // as bufferedBytes < maxInstructionSize
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory,
+                requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
+        .Times(1);
+    fetchUnit.requestFromPC();
+
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
+
+    // Memory doesn't complete reads in next cycle but buffered bytes should be
+    // predecoded
+    MacroOp mOp2 = {uopPtr2};
+    ON_CALL(memory, getCompletedReads())
+        .WillByDefault(Return(span<memory::MemoryReadResult>{nullptr, 0}));
+    ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
+        .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(insnMinSizeBytes)));
+
+    // Path through fetch as follows:
+    // More data required as bufferedBytes_ < maxInsnSize so getCompletedReads
+    // Doesn't complete so buffer doesn't get added to
+    // Buffer still has some valid data so predecode should be called
+
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(2);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    // Tick
+    fetchUnit.tick();
+
+    // Ensure min bytes are consumed
+    EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
+    EXPECT_EQ(fetchUnit.pc_, 16);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
+  }
+}
+
+// Test that minimum bytes held at the end of the buffer is not successfully
+// predecoded and should be re-tried when reads don't complete
+TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
+  // In the case where min and max are the same, predecode will never return 0
+  // so the test is only relevent in the case where they are different
+  if (insnMinSizeBytes < insnMaxSizeBytes) {
+    ON_CALL(isa, getMaxInstructionSize())
+        .WillByDefault(Return(insnMaxSizeBytes));
+    ON_CALL(isa, getMinInstructionSize())
+        .WillByDefault(Return(insnMinSizeBytes));
+    ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
+
+    // Buffer will contain invalid min bytes so predecode returns 0 bytes read
+    ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
+        .WillByDefault(Return(0));
+
+    // getMaxInstructionSize called for second time in assertion
+    if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    } else {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+    }
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(1);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    uint64_t setPC = blockSize - insnMinSizeBytes;
+    // Fetch a minimum number of bytes, buffered bytes = 0
+    fetchUnit.updatePC(setPC);
+    // Tick
+    fetchUnit.tick();
+
+    // No data consumed
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
+
+    // Expect that memory is requested even though there is data in the buffer
+    // as bufferedBytes < maxInstructionSize
+    EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    EXPECT_CALL(memory,
+                requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
+        .Times(1);
+    fetchUnit.requestFromPC();
+
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
+
+    // Memory doesn't complete reads in next cycle but buffered bytes should
+    // attempt to be predecoded
+    ON_CALL(memory, getCompletedReads())
+        .WillByDefault(Return(span<memory::MemoryReadResult>{nullptr, 0}));
+    // Predecode still returns no bytes read
+    ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
+        .WillByDefault(Return(0));
+
+    // getMaxInsnSize called again in assertion
+    if (strcmp(SIMENG_BUILD_TYPE, "Release") == 0) {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
+    } else {
+      EXPECT_CALL(isa, getMaxInstructionSize()).Times(2);
+    }
+    EXPECT_CALL(memory, getCompletedReads()).Times(1);
+    EXPECT_CALL(isa, getMinInstructionSize()).Times(2);
+    EXPECT_CALL(isa, predecode(_, _, _, _)).Times(1);
+
+    // Tick
+    fetchUnit.tick();
+
+    // Ensure min bytes are not consumed
+    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
+    EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(PipelineFetchUnitTests, PipelineFetchUnitTest,
+                         ::testing::Values(std::pair(2, 4), std::pair(4, 4)));
 
 }  // namespace pipeline
 }  // namespace simeng

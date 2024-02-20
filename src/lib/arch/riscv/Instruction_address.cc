@@ -16,11 +16,37 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
   if (isInstruction(InsnType::isLoad) && isInstruction(InsnType::isStore) &&
       isInstruction(InsnType::isAtomic)) {
     // Atomics
+    // Metadata operands[2] corresponds to instruction sourceRegValues[1]
+    assert(metadata_.operands[2].type == RISCV_OP_REG &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[1].get<uint64_t>();
+  } else if (isInstruction(InsnType::isLoad) &&
+             isInstruction(InsnType::isAtomic)) {
+    // Load reserved
+    // Metadata operands[1] corresponds to instruction sourceRegValues[0]
+    assert(metadata_.operands[1].type == RISCV_OP_REG &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[0].get<uint64_t>();
+  } else if (isInstruction(InsnType::isStore) &&
+             isInstruction(InsnType::isAtomic)) {
+    // Store conditional
+    assert(metadata_.operands[2].type == RISCV_OP_REG &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
     address = sourceValues_[1].get<uint64_t>();
   } else if (isInstruction(InsnType::isLoad)) {
-    address = sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+    assert(metadata_.operands[1].type == RISCV_OP_MEM &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[0].get<uint64_t>() + sourceImm_;
   } else {
-    address = sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;
+    assert((metadata_.operands[1].type == RISCV_OP_MEM) &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+
+    address = sourceValues_[1].get<uint64_t>() + sourceImm_;
   }
 
   // Atomics

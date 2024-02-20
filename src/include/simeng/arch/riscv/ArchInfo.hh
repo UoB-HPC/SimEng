@@ -19,6 +19,14 @@ typedef enum riscv_sysreg {
 
 } riscv_sysreg;
 
+//  A struct of RISC-V specific constants
+namespace constantsPool {
+const uint8_t addressAlignMask = 0x3;
+const uint8_t addressAlignMaskCompressed = 0x1;
+const uint8_t minInstWidthBytes = 4;
+const uint8_t minInstWidthBytesCompressed = 2;
+};  // namespace constantsPool
+
 /** A class to hold and generate riscv specific architecture configuration
  * options. */
 class ArchInfo : public simeng::arch::ArchInfo {

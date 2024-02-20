@@ -132,7 +132,7 @@ void Instruction::decode() {
     setInstructionType(InsnType::isAtomic);
   }
 
-  // Extract explicit register accesses, ignore immediates until execute
+  // Extract explicit register accesses and immediates
   for (size_t i = 0; i < metadata_.operandCount; i++) {
     const auto& op = metadata_.operands[i];
 
@@ -159,57 +159,67 @@ void Instruction::decode() {
 
         sourceRegisterCount_++;
       } else {
+        /**
+         * Register writes to x0 are discarded so no destination register is
+         * set.
+         *
+         * While the execution stage may still write to the results array,
+         * when Instruction::getResults and
+         * Instruction::getDestinationRegisters are called during writeback,
+         * zero sized spans are returned (determined by the value of
+         * destinationRegisterCount). This in turn means no register update is
+         * performed.
+         *
+         * TODO this will break if there are more than 2 destination registers
+         * with one being the zero register e.g. if an instruction implicitly
+         * writes to a system register. The current implementation could mean
+         * that the second result is discarded
+         *
+         */
         if (csRegToRegister(op.reg) != RegisterType::ZERO_REGISTER) {
           destinationRegisters_[destinationRegisterCount_] =
               csRegToRegister(op.reg);
 
           destinationRegisterCount_++;
-        } else {
-          /**
-           * Register writes to x0 are discarded so no destination register is
-           * set.
-           *
-           * While the execution stage may still write to the results array,
-           * when Instruction::getResults and
-           * Instruction::getDestinationRegisters are called during writeback,
-           * zero sized spans are returned (determined by the value of
-           * destinationRegisterCount). This in turn means no register update is
-           * performed.
-           *
-           * TODO this will break if there are more than 2 destination registers
-           * with one being the zero register e.g. if an instruction implicitly
-           * writes to a system register. The current implementation could mean
-           * that the second result is discarded
-           *
-           */
         }
       }
-    }
+    } else if (i > 0) {
+      // First operand is never of MEM or IMM type, every register operand after
+      // the first is a source register
+      if (op.type == RISCV_OP_REG) {
+        //  Second or third register operand
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
-    // For all instructions, every register operand after the first is a source
-    // register
-    else if (i > 0 && op.type == RISCV_OP_REG) {
-      //  Second or third operand
-      sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
+        if (sourceRegisters_[sourceRegisterCount_] ==
+            RegisterType::ZERO_REGISTER) {
+          // Catch zero register references and pre-complete those operands
+          sourceValues_[sourceRegisterCount_] = RegisterValue(0, 8);
+        } else {
+          sourceOperandsPending_++;
+        }
 
-      if (sourceRegisters_[sourceRegisterCount_] ==
-          RegisterType::ZERO_REGISTER) {
-        // Catch zero register references and pre-complete those operands
-        sourceValues_[sourceRegisterCount_] = RegisterValue(0, 8);
-      } else {
+        sourceRegisterCount_++;
+      } else if (op.type == RISCV_OP_MEM) {
+        // Memory operand
+        // Extract reg number from capstone object
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
+        sourceImm_ = op.mem.disp;
+        sourceRegisterCount_++;
         sourceOperandsPending_++;
+      } else if (op.type == RISCV_OP_IMM) {
+        // Immediate operand
+        sourceImm_ = op.imm;
+      } else {
+        // Something has gone wrong
+        assert(false &&
+               "Unexpected register type in non-first "
+               "operand position");
       }
-
-      sourceRegisterCount_++;
-    }
-
-    // First operand is never MEM type, only check after the first. If register
-    // contains memory address, extract reg number from capstone object
-    else if (i > 0 && op.type == RISCV_OP_MEM) {
-      //  Memory operand
-      sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
-      sourceRegisterCount_++;
-      sourceOperandsPending_++;
+    } else {
+      // Something has gone wrong
+      assert(false &&
+             "Unexpected register type in first "
+             "operand position");
     }
   }
 
@@ -292,12 +302,12 @@ void Instruction::decode() {
     case Opcode::RISCV_BGE:
     case Opcode::RISCV_BGEU:
       branchType_ = BranchType::Conditional;
-      knownOffset_ = metadata_.operands[2].imm;
+      knownOffset_ = sourceImm_;
       break;
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
       branchType_ = BranchType::Unconditional;
-      knownOffset_ = metadata_.operands[1].imm;
+      knownOffset_ = sourceImm_;
       break;
   }
 }

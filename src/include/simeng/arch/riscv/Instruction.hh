@@ -233,6 +233,10 @@ class Instruction : public simeng::Instruction {
    * `sourceRegisters` entry. */
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> sourceValues_;
 
+  /** The immediate source operand for which there is only ever one. Remains 0
+   * if unused. */
+  int64_t sourceImm_ = 0;
+
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results_;
@@ -240,8 +244,8 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
+  /** The number of source operands that have not yet had values supplied. Used
+   * to determine execution readiness. */
   uint16_t sourceOperandsPending_ = 0;
 
   /** Used to denote what type of instruction this is. Utilises the constants in

@@ -239,6 +239,8 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
+uint8_t Architecture::getMinInstructionSize() const { return 4; }
+
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   // Update the Processor Cycle Counter to total cycles completed.

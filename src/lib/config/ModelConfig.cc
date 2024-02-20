@@ -266,11 +266,17 @@ void ModelConfig::setExpectations(bool isDefault) {
     // Set isa_
     if (ISA == "AArch64") {
       isa_ = ISA::AArch64;
-    } else if ("rv64") {
+    } else if (ISA == "rv64") {
       isa_ = ISA::RV64;
     }
   }
   createGroupMapping();
+
+  if (isa_ == ISA::RV64) {
+    expectations_["Core"].addChild(
+        ExpectationNode::createExpectation<bool>(false, "Compressed"));
+    expectations_["Core"]["Compressed"].setValueSet(std::vector{false, true});
+  }
 
   expectations_["Core"].addChild(
       ExpectationNode::createExpectation<std::string>("emulation",

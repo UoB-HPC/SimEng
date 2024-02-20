@@ -30,10 +30,13 @@ struct InstructionMetadata {
     return metadataException_;
   }
 
-  /* Returns a bool stating whether an exception has been encountered */
+  /* Returns a bool stating whether an exception has been encountered. */
   bool getMetadataExceptionEncountered() const {
     return metadataExceptionEncountered_;
   }
+
+  /* Returns the length of the instruction in bytes. */
+  uint8_t getInsnLength() const { return insnLengthBytes_; }
 
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
@@ -90,7 +93,11 @@ struct InstructionMetadata {
    * instruction. */
   void alterPseudoInstructions(const cs_insn& insn);
 
-  /** Flag the instruction as NYI due to a detected unsupported alias. */
+  /** Detect compressed instructions and update metadata to match the
+   * non-compressed instruction expansion. */
+  void convertCompressedInstruction(const cs_insn& insn);
+
+  /** Flag the instruction as aliasNYI due to a detected unsupported alias. */
   void aliasNYI();
 
   /** RISC-V helper function
@@ -101,11 +108,23 @@ struct InstructionMetadata {
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
 
+  /** RISC-V helper function
+   * Duplicate operands[0] and move operands[1] to operands[2] */
+  void duplicateFirstOp();
+
+  /** RISC-V helper function
+   * Combine operands[1] and operands[2] which are of type imm and reg
+   * respectively into a single mem type operand */
+  void createMemOpPosOne();
+
   /** The current exception state of this instruction. */
   InstructionException metadataException_ = InstructionException::None;
 
   /** Whether an exception has been encountered. */
   bool metadataExceptionEncountered_ = false;
+
+  /** The length of the instruction encoding in bytes. */
+  uint8_t insnLengthBytes_;
 };
 
 }  // namespace riscv

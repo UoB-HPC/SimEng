@@ -83,31 +83,38 @@ void FetchUnit::tick() {
         break;
       }
     }
-    if (fetchIndex == fetched.size()) {
-      // Need to wait for fetched instructions
+    // Decide how to progress based on status of fetched data and buffer. Allow
+    // progression if minimal data is in the buffer no matter state of fetched
+    // data
+    if (fetchIndex == fetched.size() &&
+        bufferedBytes_ < isa_.getMinInstructionSize()) {
+      // Relevant data has not been fetched and not enough data already in the
+      // buffer. Need to wait for fetched instructions
       return;
+    } else if (fetchIndex != fetched.size()) {
+      // Data has been successfully read, move into fetch buffer
+      // TODO: Handle memory faults
+      assert(fetched[fetchIndex].data && "Memory read failed");
+      const uint8_t* fetchData =
+          fetched[fetchIndex].data.getAsVector<uint8_t>();
+
+      // Copy fetched data to fetch buffer after existing data
+      std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
+                  blockSize_ - bufferOffset);
+
+      bufferedBytes_ += blockSize_ - bufferOffset;
+      buffer = fetchBuffer_;
+      // Decoding should start from the beginning of the fetchBuffer_.
+      bufferOffset = 0;
     }
-
-    // TODO: Handle memory faults
-    assert(fetched[fetchIndex].data && "Memory read failed");
-    const uint8_t* fetchData = fetched[fetchIndex].data.getAsVector<uint8_t>();
-
-    // Copy fetched data to fetch buffer after existing data
-    std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
-                blockSize_ - bufferOffset);
-
-    bufferedBytes_ += blockSize_ - bufferOffset;
-    buffer = fetchBuffer_;
-    // Decoding should start from the beginning of the fetchBuffer_.
-    bufferOffset = 0;
   } else {
     // There is already enough data in the fetch buffer, so use that
     buffer = fetchBuffer_;
     bufferOffset = 0;
   }
 
-  // Check we have enough data to begin decoding
-  if (bufferedBytes_ < isa_.getMaxInstructionSize()) return;
+  // Check we have enough data to begin decoding as read may not have completed
+  if (bufferedBytes_ < isa_.getMinInstructionSize()) return;
 
   auto outputSlots = output_.getTailSlots();
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
@@ -164,6 +171,7 @@ void FetchUnit::tick() {
 
     assert(bytesRead <= bufferedBytes_ &&
            "Predecode consumed more bytes than were available");
+
     // Increment the offset, decrement available bytes
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
