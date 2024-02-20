@@ -469,12 +469,12 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   // Buffer will contain valid min size instruction so predecode returns
-  // 2 bytes read
+  // min bytes read
   MacroOp mOp = {uopPtr};
   ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(insnMinSizeBytes)));
 
-  // Fetch the data, only 2 bytes will be copied to fetch buffer. Should allow
+  // Fetch the data, only min bytes will be copied to fetch buffer. Should allow
   // continuation to predecode
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
@@ -515,7 +515,7 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
 
   fetchUnit.tick();
 
-  // Initially 0 bytes, 16 bytes added, max bytes predecoded leaving 16-max
+  // Initially 0 bytes, 16 bytes added, max bytes predecoded leaving (16 - max)
   // bytes left
   EXPECT_EQ(fetchUnit.bufferedBytes_, 16 - insnMaxSizeBytes);
   EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
@@ -524,7 +524,7 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
 // Test that invalid min number of bytes held at the end of the buffer is not
 // successfully predecoded and that more data is fetched subsequently allowing
 // progression as a full instruction is now present in the buffer
-TEST_P(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
+TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
   // This is only relevant if min and max size are different. Otherwise, there
   // won't be any progression as the fetch unit will be caught in an infinite
   // loop
@@ -582,9 +582,9 @@ TEST_P(PipelineFetchUnitTest, invalidHalfWordAtEndOfBuffer) {
 
     fetchUnit.tick();
 
-    // Initially 2 bytes, 16 bytes added, 4 bytes predecoded leaving 14 bytes
-    // left
-    EXPECT_EQ(fetchUnit.bufferedBytes_, (2 + 16) - insnMaxSizeBytes);
+    // Initially min bytes, 16 bytes added, max bytes predecoded
+    EXPECT_EQ(fetchUnit.bufferedBytes_,
+              (insnMinSizeBytes + 16) - insnMaxSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
   }
 }
@@ -618,7 +618,7 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
     uint64_t setPC = blockSize - (insnMaxSizeBytes + insnMinSizeBytes);
     // Fetch a minimum and maximum sized instruction, buffered bytes = 0
     fetchUnit.updatePC(setPC);
-    // Tick and predecode 4 bytes
+    // Tick and predecode max bytes
     fetchUnit.tick();
 
     // Ensure max bytes consumed
@@ -658,7 +658,7 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
     // Tick
     fetchUnit.tick();
 
-    // Ensure 2 bytes are consumed
+    // Ensure min bytes are consumed
     EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
     EXPECT_EQ(fetchUnit.pc_, 16);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
@@ -667,7 +667,7 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
 
 // Test that minimum bytes held at the end of the buffer is not successfully
 // predecoded and should be re-tried when reads don't complete
-TEST_P(PipelineFetchUnitTest, invalidHalfWordreadsDontComplete) {
+TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
   // In the case where min and max are the same, predecode will never return 0
   // so the test is only relevent in the case where they are different
   if (insnMinSizeBytes < insnMaxSizeBytes) {
@@ -677,7 +677,7 @@ TEST_P(PipelineFetchUnitTest, invalidHalfWordreadsDontComplete) {
         .WillByDefault(Return(insnMinSizeBytes));
     ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-    // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
+    // Buffer will contain invalid min bytes so predecode returns 0 bytes read
     ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
         .WillByDefault(Return(0));
 
@@ -734,7 +734,7 @@ TEST_P(PipelineFetchUnitTest, invalidHalfWordreadsDontComplete) {
     // Tick
     fetchUnit.tick();
 
-    // Ensure 2 bytes are not consumed
+    // Ensure min bytes are not consumed
     EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
