@@ -308,15 +308,13 @@ void Instruction::decode() {
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
         // Update operands structure sizes
-        if (op.access & cs_ac_type::CS_AC_WRITE) {
-          destinationRegisters_.makeSME(regs.size());
-          results_.makeSME(regs.size());
-        }
+        destinationRegisters_.makeSME(regs.size());
+        results_.makeSME(regs.size());
+        sourceRegisters_.makeSME(regs.size());
+        sourceValues_.makeSME(regs.size());
         // If WRITE, then also need to add to source registers to maintain
         // un-updated rows. Hence source structures are updated for READ and
         // WRITE
-        sourceRegisters_.makeSME(regs.size());
-        sourceValues_.makeSME(regs.size());
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters_[sourceRegisterCount_] = regs[i];
           sourceRegisterCount_++;

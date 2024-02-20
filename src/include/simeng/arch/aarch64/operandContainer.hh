@@ -38,16 +38,19 @@ class operandContainer {
       // Re-size vector to accomodate SME instruction
       std::get<std::vector<T>>(var_).resize(
           arr.size() + ADDITIONAL_SME_REGISTERS + numSMERows);
+    } else {
+      // std::vector already in use, resize to currentSize + numSMERows
+      this->resize(this->size() + numSMERows);
     }
-    // Otherwise, makeSME already called - do nothing
   }
 
   /** Resize the vector to be the same size as `numRegs`. Primarily used to
    * ensure any unused vector indexes introduced in makeSME() are removed. */
   constexpr void resize(uint16_t numRegs) {
-    if (std::holds_alternative<std::vector<T>>(var_)) {
-      std::get<std::vector<T>>(var_).resize(numRegs);
-    }
+    assert(std::holds_alternative<std::vector<T>>(var_) &&
+           "resize can only be called when the active member is std::vector "
+           "(i.e. after a call to makeSME() has been made)");
+    std::get<std::vector<T>>(var_).resize(numRegs);
   }
 
   /** Get the size of the currently active data structure. */
@@ -55,24 +58,31 @@ class operandContainer {
     return std::visit([](auto&& arg) -> size_t { return arg.size(); }, var_);
   }
 
+  /** Implementation of the [] operator to apply to the currently active variant
+   * member. */
   [[nodiscard]] constexpr const T& operator[](size_t idx) const {
     return std::visit([=](auto&& arg) -> const T& { return (arg[idx]); }, var_);
   }
 
+  /** Implementation of the [] operator to apply to the currently active variant
+   * member. */
   [[nodiscard]] constexpr T& operator[](size_t idx) {
     return std::visit([=](auto&& arg) -> T& { return (arg[idx]); }, var_);
   }
 
+  /** Retrieve the underlying pointer of the active variant member. */
   [[nodiscard]] constexpr const T* data() const noexcept {
     return std::visit([](auto&& arg) -> const T* { return arg.data(); }, var_);
   }
 
+  /** Retrieve the underlying pointer of the active variant member. */
   [[nodiscard]] constexpr T* data() noexcept {
     return std::visit([](auto&& arg) -> T* { return arg.data(); }, var_);
   }
 
  private:
-  /** Variant holding the source objects. */
+  /** Variant containing a fixed size array (used by default) and a vector, the
+   * latter of which can be utilised by calling makeSME(). */
   std::variant<std::array<T, arrSize>, std::vector<T>> var_;
 };
 
