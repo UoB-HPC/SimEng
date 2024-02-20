@@ -536,7 +536,7 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
         .WillByDefault(Return(insnMinSizeBytes));
     ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
-    // Buffer will contain invalid 2 bytes so predecode returns 0 bytes read
+    // Buffer will contain invalid min bytes so predecode returns 0 bytes read
     ON_CALL(isa, predecode(_, insnMinSizeBytes, 0x10 - insnMinSizeBytes, _))
         .WillByDefault(Return(0));
 
