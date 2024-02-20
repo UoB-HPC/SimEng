@@ -46,6 +46,7 @@ class PipelineFetchUnitTest
  protected:
   const uint8_t insnMinSizeBytes = GetParam().first;
   const uint8_t insnMaxSizeBytes = GetParam().second;
+  // TODO make this parameterisable and update all tests accordingly
   const uint8_t blockSize = 16;
 
   PipelineBuffer<MacroOp> output;
