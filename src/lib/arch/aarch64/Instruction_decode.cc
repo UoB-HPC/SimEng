@@ -235,10 +235,10 @@ void Instruction::decode() {
             std::vector<Register> regs = getZARowVectors(
                 op.reg, architecture_.getStreamingVectorLength());
             // Update operand structure sizes
-            sourceRegisters_.makeSME(regs.size());
-            destinationRegisters_.makeSME(regs.size());
-            sourceValues_.makeSME(regs.size());
-            results_.makeSME(regs.size());
+            sourceRegisters_.addSMEOperand(regs.size());
+            destinationRegisters_.addSMEOperand(regs.size());
+            sourceValues_.addSMEOperand(regs.size());
+            results_.addSMEOperand(regs.size());
             for (int i = 0; i < regs.size(); i++) {
               destinationRegisters_[destinationRegisterCount_] = regs[i];
               destinationRegisterCount_++;
@@ -264,8 +264,8 @@ void Instruction::decode() {
           std::vector<Register> regs =
               getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
           // Update source operand structure sizes
-          sourceRegisters_.makeSME(regs.size());
-          sourceValues_.makeSME(regs.size());
+          sourceRegisters_.addSMEOperand(regs.size());
+          sourceValues_.addSMEOperand(regs.size());
           for (int i = 0; i < regs.size(); i++) {
             sourceRegisters_[sourceRegisterCount_] = regs[i];
             sourceRegisterCount_++;
@@ -308,10 +308,10 @@ void Instruction::decode() {
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
         // Update operands structure sizes
-        destinationRegisters_.makeSME(regs.size());
-        results_.makeSME(regs.size());
-        sourceRegisters_.makeSME(regs.size());
-        sourceValues_.makeSME(regs.size());
+        destinationRegisters_.addSMEOperand(regs.size());
+        results_.addSMEOperand(regs.size());
+        sourceRegisters_.addSMEOperand(regs.size());
+        sourceValues_.addSMEOperand(regs.size());
         for (int i = 0; i < regs.size(); i++) {
           // If READ access, we only need to add SME rows to source registers.
           // If WRITE access, then we need to add SME rows to destination

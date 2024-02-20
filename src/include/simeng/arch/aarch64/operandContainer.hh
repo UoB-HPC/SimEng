@@ -26,30 +26,33 @@ const uint8_t ADDITIONAL_SME_REGISTERS = 8;
 template <typename T, const uint8_t arrSize>
 class operandContainer {
  public:
-  /** Tells container it is handling SME operands - stop using a fixed size
-   * array and insead use a vector. */
-  constexpr void makeSME(const uint16_t numSMERows) {
-    // Ensure that std::array is currently in use
+  /** Make enough space for an SME operand in container - stop using fixed size
+   * array and instead use vector. */
+  constexpr void addSMEOperand(const uint16_t numSMERows) {
     if (std::holds_alternative<std::array<T, arrSize>>(var_)) {
       // Get values in array
       auto arr = std::get<std::array<T, arrSize>>(var_);
       // Place into vector
       var_ = std::vector<T>{arr.begin(), arr.end()};
-      // Re-size vector to accomodate SME instruction
+      // Re-size vector to accomodate SME instruction - make sure to keep all
+      // current operands and make space for any additional operands that can be
+      // present with SME instructions
       std::get<std::vector<T>>(var_).resize(
           arr.size() + ADDITIONAL_SME_REGISTERS + numSMERows);
     } else {
-      // std::vector already in use, resize to currentSize + numSMERows
+      // std::vector already in use; only need to allocate enough room for
+      // additional SME operand.
       this->resize(this->size() + numSMERows);
     }
   }
 
   /** Resize the vector to be the same size as `numRegs`. Primarily used to
-   * ensure any unused vector indexes introduced in makeSME() are removed. */
+   * ensure any unused vector indexes introduced in addSMEOperand() are removed.
+   */
   constexpr void resize(uint16_t numRegs) {
     assert(std::holds_alternative<std::vector<T>>(var_) &&
            "resize can only be called when the active member is std::vector "
-           "(i.e. after a call to makeSME() has been made)");
+           "(i.e. after a call to addSMEOperand() has been made)");
     std::get<std::vector<T>>(var_).resize(numRegs);
   }
 
@@ -82,7 +85,7 @@ class operandContainer {
 
  private:
   /** Variant containing a fixed size array (used by default) and a vector, the
-   * latter of which can be utilised by calling makeSME(). */
+   * latter of which can be utilised by calling addSMEOperand(). */
   std::variant<std::array<T, arrSize>, std::vector<T>> var_;
 };
 

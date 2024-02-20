@@ -36,8 +36,8 @@ TEST(AArch64OperandContainerTest, useVec) {
   cont[2] = "elem2";
 
   // Convert to Vector
-  cont.makeSME(10);
-  // Check size is correct after makeSME call
+  cont.addSMEOperand(10);
+  // Check size is correct after addSMEOperand call
   EXPECT_EQ(cont.size(), MAX_SOURCE_REGISTERS + ADDITIONAL_SME_REGISTERS + 10);
   // Check initialised data was maintained
   for (size_t i = 0; i < cont.size(); i++) {
@@ -55,7 +55,7 @@ TEST(AArch64OperandContainerTest, useVec) {
   EXPECT_EQ(cont[1], "elem1");
 }
 
-// Call makeSME multiple times to ensure correct behaviour
+// Call addSMEOperand multiple times to ensure correct behaviour
 TEST(AArch64OperandContainerTest, multipleMakeSMECalls) {
   operandContainer<std::string, MAX_SOURCE_REGISTERS> cont;
   EXPECT_EQ(cont.size(), MAX_SOURCE_REGISTERS);
@@ -68,9 +68,9 @@ TEST(AArch64OperandContainerTest, multipleMakeSMECalls) {
   cont[1] = "elem1";
   cont[2] = "elem2";
 
-  // Call makeSME for the first time - convert to Vector
-  cont.makeSME(10);
-  // Check size is correct after makeSME call
+  // Call addSMEOperand for the first time - convert to Vector
+  cont.addSMEOperand(10);
+  // Check size is correct after addSMEOperand call
   size_t vecSize = MAX_SOURCE_REGISTERS + ADDITIONAL_SME_REGISTERS + 10;
   EXPECT_EQ(cont.size(), vecSize);
   // Check initialised data was maintained
@@ -82,8 +82,8 @@ TEST(AArch64OperandContainerTest, multipleMakeSMECalls) {
     }
   }
 
-  // Call makeSME again, ensuring size grows as expected
-  cont.makeSME(10);
+  // Call addSMEOperand again, ensuring size grows as expected
+  cont.addSMEOperand(10);
   EXPECT_EQ(cont.size(), vecSize + 10);
   // Check initialised data was maintained
   for (size_t i = 0; i < cont.size(); i++) {
