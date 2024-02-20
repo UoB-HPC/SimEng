@@ -437,8 +437,8 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  /** The number of source operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
+  /** The number of source operands that have not yet had values supplied. Used
+   * to determine execution readiness. */
   uint16_t sourceOperandsPending_ = 0;
 
   /** Is the micro-operation opcode of the instruction, where appropriate. */
