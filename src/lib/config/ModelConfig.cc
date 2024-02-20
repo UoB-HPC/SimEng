@@ -176,6 +176,22 @@ void ModelConfig::addConfigOptions(std::string config) {
   // validation/checks
   recursiveAdd(tree.rootref(), configTree_.root_id());
   setExpectations();
+
+  // If the config additions result in a smaller config tree then errors can
+  // occur where node ids are greater than the size of the ryml::Tree. To
+  // combat this, a new tree is created to reassign node ids such that none are
+  // greater than the size of the ryml::Tree
+  ryml::Tree tmp;
+  // Copy all config values over to a temporary tree
+  tmp.rootref() |= ryml::MAP;
+  tmp.duplicate_children(&configTree_, configTree_.root_id(), tmp.root_id(),
+                         -1);
+  // Clear configTree_ and copy config values back over but with new assigned
+  // node ids
+  configTree_.clear();
+  configTree_.rootref() |= ryml::MAP;
+  configTree_.duplicate_children(&tmp, tmp.root_id(), tmp.root_id(), -1);
+
   validate();
 }
 

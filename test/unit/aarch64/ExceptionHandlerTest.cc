@@ -423,8 +423,8 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   handler_0.printException(*static_cast<Instruction*>(insn.get()));
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
-              HasSubstr("[SimEng:ExceptionHandler] Encountered illegal "
-                        "instruction exception"));
+              HasSubstr("[SimEng:ExceptionHandler] Encountered unallocated "
+                        "instruction encoding exception"));
   buffer.str(std::string());
   uops.clear();
 

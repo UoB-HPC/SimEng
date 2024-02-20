@@ -44,6 +44,40 @@ enum class InstructionException {
   PipelineFlush
 };
 
+// RISC-V Instruction Identifier Masks
+enum class InsnType : uint16_t {
+  /** Is this a store operation? */
+  isStore = 1 << 0,
+  /** Is this a load operation? */
+  isLoad = 1 << 1,
+  /** Is this a branch operation? */
+  isBranch = 1 << 2,
+  /** Is this a multiply operation? */
+  isMultiply = 1 << 3,
+  /** Is this a divide operation? */
+  isDivide = 1 << 4,
+  /** Is this a shift operation? */
+  isShift = 1 << 5,
+  /** Is this an atomic instruction? */
+  isAtomic = 1 << 6,
+  /** Is this a logical instruction? */
+  isLogical = 1 << 7,
+  /** Is this a compare instruction? */
+  isCompare = 1 << 8,
+  /** Is this a floating point operation? */
+  isFloat = 1 << 9,
+  /** Is this a floating point <-> integer convert operation? */
+  isConvert = 1 << 10,
+};
+
+/** The maximum number of source registers any supported RISC-V instruction
+ * can have. */
+const uint8_t MAX_SOURCE_REGISTERS = 3;
+
+/** The maximum number of destination registers any supported RISC-V
+ * instruction can have. */
+const uint8_t MAX_DESTINATION_REGISTERS = 1;
+
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -57,10 +91,6 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
-  /** Retrieve the identifier for the first exception that occurred during
-   * processing this instruction. */
-  virtual InstructionException getException() const;
-
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
 
@@ -73,9 +103,6 @@ class Instruction : public simeng::Instruction {
    * renamed. */
   const span<Register> getDestinationRegisters() const override;
 
-  /** Check whether the operand at index `i` has had a value supplied. */
-  bool isOperandReady(int index) const override;
-
   /** Override the specified source register with a renamed physical register.
    */
   void renameSource(uint16_t i, Register renamed) override;
@@ -85,14 +112,10 @@ class Instruction : public simeng::Instruction {
   void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint16_t i, const RegisterValue& value) override;
+  void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
-  /** Check whether all operand values have been supplied, and the instruction
-   * is ready to execute. */
-  bool canExecute() const override;
-
-  /** Execute the instruction. */
-  void execute() override;
+  /** Check whether the operand at index `i` has had a value supplied. */
+  bool isOperandReady(int index) const override;
 
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
@@ -111,7 +134,8 @@ class Instruction : public simeng::Instruction {
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
-   * instruction. */
+   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * the instruction was mispredicted, and the correct target address. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Retrieve branch type. */
@@ -134,21 +158,22 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
-  /** Is this an atomic instruction? */
-  bool isAtomic() const;
-
-  /** Is this a floating point operation? */
-  bool isFloat() const;
-
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
-  /** Set this instruction's execution information including it's execution
-   * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const ExecutionInfo& info);
+  /** Check whether all operand values have been supplied, and the instruction
+   * is ready to execute. */
+  bool canExecute() const override;
+
+  /** Execute the instruction. */
+  void execute() override;
 
   /** Get this instruction's supported set of ports. */
   const std::vector<uint16_t>& getSupportedPorts() override;
+
+  /** Set this instruction's execution information including it's execution
+   * latency and throughput, and the set of ports which support it. */
+  void setExecutionInfo(const ExecutionInfo& info) override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -156,13 +181,35 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
+  /** Retrieve the identifier for the first exception that occurred during
+   * processing this instruction. */
+  InstructionException getException() const;
+
  private:
-  /** The maximum number of source registers any supported RISC-V instruction
-   * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 3;
-  /** The maximum number of destination registers any supported RISC-V
-   * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 1;
+  /** Process the instruction's metadata to determine source/destination
+   * registers. */
+  void decode();
+
+  /** Update the instruction's identifier with an additional field. */
+  constexpr void setInstructionType(InsnType identifier) {
+    instructionIdentifier_ |=
+        static_cast<std::underlying_type_t<InsnType>>(identifier);
+  }
+
+  /** Tests whether this instruction has the given identifier set. */
+  constexpr bool isInstruction(InsnType identifier) const {
+    return (instructionIdentifier_ &
+            static_cast<std::underlying_type_t<InsnType>>(identifier));
+  }
+
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
+
+  /** Generate an ExecutionNotYetImplemented exception. */
+  void executionNYI();
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -172,11 +219,13 @@ class Instruction : public simeng::Instruction {
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters_;
+
   /** The number of source registers this instruction reads from. */
   uint8_t sourceRegisterCount_ = 0;
 
   /** An array of destination registers. */
   std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters_;
+
   /** The number of destination registers this instruction writes to. */
   uint8_t destinationRegisterCount_ = 0;
 
@@ -195,65 +244,14 @@ class Instruction : public simeng::Instruction {
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
 
-  // Decoding
-  /** Process the instruction's metadata to determine source/destination
-   * registers. */
-  void decode();
+  /** The number of source operands that have not yet had values supplied. Used to
+   * determine execution readiness. */
+  uint16_t sourceOperandsPending_ = 0;
 
-  // Scheduling
-  /** The number of source operands that have not yet had values supplied. Used
-   * to determine execution readiness. */
-  short sourceOperandsPending_ = 0;
-
-  // Execution
-  /** Generate an ExecutionNotYetImplemented exception. */
-  void executionNYI();
-
-  /** For instructions with a valid rm field, extract the rm value and change
-   * the CPP rounding mode accordingly, then call the function "operation"
-   * before reverting the CPP rounding mode to its initial value. "Operation"
-   * should contain the entire execution logic of the instruction
-   */
-  void setStaticRoundingModeThen(std::function<void(void)> operation);
-
-  // Metadata
-  /** Is this a store operation? */
-  bool isStore_ = false;
-  /** Is this a load operation? */
-  bool isLoad_ = false;
-  /** Is this a branch operation? */
-  bool isBranch_ = false;
-  /** Is this a multiply operation? */
-  bool isMultiply_ = false;
-  /** Is this a divide operation? */
-  bool isDivide_ = false;
-  /** Is this a shift operation? */
-  bool isShift_ = false;
-  /** Is this an atomic instruction? */
-  bool isAtomic_ = false;
-  /** Is this a logical instruction? */
-  bool isLogical_ = false;
-  /** Is this a compare instruction? */
-  bool isCompare_ = false;
-  /** Is this a floating point operation? */
-  bool isFloat_ = false;
-  /** Is this a floating point <-> integer convert operation? */
-  bool isConvert_ = false;
-
-  // Memory
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses);
-
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
+  /** Used to denote what type of instruction this is. Utilises the constants in
+   * the `InsnType` namespace allowing each bit to represent a unique
+   * identifier such as `isLoad` or `isMultiply` etc. */
+  uint16_t instructionIdentifier_ = 0;
 };
 
 }  // namespace riscv

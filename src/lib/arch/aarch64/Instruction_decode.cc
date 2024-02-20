@@ -190,19 +190,19 @@ void Instruction::decode() {
 
   // Extract implicit writes
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
-    destinationRegisters_.push_back(csRegToRegister(
-        static_cast<arm64_reg>(metadata_.implicitDestinations[i])));
+    destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
+        static_cast<arm64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
   }
   // Extract implicit reads
   for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
-    sourceRegisters_.push_back(
-        csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i])));
+    sourceRegisters_[sourceOperandsPending_] =
+        csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i]));
+    sourceRegisterCount_++;
     sourceOperandsPending_++;
   }
 
   bool accessesMemory = false;
-  uint16_t zrDestRegs = 0;
 
   // Extract explicit register accesses
   for (size_t i = 0; i < metadata_.operandCount; i++) {
@@ -216,17 +216,17 @@ void Instruction::decode() {
           // Belongs to the predicate group if the destination register is a
           // predicate
           if (op.reg >= ARM64_REG_V0) {
-            isVectorData_ = true;
+            setInstructionType(InsnType::isVectorData);
           } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-            isSMEData_ = true;
+            setInstructionType(InsnType::isSMEData);
           } else if (op.reg >= ARM64_REG_Z0) {
-            isSVEData_ = true;
+            setInstructionType(InsnType::isSVEData);
           } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-            isScalarData_ = true;
+            setInstructionType(InsnType::isScalarData);
           } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-            isPredicate_ = true;
+            setInstructionType(InsnType::isPredicate);
           } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-            isScalarData_ = true;
+            setInstructionType(InsnType::isScalarData);
           }
 
           if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
@@ -234,23 +234,27 @@ void Instruction::decode() {
             // Add all Matrix register rows as destination operands
             std::vector<Register> regs = getZARowVectors(
                 op.reg, architecture_.getStreamingVectorLength());
+            // Update operand structure sizes
+            sourceRegisters_.addSMEOperand(regs.size());
+            destinationRegisters_.addSMEOperand(regs.size());
+            sourceValues_.addSMEOperand(regs.size());
+            results_.addSMEOperand(regs.size());
             for (int i = 0; i < regs.size(); i++) {
-              destinationRegisters_.push_back(regs[i]);
+              destinationRegisters_[destinationRegisterCount_] = regs[i];
               destinationRegisterCount_++;
               // If WRITE, also need to add to source registers to maintain
               // unaltered row values
-              sourceRegisters_.push_back(regs[i]);
+              sourceRegisters_[sourceRegisterCount_] = regs[i];
+              sourceRegisterCount_++;
               sourceOperandsPending_++;
             }
           } else {
             // Add register writes to destinations, but skip zero-register
             // destinations
-            destinationRegisters_.push_back(csRegToRegister(op.reg));
+            destinationRegisters_[destinationRegisterCount_] =
+                csRegToRegister(op.reg);
             destinationRegisterCount_++;
           }
-        } else {
-          // Need to allocate extra space in results vector for zero destination
-          zrDestRegs++;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
@@ -259,30 +263,39 @@ void Instruction::decode() {
           // Add all Matrix register rows as source operands
           std::vector<Register> regs =
               getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
+          // Update source operand structure sizes
+          sourceRegisters_.addSMEOperand(regs.size());
+          sourceValues_.addSMEOperand(regs.size());
           for (int i = 0; i < regs.size(); i++) {
-            sourceRegisters_.push_back(regs[i]);
+            sourceRegisters_[sourceRegisterCount_] = regs[i];
+            sourceRegisterCount_++;
             sourceOperandsPending_++;
           }
         } else {
           // Add register reads to destinations
-          sourceRegisters_.push_back(csRegToRegister(op.reg));
+          sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
+          sourceRegisterCount_++;
           sourceOperandsPending_++;
         }
-        if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
+        if (op.shift.value > 0)
+          setInstructionType(InsnType::isShift);  // Identify shift operands
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
-      sourceRegisters_.push_back(csRegToRegister(op.mem.base));
+      sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
+      sourceRegisterCount_++;
       sourceOperandsPending_++;
 
       if (metadata_.writeback) {
         // Writeback instructions modify the base address
-        destinationRegisters_.push_back(csRegToRegister(op.mem.base));
+        destinationRegisters_[destinationRegisterCount_] =
+            csRegToRegister(op.mem.base);
         destinationRegisterCount_++;
       }
       if (op.mem.index) {
         // Register offset; add to sources
-        sourceRegisters_.push_back(csRegToRegister(op.mem.index));
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.index);
+        sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
     } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
@@ -291,33 +304,47 @@ void Instruction::decode() {
            op.sme_index.reg < ARM64_REG_V0) ||
           (op.sme_index.reg == ARM64_REG_ZA)) {
         // Set instruction group
-        isSMEData_ = true;
+        setInstructionType(InsnType::isSMEData);
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
-        // If WRITE, then also need to add to source registers to maintain
-        // un-updated rows
+        // Update operands structure sizes
+        destinationRegisters_.addSMEOperand(regs.size());
+        results_.addSMEOperand(regs.size());
+        sourceRegisters_.addSMEOperand(regs.size());
+        sourceValues_.addSMEOperand(regs.size());
         for (int i = 0; i < regs.size(); i++) {
-          sourceRegisters_.push_back(regs[i]);
+          // If READ access, we only need to add SME rows to source registers.
+          // If WRITE access, then we need to add SME rows to destination
+          // registers AND source registers. The latter is required to maintain
+          // any un-updated rows given that an SME_INDEX op will specify only
+          // one row (or column) to write to.
+          sourceRegisters_[sourceRegisterCount_] = regs[i];
+          sourceRegisterCount_++;
           sourceOperandsPending_++;
           if (op.access & cs_ac_type::CS_AC_WRITE) {
-            destinationRegisters_.push_back(regs[i]);
+            destinationRegisters_[destinationRegisterCount_] = regs[i];
             destinationRegisterCount_++;
           }
         }
       } else {
         // SME_INDEX can also be for predicate
         // Set instruction group
-        isPredicate_ = true;
+        setInstructionType(InsnType::isPredicate);
         if (op.access & cs_ac_type::CS_AC_WRITE) {
-          destinationRegisters_.push_back(csRegToRegister(op.sme_index.reg));
+          destinationRegisters_[destinationRegisterCount_] =
+              csRegToRegister(op.sme_index.reg);
           destinationRegisterCount_++;
         } else if (op.access & cs_ac_type::CS_AC_READ) {
-          sourceRegisters_.push_back(csRegToRegister(op.sme_index.reg));
+          sourceRegisters_[sourceRegisterCount_] =
+              csRegToRegister(op.sme_index.reg);
+          sourceRegisterCount_++;
           sourceOperandsPending_++;
         }
       }
       // Register that is base of index will always be a source operand
-      sourceRegisters_.push_back(csRegToRegister(op.sme_index.base));
+      sourceRegisters_[sourceRegisterCount_] =
+          csRegToRegister(op.sme_index.base);
+      sourceRegisterCount_++;
       sourceOperandsPending_++;
     } else if (op.type == ARM64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
@@ -326,8 +353,9 @@ void Instruction::decode() {
         exception_ = InstructionException::UnmappedSysReg;
         return;
       } else {
-        sourceRegisters_.push_back(
-            {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
+        sourceRegisters_[sourceRegisterCount_] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
     } else if (op.type == ARM64_OP_REG_MSR) {
@@ -337,8 +365,8 @@ void Instruction::decode() {
         exception_ = InstructionException::UnmappedSysReg;
         return;
       } else {
-        destinationRegisters_.push_back(
-            {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
+        destinationRegisters_[destinationRegisterCount_] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount_++;
       }
     } else if (op.type == ARM64_OP_SVCR) {
@@ -352,12 +380,12 @@ void Instruction::decode() {
   // Identify branches
   for (size_t i = 0; i < metadata_.groupCount; i++) {
     if (metadata_.groups[i] == ARM64_GRP_JUMP) {
-      isBranch_ = true;
+      setInstructionType(InsnType::isBranch);
     }
   }
 
   // Identify branch type
-  if (isBranch_) {
+  if (isInstruction(InsnType::isBranch)) {
     switch (metadata_.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
@@ -431,61 +459,61 @@ void Instruction::decode() {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
-          isStoreAddress_ = true;
+          setInstructionType(InsnType::isStoreAddress);
         }
         if (microOpcode_ != MicroOpcode::STR_ADDR) {
-          isStoreData_ = true;
+          setInstructionType(InsnType::isStoreData);
         }
       } else {
-        isLoad_ = true;
+        setInstructionType(InsnType::isLoad);
       }
     } else {
       if (microOpcode_ != MicroOpcode::STR_DATA) {
-        isStoreAddress_ = true;
+        setInstructionType(InsnType::isStoreAddress);
       }
       if (microOpcode_ != MicroOpcode::STR_ADDR) {
-        isStoreData_ = true;
+        setInstructionType(InsnType::isStoreData);
       }
     }
 
     // LDADD* are considered to be both a load and a store
     if (metadata_.id >= ARM64_INS_LDADD && metadata_.id <= ARM64_INS_LDADDLH) {
-      isLoad_ = true;
+      setInstructionType(InsnType::isLoad);
     }
 
     // CASAL* are considered to be both a load and a store
     if (metadata_.opcode == Opcode::AArch64_CASALW ||
         metadata_.opcode == Opcode::AArch64_CASALX) {
-      isLoad_ = true;
+      setInstructionType(InsnType::isLoad);
     }
 
-    if (isStoreData_) {
+    if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata_.operands[0].reg &&
           metadata_.operands[0].reg <= ARM64_REG_Z31) {
-        isSVEData_ = true;
+        setInstructionType(InsnType::isSVEData);
       } else if ((metadata_.operands[0].reg <= ARM64_REG_S31 &&
                   metadata_.operands[0].reg >= ARM64_REG_Q0) ||
                  (metadata_.operands[0].reg <= ARM64_REG_H31 &&
                   metadata_.operands[0].reg >= ARM64_REG_B0)) {
-        isScalarData_ = true;
+        setInstructionType(InsnType::isScalarData);
       } else if (metadata_.operands[0].reg >= ARM64_REG_V0) {
-        isVectorData_ = true;
+        setInstructionType(InsnType::isVectorData);
       } else if ((metadata_.operands[0].reg >= ARM64_REG_ZAB0 &&
                   metadata_.operands[0].reg < ARM64_REG_V0) ||
                  metadata_.operands[0].reg == ARM64_REG_ZA) {
-        isSMEData_ = true;
+        setInstructionType(InsnType::isSMEData);
       }
     }
   } else if (microOpcode_ == MicroOpcode::STR_DATA) {
     // Edge case for identifying store data micro-operation
-    isStoreData_ = true;
+    setInstructionType(InsnType::isStoreData);
   }
   if (metadata_.opcode == Opcode::AArch64_LDRXl ||
       metadata_.opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
-    isLoad_ = true;
+    setInstructionType(InsnType::isLoad);
   }
 
   if ((264 <= metadata_.opcode && metadata_.opcode <= 267) ||    // AND
@@ -498,20 +526,21 @@ void Instruction::decode() {
       (771 <= metadata_.opcode && metadata_.opcode <= 774) ||  // ORR/ORN
       (3748 <= metadata_.opcode &&
        metadata_.opcode <= 3771)) {  // ORR/ORN (pt.2)
-    isLogical_ = true;
+    setInstructionType(InsnType::isLogical);
   }
 
   if ((1252 <= metadata_.opcode && metadata_.opcode <= 1259) ||
       (1314 <= metadata_.opcode && metadata_.opcode <= 1501) ||
       (1778 <= metadata_.opcode && metadata_.opcode <= 1799) ||
       (1842 <= metadata_.opcode && metadata_.opcode <= 1969)) {
-    isCompare_ = true;
+    setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
-    if (sourceRegisters_.size() != 0) {
-      if (!(isScalarData_ || isVectorData_) &&
+    if (sourceRegisterCount_ != 0) {
+      if (!(isInstruction(InsnType::isScalarData) ||
+            isInstruction(InsnType::isVectorData)) &&
           sourceRegisters_[0].type == RegisterType::VECTOR) {
-        isScalarData_ = true;
+        setInstructionType(InsnType::isScalarData);
       }
     }
   }
@@ -524,11 +553,13 @@ void Instruction::decode() {
       (4063 <= metadata_.opcode && metadata_.opcode <= 4097) ||
       (898 <= metadata_.opcode && metadata_.opcode <= 904) ||
       (5608 <= metadata_.opcode && metadata_.opcode <= 5642)) {
-    isConvert_ = true;
+    setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
-    if (!(isScalarData_ || isVectorData_ || isSVEData_)) {
-      isScalarData_ = true;
+    if (!(isInstruction(InsnType::isScalarData) ||
+          isInstruction(InsnType::isVectorData) ||
+          isInstruction(InsnType::isSVEData))) {
+      setInstructionType(InsnType::isScalarData);
     }
   }
 
@@ -544,7 +575,7 @@ void Instruction::decode() {
       (2640 <= metadata_.opcode && metadata_.opcode <= 2661) ||
       (2665 <= metadata_.opcode && metadata_.opcode <= 2675) ||
       (6066 <= metadata_.opcode && metadata_.opcode <= 6068)) {
-    isDivideOrSqrt_ = true;
+    setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
@@ -610,44 +641,49 @@ void Instruction::decode() {
       (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
       (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
       (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
-    isMultiply_ = true;
+    setInstructionType(InsnType::isMultiply);
   }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught predicate assignment due to lacking destination register
   if (metadata_.opcode == Opcode::AArch64_PTEST_PP) {
-    isPredicate_ = true;
+    setInstructionType(InsnType::isPredicate);
   }
   // Uncaught float data assignment for FMOV move to general instructions
   if (((430 <= metadata_.opcode && metadata_.opcode <= 432) ||
        (2409 <= metadata_.opcode && metadata_.opcode <= 2429)) &&
-      !(isScalarData_ || isVectorData_)) {
-    isScalarData_ = true;
+      !(isInstruction(InsnType::isScalarData) ||
+        isInstruction(InsnType::isVectorData))) {
+    setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
   if ((4341 <= metadata_.opcode && metadata_.opcode <= 4350) ||
       (5795 <= metadata_.opcode && metadata_.opcode <= 5802)) {
-    isVectorData_ = true;
+    setInstructionType(InsnType::isVectorData);
   }
   // Uncaught float data assignment for FCVT convert to general instructions
   if ((1976 <= metadata_.opcode && metadata_.opcode <= 2186) &&
-      !(isScalarData_ || isVectorData_)) {
-    isScalarData_ = true;
+      !(isInstruction(InsnType::isScalarData) ||
+        isInstruction(InsnType::isVectorData))) {
+    setInstructionType(InsnType::isScalarData);
   }
 
-  // Allocate enough entries in results vector
-  results_.resize(destinationRegisterCount_ + zrDestRegs);
-  // Allocate enough entries in the operands vector
-  sourceValues_.resize(sourceRegisters_.size());
-
-  // Catch zero register references and pre-complete those operands
-  if (!(isSMEData_)) {
-    for (uint16_t i = 0; i < sourceRegisters_.size(); i++) {
+  if (!(isInstruction(InsnType::isSMEData))) {
+    // Catch zero register references and pre-complete those operands - not
+    // applicable to SME instructions
+    for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
       if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
         sourceValues_[i] = RegisterValue(0, 8);
         sourceOperandsPending_--;
       }
     }
+  } else {
+    // For SME instructions, resize the following structures to have the exact
+    // amount of space required
+    sourceRegisters_.resize(sourceRegisterCount_);
+    destinationRegisters_.resize(destinationRegisterCount_);
+    sourceValues_.resize(sourceRegisterCount_);
+    results_.resize(destinationRegisterCount_);
   }
 }
 

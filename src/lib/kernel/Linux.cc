@@ -522,11 +522,14 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
                           size_t bufsize) const {
   const auto& processState = processStates_[0];
   if (pathname == "/proc/self/exe") {
-    // Copy executable path to buffer
-    // TODO: resolve path into canonical path
-    std::strncpy(buf, processState.path.c_str(), bufsize);
+    // Resolve absolute path
+    char absolutePath[LINUX_PATH_MAX];
+    realpath(processState.path.c_str(), absolutePath);
 
-    return std::min(processState.path.length(), bufsize);
+    // Copy executable path to buffer
+    std::strncpy(buf, absolutePath, bufsize);
+
+    return std::min(std::strlen(absolutePath), bufsize);
   }
 
   // TODO: resolve symbolic link for other paths

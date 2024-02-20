@@ -1,6 +1,7 @@
 add_executable(regression-riscv
             RISCVRegressionTest.cc
             RISCVRegressionTest.hh
+            Exception.cc
             LoadStoreQueue.cc
             InorderPipeline.cc
             SmokeTest.cc
@@ -14,9 +15,15 @@ add_executable(regression-riscv
             instructions/atomic.cc
             instructions/float.cc
             instructions/compressed.cc
-)
+        )
+
+configure_file(${capstone_SOURCE_DIR}/arch/RISCV/RISCVGenInstrInfo.inc RISCVGenInstrInfo.inc COPYONLY)
+
 target_include_directories(regression-riscv PRIVATE
-                           ${CMAKE_CURRENT_SOURCE_DIR})
+                            ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(regression-riscv PRIVATE
+                            ${CMAKE_CURRENT_BINARY_DIR})
+
 target_link_libraries(regression-riscv regression-test-base)
 
 # Define a macro so that tests can find data files

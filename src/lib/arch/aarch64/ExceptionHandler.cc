@@ -426,9 +426,9 @@ bool ExceptionHandler::init() {
           // Currently, only a single CPU bitmask is supported
           if (bitmask != 1) {
             printException(instruction_);
-            std::cout
-                << "Unexpected CPU affinity mask returned in exception handler"
-                << std::endl;
+            std::cout << "\n[SimEng:ExceptionHandler] Unexpected CPU affinity "
+                         "mask returned in exception handler"
+                      << std::endl;
             return fatal();
           }
           uint64_t retval = (pid == 0) ? 1 : 0;
@@ -873,7 +873,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
+      std::cout << "unallocated instruction encoding";
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";

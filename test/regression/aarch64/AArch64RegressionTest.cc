@@ -23,7 +23,7 @@ void AArch64RegressionTest::run(const char* source) {
 
 void AArch64RegressionTest::generateConfig() const {
   // Re-generate the default config for the AArch64 ISA
-  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64, true);
 
   // Add the base additional AArch64 test suite config options
   simeng::config::SimInfo::addToConfig(AARCH64_ADDITIONAL_CONFIG);

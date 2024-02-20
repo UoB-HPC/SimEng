@@ -56,7 +56,8 @@ inline std::string paramToString(
 /** A helper macro to run a snippet of RISCV assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros
  * are appended to the source to ensure that the program will terminate with
- * an illegal instruction exception instead of running into the heap. */
+ * an unallocated instruction encoding exception instead of running into the
+ * heap. */
 #define RUN_RISCV(source)                             \
   {                                                   \
     std::string sourceWithTerminator = source;        \
