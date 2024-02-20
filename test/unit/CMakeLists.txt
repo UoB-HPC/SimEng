@@ -4,6 +4,7 @@ set(TEST_SOURCES
     aarch64/AuxiliaryFunctionsTest.cc
     aarch64/ExceptionHandlerTest.cc
     aarch64/InstructionTest.cc
+    aarch64/OperandContainerTest.cc
     riscv/ArchInfoTest.cc
     riscv/ArchitectureTest.cc
     riscv/ExceptionHandlerTest.cc

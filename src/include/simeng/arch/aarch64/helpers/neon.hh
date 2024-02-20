@@ -7,14 +7,14 @@ namespace arch {
 namespace aarch64 {
 
 /** Helper function for NEON instructions with the format `add vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecAdd_3ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecAdd_3ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = static_cast<T>(n[i] + m[i]);
@@ -23,14 +23,14 @@ RegisterValue vecAdd_3ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `addp vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecAddp_3ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecAddp_3ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   uint8_t offset = I / 2;
   for (int i = 0; i < I; i++) {
@@ -44,14 +44,14 @@ RegisterValue vecAddp_3ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `bic vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecBic_3ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecBic_3ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = n[i] & ~m[i];
@@ -61,15 +61,15 @@ RegisterValue vecBic_3ops(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `bic vd, #imm{, lsl
  * #shift}`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecBicShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* d = operands[0].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
   T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
                       metadata.operands[1].shift.type,
                       metadata.operands[1].shift.value);
@@ -86,11 +86,10 @@ RegisterValue vecBicShift_imm(
  * (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <int I>
-RegisterValue vecBitwiseInsert(std::vector<RegisterValue>& operands,
-                               bool isBif) {
-  const uint64_t* d = operands[0].getAsVector<uint64_t>();
-  const uint64_t* n = operands[1].getAsVector<uint64_t>();
-  const uint64_t* m = operands[2].getAsVector<uint64_t>();
+RegisterValue vecBitwiseInsert(srcValContainer& sourceValues, bool isBif) {
+  const uint64_t* d = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[2].getAsVector<uint64_t>();
   uint64_t out[2] = {0};
   for (int i = 0; i < (I / 8); i++) {
     out[i] =
@@ -105,10 +104,10 @@ RegisterValue vecBitwiseInsert(std::vector<RegisterValue>& operands,
  * (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <int I>
-RegisterValue vecBsl(std::vector<RegisterValue>& operands) {
-  const uint64_t* d = operands[0].getAsVector<uint64_t>();
-  const uint64_t* n = operands[1].getAsVector<uint64_t>();
-  const uint64_t* m = operands[2].getAsVector<uint64_t>();
+RegisterValue vecBsl(srcValContainer& sourceValues) {
+  const uint64_t* d = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* n = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[2].getAsVector<uint64_t>();
   uint64_t out[2] = {0};
   for (int i = 0; i < (I / 8); i++) {
     out[i] = (d[i] & n[i]) | (~d[i] & m[i]);
@@ -118,16 +117,16 @@ RegisterValue vecBsl(std::vector<RegisterValue>& operands) {
 
 /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
  *le, lt> vd, vn, <vm, #0>`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
+RegisterValue vecCompare(srcValContainer& sourceValues, bool cmpToZero,
                          std::function<bool(T, T)> func) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   const T* m;
-  if (!cmpToZero) m = operands[1].getAsVector<T>();
+  if (!cmpToZero) m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
@@ -138,13 +137,13 @@ RegisterValue vecCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
 }
 
 /** Helper function for instructions with the format `cnt vd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecCountPerByte(std::vector<RegisterValue>& operands) {
-  const uint8_t* n = operands[0].getAsVector<uint8_t>();
+RegisterValue vecCountPerByte(srcValContainer& sourceValues) {
+  const uint8_t* n = sourceValues[0].getAsVector<uint8_t>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     for (int j = 0; j < (sizeof(T) * 8); j++) {
@@ -157,17 +156,17 @@ RegisterValue vecCountPerByte(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `dup <rd, vd>,
  * <vn[index], rn>`.
- * T represents the type of operands (e.g. for vd.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vd.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecDup_gprOrIndex(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool useGpr) {
   int index = useGpr ? 0 : metadata.operands[1].vector_index;
-  T element =
-      useGpr ? operands[0].get<T>() : operands[0].getAsVector<T>()[index];
+  T element = useGpr ? sourceValues[0].get<T>()
+                     : sourceValues[0].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
   std::fill_n(std::begin(out), I, element);
   return {out, 256};
@@ -175,16 +174,16 @@ RegisterValue vecDup_gprOrIndex(
 
 /** Helper function for NEON instructions with the format `ext vd,
  *  vn, vm, #index`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecExtVecs_index(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
   T out[16 / sizeof(T)] = {0};
 
@@ -199,14 +198,14 @@ RegisterValue vecExtVecs_index(
 
 /** Helper function for NEON instructions with the format `fabd vd.T, vn.T,
  * vm.T`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecFabd(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = std::fabs(n[i] - m[i]);
@@ -215,13 +214,13 @@ RegisterValue vecFabd(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `fabs vd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFabs_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecFabs_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = std::fabs(n[i]);
@@ -238,11 +237,11 @@ RegisterValue vecFabs_2ops(std::vector<RegisterValue>& operands) {
  * updated (e.g. for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename C, int I>
-RegisterValue vecFCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
+RegisterValue vecFCompare(srcValContainer& sourceValues, bool cmpToZero,
                           std::function<bool(T, T)> func) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   const T* m;
-  if (!cmpToZero) m = operands[1].getAsVector<T>();
+  if (!cmpToZero) m = sourceValues[1].getAsVector<T>();
   C out[16 / sizeof(C)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
@@ -259,8 +258,8 @@ RegisterValue vecFCompare(std::vector<RegisterValue>& operands, bool cmpToZero,
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtl(std::vector<RegisterValue>& operands, bool isFcvtl2) {
-  const N* n = operands[0].getAsVector<N>();
+RegisterValue vecFcvtl(srcValContainer& sourceValues, bool isFcvtl2) {
+  const N* n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtl2 ? I : 0); i < (isFcvtl2 ? (I * 2) : I); i++) {
     out[isFcvtl2 ? (i - I) : i] = static_cast<D>(n[i]);
@@ -275,8 +274,8 @@ RegisterValue vecFcvtl(std::vector<RegisterValue>& operands, bool isFcvtl2) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtn(std::vector<RegisterValue>& operands, bool isFcvtn2) {
-  const N* n = operands[0].getAsVector<N>();
+RegisterValue vecFcvtn(srcValContainer& sourceValues, bool isFcvtn2) {
+  const N* n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtn2 ? (I / 2) : 0); i < I; i++) {
     out[i] = static_cast<D>(n[isFcvtn2 ? (i - (I / 2)) : i]);
@@ -291,8 +290,8 @@ RegisterValue vecFcvtn(std::vector<RegisterValue>& operands, bool isFcvtn2) {
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecFcvtzs(std::vector<RegisterValue>& operands) {
-  const N* n = operands[0].getAsVector<N>();
+RegisterValue vecFcvtzs(srcValContainer& sourceValues) {
+  const N* n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   // TODO: Handle NaNs, denorms, and saturation
   for (int i = 0; i < I; i++) {
@@ -303,15 +302,15 @@ RegisterValue vecFcvtzs(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `fmla vd,
  *  vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFmla_3vecs(std::vector<RegisterValue>& operands) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+RegisterValue vecFmla_3vecs(srcValContainer& sourceValues) {
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] + n[i] * m[i];
@@ -320,15 +319,15 @@ RegisterValue vecFmla_3vecs(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `fdiv vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
-    std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+    srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     if (m[i] == 0)
@@ -341,18 +340,18 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
 
 /** Helper function for NEON instructions with the format `fmla vd,
  *  vn, vm[index]`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmlaIndexed_3vecs(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
   int index = metadata.operands[2].vector_index;
-  const T m = operands[2].getAsVector<T>()[index];
+  const T m = sourceValues[2].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] + n[i] * m;
@@ -362,15 +361,15 @@ RegisterValue vecFmlaIndexed_3vecs(
 
 /** Helper function for NEON instructions with the format `fmls vd,
  *  vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFmls_3vecs(std::vector<RegisterValue>& operands) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
-  const T* m = operands[2].getAsVector<T>();
+RegisterValue vecFmls_3vecs(srcValContainer& sourceValues) {
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] - (n[i] * m[i]);
@@ -380,18 +379,18 @@ RegisterValue vecFmls_3vecs(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `fmls vd,
  *  vn, vm[index]`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmlsIndexed_3vecs(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
   int index = metadata.operands[2].vector_index;
-  const T m = operands[2].getAsVector<T>()[index];
+  const T m = sourceValues[2].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] - n[i] * m;
@@ -401,17 +400,17 @@ RegisterValue vecFmlsIndexed_3vecs(
 
 /** Helper function for NEON instructions with the format `fmul rd,
  *  rn, vm[index]`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmulIndexed_vecs(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   int index = metadata.operands[2].vector_index;
-  const T* n = operands[0].getAsVector<T>();
-  const T m = operands[1].getAsVector<T>()[index];
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T m = sourceValues[1].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = n[i] * m;
@@ -420,13 +419,13 @@ RegisterValue vecFmulIndexed_vecs(
 }
 
 /** Helper function for NEON instructions with the format `fneg vd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFneg_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecFneg_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = -n[i];
@@ -435,13 +434,13 @@ RegisterValue vecFneg_2ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `fsqrt vd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFsqrt_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecFsqrt_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = ::sqrt(n[i]);
@@ -450,13 +449,13 @@ RegisterValue vecFsqrt_2ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `frsqrte vd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFrsqrte_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecFrsqrte_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = 1.0f / sqrtf(n[i]);
@@ -466,14 +465,14 @@ RegisterValue vecFrsqrte_2ops(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `frsqrts vd, vn,
  * vm`.
- * T represents the type of operands (e.g. for vn.2d, T = double).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = double).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecFrsqrts_3ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecFrsqrts_3ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = (3.0f - n[i] * m[i]) / 2.0f;
@@ -483,16 +482,16 @@ RegisterValue vecFrsqrts_3ops(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `ins vd[index],
  *  vn[index]`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecIns_2Index(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* d = operands[0].getAsVector<T>();
-  const T* n = operands[1].getAsVector<T>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -511,10 +510,10 @@ RegisterValue vecIns_2Index(
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename R, int I>
 RegisterValue vecInsIndex_gpr(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* d = operands[0].getAsVector<T>();
-  const T n = operands[1].get<R>();
+  const T* d = sourceValues[0].getAsVector<T>();
+  const T n = sourceValues[1].get<R>();
   T out[16 / sizeof(T)] = {0};
 
   for (int i = 0; i < I; i++) {
@@ -526,14 +525,14 @@ RegisterValue vecInsIndex_gpr(
 
 /** Helper function for NEON instructions with the format `<NOT, ...> vd,
  *  vn`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecLogicOp_2vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecLogicOp_2vecs(srcValContainer& sourceValues,
                                std::function<T(T)> func) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i]);
@@ -543,15 +542,15 @@ RegisterValue vecLogicOp_2vecs(std::vector<RegisterValue>& operands,
 
 /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
  *  vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecLogicOp_3vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecLogicOp_3vecs(srcValContainer& sourceValues,
                                std::function<T(T, T)> func) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], m[i]);
@@ -560,14 +559,14 @@ RegisterValue vecLogicOp_3vecs(std::vector<RegisterValue>& operands,
 }
 
 /** Helper function for NEON instructions with the format `umaxp vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecUMaxP(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecUMaxP(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -577,14 +576,14 @@ RegisterValue vecUMaxP(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `uminp vd, vn, vm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecUMinP(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecUMinP(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -594,13 +593,13 @@ RegisterValue vecUMinP(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `maxnmp rd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecMaxnmp_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecMaxnmp_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
   T out = n[0];
@@ -611,13 +610,13 @@ RegisterValue vecMaxnmp_2ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `sminv sd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecMinv_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecMinv_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
   T out = n[0];
@@ -628,7 +627,7 @@ RegisterValue vecMinv_2ops(std::vector<RegisterValue>& operands) {
 }
 
 /** Helper function for NEON instructions with the format `movi vd, #imm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
@@ -645,7 +644,7 @@ RegisterValue vecMovi_imm(
 
 /** Helper function for NEON instructions with the format `movi vd, #imm{, lsl
  * #shift}`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
@@ -669,9 +668,9 @@ RegisterValue vecMoviShift_imm(
  * updated (e.g. for vd.8b I = 8).
  * Returns correctly formated RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecScvtf_2vecs(std::vector<RegisterValue>& operands,
+RegisterValue vecScvtf_2vecs(srcValContainer& sourceValues,
                              std::function<D(N)> func) {
-  const N* n = operands[0].getAsVector<N>();
+  const N* n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = static_cast<D>(n[i]);
@@ -680,15 +679,15 @@ RegisterValue vecScvtf_2vecs(std::vector<RegisterValue>& operands,
 }
 
 /** Helper function for NEON instructions with the format `shl vd, vn, #imm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecShlShift_vecImm(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* n = operands[0].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   int64_t shift = metadata.operands[2].imm;
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -706,9 +705,9 @@ RegisterValue vecShlShift_vecImm(
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
 RegisterValue vecShllShift_vecImm(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata, bool isShll2) {
-  const N* n = operands[0].getAsVector<N>();
+  const N* n = sourceValues[0].getAsVector<N>();
   uint64_t shift = metadata.operands[2].imm;
   D out[16 / sizeof(D)] = {0};
   int index = isShll2 ? I : 0;
@@ -729,10 +728,10 @@ RegisterValue vecShllShift_vecImm(
  */
 template <typename Ta, typename Tb, int I>
 RegisterValue vecShrnShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     bool shrn2 = false) {
-  const Ta* n = operands[0].getAsVector<Ta>();
+  const Ta* n = sourceValues[0].getAsVector<Ta>();
 
   uint64_t shift = metadata.operands[2].imm;
 
@@ -745,15 +744,15 @@ RegisterValue vecShrnShift_imm(
 }
 
 /** Helper function for NEON instructions with the format `sshr vd, vn, #imm`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecSshrShift_imm(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* n = operands[1].getAsVector<T>();
+  const T* n = sourceValues[1].getAsVector<T>();
   uint64_t shift = metadata.operands[2].imm;
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -763,13 +762,13 @@ RegisterValue vecSshrShift_imm(
 }
 
 /** Helper function for NEON instructions with the format `addp rd, vn`.
- * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
-RegisterValue vecSumElems_2ops(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
+RegisterValue vecSumElems_2ops(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
   T out = 0;
   for (int i = 0; i < I; i++) {
     out += n[i];
@@ -784,10 +783,10 @@ RegisterValue vecSumElems_2ops(std::vector<RegisterValue>& operands) {
  * updated (i.e. for vd.4s I = 4).
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
-RegisterValue vecXtn(std::vector<RegisterValue>& operands, bool isXtn2) {
+RegisterValue vecXtn(srcValContainer& sourceValues, bool isXtn2) {
   const D* d;
-  if (isXtn2) d = operands[0].getAsVector<D>();
-  const N* n = operands[isXtn2 ? 1 : 0].getAsVector<N>();
+  if (isXtn2) d = sourceValues[0].getAsVector<D>();
+  const N* n = sourceValues[isXtn2 ? 1 : 0].getAsVector<N>();
 
   D out[16 / sizeof(D)] = {0};
   int index = 0;
@@ -811,25 +810,25 @@ RegisterValue vecXtn(std::vector<RegisterValue>& operands, bool isXtn2) {
  * Returns correctly formatted RegisterValue. */
 template <int I>
 RegisterValue vecTbl(
-    std::vector<RegisterValue>& operands,
+    srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   // Vd and Vm are only valid in format 8b or 16b
   assert(I == 8 || I == 16);
 
   // Vm contains the indices to fetch from table
   const int8_t* Vm =
-      operands[metadata.operandCount - 2]
+      sourceValues[metadata.operandCount - 2]
           .getAsVector<int8_t>();  // final operand is vecMovi_imm
 
-  // All operands except the first and last are the vector registers to
+  // All sourceValues except the first and last are the vector registers to
   // construct the table from
   const uint8_t n_table_regs = metadata.operandCount - 2;
 
-  // Create table from vectors. All table operands must be of 16b format.
+  // Create table from vectors. All table sourceValues must be of 16b format.
   int tableSize = 16 * n_table_regs;
   uint8_t table[tableSize];
   for (int i = 0; i < n_table_regs; i++) {
-    const int8_t* currentVector = operands[i].getAsVector<int8_t>();
+    const int8_t* currentVector = sourceValues[i].getAsVector<int8_t>();
     for (int j = 0; j < 16; j++) {
       table[16 * i + j] = currentVector[j];
     }
@@ -862,8 +861,8 @@ RegisterValue vecTbl(
  * It is only valid for T to be a same or smaller width than V.
  * Returns correctly formatted RegisterValue. */
 template <typename T, int V, int I>
-RegisterValue vecRev(std::vector<RegisterValue>& operands) {
-  const T* source = operands[0].getAsVector<T>();
+RegisterValue vecRev(srcValContainer& sourceValues) {
+  const T* source = sourceValues[0].getAsVector<T>();
   int element_size = (sizeof(T) * 8);
   int datasize = I * element_size;
   int container_size = V;
@@ -886,13 +885,13 @@ RegisterValue vecRev(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `trn1 Vd.T, Vn.T,
  * Vm.T`.
- * T represents the type of operands (e.g. for vn.d, T = uint64_t).
- * I represents the number of operands (e.g. for vn.8b, I = 8).
+ * T represents the type of sourceValues (e.g. for vn.d, T = uint64_t).
+ * I represents the number of sourceValues (e.g. for vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecTrn1(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecTrn1(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -905,13 +904,13 @@ RegisterValue vecTrn1(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `trn2 Vd.T, Vn.T,
  * Vm.T`.
- * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
- * I represents the number of operands (e.g. for Vn.8b, I = 8).
+ * T represents the type of sourceValues (e.g. for Vn.d, T = uint64_t).
+ * I represents the number of sourceValues (e.g. for Vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecTrn2(std::vector<RegisterValue>& operands) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecTrn2(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -924,13 +923,13 @@ RegisterValue vecTrn2(std::vector<RegisterValue>& operands) {
 
 /** Helper function for NEON instructions with the format `uzp<1,2> Vd.T,
  * Vn.T, Vm.T`.
- * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
- * I represents the number of operands (e.g. for Vn.8b, I = 8).
+ * T represents the type of sourceValues (e.g. for Vn.d, T = uint64_t).
+ * I represents the number of sourceValues (e.g. for Vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecUzp(std::vector<RegisterValue>& operands, bool isUzp1) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecUzp(srcValContainer& sourceValues, bool isUzp1) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -944,14 +943,14 @@ RegisterValue vecUzp(std::vector<RegisterValue>& operands, bool isUzp1) {
 
 /** Helper function for NEON instructions with the format `zip<1,2> vd.T,
  * vn.T, vm.T`.
- * T represents the type of operands (e.g. for vn.d, T = uint64_t).
+ * T represents the type of sourceValues (e.g. for vn.d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.
  * for vn.8b, I = 8).
  * Returns formatted Register Value. */
 template <typename T, int I>
-RegisterValue vecZip(std::vector<RegisterValue>& operands, bool isZip2) {
-  const T* n = operands[0].getAsVector<T>();
-  const T* m = operands[1].getAsVector<T>();
+RegisterValue vecZip(srcValContainer& sourceValues, bool isZip2) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   int index = isZip2 ? (I / 2) : 0;

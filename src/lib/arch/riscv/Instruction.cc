@@ -27,8 +27,6 @@ Instruction::Instruction(const Architecture& architecture,
   exceptionEncountered_ = true;
 }
 
-InstructionException Instruction::getException() const { return exception_; }
-
 const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }
@@ -41,10 +39,6 @@ const span<RegisterValue> Instruction::getSourceOperands() const {
 const span<Register> Instruction::getDestinationRegisters() const {
   return {const_cast<Register*>(destinationRegisters_.data()),
           destinationRegisterCount_};
-}
-
-bool Instruction::isOperandReady(int index) const {
-  return static_cast<bool>(sourceValues_[index]);
 }
 
 void Instruction::renameSource(uint16_t i, Register renamed) {
@@ -62,6 +56,20 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
 
   sourceValues_[i] = value;
   sourceOperandsPending_--;
+}
+
+bool Instruction::isOperandReady(int index) const {
+  return static_cast<bool>(sourceValues_[index]);
+}
+
+const span<RegisterValue> Instruction::getResults() const {
+  return {const_cast<RegisterValue*>(results_.data()),
+          destinationRegisterCount_};
+}
+
+span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
+    const {
+  return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
@@ -87,32 +95,6 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData_.data(), memoryData_.size()};
 }
 
-bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
-
-const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results_.data()),
-          destinationRegisterCount_};
-}
-
-bool Instruction::isStoreAddress() const { return isStore_; }
-bool Instruction::isStoreData() const { return isStore_; }
-bool Instruction::isLoad() const { return isLoad_; }
-bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isAtomic() const { return isAtomic_; }
-bool Instruction::isFloat() const { return isFloat_; }
-
-void Instruction::setMemoryAddresses(
-    const std::vector<memory::MemoryAccessTarget>& addresses) {
-  memoryData_ = std::vector<RegisterValue>(addresses.size());
-  memoryAddresses_ = addresses;
-  dataPending_ = addresses.size();
-}
-
-span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
-    const {
-  return {memoryAddresses_.data(), memoryAddresses_.size()};
-}
-
 std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   assert(
       !executed_ &&
@@ -132,33 +114,38 @@ BranchType Instruction::getBranchType() const { return branchType_; }
 
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
+bool Instruction::isStoreAddress() const {
+  return isInstruction(InsnType::isStore);
+}
+
+bool Instruction::isStoreData() const {
+  return isInstruction(InsnType::isStore);
+}
+
+bool Instruction::isLoad() const { return isInstruction(InsnType::isLoad); }
+
+bool Instruction::isBranch() const { return isInstruction(InsnType::isBranch); }
+
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
-  if (isFloat()) {
+  if (isInstruction(InsnType::isFloat)) {
     base = InstructionGroups::FLOAT;
   }
 
-  if (isBranch()) return InstructionGroups::BRANCH;
-  if (isLoad()) return base + 8;
-  if (isStoreAddress()) return base + 9;
-  if (isDivide_) return base + 7;
-  if (isMultiply_) return base + 6;
-  if (isShift_ || isConvert_) return base + 5;
-  if (isLogical_) return base + 4;
-  if (isCompare_) return base + 3;
+  if (isInstruction(InsnType::isBranch)) return InstructionGroups::BRANCH;
+  if (isInstruction(InsnType::isLoad)) return base + 8;
+  if (isInstruction(InsnType::isStore)) return base + 9;
+  if (isInstruction(InsnType::isDivide)) return base + 7;
+  if (isInstruction(InsnType::isMultiply)) return base + 6;
+  if (isInstruction(InsnType::isShift) || isInstruction(InsnType::isConvert))
+    return base + 5;
+  if (isInstruction(InsnType::isLogical)) return base + 4;
+  if (isInstruction(InsnType::isCompare)) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
-void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isLoad_ || isStore_) {
-    lsqExecutionLatency_ = info.latency;
-  } else {
-    latency_ = info.latency;
-  }
-  stallCycles_ = info.stallCycles;
-  supportedPorts_ = info.ports;
-}
+bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
 
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
@@ -168,6 +155,16 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   return supportedPorts_;
 }
 
+void Instruction::setExecutionInfo(const ExecutionInfo& info) {
+  if (isInstruction(InsnType::isLoad) || isInstruction(InsnType::isStore)) {
+    lsqExecutionLatency_ = info.latency;
+  } else {
+    latency_ = info.latency;
+  }
+  stallCycles_ = info.stallCycles;
+  supportedPorts_ = info.ports;
+}
+
 const InstructionMetadata& Instruction::getMetadata() const {
   return metadata_;
 }
@@ -175,6 +172,8 @@ const InstructionMetadata& Instruction::getMetadata() const {
 const Architecture& Instruction::getArchitecture() const {
   return architecture_;
 }
+
+InstructionException Instruction::getException() const { return exception_; }
 
 }  // namespace riscv
 }  // namespace arch

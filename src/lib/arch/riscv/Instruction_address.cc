@@ -8,14 +8,16 @@ namespace arch {
 namespace riscv {
 
 span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
-  assert((isLoad() || isStoreAddress()) &&
-         "generateAddresses called on non-load-or-store instruction");
+  assert(
+      (isInstruction(InsnType::isLoad) || isInstruction(InsnType::isStore)) &&
+      "generateAddresses called on non-load-or-store instruction");
 
   uint64_t address;
-  if (isLoad() && isStoreAddress() && isAtomic()) {
+  if (isInstruction(InsnType::isLoad) && isInstruction(InsnType::isStore) &&
+      isInstruction(InsnType::isAtomic)) {
     // Atomics
     address = sourceValues_[1].get<uint64_t>();
-  } else if (isLoad()) {
+  } else if (isInstruction(InsnType::isLoad)) {
     address = sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
   } else {
     address = sourceValues_[1].get<uint64_t>() + metadata_.operands[1].mem.disp;

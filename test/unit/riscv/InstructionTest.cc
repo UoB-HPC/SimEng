@@ -141,8 +141,6 @@ TEST_F(RiscVInstructionTest, validInsn) {
   EXPECT_FALSE(insn.isStoreData());
   EXPECT_FALSE(insn.isLoad());
   EXPECT_FALSE(insn.isBranch());
-  EXPECT_FALSE(insn.isAtomic());
-  EXPECT_FALSE(insn.isFloat());
   EXPECT_FALSE(insn.exceptionEncountered());
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());
@@ -205,8 +203,6 @@ TEST_F(RiscVInstructionTest, invalidInsn_1) {
   EXPECT_FALSE(insn.isStoreData());
   EXPECT_FALSE(insn.isLoad());
   EXPECT_FALSE(insn.isBranch());
-  EXPECT_FALSE(insn.isAtomic());
-  EXPECT_FALSE(insn.isFloat());
   EXPECT_TRUE(insn.exceptionEncountered());
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());
@@ -271,8 +267,6 @@ TEST_F(RiscVInstructionTest, invalidInsn_2) {
   EXPECT_FALSE(insn.isStoreData());
   EXPECT_FALSE(insn.isLoad());
   EXPECT_FALSE(insn.isBranch());
-  EXPECT_FALSE(insn.isAtomic());
-  EXPECT_FALSE(insn.isFloat());
   EXPECT_TRUE(insn.exceptionEncountered());
   EXPECT_FALSE(insn.hasExecuted());
   EXPECT_FALSE(insn.canCommit());

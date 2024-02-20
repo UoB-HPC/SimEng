@@ -78,7 +78,11 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
   std::vector<std::tuple<CoreType, std::string>> coreVLPairs;
   for (uint64_t i = 128; i <= 2048; i += 128) {
     coreVLPairs.push_back(std::make_tuple(
-        type, "{Core: {Vector-Length: " + std::to_string(i) + "}}"));
+        type, "{Core: {Vector-Length: " + std::to_string(i) +
+                  ", Streaming-Vector-Length: 128}, LSQ-L1-Interface: "
+                  "{Load-Bandwidth: " +
+                  std::to_string(i / 8) +
+                  ", Store-Bandwidth: " + std::to_string(i / 8) + "}}"));
   }
   return coreVLPairs;
 }
@@ -89,7 +93,10 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
   std::vector<std::tuple<CoreType, std::string>> coreSVLPairs;
   for (uint64_t i = 128; i <= 2048; i *= 2) {
     coreSVLPairs.push_back(std::make_tuple(
-        type, "{Core: {Streaming-Vector-Length: " + std::to_string(i) + "}}"));
+        type, "{Core: {Vector-Length: 128, Streaming-Vector-Length: " +
+                  std::to_string(i) + "}, LSQ-L1-Interface: {Load-Bandwidth: " +
+                  std::to_string(i / 8) +
+                  ", Store-Bandwidth: " + std::to_string(i / 8) + "}}"));
   }
   return coreSVLPairs;
 }
