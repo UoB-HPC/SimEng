@@ -274,7 +274,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   if (isa_ == ISA::RV64) {
     expectations_["Core"].addChild(
-        ExpectationNode::createExpectation<bool>(true, "Compressed"));
+        ExpectationNode::createExpectation<bool>(false, "Compressed"));
     expectations_["Core"]["Compressed"].setValueSet(std::vector{false, true});
   }
 

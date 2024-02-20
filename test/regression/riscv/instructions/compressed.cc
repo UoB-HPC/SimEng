@@ -719,8 +719,9 @@ TEST_P(InstCompressed, ebreak) {
   EXPECT_EQ(stdout_.substr(0, sizeof(err1) - 1), err1);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstCompressed,
-                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
-                         paramToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstCompressed,
+    ::testing::Values(std::make_tuple(EMULATION, "{Core: {Compressed: True}}")),
+    paramToString);
 
 }  // namespace
