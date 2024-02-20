@@ -312,10 +312,12 @@ void Instruction::decode() {
         results_.makeSME(regs.size());
         sourceRegisters_.makeSME(regs.size());
         sourceValues_.makeSME(regs.size());
-        // If WRITE, then also need to add to source registers to maintain
-        // un-updated rows. Hence source structures are updated for READ and
-        // WRITE
         for (int i = 0; i < regs.size(); i++) {
+          // If READ access, we only need to add SME rows to source registers.
+          // If WRITE access, then we need to add SME rows to destination
+          // registers AND source registers. The latter is required to maintain
+          // any un-updated rows given that an SME_INDEX op will specify only
+          // one row (or column) to write to.
           sourceRegisters_[sourceRegisterCount_] = regs[i];
           sourceRegisterCount_++;
           sourceOperandsPending_++;
