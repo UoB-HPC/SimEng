@@ -1,4 +1,4 @@
-Welcome to the 0.9.6 open source release of the Simulation Engine! SimEng is a fast, easy to use and modify, cycle-level simulator for CPUs. Its initial focus is on simulating single Arm cores in server CPUs, and so the instruction set architecture (ISA) target is initially Arm9.2-a+SVE+SME. RISC-V has also seen some inital support, starting with rv64ima. Later versions of the Arm ISA, additional RISC-V ISA extensions and other ISAs, will be supported in future releases.
+Welcome to the 0.9.6 open source release of the Simulation Engine! SimEng is a fast, easy to use and modify, cycle-level simulator for CPUs. Its initial focus is on simulating single Arm cores in server CPUs, and so the instruction set architecture (ISA) target is initially Arm9.2-a+SVE+SME. RISC-V has also seen some inital support, starting with rv64imafd. Later versions of the Arm ISA, additional RISC-V ISA extensions and other ISAs, will be supported in future releases.
 
 This SimEng release should be considered beta software - you are the first users outside of the core developers, so there *will* be lots of bugs and missing features. The good news is that the code has been designed to be simple to understand and modify, so if you find a bug, such as a missing instruction or missing system call, please submit a PR, or report an issue and we’ll get to it as soon as we can. 
 
@@ -10,7 +10,7 @@ SimEng should be fast, much faster than other cycle-level CPU simulators. The fa
 
 Things that should work in this release include:
 * Static AArch64, with SVE/SME, binaries compiled with either GCC 7.3 or later, or Arm Clang 20/LLVM 9 or later
-* Static RISC-V binaries targetting rv64ima and compiled with GCC 12.2.0
+* Static RISC-V binaries targetting rv64imafd and compiled with GCC 12.2.0
 * Single thread OpenMP programs
 * Binaries compiled from Fortran or C programs
 
