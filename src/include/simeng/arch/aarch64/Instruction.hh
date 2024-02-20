@@ -381,19 +381,10 @@ class Instruction : public simeng::Instruction {
         static_cast<std::underlying_type_t<InsnType>>(identifier);
   }
 
-  /** Test whether this instruction has one or more of the given
-   * identifiers set. */
-  template <typename... Types>
-  constexpr bool isInsnOneOf(Types... identifiers) const {
-    // Ensure only correct type is used (InsnType)
-    static_assert(
-        (std::is_same_v<std::decay_t<Types>, InsnType> && ...),
-        "isInsnOneOf() can only be passed arguments of type `InsnType`.");
-    // Perform bitwise AND on `instructionIdentifier_` and each identifer from
-    // `identifiers` parameter pack; boolean OR-ing the results
-    return ((instructionIdentifier_ &
-             static_cast<std::underlying_type_t<InsnType>>(identifiers)) ||
-            ...);
+  /** Tests whether this instruction has the given identifier set. */
+  constexpr bool isInstruction(InsnType identifier) const {
+    return (instructionIdentifier_ &
+            static_cast<std::underlying_type_t<InsnType>>(identifier));
   }
 
   /** Generate an ExecutionNotYetImplemented exception. */

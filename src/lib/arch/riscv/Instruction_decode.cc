@@ -142,9 +142,11 @@ void Instruction::decode() {
       // If opcode is branch or store (but not atomic or jump) the first operand
       // is a source register, for all other instructions the first operand is a
       // destination register
-      if ((isBranch() && metadata_.opcode != Opcode::RISCV_JAL &&
+      if ((isInstruction(InsnType::isBranch) &&
+           metadata_.opcode != Opcode::RISCV_JAL &&
            metadata_.opcode != Opcode::RISCV_JALR) ||
-          (isStoreAddress() && !isInsnOneOf(InsnType::isAtomic))) {
+          (isInstruction(InsnType::isStore) &&
+           !isInstruction(InsnType::isAtomic))) {
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
 
         if (sourceRegisters_[sourceRegisterCount_] ==

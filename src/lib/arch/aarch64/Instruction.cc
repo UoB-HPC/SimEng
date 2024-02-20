@@ -120,44 +120,44 @@ BranchType Instruction::getBranchType() const { return branchType_; }
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 bool Instruction::isStoreAddress() const {
-  return isInsnOneOf(InsnType::isStoreAddress);
+  return isInstruction(InsnType::isStoreAddress);
 }
 
 bool Instruction::isStoreData() const {
-  return isInsnOneOf(InsnType::isStoreData);
+  return isInstruction(InsnType::isStoreData);
 }
 
-bool Instruction::isLoad() const { return isInsnOneOf(InsnType::isLoad); }
+bool Instruction::isLoad() const { return isInstruction(InsnType::isLoad); }
 
-bool Instruction::isBranch() const { return isInsnOneOf(InsnType::isBranch); }
+bool Instruction::isBranch() const { return isInstruction(InsnType::isBranch); }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
   // Set base
   uint16_t base = InstructionGroups::INT;
-  if (isInsnOneOf(InsnType::isScalarData))
+  if (isInstruction(InsnType::isScalarData))
     base = InstructionGroups::SCALAR;
-  else if (isInsnOneOf(InsnType::isVectorData))
+  else if (isInstruction(InsnType::isVectorData))
     base = InstructionGroups::VECTOR;
-  else if (isInsnOneOf(InsnType::isSVEData))
+  else if (isInstruction(InsnType::isSVEData))
     base = InstructionGroups::SVE;
-  else if (isInsnOneOf(InsnType::isSMEData))
+  else if (isInstruction(InsnType::isSMEData))
     base = InstructionGroups::SME;
 
-  if (isInsnOneOf(InsnType::isLoad)) return base + 10;
-  if (isInsnOneOf(InsnType::isStoreAddress)) return base + 11;
-  if (isInsnOneOf(InsnType::isStoreData)) return base + 12;
-  if (isInsnOneOf(InsnType::isBranch)) return InstructionGroups::BRANCH;
-  if (isInsnOneOf(InsnType::isPredicate)) return InstructionGroups::PREDICATE;
-  if (isInsnOneOf(InsnType::isDivideOrSqrt)) return base + 9;
-  if (isInsnOneOf(InsnType::isMultiply)) return base + 8;
-  if (isInsnOneOf(InsnType::isConvert)) return base + 7;
-  if (isInsnOneOf(InsnType::isCompare)) return base + 6;
-  if (isInsnOneOf(InsnType::isLogical)) {
-    if (isInsnOneOf(InsnType::isShift)) return base + 4;
+  if (isInstruction(InsnType::isLoad)) return base + 10;
+  if (isInstruction(InsnType::isStoreAddress)) return base + 11;
+  if (isInstruction(InsnType::isStoreData)) return base + 12;
+  if (isInstruction(InsnType::isBranch)) return InstructionGroups::BRANCH;
+  if (isInstruction(InsnType::isPredicate)) return InstructionGroups::PREDICATE;
+  if (isInstruction(InsnType::isDivideOrSqrt)) return base + 9;
+  if (isInstruction(InsnType::isMultiply)) return base + 8;
+  if (isInstruction(InsnType::isConvert)) return base + 7;
+  if (isInstruction(InsnType::isCompare)) return base + 6;
+  if (isInstruction(InsnType::isLogical)) {
+    if (isInstruction(InsnType::isShift)) return base + 4;
     return base + 5;
   }
-  if (isInsnOneOf(InsnType::isShift)) return base + 2;
+  if (isInstruction(InsnType::isShift)) return base + 2;
   return base + 3;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
@@ -172,7 +172,8 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isInsnOneOf(InsnType::isLoad, InsnType::isStoreAddress)) {
+  if (isInstruction(InsnType::isLoad) ||
+      isInstruction(InsnType::isStoreAddress)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

@@ -115,31 +115,33 @@ BranchType Instruction::getBranchType() const { return branchType_; }
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
 
 bool Instruction::isStoreAddress() const {
-  return isInsnOneOf(InsnType::isStore);
+  return isInstruction(InsnType::isStore);
 }
 
-bool Instruction::isStoreData() const { return isInsnOneOf(InsnType::isStore); }
+bool Instruction::isStoreData() const {
+  return isInstruction(InsnType::isStore);
+}
 
-bool Instruction::isLoad() const { return isInsnOneOf(InsnType::isLoad); }
+bool Instruction::isLoad() const { return isInstruction(InsnType::isLoad); }
 
-bool Instruction::isBranch() const { return isInsnOneOf(InsnType::isBranch); }
+bool Instruction::isBranch() const { return isInstruction(InsnType::isBranch); }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
-  if (isInsnOneOf(InsnType::isFloat)) {
+  if (isInstruction(InsnType::isFloat)) {
     base = InstructionGroups::FLOAT;
   }
 
-  if (isBranch()) return InstructionGroups::BRANCH;
-  if (isLoad()) return base + 8;
-  if (isStoreAddress()) return base + 9;
-  if (isInsnOneOf(InsnType::isDivide)) return base + 7;
-  if (isInsnOneOf(InsnType::isMultiply)) return base + 6;
-  if (isInsnOneOf(InsnType::isShift) || isInsnOneOf(InsnType::isConvert))
+  if (isInstruction(InsnType::isBranch)) return InstructionGroups::BRANCH;
+  if (isInstruction(InsnType::isLoad)) return base + 8;
+  if (isInstruction(InsnType::isStore)) return base + 9;
+  if (isInstruction(InsnType::isDivide)) return base + 7;
+  if (isInstruction(InsnType::isMultiply)) return base + 6;
+  if (isInstruction(InsnType::isShift) || isInstruction(InsnType::isConvert))
     return base + 5;
-  if (isInsnOneOf(InsnType::isLogical)) return base + 4;
-  if (isInsnOneOf(InsnType::isCompare)) return base + 3;
+  if (isInstruction(InsnType::isLogical)) return base + 4;
+  if (isInstruction(InsnType::isCompare)) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
@@ -154,7 +156,7 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isInsnOneOf(InsnType::isLoad) || isInsnOneOf(InsnType::isStore)) {
+  if (isInstruction(InsnType::isLoad) || isInstruction(InsnType::isStore)) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

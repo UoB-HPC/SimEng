@@ -385,7 +385,7 @@ void Instruction::decode() {
   }
 
   // Identify branch type
-  if (isInsnOneOf(InsnType::isBranch)) {
+  if (isInstruction(InsnType::isBranch)) {
     switch (metadata_.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
@@ -487,7 +487,7 @@ void Instruction::decode() {
       setInstructionType(InsnType::isLoad);
     }
 
-    if (isInsnOneOf(InsnType::isStoreData)) {
+    if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata_.operands[0].reg &&
           metadata_.operands[0].reg <= ARM64_REG_Z31) {
@@ -537,8 +537,8 @@ void Instruction::decode() {
     // Capture those floating point compare instructions with no destination
     // register
     if (sourceRegisterCount_ != 0) {
-      if (!(isInsnOneOf(InsnType::isScalarData) ||
-            isInsnOneOf(InsnType::isVectorData)) &&
+      if (!(isInstruction(InsnType::isScalarData) ||
+            isInstruction(InsnType::isVectorData)) &&
           sourceRegisters_[0].type == RegisterType::VECTOR) {
         setInstructionType(InsnType::isScalarData);
       }
@@ -556,8 +556,9 @@ void Instruction::decode() {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
-    if (!(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData,
-                      InsnType::isSVEData))) {
+    if (!(isInstruction(InsnType::isScalarData) ||
+          isInstruction(InsnType::isVectorData) ||
+          isInstruction(InsnType::isSVEData))) {
       setInstructionType(InsnType::isScalarData);
     }
   }
@@ -651,7 +652,8 @@ void Instruction::decode() {
   // Uncaught float data assignment for FMOV move to general instructions
   if (((430 <= metadata_.opcode && metadata_.opcode <= 432) ||
        (2409 <= metadata_.opcode && metadata_.opcode <= 2429)) &&
-      !(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData))) {
+      !(isInstruction(InsnType::isScalarData) ||
+        isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
@@ -661,11 +663,12 @@ void Instruction::decode() {
   }
   // Uncaught float data assignment for FCVT convert to general instructions
   if ((1976 <= metadata_.opcode && metadata_.opcode <= 2186) &&
-      !(isInsnOneOf(InsnType::isScalarData, InsnType::isVectorData))) {
+      !(isInstruction(InsnType::isScalarData) ||
+        isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
 
-  if (!(isInsnOneOf(InsnType::isSMEData))) {
+  if (!(isInstruction(InsnType::isSMEData))) {
     // Catch zero register references and pre-complete those operands - not
     // applicable to SME instructions
     for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
