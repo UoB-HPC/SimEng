@@ -31,52 +31,126 @@ TEST(AArch64AuxiliaryFunctionTest, AddWithCarry) {
 /** `bitfieldManipulate` Tests */
 TEST(AArch64AuxiliaryFunctionTest, BitfieldManipulate) {
   // uint8
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(0xFF, 12, 2, 1, false), 204);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(16, 3, 0xFF, 24, false), 3);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(0, 64, 4, 8, false), 64);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(64, 0, 8, 4, false), 0);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 0, 0, false), 0xF1);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 0, 0, true), 0xFF);
 
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(0xFF, 12, 2, 1, true), 204);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(16, 3, 0xFF, 24, true), 3);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(0, 64, 4, 8, true), 0);
-  EXPECT_EQ(bitfieldManipulate<uint8_t>(64, 8, 8, 4, true), 0);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 0, 7, false), 0x0F);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 0, 7, true), 0x0F);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 7, 0, false), 0xF2);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x0F, 0xF0, 7, 0, true), 0xFE);
+
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x18, 0xF0, 2, 5, false), 0xF6);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x18, 0xF0, 2, 5, true), 0x06);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x7, 0xF0, 5, 2, false), 0xF8);
+  EXPECT_EQ(bitfieldManipulate<uint8_t>(0x7, 0xF0, 5, 2, true), 0xF8);
+
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint8_t>(0, 0, 8, 0, false); },
+      "Attempted to use a rotate amount of 8 in bitfieldManipulate which is "
+      "greater than or equal to the data type size of 8b in use");
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint8_t>(0, 0, 0, 8, false); },
+      "Attempted to use a source bit position value of 8 in bitfieldManipulate "
+      "which is greater than or equal to the data type size of 8b in use");
 
   // uint16
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(0xFFFF, 12, 2, 1, false), 49164);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(16, 3, 0xFF, 24, false), 3);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(0, 64, 4, 8, false), 64);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(64, 0, 8, 4, false), 0);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 0, 0, false), 0xFF01);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 0, 0, true), 0xFFFF);
 
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(0xFFFF, 12, 2, 1, true), 49164);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(16, 3, 0xFF, 24, true), 3);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(0, 64, 4, 8, true), 0);
-  EXPECT_EQ(bitfieldManipulate<uint16_t>(64, 8, 8, 4, true), 8);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 0, 15, false), 0x00FF);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 0, 15, true), 0x00FF);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 15, 0, false), 0xFF02);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x00FF, 0xFF00, 15, 0, true), 0xFFFE);
+
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x03C0, 0xFF00, 4, 11, false), 0xFF3C);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x03C0, 0xFF00, 4, 11, true), 0x003C);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x1F, 0xFF00, 11, 4, false), 0xFFE0);
+  EXPECT_EQ(bitfieldManipulate<uint16_t>(0x1F, 0xFF00, 11, 4, true), 0xFFE0);
+
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint16_t>(0, 0, 16, 0, false); },
+      "Attempted to use a rotate amount of 16 in bitfieldManipulate which is "
+      "greater than or equal to the data type size of 16b in use");
+  ASSERT_DEATH({ bitfieldManipulate<uint16_t>(0, 0, 0, 16, false); },
+               "Attempted to use a source bit position value of 16 in "
+               "bitfieldManipulate which is greater than or equal to the data "
+               "type size of 16b in use");
 
   // uint32
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(0xFFFFFFFF, 12, 2, 1, false),
-            3221225484);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(16, 3, 0xFF, 24, false), 33);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(0, 64, 4, 8, false), 64);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(64, 0, 8, 4, false), 0);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 0, 0, false),
+            0xFFFF0001);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 0, 0, true),
+            0xFFFFFFFF);
 
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(0xFFFFFFFF, 12, 2, 1, true),
-            3221225484);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(16, 3, 0xFF, 24, true), 33);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(0, 64, 4, 8, true), 0);
-  EXPECT_EQ(bitfieldManipulate<uint32_t>(64, 8, 8, 4, true), 8);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 0, 31, false),
+            0x0000FFFF);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 0, 31, true),
+            0x0000FFFF);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 31, 0, false),
+            0xFFFF0002);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 31, 0, true),
+            0xFFFFFFFE);
+
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x000FF000, 0xFFFF0000, 8, 23, false),
+            0xFFFF0FF0);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x000FF000, 0xFFFF0000, 8, 23, true),
+            0x00000FF0);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x1FF, 0xFFFF0000, 23, 8, false),
+            0xFFFFFE00);
+  EXPECT_EQ(bitfieldManipulate<uint32_t>(0x1FF, 0xFFFF0000, 23, 8, true),
+            0xFFFFFE00);
+
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint32_t>(0, 0, 32, 0, false); },
+      "Attempted to use a rotate amount of 32 in bitfieldManipulate which is "
+      "greater than or equal to the data type size of 32b in use");
+  ASSERT_DEATH({ bitfieldManipulate<uint32_t>(0, 0, 0, 32, false); },
+               "Attempted to use a source bit position value of 32 in "
+               "bitfieldManipulate which is greater than or equal to the data "
+               "type size of 32b in use");
 
   // uint64
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(0xFFFFFFFFFFFFFFFF, 12, 2, 1, false),
-            13835058055282163724u);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(16, 3, 0xFF, 24, false), 33);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(0, 64, 4, 8, false), 64);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(64, 0, 8, 4, false), 0);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         0, 0, false),
+            0xFFFFFFFF00000001);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         0, 0, true),
+            0xFFFFFFFFFFFFFFFF);
 
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(0xFFFFFFFFFFFFFFFF, 12, 2, 1, true),
-            13835058055282163724u);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(16, 3, 0xFF, 24, true), 33);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(0, 64, 4, 8, true), 0);
-  EXPECT_EQ(bitfieldManipulate<uint64_t>(64, 8, 8, 4, true), 8);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         0, 63, false),
+            0x00000000FFFFFFFF);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         0, 63, true),
+            0x00000000FFFFFFFF);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         63, 0, false),
+            0xFFFFFFFF00000002);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
+                                         63, 0, true),
+            0xFFFFFFFFFFFFFFFE);
+
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x000000FFFF000000, 0xFFFFFFFF00000000,
+                                         16, 47, false),
+            0xFFFFFFFF00FFFF00);
+  EXPECT_EQ(bitfieldManipulate<uint64_t>(0x000000FFFF000000, 0xFFFFFFFF00000000,
+                                         16, 47, true),
+            0x0000000000FFFF00);
+  EXPECT_EQ(
+      bitfieldManipulate<uint64_t>(0x1FFFF, 0xFFFFFFFF00000000, 47, 16, false),
+      0xFFFFFFFFFFFE0000);
+  EXPECT_EQ(
+      bitfieldManipulate<uint64_t>(0x1FFFF, 0xFFFFFFFF00000000, 47, 16, true),
+      0xFFFFFFFFFFFE0000);
+
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint64_t>(0, 0, 64, 0, false); },
+      "Attempted to use a rotate amount of 64 in bitfieldManipulate which is "
+      "greater than or equal to the data type size of 64b in use");
+  ASSERT_DEATH({ bitfieldManipulate<uint64_t>(0, 0, 0, 64, false); },
+               "Attempted to use a source bit position value of 64 in "
+               "bitfieldManipulate which is greater than or equal to the data "
+               "type size of 64b in use");
 }
 
 /** `conditionHolds` Tests */
