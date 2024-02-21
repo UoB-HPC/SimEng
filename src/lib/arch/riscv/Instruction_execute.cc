@@ -177,7 +177,7 @@ void Instruction::execute() {
          "Attempted to execute an instruction before all source operands were "
          "provided");
 
-  // Implementation of rv64iamfdc according to the v. 20191213 unprivileged spec
+  // Implementation of rv64imafdc according to the v. 20191213 unprivileged spec
 
   executed_ = true;
   switch (metadata_.opcode) {
