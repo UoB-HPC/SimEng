@@ -64,17 +64,39 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
                    bool signExtend = false) {
   size_t bits = sizeof(T) * 8;
 
+  if (rotateBy >= bits) {
+    std::cerr
+        << "\n[SimEng:auxiliaryFunctions] Attempted to use a rotate amount of "
+        << unsigned(rotateBy)
+        << " in bitfieldManipulate which is greater than or equal to the "
+           "data type size of "
+        << bits << "b in use. Exiting." << std::endl;
+    exit(1);
+  } else if (sourceBits >= bits) {
+    std::cerr << "\n[SimEng:auxiliaryFunctions] Attempted to use a source bit "
+                 "position "
+                 "value of "
+              << unsigned(sourceBits)
+              << " in bitfieldManipulate which is greater than or equal to the "
+                 "data type size of "
+              << bits << "b in use. Exiting." << std::endl;
+    exit(1);
+  }
+
   T source;
   T destMask;
   uint8_t highestBit = sourceBits;
   if (sourceBits >= rotateBy) {
     // Mask of values [rotateBy:source+1]
-    destMask = (static_cast<T>(-1) << (sourceBits - rotateBy + 1));
+    uint8_t bitMaskSize = sourceBits - rotateBy + 1;
+    destMask = (bitMaskSize == bits) ? 0 : (static_cast<T>(-1) << bitMaskSize);
     source = value >> rotateBy;
     highestBit -= rotateBy;
   } else {
-    T upper = (static_cast<T>(-1) << (bits - rotateBy));
-    T lower = (static_cast<T>(-1) >> (rotateBy - sourceBits - 1));
+    uint8_t upperSize = bits - rotateBy;
+    T upper = (upperSize == bits) ? 0 : (static_cast<T>(-1) << upperSize);
+    uint8_t lowerSize = rotateBy - sourceBits - 1;
+    T lower = (lowerSize == bits) ? 0 : (static_cast<T>(-1) >> lowerSize);
     destMask = upper ^ lower;
     source = value << (bits - rotateBy);
     highestBit += (bits - rotateBy);
