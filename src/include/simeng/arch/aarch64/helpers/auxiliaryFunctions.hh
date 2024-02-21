@@ -65,16 +65,16 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
   size_t bits = sizeof(T) * 8;
 
   if (rotateBy >= bits) {
-    std::cerr << "\n[SimEng] Attempted to use a rotate amount of "
-              << unsigned(rotateBy)
-              << " in bitfieldManipulate which is greater than or equal to the "
-                 "data type size of "
-              << bits << "b in use. Exiting." << std::endl;
+    std::cerr
+        << "\n[SimEng:auxiliaryFunctions] Attempted to use a rotate amount of "
+        << unsigned(rotateBy)
+        << " in bitfieldManipulate which is greater than or equal to the "
+           "data type size of "
+        << bits << "b in use. Exiting." << std::endl;
     exit(1);
-  }
-
-  else if (sourceBits >= bits) {
-    std::cerr << "\n[SimEng] Attempted to use a source bit position "
+  } else if (sourceBits >= bits) {
+    std::cerr << "\n[SimEng:auxiliaryFunctions] Attempted to use a source bit "
+                 "position "
                  "value of "
               << unsigned(sourceBits)
               << " in bitfieldManipulate which is greater than or equal to the "
