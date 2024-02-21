@@ -49,4 +49,5 @@ workflows:
             - docs-build
           filters:
             branches:
-              only: main
+              only: 
+                - main
