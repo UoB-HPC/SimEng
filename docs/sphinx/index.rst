@@ -70,7 +70,7 @@ SimEng was first presented by `Professor Simon McIntosh-Smith <http://uob-hpc.gi
 
 Additionally, other works concerning SimEng and its use can be found below:
 
-- Second International workshop on RISC-V for HPC - `An Empirical Comparison of the RISC-V and AArch64 Instruction Sets <https://dl.acm.org/doi/abs/10.1145/3624062.3624233>`_
+- Second International workshop on RISC-V for HPC at SC2023 - `An Empirical Comparison of the RISC-V and AArch64 Instruction Sets <https://dl.acm.org/doi/abs/10.1145/3624062.3624233>`_
 - ModSim 2023 - :download:`Leveraging Arm's Scalable Matrix Extension to Accelerate Matrix Multiplication Kernels <assets/modsim23_poster.pdf>`
 - PMBS 2022 - `An Initial Evaluation of Arm's Scalable Matrix Extension <https://ieeexplore.ieee.org/document/10024029>`_
 - ModSim 2022 - :download:`A design space exploration for optimal vector unit composition <assets/modsim22_poster.pdf>`
@@ -80,7 +80,7 @@ Additionally, other works concerning SimEng and its use can be found below:
 Release
 -------
 
-This is SimEng's eighth release, and should be considered beta level software (version 0.9.6). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
+This is SimEng's eighth release, and should be considered beta level software (version 0.9.6). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
 
 SimEng is released under the same license as LLVM, the permissive `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license. We are passionate about enabling experimentation with computer architectures, and want users and developers in academic and industry to have complete freedom to use SimEng anyway they wish, including using it in commercial settings.
 
