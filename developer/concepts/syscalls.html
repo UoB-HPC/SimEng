@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
@@ -114,7 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
@@ -122,7 +116,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -198,13 +192,13 @@
            <div itemprop="articleBody">
             
   <div class="section" id="system-calls">
-<h1>System Calls<a class="headerlink" href="#system-calls" title="Permalink to this headline">¶</a></h1>
+<h1>System Calls<a class="headerlink" href="#system-calls" title="Permalink to this heading">¶</a></h1>
 <p>To support the simulation of programs that perform system calls, SimEng implements system call emulation. When a supervisor call exception is raised by the program, the <a class="reference internal" href="../arch/abstract.html"><span class="doc">exception handler</span></a> invokes the emulated operating system <a class="reference internal" href="kernel.html"><span class="doc">kernel</span></a> instance to perform the syscall.</p>
 <p>Many syscalls are emulated entirely inside SimEng, with some exceptions detailed below.</p>
 <div class="section" id="file-input-output">
-<h2>File input/output<a class="headerlink" href="#file-input-output" title="Permalink to this headline">¶</a></h2>
-<p>Syscalls that interact with files are passed through to the host, in order to allow the simulated program to read and write data files on the host filesystem and interact with <code class="docutils literal"><span class="pre">stdin</span></code>, <code class="docutils literal"><span class="pre">stdout</span></code> and <code class="docutils literal"><span class="pre">stderr</span></code>. When a file is opened (e.g. with <code class="docutils literal"><span class="pre">open</span></code> or <code class="docutils literal"><span class="pre">openat</span></code>), the emulated kernel maps the host file descriptor to a virtual file descriptor (<code class="docutils literal"><span class="pre">fileDescriptorTable</span></code>) which is returned to the simulated program. When handling syscalls that operate on file descriptors (e.g. <code class="docutils literal"><span class="pre">lseek</span></code> or <code class="docutils literal"><span class="pre">writev</span></code>), the kernel looks up the corresponding host file descriptor in the map before passing the call onwards to the host.</p>
-<p id="specialdir">The kernel detects attempts to open special files (such as those in <code class="docutils literal"><span class="pre">/dev/</span></code> or <code class="docutils literal"><span class="pre">/proc</span></code>) and emulates their access inside SimEng rather than passing the call through to the host. This is achieved by generating the most commonly accessed special files at runtime via information provided in the model <a class="reference internal" href="../../user/configuring_simeng.html#cpu-info"><span class="std std-ref">config file</span></a>. The generated special files directory can be found at <code class="docutils literal"><span class="pre">simeng/build/specialFiles/...</span></code>. Alternatively, a user can disable the special file generation in the model config file and copy in their own directory to the same location.</p>
+<h2>File input/output<a class="headerlink" href="#file-input-output" title="Permalink to this heading">¶</a></h2>
+<p>Syscalls that interact with files are passed through to the host, in order to allow the simulated program to read and write data files on the host filesystem and interact with <code class="docutils literal notranslate"><span class="pre">stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code>. When a file is opened (e.g. with <code class="docutils literal notranslate"><span class="pre">open</span></code> or <code class="docutils literal notranslate"><span class="pre">openat</span></code>), the emulated kernel maps the host file descriptor to a virtual file descriptor (<code class="docutils literal notranslate"><span class="pre">fileDescriptorTable</span></code>) which is returned to the simulated program. When handling syscalls that operate on file descriptors (e.g. <code class="docutils literal notranslate"><span class="pre">lseek</span></code> or <code class="docutils literal notranslate"><span class="pre">writev</span></code>), the kernel looks up the corresponding host file descriptor in the map before passing the call onwards to the host.</p>
+<p id="specialdir">The kernel detects attempts to open special files (such as those in <code class="docutils literal notranslate"><span class="pre">/dev/</span></code> or <code class="docutils literal notranslate"><span class="pre">/proc</span></code>) and emulates their access inside SimEng rather than passing the call through to the host. This is achieved by generating the most commonly accessed special files at runtime via information provided in the model <a class="reference internal" href="../../user/configuring_simeng.html#cpu-info"><span class="std std-ref">config file</span></a>. The generated special files directory can be found at <code class="docutils literal notranslate"><span class="pre">simeng/build/specialFiles/...</span></code>. Alternatively, a user can disable the special file generation in the model config file and copy in their own directory to the same location.</p>
 </div>
 </div>
 
@@ -222,7 +216,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

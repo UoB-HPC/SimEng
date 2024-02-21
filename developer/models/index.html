@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
@@ -108,12 +102,19 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#current-hardware-models">Current Hardware Models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-model-configuration-options">Adding model configuration options</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-a-new-expectation">Creating a new expectation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wildcard-nodes">Wildcard nodes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sequence-nodes">Sequence Nodes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#additional-options">Additional options</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
@@ -121,7 +122,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -195,54 +196,178 @@
            <div itemprop="articleBody">
             
   <div class="section" id="models">
-<h1>Models<a class="headerlink" href="#models" title="Permalink to this headline">¶</a></h1>
+<h1>Models<a class="headerlink" href="#models" title="Permalink to this heading">¶</a></h1>
 <p>SimEng provides a number of default processor core models, which simulate the structure and behaviour of common processor archetypes.</p>
 <div class="section" id="archetypes">
-<span id="id1"></span><h2>Archetypes<a class="headerlink" href="#archetypes" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2>Archetypes<a class="headerlink" href="#archetypes" title="Permalink to this heading">¶</a></h2>
 <div class="section" id="emulation">
-<h3>Emulation<a class="headerlink" href="#emulation" title="Permalink to this headline">¶</a></h3>
+<h3>Emulation<a class="headerlink" href="#emulation" title="Permalink to this heading">¶</a></h3>
 <p>The emulation model is the simplest default model, simulating a simple atomic “emulation-style” approach to processing the instruction stream: each instruction is processed in its entirety before proceeding to the next instruction. This model is not particularly well suited for modelling all but the simplest processors, but due to its simplicity is extremely fast, and thus suitable for rapidly testing program correctness.</p>
 <p>In future, this model may be suitable for rapidly progressing a program to a region of interest, before hot-swapping to a slower but more detailed model.</p>
 </div>
 <div class="section" id="in-order">
-<h3>In-Order<a class="headerlink" href="#in-order" title="Permalink to this headline">¶</a></h3>
+<h3>In-Order<a class="headerlink" href="#in-order" title="Permalink to this heading">¶</a></h3>
 <p>The in-order model simulates a simple in-order pipelined processor core, with discrete fetch, decode, execute, and writeback stages. This model is capable of speculatively fetching instructions via a supplied branch prediction model, with a flush mechanism for mispredictions.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Due to a lack of dependency handling, this model only supports single-cycle instructions, which necessitates a zero-cycle memory model. Attempting to use this model with a multi-cycle memory model will result in incorrect execution and undefined behaviour.</p>
+<p class="admonition-title">Note</p>
+<p>Due to a lack of dependency handling, this model only supports single-cycle instructions, which necessitates a zero-cycle memory model. Attempting to use this model with a multi-cycle memory model will result in incorrect execution and undefined behaviour.</p>
 </div>
 </div>
 <div class="section" id="out-of-order">
-<h3>Out-of-order<a class="headerlink" href="#out-of-order" title="Permalink to this headline">¶</a></h3>
+<h3>Out-of-order<a class="headerlink" href="#out-of-order" title="Permalink to this heading">¶</a></h3>
 <p>The out-of-order model simulates a complex superscalar out-of-order core, similar to those found in modern high-performance processors. This core contains the following pipeline stages:</p>
 <ul class="simple">
-<li>Fetch</li>
-<li>Decode</li>
-<li>Rename</li>
-<li>Dispatch/Issue</li>
-<li>Execute</li>
-<li>Writeback</li>
-<li>Commit</li>
+<li><p>Fetch</p></li>
+<li><p>Decode</p></li>
+<li><p>Rename</p></li>
+<li><p>Dispatch/Issue</p></li>
+<li><p>Execute</p></li>
+<li><p>Writeback</p></li>
+<li><p>Commit</p></li>
 </ul>
 <p>To facilitate out-of-order execution, this model contains the following features:</p>
 <ul class="simple">
-<li>A reorder buffer for holding in-flight instructions</li>
-<li>A set of reservation stations for dependency management and instruction scheduling</li>
-<li>A load/store queue to enable out-of-order memory access while ensuring memory order correctness</li>
-<li>A register alias table to allow register renaming and false dependency elimination</li>
+<li><p>A reorder buffer for holding in-flight instructions</p></li>
+<li><p>A set of reservation stations for dependency management and instruction scheduling</p></li>
+<li><p>A load/store queue to enable out-of-order memory access while ensuring memory order correctness</p></li>
+<li><p>A register alias table to allow register renaming and false dependency elimination</p></li>
 </ul>
 <p>This model also supports speculative execution, using a supplied branch prediction model, and is capable of selectively flushing only mispredicted instructions from the pipeline while leaving correct instructions in place.</p>
 </div>
 </div>
 <div class="section" id="current-hardware-models">
-<h2>Current Hardware Models<a class="headerlink" href="#current-hardware-models" title="Permalink to this headline">¶</a></h2>
+<h2>Current Hardware Models<a class="headerlink" href="#current-hardware-models" title="Permalink to this heading">¶</a></h2>
 <p>Through SimEng’s configurable options, the above archetypes can be transformed into models based on existing processors. More information on the configurable options of SimEng can be found <a class="reference internal" href="../../user/configuring_simeng.html#cnfsimeng"><span class="std std-ref">here</span></a>.</p>
 <p>The current existing processors have supplied configuration files:</p>
 <ul class="simple">
-<li><a class="reference external" href="https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan">ThunderX2</a></li>
-<li><a class="reference external" href="https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf">A64FX</a></li>
-<li><a class="reference external" href="https://github.com/UoB-HPC/SimEng/blob/m1-dev/m1_docs/M1_Findings.md">M1 Firestorm</a></li>
+<li><p><a class="reference external" href="https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan">ThunderX2</a></p></li>
+<li><p><a class="reference external" href="https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf">A64FX</a></p></li>
+<li><p><a class="reference external" href="https://github.com/UoB-HPC/SimEng/blob/m1-dev/m1_docs/M1_Findings.md">M1 Firestorm</a></p></li>
 </ul>
+</div>
+<div class="section" id="adding-model-configuration-options">
+<h2>Adding model configuration options<a class="headerlink" href="#adding-model-configuration-options" title="Permalink to this heading">¶</a></h2>
+<p>SimEng utilises a scheme which defines value expectations on mandatory and optional configuration options. The value expectations consist of:</p>
+<ul class="simple">
+<li><p>A default value to be used when creating an in-code default config file</p></li>
+<li><p>A boolean to describe whether the config option is mandatory or optional</p></li>
+<li><p>Either a set of values or an upper and lower bound which the supplied config option must conform to</p></li>
+</ul>
+<p>The scheme is implemented through the <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> class which creates a tree structure where each node holds the above expectations. The tree structure should map one-to-one to the structure of the passed config file. For example:</p>
+<p>With the YAML:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Core:
+    ISA: AArch64
+    Simulation-Mode: outoforder
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> tree structure would be:</p>
+<a class="reference internal image-reference" href="../../_images/expectations.png"><img alt="ExpectationNode structure example" src="../../_images/expectations.png" style="width: 350px;" /></a>
+<p>The tree structure formed with <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instances is constructed through the <code class="docutils literal notranslate"><span class="pre">addChild(...)</span></code> utility of the <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> class. Starting at a root node, <code class="docutils literal notranslate"><span class="pre">addChild(...)</span></code> is used to create various branches of the tree which map to the various config options as described in the above diagram. For those nodes which hold config values, either <code class="docutils literal notranslate"><span class="pre">setValueBounds(...)</span></code> or <code class="docutils literal notranslate"><span class="pre">setValueSet(...)</span></code> is used to set the config value restrictions.</p>
+<div class="section" id="creating-a-new-expectation">
+<h3>Creating a new expectation<a class="headerlink" href="#creating-a-new-expectation" title="Permalink to this heading">¶</a></h3>
+<p>Many examples of utilising the <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> class to set the expectation of a specific config value exist in <code class="docutils literal notranslate"><span class="pre">src/lib/config/ModelConfig.cc</span></code>. To elaborate on these examples, below is a simplified outline of how you would create the expectations for the above diagram. As with <code class="docutils literal notranslate"><span class="pre">src/lib/config/ModelConfig.cc</span></code>, <code class="docutils literal notranslate"><span class="pre">expectations_</span></code> is treated as the blank root node from which we construct the tree.</p>
+<p>First, we create the expectation of the parent config key <code class="docutils literal notranslate"><span class="pre">Core</span></code>. The <code class="docutils literal notranslate"><span class="pre">addChild(...)</span></code> utility takes a new <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instance which is appended to the vector of children in the parent <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instance; thus forming a new branch of the eventual tree structure. To create a new <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instance, the <code class="docutils literal notranslate"><span class="pre">ExpectationNode::createExpectation(...)</span></code> utility can be used. There are two variants of the function, namely:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>1.
+    createExpectation(std::string key, bool optional = false)
+</pre></div>
+</div>
+<p>Which is used for those nodes whose corresponding config option has no value (only a key and children).</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2.
+    template &lt;typename T&gt;
+    createExpectation(T defaultValue, std::string key, bool optional = false)
+</pre></div>
+</div>
+<p>Which is used for those nodes whose corresponding config option does have a value. The function is templated to support different config value types (e.g. T = string, integer, floating point, etc).</p>
+<p>For the expectation on the parent config key <code class="docutils literal notranslate"><span class="pre">Core</span></code>, given it holds no value, we don’t need to set any value expectations. Therefore, the first <code class="docutils literal notranslate"><span class="pre">createExpectation</span></code> can be used.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>expectations_.addChild(ExpectationNode::createExpectation(&quot;Core&quot;));
+</pre></div>
+</div>
+<p>With both the <code class="docutils literal notranslate"><span class="pre">ISA</span></code> and <code class="docutils literal notranslate"><span class="pre">Simulation-Mode</span></code> config options which do have values, the second  <code class="docutils literal notranslate"><span class="pre">createExpectation</span></code> must be used. First, we create the <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instances for them and add them to the children of the new “Core” <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code> instance. For simplicity of the example, we have set the default values of the <code class="docutils literal notranslate"><span class="pre">ISA</span></code> and <code class="docutils literal notranslate"><span class="pre">Simulation-Mode</span></code> config options to <code class="docutils literal notranslate"><span class="pre">AArch64</span></code> and <code class="docutils literal notranslate"><span class="pre">emulation</span></code> respectively.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>expectations_[&quot;Core&quot;].addChild(
+    ExpectationNode::createExpectation&lt;std::string&gt;(&quot;AArch64&quot;, &quot;ISA&quot;));
+
+expectations_[&quot;Core&quot;].addChild(
+    ExpectationNode::createExpectation&lt;std::string&gt;(&quot;emulation&quot;,
+                                              &quot;Simulation-Mode&quot;));
+</pre></div>
+</div>
+<p>Then we set the value restrictions as described in the above diagram:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>expectations_[&quot;Core&quot;][&quot;ISA&quot;].setValueSet(
+    std::vector&lt;std::string&gt;{&quot;AArch64&quot;, &quot;rv64&quot;});
+
+expectations_[&quot;Core&quot;][&quot;Simulation-Mode&quot;].setValueSet(
+    std::vector&lt;std::string&gt;{&quot;emulation&quot;, &quot;inorderpipelined&quot;, &quot;outoforder&quot;});
+</pre></div>
+</div>
+</div>
+<div class="section" id="wildcard-nodes">
+<h3>Wildcard nodes<a class="headerlink" href="#wildcard-nodes" title="Permalink to this heading">¶</a></h3>
+<p>To reduce code duplication, the concept of mapping one set of expectations to many config values has been implemented. Denoted as a <code class="docutils literal notranslate"><span class="pre">wildcard</span></code> node, these nodes can be used to specify the value expectations on a config option which has multiple instances of the same value format/structure. For example, in the “Latencies” config option, many latencies can be defined as seen below:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Latencies:
+0:
+    Instruction-Groups:
+    - INT_SIMPLE_ARTH
+    - INT_SIMPLE_LOGICAL
+    Execution-Latency: 2
+    Execution-Throughput: 2
+1:
+    Instruction-Groups:
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    Execution-Latency: 1
+    Execution-Throughput: 1
+2:
+    Instruction-Groups:
+    - INT_MUL
+    Execution-Latency: 5
+    Execution-Throughput: 1
+</pre></div>
+</div>
+<p>Taking the “Execution-Latency” option as an example, rather than setting the expectation for an unknown number of occurrences, we can instead write:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>expectations_[&quot;Latencies&quot;].addChild(
+  ExpectationNode::createExpectation&lt;uint16_t&gt;(0, wildcard));
+
+expectations_[&quot;Latencies&quot;][wildcard].addChild(
+  ExpectationNode::createExpectation&lt;uint16_t&gt;(1, &quot;Execution-Latency&quot;));
+expectations_[&quot;Latencies&quot;][wildcard][&quot;Execution-Latency&quot;]
+  .setValueBounds&lt;uint16_t&gt;(1, UINT16_MAX);
+</pre></div>
+</div>
+<p>When validating all config options under the “Latencies” key, the <code class="docutils literal notranslate"><span class="pre">wildcard</span></code> node created will be used for each option.</p>
+</div>
+<div class="section" id="sequence-nodes">
+<h3>Sequence Nodes<a class="headerlink" href="#sequence-nodes" title="Permalink to this heading">¶</a></h3>
+<p>Similar to the motivation behind the <code class="docutils literal notranslate"><span class="pre">wildcard</span></code> node usage, a value expectation can be set to be applied to all values in a YAML sequence/list/array/etc. By calling <code class="docutils literal notranslate"><span class="pre">.setAsSequence()</span></code> on an instance of <code class="docutils literal notranslate"><span class="pre">ExpectationNode</span></code>, its value expectations will be applied to a YAML sequence of values. Below is an example of when you might use this.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Ports:
+0:
+    Portname: Port 0
+    Instruction-Group-Support:
+    - INT_SIMPLE
+    - INT_MUL
+    - FP
+1:
+    Portname: Port 1
+    Instruction-Group-Support:
+    - INT
+    - FP
+</pre></div>
+</div>
+<p>To apply a value expectation for all values in the “Instruction-Group-Support” options, we’d write:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>expectations_[&quot;Ports&quot;][wildcard].addChild(
+    ExpectationNode::createExpectation&lt;std::string&gt;(
+        &quot;ALL&quot;, &quot;Instruction-Group-Support&quot;, true));
+
+expectations_[&quot;Ports&quot;][wildcard][&quot;Instruction-Group-Support&quot;].setValueSet(
+    {vector of ISA-specific instruction groups});
+expectations_[&quot;Ports&quot;][wildcard][&quot;Instruction-Group-Support&quot;].setAsSequence();
+</pre></div>
+</div>
+<p>We once again use a <code class="docutils literal notranslate"><span class="pre">wildcard</span></code> node here as all options under the “Ports” config key are repeated an unknown number of times.</p>
+</div>
+<div class="section" id="additional-options">
+<h3>Additional options<a class="headerlink" href="#additional-options" title="Permalink to this heading">¶</a></h3>
+<p>If any form of config value manipulation/verification is required, for example ensuring each reservation station port has an associated execution unit, this can be done in <code class="docutils literal notranslate"><span class="pre">postValidation()</span></code> within <code class="docutils literal notranslate"><span class="pre">src/lib/config/ModelConfig.cc</span></code>.</p>
+</div>
 </div>
 </div>
 
@@ -260,7 +385,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

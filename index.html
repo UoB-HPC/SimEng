@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'./',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -93,7 +87,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer/developerInfo.html">Developer information</a></li>
@@ -103,7 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/building_simeng.html">Building SimEng</a></li>
@@ -111,7 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -185,7 +179,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="the-simulation-engine-simeng">
-<h1>The Simulation Engine - SimEng<a class="headerlink" href="#the-simulation-engine-simeng" title="Permalink to this headline">¶</a></h1>
+<h1>The Simulation Engine - SimEng<a class="headerlink" href="#the-simulation-engine-simeng" title="Permalink to this heading">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <div class="toctree-wrapper compound">
@@ -194,79 +188,83 @@
 </div>
 <p>SimEng is a framework for building modern, cycle-accurate processor simulators. Its goals are to be:</p>
 <ul class="simple">
-<li>Fast, typically 4-5X faster than gem5</li>
-<li>Easy to use and modify to model desired microarchitecture configurations. New cores can be configured in just a few hours</li>
-<li>Scalable, from simple scalar microarchitectures up to the most sophisticated, superscalar, out-of-order designs</li>
-<li>Capable of supporting a wide range of instruction set architectures (ISAs), starting with AArch64 and RISC-V, but eventually including x86, POWER, etc.</li>
-<li>Accurate, aiming for simulated cycle times being within 5-10% of real hardware</li>
-<li>Open source, with a permissive license to enable collaboration across academia and industry</li>
+<li><p>Fast, typically 4-5X faster than gem5</p></li>
+<li><p>Easy to use and modify to model desired microarchitecture configurations. New cores can be configured in just a few hours</p></li>
+<li><p>Scalable, from simple scalar microarchitectures up to the most sophisticated, superscalar, out-of-order designs</p></li>
+<li><p>Capable of supporting a wide range of instruction set architectures (ISAs), starting with AArch64 and RISC-V, but eventually including x86, POWER, etc.</p></li>
+<li><p>Accurate, aiming for simulated cycle times being within 5-10% of real hardware</p></li>
+<li><p>Open source, with a permissive license to enable collaboration across academia and industry</p></li>
 </ul>
-<p>SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 17,000 and 3,000 lines or so implementing the specifics of the AArch64 and RISC-V ISAs respectively, and around 27,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.</p>
+<p>SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 11,000 lines of simple C++, with another 18,000 and 5,000 lines or so implementing the specifics of the AArch64 and RISC-V ISAs respectively, and around 41,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.</p>
 <div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
-<p>Currently, SimEng targets the Armv9.2-a ISA with support for the SVE, SVE2, and SME extensions as well as RISC-V rv64ima. SimEng has the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware, with additional support for single-threaded OpenMP binaries too. Internally, SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache. However, we have a tested integration with the <a class="reference external" href="http://sst-simulator.org/">Structural Simulation Toolkit</a> (SST) allowing for a full memory model to be simulated; more information can be found in the <a class="reference internal" href="sst/index.html"><span class="doc">SST Integration section</span></a>.</p>
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">¶</a></h2>
+<p>Currently, SimEng targets the Armv9.2-a ISA with support for the SVE, SVE2, and SME extensions as well as RISC-V rv64imafdc. SimEng has the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware, with additional support for single-threaded OpenMP binaries too. Internally, SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache. However, we have a tested integration with the <a class="reference external" href="http://sst-simulator.org/">Structural Simulation Toolkit</a> (SST) allowing for a full memory model to be simulated; more information can be found in the <a class="reference internal" href="sst/index.html"><span class="doc">SST Integration section</span></a>.</p>
 <p>The main component provided by the simulator is a discrete processor core model, shown in diagrammatic form below.  This model accepts a clock signal and supports a memory access interface. A single YAML format configuration file can be passed to the simulation to specify models of existing microarchitectures, such as Marvell’s ThunderX2 or Fujitsu’s A64fx, or to model hypothetical core designs.</p>
 <a class="reference internal image-reference" href="_images/simeng_generic_core_model.png"><img alt="Generic Core Model" src="_images/simeng_generic_core_model.png" style="width: 500px;" /></a>
 <p>A future release of SimEng will support multi-core simulation by integrating with the SST.</p>
 </div>
 <div class="section" id="talks-and-presentations">
-<h2>Talks and presentations<a class="headerlink" href="#talks-and-presentations" title="Permalink to this headline">¶</a></h2>
+<h2>Talks and presentations<a class="headerlink" href="#talks-and-presentations" title="Permalink to this heading">¶</a></h2>
 <p>SimEng was first presented by <a class="reference external" href="http://uob-hpc.github.io/SimonMS/">Professor Simon McIntosh-Smith</a> at the 2019 Workshop on Modeling &amp; Simulation of Systems and Applications (ModSim):</p>
 <ul class="simple">
-<li>ModSim 2019 - <a class="reference download internal" href="_downloads/simeng_modsim_2019.pdf" download=""><code class="xref download docutils literal"><span class="pre">Enabling</span> <span class="pre">Processor</span> <span class="pre">Design</span> <span class="pre">Space</span> <span class="pre">Exploration</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></li>
+<li><p>ModSim 2019 - <a class="reference download internal" download="" href="_downloads/49d46ac9c44fb683c396a57b95da5ba5/simeng_modsim_2019.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Enabling</span> <span class="pre">Processor</span> <span class="pre">Design</span> <span class="pre">Space</span> <span class="pre">Exploration</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
 </ul>
 <p>Additionally, other works concerning SimEng and its use can be found below:</p>
 <ul class="simple">
-<li>ModSim 2023 - <a class="reference download internal" href="_downloads/modsim23_poster.pdf" download=""><code class="xref download docutils literal"><span class="pre">Leveraging</span> <span class="pre">Arm's</span> <span class="pre">Scalable</span> <span class="pre">Matrix</span> <span class="pre">Extension</span> <span class="pre">to</span> <span class="pre">Accelerate</span> <span class="pre">Matrix</span> <span class="pre">Multiplication</span> <span class="pre">Kernels</span></code></a></li>
-<li>ModSim 2022 - <a class="reference download internal" href="_downloads/modsim22_poster.pdf" download=""><code class="xref download docutils literal"><span class="pre">A</span> <span class="pre">design</span> <span class="pre">space</span> <span class="pre">exploration</span> <span class="pre">for</span> <span class="pre">optimal</span> <span class="pre">vector</span> <span class="pre">unit</span> <span class="pre">composition</span></code></a></li>
-<li><a class="reference download internal" href="_downloads/simeng_arm_cpus.pdf" download=""><code class="xref download docutils literal"><span class="pre">Modelling</span> <span class="pre">Advanced</span> <span class="pre">Arm-based</span> <span class="pre">CPUs</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></li>
+<li><p>Second International workshop on RISC-V for HPC at SC2023 - <a class="reference external" href="https://dl.acm.org/doi/abs/10.1145/3624062.3624233">An Empirical Comparison of the RISC-V and AArch64 Instruction Sets</a></p></li>
+<li><p>ModSim 2023 - <a class="reference download internal" download="" href="_downloads/7fc6e5f8245c815d76a7dea0538ae35b/modsim23_poster.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Leveraging</span> <span class="pre">Arm's</span> <span class="pre">Scalable</span> <span class="pre">Matrix</span> <span class="pre">Extension</span> <span class="pre">to</span> <span class="pre">Accelerate</span> <span class="pre">Matrix</span> <span class="pre">Multiplication</span> <span class="pre">Kernels</span></code></a></p></li>
+<li><p>PMBS 2022 - <a class="reference external" href="https://ieeexplore.ieee.org/document/10024029">An Initial Evaluation of Arm’s Scalable Matrix Extension</a></p></li>
+<li><p>ModSim 2022 - <a class="reference download internal" download="" href="_downloads/b22003b9a8e3760ab9b7040bb443f108/modsim22_poster.pdf"><code class="xref download docutils literal notranslate"><span class="pre">A</span> <span class="pre">design</span> <span class="pre">space</span> <span class="pre">exploration</span> <span class="pre">for</span> <span class="pre">optimal</span> <span class="pre">vector</span> <span class="pre">unit</span> <span class="pre">composition</span></code></a></p></li>
+<li><p><a class="reference download internal" download="" href="_downloads/0f5675c2f3b49b0ed658267714946599/simeng_arm_cpus.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Modelling</span> <span class="pre">Advanced</span> <span class="pre">Arm-based</span> <span class="pre">CPUs</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
 </ul>
 </div>
 <div class="section" id="release">
-<h2>Release<a class="headerlink" href="#release" title="Permalink to this headline">¶</a></h2>
-<p>This is SimEng’s seventh release, and should be considered beta level software (version 0.9.5). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the <a class="reference external" href="https://github.com/UoB-HPC/SimEng">GitHub repository</a>. The file <a class="reference external" href="https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt">RELEASE_NOTES.txt</a>, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.</p>
+<h2>Release<a class="headerlink" href="#release" title="Permalink to this heading">¶</a></h2>
+<p>This is SimEng’s eighth release, and should be considered beta level software (version 0.9.6). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find all the code and associated test suites for SimEng in the <a class="reference external" href="https://github.com/UoB-HPC/SimEng">GitHub repository</a>. The file <a class="reference external" href="https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt">RELEASE_NOTES.txt</a>, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.</p>
 <p>SimEng is released under the same license as LLVM, the permissive <a class="reference external" href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a> license. We are passionate about enabling experimentation with computer architectures, and want users and developers in academic and industry to have complete freedom to use SimEng anyway they wish, including using it in commercial settings.</p>
 </div>
 <div class="section" id="external-project-usage">
-<h2>External project usage<a class="headerlink" href="#external-project-usage" title="Permalink to this headline">¶</a></h2>
+<h2>External project usage<a class="headerlink" href="#external-project-usage" title="Permalink to this heading">¶</a></h2>
 <p>While we have tried to minimise SimEng’s dependencies to keep it as simple as possible, it does make use of a small number of libraries and frameworks to provide crucial capabilities:</p>
 <ul class="simple">
-<li><a class="reference external" href="https://www.capstone-engine.org/">Capstone disassembly engine</a> - Provides instruction decoding for AArch64, RISC-V, x86 and other important ISAs</li>
-<li><a class="reference external" href="https://github.com/jbeder/yaml-cpp">Yaml-cpp</a> - Parsing YAML configuration files</li>
-<li><a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> - Framework for the test suites</li>
-<li><a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM</a> - Generation of binaries for use in the regression test suite</li>
+<li><p><a class="reference external" href="https://www.capstone-engine.org/">Capstone disassembly engine</a> - Provides instruction decoding for AArch64, RISC-V, x86 and other important ISAs</p></li>
+<li><p><a class="reference external" href="https://github.com/biojppm/rapidyaml">Rapid YAML</a> - Parsing YAML configuration files</p></li>
+<li><p><a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> - Framework for the test suites</p></li>
+<li><p><a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM</a> - Generation of binaries for use in the regression test suite</p></li>
 </ul>
 </div>
 <div class="section" id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h2>
+<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this heading">¶</a></h2>
 <p>Major contributors to SimEng to date include:</p>
 <p>Project leader: Simon McIntosh-Smith</p>
 <p>Current development team:</p>
 <ul class="simple">
-<li>Jack Jones (lead developer)</li>
-<li>Finn Wilkinson</li>
-<li>Rahat Muneeb</li>
-<li>Dan Weaver</li>
+<li><p>Jack Jones (lead developer)</p></li>
+<li><p>Finn Wilkinson</p></li>
+<li><p>Rahat Muneeb</p></li>
+<li><p>Dan Weaver</p></li>
+<li><p>Alex Cockrean</p></li>
+<li><p>Joseph Moore</p></li>
 </ul>
 <p>Original SimEng design and implementation:</p>
 <ul class="simple">
-<li>Hal Jones</li>
-<li>James Price</li>
+<li><p>Hal Jones</p></li>
+<li><p>James Price</p></li>
 </ul>
 <p>Additional Contributors:</p>
 <ul class="simple">
-<li>Ainsley Rutterford</li>
-<li>Andrei Poenaru</li>
-<li>Harry Waugh</li>
-<li>Mutalib Mohammed</li>
-<li>Seunghun Lee</li>
-<li>Tom Hepworth</li>
-<li>Tom Lin</li>
-<li>Will Robinson</li>
+<li><p>Ainsley Rutterford</p></li>
+<li><p>Andrei Poenaru</p></li>
+<li><p>Harry Waugh</p></li>
+<li><p>Mutalib Mohammed</p></li>
+<li><p>Seunghun Lee</p></li>
+<li><p>Tom Hepworth</p></li>
+<li><p>Tom Lin</p></li>
+<li><p>Will Robinson</p></li>
 </ul>
 </div>
 <div class="section" id="funding">
-<h2>Funding<a class="headerlink" href="#funding" title="Permalink to this headline">¶</a></h2>
+<h2>Funding<a class="headerlink" href="#funding" title="Permalink to this heading">¶</a></h2>
 <p>The SimEng development team is grateful for the funding which has made this project possible, which to date has been from the UKRI/EPSRC ASiMoV project (Advanced Simulation and Modelling of Virtual systems), number EP/S005072/1, and from Arm via the Arm Centre of Excellence in HPC at the University of Bristol.</p>
 </div>
 </div>
@@ -284,7 +282,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

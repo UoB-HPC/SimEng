@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
@@ -114,7 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
@@ -122,7 +116,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -198,13 +192,13 @@
            <div itemprop="articleBody">
             
   <div class="section" id="registers">
-<span id="id1"></span><h1>Registers<a class="headerlink" href="#registers" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Registers<a class="headerlink" href="#registers" title="Permalink to this heading">¶</a></h1>
 <p>Instructions in SimEng primarily operate upon registers. Each instruction may request data from any number of registers, and may update any number of registers upon completion.</p>
-<p>Registers are uniquely identified within SimEng using a <code class="docutils literal"><span class="pre">Register</span></code> object, consisting of a “type”—corresponding to a specific set of registers (i.e., general purpose, floating point, etc.)—and a “tag”, which identifies an individual register within that set. The number of different types of registers, as well as the number and size of registers of each type, is defined by the architecture used.</p>
+<p>Registers are uniquely identified within SimEng using a <code class="docutils literal notranslate"><span class="pre">Register</span></code> object, consisting of a “type”—corresponding to a specific set of registers (i.e., general purpose, floating point, etc.)—and a “tag”, which identifies an individual register within that set. The number of different types of registers, as well as the number and size of registers of each type, is defined by the architecture used.</p>
 <div class="section" id="registervalue">
-<h2>RegisterValue<a class="headerlink" href="#registervalue" title="Permalink to this headline">¶</a></h2>
-<p>As the type of data stored in registers and passed between instructions is architecture-dependent, all data is represented using the <code class="docutils literal"><span class="pre">RegisterValue</span></code> class. This is essentially a thin wrapper around a byte array, and provides templated helper functions to read the data as the desired datatype.</p>
-<p>A default-initialised <code class="docutils literal"><span class="pre">RegisterValue</span></code> has size 0, and will return <code class="docutils literal"><span class="pre">false</span></code> if evaluated as a bool.</p>
+<h2>RegisterValue<a class="headerlink" href="#registervalue" title="Permalink to this heading">¶</a></h2>
+<p>As the type of data stored in registers and passed between instructions is architecture-dependent, all data is represented using the <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> class. This is essentially a thin wrapper around a byte array, and provides templated helper functions to read the data as the desired datatype.</p>
+<p>A default-initialised <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> has size 0, and will return <code class="docutils literal notranslate"><span class="pre">false</span></code> if evaluated as a bool.</p>
 </div>
 </div>
 
@@ -222,7 +216,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

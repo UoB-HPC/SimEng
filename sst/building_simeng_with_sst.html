@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
@@ -104,7 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
@@ -112,7 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Building SimEng with SST</a><ul>
@@ -191,39 +185,39 @@
            <div itemprop="articleBody">
             
   <div class="section" id="building-simeng-with-sst">
-<h1>Building SimEng with SST<a class="headerlink" href="#building-simeng-with-sst" title="Permalink to this headline">¶</a></h1>
+<h1>Building SimEng with SST<a class="headerlink" href="#building-simeng-with-sst" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h2>
 <p>In addition to CMake and a compiler that supports C++17, version <strong>12.0.x</strong> of SST-Core and SST-Elements are required.</p>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Please ensure that while installing SST-Elements, the initial configuration step should include the
-<code class="docutils literal"><span class="pre">--with-sst-core=&lt;sst-core_install_directory&gt;</span></code> flag so that all components present in <strong>SST-Elements</strong> are registered with the <strong>SST-Core</strong>.
+<p class="admonition-title">Warning</p>
+<p>Please ensure that while installing SST-Elements, the initial configuration step should include the
+<code class="docutils literal notranslate"><span class="pre">--with-sst-core=&lt;sst-core_install_directory&gt;</span></code> flag so that all components present in <strong>SST-Elements</strong> are registered with the <strong>SST-Core</strong>.
 This is important because <strong>SimEng</strong> relies on components present in <strong>SST-Elements</strong>.
 However, if these components aren’t registered, <strong>SST-Core</strong> will fail to locate the components to use during simulation.</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">If the path: <code class="docutils literal"><span class="pre">&lt;sst-core_install_directory&gt;/bin</span></code> is added to the <code class="docutils literal"><span class="pre">$PATH</span></code> environment variable then all sst executables will be
-available globally. i.e. you will be to use the commands <code class="docutils literal"><span class="pre">sst</span></code> , <code class="docutils literal"><span class="pre">sst-info</span></code>, <code class="docutils literal"><span class="pre">sst-register</span></code> and <code class="docutils literal"><span class="pre">sst-config</span></code> without having to navigate
+<p class="admonition-title">Note</p>
+<p>If the path: <code class="docutils literal notranslate"><span class="pre">&lt;sst-core_install_directory&gt;/bin</span></code> is added to the <code class="docutils literal notranslate"><span class="pre">$PATH</span></code> environment variable then all sst executables will be
+available globally. i.e. you will be to use the commands <code class="docutils literal notranslate"><span class="pre">sst</span></code> , <code class="docutils literal notranslate"><span class="pre">sst-info</span></code>, <code class="docutils literal notranslate"><span class="pre">sst-register</span></code> and <code class="docutils literal notranslate"><span class="pre">sst-config</span></code> without having to navigate
 to the SST install directory.</p>
 </div>
 </div>
 <div class="section" id="build-steps">
-<h2>Build Steps<a class="headerlink" href="#build-steps" title="Permalink to this headline">¶</a></h2>
+<h2>Build Steps<a class="headerlink" href="#build-steps" title="Permalink to this heading">¶</a></h2>
 <p>Two flags have been added to SimEng’s CMake configuration step to enable integration with SST:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>-DSIMENG_ENABLE_SST={ON, OFF} // Defaults to OFF
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>-DSIMENG_ENABLE_SST={ON, OFF} // Defaults to OFF
 -DSST_INSTALL_DIR=&lt;sst-core_install_directory&gt; // Path to the SST-Core install location
 </pre></div>
 </div>
 <p>The rest of the steps for building and installing SimEng with SST integration remain the same as a standalone SimEng <a class="reference internal" href="../user/building_simeng.html#building-simeng"><span class="std std-ref">installation</span></a> i.e the build step and the install step.</p>
 </div>
 <div class="section" id="validation">
-<h2>Validation<a class="headerlink" href="#validation" title="Permalink to this headline">¶</a></h2>
-<p>A successful SST installation should also install the <code class="docutils literal"><span class="pre">sst-info</span></code> executable. This executable is used to print all the components registered with SST-Core which
-can be used in an SST simulation. To verify a successful installation of SimEng with SST integration enabled, the command <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">--libs=libsstsimeng</span></code>
+<h2>Validation<a class="headerlink" href="#validation" title="Permalink to this heading">¶</a></h2>
+<p>A successful SST installation should also install the <code class="docutils literal notranslate"><span class="pre">sst-info</span></code> executable. This executable is used to print all the components registered with SST-Core which
+can be used in an SST simulation. To verify a successful installation of SimEng with SST integration enabled, the command <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">--libs=libsstsimeng</span></code>
 should output:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>================================================================================
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>================================================================================
 ELEMENT 0 = sstsimeng()
 Num Components = 1
     Component 0: simengcore
@@ -262,7 +256,7 @@ Num SSTPartitioners = 0
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

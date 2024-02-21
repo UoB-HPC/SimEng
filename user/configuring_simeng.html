@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
@@ -104,7 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_simeng.html">Building SimEng</a></li>
@@ -129,7 +123,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -203,224 +197,235 @@
            <div itemprop="articleBody">
             
   <div class="section" id="configuring-simeng">
-<span id="cnfsimeng"></span><h1>Configuring SimEng<a class="headerlink" href="#configuring-simeng" title="Permalink to this headline">¶</a></h1>
-<p>SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. Pre-written model configuration files can be found in the <code class="docutils literal"><span class="pre">configs/</span></code> directory.</p>
+<span id="cnfsimeng"></span><h1>Configuring SimEng<a class="headerlink" href="#configuring-simeng" title="Permalink to this heading">¶</a></h1>
+<p>SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. Pre-written model configuration files can be found in the <code class="docutils literal notranslate"><span class="pre">configs/</span></code> directory.</p>
 <p>The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.</p>
 <div class="section" id="core">
-<span id="id1"></span><h2>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h2>Core<a class="headerlink" href="#core" title="Permalink to this heading">¶</a></h2>
 <p>SimEng cores can be one of three types:</p>
-<dl class="docutils">
-<dt><code class="docutils literal"><span class="pre">emulation</span></code></dt>
-<dd>An atomic “emulation-style” core which, per cycle, processes an instruction in its entirety before proceeding to the next instruction.</dd>
-<dt><code class="docutils literal"><span class="pre">inorderpipeline</span></code></dt>
-<dd>An in-order pipeline processor core with discrete fetch, decode, execute, and writeback stages.</dd>
-<dt><code class="docutils literal"><span class="pre">outoforder</span></code></dt>
-<dd>A complex superscalar out-of-order core, similar to those found in modern high-performance processors.</dd>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">emulation</span></code></dt><dd><p>An atomic “emulation-style” core which, per cycle, processes an instruction in its entirety before proceeding to the next instruction.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inorderpipeline</span></code></dt><dd><p>An in-order pipeline processor core with discrete fetch, decode, execute, and writeback stages.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">outoforder</span></code></dt><dd><p>A complex superscalar out-of-order core, similar to those found in modern high-performance processors.</p>
+</dd>
 </dl>
 <p>These core types are primarily referred to as core “archetypes”.</p>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Currently, the configuration files do not take into account the core archetype being modelled and require all parameters (without default values) to be defined, even if unused (e.g. reservation station definitions for an <code class="docutils literal"><span class="pre">emulation</span></code> core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.</p>
+<p class="admonition-title">Note</p>
+<p>Currently, the configuration files do not take into account the core archetype being modelled and require all parameters (without default values) to be defined, even if unused (e.g. reservation station definitions for an <code class="docutils literal notranslate"><span class="pre">emulation</span></code> core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.</p>
 </div>
 <p>Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:</p>
-<dl class="docutils">
-<dt>ISA</dt>
-<dd>The Instruction Set Architecture under simulation. The options are <code class="docutils literal"><span class="pre">AArch64</span></code> and <code class="docutils literal"><span class="pre">rv64</span></code>.</dd>
-<dt>Simulation-Mode</dt>
-<dd>The core archetype to use, the options are <code class="docutils literal"><span class="pre">emulation</span></code>, <code class="docutils literal"><span class="pre">inorderpipelined</span></code>, and <code class="docutils literal"><span class="pre">outoforder</span></code>.</dd>
-<dt>Clock-Frequency</dt>
-<dd>The clock frequency, in GHz, of the processor being modelled.</dd>
-<dt>Timer Frequency</dt>
-<dd><p class="first">This dictates the frequency in MHz that the CPU’s internal counter timer is updated.</p>
-<p class="last">i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through <code class="docutils literal"><span class="pre">mrs</span> <span class="pre">x0</span> <span class="pre">CNTVCT_el0</span></code>.</p>
+<dl>
+<dt>ISA</dt><dd><p>The Instruction Set Architecture under simulation. The options are <code class="docutils literal notranslate"><span class="pre">AArch64</span></code> and <code class="docutils literal notranslate"><span class="pre">rv64</span></code>.</p>
 </dd>
-<dt>Micro-Operations</dt>
-<dd>Whether to enable instruction splitting for pre-defined Macro Operations or not.</dd>
-<dt>Vector-Length (Only in use when ISA is <code class="docutils literal"><span class="pre">AArch64</span></code>)</dt>
-<dd>The vector length used by instructions belonging to Arm’s Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.</dd>
-<dt>Streaming-Vector-Length (Only in use when ISA is <code class="docutils literal"><span class="pre">AArch64</span></code>)</dt>
-<dd>The vector length used by instructions belonging to Arm’s Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.</dd>
+<dt>Simulation-Mode</dt><dd><p>The core archetype to use, the options are <code class="docutils literal notranslate"><span class="pre">emulation</span></code>, <code class="docutils literal notranslate"><span class="pre">inorderpipelined</span></code>, and <code class="docutils literal notranslate"><span class="pre">outoforder</span></code>.</p>
+</dd>
+<dt>Clock-Frequency-GHz</dt><dd><p>The clock frequency, in GHz, of the processor being modelled.</p>
+</dd>
+<dt>Timer Frequency-MHz</dt><dd><p>This dictates the frequency in MHz that the CPU’s internal counter timer is updated.</p>
+<p>i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through <code class="docutils literal notranslate"><span class="pre">mrs</span> <span class="pre">x0</span> <span class="pre">CNTVCT_el0</span></code>.</p>
+</dd>
+<dt>Micro-Operations</dt><dd><p>Whether to enable instruction splitting for pre-defined Macro Operations or not.</p>
+</dd>
+<dt>Vector-Length (Only in use when ISA is <code class="docutils literal notranslate"><span class="pre">AArch64</span></code>)</dt><dd><p>The vector length used by instructions belonging to Arm’s Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.</p>
+</dd>
+<dt>Streaming-Vector-Length (Only in use when ISA is <code class="docutils literal notranslate"><span class="pre">AArch64</span></code>)</dt><dd><p>The vector length used by instructions belonging to Arm’s Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.</p>
+</dd>
+<dt>Compressed (Only in use when ISA is <code class="docutils literal notranslate"><span class="pre">rv64</span></code>)</dt><dd><p>Enables the RISC-V compressed extension. If set to false and compressed instructions are supplied, a misaligned program counter exception is usually thrown.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="fetch">
-<h2>Fetch<a class="headerlink" href="#fetch" title="Permalink to this headline">¶</a></h2>
+<h2>Fetch<a class="headerlink" href="#fetch" title="Permalink to this heading">¶</a></h2>
 <p>This section is concerned with the parameterisation of the fetch unit and its internal structures.</p>
-<dl class="docutils">
-<dt>Fetch-Block-Size</dt>
-<dd>The size, in bytes, of the block fetched from the instruction cache.</dd>
-<dt>Loop-Buffer-Size</dt>
-<dd>The number of Macro-ops which can be stored in the loop buffer.</dd>
-<dt>Loop-Detection-Threshold</dt>
-<dd>The number of commits a unique branch instruction must go through, without another branch instruction being committed, before a loop is detected and the loop buffer is filled.</dd>
+<dl class="simple">
+<dt>Fetch-Block-Size</dt><dd><p>The size, in bytes, of the block fetched from the instruction cache.</p>
+</dd>
+<dt>Loop-Buffer-Size</dt><dd><p>The number of Macro-ops which can be stored in the loop buffer.</p>
+</dd>
+<dt>Loop-Detection-Threshold</dt><dd><p>The number of commits a unique branch instruction must go through, without another branch instruction being committed, before a loop is detected and the loop buffer is filled.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="process-image">
-<h2>Process Image<a class="headerlink" href="#process-image" title="Permalink to this headline">¶</a></h2>
+<h2>Process Image<a class="headerlink" href="#process-image" title="Permalink to this heading">¶</a></h2>
 <p>This allows the stack and heap size to be altered as required.</p>
-<dl class="docutils">
-<dt>Heap-Size</dt>
-<dd>Size of the Heap; defined in bytes.</dd>
-<dt>Stack- Size</dt>
-<dd>Size of the Stack in memory; defined in bytes.</dd>
+<dl class="simple">
+<dt>Heap-Size</dt><dd><p>Size of the Heap; defined in bytes.</p>
+</dd>
+<dt>Stack- Size</dt><dd><p>Size of the Stack in memory; defined in bytes.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="register-set">
-<h2>Register-set<a class="headerlink" href="#register-set" title="Permalink to this headline">¶</a></h2>
+<h2>Register-set<a class="headerlink" href="#register-set" title="Permalink to this heading">¶</a></h2>
 <p>The number of physical registers, of each type, to be used under the register renaming scheme. The register types supported are ISA dependent. The types available for each supported ISA are as followed:</p>
 <p>AArch64</p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt>GeneralPurpose-Count</dt>
-<dd>The number of physical general-purpose registers.</dd>
+<li><dl class="simple">
+<dt>GeneralPurpose-Count</dt><dd><p>The number of physical general-purpose registers.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>FloatingPoint/SVE-Count</dt>
-<dd>The number of physical floating point registers. Also considered as the number of Arm SVE extension <code class="docutils literal"><span class="pre">z</span></code> registers where appropriate.</dd>
+<li><dl class="simple">
+<dt>FloatingPoint/SVE-Count</dt><dd><p>The number of physical floating point registers. Also considered as the number of Arm SVE extension <code class="docutils literal notranslate"><span class="pre">z</span></code> registers where appropriate.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>Predicate-Count (Optional)</dt>
-<dd>The number of physical Arm SVE extension predicate registers.</dd>
+<li><dl class="simple">
+<dt>Predicate-Count (Optional)</dt><dd><p>The number of physical Arm SVE extension predicate registers.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>Conditional-Count</dt>
-<dd>The number of physical status/flag/conditional-code registers.</dd>
+<li><dl class="simple">
+<dt>Conditional-Count</dt><dd><p>The number of physical status/flag/conditional-code registers.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>Matrix-Count (Optional)</dt>
-<dd>The number of physical <code class="docutils literal"><span class="pre">za</span></code> Arm SME registers.</dd>
+<li><dl class="simple">
+<dt>Matrix-Count (Optional)</dt><dd><p>The number of physical <code class="docutils literal notranslate"><span class="pre">za</span></code> Arm SME registers.</p>
+</dd>
 </dl>
 </li>
 </ul>
 <p>RISC-V</p>
 <ul class="simple">
-<li><dl class="first docutils">
-<dt>GeneralPurpose-Count</dt>
-<dd>The number of physical general-purpose registers.</dd>
+<li><dl class="simple">
+<dt>GeneralPurpose-Count</dt><dd><p>The number of physical general-purpose registers.</p>
+</dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>FloatingPoint-Count</dt>
-<dd>The number of physical floating point registers.</dd>
+<li><dl class="simple">
+<dt>FloatingPoint-Count</dt><dd><p>The number of physical floating point registers.</p>
+</dd>
 </dl>
 </li>
 </ul>
 </div>
 <div class="section" id="pipeline-widths">
-<h2>Pipeline-widths<a class="headerlink" href="#pipeline-widths" title="Permalink to this headline">¶</a></h2>
+<h2>Pipeline-widths<a class="headerlink" href="#pipeline-widths" title="Permalink to this heading">¶</a></h2>
 <p>This section is concerned with the width of the simulated processor pipeline at specific stages, including:</p>
-<dl class="docutils">
-<dt>Commit</dt>
-<dd>The commitment/retirement width from the re-order buffer.</dd>
-<dt>FrontEnd</dt>
-<dd>The width of the pipeline before the execution stage (also excludes the dispatch/issue stage if simulating an <code class="docutils literal"><span class="pre">outoforder</span></code> core archetype).</dd>
-<dt>LSQ-Completion</dt>
-<dd>The width between the load/store queue unit and the write-back unit (translates to the number of load instructions that can be sent to the write-back unit per cycle).</dd>
+<dl class="simple">
+<dt>Commit</dt><dd><p>The commitment/retirement width from the re-order buffer.</p>
+</dd>
+<dt>FrontEnd</dt><dd><p>The width of the pipeline before the execution stage (also excludes the dispatch/issue stage if simulating an <code class="docutils literal notranslate"><span class="pre">outoforder</span></code> core archetype).</p>
+</dd>
+<dt>LSQ-Completion</dt><dd><p>The width between the load/store queue unit and the write-back unit (translates to the number of load instructions that can be sent to the write-back unit per cycle).</p>
+</dd>
 </dl>
 <p>Excluding the Commit option, the value given for these widths denotes the number of Micro-Ops, as opposed to Macro-ops, if the simulated architecture supports them.</p>
 </div>
 <div class="section" id="queue-sizes">
-<h2>Queue-sizes<a class="headerlink" href="#queue-sizes" title="Permalink to this headline">¶</a></h2>
+<h2>Queue-sizes<a class="headerlink" href="#queue-sizes" title="Permalink to this heading">¶</a></h2>
 <p>This section defines the size of specific architectural queues. These queues currently include:</p>
-<dl class="docutils">
-<dt>ROB</dt>
-<dd>The size of the re-order buffer.</dd>
-<dt>Load</dt>
-<dd>The size of the load queue within the load/store queue unit.</dd>
-<dt>Store</dt>
-<dd>The size of the store queue within the load/store queue unit.</dd>
+<dl class="simple">
+<dt>ROB</dt><dd><p>The size of the re-order buffer.</p>
+</dd>
+<dt>Load</dt><dd><p>The size of the load queue within the load/store queue unit.</p>
+</dd>
+<dt>Store</dt><dd><p>The size of the store queue within the load/store queue unit.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="branch-predictor">
-<h2>Branch-Predictor<a class="headerlink" href="#branch-predictor" title="Permalink to this headline">¶</a></h2>
+<h2>Branch-Predictor<a class="headerlink" href="#branch-predictor" title="Permalink to this heading">¶</a></h2>
 <p>The Branch-Prediction section contains those options to parameterise the branch predictor used during simulation. Currently, the options are minimal, but, planned developments will see options including the toggling and parameterisation of common branch predictor algorithms/structures.</p>
 <p>The current options include:</p>
-<dl class="docutils">
-<dt>BTB-Tag-Bits</dt>
-<dd>The number of bits used to denote an entry in the Branch Target Buffer (BTB). For example, a <code class="docutils literal"><span class="pre">bits</span></code> value of 12 could denote 4096 entries with the calculation 1 &lt;&lt; <code class="docutils literal"><span class="pre">bits</span></code>.</dd>
-<dt>Saturating-Count-Bits</dt>
-<dd>The number of bits used in the saturating counter value.</dd>
-<dt>Global-History-Length</dt>
-<dd>The number of bits used to record the global history of branch directions. Each bit represents one branch direction.</dd>
-<dt>RAS-entries</dt>
-<dd>The number of entries in the Return Address Stack (RAS).</dd>
-<dt>Fallback-Static-Predictor</dt>
-<dd>The static predictor used when no dynamic prediction is available. The options are either <code class="docutils literal"><span class="pre">&quot;Always-Taken&quot;</span></code> or <code class="docutils literal"><span class="pre">&quot;Always-Not-Taken&quot;</span></code>.</dd>
+<dl class="simple">
+<dt>Type</dt><dd><p>The type of branch predictor that is used, the options are <code class="docutils literal notranslate"><span class="pre">Generic</span></code>, and <code class="docutils literal notranslate"><span class="pre">Perceptron</span></code>.  Both types of predictor use a branch target buffer with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in <code class="docutils literal notranslate"><span class="pre">Generic</span></code> is a saturating counter, and in <code class="docutils literal notranslate"><span class="pre">Perceptron</span></code> it is a perceptron.</p>
+</dd>
+<dt>BTB-Tag-Bits</dt><dd><p>The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 &lt;&lt; <code class="docutils literal notranslate"><span class="pre">bits</span></code>. For example, a <code class="docutils literal notranslate"><span class="pre">bits</span></code> value of 12 would result in a BTB with 4096 entries.</p>
+</dd>
+<dt>Saturating-Count-Bits</dt><dd><p>Only needed for a <code class="docutils literal notranslate"><span class="pre">Generic</span></code> predictor.  The number of bits used in the saturating counter value.</p>
+</dd>
+<dt>Global-History-Length</dt><dd><p>The number of bits used to record the global history of branch directions. Each bit represents one branch direction.  For <code class="docutils literal notranslate"><span class="pre">PerceptronPredictor</span></code>, this dictates the size of the perceptrons (with each perceptron having Global-History-Length + 1 weights).</p>
+</dd>
+<dt>RAS-entries</dt><dd><p>The number of entries in the Return Address Stack (RAS).</p>
+</dd>
+<dt>Fallback-Static-Predictor</dt><dd><p>Only needed for a <code class="docutils literal notranslate"><span class="pre">Generic</span></code> predictor.  The static predictor used when no dynamic prediction is available. The options are either <code class="docutils literal notranslate"><span class="pre">&quot;Always-Taken&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;Always-Not-Taken&quot;</span></code>.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="l1-data-memory">
-<span id="l1dcnf"></span><h2>L1-Data-Memory<a class="headerlink" href="#l1-data-memory" title="Permalink to this headline">¶</a></h2>
+<span id="l1dcnf"></span><h2>L1-Data-Memory<a class="headerlink" href="#l1-data-memory" title="Permalink to this heading">¶</a></h2>
 <p>This section describes the configuration for the L1 data cache in use.</p>
-<dl class="docutils">
-<dt>Interface-Type</dt>
-<dd>The type of memory interface used to model the L1 data cache. Options are currently <code class="docutils literal"><span class="pre">Flat</span></code> or <code class="docutils literal"><span class="pre">Fixed</span></code> which represent a <code class="docutils literal"><span class="pre">FlatMemoryInterface</span></code> or <code class="docutils literal"><span class="pre">FixedMemoryInterface</span></code> respectively. More information concerning these interfaces can be found <a class="reference internal" href="../developer/concepts/memory.html#memint"><span class="std std-ref">here</span></a>.</dd>
+<dl class="simple">
+<dt>Interface-Type</dt><dd><p>The type of memory interface used to model the L1 data cache. Options are currently <code class="docutils literal notranslate"><span class="pre">Flat</span></code> or <code class="docutils literal notranslate"><span class="pre">Fixed</span></code> which represent a <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code> or <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> respectively. More information concerning these interfaces can be found <a class="reference internal" href="../developer/concepts/memory.html#memint"><span class="std std-ref">here</span></a>.</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Currently, if the chosen <code class="docutils literal"><span class="pre">Simulation-Mode</span></code> option is <code class="docutils literal"><span class="pre">emulation</span></code> or <code class="docutils literal"><span class="pre">inorderpipelined</span></code>, then only a <code class="docutils literal"><span class="pre">Flat</span></code> value is permitted. Future developments will seek to allow for more memory interfaces with these simulation archetypes.</p>
+<p class="admonition-title">Note</p>
+<p>Currently, if the chosen <code class="docutils literal notranslate"><span class="pre">Simulation-Mode</span></code> option is <code class="docutils literal notranslate"><span class="pre">emulation</span></code> or <code class="docutils literal notranslate"><span class="pre">inorderpipelined</span></code>, then only a <code class="docutils literal notranslate"><span class="pre">Flat</span></code> value is permitted. Future developments will seek to allow for more memory interfaces with these simulation archetypes.</p>
 </div>
 </div>
 <div class="section" id="l1-instruction-memory">
-<span id="l1icnf"></span><h2>L1-Instruction-Memory<a class="headerlink" href="#l1-instruction-memory" title="Permalink to this headline">¶</a></h2>
+<span id="l1icnf"></span><h2>L1-Instruction-Memory<a class="headerlink" href="#l1-instruction-memory" title="Permalink to this heading">¶</a></h2>
 <p>This section describes the configuration for the L1 instruction cache in use.</p>
-<dl class="docutils">
-<dt>Interface-Type</dt>
-<dd>The type of memory interface used to model the L1 instruction cache. Options are currently <code class="docutils literal"><span class="pre">Flat</span></code> or <code class="docutils literal"><span class="pre">Fixed</span></code> which represent a <code class="docutils literal"><span class="pre">FlatMemoryInterface</span></code> or <code class="docutils literal"><span class="pre">FixedMemoryInterface</span></code> respectively. More information concerning these interfaces can be found <a class="reference internal" href="../developer/concepts/memory.html#memint"><span class="std std-ref">here</span></a>.</dd>
+<dl class="simple">
+<dt>Interface-Type</dt><dd><p>The type of memory interface used to model the L1 instruction cache. Options are currently <code class="docutils literal notranslate"><span class="pre">Flat</span></code> or <code class="docutils literal notranslate"><span class="pre">Fixed</span></code> which represent a <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code> or <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> respectively. More information concerning these interfaces can be found <a class="reference internal" href="../developer/concepts/memory.html#memint"><span class="std std-ref">here</span></a>.</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Currently, only a <code class="docutils literal"><span class="pre">Flat</span></code> value is permitted for the L1 instruction cache interface. Future developments will seek to allow for more memory interfaces to be used with the L1 instruction cache.</p>
+<p class="admonition-title">Note</p>
+<p>Currently, only a <code class="docutils literal notranslate"><span class="pre">Flat</span></code> value is permitted for the L1 instruction cache interface. Future developments will seek to allow for more memory interfaces to be used with the L1 instruction cache.</p>
 </div>
 </div>
 <div class="section" id="lsq-l1-interface">
-<h2>LSQ-L1-Interface<a class="headerlink" href="#lsq-l1-interface" title="Permalink to this headline">¶</a></h2>
+<h2>LSQ-L1-Interface<a class="headerlink" href="#lsq-l1-interface" title="Permalink to this heading">¶</a></h2>
 <p>This section contains the options used to configure SimEng’s interface between the LSQ and the L1 data cache. These options include:</p>
-<dl class="docutils">
-<dt>Access-Latency</dt>
-<dd>The cycle latency of L1 cache access.</dd>
-<dt>Exclusive</dt>
-<dd>If set to true, only one type of memory access (read or write) can be performed per cycle.</dd>
-<dt>Load-Bandwidth</dt>
-<dd>The number of bytes permitted to be loaded per cycle.</dd>
-<dt>Store-Bandwidth</dt>
-<dd>The number of bytes permitted to be stored per cycle.</dd>
-<dt>Permitted-Requests-Per-Cycle</dt>
-<dd>The number of load and store requests permitted per cycle.</dd>
-<dt>Permitted-Loads-Per-Cycle</dt>
-<dd>The number of load requests permitted per cycle.</dd>
-<dt>Permitted-Stores-Per-Cycle</dt>
-<dd>The number of store requests permitted per cycle.</dd>
+<dl class="simple">
+<dt>Access-Latency</dt><dd><p>The cycle latency of L1 cache access.</p>
+</dd>
+<dt>Exclusive</dt><dd><p>If set to true, only one type of memory access (read or write) can be performed per cycle.</p>
+</dd>
+<dt>Load-Bandwidth</dt><dd><p>The number of bytes permitted to be loaded per cycle.</p>
+</dd>
+<dt>Store-Bandwidth</dt><dd><p>The number of bytes permitted to be stored per cycle.</p>
+</dd>
+<dt>Permitted-Requests-Per-Cycle</dt><dd><p>The number of load and store requests permitted per cycle.</p>
+</dd>
+<dt>Permitted-Loads-Per-Cycle</dt><dd><p>The number of load requests permitted per cycle.</p>
+</dd>
+<dt>Permitted-Stores-Per-Cycle</dt><dd><p>The number of store requests permitted per cycle.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="ports">
-<span id="execution-ports"></span><h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
-<p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found <a class="reference internal" href="../developer/arch/supported/aarch64.html#aarch64-instruction-groups"><span class="std std-ref">here</span></a> and for RISC-V, can be found <a class="reference internal" href="../developer/arch/supported/riscv.html#riscv-instruction-groups"><span class="std std-ref">here</span></a>.</p>
+<span id="execution-ports"></span><h2>Ports<a class="headerlink" href="#ports" title="Permalink to this heading">¶</a></h2>
+<p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups/opcodes it supports. The instruction groups/opcodes are architecture-dependent, but, the available AArch64 instruction groups/opcodes can be found <a class="reference internal" href="../developer/arch/supported/aarch64.html#aarch64-instruction-groups"><span class="std std-ref">here</span></a> and for RISC-V, can be found <a class="reference internal" href="../developer/arch/supported/riscv.html#riscv-instruction-groups"><span class="std std-ref">here</span></a>.</p>
 <p>To define a port, the following structure must be adhered to:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>0:
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Portname: &lt;port_name&gt;
-  Instruction-Support:
+  Instruction-Group-Support:
   - &lt;instruction_group&gt;
   - ...
   - &lt;instruction_group&gt;
+  Instruction-Opcode-Support:
+  - &lt;instruction_opcode&gt;
+  - ...
+  - &lt;instruction_opcode&gt;
 ...
 N-1:
-    Portname: &lt;port_name&gt;
-    Instruction-Support:
-    - &lt;instruction_group&gt;
-    - ...
-    - &lt;instruction_group&gt;
+  Portname: &lt;port_name&gt;
+  Instruction-Group-Support:
+  - &lt;instruction_group&gt;
+  - ...
+  - &lt;instruction_group&gt;
+  Instruction-Opcode-Support:
+  - &lt;instruction_opcode&gt;
+  - ...
+  - &lt;instruction_opcode&gt;
 </pre></div>
 </div>
 <p>With N as the number of execution ports.</p>
 </div>
 <div class="section" id="reservation-stations">
-<h2>Reservation-Stations<a class="headerlink" href="#reservation-stations" title="Permalink to this headline">¶</a></h2>
+<h2>Reservation-Stations<a class="headerlink" href="#reservation-stations" title="Permalink to this heading">¶</a></h2>
 <p>The relationships between reservation stations and the execution ports, i.e. which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value, a dispatch rate value, and a set of port names, previously defined in the Ports section.</p>
 <p>The following structure must be adhered to when defining a reservation station:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>0:
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Size: &lt;number_of_entries&gt;
   Dispatch-Rate: &lt;number_of_permitted_dispatches_per_cycle&gt;
   Ports:
@@ -440,10 +445,10 @@ N-1:
 <p>With N as the number of reservation stations. Each execution port must be mapped to a reservation station.</p>
 </div>
 <div class="section" id="execution-units">
-<h2>Execution-Units<a class="headerlink" href="#execution-units" title="Permalink to this headline">¶</a></h2>
+<h2>Execution-Units<a class="headerlink" href="#execution-units" title="Permalink to this heading">¶</a></h2>
 <p>An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for <a class="reference internal" href="../developer/components/pipeline/units.html#operation-blocking"><span class="std std-ref">operation blocking</span></a>. The instruction groups referenced here are the same as those used in the Ports section.</p>
 <p>The following structure must be adhered to when defining an execution unit:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>0:
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Pipelined: &lt;True/False&gt;
   Blocking-Groups:
   - &lt;instruction_group&gt;
@@ -462,95 +467,117 @@ N-1:
 <p><strong>Note</strong>, the indexing used in both the Ports and Execution-Units sections provide a relationship mapping, the 0th execution port maps to the 0th execution unit.</p>
 </div>
 <div class="section" id="latencies">
-<span id="config-latencies"></span><h2>Latencies<a class="headerlink" href="#latencies" title="Permalink to this headline">¶</a></h2>
-<p>The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.</p>
+<span id="config-latencies"></span><h2>Latencies<a class="headerlink" href="#latencies" title="Permalink to this heading">¶</a></h2>
+<p>The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups/opcodes, the groups/opcodes available are the same as the set discussed in the Ports section.</p>
 <p>The execution latency defines the total number of cycles an instruction will spend in an execution unit. The throughput is how many cycles an instruction will block another instruction entering the execution unit. In non-pipelined execution units, the throughput is equal to the latency.</p>
 <p>The following structure must be adhered to when defining group latencies:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>0:
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Instruction-Groups:
   - &lt;instruction_group&gt;
   - ...
   - &lt;instruction_group&gt;
+  Instruction-Opcodes:
+  - &lt;instruction_opcode&gt;
+  - ...
+  - &lt;instruction_opcode&gt;
   Execution-Latency: &lt;number_of_cycles&gt;
   Execution-Throughput: &lt;number_of_cycles&gt;
 ...
 N-1:
-    Instruction-Groups:
-    - &lt;instruction_group&gt;
-    - ...
-    - &lt;instruction_group&gt;
-    Execution-Latency: &lt;number_of_cycles&gt;
-    Execution-Throughput: &lt;number_of_cycles&gt;
+  Instruction-Groups:
+  - &lt;instruction_group&gt;
+  - ...
+  - &lt;instruction_group&gt;
+  Instruction-Opcodes:
+  - &lt;instruction_opcode&gt;
+  - ...
+  - &lt;instruction_opcode&gt;
+  Execution-Latency: &lt;number_of_cycles&gt;
+  Execution-Throughput: &lt;number_of_cycles&gt;
 </pre></div>
 </div>
 <p>With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.</p>
 <p><strong>Note</strong>, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details <a class="reference internal" href="../developer/components/pipeline/components.html#lsq-restrict"><span class="std std-ref">here</span></a>).</p>
 </div>
 <div class="section" id="cpu-info">
-<span id="id2"></span><h2>CPU Info<a class="headerlink" href="#cpu-info" title="Permalink to this headline">¶</a></h2>
+<span id="id2"></span><h2>CPU Info<a class="headerlink" href="#cpu-info" title="Permalink to this heading">¶</a></h2>
 <blockquote>
-<div>This section contains information about the physical properties of the CPU.
-These fields are currently only used to generate a replica of the required Special Files directory structure.</div></blockquote>
-<dl class="docutils">
-<dt>Generate-Special-Dir</dt>
-<dd>Values are either “True” or “False”.
-Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
-The alternative to this would be to copy in the required SpecialFiles by hand.</dd>
-<dt>Core-Count</dt>
-<dd>Defines the total number of Physical cores (Not including threads).</dd>
+<div><p>This section contains information about the physical properties of the CPU.
+These fields are currently only used to generate a replica of the required Special Files directory structure.</p>
+</div></blockquote>
+<dl>
+<dt>Generate-Special-Dir</dt><dd><p>Values are either <cite>True</cite> or <cite>False</cite>.
+Dictates whether or not SimEng should generate the Special-Files directory tree at runtime.
+If your code requires Special-Files but you wish to use your own / existing files from a real system, you will need to set this option to <cite>False</cite>.
+The files which are currently generated / supported in SimEng are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><cite>/proc/cpuinfo</cite></p></li>
+<li><p><cite>/proc/stat</cite></p></li>
+<li><p><cite>/sys/deviced/system/cpu/online</cite></p></li>
+<li><p><cite>/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/core_id</cite></p></li>
+<li><p><cite>/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/physical_package_id</cite></p></li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>Special-File-Dir-Path</dt><dd><p>Represented as a String; is the <strong>absolute path</strong>  to the root directory where the Special-Files will be generated <em>OR</em> where existing Special-Files are located.
+This is optional, and defaults to <cite>SIMENG_BUILD_DIRECTORY/specialFiles</cite>. The root directory must already exist.</p>
+</dd>
+<dt>Core-Count</dt><dd><p>Defines the total number of Physical cores (Not including threads).</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Max Core-Count currently supported is 1.</p>
+<p class="admonition-title">Note</p>
+<p>Max Core-Count currently supported is 1.</p>
 </div>
-<dl class="docutils">
-<dt>Socket-Count</dt>
-<dd>Defines the number of sockets used. Typically set to 1, but can be more for CPU’s that support multi-socket implementations (i.e. ThunderX2).</dd>
+<dl class="simple">
+<dt>Socket-Count</dt><dd><p>Defines the number of sockets used. Typically set to 1, but can be more for CPU’s that support multi-socket implementations (i.e. ThunderX2).</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Max Socket-Count currently supported is 1.</p>
+<p class="admonition-title">Note</p>
+<p>Max Socket-Count currently supported is 1.</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">If Socket-Count is more than 1, Core-Count must reflect the number of physical cores per socket.</p>
+<p class="admonition-title">Note</p>
+<p>If Socket-Count is more than 1, Core-Count must reflect the number of physical cores per socket.</p>
 </div>
-<dl class="docutils">
-<dt>SMT</dt>
-<dd>Defines the number of threads present on each core.</dd>
+<dl class="simple">
+<dt>SMT</dt><dd><p>Defines the number of threads present on each core.</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Max SMT currently supported is 1.</p>
+<p class="admonition-title">Note</p>
+<p>Max SMT currently supported is 1.</p>
 </div>
 <p>The fields listed below are used to generate <cite>/proc/cpuinfo</cite>. Their values can be found there on a Linux system using the CPU being modelled. With each field is a description of the format required and an example value.</p>
 <blockquote>
 <div><ul class="simple">
-<li>BogoMIPS : Float in format <cite>x.00</cite>, i.e. <cite>200.00</cite></li>
-<li>Features : String with values seperated with a space, i.e. <cite>“fp asimd sha1 sha2 fphp”</cite></li>
-<li>CPU-Implementer : Hex value represented as a string, i.e. <cite>“0x46”</cite></li>
-<li>CPU-Architecture : Integer, i.e. <cite>8</cite></li>
-<li>CPU-Variant : Hex value represented as a string, i.e. <cite>“0x1”</cite></li>
-<li>CPU-Part : Hex value represented as a string, i.e. <cite>“0x001”</cite></li>
-<li>CPU-Revision : Integer, i.e. <cite>0</cite></li>
+<li><p>BogoMIPS : Float in format <cite>x.00</cite>, i.e. <cite>200.00</cite></p></li>
+<li><p>Features : String with values seperated with a space, i.e. <cite>“fp asimd sha1 sha2 fphp”</cite></p></li>
+<li><p>CPU-Implementer : Hex value represented as a string, i.e. <cite>“0x46”</cite></p></li>
+<li><p>CPU-Architecture : Integer, i.e. <cite>8</cite></p></li>
+<li><p>CPU-Variant : Hex value represented as a string, i.e. <cite>“0x1”</cite></p></li>
+<li><p>CPU-Part : Hex value represented as a string, i.e. <cite>“0x001”</cite></p></li>
+<li><p>CPU-Revision : Integer, i.e. <cite>0</cite></p></li>
 </ul>
 </div></blockquote>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">If values are unknown then set equal to 0 in the correct format</p>
+<p class="admonition-title">Note</p>
+<p>If values are unknown then set equal to 0 in the correct format</p>
 </div>
-<dl class="docutils">
-<dt>Package-Count</dt>
-<dd>Used to generate <cite>/sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}</cite> files.
-On each CPU the cores are split into packages. The number of packages used can be calculated by analysing the <cite>physical_package_id</cite> files on a Linux system using the CPU being modelled.</dd>
+<dl class="simple">
+<dt>Package-Count</dt><dd><p>Used to generate <cite>/sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}</cite> files.
+On each CPU the cores are split into packages. The number of packages used can be calculated by analysing the <cite>physical_package_id</cite> files on a Linux system using the CPU being modelled.</p>
+</dd>
 </dl>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Core-Count must be wholly divisible by Package-Count.</p>
+<p class="admonition-title">Note</p>
+<p>Core-Count must be wholly divisible by Package-Count.</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Max Package-Count currently supported is 1.</p>
+<p class="admonition-title">Note</p>
+<p>Max Package-Count currently supported is 1.</p>
 </div>
 </div>
 </div>
@@ -569,7 +596,7 @@ On each CPU the cores are split into packages. The number of packages used can b
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

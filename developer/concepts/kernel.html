@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
@@ -118,7 +112,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
@@ -126,7 +120,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -202,59 +196,55 @@
            <div itemprop="articleBody">
             
   <div class="section" id="kernel">
-<h1>Kernel<a class="headerlink" href="#kernel" title="Permalink to this headline">¶</a></h1>
+<h1>Kernel<a class="headerlink" href="#kernel" title="Permalink to this heading">¶</a></h1>
 <p>The Kernel used in SimEng is an emulation of a Linux Kernel. The SimEng Kernel does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for creating the program memory space and aid the emulation of system calls by maintaining a system and process state.</p>
-<p>The SimEng Kernel is split into two classes, <code class="docutils literal"><span class="pre">LinuxProcess</span></code> and <code class="docutils literal"><span class="pre">Linux</span></code>.</p>
+<p>The SimEng Kernel is split into two classes, <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> and <code class="docutils literal notranslate"><span class="pre">Linux</span></code>.</p>
 <div class="section" id="linuxprocess">
-<h2>LinuxProcess<a class="headerlink" href="#linuxprocess" title="Permalink to this headline">¶</a></h2>
-<p>The <code class="docutils literal"><span class="pre">LinuxProcess</span></code> class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The process memory space created contains all the data required by the program to run.</p>
+<h2>LinuxProcess<a class="headerlink" href="#linuxprocess" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The process memory space created contains all the data required by the program to run.</p>
 <div class="section" id="elf-parsing">
-<h3>ELF Parsing<a class="headerlink" href="#elf-parsing" title="Permalink to this headline">¶</a></h3>
-<p>The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the <a class="reference external" href="https://man7.org/linux/man-pages/man5/elf.5.html">Linux manual page</a>. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the <cite>ELF Binary</cite> in a <code class="docutils literal"><span class="pre">char[]</span> <span class="pre">processImage</span></code> array, which is a private member variable of the <code class="docutils literal"><span class="pre">LinuxProcess</span></code> class.</p>
+<h3>ELF Parsing<a class="headerlink" href="#elf-parsing" title="Permalink to this heading">¶</a></h3>
+<p>The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the <a class="reference external" href="https://man7.org/linux/man-pages/man5/elf.5.html">Linux manual page</a>. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the <cite>ELF Binary</cite> in a <code class="docutils literal notranslate"><span class="pre">char[]</span> <span class="pre">processImage</span></code> array, which is a private member variable of the <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> class.</p>
 <img alt="ELF Structure" class="align-center" src="../../_images/elfstruct.png" />
 <ul>
-<li><p class="first">The <cite>ELF Header</cite> is the first part of <cite>ELF binary</cite>. The <cite>ELF Header</cite> holds information regarding the structure of the <cite>ELF Binary</cite>. SimEng extracts the following from the <cite>ELF Header</cite>:</p>
+<li><p>The <cite>ELF Header</cite> is the first part of <cite>ELF binary</cite>. The <cite>ELF Header</cite> holds information regarding the structure of the <cite>ELF Binary</cite>. SimEng extracts the following from the <cite>ELF Header</cite>:</p>
 <blockquote>
 <div><ul class="simple">
-<li>The entry point of binary i.e. the virtual address to which the system first transfers control.</li>
-<li>The file offset of the <cite>ELF Program Headers</cite>.</li>
-<li>The size of each entry stored in the <cite>ELF Program Header</cite>.</li>
+<li><p>The entry point of binary i.e. the virtual address to which the system first transfers control.</p></li>
+<li><p>The file offset of the <cite>ELF Program Headers</cite>.</p></li>
+<li><p>The size of each entry stored in the <cite>ELF Program Header</cite>.</p></li>
 </ul>
 </div></blockquote>
 </li>
-<li><p class="first">The <cite>ELF Program Header</cite> table is an array of structures, each describing a segment or other information the system needs to prepare the program for execution. An object file segment contains one or more sections, each section holds program and control information. SimEng extracts the following from the <cite>ELF Program Headers</cite>:</p>
+<li><p>The <cite>ELF Program Header</cite> table is an array of structures, each describing a segment or other information the system needs to prepare the program for execution. An object file segment contains one or more sections, each section holds program and control information. SimEng extracts the following from the <cite>ELF Program Headers</cite>:</p>
 <blockquote>
 <div><ul class="simple">
-<li>The offset from the beginning of the file at which the first byte of the segment resides.</li>
-<li>The number of bytes in the memory image of the segment.</li>
+<li><p>The offset from the beginning of the file at which the first byte of the segment resides.</p></li>
+<li><p>The number of bytes in the memory image of the segment.</p></li>
 </ul>
 </div></blockquote>
 </li>
-<li><p class="first">SimEng uses these extracted values to loop through all <cite>ELF Program Headers</cite> and looks for the <cite>ELF Program Header</cite> located at largest virtual address range. SimEng uses the largest virtual address and size associated with that <cite>ELF Program Header</cite> to create an array called the <code class="docutils literal"><span class="pre">ElfProcessImage</span></code>. Internally, SimEng treats these virtual address as physical addresses to index into said array.</p>
-</li>
-<li><p class="first">The segment referenced by an ELF Program Header has a type attribute which explains its contents and how to interpret it. SimEng, only extracts segments of type <code class="docutils literal"><span class="pre">LOAD</span></code> which specifies a loadable segment. Loadable segments most notably contain the workloads’ compiled instructions and initialised data that contributes to the program’s memory space. This completes the creation of the <code class="docutils literal"><span class="pre">ElfProcessImage</span></code>.</p>
-</li>
-<li><p class="first">After the <code class="docutils literal"><span class="pre">ElfProcessImage</span></code> has been created the <code class="docutils literal"><span class="pre">LinuxProcess</span></code> class creates an array <code class="docutils literal"><span class="pre">char[]</span> <span class="pre">processImage</span></code>. The size of <code class="docutils literal"><span class="pre">processImage</span></code> is much larger than <code class="docutils literal"><span class="pre">ElfProcessImage</span></code> as SimEng adds the <code class="docutils literal"><span class="pre">HEAP_SIZE</span></code> and <code class="docutils literal"><span class="pre">STACK_SIZE</span></code> values specified in the YAML configuration file to the 32-byte aligned value of <code class="docutils literal"><span class="pre">ElfProcessImage</span></code> size. After this, SimEng proceeds to create a process stack around <code class="docutils literal"><span class="pre">processImage</span></code>.</p>
-</li>
-<li><p class="first">The population of the initial stack state is based on the information <a class="reference external" href="https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html">here</a>.</p>
-</li>
+<li><p>SimEng uses these extracted values to loop through all <cite>ELF Program Headers</cite> and looks for the <cite>ELF Program Header</cite> located at largest virtual address range. SimEng uses the largest virtual address and size associated with that <cite>ELF Program Header</cite> to create an array called the <code class="docutils literal notranslate"><span class="pre">ElfProcessImage</span></code>. Internally, SimEng treats these virtual address as physical addresses to index into said array.</p></li>
+<li><p>The segment referenced by an ELF Program Header has a type attribute which explains its contents and how to interpret it. SimEng, only extracts segments of type <code class="docutils literal notranslate"><span class="pre">LOAD</span></code> which specifies a loadable segment. Loadable segments most notably contain the workloads’ compiled instructions and initialised data that contributes to the program’s memory space. This completes the creation of the <code class="docutils literal notranslate"><span class="pre">ElfProcessImage</span></code>.</p></li>
+<li><p>After the <code class="docutils literal notranslate"><span class="pre">ElfProcessImage</span></code> has been created the <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> class creates an array <code class="docutils literal notranslate"><span class="pre">char[]</span> <span class="pre">processImage</span></code>. The size of <code class="docutils literal notranslate"><span class="pre">processImage</span></code> is much larger than <code class="docutils literal notranslate"><span class="pre">ElfProcessImage</span></code> as SimEng adds the <code class="docutils literal notranslate"><span class="pre">HEAP_SIZE</span></code> and <code class="docutils literal notranslate"><span class="pre">STACK_SIZE</span></code> values specified in the YAML configuration file to the 32-byte aligned value of <code class="docutils literal notranslate"><span class="pre">ElfProcessImage</span></code> size. After this, SimEng proceeds to create a process stack around <code class="docutils literal notranslate"><span class="pre">processImage</span></code>.</p></li>
+<li><p>The population of the initial stack state is based on the information <a class="reference external" href="https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html">here</a>.</p></li>
 </ul>
-<p>Currently, the only environment variable set is <code class="docutils literal"><span class="pre">OMP_NUM_THREADS=1</span></code>, however, functionality to add more is available.</p>
-<p>For the supplied program, the <code class="docutils literal"><span class="pre">LinuxProcess</span></code> class supports both statically compiled binaries and raw instructions in a hexadecimal format.</p>
+<p>Currently, the only environment variable set is <code class="docutils literal notranslate"><span class="pre">OMP_NUM_THREADS=1</span></code>, however, functionality to add more is available.</p>
+<p>For the supplied program, the <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> class supports both statically compiled binaries and raw instructions in a hexadecimal format.</p>
 </div>
 </div>
 <div class="section" id="linux">
-<h2>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h2>
-<p>The <code class="docutils literal"><span class="pre">Linux</span></code> class provides part of the functionality used to emulate system calls by maintaining a system and process state. These states contain information about the <code class="docutils literal"><span class="pre">LinuxProcess</span></code> class created from the supplied program. Such information includes:</p>
+<h2>Linux<a class="headerlink" href="#linux" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">Linux</span></code> class provides part of the functionality used to emulate system calls by maintaining a system and process state. These states contain information about the <code class="docutils literal notranslate"><span class="pre">LinuxProcess</span></code> class created from the supplied program. Such information includes:</p>
 <ul class="simple">
-<li>PID</li>
-<li>Program path</li>
-<li>Start location for brk system calls</li>
-<li>Current location of the most recent brk system call</li>
-<li>The initial stack pointer</li>
-<li><code class="docutils literal"><span class="pre">fileDescriptorTable</span></code> that tracks the open file descriptors</li>
+<li><p>PID</p></li>
+<li><p>Program path</p></li>
+<li><p>Start location for brk system calls</p></li>
+<li><p>Current location of the most recent brk system call</p></li>
+<li><p>The initial stack pointer</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fileDescriptorTable</span></code> that tracks the open file descriptors</p></li>
 </ul>
-<p>All system call functionality is invoked within the <code class="docutils literal"><span class="pre">Linux</span></code> class, and any return value associated with the system call is generated here.</p>
+<p>All system call functionality is invoked within the <code class="docutils literal notranslate"><span class="pre">Linux</span></code> class, and any return value associated with the system call is generated here.</p>
 </div>
 </div>
 
@@ -272,7 +262,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

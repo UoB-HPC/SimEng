@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
@@ -104,7 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Building SimEng</a><ul>
@@ -116,7 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -190,23 +184,23 @@
            <div itemprop="articleBody">
             
   <div class="section" id="building-simeng">
-<span id="id1"></span><h1>Building SimEng<a class="headerlink" href="#building-simeng" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Building SimEng<a class="headerlink" href="#building-simeng" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="prerequisites">
-<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h2>
 <p>Building SimEng requires CMake and a compiler that supports C++17.</p>
 </div>
 <div class="section" id="building">
-<h2>Building<a class="headerlink" href="#building" title="Permalink to this headline">¶</a></h2>
+<h2>Building<a class="headerlink" href="#building" title="Permalink to this heading">¶</a></h2>
 <ol class="arabic simple">
-<li>Obtain the source code using git:</li>
+<li><p>Obtain the source code using git:</p></li>
 </ol>
-<div class="highlight-text"><div class="highlight"><pre><span></span>git clone https://github.com/UoB-HPC/SimEng.git
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/UoB-HPC/SimEng.git
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li>Configure with CMake, specifying the path to your desired installation directory if necessary:</li>
+<li><p>Configure with CMake, specifying the path to your desired installation directory if necessary:</p></li>
 </ol>
-<div class="highlight-text"><div class="highlight"><pre><span></span>cd SimEng
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>cd SimEng
 cmake -B build -S .
         -DCMAKE_BUILD_TYPE={Release, Debug, RelWithDebInfo, MinSizeRel}
         -DCMAKE_INSTALL_PREFIX=&lt;simeng_install_directory&gt;
@@ -216,30 +210,30 @@ cmake -B build -S .
 <p>With this configuration, the build files will be generated in a directory called “build”.</p>
 <blockquote>
 <div><ol class="loweralpha">
-<li><p class="first">The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following CMake configuration flags should be set to enable this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSIMENG_USE_EXTERNAL_LLVM</span><span class="o">=</span><span class="n">ON</span>
+<li><p>The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following CMake configuration flags should be set to enable this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSIMENG_USE_EXTERNAL_LLVM</span><span class="o">=</span><span class="n">ON</span>
 <span class="o">-</span><span class="n">DLLVM_DIR</span><span class="o">=&lt;</span><span class="n">llvm_library_directory</span><span class="o">&gt;</span> <span class="c1"># directory of LLVM libraries as CMake targets</span>
 </pre></div>
 </div>
 </li>
 </ol>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">More information about the LLVM_DIR value can be found <a class="reference external" href="https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project">here</a>.</p>
+<p class="admonition-title">Note</p>
+<p>More information about the LLVM_DIR value can be found <a class="reference external" href="https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project">here</a>.</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">LLVM versions greater than 14 or less than 8 are not supported. We’d recommend using LLVM 14.0.5 where possible as this has been verified by us to work correctly.</p>
+<p class="admonition-title">Note</p>
+<p>LLVM versions greater than 14 or less than 8 are not supported. We’d recommend using LLVM 14.0.5 where possible as this has been verified by us to work correctly.</p>
 </div>
 <ol class="loweralpha simple" start="2">
-<li>Two additional flags are available when building SimEng. Firstly is <code class="docutils literal"><span class="pre">-DSIMENG_SANITIZE={ON,</span> <span class="pre">OFF}</span></code> which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is <code class="docutils literal"><span class="pre">-SIMENG_OPTIMIZE={ON,</span> <span class="pre">OFF}</span></code> which attempts to optimise the framework’s compilation for the host machine through a set of compiler flags and options.</li>
+<li><p>Two additional flags are available when building SimEng. Firstly is <code class="docutils literal notranslate"><span class="pre">-DSIMENG_SANITIZE={ON,</span> <span class="pre">OFF}</span></code> which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is <code class="docutils literal notranslate"><span class="pre">-SIMENG_OPTIMIZE={ON,</span> <span class="pre">OFF}</span></code> which attempts to optimise the framework’s compilation for the host machine through a set of compiler flags and options.</p></li>
 </ol>
 </div></blockquote>
-<p>We recommend using the <a class="reference external" href="https://ninja-build.org/">Ninja</a> build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the <code class="docutils literal"><span class="pre">-GNinja</span></code> flag in the above CMake build command.</p>
+<p>We recommend using the <a class="reference external" href="https://ninja-build.org/">Ninja</a> build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the <code class="docutils literal notranslate"><span class="pre">-GNinja</span></code> flag in the above CMake build command.</p>
 <ol class="arabic simple">
-<li>Once configured, use <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> or whichever generator you have selected for CMake to build. Append the <code class="docutils literal"><span class="pre">-j{Num_Cores}</span></code> flag to build in parallel, keep in mind that building without a linked external LLVM library usually has very high (1.5GB per core) memory requirements.</li>
-<li>(Optional) Run <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">test</span></code> to run the SimEng regression tests and unit tests. Please report any test failures as <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues">a GitHub issue</a>.</li>
-<li>Finally, run <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">install</span></code> to install SimEng to the directory specified with CMake.</li>
+<li><p>Once configured, use <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> or whichever generator you have selected for CMake to build. Append the <code class="docutils literal notranslate"><span class="pre">-j{Num_Cores}</span></code> flag to build in parallel, keep in mind that building without a linked external LLVM library usually has very high (1.5GB per core) memory requirements.</p></li>
+<li><p>(Optional) Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">test</span></code> to run the SimEng regression tests and unit tests. Please report any test failures as <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues">a GitHub issue</a>.</p></li>
+<li><p>Finally, run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">install</span></code> to install SimEng to the directory specified with CMake.</p></li>
 </ol>
 </div>
 </div>
@@ -258,7 +252,7 @@ cmake -B build -S .
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

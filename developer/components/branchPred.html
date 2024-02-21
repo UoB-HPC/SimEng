@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
@@ -104,6 +98,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pipeline/index.html">Pipeline</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Branch prediction</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#generic-predictor">Generic Predictor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#perceptron-predictor">Perceptron Predictor</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="registerFiles.html">Register Files</a></li>
@@ -113,7 +108,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
@@ -121,7 +116,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -197,33 +192,46 @@
            <div itemprop="articleBody">
             
   <div class="section" id="branch-prediction">
-<h1>Branch prediction<a class="headerlink" href="#branch-prediction" title="Permalink to this headline">¶</a></h1>
-<p>SimEng’s fetch unit is supplied with an instance of the abstract <code class="docutils literal"><span class="pre">BranchPredictor</span></code> class to enable speculative execution.</p>
-<p>Access to the <code class="docutils literal"><span class="pre">BranchPredictor</span></code> is supported through the <code class="docutils literal"><span class="pre">predict</span></code>, <code class="docutils literal"><span class="pre">update</span></code>, and <code class="docutils literal"><span class="pre">flush</span></code> functions. <code class="docutils literal"><span class="pre">predict</span></code> provides a branch prediction, both target and direction, <code class="docutils literal"><span class="pre">update</span></code> updates an instructions’ prediction, and <code class="docutils literal"><span class="pre">flush</span></code> provides optional algorithm specific flushing functionality.</p>
-<p>The <code class="docutils literal"><span class="pre">predict</span></code> function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:</p>
+<h1>Branch prediction<a class="headerlink" href="#branch-prediction" title="Permalink to this heading">¶</a></h1>
+<p>SimEng’s fetch unit is supplied with an instance of the abstract <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> class to enable speculative execution.</p>
+<p>Access to the <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> is supported through the <code class="docutils literal notranslate"><span class="pre">predict</span></code>, <code class="docutils literal notranslate"><span class="pre">update</span></code>, and <code class="docutils literal notranslate"><span class="pre">flush</span></code> functions. <code class="docutils literal notranslate"><span class="pre">predict</span></code> provides a branch prediction, both target and direction, <code class="docutils literal notranslate"><span class="pre">update</span></code> updates an instructions’ prediction, and <code class="docutils literal notranslate"><span class="pre">flush</span></code> provides optional algorithm specific flushing functionality.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">predict</span></code> function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">Conditional</span></code></li>
-<li><code class="docutils literal"><span class="pre">LoopClosing</span></code></li>
-<li><code class="docutils literal"><span class="pre">Return</span></code></li>
-<li><code class="docutils literal"><span class="pre">SubroutineCall</span></code></li>
-<li><code class="docutils literal"><span class="pre">Unconditional</span></code></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Conditional</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LoopClosing</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Return</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SubroutineCall</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Unconditional</span></code></p></li>
 </ul>
-<p>The usage of these parameters within a branch predictor’s <code class="docutils literal"><span class="pre">predict</span></code> function is algorithm specific.</p>
-<p>The <code class="docutils literal"><span class="pre">update</span></code> function is passed the branch outcome, the instruction address, and the branch type. From this information, any algorithms or branch structures may be updated.</p>
+<p>The usage of these parameters within a branch predictor’s <code class="docutils literal notranslate"><span class="pre">predict</span></code> function is algorithm specific.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">update</span></code> function is passed the branch outcome, the instruction address, and the branch type. From this information, any algorithms or branch structures may be updated.</p>
 <div class="section" id="generic-predictor">
-<h2>Generic Predictor<a class="headerlink" href="#generic-predictor" title="Permalink to this headline">¶</a></h2>
-<p>The algorithm(s) held within a <code class="docutils literal"><span class="pre">BranchPredictor</span></code> class instance can be model-specific, however, SimEng provides a <code class="docutils literal"><span class="pre">GenericPredictor</span></code> which contains the following logic.</p>
-<dl class="docutils">
-<dt>Global History</dt>
-<dd>For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.</dd>
-<dt>Branch Target Buffer (BTB)</dt>
-<dd><p class="first">For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR’ed with the current global branch history value.</p>
-<p class="last">If the supplied branch type is <code class="docutils literal"><span class="pre">Unconditional</span></code>, then the predicted direction is overridden to be taken. If the supplied branch type is <code class="docutils literal"><span class="pre">Conditional</span></code> and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.</p>
+<h2>Generic Predictor<a class="headerlink" href="#generic-predictor" title="Permalink to this heading">¶</a></h2>
+<p>The algorithm(s) held within a <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> class instance can be model-specific, however, SimEng provides a <code class="docutils literal notranslate"><span class="pre">GenericPredictor</span></code> which contains the following logic.</p>
+<dl>
+<dt>Global History</dt><dd><p>For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.</p>
 </dd>
-<dt>Return Address Stack (RAS)</dt>
-<dd>Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for use by a proceeding Return instruction.</dd>
-<dt>Static Prediction</dt>
-<dd>Based on the chosen static prediction method of “always taken” or “always not taken”, the n-bit saturating counter value in the initial entries of the BTB structure are filled with the weakest variant of taken or not-taken respectively.</dd>
+<dt>Branch Target Buffer (BTB)</dt><dd><p>For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR’ed with the current global branch history value.</p>
+<p>If the supplied branch type is <code class="docutils literal notranslate"><span class="pre">Unconditional</span></code>, then the predicted direction is overridden to be taken. If the supplied branch type is <code class="docutils literal notranslate"><span class="pre">Conditional</span></code> and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.</p>
+</dd>
+<dt>Return Address Stack (RAS)</dt><dd><p>Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction’s corresponding Return instruction.</p>
+</dd>
+<dt>Static Prediction</dt><dd><p>Based on the chosen static prediction method of “always taken” or “always not taken”, the n-bit saturating counter value in the initial entries of the BTB structure are filled with the weakest variant of taken or not-taken respectively.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="perceptron-predictor">
+<h2>Perceptron Predictor<a class="headerlink" href="#perceptron-predictor" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">PerceptronPredictor</span></code> has the same overall structure as the <code class="docutils literal notranslate"><span class="pre">GenericPredictor</span></code> but replaces the saturating counter as a means for direction prediction with a perceptron.  The <code class="docutils literal notranslate"><span class="pre">PerceptronPredictor</span></code> contains the following logic.</p>
+<dl>
+<dt>Global History</dt><dd><p>For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.</p>
+</dd>
+<dt>Branch Target Buffer (BTB)</dt><dd><p>For each entry, the BTB stores the most recent target along with a perceptron for an associated direction. The indexing of this structure uses the lower, non-zero bits of an instruction address XOR’ed with the current global branch history value.</p>
+<p>The direction prediction is obtained from the perceptron by taking its dot-product with the global history.  The prediction is not taken if this is negative, or taken otherwise.  The perceptron is updated when its prediction is wrong or when the magnitude of the dot-product is below a pre-determined threshold (i.e., the confidence of the prediction is low).  To update, each ith weight of the perceptron is incremented if the actual outcome of the branch is the same as the ith bit of <code class="docutils literal notranslate"><span class="pre">globalHistory_</span></code>, and decremented otherwise.</p>
+<p>If the supplied branch type is <code class="docutils literal notranslate"><span class="pre">Unconditional</span></code>, then the predicted direction is overridden to be taken. If the supplied branch type is <code class="docutils literal notranslate"><span class="pre">Conditional</span></code> and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.</p>
+</dd>
+<dt>Return Address Stack (RAS)</dt><dd><p>Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction’s corresponding Return instruction.</p>
+</dd>
 </dl>
 </div>
 </div>
@@ -242,7 +250,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

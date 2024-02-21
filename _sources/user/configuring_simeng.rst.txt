@@ -35,10 +35,10 @@ ISA
 Simulation-Mode
     The core archetype to use, the options are ``emulation``, ``inorderpipelined``, and ``outoforder``.
 
-Clock-Frequency
+Clock-Frequency-GHz
     The clock frequency, in GHz, of the processor being modelled.
 
-Timer Frequency
+Timer Frequency-MHz
     This dictates the frequency in MHz that the CPU's internal counter timer is updated. 
 
     i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through ``mrs x0 CNTVCT_el0``.
@@ -51,6 +51,9 @@ Vector-Length (Only in use when ISA is ``AArch64``)
 
 Streaming-Vector-Length (Only in use when ISA is ``AArch64``)
     The vector length used by instructions belonging to Arm's Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.
+
+Compressed (Only in use when ISA is ``rv64``)
+    Enables the RISC-V compressed extension. If set to false and compressed instructions are supplied, a misaligned program counter exception is usually thrown.
 
 Fetch
 -----
@@ -145,20 +148,23 @@ The Branch-Prediction section contains those options to parameterise the branch 
 
 The current options include:
 
+Type
+    The type of branch predictor that is used, the options are ``Generic``, and ``Perceptron``.  Both types of predictor use a branch target buffer with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` is a saturating counter, and in ``Perceptron`` it is a perceptron.
+
 BTB-Tag-Bits
-    The number of bits used to denote an entry in the Branch Target Buffer (BTB). For example, a ``bits`` value of 12 could denote 4096 entries with the calculation 1 << ``bits``.
+    The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
 
 Saturating-Count-Bits
-    The number of bits used in the saturating counter value.
+    Only needed for a ``Generic`` predictor.  The number of bits used in the saturating counter value.
 
 Global-History-Length
-    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.
+    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.  For ``PerceptronPredictor``, this dictates the size of the perceptrons (with each perceptron having Global-History-Length + 1 weights).
 
 RAS-entries
     The number of entries in the Return Address Stack (RAS).
 
 Fallback-Static-Predictor
-    The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
+    Only needed for a ``Generic`` predictor.  The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
 .. _l1dcnf:
 
@@ -215,7 +221,7 @@ Permitted-Stores-Per-Cycle
 Ports
 -----
 
-Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <riscv-instruction-groups>`.
+Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups/opcodes it supports. The instruction groups/opcodes are architecture-dependent, but, the available AArch64 instruction groups/opcodes can be found :ref:`here <aarch64-instruction-groups>` and for RISC-V, can be found :ref:`here <riscv-instruction-groups>`.
 
 To define a port, the following structure must be adhered to:
 
@@ -223,17 +229,25 @@ To define a port, the following structure must be adhered to:
 
     0:
       Portname: <port_name>
-      Instruction-Support:
+      Instruction-Group-Support:
       - <instruction_group>
       - ...
       - <instruction_group>
+      Instruction-Opcode-Support:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
     ...
     N-1:
-        Portname: <port_name>
-        Instruction-Support:
-        - <instruction_group>
-        - ...
-        - <instruction_group>
+      Portname: <port_name>
+      Instruction-Group-Support:
+      - <instruction_group>
+      - ...
+      - <instruction_group>
+      Instruction-Opcode-Support:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
 
 With N as the number of execution ports.
 
@@ -297,7 +311,7 @@ With N as the number of execution units. The number of execution units should be
 Latencies
 ---------
 
-The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.
+The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups/opcodes, the groups/opcodes available are the same as the set discussed in the Ports section.
 
 The execution latency defines the total number of cycles an instruction will spend in an execution unit. The throughput is how many cycles an instruction will block another instruction entering the execution unit. In non-pipelined execution units, the throughput is equal to the latency.
 
@@ -310,16 +324,24 @@ The following structure must be adhered to when defining group latencies:
       - <instruction_group>
       - ...
       - <instruction_group>
+      Instruction-Opcodes:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
       Execution-Latency: <number_of_cycles>
       Execution-Throughput: <number_of_cycles>
     ...
     N-1:
-        Instruction-Groups:
-        - <instruction_group>
-        - ...
-        - <instruction_group>
-        Execution-Latency: <number_of_cycles>
-        Execution-Throughput: <number_of_cycles>
+      Instruction-Groups:
+      - <instruction_group>
+      - ...
+      - <instruction_group>
+      Instruction-Opcodes:
+      - <instruction_opcode>
+      - ...
+      - <instruction_opcode>
+      Execution-Latency: <number_of_cycles>
+      Execution-Throughput: <number_of_cycles>
 
 With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.
 
@@ -333,9 +355,20 @@ CPU Info
     These fields are currently only used to generate a replica of the required Special Files directory structure.
 
 Generate-Special-Dir
-    Values are either "True" or "False".
-    Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
-    The alternative to this would be to copy in the required SpecialFiles by hand.
+    Values are either `True` or `False`.
+    Dictates whether or not SimEng should generate the Special-Files directory tree at runtime.
+    If your code requires Special-Files but you wish to use your own / existing files from a real system, you will need to set this option to `False`.
+    The files which are currently generated / supported in SimEng are:
+
+        - `/proc/cpuinfo`
+        - `/proc/stat`
+        - `/sys/deviced/system/cpu/online`
+        - `/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/core_id`
+        - `/sys/deviced/system/cpu/cpu{0..CoreCount}/topology/physical_package_id`
+
+Special-File-Dir-Path
+    Represented as a String; is the **absolute path**  to the root directory where the Special-Files will be generated *OR* where existing Special-Files are located.
+    This is optional, and defaults to `SIMENG_BUILD_DIRECTORY/specialFiles`. The root directory must already exist.
 
 Core-Count
     Defines the total number of Physical cores (Not including threads).

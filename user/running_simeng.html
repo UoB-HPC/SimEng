@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
@@ -104,7 +98,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_simeng.html">Building SimEng</a></li>
@@ -116,7 +110,7 @@
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -190,41 +184,37 @@
            <div itemprop="articleBody">
             
   <div class="section" id="running-simeng">
-<h1>Running SimEng<a class="headerlink" href="#running-simeng" title="Permalink to this headline">¶</a></h1>
+<h1>Running SimEng<a class="headerlink" href="#running-simeng" title="Permalink to this heading">¶</a></h1>
 <p>SimEng uses a configuration file and a program binary to produce a cycle-accurate simulation of a modern processor. These options are passed to SimEng through the following command line arguments:</p>
-<div class="highlight-text"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
 </pre></div>
 </div>
-<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in <code class="docutils literal"><span class="pre">SimEng/src/include/simeng/CoreInstance.hh</span></code> under the <code class="docutils literal"><span class="pre">hex[]</span></code> array which contains a set of raw instructions in a hexadecimal format.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Paths to binaries must be in full, and not relative.</p>
-</div>
+<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in <code class="docutils literal notranslate"><span class="pre">SimEng/src/include/simeng/CoreInstance.hh</span></code> under the <code class="docutils literal notranslate"><span class="pre">hex[]</span></code> array which contains a set of raw instructions in a hexadecimal format.</p>
 <p>Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.</p>
 <div class="section" id="simulation-output">
-<h2>Simulation Output<a class="headerlink" href="#simulation-output" title="Permalink to this headline">¶</a></h2>
+<h2>Simulation Output<a class="headerlink" href="#simulation-output" title="Permalink to this heading">¶</a></h2>
 <p>For a successful simulation, SimEng’s output can be split into 4 parts;</p>
-<dl class="docutils">
-<dt>Build Metadata</dt>
-<dd>A summary of the build options set and general information about the SimEng framework built.</dd>
-<dt>Workload Output</dt>
-<dd>All outputs from the supplied workload under simulation.</dd>
-<dt>Exit Clause</dt>
-<dd>The reason why the simulation has halted. Most commonly this is due to the invoking of the <code class="docutils literal"><span class="pre">exit()</span></code> system call by the workload under simulation.</dd>
-<dt>Statistics</dt>
-<dd>A selection of simulation statistics describing the emergent simulated PMU-style hardware events.</dd>
+<dl class="simple">
+<dt>Build Metadata</dt><dd><p>A summary of the build options set and general information about the SimEng framework built.</p>
+</dd>
+<dt>Workload Output</dt><dd><p>All outputs from the supplied workload under simulation.</p>
+</dd>
+<dt>Exit Clause</dt><dd><p>The reason why the simulation has halted. Most commonly this is due to the invoking of the <code class="docutils literal notranslate"><span class="pre">exit()</span></code> system call by the workload under simulation.</p>
+</dd>
+<dt>Statistics</dt><dd><p>A selection of simulation statistics describing the emergent simulated PMU-style hardware events.</p>
+</dd>
 </dl>
-<p>All non-workload outputs from SimEng are prefixed with a tag of the format <code class="docutils literal"><span class="pre">[SimEng:Object]</span></code> (e.g. <code class="docutils literal"><span class="pre">[SimEng:ExceptionHandler]</span></code>). If the output came from the root of the framework, the <code class="docutils literal"><span class="pre">Object</span></code> field is omitted.</p>
+<p>All non-workload outputs from SimEng are prefixed with a tag of the format <code class="docutils literal notranslate"><span class="pre">[SimEng:Object]</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">[SimEng:ExceptionHandler]</span></code>). If the output came from the root of the framework, the <code class="docutils literal notranslate"><span class="pre">Object</span></code> field is omitted.</p>
 </div>
 <div class="section" id="configuration-files">
-<h2>Configuration files<a class="headerlink" href="#configuration-files" title="Permalink to this headline">¶</a></h2>
-<p>SimEng provides several configuration files that parameterise the simulated model. These can be found in <code class="docutils literal"><span class="pre">&lt;simeng_repository&gt;/configs</span></code> and more information about their content can be found <a class="reference internal" href="configuring_simeng.html"><span class="doc">here</span></a>.</p>
+<h2>Configuration files<a class="headerlink" href="#configuration-files" title="Permalink to this heading">¶</a></h2>
+<p>SimEng provides several configuration files that parameterise the simulated model. These can be found in <code class="docutils literal notranslate"><span class="pre">&lt;simeng_repository&gt;/configs</span></code> and more information about their content can be found <a class="reference internal" href="configuring_simeng.html"><span class="doc">here</span></a>.</p>
 <p>The following examples illustrate the use of both the ThunderX2 and A64FX configurations:</p>
-<dl class="docutils">
-<dt>ThunderX2 processor</dt>
-<dd><code class="docutils literal"><span class="pre">&lt;simeng_install_directory&gt;/bin/simeng</span> <span class="pre">&lt;simeng_repository&gt;/configs/tx2.yaml</span> <span class="pre">&lt;binary&gt;</span></code></dd>
-<dt>A64FX processor</dt>
-<dd><code class="docutils literal"><span class="pre">&lt;simeng_install_directory&gt;/bin/simeng</span> <span class="pre">&lt;simeng_repository&gt;/configs/a64fx.yaml</span> <span class="pre">&lt;binary&gt;</span></code></dd>
+<dl class="simple">
+<dt>ThunderX2 processor</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&lt;simeng_install_directory&gt;/bin/simeng</span> <span class="pre">&lt;simeng_repository&gt;/configs/tx2.yaml</span> <span class="pre">&lt;binary&gt;</span></code></p>
+</dd>
+<dt>A64FX processor</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&lt;simeng_install_directory&gt;/bin/simeng</span> <span class="pre">&lt;simeng_repository&gt;/configs/a64fx.yaml</span> <span class="pre">&lt;binary&gt;</span></code></p>
+</dd>
 </dl>
 </div>
 </div>
@@ -243,7 +233,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

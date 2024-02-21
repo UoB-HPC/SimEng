@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../../_static/js/theme.js"></script>
 
@@ -94,7 +88,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../developerInfo.html">Developer information</a></li>
@@ -106,7 +100,7 @@
 <li class="toctree-l2"><a class="reference internal" href="aarch64.html">AArch64</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">RISCV</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#decoding">Decoding</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#instruction-groups">Instruction Groups</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#instruction-groups-opcodes">Instruction Groups/Opcodes</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#adding-instructions">Adding instructions</a><ul>
@@ -114,6 +108,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#zero-registers">Zero registers</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#loads-and-stores">Loads and stores</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pseudoinstructions">Pseudoinstructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rounding-modes">Rounding Modes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#zicsr">Zicsr</a></li>
 </ul>
 </li>
 </ul>
@@ -122,7 +118,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/building_simeng.html">Building SimEng</a></li>
@@ -130,7 +126,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../sst/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../sst/building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -206,21 +202,26 @@
            <div itemprop="articleBody">
             
   <div class="section" id="riscv">
-<h1><a class="toc-backref" href="#id1">RISCV</a><a class="headerlink" href="#riscv" title="Permalink to this headline">¶</a></h1>
-<p>SimEng provides an almost complete implementation of the rv64ima architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.</p>
+<h1><a class="toc-backref" href="#id1">RISCV</a><a class="headerlink" href="#riscv" title="Permalink to this heading">¶</a></h1>
+<p>SimEng provides an almost complete implementation of the rv64imafdc architecture, as well as being capable of handling some supervisor call (syscall) exceptions via basic system call emulation. This is sufficient to run many simple single threaded programs that have been statically compiled with the standard library.</p>
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#riscv" id="id1">RISCV</a><ul>
-<li><a class="reference internal" href="#decoding" id="id2">Decoding</a><ul>
-<li><a class="reference internal" href="#instruction-groups" id="id3">Instruction Groups</a></li>
+<li><p><a class="reference internal" href="#riscv" id="id1">RISCV</a></p>
+<ul>
+<li><p><a class="reference internal" href="#decoding" id="id2">Decoding</a></p>
+<ul>
+<li><p><a class="reference internal" href="#instruction-groups-opcodes" id="id3">Instruction Groups/Opcodes</a></p></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#adding-instructions" id="id4">Adding instructions</a><ul>
-<li><a class="reference internal" href="#adding-execution-behaviour" id="id5">Adding execution behaviour</a></li>
-<li><a class="reference internal" href="#zero-registers" id="id6">Zero registers</a></li>
-<li><a class="reference internal" href="#loads-and-stores" id="id7">Loads and stores</a></li>
-<li><a class="reference internal" href="#pseudoinstructions" id="id8">Pseudoinstructions</a></li>
+<li><p><a class="reference internal" href="#adding-instructions" id="id4">Adding instructions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#adding-execution-behaviour" id="id5">Adding execution behaviour</a></p></li>
+<li><p><a class="reference internal" href="#zero-registers" id="id6">Zero registers</a></p></li>
+<li><p><a class="reference internal" href="#loads-and-stores" id="id7">Loads and stores</a></p></li>
+<li><p><a class="reference internal" href="#pseudoinstructions" id="id8">Pseudoinstructions</a></p></li>
+<li><p><a class="reference internal" href="#rounding-modes" id="id9">Rounding Modes</a></p></li>
+<li><p><a class="reference internal" href="#zicsr" id="id10">Zicsr</a></p></li>
 </ul>
 </li>
 </ul>
@@ -228,54 +229,73 @@
 </ul>
 </div>
 <div class="section" id="decoding">
-<h2><a class="toc-backref" href="#id2">Decoding</a><a class="headerlink" href="#decoding" title="Permalink to this headline">¶</a></h2>
+<h2><a class="toc-backref" href="#id2">Decoding</a><a class="headerlink" href="#decoding" title="Permalink to this heading">¶</a></h2>
 <p>Instruction decoding is performed using the <a class="reference external" href="https://github.com/aquynh/capstone/">Capstone</a> disassembly framework. The disassembly generated by Capstone is used to determine the properties, operands, and execution behaviour of the corresponding instruction.</p>
-<p>The logic held in <code class="docutils literal"><span class="pre">src/lib/arch/riscv/Instruction_decode.cc</span></code> is primarily associated with converting the provided Capstone instruction metadata into the appropriate SimEng <code class="docutils literal"><span class="pre">instruction</span></code> format. Additionally, an instruction’s identifiers are defined here through operand usage and opcode values. For the RISC-V architecture model, the following identifiers are defined:</p>
+<p>The logic held in <code class="docutils literal notranslate"><span class="pre">src/lib/arch/riscv/Instruction_decode.cc</span></code> is primarily associated with converting the provided Capstone instruction metadata into the appropriate SimEng <code class="docutils literal notranslate"><span class="pre">instruction</span></code> format. Additionally, an instruction’s type identifiers are set here through operand usage and opcode values. For the RISC-V architecture model, the following identifiers are defined in <code class="docutils literal notranslate"><span class="pre">src/include/simeng/arch/riscv/Instruction.hh</span></code>:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">isStore_</span></code>, is a store operation.</li>
-<li><code class="docutils literal"><span class="pre">isLoad_</span></code>, is a load operation.</li>
-<li><code class="docutils literal"><span class="pre">isBranch_</span></code>, is a branch operation.</li>
-<li><code class="docutils literal"><span class="pre">isMultiply_</span></code>, is a multiply operation.</li>
-<li><code class="docutils literal"><span class="pre">isDivide_</span></code>, is a divide operation.</li>
-<li><code class="docutils literal"><span class="pre">isShift_</span></code>, is a shift operation.</li>
-<li><code class="docutils literal"><span class="pre">isAtomic_</span></code>, is an atomic operation.</li>
-<li><code class="docutils literal"><span class="pre">isLogical_</span></code>, is a logical operation e.g bitwise and.</li>
-<li><code class="docutils literal"><span class="pre">isCompare_</span></code>, is a compare operation.</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isStore</span></code>, is a store operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isLoad</span></code>, is a load operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isBranch</span></code>, is a branch operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isMultiply</span></code>, is a multiply operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isDivide</span></code>, is a divide operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isShift</span></code>, is a shift operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isAtomic</span></code>, is an atomic operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isLogical</span></code>, is a logical operation e.g bitwise and.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isCompare</span></code>, is a compare operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isFloat</span></code>, is a floating point operation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">isConvert</span></code>, is a floating point to integer conversion operation.</p></li>
 </ul>
-<div class="section" id="instruction-groups">
-<span id="riscv-instruction-groups"></span><h3><a class="toc-backref" href="#id3">Instruction Groups</a><a class="headerlink" href="#instruction-groups" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="instruction-groups-opcodes">
+<span id="riscv-instruction-groups"></span><h3><a class="toc-backref" href="#id3">Instruction Groups/Opcodes</a><a class="headerlink" href="#instruction-groups-opcodes" title="Permalink to this heading">¶</a></h3>
 <p>Through a combination of the above identifiers, an instruction can be allocated an <a class="reference internal" href="../../concepts/instructions.html#instruction-group"><span class="std std-ref">instruction group</span></a>. The instruction groups available to the RISC-V ISA are detailed below:</p>
 <img alt="RISC-V instruction groups" src="../../../_images/instruction_groups_RISCV.png" />
-<p>The above diagram follows the same structure as <a class="reference internal" href="aarch64.html#aarch64-instruction-groups"><span class="std std-ref">AArch64 instruction groups</span></a>. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. Each of the above levels is combined through the <code class="docutils literal"><span class="pre">_</span></code> character, working from the top level of the diagram to the bottom. Lower levels are not required if a larger set of instructions is desired. For example the instruction group <code class="docutils literal"><span class="pre">INT</span></code> is valid and would encapsulate all instructions that perform integer operations, while <code class="docutils literal"><span class="pre">INT_MUL</span></code> is also valid but would only encapsulate the 5 multiply instructions.</p>
+<p>The above diagram follows the same structure as <a class="reference internal" href="aarch64.html#aarch64-instruction-groups"><span class="std std-ref">AArch64 instruction groups</span></a>. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. Each of the above levels is combined through the <code class="docutils literal notranslate"><span class="pre">_</span></code> character, working from the top level of the diagram to the bottom. Lower levels are not required if a larger set of instructions is desired. For example the instruction group <code class="docutils literal notranslate"><span class="pre">INT</span></code> is valid and would encapsulate all instructions that perform integer operations, while <code class="docutils literal notranslate"><span class="pre">INT_MUL</span></code> is also valid but would only encapsulate the 5 multiply instructions.</p>
 <p>This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.</p>
-<p>If the supplied instruction groups don’t provide a small enough scope, a Capstone opcode can be used instead (found in <code class="docutils literal"><span class="pre">SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc</span></code>) with the format <code class="docutils literal"><span class="pre">~{CAPSTONE_OPCODE}</span></code>.</p>
+<blockquote>
+<div><div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>INT_SIMPLE_CVT and FLOAT_SIMPLE_SHIFT are both invalid instruction groups</p>
+</div>
+</div></blockquote>
+<p>If the supplied instruction groups don’t provide a small enough scope, a numerical Capstone opcode can be used instead (found in <code class="docutils literal notranslate"><span class="pre">SimEng/build/_deps/capstone-lib-src/arch/RISCV/RISCVGenInstrInfo.inc</span></code>).</p>
 </div>
 </div>
 <div class="section" id="adding-instructions">
-<span id="riscv-adding-instructions"></span><h2><a class="toc-backref" href="#id4">Adding instructions</a><a class="headerlink" href="#adding-instructions" title="Permalink to this headline">¶</a></h2>
+<span id="riscv-adding-instructions"></span><h2><a class="toc-backref" href="#id4">Adding instructions</a><a class="headerlink" href="#adding-instructions" title="Permalink to this heading">¶</a></h2>
 <p>One major advantage of RISC-V over other architectures is the comparatively small number of instructions. For this reason it has been possible to implement all instructions within each supported extension rather than just those that are needed.</p>
 <p>As the currently ratified extensions are relatively small it is recommended that a full extension is implemented at once, rather than just the instructions necessary to run a particular code. It is not expected that this will be much more work than implementing just the instructions needed and should prevent more work later in development.</p>
 <div class="section" id="adding-execution-behaviour">
-<h3><a class="toc-backref" href="#id5">Adding execution behaviour</a><a class="headerlink" href="#adding-execution-behaviour" title="Permalink to this headline">¶</a></h3>
-<p>The process for adding a new instruction is very similar to that of <a class="reference internal" href="aarch64.html#aarch64-adding-instructions"><span class="std std-ref">AArch64</span></a>, by adding a new, uniquely identified entry to <code class="docutils literal"><span class="pre">src/lib/arch/riscv/Instruction_execute.cc</span></code>.</p>
+<h3><a class="toc-backref" href="#id5">Adding execution behaviour</a><a class="headerlink" href="#adding-execution-behaviour" title="Permalink to this heading">¶</a></h3>
+<p>The process for adding a new instruction is very similar to that of <a class="reference internal" href="aarch64.html#aarch64-adding-instructions"><span class="std std-ref">AArch64</span></a>, by adding a new, uniquely identified entry to <code class="docutils literal notranslate"><span class="pre">src/lib/arch/riscv/Instruction_execute.cc</span></code>.</p>
+<p>Compressed instructions are treated in the same way as pseudoinstructions. By design they can be expanded to full instructions from the base and floating point extensions. A new case should be added to the switch statement in <code class="docutils literal notranslate"><span class="pre">InstructionMetadata</span></code> to perform the relevant adjustment to the metadata. The instruction can then be allowed to flow through the pipeline - no new execute case is necessary.</p>
 </div>
 <div class="section" id="zero-registers">
-<h3><a class="toc-backref" href="#id6">Zero registers</a><a class="headerlink" href="#zero-registers" title="Permalink to this headline">¶</a></h3>
-<p>RISC-V provides a zero register <code class="docutils literal"><span class="pre">RO</span></code> which is always read as 0. This implementation mirrors that behaviour, and will automatically populate the relevant <code class="docutils literal"><span class="pre">operands</span></code> entry with a 0-value <code class="docutils literal"><span class="pre">RegisterValue</span></code>.</p>
-<p>For instructions that write to the zero registers, the result is discarded. The number of available <code class="docutils literal"><span class="pre">results</span></code> entries is reduced accordingly.</p>
+<h3><a class="toc-backref" href="#id6">Zero registers</a><a class="headerlink" href="#zero-registers" title="Permalink to this heading">¶</a></h3>
+<p>RISC-V provides a zero register <code class="docutils literal notranslate"><span class="pre">RO</span></code> which is always read as 0. This implementation mirrors that behaviour, and will automatically populate the relevant <code class="docutils literal notranslate"><span class="pre">sourceValues_</span></code> entry with a 0-value <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code>.</p>
+<p>For instructions that write to the zero registers, the result is discarded. The number of available <code class="docutils literal notranslate"><span class="pre">results</span></code> entries is reduced accordingly.</p>
 </div>
 <div class="section" id="loads-and-stores">
-<h3><a class="toc-backref" href="#id7">Loads and stores</a><a class="headerlink" href="#loads-and-stores" title="Permalink to this headline">¶</a></h3>
-<p>In addition to an execution behaviour, memory instructions also require a new entry in the address generation behaviour table found in <code class="docutils literal"><span class="pre">src/lib/arch/riscv/Instruction_address.cc</span></code>. These entries are responsible for describing the method used to generate the addresses that these instructions will read from or write to.</p>
-<p>Address generation is expected to generate one or more instances of <code class="docutils literal"><span class="pre">MemoryAddressTarget</span></code>, containing an address and the number of bytes to access. The same variables as described in the <a class="reference internal" href="aarch64.html#aarch64-adding-execution-behaviour-operands"><span class="std std-ref">AArch64 documentation</span></a> (<code class="docutils literal"><span class="pre">operands</span></code>, <code class="docutils literal"><span class="pre">metadata</span></code>) are available to use to generate these addresses.</p>
-<p>Once the addresses have been generated, they should be supplied in a vector to the <code class="docutils literal"><span class="pre">setMemoryAddresses</span></code> helper function.</p>
+<h3><a class="toc-backref" href="#id7">Loads and stores</a><a class="headerlink" href="#loads-and-stores" title="Permalink to this heading">¶</a></h3>
+<p>In addition to an execution behaviour, memory instructions also require a new entry in the address generation behaviour table found in <code class="docutils literal notranslate"><span class="pre">src/lib/arch/riscv/Instruction_address.cc</span></code>. These entries are responsible for describing the method used to generate the addresses that these instructions will read from or write to.</p>
+<p>Address generation is expected to generate one or more instances of <code class="docutils literal notranslate"><span class="pre">MemoryAddressTarget</span></code>, containing an address and the number of bytes to access. The same variables as described in the <a class="reference internal" href="aarch64.html#aarch64-adding-execution-behaviour-operands"><span class="std std-ref">AArch64 documentation</span></a> (<code class="docutils literal notranslate"><span class="pre">sourceValues_</span></code>, <code class="docutils literal notranslate"><span class="pre">metadata</span></code>) are available to use to generate these addresses.</p>
+<p>Once the addresses have been generated, they should be supplied in a vector to the <code class="docutils literal notranslate"><span class="pre">setMemoryAddresses</span></code> helper function.</p>
 </div>
 <div class="section" id="pseudoinstructions">
-<h3><a class="toc-backref" href="#id8">Pseudoinstructions</a><a class="headerlink" href="#pseudoinstructions" title="Permalink to this headline">¶</a></h3>
+<h3><a class="toc-backref" href="#id8">Pseudoinstructions</a><a class="headerlink" href="#pseudoinstructions" title="Permalink to this heading">¶</a></h3>
 <p>Similar to AArch64 instruction aliases, RISC-V has many pseudoinstructions. These are usually specific instances of a more general instruction. They will have the same opcode but a different mnemonic. Capstone will disassemble these instructions giving a valid opcode but will often miss vital operands that need to be inferred from the instruction mnemonic. This can be quite dangerous as the instruction may pass through the pipeline completely unhindered, but will give an incorrect result. These sorts of errors are very hard to track down.</p>
-<p>An example of this would be the pseudoinstruction <code class="docutils literal"><span class="pre">not</span> <span class="pre">rd,</span> <span class="pre">rs</span></code>. This is implemented using the more specific instance <code class="docutils literal"><span class="pre">xori</span> <span class="pre">rd,</span> <span class="pre">rs,</span> <span class="pre">-1</span></code>. Capstone will disassemble this giving the opcode for <code class="docutils literal"><span class="pre">xori</span></code> as well as the register codes for <code class="docutils literal"><span class="pre">rd</span></code> and <code class="docutils literal"><span class="pre">rs</span></code> but not the immediate <code class="docutils literal"><span class="pre">-1</span></code>.</p>
-<p>This must be fixed in the <code class="docutils literal"><span class="pre">InstructionMetadata</span></code> constructor. A new entry should be added to the switch statement and the pseudoinstruction mnemonic checked. The correct set of operands can then be set. A couple of helper functions are used for common operand fixes.</p>
+<p>An example of this would be the pseudoinstruction <code class="docutils literal notranslate"><span class="pre">not</span> <span class="pre">rd,</span> <span class="pre">rs</span></code>. This is implemented using the more specific instance <code class="docutils literal notranslate"><span class="pre">xori</span> <span class="pre">rd,</span> <span class="pre">rs,</span> <span class="pre">-1</span></code>. Capstone will disassemble this giving the opcode for <code class="docutils literal notranslate"><span class="pre">xori</span></code> as well as the register codes for <code class="docutils literal notranslate"><span class="pre">rd</span></code> and <code class="docutils literal notranslate"><span class="pre">rs</span></code> but not the immediate <code class="docutils literal notranslate"><span class="pre">-1</span></code>.</p>
+<p>This must be fixed in the <code class="docutils literal notranslate"><span class="pre">InstructionMetadata</span></code> constructor. A new entry should be added to the switch statement and the pseudoinstruction mnemonic checked. The correct set of operands can then be set. A couple of helper functions are used for common operand fixes.</p>
 <p>To ensure all pseudoinstructions are accounted for, the table in chapter 25 of the <a class="reference external" href="https://riscv.org/technical/specifications/">RISC-V Unprivileged specification</a> should be checked. It is recommended to implement all pseudoinstructions for all currently implemented instructions.</p>
+</div>
+<div class="section" id="rounding-modes">
+<h3><a class="toc-backref" href="#id9">Rounding Modes</a><a class="headerlink" href="#rounding-modes" title="Permalink to this heading">¶</a></h3>
+<p>RISC-V floating point instructions can use either static or dynamic rounding modes. The former embedded as 3 bits within the instruction encoding, and the latter held as 3 bits of the <code class="docutils literal notranslate"><span class="pre">fcsr</span></code> system register.</p>
+<p>To enforce static rounding modes, the function <code class="docutils literal notranslate"><span class="pre">setStaticRoundingModeThen</span></code> is used. This takes the execution logic of the instruction as a parameter in the form of a lambda function. <code class="docutils literal notranslate"><span class="pre">setStaticRoundingModeThen</span></code> extracts the rounding mode from the raw instruction encoding as Capstone currently doesn’t perform this functionality. It then changes the C++ <code class="docutils literal notranslate"><span class="pre">fenv</span></code> rounding mode before calling the lambda to perform the execution logic within this new environment. Before returning execution to the switch statement, it reverts the <code class="docutils literal notranslate"><span class="pre">fenv</span></code> rounding mode to its initial state to preserve the dynamic rounding mode.</p>
+<p>Updating the dynamic rounding mode can only be performed by a change to the <code class="docutils literal notranslate"><span class="pre">fcsr</span></code> system register. This is done using a Zicsr instruction and must happen atomically. To enforce this functionality, the relevant instruction causes a non-fatal exception. This forces all instructions earlier in program order to be committed and all instructions later to be flushed from the pipeline. This allows the <code class="docutils literal notranslate"><span class="pre">fenv</span></code> rounding mode to be changed while the pipeline is sterile, thus preventing incorrect rounding of speculatively executed instructions.</p>
+</div>
+<div class="section" id="zicsr">
+<h3><a class="toc-backref" href="#id10">Zicsr</a><a class="headerlink" href="#zicsr" title="Permalink to this heading">¶</a></h3>
+<p>The Zicsr extension is required by the F and D extensions; however, this is left with dummy implementations for this release (0.9.6). Therefore, the <code class="docutils literal notranslate"><span class="pre">fcsr</span></code> register is not updated based on the result of operations or the changing of the rounding mode. Thus far, this has not affected our ability to run typical high performance computing applications and miniapps.</p>
 </div>
 </div>
 </div>
@@ -294,7 +314,7 @@
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>

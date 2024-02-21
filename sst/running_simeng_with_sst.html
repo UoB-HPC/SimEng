@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -13,6 +13,8 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
 
   
   
@@ -28,20 +30,12 @@
   <![endif]-->
   
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -93,7 +87,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Developer Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
@@ -103,7 +97,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
 </ul>
-<p class="caption"><span class="caption-text">User Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
@@ -111,7 +105,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
 </ul>
-<p class="caption"><span class="caption-text">SST Integration</span></p>
+<p class="caption" role="heading"><span class="caption-text">SST Integration</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_simeng_with_sst.html">Building SimEng with SST</a></li>
@@ -207,22 +201,22 @@
            <div itemprop="articleBody">
             
   <div class="section" id="running-simeng-with-sst">
-<span id="running-simeng-w-sst"></span><h1>Running SimEng with SST<a class="headerlink" href="#running-simeng-with-sst" title="Permalink to this headline">¶</a></h1>
+<span id="running-simeng-w-sst"></span><h1>Running SimEng with SST<a class="headerlink" href="#running-simeng-with-sst" title="Permalink to this heading">¶</a></h1>
 <div class="section" id="setup">
-<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
-<p>During the installation stage of SimEng with the SST integration enabled, <code class="docutils literal"><span class="pre">libsstsimeng.so</span></code> is installed in the
-<code class="docutils literal"><span class="pre">&lt;path_to_simeng_install&gt;/sst</span></code> directory and <code class="docutils literal"><span class="pre">libsimeng.so</span></code> is installed in the <code class="docutils literal"><span class="pre">&lt;path_to_simeng_install&gt;/lib</span></code> directory at the install location.
-To make sure SimEng is able to run successfully inside a SST simulation, the <code class="docutils literal"><span class="pre">$LD_LIBRARY_PATH</span></code> environment variable should include the
-path to <code class="docutils literal"><span class="pre">libsimeng.so</span></code> i.e <code class="docutils literal"><span class="pre">&lt;path_to_simeng_install&gt;/lib</span></code>. For the SST Simulation, SimEng also relies on components present inside <strong>SST-Elements</strong>,
-so the path to all <strong>SST-Elements</strong> needs to be included also i.e <code class="docutils literal"><span class="pre">&lt;sst-elements_install_directory&gt;/lib/sst-elements-library</span></code>.</p>
+<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading">¶</a></h2>
+<p>During the installation stage of SimEng with the SST integration enabled, <code class="docutils literal notranslate"><span class="pre">libsstsimeng.so</span></code> is installed in the
+<code class="docutils literal notranslate"><span class="pre">&lt;path_to_simeng_install&gt;/sst</span></code> directory and <code class="docutils literal notranslate"><span class="pre">libsimeng.so</span></code> is installed in the <code class="docutils literal notranslate"><span class="pre">&lt;path_to_simeng_install&gt;/lib</span></code> directory at the install location.
+To make sure SimEng is able to run successfully inside a SST simulation, the <code class="docutils literal notranslate"><span class="pre">$LD_LIBRARY_PATH</span></code> environment variable should include the
+path to <code class="docutils literal notranslate"><span class="pre">libsimeng.so</span></code> i.e <code class="docutils literal notranslate"><span class="pre">&lt;path_to_simeng_install&gt;/lib</span></code>. For the SST Simulation, SimEng also relies on components present inside <strong>SST-Elements</strong>,
+so the path to all <strong>SST-Elements</strong> needs to be included also i.e <code class="docutils literal notranslate"><span class="pre">&lt;sst-elements_install_directory&gt;/lib/sst-elements-library</span></code>.</p>
 </div>
 <div class="section" id="configuration-for-sst-simulation">
-<h2>Configuration for SST Simulation<a class="headerlink" href="#configuration-for-sst-simulation" title="Permalink to this headline">¶</a></h2>
-<p>SST provides a python module to allow interaction with the simulation build system. SST simulations are configured through a <code class="docutils literal"><span class="pre">config.py</span></code> python file. The SST
+<h2>Configuration for SST Simulation<a class="headerlink" href="#configuration-for-sst-simulation" title="Permalink to this heading">¶</a></h2>
+<p>SST provides a python module to allow interaction with the simulation build system. SST simulations are configured through a <code class="docutils literal notranslate"><span class="pre">config.py</span></code> python file. The SST
 core python module is defined in CPython and is only available in the python interpreter launched within a running SST executable. SST parses the python file and
 creates a component graph, which it then uses to instantiate and configure components, links, and subcomponents.</p>
 <p>All SST config files have to use the following import:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
 <span class="c1"># or</span>
 <span class="kn">from</span> <span class="nn">sst</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
@@ -233,29 +227,29 @@ creates a component graph, which it then uses to instantiate and configure compo
 <strong>StatisticOutput</strong>, and <strong>StatisticGroup</strong>. The global functions are divided between general functions and functions operating on or returning one of the
 available classes mentioned.</p>
 <div class="section" id="declaring-and-configuring-sst-component-s">
-<h3>Declaring and configuring SST::Component(s)<a class="headerlink" href="#declaring-and-configuring-sst-component-s" title="Permalink to this headline">¶</a></h3>
-<p>Declaring components in the SST configuration files can be achieved by declaring an <code class="docutils literal"><span class="pre">sst.Component</span></code> class. This constructor takes in a unique identifier string
-called <code class="docutils literal"><span class="pre">name</span></code> and an <code class="docutils literal"><span class="pre">element_type</span></code> string used to identify the SST component to dynamically load during runtime. The <code class="docutils literal"><span class="pre">element_type</span></code> string is very
-important and has a specific format i.e <code class="docutils literal"><span class="pre">&lt;componentLibrary&gt;.&lt;(sub)componentName&gt;</span></code>.</p>
+<h3>Declaring and configuring SST::Component(s)<a class="headerlink" href="#declaring-and-configuring-sst-component-s" title="Permalink to this heading">¶</a></h3>
+<p>Declaring components in the SST configuration files can be achieved by declaring an <code class="docutils literal notranslate"><span class="pre">sst.Component</span></code> class. This constructor takes in a unique identifier string
+called <code class="docutils literal notranslate"><span class="pre">name</span></code> and an <code class="docutils literal notranslate"><span class="pre">element_type</span></code> string used to identify the SST component to dynamically load during runtime. The <code class="docutils literal notranslate"><span class="pre">element_type</span></code> string is very
+important and has a specific format i.e <code class="docutils literal notranslate"><span class="pre">&lt;componentLibrary&gt;.&lt;(sub)componentName&gt;</span></code>.</p>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last"><code class="docutils literal"><span class="pre">(sub)componentName</span></code> is different from <code class="docutils literal"><span class="pre">name</span></code>. <code class="docutils literal"><span class="pre">(sub)componentName</span></code> is used to locate the actual SST component or subcomponent from the SST Element
-registry, whereas <code class="docutils literal"><span class="pre">name</span></code> is a just unique identifier string which can be used in the codebase to manually locate and instantiate components.</p>
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">(sub)componentName</span></code> is different from <code class="docutils literal notranslate"><span class="pre">name</span></code>. <code class="docutils literal notranslate"><span class="pre">(sub)componentName</span></code> is used to locate the actual SST component or subcomponent from the SST Element
+registry, whereas <code class="docutils literal notranslate"><span class="pre">name</span></code> is a just unique identifier string which can be used in the codebase to manually locate and instantiate components.</p>
 </div>
-<p>The <code class="docutils literal"><span class="pre">componentLibrary</span></code> string is the name of the dynamic library which contains components with the <code class="docutils literal"><span class="pre">lib</span></code> prefix stripped. During runtime, SST adds the
-<code class="docutils literal"><span class="pre">lib</span></code> prefix to the <code class="docutils literal"><span class="pre">componentLibrary</span></code> string, dynamically loads the library, and uses the <code class="docutils literal"><span class="pre">(sub)componentName</span></code> string to index into the Element registry and
+<p>The <code class="docutils literal notranslate"><span class="pre">componentLibrary</span></code> string is the name of the dynamic library which contains components with the <code class="docutils literal notranslate"><span class="pre">lib</span></code> prefix stripped. During runtime, SST adds the
+<code class="docutils literal notranslate"><span class="pre">lib</span></code> prefix to the <code class="docutils literal notranslate"><span class="pre">componentLibrary</span></code> string, dynamically loads the library, and uses the <code class="docutils literal notranslate"><span class="pre">(sub)componentName</span></code> string to index into the Element registry and
 instantiate the component or subcomponent.</p>
 <p><strong>Example:</strong>
-SimEng core is wrapped in a class called <code class="docutils literal"><span class="pre">SimengCoreWrapper</span></code>. The class is then registered as a custom SST component with <code class="docutils literal"><span class="pre">(sub)componentName</span> <span class="pre">=</span> <span class="pre">simengcore</span></code>. The
-class is then compiled into a shared library with the name <code class="docutils literal"><span class="pre">libsstsimeng</span></code>. Finally, using the <code class="docutils literal"><span class="pre">sst-register</span></code> executable, the <code class="docutils literal"><span class="pre">libsstsimeng</span></code> library and its
+SimEng core is wrapped in a class called <code class="docutils literal notranslate"><span class="pre">SimengCoreWrapper</span></code>. The class is then registered as a custom SST component with <code class="docutils literal notranslate"><span class="pre">(sub)componentName</span> <span class="pre">=</span> <span class="pre">simengcore</span></code>. The
+class is then compiled into a shared library with the name <code class="docutils literal notranslate"><span class="pre">libsstsimeng</span></code>. Finally, using the <code class="docutils literal notranslate"><span class="pre">sst-register</span></code> executable, the <code class="docutils literal notranslate"><span class="pre">libsstsimeng</span></code> library and its
 path are registered into SST. This is all done automatically in the build and install steps of SST Simeng integration.</p>
-<p><code class="docutils literal"><span class="pre">simengcore</span></code> can now be in a SST simulation using the following <code class="docutils literal"><span class="pre">element_type</span></code> string:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
+<p><code class="docutils literal notranslate"><span class="pre">simengcore</span></code> can now be in a SST simulation using the following <code class="docutils literal notranslate"><span class="pre">element_type</span></code> string:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
 <span class="n">cpu</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;mycore&quot;</span><span class="p">,</span> <span class="s2">&quot;sstsimeng.simengcore&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Adding parameters to the SST component can be done through the <code class="docutils literal"><span class="pre">addParams</span></code> method of the SST Python module Component class.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
+<p>Adding parameters to the SST component can be done through the <code class="docutils literal notranslate"><span class="pre">addParams</span></code> method of the SST Python module Component class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
 <span class="n">cpu</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;mycore&quot;</span><span class="p">,</span> <span class="s2">&quot;sstsimeng.simengcore&quot;</span><span class="p">)</span>
 <span class="n">cpu</span><span class="o">.</span><span class="n">addParams</span><span class="p">({</span>
     <span class="s2">&quot;clock&quot;</span><span class="p">:</span> <span class="s2">&quot;1GHz&quot;</span><span class="p">,</span>
@@ -264,23 +258,21 @@ path are registered into SST. This is all done automatically in the build and in
 </pre></div>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<ul class="last simple">
-<li><dl class="first docutils">
-<dt>To find out about the <code class="docutils literal"><span class="pre">componentLibrary</span></code> or <code class="docutils literal"><span class="pre">(sub)componentNane</span></code> you can use the <code class="docutils literal"><span class="pre">sst-info</span></code> command.</dt>
-<dd><ul class="first last">
-<li>The <code class="docutils literal"><span class="pre">sst-info</span></code> command can be used to find out about all libraries, components and subcomponents registered with the SST Core</li>
-<li>The <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">&lt;componentLibrary&gt;</span></code> command can be used to find out about all components and subcomponents in a library.</li>
-<li>The <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">&lt;componentLibrary&gt;.&lt;(sub)componentName&gt;</span></code> command can be used to get information about a specific component or subcomponent in a library.</li>
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>To find out about the <code class="docutils literal notranslate"><span class="pre">componentLibrary</span></code> or <code class="docutils literal notranslate"><span class="pre">(sub)componentNane</span></code> you can use the <code class="docutils literal notranslate"><span class="pre">sst-info</span></code> command.</dt><dd><ul>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">sst-info</span></code> command can be used to find out about all libraries, components and subcomponents registered with the SST Core</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">&lt;componentLibrary&gt;</span></code> command can be used to find out about all components and subcomponents in a library.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">&lt;componentLibrary&gt;.&lt;(sub)componentName&gt;</span></code> command can be used to get information about a specific component or subcomponent in a library.</p></li>
 </ul>
 </dd>
 </dl>
 </li>
-<li><dl class="first docutils">
-<dt>Examples:</dt>
-<dd><ul class="first last">
-<li><code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">sstsimeng</span></code></li>
-<li><code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">sstsimeng.simengcore</span></code></li>
+<li><dl class="simple">
+<dt>Examples:</dt><dd><ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">sstsimeng</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">sstsimeng.simengcore</span></code></p></li>
 </ul>
 </dd>
 </dl>
@@ -289,15 +281,15 @@ path are registered into SST. This is all done automatically in the build and in
 </div>
 </div>
 <div class="section" id="declaring-and-configuring-sst-link-s">
-<h3>Declaring and Configuring SST::Link(s)<a class="headerlink" href="#declaring-and-configuring-sst-link-s" title="Permalink to this headline">¶</a></h3>
+<h3>Declaring and Configuring SST::Link(s)<a class="headerlink" href="#declaring-and-configuring-sst-link-s" title="Permalink to this heading">¶</a></h3>
 <p>Links are present as a class in a Python SST Module as well. There are two ways to connect SST components using links. For both approaches, links first need to
-be instantiated using <code class="docutils literal"><span class="pre">sst.Link</span></code>, which takes in a user-defined name as its argument.</p>
+be instantiated using <code class="docutils literal notranslate"><span class="pre">sst.Link</span></code>, which takes in a user-defined name as its argument.</p>
 <div class="section" id="approach-1">
-<h4>Approach 1<a class="headerlink" href="#approach-1" title="Permalink to this headline">¶</a></h4>
-<p>For the first approach, the link needs to be instantiated and then, using the <code class="docutils literal"><span class="pre">sst.Link.connect</span></code> function, the components need to be connected. The connect
-function takes in 2 tuples, of the same format: <code class="docutils literal"><span class="pre">(component,</span> <span class="pre">port_name,</span> <span class="pre">port_latency)</span></code>. <code class="docutils literal"><span class="pre">port_name</span></code>  is the name of the port defined by the component. This
-can be found in the SST component’s documented ports with the <code class="docutils literal"><span class="pre">sst-info</span></code> command.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">component_1</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_1 has a port called data_port</span>
+<h4>Approach 1<a class="headerlink" href="#approach-1" title="Permalink to this heading">¶</a></h4>
+<p>For the first approach, the link needs to be instantiated and then, using the <code class="docutils literal notranslate"><span class="pre">sst.Link.connect</span></code> function, the components need to be connected. The connect
+function takes in 2 tuples, of the same format: <code class="docutils literal notranslate"><span class="pre">(component,</span> <span class="pre">port_name,</span> <span class="pre">port_latency)</span></code>. <code class="docutils literal notranslate"><span class="pre">port_name</span></code>  is the name of the port defined by the component. This
+can be found in the SST component’s documented ports with the <code class="docutils literal notranslate"><span class="pre">sst-info</span></code> command.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">component_1</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_1 has a port called data_port</span>
 <span class="n">component_2</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_2 has a port called data_port</span>
 
 <span class="n">link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;mylink&quot;</span><span class="p">)</span> <span class="c1"># Passing a user-defined link name</span>
@@ -308,10 +300,10 @@ can be found in the SST component’s documented ports with the <code class="doc
 </div>
 </div>
 <div class="section" id="approach-2">
-<h4>Approach 2<a class="headerlink" href="#approach-2" title="Permalink to this headline">¶</a></h4>
-<p>For the second approach, the addLink method of each component can be used to establish communication. The addLink method takes in 3 arguments: <code class="docutils literal"><span class="pre">link</span></code>,
-<code class="docutils literal"><span class="pre">port_name</span></code>, and <code class="docutils literal"><span class="pre">port_latency</span></code>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">component_1</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_1 has a port called data_port</span>
+<h4>Approach 2<a class="headerlink" href="#approach-2" title="Permalink to this heading">¶</a></h4>
+<p>For the second approach, the addLink method of each component can be used to establish communication. The addLink method takes in 3 arguments: <code class="docutils literal notranslate"><span class="pre">link</span></code>,
+<code class="docutils literal notranslate"><span class="pre">port_name</span></code>, and <code class="docutils literal notranslate"><span class="pre">port_latency</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">component_1</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_1 has a port called data_port</span>
 <span class="n">component_2</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># Assuming component_2 has a port called data_port</span>
 
 <span class="n">link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;mylink&quot;</span><span class="p">)</span> <span class="c1"># Passing a user-defined link name</span>
@@ -323,12 +315,12 @@ can be found in the SST component’s documented ports with the <code class="doc
 </div>
 </div>
 <div class="section" id="declaring-and-configuring-sst-subcomponent-s">
-<h3>Declaring and Configuring SST::SubComponent(s)<a class="headerlink" href="#declaring-and-configuring-sst-subcomponent-s" title="Permalink to this headline">¶</a></h3>
-<p>If a component has a SubComponent slot, then it can be filled using the <code class="docutils literal"><span class="pre">component.setSubComponent</span></code> method. This method takes in 3 arguments: <code class="docutils literal"><span class="pre">slot_name</span></code> ,
-<code class="docutils literal"><span class="pre">element_type</span></code> and <code class="docutils literal"><span class="pre">slot_index</span></code>. The <code class="docutils literal"><span class="pre">slot_index</span></code> is the index in which the SubComponent should be inserted. This defaults to 0 and is not required if only
-one SubComponent is being loaded into the specified slot. Each SubComponent must be loaded into a unique <code class="docutils literal"><span class="pre">slot_index</span></code> and some SubComponents will require the
-indexes to be incremental. SubComponents can also be configured using the <code class="docutils literal"><span class="pre">addParams</span></code> method.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
+<h3>Declaring and Configuring SST::SubComponent(s)<a class="headerlink" href="#declaring-and-configuring-sst-subcomponent-s" title="Permalink to this heading">¶</a></h3>
+<p>If a component has a SubComponent slot, then it can be filled using the <code class="docutils literal notranslate"><span class="pre">component.setSubComponent</span></code> method. This method takes in 3 arguments: <code class="docutils literal notranslate"><span class="pre">slot_name</span></code> ,
+<code class="docutils literal notranslate"><span class="pre">element_type</span></code> and <code class="docutils literal notranslate"><span class="pre">slot_index</span></code>. The <code class="docutils literal notranslate"><span class="pre">slot_index</span></code> is the index in which the SubComponent should be inserted. This defaults to 0 and is not required if only
+one SubComponent is being loaded into the specified slot. Each SubComponent must be loaded into a unique <code class="docutils literal notranslate"><span class="pre">slot_index</span></code> and some SubComponents will require the
+indexes to be incremental. SubComponents can also be configured using the <code class="docutils literal notranslate"><span class="pre">addParams</span></code> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sst</span>
 <span class="c1"># Memory controller from memHierarchy library</span>
 <span class="n">memctrl</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;memory&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.MemController&quot;</span><span class="p">)</span>
 <span class="n">memctrl</span><span class="o">.</span><span class="n">addParams</span><span class="p">({</span>
@@ -344,32 +336,32 @@ indexes to be incremental. SubComponents can also be configured using the <code 
 </div>
 </div>
 <div class="section" id="simeng-sst-configuration">
-<h2>SimEng SST Configuration<a class="headerlink" href="#simeng-sst-configuration" title="Permalink to this headline">¶</a></h2>
+<h2>SimEng SST Configuration<a class="headerlink" href="#simeng-sst-configuration" title="Permalink to this heading">¶</a></h2>
 <div class="section" id="configuring-the-simengcore">
-<h3>Configuring the SimEngCore<a class="headerlink" href="#configuring-the-simengcore" title="Permalink to this headline">¶</a></h3>
-<p>As discussed earlier, the SimEng core has been wrapped in the <code class="docutils literal"><span class="pre">SimengCoreWrapper</span></code> class and registered as a custom SST Component. Instantiating and using this
+<h3>Configuring the SimEngCore<a class="headerlink" href="#configuring-the-simengcore" title="Permalink to this heading">¶</a></h3>
+<p>As discussed earlier, the SimEng core has been wrapped in the <code class="docutils literal notranslate"><span class="pre">SimengCoreWrapper</span></code> class and registered as a custom SST Component. Instantiating and using this
 component is fundamental to running the simulation. The component has the following parameters:</p>
 <ul class="simple">
-<li><code class="docutils literal"><span class="pre">config_path</span></code>: Path to YAML configuration file needed by SimEng for configuration of the core microarchitecture under simulation.</li>
-<li><code class="docutils literal"><span class="pre">executable_path</span></code>: Path to the executable to run inside SimEng.</li>
-<li><code class="docutils literal"><span class="pre">executable_args</span></code>: Arguments provided to the executable.</li>
-<li><code class="docutils literal"><span class="pre">clock</span></code>: The frequency of clock ticking the SimEng Core e.g. 1GHz (S.I units accepted).</li>
-<li><code class="docutils literal"><span class="pre">max_addr_range</span></code>: Maximum address which can be accessed by SimEng.</li>
-<li><code class="docutils literal"><span class="pre">cache_line_width</span></code>: Width of the cache line (in bytes).</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config_path</span></code>: Path to YAML configuration file needed by SimEng for configuration of the core microarchitecture under simulation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">executable_path</span></code>: Path to the executable to run inside SimEng.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">executable_args</span></code>: Arguments provided to the executable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clock</span></code>: The frequency of clock ticking the SimEng Core e.g. 1GHz (S.I units accepted).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_addr_range</span></code>: Maximum address which can be accessed by SimEng.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cache_line_width</span></code>: Width of the cache line (in bytes).</p></li>
 </ul>
 </div>
 <div class="section" id="configuring-standardinterface">
-<h3>Configuring StandardInterface<a class="headerlink" href="#configuring-standardinterface" title="Permalink to this headline">¶</a></h3>
-<p>After the <code class="docutils literal"><span class="pre">simengcore</span></code> has been instantiated, the <code class="docutils literal"><span class="pre">StandardInterface</span></code> has to be set into the <code class="docutils literal"><span class="pre">memory</span></code> slot of simengcore.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">iface</span> <span class="o">=</span> <span class="n">cpu</span><span class="o">.</span><span class="n">setSubComponent</span><span class="p">(</span><span class="s2">&quot;memory&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.standardInterface&quot;</span><span class="p">)</span>
+<h3>Configuring StandardInterface<a class="headerlink" href="#configuring-standardinterface" title="Permalink to this heading">¶</a></h3>
+<p>After the <code class="docutils literal notranslate"><span class="pre">simengcore</span></code> has been instantiated, the <code class="docutils literal notranslate"><span class="pre">StandardInterface</span></code> has to be set into the <code class="docutils literal notranslate"><span class="pre">memory</span></code> slot of simengcore.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">iface</span> <span class="o">=</span> <span class="n">cpu</span><span class="o">.</span><span class="n">setSubComponent</span><span class="p">(</span><span class="s2">&quot;memory&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.standardInterface&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="configuring-the-cache">
-<h3>Configuring the Cache<a class="headerlink" href="#configuring-the-cache" title="Permalink to this headline">¶</a></h3>
+<h3>Configuring the Cache<a class="headerlink" href="#configuring-the-cache" title="Permalink to this heading">¶</a></h3>
 <p>Next, the L1 cache needs to be configured. All configuration parameters (and their documentation), ports and slots for the cache can be found using the
-command <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.Cache</span></code>. The default cache parameters provided by the installation are defined below:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">l1cache</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;l1cache.mesi&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.Cache&quot;</span><span class="p">)</span>
+command <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">memHierarchy.Cache</span></code>. The default cache parameters provided by the installation are defined below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">l1cache</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;l1cache.mesi&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.Cache&quot;</span><span class="p">)</span>
 <span class="n">l1cache</span><span class="o">.</span><span class="n">addParams</span><span class="p">({</span>
      <span class="s2">&quot;access_latency_cycles&quot;</span> <span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>
      <span class="s2">&quot;cache_frequency&quot;</span> <span class="p">:</span> <span class="s2">&quot;2Ghz&quot;</span><span class="p">,</span>
@@ -386,12 +378,12 @@ command <code class="docutils literal"><span class="pre">sst-info</span> <span c
 </div>
 </div>
 <div class="section" id="configuring-the-memorycontroller-and-membackend">
-<h3>Configuring the MemoryController and MemBackend<a class="headerlink" href="#configuring-the-memorycontroller-and-membackend" title="Permalink to this headline">¶</a></h3>
-<p>As discussed in the <a class="reference internal" href="understanding_sst.html#u-sst"><span class="std std-ref">Understanding SST</span></a> section, the <code class="docutils literal"><span class="pre">MemoryController</span></code> and the <code class="docutils literal"><span class="pre">MemBackend</span></code> are the last levels in the memory hierarchy. The <code class="docutils literal"><span class="pre">MemBackend</span></code> is a subcomponent of the
-<code class="docutils literal"><span class="pre">MemoryController</span></code> (<code class="docutils literal"><span class="pre">slot:</span> <span class="pre">backend</span></code>) and for the SimEng simulation the <code class="docutils literal"><span class="pre">SimpleMem</span></code> backend is used. Other backends are also supported.</p>
-<p>All configuration parameters (and their documentation), ports, and slots for <code class="docutils literal"><span class="pre">MemoryController</span></code> and <code class="docutils literal"><span class="pre">MemBackend</span></code> can be found using the commands: <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.MemController</span></code>
-and <code class="docutils literal"><span class="pre">sst-info</span> <span class="pre">memHierarchy.simpleMem</span></code>. The default memory controller and backend parameters provided by the installation are defined below:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Memory controller</span>
+<h3>Configuring the MemoryController and MemBackend<a class="headerlink" href="#configuring-the-memorycontroller-and-membackend" title="Permalink to this heading">¶</a></h3>
+<p>As discussed in the <a class="reference internal" href="understanding_sst.html#u-sst"><span class="std std-ref">Understanding SST</span></a> section, the <code class="docutils literal notranslate"><span class="pre">MemoryController</span></code> and the <code class="docutils literal notranslate"><span class="pre">MemBackend</span></code> are the last levels in the memory hierarchy. The <code class="docutils literal notranslate"><span class="pre">MemBackend</span></code> is a subcomponent of the
+<code class="docutils literal notranslate"><span class="pre">MemoryController</span></code> (<code class="docutils literal notranslate"><span class="pre">slot:</span> <span class="pre">backend</span></code>) and for the SimEng simulation the <code class="docutils literal notranslate"><span class="pre">SimpleMem</span></code> backend is used. Other backends are also supported.</p>
+<p>All configuration parameters (and their documentation), ports, and slots for <code class="docutils literal notranslate"><span class="pre">MemoryController</span></code> and <code class="docutils literal notranslate"><span class="pre">MemBackend</span></code> can be found using the commands: <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">memHierarchy.MemController</span></code>
+and <code class="docutils literal notranslate"><span class="pre">sst-info</span> <span class="pre">memHierarchy.simpleMem</span></code>. The default memory controller and backend parameters provided by the installation are defined below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Memory controller</span>
  <span class="n">memctrl</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Component</span><span class="p">(</span><span class="s2">&quot;memory&quot;</span><span class="p">,</span> <span class="s2">&quot;memHierarchy.MemController&quot;</span><span class="p">)</span>
  <span class="n">memctrl</span><span class="o">.</span><span class="n">addParams</span><span class="p">({</span>
      <span class="s2">&quot;clock&quot;</span> <span class="p">:</span> <span class="s2">&quot;1GHz&quot;</span><span class="p">,</span>
@@ -411,12 +403,12 @@ and <code class="docutils literal"><span class="pre">sst-info</span> <span class
 </div>
 </div>
 <div class="section" id="connecting-components-with-links">
-<h3>Connecting Components with links<a class="headerlink" href="#connecting-components-with-links" title="Permalink to this headline">¶</a></h3>
+<h3>Connecting Components with links<a class="headerlink" href="#connecting-components-with-links" title="Permalink to this heading">¶</a></h3>
 <p>In the last step, we need to connect all components defined above together so that they can communicate with each other and exchange memory requests. As mentioned
-above, the <code class="docutils literal"><span class="pre">high_network_0</span></code> port of the cache needs to be connected to higher cache levels or the core. Since the SimEng core interfaces with the memory system
-through <code class="docutils literal"><span class="pre">StandardInterface</span></code>, the cache will be connected to it. The default core to memory hierarchy component link provided by the installation are defined
+above, the <code class="docutils literal notranslate"><span class="pre">high_network_0</span></code> port of the cache needs to be connected to higher cache levels or the core. Since the SimEng core interfaces with the memory system
+through <code class="docutils literal notranslate"><span class="pre">StandardInterface</span></code>, the cache will be connected to it. The default core to memory hierarchy component link provided by the installation are defined
 below:</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">cpu_to_cache_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link1&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cpu_to_cache_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link1&quot;</span><span class="p">)</span>
 <span class="n">cpu_to_cache_link</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">iface</span><span class="p">,</span> <span class="s2">&quot;port&quot;</span><span class="p">,</span> <span class="s2">&quot;100ps&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">l1cache</span><span class="p">,</span> <span class="s2">&quot;high_network_0&quot;</span><span class="p">,</span> <span class="s2">&quot;100ps&quot;</span><span class="p">))</span>
 <span class="c1"># or</span>
 <span class="n">cpu_to_cache_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link1&quot;</span><span class="p">)</span>
@@ -426,8 +418,8 @@ below:</p>
 </div>
 <p>Now that the SimEng core has been connected to the cache, the cache needs to connect to the lower levels of memory. For this configuration, it will be connected
 to the memory controller. Otherwise it will be connected to lower levels of cache i.e. L2. As mentioned earlier, the cache connects to lower levels through the
-<code class="docutils literal"><span class="pre">low_network_0</span></code> port.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">l1_to_mem_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link2&quot;</span><span class="p">)</span>
+<code class="docutils literal notranslate"><span class="pre">low_network_0</span></code> port.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">l1_to_mem_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link2&quot;</span><span class="p">)</span>
 <span class="n">l1_to_mem_link</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">l1cache</span><span class="p">,</span> <span class="s2">&quot;low_netowrk_0&quot;</span><span class="p">,</span> <span class="s2">&quot;50ps&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">memctrl</span><span class="p">,</span> <span class="s2">&quot;direct_link&quot;</span><span class="p">,</span> <span class="s2">&quot;50ps&quot;</span><span class="p">))</span>
 <span class="c1"># or</span>
 <span class="n">l1_to_mem_link</span> <span class="o">=</span> <span class="n">sst</span><span class="o">.</span><span class="n">Link</span><span class="p">(</span><span class="s2">&quot;link2&quot;</span><span class="p">)</span>
@@ -436,27 +428,27 @@ to the memory controller. Otherwise it will be connected to lower levels of cach
 </pre></div>
 </div>
 <div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p>The SimEng core YAML configuration file defines <code class="docutils literal"><span class="pre">stack_size</span></code> and <code class="docutils literal"><span class="pre">heap_size</span></code> parameters which are used to determine the size of the process image.
+<p class="admonition-title">Warning</p>
+<p>The SimEng core YAML configuration file defines <code class="docutils literal notranslate"><span class="pre">stack_size</span></code> and <code class="docutils literal notranslate"><span class="pre">heap_size</span></code> parameters which are used to determine the size of the process image.
 In addition to these parameters, the process image size is also determined by the ELF binary header sections (which contain instructions and initialised data). To ensure
 the simulation is very fast, SimEng internally initialises the process image as a large char array that can index the highest virtual address encountered in
 the ELF binary header sections, eliminating the need for any address translation.</p>
-<p>To make sure that the memory used by SST is consistent with the details mentioned above, the memory size of the backend i.e <code class="docutils literal"><span class="pre">mem_size</span></code> has been set to <strong>2GiB</strong>
-in the default SST <code class="docutils literal"><span class="pre">config.py</span></code> file. The <code class="docutils literal"><span class="pre">SimengCoreWrapper</span></code> checks if the SST memory backend has been configured with enough memory to store the process
-image. This check is done using the <code class="docutils literal"><span class="pre">addr_range_end</span></code> parameter of <code class="docutils literal"><span class="pre">sstsimeng.simengcore</span></code>.</p>
-<p class="last">The user must also ensure that the maximum address accessible in the memory backend is consistent with <code class="docutils literal"><span class="pre">addr_range_end</span></code> parameter of the memory controller
-i.e <code class="docutils literal"><span class="pre">memHierarchy.MemController</span></code> and <code class="docutils literal"><span class="pre">max_addr_range</span></code> parameter of SimEng core i.e <code class="docutils literal"><span class="pre">sstsimeng.simengcore</span></code>.</p>
+<p>To make sure that the memory used by SST is consistent with the details mentioned above, the memory size of the backend i.e <code class="docutils literal notranslate"><span class="pre">mem_size</span></code> has been set to <strong>2GiB</strong>
+in the default SST <code class="docutils literal notranslate"><span class="pre">config.py</span></code> file. The <code class="docutils literal notranslate"><span class="pre">SimengCoreWrapper</span></code> checks if the SST memory backend has been configured with enough memory to store the process
+image. This check is done using the <code class="docutils literal notranslate"><span class="pre">addr_range_end</span></code> parameter of <code class="docutils literal notranslate"><span class="pre">sstsimeng.simengcore</span></code>.</p>
+<p>The user must also ensure that the maximum address accessible in the memory backend is consistent with <code class="docutils literal notranslate"><span class="pre">addr_range_end</span></code> parameter of the memory controller
+i.e <code class="docutils literal notranslate"><span class="pre">memHierarchy.MemController</span></code> and <code class="docutils literal notranslate"><span class="pre">max_addr_range</span></code> parameter of SimEng core i.e <code class="docutils literal notranslate"><span class="pre">sstsimeng.simengcore</span></code>.</p>
 </div>
 <div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">More examples of the SST <code class="docutils literal"><span class="pre">config.py</span></code> files are present in the <strong>SST-Elements</strong> code base, found <a class="reference external" href="https://github.com/sstsimulator/sst-elements/tree/master/src/sst/elements/memHierarchy/tests">here</a>. Files starting with the prefix <code class="docutils literal"><span class="pre">sdl</span></code> contain different examples of memory hierarchy configurations which SST can simulate.</p>
+<p class="admonition-title">Note</p>
+<p>More examples of the SST <code class="docutils literal notranslate"><span class="pre">config.py</span></code> files are present in the <strong>SST-Elements</strong> code base, found <a class="reference external" href="https://github.com/sstsimulator/sst-elements/tree/master/src/sst/elements/memHierarchy/tests">here</a>. Files starting with the prefix <code class="docutils literal notranslate"><span class="pre">sdl</span></code> contain different examples of memory hierarchy configurations which SST can simulate.</p>
 </div>
 </div>
 </div>
 <div class="section" id="running-sst-simeng-simulation">
-<h2>Running SST SimEng Simulation<a class="headerlink" href="#running-sst-simeng-simulation" title="Permalink to this headline">¶</a></h2>
-<p>To run the simulation, navigate to the <code class="docutils literal"><span class="pre">config.py</span></code> file (the default configuration file can be found at the path <code class="docutils literal"><span class="pre">&lt;path-to-simeng-install&gt;/sst/config</span></code>) and
-use the command <code class="docutils literal"><span class="pre">sst</span> <span class="pre">config.py</span></code> to start the simulation.</p>
+<h2>Running SST SimEng Simulation<a class="headerlink" href="#running-sst-simeng-simulation" title="Permalink to this heading">¶</a></h2>
+<p>To run the simulation, navigate to the <code class="docutils literal notranslate"><span class="pre">config.py</span></code> file (the default configuration file can be found at the path <code class="docutils literal notranslate"><span class="pre">&lt;path-to-simeng-install&gt;/sst/config</span></code>) and
+use the command <code class="docutils literal notranslate"><span class="pre">sst</span> <span class="pre">config.py</span></code> to start the simulation.</p>
 </div>
 </div>
 
@@ -473,7 +465,7 @@ use the command <code class="docutils literal"><span class="pre">sst</span> <spa
 
   <div role="contentinfo">
     <p>
-        &#169; Copyright 2021, SimEng developers.
+        &#169; Copyright 2024, SimEng developers.
 
     </p>
   </div>
