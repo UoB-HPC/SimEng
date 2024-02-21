@@ -95,7 +95,7 @@ TEST(ConfigTest, Default) {
   emittedConfig =
       ryml::emitrs_yaml<std::string>(simeng::config::SimInfo::getConfig());
   expectedValues =
-      "Core:\n  ISA: rv64\n  'Simulation-Mode': emulation\n  "
+      "Core:\n  ISA: rv64\n  Compressed: 0\n  'Simulation-Mode': emulation\n  "
       "'Clock-Frequency-GHz': 1\n  'Timer-Frequency-MHz': 100\n  "
       "'Micro-Operations': 0\nFetch:\n  'Fetch-Block-Size': 32\n  "
       "'Loop-Buffer-Size': 32\n  'Loop-Detection-Threshold': "
