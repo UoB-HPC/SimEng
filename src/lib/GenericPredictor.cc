@@ -98,8 +98,9 @@ void GenericPredictor::update(uint64_t address, bool taken,
 
 
   // Update global history if prediction was incorrect
-  // ToDo -- consider if need to replace history rather than just remove?
-  if (btb_[hashedIndex].first >= (1 << (satCntBits_ - 1)) != taken) globalHistory_ >>= 1;
+  if (btb_[hashedIndex].first >= (1 << (satCntBits_ - 1)) != taken) {
+    globalHistory_ ^= (1 << FTQ_.size());
+  }
 
   return;
 }

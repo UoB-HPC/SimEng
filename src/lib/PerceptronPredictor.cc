@@ -25,7 +25,6 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 PerceptronPredictor::~PerceptronPredictor() {
   ras_.clear();
   rasHistory_.clear();
-  std::cout << "___________REMAINING FTQ OF SIZE " << FTQ_.size() << std::endl;
   FTQ_.clear();
 }
 
@@ -130,8 +129,9 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex].second = targetAddress;
 
   // Update global history if prediction was incorrect
-  // ToDo -- consider if need to replace history rather than just remove?
-  if (directionPrediction != taken) globalHistory_ >>= 1;
+  if (directionPrediction != taken) {
+    globalHistory_ ^= (1 << FTQ_.size());
+  }
 
   return;
 }
