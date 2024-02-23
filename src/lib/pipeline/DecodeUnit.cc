@@ -93,7 +93,12 @@ bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; }
 
-void DecodeUnit::purgeFlushed() { microOps_.clear(); }
+void DecodeUnit::purgeFlushed() {
+  while (!microOps_.empty()) {
+    if (microOps_.front()->isBranch()) predictor_.flush(microOps_.front()->getInstructionAddress());
+    microOps_.pop_front();
+  }
+}
 
 }  // namespace pipeline
 }  // namespace simeng
