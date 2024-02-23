@@ -3,7 +3,7 @@ Branch prediction
 
 SimEng's fetch unit is supplied with an instance of the abstract ``BranchPredictor`` class to enable speculative execution. 
 
-Access to the ``BranchPredictor`` is supported through the ``predict``, ``update``, and ``flush`` functions. ``predict`` provides a branch prediction, both target and direction, ``update`` updates an instructions' prediction, and ``flush`` provides optional algorithm specific flushing functionality.
+Access to the ``BranchPredictor`` is supported through the ``predict``, ``update``, ``flush``, and ``addToFTQ``` functions. ``predict`` provides a branch prediction, both target and direction, ``update`` updates an instructions' prediction, ``flush`` provides optional algorithm specific flushing functionality, and ``addToFTQ`` adds an instruction to the predictor's Fetch Target Queue (FTQ) when a new prediction is not needed.
 
 The ``predict`` function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:
 
@@ -23,7 +23,7 @@ Generic Predictor
 The algorithm(s) held within a ``BranchPredictor`` class instance can be model-specific, however, SimEng provides a ``GenericPredictor`` which contains the following logic.
 
 Global History
-    For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.
+    For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.  The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR'ed with the current global branch history value.
@@ -41,7 +41,7 @@ Perceptron Predictor
 The ``PerceptronPredictor`` has the same overall structure as the ``GenericPredictor`` but replaces the saturating counter as a means for direction prediction with a perceptron.  The ``PerceptronPredictor`` contains the following logic.
 
 Global History
-    For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.
+    For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.  The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with a perceptron for an associated direction. The indexing of this structure uses the lower, non-zero bits of an instruction address XOR'ed with the current global branch history value.
