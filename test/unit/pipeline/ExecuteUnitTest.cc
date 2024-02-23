@@ -35,7 +35,7 @@ class PipelineExecuteUnitTest : public testing::Test {
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
             },
-            predictor, true, {3, 4, 5}),
+            true, {3, 4, 5}),
         uop(new MockInstruction),
         secondUop(new MockInstruction),
         thirdUop(new MockInstruction),

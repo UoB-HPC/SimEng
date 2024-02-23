@@ -40,6 +40,8 @@ class GenericPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
+  void addToFTQ(uint64_t address) override;
+
  private:
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint8_t btbBits_;
@@ -49,7 +51,7 @@ class GenericPredictor : public BranchPredictor {
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
   /** The previous BTB index calculated for an address. */
-  std::map<uint64_t, uint64_t> btbHistory_;
+  std::deque<std::pair<uint64_t, uint64_t>> FTQ_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
