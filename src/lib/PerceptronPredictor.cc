@@ -81,20 +81,22 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   }
 
   // speculatively update global history
-  globalHistory_ =
-      ((globalHistory_ << 1) | prediction.taken) & ((1 << (globalHistoryLength_ * 2)) - 1);
+  globalHistory_ = ((globalHistory_ << 1) | prediction.taken) &
+                   ((1 << (globalHistoryLength_ * 2)) - 1);
 
   return prediction;
 }
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
-  // Make sure there is FTQ info and it relates to the correct branch
+  // Sanity check to avoid segfault/wrong branch update
   if (FTQ_.empty() || FTQ_.front().first != address) return;
-  // Work out hash index
+
+  // Get previous branch state from FTQ
   uint64_t prevGlobalHistory = FTQ_.front().second;
   FTQ_.pop_front();
 
+  // Work out hashed index
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
 
@@ -129,11 +131,9 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex].second = targetAddress;
 
   // Update global history if prediction was incorrect
-  if (directionPrediction != taken) {
-    globalHistory_ ^= (1 << FTQ_.size());
-  }
-
-  return;
+  // Bit-flip the global history bit corresponding to this prediction
+  // We know how many predictions there have since been by the size of the FTQ
+  if (directionPrediction != taken) globalHistory_ ^= (1 << FTQ_.size());
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -158,6 +158,7 @@ void PerceptronPredictor::flush(uint64_t address) {
     rasHistory_.erase(it);
   }
 
+  // If possible, pop instruction from FTQ
   if (!FTQ_.empty()) FTQ_.pop_back();
 
   // Roll back global history
@@ -165,6 +166,7 @@ void PerceptronPredictor::flush(uint64_t address) {
 }
 
 void PerceptronPredictor::addToFTQ(uint64_t address) {
+  // Add instruction to the FTQ in event of reused prediction
   FTQ_.emplace_back(address, globalHistory_);
 }
 
