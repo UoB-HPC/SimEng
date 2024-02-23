@@ -38,7 +38,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Store the global history for correct hashing in update() --
   // needs to be global history and not the hashed index as hashing loses
   // information at longer global history lengths
-  btbHistory_[address] = globalHistory_;
+  FTQ_.emplace_back(address, globalHistory_);
 
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
@@ -78,13 +78,23 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   } else if (type == BranchType::Conditional) {
     if (!prediction.taken) prediction.target = address + 4;
   }
+
+  // speculatively update global history
+  globalHistory_ =
+      ((globalHistory_ << 1) | prediction.taken) & ((1 << (globalHistoryLength_ * 2)) - 1);
+
+  pre++;
   return prediction;
 }
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
+  // Make sure there is FTQ info and it relates to the correct branch
+  if (FTQ_.empty() || FTQ_.front().first != address) return;
   // Work out hash index
-  uint64_t prevGlobalHistory = btbHistory_[address];
+  uint64_t prevGlobalHistory = FTQ_.front().second;
+  FTQ_.pop_front();
+
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
 
@@ -118,8 +128,11 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex].first = perceptron;
   btb_[hashedIndex].second = targetAddress;
 
-  globalHistory_ =
-      ((globalHistory_ << 1) | taken) & ((1 << globalHistoryLength_) - 1);
+  // Update global history if prediction was incorrect
+  // ToDo -- consider if need to replace history rather than just remove?
+  if (directionPrediction != taken) globalHistory_ >>= 1;
+
+  upd++;;
   return;
 }
 
@@ -144,6 +157,16 @@ void PerceptronPredictor::flush(uint64_t address) {
     }
     rasHistory_.erase(it);
   }
+
+  if (!FTQ_.empty()) FTQ_.pop_back();
+
+  // Roll back global history
+  globalHistory_ >>= 1;
+  flu++;
+}
+
+void PerceptronPredictor::addToFTQ(uint64_t address) {
+  FTQ_.emplace_back(address, globalHistory_);
 }
 
 int64_t PerceptronPredictor::getDotProduct(

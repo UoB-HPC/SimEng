@@ -72,7 +72,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       portAllocator_(portAllocator),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()),
+      predictor_(branchPredictor) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -87,7 +88,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor,
+        [](auto uop) { uop->setCommitReady(); },
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
@@ -236,6 +237,13 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
+  std::cout << "_____BRANCH STATS_____" << std::endl
+            << "Predictions:\t\t" << predictor_.pre << std::endl
+            << "Updates:    \t\t" << predictor_.upd << std::endl
+            << "Flushes:    \t\t" << predictor_.flu << std::endl
+            << "Delta:      \t\t\t" << ((int64_t)predictor_.pre - ((int64_t)predictor_.upd + (int64_t)predictor_.flu)) << std::endl
+            << std::endl << std::endl;
+
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", ipcStr.str()},
@@ -263,9 +271,29 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+    auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
+    if (!macroOp.empty() && macroOp[0]->isBranch()) {
+      predictor_.flush(macroOp[0]->getInstructionAddress());
+    }
+    macroOp = fetchToDecodeBuffer_.getHeadSlots()[slot];
+    if (!macroOp.empty() && macroOp[0]->isBranch()) {
+      predictor_.flush(macroOp[0]->getInstructionAddress());
+    }
+  }
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
+  for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
+    auto& uop = decodeToRenameBuffer_.getTailSlots()[slot];
+    if (uop != nullptr && uop->isBranch()) {
+      predictor_.flush(uop->getInstructionAddress());
+    }
+    uop = decodeToRenameBuffer_.getHeadSlots()[slot];
+    if (uop != nullptr && uop->isBranch()) {
+      predictor_.flush(uop->getInstructionAddress());
+    }
+  }
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
@@ -345,9 +373,29 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+      auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        predictor_.flush(macroOp[0]->getInstructionAddress());
+      }
+      macroOp = fetchToDecodeBuffer_.getHeadSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        predictor_.flush(macroOp[0]->getInstructionAddress());
+      }
+    }
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
+    for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
+      auto& uop = decodeToRenameBuffer_.getTailSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        predictor_.flush(uop->getInstructionAddress());
+      }
+      uop = decodeToRenameBuffer_.getHeadSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        predictor_.flush(uop->getInstructionAddress());
+      }
+    }
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -371,6 +419,16 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+      auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        predictor_.flush(macroOp[0]->getInstructionAddress());
+      }
+      macroOp = fetchToDecodeBuffer_.getHeadSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        predictor_.flush(macroOp[0]->getInstructionAddress());
+      }
+    }
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 

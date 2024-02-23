@@ -43,6 +43,8 @@ class PerceptronPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
+  void addToFTQ(uint64_t address) override;
+
  private:
   /** Returns the dot product of a perceptron and a history vector.  Used to
    * determine a direction prediction */
@@ -59,8 +61,8 @@ class PerceptronPredictor : public BranchPredictor {
    * in Jiminez and Lin */
   std::vector<std::pair<std::vector<int8_t>, uint64_t>> btb_;
 
-  /** The previous hashed index for an address. */
-  std::map<uint64_t, uint64_t> btbHistory_;
+  /** Fetch Target Queue containing the address and previous global history state of branches that are currently unresolved */
+  std::deque<std::pair<uint64_t, uint64_t>> FTQ_;
 
   /** An n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_. */

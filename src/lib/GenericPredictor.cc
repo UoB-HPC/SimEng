@@ -23,7 +23,7 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
   btb_ =
       std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
   // Alter globalHistoryLength_ value to better suit required format in update()
-  globalHistoryLength_ = (1 << globalHistoryLength_) - 1;
+  globalHistoryLength_ = (1 << (globalHistoryLength_ * 2)) - 1;
 }
 
 GenericPredictor::~GenericPredictor() {
@@ -37,11 +37,11 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   // Get index via an XOR hash between the global history and the lower btbBits_
   // bits of the instruction address
   uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
-  btbHistory_[address] = hashedIndex;
+  FTQ_.emplace_back(address, hashedIndex);
 
   // Get prediction from BTB
   bool direction =
-      btb_[hashedIndex].first < (1 << (satCntBits_ - 1)) ? false : true;
+      btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
   uint64_t target =
       (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
   BranchPrediction prediction = {direction, target};
@@ -70,13 +70,19 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   } else if (type == BranchType::Conditional) {
     if (!prediction.taken) prediction.target = address + 4;
   }
+
+  globalHistory_ = ((globalHistory_ << 1) | prediction.taken) & globalHistoryLength_;
+
   return prediction;
 }
 
 void GenericPredictor::update(uint64_t address, bool taken,
                               uint64_t targetAddress, BranchType type) {
+  if (FTQ_.empty() || FTQ_.front().first != address) return;
+
   // Get previous index calculated for the instruction address supplied
-  uint64_t hashedIndex = btbHistory_[address];
+  uint64_t hashedIndex = FTQ_.front().second;
+  FTQ_.pop_front();
 
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[hashedIndex].first;
@@ -89,8 +95,11 @@ void GenericPredictor::update(uint64_t address, bool taken,
   // Update BTB entry
   btb_[hashedIndex] = {satCntVal, targetAddress};
 
-  // Update global history value with new direction
-  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
+
+  // Update global history if prediction was incorrect
+  // ToDo -- consider if need to replace history rather than just remove?
+  if (btb_[hashedIndex].first >= (1 << (satCntBits_ - 1)) != taken) globalHistory_ >>= 1;
+
   return;
 }
 
@@ -115,6 +124,14 @@ void GenericPredictor::flush(uint64_t address) {
     }
     rasHistory_.erase(it);
   }
+
+  if (!FTQ_.empty()) FTQ_.pop_back();
+
+  globalHistory_ >>= 1;
+}
+
+void GenericPredictor::addToFTQ(uint64_t address) {
+  FTQ_.emplace_back(address, globalHistory_);
 }
 
 }  // namespace simeng
