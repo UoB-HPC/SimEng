@@ -30,6 +30,7 @@ GenericPredictor::~GenericPredictor() {
   btb_.clear();
   ras_.clear();
   rasHistory_.clear();
+  FTQ_.clear();
 }
 
 BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,

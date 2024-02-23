@@ -25,6 +25,8 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 PerceptronPredictor::~PerceptronPredictor() {
   ras_.clear();
   rasHistory_.clear();
+  std::cout << "___________REMAINING FTQ OF SIZE " << FTQ_.size() << std::endl;
+  FTQ_.clear();
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
@@ -83,7 +85,6 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   globalHistory_ =
       ((globalHistory_ << 1) | prediction.taken) & ((1 << (globalHistoryLength_ * 2)) - 1);
 
-  pre++;
   return prediction;
 }
 
@@ -132,7 +133,6 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   // ToDo -- consider if need to replace history rather than just remove?
   if (directionPrediction != taken) globalHistory_ >>= 1;
 
-  upd++;;
   return;
 }
 
@@ -162,7 +162,6 @@ void PerceptronPredictor::flush(uint64_t address) {
 
   // Roll back global history
   globalHistory_ >>= 1;
-  flu++;
 }
 
 void PerceptronPredictor::addToFTQ(uint64_t address) {
