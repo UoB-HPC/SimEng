@@ -237,13 +237,6 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  std::cout << "_____BRANCH STATS_____" << std::endl
-            << "Predictions:\t\t" << predictor_.pre << std::endl
-            << "Updates:    \t\t" << predictor_.upd << std::endl
-            << "Flushes:    \t\t" << predictor_.flu << std::endl
-            << "Delta:      \t\t\t" << ((int64_t)predictor_.pre - ((int64_t)predictor_.upd + (int64_t)predictor_.flu)) << std::endl
-            << std::endl << std::endl;
-
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", ipcStr.str()},
