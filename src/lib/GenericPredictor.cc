@@ -138,7 +138,8 @@ void GenericPredictor::flush(uint64_t address) {
 }
 
 void GenericPredictor::addToFTQ(uint64_t address) {
-  FTQ_.emplace_back(address, globalHistory_);
+  uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
+  FTQ_.emplace_back(address, hashedIndex);
 }
 
 }  // namespace simeng
