@@ -90,7 +90,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
   // Sanity check to avoid segfault/wrong branch update
-  if (FTQ_.empty() || FTQ_.front().first != address) return;
+  //if (FTQ_.empty() || FTQ_.front().first != address) return;
 
   // Get previous branch state from FTQ
   uint64_t prevGlobalHistory = FTQ_.front().second;
@@ -158,7 +158,8 @@ void PerceptronPredictor::flush(uint64_t address) {
   }
 
   // If possible, pop instruction from FTQ
-  if (!FTQ_.empty()) FTQ_.pop_back();
+  // if (!FTQ_.empty()) FTQ_.pop_back();
+  FTQ_.pop_back();
 
   // Roll back global history
   globalHistory_ >>= 1;
