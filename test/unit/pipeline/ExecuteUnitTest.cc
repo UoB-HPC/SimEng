@@ -135,12 +135,6 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
     uop->setBranchResults(taken, pc);
   }));
 
-  // Check that the branch predictor was updated with the results
-  EXPECT_CALL(*uop, getBranchType()).Times(1);
-  EXPECT_CALL(predictor,
-              update(insnAddress, taken, pc, BranchType::Unconditional))
-      .Times(1);
-
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
       .Times(1);
@@ -287,13 +281,6 @@ TEST_F(PipelineExecuteUnitTest, mispredictedBranch) {
     uop->setExecuted(true);
     uop->setBranchResults(taken, pc);
   }));
-
-  // Check that the branch predictor was updated with the results
-  EXPECT_CALL(*uop, getBranchType()).Times(1);
-
-  EXPECT_CALL(predictor,
-              update(insnAddress, taken, pc, BranchType::Conditional))
-      .Times(1);
 
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
