@@ -63,7 +63,7 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Fetch Target Queue containing the address and previous global history
    * state of branches that are currently unresolved */
-  std::deque<std::pair<uint64_t, uint64_t>> FTQ_;
+  std::deque<uint64_t> FTQ_;
 
   /** An n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_. */
