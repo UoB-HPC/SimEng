@@ -40,7 +40,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
 
   // Store the hashed index for correct hashing in update()
-  FTQ_.emplace_back(address, hashedIndex);
+  FTQ_.emplace_back(hashedIndex);
 
   // Get prediction from BTB
   bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
@@ -82,11 +82,8 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
 void GenericPredictor::update(uint64_t address, bool taken,
                               uint64_t targetAddress, BranchType type) {
-  // Sanity check to avoid segfault/wrong branch update
-  if (FTQ_.empty() || FTQ_.front().first != address) return;
-
   // Get previous index calculated from the FTQ
-  uint64_t hashedIndex = FTQ_.front().second;
+  uint64_t hashedIndex = FTQ_.front();
   FTQ_.pop_front();
 
   // Calculate 2-bit saturating counter value
@@ -140,7 +137,7 @@ void GenericPredictor::flush(uint64_t address) {
 void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
   // Make the hashed index and add it to the FTQ
   uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
-  FTQ_.emplace_back(address, hashedIndex);
+  FTQ_.emplace_back(hashedIndex);
   // Speculatively update the global history
   globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
 }

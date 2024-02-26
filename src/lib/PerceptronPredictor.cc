@@ -41,7 +41,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Store the global history for correct hashing in update() --
   // needs to be global history and not the hashed index as hashing loses
   // information at longer global history lengths
-  FTQ_.emplace_back(address, globalHistory_);
+  FTQ_.emplace_back(globalHistory_);
 
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
@@ -91,11 +91,8 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
-  // Sanity check to avoid segfault/wrong branch update
-  //if (FTQ_.empty() || FTQ_.front().first != address) return;
-
   // Get previous branch state from FTQ
-  uint64_t prevGlobalHistory = FTQ_.front().second;
+  uint64_t prevGlobalHistory = FTQ_.front();
   FTQ_.pop_front();
 
   // Work out hashed index
@@ -170,7 +167,7 @@ void PerceptronPredictor::flush(uint64_t address) {
 
 void PerceptronPredictor::addToFTQ(uint64_t address, bool taken) {
   // Add instruction to the FTQ in event of reused prediction
-  FTQ_.emplace_back(address, globalHistory_);
+  FTQ_.emplace_back(globalHistory_);
   globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
 }
 
