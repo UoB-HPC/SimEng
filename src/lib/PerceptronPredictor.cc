@@ -83,8 +83,8 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   }
 
   // speculatively update global history
-  globalHistory_ = ((globalHistory_ << 1) | prediction.taken) &
-                   globalHistoryMask_;
+  globalHistory_ =
+      ((globalHistory_ << 1) | prediction.taken) & globalHistoryMask_;
 
   return prediction;
 }
