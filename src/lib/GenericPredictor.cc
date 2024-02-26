@@ -37,7 +37,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
                                            int64_t knownOffset) {
   // Get index via an XOR hash between the global history and the lower btbBits_
   // bits of the instruction address
-  uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
+  uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
 
   // Store the hashed index for correct hashing in update()
   FTQ_.emplace_back(address, hashedIndex);
@@ -104,7 +104,7 @@ void GenericPredictor::update(uint64_t address, bool taken,
   if (btb_[hashedIndex].first >= (1 << (satCntBits_ - 1)) != taken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
-    globalHistory_ ^= (1 << FTQ_.size());
+    globalHistory_ ^= (1 << (FTQ_.size() - 1));
   }
 }
 
@@ -137,9 +137,12 @@ void GenericPredictor::flush(uint64_t address) {
   globalHistory_ >>= 1;
 }
 
-void GenericPredictor::addToFTQ(uint64_t address) {
-  uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
+void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
+  // Make the hashed index and add it to the FTQ
+  uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
   FTQ_.emplace_back(address, hashedIndex);
+  // Speculatively update the global history
+  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
 }
 
 }  // namespace simeng

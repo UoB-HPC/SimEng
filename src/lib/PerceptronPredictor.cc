@@ -20,6 +20,8 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (uint64_t)((1.93 * globalHistoryLength_) + 14);
+
+  globalHistoryMask_ = (globalHistoryLength_ * 2) - 1;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -82,7 +84,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
   // speculatively update global history
   globalHistory_ = ((globalHistory_ << 1) | prediction.taken) &
-                   ((1 << (globalHistoryLength_ * 2)) - 1);
+                   globalHistoryMask_;
 
   return prediction;
 }
@@ -132,7 +134,7 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
   // We know how many predictions there have since been by the size of the FTQ
-  if (directionPrediction != taken) globalHistory_ ^= (1 << FTQ_.size());
+  if (directionPrediction != taken) globalHistory_ ^= (1 << (FTQ_.size() - 1));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -165,9 +167,10 @@ void PerceptronPredictor::flush(uint64_t address) {
   globalHistory_ >>= 1;
 }
 
-void PerceptronPredictor::addToFTQ(uint64_t address) {
+void PerceptronPredictor::addToFTQ(uint64_t address, bool taken) {
   // Add instruction to the FTQ in event of reused prediction
   FTQ_.emplace_back(address, globalHistory_);
+  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
 }
 
 int64_t PerceptronPredictor::getDotProduct(
