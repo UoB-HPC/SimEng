@@ -51,7 +51,7 @@ class GenericPredictor : public BranchPredictor {
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
   /** The previous BTB index calculated for an address. */
-  std::deque<std::pair<uint64_t, uint64_t>> FTQ_;
+  std::deque<uint64_t> FTQ_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
