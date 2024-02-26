@@ -55,7 +55,8 @@ void FetchUnit::tick() {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
         // Let the branch predictor know the prediction is being reused so that
         // the FTQ can be kept up to date
-        branchPredictor_.addToFTQ(macroOp[0]->getInstructionAddress());
+        branchPredictor_.addToFTQ(macroOp[0]->getInstructionAddress(),
+                                  macroOp[0]->getBranchPrediction().taken);
       }
 
       // Cycle queue by moving front entry to back

@@ -43,7 +43,7 @@ class PerceptronPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
-  void addToFTQ(uint64_t address) override;
+  void addToFTQ(uint64_t address, bool taken) override;
 
  private:
   /** Returns the dot product of a perceptron and a history vector.  Used to
@@ -71,6 +71,8 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** The number of previous branch directions recorded globally. */
   uint64_t globalHistoryLength_;
+
+  uint64_t globalHistoryMask_;
 
   /** The magnitude of the dot product of the perceptron and the global history,
    * below which the perceptron's weight must be updated */

@@ -61,7 +61,7 @@ class BranchPredictor {
    */
   virtual void flush(uint64_t address) = 0;
 
-  virtual void addToFTQ(uint64_t address) = 0;
+  virtual void addToFTQ(uint64_t address, bool taken) = 0;
 };
 
 }  // namespace simeng
