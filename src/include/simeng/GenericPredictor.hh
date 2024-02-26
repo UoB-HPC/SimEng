@@ -40,7 +40,7 @@ class GenericPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
-  void addToFTQ(uint64_t address) override;
+  void addToFTQ(uint64_t address, bool taken) override;
 
  private:
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
