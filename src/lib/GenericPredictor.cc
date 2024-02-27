@@ -39,9 +39,6 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   // bits of the instruction address
   uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
 
-  // Store the hashed index for correct hashing in update()
-  FTQ_.emplace_back(hashedIndex);
-
   // Get prediction from BTB
   bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
   uint64_t target =
@@ -73,6 +70,9 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
     if (!prediction.taken) prediction.target = address + 4;
   }
 
+  // Store the hashed index for correct hashing in update()
+  FTQ_.emplace_back(prediction.taken, hashedIndex);
+
   // Speculatively update the global history
   globalHistory_ =
       ((globalHistory_ << 1) | prediction.taken) & globalHistoryLength_;
@@ -82,8 +82,9 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
 void GenericPredictor::update(uint64_t address, bool taken,
                               uint64_t targetAddress, BranchType type) {
-  // Get previous index calculated from the FTQ
-  uint64_t hashedIndex = FTQ_.front();
+  // Get previous prediciton and index calculated from the FTQ
+  bool prevPrediction = FTQ_.front().first;
+  uint64_t hashedIndex = FTQ_.front().second;
   FTQ_.pop_front();
 
   // Calculate 2-bit saturating counter value
@@ -98,10 +99,10 @@ void GenericPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex] = {satCntVal, targetAddress};
 
   // Update global history if prediction was incorrect
-  if (btb_[hashedIndex].first >= (1 << (satCntBits_ - 1)) != taken) {
+  if (prevPrediction != taken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
-    globalHistory_ ^= (1 << (FTQ_.size() - 1));
+    globalHistory_ ^= (1 << (FTQ_.size()));
   }
 }
 
@@ -128,7 +129,7 @@ void GenericPredictor::flush(uint64_t address) {
   }
 
   // If possible, pop instruction from FTQ
-  if (!FTQ_.empty()) FTQ_.pop_back();
+  FTQ_.pop_back();
 
   // Roll back global history
   globalHistory_ >>= 1;
@@ -137,7 +138,7 @@ void GenericPredictor::flush(uint64_t address) {
 void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
   // Make the hashed index and add it to the FTQ
   uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
-  FTQ_.emplace_back(hashedIndex);
+  FTQ_.emplace_back(taken, hashedIndex);
   // Speculatively update the global history
   globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
 }

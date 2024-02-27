@@ -50,8 +50,9 @@ class GenericPredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  /** The previous BTB index calculated for an address. */
-  std::deque<uint64_t> FTQ_;
+  /** Fetch Target Queue containing the direction prediction and previous global
+   * history state of branches that are currently unresolved */
+  std::deque<std::pair<bool, uint64_t>> FTQ_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;

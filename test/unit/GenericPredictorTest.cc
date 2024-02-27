@@ -260,4 +260,52 @@ TEST_F(GenericPredictorTest, flush) {
   EXPECT_EQ(prediction.target, 12);
 }
 
+// Test that update correctly corrects the speculatively updated gloabl history
+TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
+  simeng::config::SimInfo::addToConfig(
+      "{Branch-Predictor: {BTB-Tag-Bits: 2, Saturating-Count-Bits: 6, "
+      "Global-History-Length: 6, RAS-entries: 10, Fallback-Static-Predictor: "
+      "Always-Taken}}");
+  auto predictor = simeng::GenericPredictor();
+  // spool up a global history to set the target address
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  // Ensure default behaviour for first encounter
+  auto prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 0x4);
+  // Set entry in BTB
+  predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
+
+  // recreate this global history but with incorrect predictions
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  // Ensure default behaviour for first encounter
+  prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 0xAB);
+  // Set entry in BTB
+  predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
+}
+
 }  // namespace simeng
