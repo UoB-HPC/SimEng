@@ -146,7 +146,7 @@ RegisterValue vecCountPerByte(srcValContainer& sourceValues) {
   const uint8_t* n = sourceValues[0].getAsVector<uint8_t>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
-    for (int j = 0; j < (sizeof(T) * 8); j++) {
+    for (size_t j = 0; j < (sizeof(T) * 8); j++) {
       // Move queried bit to LSB and extract via an AND operator
       out[i] += ((n[i] >> j) & 1);
     }
@@ -187,10 +187,10 @@ RegisterValue vecExtVecs_index(
   const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
   T out[16 / sizeof(T)] = {0};
 
-  for (int i = index; i < I; i++) {
+  for (uint64_t i = index; i < I; i++) {
     out[i - index] = n[i];
   }
-  for (int i = 0; i < index; i++) {
+  for (uint64_t i = 0; i < index; i++) {
     out[I - index + i] = m[i];
   }
   return {out, 256};
@@ -825,7 +825,7 @@ RegisterValue vecTbl(
   const uint8_t n_table_regs = metadata.operandCount - 2;
 
   // Create table from vectors. All table sourceValues must be of 16b format.
-  int tableSize = 16 * n_table_regs;
+  int16_t tableSize = 16 * n_table_regs;
   uint8_t table[tableSize];
   for (int i = 0; i < n_table_regs; i++) {
     const int8_t* currentVector = sourceValues[i].getAsVector<int8_t>();
@@ -836,7 +836,7 @@ RegisterValue vecTbl(
 
   int8_t out[16 / sizeof(int8_t)] = {0};
   for (int i = 0; i < I; i++) {
-    unsigned int index = Vm[i];
+    int8_t index = Vm[i];
 
     // If an index is out of range for the table, the result for that lookup
     // is 0

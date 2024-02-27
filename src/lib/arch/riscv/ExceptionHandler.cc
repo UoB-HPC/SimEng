@@ -152,14 +152,9 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
+          uint64_t iLength = totalRead;
 
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
@@ -219,17 +214,22 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t totalRead = linux_.readv(fd, iovec.data(), iovcnt);
+          int64_t totRead = linux_.readv(fd, iovec.data(), iovcnt);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+              ChangeType::REPLACEMENT, {R0}, {totRead}};
 
           // Check for failure
-          if (totalRead < 0) {
+          if (totRead < 0) {
             return concludeSyscall(stateChange);
           }
 
+          // TODO after this point totalRead can be converted to UINT for proper
+          // comparison. Unsure of this current solution
+
+          uint64_t totalRead = (uint64_t)totRead;
+
           // Build list of memory write operations
-          int64_t bytesRemaining = totalRead;
+          uint64_t bytesRemaining = totalRead;
           for (int64_t i = 0; i < iovcnt; i++) {
             // Get pointer and size of the buffer
             uint64_t iDst = iovdata[i * 2 + 0];

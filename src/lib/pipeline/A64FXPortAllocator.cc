@@ -19,6 +19,7 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
 
   uint16_t rs = 0;
   uint16_t port = 0;
+  // TODO both only used in assertion
   bool foundRS = false;
   bool foundPort = false;
 
@@ -34,7 +35,7 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
     int thresholdC = 4;
 
     if (diffRSE >= thresholdA) {
-      if ((freeEntries_[0] - freeEntries_[1]) >= thresholdB) {
+      if (((int64_t)freeEntries_[0] - (int64_t)freeEntries_[1]) >= thresholdB) {
         rs = RSEm_;  // Table 1
       } else {
         rs = dispatchSlot_ % 2 == 0 ? RSEm_ : RSEf_;  // Table 2
@@ -151,6 +152,7 @@ void A64FXPortAllocator::deallocate(uint16_t port) { issued(port); };
 uint8_t A64FXPortAllocator::attributeMapping(
     const std::vector<uint16_t>& ports) {
   uint8_t attribute = 0;
+  // TODO only used in assertion so produces warning in release mode
   bool foundAttribute = false;
   if (ports == EXA_EXB_EAGA_EAGB) {  // EXA,EXB,EAGA,EAGB
     attribute = InstructionAttribute::RSX;

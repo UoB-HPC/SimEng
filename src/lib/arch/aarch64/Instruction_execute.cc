@@ -2566,7 +2566,8 @@ void Instruction::execute() {
 
         // All Slice vectors are added to results[] so need to update the
         // correct one
-        for (int i = 0; i < partition_num; i++) {
+        // TODO updated based on == comparison
+        for (uint32_t i = 0; i < partition_num; i++) {
           if (i == sliceNum)
             results_[i] = {out, 256};
           else
@@ -2630,7 +2631,8 @@ void Instruction::execute() {
 
         // All Slice vectors are added to results[] so need to update the
         // correct one
-        for (int i = 0; i < partition_num; i++) {
+        // TODO updated based on == comparison
+        for (uint32_t i = 0; i < partition_num; i++) {
           if (i == sliceNum)
             results_[i] = {out, 256};
           else

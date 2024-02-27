@@ -42,7 +42,7 @@ DispatchIssueUnit::DispatchIssueUnit(
       uint16_t issue_port = reservation_station["Port-Nums"][j].as<uint16_t>();
       rs.ports[j].issuePort = issue_port;
       // Add port mapping entry, resizing vector if needed
-      if ((issue_port + 1) > portMapping_.size()) {
+      if ((size_t)(issue_port + 1) > portMapping_.size()) {
         portMapping_.resize((issue_port + 1));
       }
       portMapping_[issue_port] = {i, j};

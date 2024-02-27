@@ -12,7 +12,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   btb_.resize(btbSize);
   // Initialise perceptron values with 0 for the global history weights, and 1
   // for the bias weight; and initialise the target with 0 (i.e., unknown)
-  for (int i = 0; i < btbSize; i++) {
+  for (uint32_t i = 0; i < btbSize; i++) {
     btb_[i].first.assign(globalHistoryLength_, 0);
     btb_[i].first.push_back(1);
     btb_[i].second = 0;
@@ -96,10 +96,11 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
 
   // Update the perceptron if the prediction was wrong, or the dot product's
   // magnitude was not greater than the training threshold
-  if ((directionPrediction != taken) || (abs(Pout) < trainingThreshold_)) {
+  if ((directionPrediction != taken) ||
+      ((uint64_t)abs(Pout) < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
 
-    for (int i = 0; i < globalHistoryLength_; i++) {
+    for (uint64_t i = 0; i < globalHistoryLength_; i++) {
       int8_t xi =
           ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0)
               ? -1
@@ -148,7 +149,7 @@ void PerceptronPredictor::flush(uint64_t address) {
 int64_t PerceptronPredictor::getDotProduct(
     const std::vector<int8_t>& perceptron, uint64_t history) {
   int64_t Pout = perceptron[globalHistoryLength_];
-  for (int i = 0; i < globalHistoryLength_; i++) {
+  for (uint64_t i = 0; i < globalHistoryLength_; i++) {
     // Get branch direction for ith entry in the history
     bool historyTaken =
         ((history & (1 << ((globalHistoryLength_ - 1) - i))) != 0);

@@ -45,15 +45,19 @@ void Linux::createProcess(const LinuxProcess& process) {
 uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
+  // TODO result ignored
   realpath(pathname.c_str(), absolutePath);
 
   int64_t dfd_temp = AT_FDCWD;
+  // TODO unsure of where -100 comes from. Requires comment
   if (dfd != -100) {
     dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
+      // TODO incorrect comparison between int and size_t. Need to be sure dfd
+      // is not negative to allow type conversion and make this assertion
+      assert((size_t)dfd < processStates_[0].fileDescriptorTable.size());
       dfd_temp = processStates_[0].fileDescriptorTable[dfd];
       if (dfd_temp < 0) {
         return -1;
@@ -66,7 +70,7 @@ uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
 std::string Linux::getSpecialFile(const std::string filename) {
   for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
-      for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
+      for (size_t i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
           std::cerr << "[SimEng:Linux] Using Special File: " << filename.c_str()
                     << std::endl;
@@ -155,7 +159,8 @@ int64_t Linux::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processStates_[0].fileDescriptorTable.size());
+    // TODO ensure fd positive to make this assertion valid
+    assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
     int64_t hfd = processStates_[0].fileDescriptorTable[fd];
     if (hfd < 0) {
       return EBADF;
@@ -224,7 +229,8 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 }
 
 int64_t Linux::fstat(int64_t fd, stat& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  // TODO ensure +ve int to make assertion valid
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -320,7 +326,7 @@ int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
 }
 
 int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -355,7 +361,7 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
 }
 
 uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -369,7 +375,8 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
     // addr must be a multiple of the process page size
     return -1;
   }
-  int i;
+  // TODO i defined twice. Need to determine correct usage of second
+  size_t i;
   vm_area_struct alloc;
   // Find addr in allocations
   for (i = 0; i < lps->contiguousAllocations.size(); i++) {
@@ -388,15 +395,16 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
     }
   }
 
-  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-    alloc = lps->nonContiguousAllocations[i];
+  // TODO check redefinition of i is correct
+  for (size_t j = 0; j < lps->nonContiguousAllocations.size(); j++) {
+    alloc = lps->nonContiguousAllocations[j];
     if (alloc.vm_start == addr) {
       if ((alloc.vm_end - alloc.vm_start) < length) {
         // length must not be larger than the original allocation
         return -1;
       }
       lps->nonContiguousAllocations.erase(
-          lps->nonContiguousAllocations.begin() + i);
+          lps->nonContiguousAllocations.begin() + j);
       return 0;
     }
   }
@@ -524,6 +532,7 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   if (pathname == "/proc/self/exe") {
     // Resolve absolute path
     char absolutePath[LINUX_PATH_MAX];
+    // TODO result ignored
     realpath(processState.path.c_str(), absolutePath);
 
     // Copy executable path to buffer
@@ -537,7 +546,7 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
 }
 
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -593,7 +602,7 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -602,7 +611,7 @@ int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -633,7 +642,7 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
 }
 
 int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -642,7 +651,7 @@ int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert((size_t)fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;

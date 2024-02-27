@@ -38,6 +38,8 @@ void FetchUnit::tick() {
     auto outputSlots = output_.getTailSlots();
     for (size_t slot = 0; slot < output_.getWidth(); slot++) {
       auto& macroOp = outputSlots[slot];
+      // TODO bytes read not used in release mode producing warning. Should
+      // assertion become if?
       auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
                                       loopBuffer_.front().instructionSize,
                                       loopBuffer_.front().address, macroOp);
@@ -56,6 +58,7 @@ void FetchUnit::tick() {
   }
 
   // Pointer to the instruction data to decode from
+  // TODO unsure of why buffer exists and fetchBuffer_ isn't used everywhere
   const uint8_t* buffer;
   uint16_t bufferOffset;
 
@@ -105,6 +108,10 @@ void FetchUnit::tick() {
       bufferedBytes_ += blockSize_ - bufferOffset;
       buffer = fetchBuffer_;
       // Decoding should start from the beginning of the fetchBuffer_.
+      bufferOffset = 0;
+    } else {
+      // There is already enough data in the fetch buffer, so use that
+      buffer = fetchBuffer_;
       bufferOffset = 0;
     }
   } else {

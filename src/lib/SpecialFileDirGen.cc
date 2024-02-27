@@ -23,6 +23,7 @@ void SpecialFileDirGen::RemoveExistingSFDir() {
   const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
   if (system(exist_input.c_str())) {
     const std::string rm_input = "rm -r " + specialFilesDir_;
+    // TODO handle result, applied to all "system" calls
     system(rm_input.c_str());
   }
   return;
@@ -45,7 +46,7 @@ void SpecialFileDirGen::GenerateSFDir() {
 
   // Create '/proc/cpuinfo' file.
   std::ofstream cpuinfo_File(proc_dir + "cpuinfo");
-  for (int i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
+  for (uint64_t i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
     cpuinfo_File << "processor\t: " + std::to_string(i) + "\nBogoMIPS\t: " +
                         std::to_string(bogoMIPS_).erase(
                             std::to_string(bogoMIPS_).length() - 4) +
@@ -63,7 +64,7 @@ void SpecialFileDirGen::GenerateSFDir() {
   // Create '/proc/stat' file.
   std::ofstream stat_File(proc_dir + "stat");
   stat_File << "cpu  0 0 0 0 0 0 0 0 0 0\n";
-  for (int i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
+  for (uint64_t i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
     stat_File << "cpu" + std::to_string(i) + " 0 0 0 0 0 0 0 0 0 0\n";
   }
   stat_File << "intr 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
@@ -88,7 +89,7 @@ void SpecialFileDirGen::GenerateSFDir() {
   online_File.close();
 
   // Create sub directory for each CPU core and required files.
-  for (int i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
+  for (uint64_t i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
     system(("mkdir " + cpu_base_dir + std::to_string(i) + "/").c_str());
     system(
         ("mkdir " + cpu_base_dir + std::to_string(i) + "/topology/").c_str());
@@ -98,12 +99,12 @@ void SpecialFileDirGen::GenerateSFDir() {
   // physical_package_id}' files
   uint64_t cores_per_package = coreCount_ / packageCount_;
   uint64_t current_package_id = 0;
-  for (int s = 0; s < socketCount_; s++) {
-    for (int c = 0; c < coreCount_; c++) {
+  for (uint64_t s = 0; s < socketCount_; s++) {
+    for (uint64_t c = 0; c < coreCount_; c++) {
       if (c % cores_per_package == 0 && c != 0) {
         current_package_id += 1;
       }
-      for (int t = 0; t < smt_; t++) {
+      for (uint64_t t = 0; t < smt_; t++) {
         // core_id File generation
         std::ofstream core_id_file(
             cpu_base_dir +

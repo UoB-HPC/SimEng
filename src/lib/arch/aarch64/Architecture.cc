@@ -65,7 +65,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
         if (groupInheritance_.find(groups.front()) != groupInheritance_.end()) {
           std::vector<uint16_t> inheritedGroups =
               groupInheritance_.at(groups.front());
-          for (int k = 0; k < inheritedGroups.size(); k++) {
+          for (size_t k = 0; k < inheritedGroups.size(); k++) {
             // Determine if this group has inherited latency values from a
             // smaller distance
             if (inheritanceDistance[inheritedGroups[k]] > distance) {
@@ -111,7 +111,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
               groupInheritance_.end()) {
             std::vector<uint16_t> inheritedGroups =
                 groupInheritance_.at(groups.front());
-            for (int k = 0; k < inheritedGroups.size(); k++) {
+            for (size_t k = 0; k < inheritedGroups.size(); k++) {
               groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
               groups.push(inheritedGroups[k]);
             }

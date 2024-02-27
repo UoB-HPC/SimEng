@@ -73,7 +73,7 @@ class SpecialFileDirGenTest : public testing::Test {
 // (i.e. the one defined in the YAML string above)
 TEST_F(SpecialFileDirGenTest, genAndDelete) {
   // Make sure files currently do not exist
-  for (int i = 0; i < allFiles_names_Lines.size(); i++) {
+  for (size_t i = 0; i < allFiles_names_Lines.size(); i++) {
     EXPECT_FALSE(
         std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
             .good());
@@ -83,7 +83,7 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
   specFile.GenerateSFDir();
 
   // Validate files exist and are correct
-  for (int i = 0; i < allFiles_names_Lines.size(); i++) {
+  for (size_t i = 0; i < allFiles_names_Lines.size(); i++) {
     EXPECT_TRUE(
         std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
             .good());
@@ -92,7 +92,7 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
     const std::vector<std::string>& knownLines =
         std::get<1>(allFiles_names_Lines[i]);
     std::string line;
-    int numOfLines = 0;
+    size_t numOfLines = 0;
     while (std::getline(file, line)) {
       if (numOfLines > knownLines.size()) {
         break;
@@ -107,7 +107,7 @@ TEST_F(SpecialFileDirGenTest, genAndDelete) {
   specFile.RemoveExistingSFDir();
 
   // Make sure files don't exist
-  for (int i = 0; i < allFiles_names_Lines.size(); i++) {
+  for (size_t i = 0; i < allFiles_names_Lines.size(); i++) {
     EXPECT_FALSE(
         std::ifstream(TEST_SPEC_FILE_DIR + std::get<0>(allFiles_names_Lines[i]))
             .good());

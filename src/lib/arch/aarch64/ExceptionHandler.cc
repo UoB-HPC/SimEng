@@ -146,15 +146,17 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_.read(fd, dataBuffer_.data(), count);
+          int64_t totRead = linux_.read(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+              ChangeType::REPLACEMENT, {R0}, {totRead}};
           // Check for failure
-          if (totalRead < 0) {
+          if (totRead < 0) {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
+          uint64_t totalRead = (uint64_t)totRead;
+
+          uint64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
           uint64_t iLength = bytesRemaining;
@@ -221,17 +223,19 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t totalRead = linux_.readv(fd, iovec.data(), iovcnt);
+          int64_t totRead = linux_.readv(fd, iovec.data(), iovcnt);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+              ChangeType::REPLACEMENT, {R0}, {totRead}};
 
           // Check for failure
-          if (totalRead < 0) {
+          if (totRead < 0) {
             return concludeSyscall(stateChange);
           }
 
+          uint64_t totalRead = (uint64_t)totRead;
+
           // Build list of memory write operations
-          int64_t bytesRemaining = totalRead;
+          uint64_t bytesRemaining = totalRead;
           for (int64_t i = 0; i < iovcnt; i++) {
             // Get pointer and size of the buffer
             uint64_t iDst = iovdata[i * 2 + 0];
