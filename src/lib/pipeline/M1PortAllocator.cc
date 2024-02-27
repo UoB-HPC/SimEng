@@ -21,7 +21,7 @@ uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
 
   uint16_t bestRSQueueSize = 0xFFFF;
   // TODO unused in release mode as only used in assertion
-  bool foundRS = false;
+  [[maybe_unused]] bool foundRS = false;
 
   // Update the reference for number of free spaces in the reservation
   // stations

@@ -1111,7 +1111,7 @@ TEST_P(Syscall, uname) {
 
   data += 65;
   const char machine[] = "aarch64";
-  for (int i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
+  for (size_t i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
 }
 
 TEST_P(Syscall, getrusage) {

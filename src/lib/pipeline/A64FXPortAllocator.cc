@@ -20,8 +20,8 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
   uint16_t rs = 0;
   uint16_t port = 0;
   // TODO both only used in assertion
-  bool foundRS = false;
-  bool foundPort = false;
+  [[maybe_unused]] bool foundRS = false;
+  [[maybe_unused]] bool foundPort = false;
 
   if (attribute == InstructionAttribute::RSX) {
     // Get difference between free entries of RSE{0|1} and RSA{0|1}
@@ -153,7 +153,7 @@ uint8_t A64FXPortAllocator::attributeMapping(
     const std::vector<uint16_t>& ports) {
   uint8_t attribute = 0;
   // TODO only used in assertion so produces warning in release mode
-  bool foundAttribute = false;
+  [[maybe_unused]] bool foundAttribute = false;
   if (ports == EXA_EXB_EAGA_EAGB) {  // EXA,EXB,EAGA,EAGB
     attribute = InstructionAttribute::RSX;
     foundAttribute = true;

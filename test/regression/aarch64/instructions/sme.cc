@@ -70,7 +70,7 @@ TEST_P(InstSme, fmopa) {
 
     fmopa za2.s, p0/m, p2/m, z3.s, z4.s
   )");
-  for (int i = 0; i < (SVL / 32); i++) {
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZAS0, i, float,
                   fillNeon<float>({10.0f}, (SVL / 8)));
     CHECK_MAT_ROW(ARM64_REG_ZAS2, i, float,

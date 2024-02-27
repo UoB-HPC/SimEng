@@ -40,9 +40,9 @@ void FetchUnit::tick() {
       auto& macroOp = outputSlots[slot];
       // TODO bytes read not used in release mode producing warning. Should
       // assertion become if?
-      auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
-                                      loopBuffer_.front().instructionSize,
-                                      loopBuffer_.front().address, macroOp);
+      [[maybe_unused]] auto bytesRead = isa_.predecode(
+          &(loopBuffer_.front().encoding), loopBuffer_.front().instructionSize,
+          loopBuffer_.front().address, macroOp);
       assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling
