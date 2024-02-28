@@ -45,8 +45,13 @@ void Linux::createProcess(const LinuxProcess& process) {
 uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
-  // TODO result ignored
-  realpath(pathname.c_str(), absolutePath);
+  char* output = realpath(pathname.c_str(), absolutePath);
+  if (output == NULL) {
+    // Something went wrong
+    std::cerr << "[SimEng:getDirFd] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   int64_t dfd_temp = AT_FDCWD;
   // TODO unsure of where -100 comes from. Requires comment
@@ -532,8 +537,13 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   if (pathname == "/proc/self/exe") {
     // Resolve absolute path
     char absolutePath[LINUX_PATH_MAX];
-    // TODO result ignored
-    realpath(processState.path.c_str(), absolutePath);
+    char* output = realpath(processState.path.c_str(), absolutePath);
+    if (output == NULL) {
+      // Something went wrong
+      std::cerr << "[SimEng:getDirFd] realpath failed with errno = " << errno
+                << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
     // Copy executable path to buffer
     std::strncpy(buf, absolutePath, bufsize);

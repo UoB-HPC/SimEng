@@ -4,6 +4,37 @@
 
 namespace simeng {
 
+int systemWrapper(const char* __command) {
+  // Check that there is a shell available
+  if (!system(NULL)) {
+    std::cerr
+        << "[SimEng:SpecialFileDirGen] Shell unavailable, can't call system"
+        << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  int output = system(__command);
+
+  switch (output) {
+    case -1:
+      std::cerr << "Child process could not be created, or its status could "
+                   "not  be retrieved. errno = "
+                << errno << std::endl;
+      exit(EXIT_FAILURE);
+      break;
+      // TODO Unsure of how to check for this
+      //    case 2:
+      //      std::cerr << "Shell could not be executed in the child process,
+      //      then the  re‐\n"
+      //                   "          turn  value  is  as  though  the  child
+      //                   shell terminated by calling\n" "          _exit(2)
+      //                   with the status 127." << std::endl;
+    default:
+      // Success
+      return output;
+  }
+}
+
 SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
     : specialFilesDir_(
           config["CPU-Info"]["Special-File-Dir-Path"].as<std::string>()),
@@ -21,28 +52,27 @@ SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
   const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
-  if (system(exist_input.c_str())) {
+  if (systemWrapper(exist_input.c_str())) {
     const std::string rm_input = "rm -r " + specialFilesDir_;
-    // TODO handle result, applied to all "system" calls
-    system(rm_input.c_str());
+    systemWrapper(rm_input.c_str());
   }
   return;
 }
 
 void SpecialFileDirGen::GenerateSFDir() {
   // Create root special files directory
-  system(("mkdir -p " + specialFilesDir_).c_str());
+  systemWrapper(("mkdir -p " + specialFilesDir_).c_str());
   // Define frequently accessed root directories in special file tree
   const std::string proc_dir = specialFilesDir_ + "/proc/";
   const std::string online_dir = specialFilesDir_ + "/sys/devices/system/cpu/";
   const std::string cpu_base_dir =
       specialFilesDir_ + "/sys/devices/system/cpu/cpu";
 
-  system(("mkdir " + proc_dir).c_str());
-  system(("mkdir " + specialFilesDir_ + "/sys/").c_str());
-  system(("mkdir " + specialFilesDir_ + "/sys/devices/").c_str());
-  system(("mkdir " + specialFilesDir_ + "/sys/devices/system/").c_str());
-  system(("mkdir " + online_dir).c_str());
+  systemWrapper(("mkdir " + proc_dir).c_str());
+  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/").c_str());
+  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/devices/").c_str());
+  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/devices/system/").c_str());
+  systemWrapper(("mkdir " + online_dir).c_str());
 
   // Create '/proc/cpuinfo' file.
   std::ofstream cpuinfo_File(proc_dir + "cpuinfo");
@@ -90,8 +120,8 @@ void SpecialFileDirGen::GenerateSFDir() {
 
   // Create sub directory for each CPU core and required files.
   for (uint64_t i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
-    system(("mkdir " + cpu_base_dir + std::to_string(i) + "/").c_str());
-    system(
+    systemWrapper(("mkdir " + cpu_base_dir + std::to_string(i) + "/").c_str());
+    systemWrapper(
         ("mkdir " + cpu_base_dir + std::to_string(i) + "/topology/").c_str());
   }
 
