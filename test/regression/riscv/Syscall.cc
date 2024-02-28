@@ -186,7 +186,16 @@ TEST_P(Syscall, faccessat) {
   unlink(filepath);
 
   char abs_filepath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
+
+  char* output =
+      realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
+  if (output == NULL) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   initialHeapData_.resize(strlen(abs_filepath) + 1);
   // Copy abs_filepath to heap
   memcpy(initialHeapData_.data(), abs_filepath, strlen(abs_filepath) + 1);
@@ -212,7 +221,14 @@ TEST_P(Syscall, faccessat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+
+  output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+  if (output == NULL) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
@@ -596,7 +612,15 @@ TEST_P(Syscall, readlinkat) {
   // Get current directory and append the default program's comannd line
   // argument 0 value
   char cwd[LINUX_PATH_MAX];
-  getcwd(cwd, LINUX_PATH_MAX);
+
+  char* output = getcwd(cwd, LINUX_PATH_MAX);
+  if (output == NULL) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] getcwd failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   std::string reference = std::string(cwd) + std::string("/Default");
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
@@ -729,7 +753,14 @@ TEST_P(Syscall, newfstatat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+
+  char* output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+  if (output == NULL) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
