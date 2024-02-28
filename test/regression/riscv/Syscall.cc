@@ -620,7 +620,7 @@ TEST_P(Syscall, readlinkat) {
 
   EXPECT_EQ(getGeneralRegister<int64_t>(10), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
-  for (int i = 0; i < reference.size(); i++) {
+  for (size_t i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
 }
@@ -1119,28 +1119,28 @@ TEST_P(Syscall, uname) {
   // Check utsname struct in memory
   char* data = processMemory_ + process_->getHeapStart();
   const char sysname[] = "Linux";
-  for (int i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
+  for (size_t i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
 
   // Add 65 to data pointer for reserved length of each string field in Linux
   data += 65;
   const char nodename[] = "fedora-riscv";
-  for (int i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
+  for (size_t i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
 
   data += 65;
   const char release[] = "5.5.0-0.rc5.git0.1.1.riscv64.fc32.riscv64";
-  for (int i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
+  for (size_t i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
 
   data += 65;
   const char version[] = "#1 SMP Mon Jan 6 17:31:22 UTC 2020";
-  for (int i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
+  for (size_t i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
 
   data += 65;
   const char machine[] = "riscv64";
-  for (int i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
+  for (size_t i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
 
   data += 65;
   const char domainname[] = "(none)";
-  for (int i = 0; i < strlen(domainname); i++)
+  for (size_t i = 0; i < strlen(domainname); i++)
     EXPECT_EQ(data[i], domainname[i]);
 }
 

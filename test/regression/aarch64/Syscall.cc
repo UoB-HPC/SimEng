@@ -436,14 +436,14 @@ TEST_P(Syscall, file_read) {
   // Check result of readv operations
   const char refReadv[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
   char* dataReadv = processMemory_ + process_->getHeapStart();
-  for (int i = 0; i < strlen(refReadv); i++) {
+  for (size_t i = 0; i < strlen(refReadv); i++) {
     EXPECT_EQ(dataReadv[i], refReadv[i]) << "at index i=" << i << '\n';
   }
 
   // Check result of read operation
   const char refRead[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   char* dataRead = processMemory_ + process_->getInitialStackPointer() - 64;
-  for (int i = 0; i < strlen(refRead); i++) {
+  for (size_t i = 0; i < strlen(refRead); i++) {
     EXPECT_EQ(dataRead[i], refRead[i]) << "at index i=" << i << '\n';
   }
 }
@@ -610,7 +610,7 @@ TEST_P(Syscall, readlinkat) {
 
   EXPECT_EQ(getGeneralRegister<int64_t>(0), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
-  for (int i = 0; i < reference.size(); i++) {
+  for (size_t i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
 }
@@ -1094,20 +1094,20 @@ TEST_P(Syscall, uname) {
   // Check utsname struct in memory
   char* data = processMemory_ + process_->getHeapStart();
   const char sysname[] = "Linux";
-  for (int i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
+  for (size_t i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
 
   // Add 65 to data pointer for reserved length of each string field in Linux
   data += 65;
   const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-  for (int i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
+  for (size_t i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
 
   data += 65;
   const char release[] = "4.14.0";
-  for (int i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
+  for (size_t i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
 
   data += 65;
   const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
-  for (int i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
+  for (size_t i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
 
   data += 65;
   const char machine[] = "aarch64";

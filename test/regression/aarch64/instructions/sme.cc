@@ -98,7 +98,7 @@ TEST_P(InstSme, fmopa) {
 
     fmopa za2.d, p0/m, p2/m, z3.d, z4.d
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZAD0, i, double,
                   fillNeon<double>({10.0}, (SVL / 8)));
     CHECK_MAT_ROW(ARM64_REG_ZAD2, i, double,
@@ -299,7 +299,7 @@ TEST_P(InstSme, st1d) {
     st1d {za0h.d[w12, 0]}, p0, [sp, x1, lsl #3]
     st1d {za1h.d[w12, 1]}, p0, [x4]
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 8)),
               src[i % 2]);
@@ -329,7 +329,7 @@ TEST_P(InstSme, st1d) {
     ld1d {za1h.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
     st1d {za1h.d[w13, 1]}, p1, [x5, x3, lsl #3]
   )");
-  for (int i = 0; i < (SVL / 128); i++) {
+  for (uint64_t i = 0; i < (SVL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src[i % 2]);
   }
@@ -360,7 +360,7 @@ TEST_P(InstSme, st1d) {
     st1d {za0v.d[w12, 0]}, p0, [sp, x1, lsl #3]
     st1d {za1v.d[w12, 1]}, p0, [x4]
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 8)),
               src_vert[i % 2]);
@@ -390,7 +390,7 @@ TEST_P(InstSme, st1d) {
     ld1d {za1v.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
     st1d {za1v.d[w13, 1]}, p1, [x5, x3, lsl #3]
   )");
-  for (int i = 0; i < (SVL / 128); i++) {
+  for (uint64_t i = 0; i < (SVL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src_vert[i % 2]);
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src_vert[i % 2]);
   }
@@ -423,7 +423,7 @@ TEST_P(InstSme, st1w) {
     st1w {za0h.s[w12, 0]}, p0, [sp, x1, lsl #2]
     st1w {za1h.s[w12, 1]}, p0, [x4]
   )");
-  for (int i = 0; i < (SVL / 32); i++) {
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 4)),
               src[i % 4]);
@@ -452,7 +452,7 @@ TEST_P(InstSme, st1w) {
     ld1w {za1h.s[w12, 2]}, p1/z, [x0, x3, lsl #2]
     st1w {za1h.s[w12, 2]}, p1, [x5, x3, lsl #2]
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src[i % 4]);
   }
@@ -484,7 +484,7 @@ TEST_P(InstSme, st1w) {
     st1w {za0v.s[w12, 0]}, p0, [sp, x1, lsl #2]
     st1w {za1v.s[w12, 1]}, p0, [x4]
   )");
-  for (int i = 0; i < (SVL / 32); i++) {
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 4)),
               src_vert[i % 4]);
@@ -513,7 +513,7 @@ TEST_P(InstSme, st1w) {
     ld1w {za1v.s[w12, 2]}, p1/z, [x0, x3, lsl #2]
     st1w {za1v.s[w12, 2]}, p1, [x5, x3, lsl #2]
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src_vert[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src_vert[i % 4]);
   }
@@ -525,7 +525,7 @@ TEST_P(InstSme, zero) {
 
     zero {za}
   )");
-  for (int i = 0; i < (SVL / 8); i++) {
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZA, i, uint64_t, fillNeon<uint64_t>({0}, SVL / 8));
   }
 
@@ -561,7 +561,7 @@ TEST_P(InstSme, zero) {
 
     zero {za0.s, za2.s}
   )");
-  for (int i = 0; i < (SVL / 32); i++) {
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, SVL / 8));
     CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,

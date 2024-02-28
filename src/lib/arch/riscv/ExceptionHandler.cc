@@ -338,6 +338,7 @@ bool ExceptionHandler::init() {
               delete[] filename;
               stateChange.memoryAddresses.push_back(
                   {statbufPtr, sizeof(statOut)});
+              // TODO implicit cast stat to register value
               stateChange.memoryAddressValues.push_back(statOut);
               return concludeSyscall(stateChange);
             });
