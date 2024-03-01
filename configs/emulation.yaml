@@ -1,0 +1,65 @@
+Core:
+  ISA: AArch64
+  Simulation-Mode: emulation
+  Clock-Frequency-GHz: 2.5
+  Timer-Frequency-MHz: 200
+  Micro-Operations: True
+Fetch:
+  Fetch-Block-Size: 32
+  Loop-Buffer-Size: 64
+  Loop-Detection-Threshold: 4
+Process-Image:
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
+Register-Set:
+  GeneralPurpose-Count: 154
+  FloatingPoint/SVE-Count: 90
+  Conditional-Count: 128
+Pipeline-Widths:
+  Commit: 4
+  FrontEnd: 4
+  LSQ-Completion: 2
+Queue-Sizes:
+  ROB: 180
+  Load: 64
+  Store: 36
+Branch-Predictor:
+  Type: "Perceptron"
+  BTB-Tag-Bits: 11
+  Global-History-Length: 19
+  RAS-entries: 5
+L1-Data-Memory:
+  Interface-Type: Flat
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
+  Access-Latency: 4
+  Exclusive: False
+  Load-Bandwidth: 32
+  Store-Bandwidth: 16
+  Permitted-Requests-Per-Cycle: 2
+  Permitted-Loads-Per-Cycle: 2
+  Permitted-Stores-Per-Cycle: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: True
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (TX2 true value is 4)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 400.00
+  Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics cpuid asimdrdm
+  CPU-Implementer: "0x43"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x0af"
+  CPU-Revision: 2
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1
