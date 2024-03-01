@@ -3,7 +3,7 @@
 
 Core:
   ISA: AArch64
-  Simulation-Mode: emulation
+  Simulation-Mode: outoforder
   Clock-Frequency-GHz: 2.5
   Timer-Frequency-MHz: 200
   Micro-Operations: True
@@ -33,7 +33,7 @@ Branch-Predictor:
   Global-History-Length: 19
   RAS-entries: 8
 L1-Data-Memory:
-  Interface-Type: Flat
+  Interface-Type: Fixed
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
