@@ -636,9 +636,9 @@ int64_t Linux::schedGetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask) {
 int64_t Linux::schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask) {
   // Currently, the bit mask can only be 1 so capture any error which would
   // occur but otherwise omit functionality
-  if (mask == 0) return -EFAULT;
-  if (pid != 0) return -ESRCH;
-  if (cpusetsize == 0) return -EINVAL;
+  if (mask == 0) return -1;
+  if (pid != 0) return -1;
+  if (cpusetsize == 0) return -1;
   return 0;
 }
 int64_t Linux::setTidAddress(uint64_t tidptr) {

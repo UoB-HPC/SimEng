@@ -431,10 +431,26 @@ bool ExceptionHandler::init() {
                       << std::endl;
             return fatal();
           }
-          uint64_t retval = (pid == 0) ? 1 : 0;
-          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-          stateChange.memoryAddresses.push_back({mask, 1});
-          stateChange.memoryAddressValues.push_back(bitmask);
+          // The size of the internal representation of the affinity mask in
+          // bytes
+          size_t interalCpuSetBitMaskSize = 8;
+          stateChange = {ChangeType::REPLACEMENT,
+                         {R0},
+                         {static_cast<uint64_t>(interalCpuSetBitMaskSize)}};
+          // Write affinity mask to memory in byte chunks.
+          for (uint16_t i = 0; i < interalCpuSetBitMaskSize; i += 1) {
+            // Currently, only a single core is available thus the first byte
+            // should contain a value of 0x01 and 0x00 there after
+            if (i == 0) {
+              stateChange.memoryAddresses.push_back({mask, 1});
+              stateChange.memoryAddressValues.push_back(
+                  static_cast<uint64_t>(0x1));
+            } else {
+              stateChange.memoryAddresses.push_back({mask + i, 1});
+              stateChange.memoryAddressValues.push_back(
+                  static_cast<uint64_t>(0x0));
+            }
+          }
         } else {
           stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
         }

@@ -993,8 +993,7 @@ TEST_P(Syscall, clock_gettime) {
             nanosecondsMono);
 }
 
-// TODO: tests only test errored instances of using sched_setaffinity due to
-// omitted functionality. Redo test once functionality is implemented
+// TODO: Redo test once multi-core functionality is implemented
 TEST_P(Syscall, sched_setaffinity) {
   RUN_AARCH64(R"(
     # sched_setaffinity(pid=0, cpusetsize=1, mask=0)
@@ -1029,16 +1028,21 @@ TEST_P(Syscall, sched_setaffinity) {
     svc #0
     mov x24, x0
     )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(21), -EFAULT);
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), -ESRCH);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), -EINVAL);
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(24), 0);
 }
 
-// TODO: tests only test errored instances of using sched_getaffinity due to
-// omitted functionality. Redo test once functionality is implemented
+// TODO: Redo test once multi-core functionality is implemented
 TEST_P(Syscall, sched_getaffinity) {
   RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
     # schedGetAffinity(pid=0, cpusetsize=0, mask=0)
     mov x0, #0
     mov x1, #0
@@ -1055,17 +1059,29 @@ TEST_P(Syscall, sched_getaffinity) {
     svc #0
     mov x22, x0
 
+    # Write to mask pointer to ensure we can check unset affinity bits are zero'ed out
+    mov x5, #-1
+    str x5, [x20]
+
     # sched_getaffinity(pid=0, cpusetsize=0, mask=1)
     mov x0, #0
     mov x1, #0
-    mov x2, #1
+    mov x2, x20
     mov x8, #123
     svc #0
     mov x23, x0
     )");
   EXPECT_EQ(getGeneralRegister<int64_t>(21), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(22), -1);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), 1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 8);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart()), 0x1);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 1), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 2), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 3), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 4), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 5), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 6), 0x0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getHeapStart() + 7), 0x0);
 }
 
 // TODO: write tgkill test
