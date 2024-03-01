@@ -251,6 +251,26 @@ RegisterValue vecFCompare(srcValContainer& sourceValues, bool cmpToZero,
   return {out, 256};
 }
 
+/** Helper function for instructions with the format `fac<ge, gt, le, lt> vd,
+ * vn, vm`.
+ * T represents operand type (e.g. vd.2d is double).
+ * C represents comparison type (e.g. for T=float, comparison type is
+ * uint32_t).
+ * I represents the number of elements in the output array to be
+ * updated (e.g. for vd.8b I = 8).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, typename C, int I>
+RegisterValue vecFCompareAbs(srcValContainer& sourceValues,
+                             std::function<bool(T, T)> func) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
+  C out[16 / sizeof(C)] = {0};
+  for (int i = 0; i < I; i++) {
+    out[i] = func(std::fabs(n[i]), std::fabs(m[i])) ? static_cast<C>(-1) : 0;
+  }
+  return {out, 256};
+}
+
 /** Helper function for NEON instructions with the format `fcvtl{2} vd, vn`.
  * D represents the dest. vector register type (e.g. vd.2d would be double).
  * N represents the source vector register type (e.g. vd.4s would be float).
@@ -572,6 +592,22 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
   for (int i = 0; i < I / 2; i++) {
     out[i] = std::max(n[2 * i], n[(2 * i) + 1]);
     out[i + (I / 2)] = std::max(m[2 * i], m[(2 * i) + 1]);
+  }
+  return {out, 256};
+}
+
+/** Helper function for NEON instructions with the format `umaxv vd, vn`.
+ * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, int I>
+RegisterValue vecUMaxV(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+
+  T out = n[0];
+  for (int i = 1; i < I; i++) {
+    out = std::max(out, n[i]);
   }
   return {out, 256};
 }

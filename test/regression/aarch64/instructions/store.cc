@@ -60,6 +60,46 @@ TEST_P(InstStore, stlr) {
             0xBABA);
 }
 
+TEST_P(InstStore, stlxr) {
+  initialHeapData_.resize(8);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0xFEDCBA987654321;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldaxrb w1, [x0]
+    ldaxrh w2, [x0]
+    ldaxr w3, [x0]
+    ldaxr x4, [x0]
+
+    sub sp, sp, #15
+    stlxrb w5, w1, [sp]
+    add sp, sp, #1
+    stlxrh w6, w2, [sp]
+    add sp, sp, #2
+    stlxr w7, w3, [sp]
+    add sp, sp, #4
+    stlxr w8, x4, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 15),
+            0x21);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 14),
+            0x4321);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 12),
+            0x87654321);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 8),
+            0xFEDCBA987654321);
+}
+
 TEST_P(InstStore, strb) {
   RUN_AARCH64(R"(
     mov w0, 0xAB
@@ -885,6 +925,14 @@ TEST_P(InstStore, stur) {
             -0.125);
 
   RUN_AARCH64(R"(
+    mov w0, 0x1234
+    fmov s0, w0
+    stur h0, [sp, #-2]
+  )");
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 2),
+            0x1234);
+
+  RUN_AARCH64(R"(
     fmov v0.2d, -0.125
     stur q0, [sp, #-16]
   )");
@@ -905,6 +953,42 @@ TEST_P(InstStore, sturh) {
             42u);
   EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 4),
             128u);
+}
+
+TEST_P(InstStore, swpa) {
+  // 64-bit
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEF;
+  heap64[1] = 0x12345678;
+  heap64[2] = 0xABCDEFAB;
+  heap64[3] = 0x98765432;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #3
+    mov x2, #16
+
+    swpa x1, x3, [x0]
+    add x0, x0, #8
+    swpa xzr, x4, [x0]
+    add x0, x0, #8
+    swpa x2, xzr, [x0]
+    add x0, x0, #8
+    swpa xzr, xzr, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 3ul);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 16ul);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xDEADBEEFul);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x12345678ul);
+
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart()), 3ul);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart() + 8), 0ul);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart() + 16), 16ul);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart() + 24), 0ul);
 }
 
 TEST_P(InstStore, swpl) {

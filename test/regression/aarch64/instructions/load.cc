@@ -569,6 +569,7 @@ TEST_P(InstLoad, ld2_multi_struct) {
 }
 
 TEST_P(InstLoad, ldadd) {
+  // 32-bit
   RUN_AARCH64(R"(
     sub sp, sp, #1024
     mov w0, #16
@@ -587,13 +588,13 @@ TEST_P(InstLoad, ldadd) {
 
     sub sp, sp, #128
 
-    ldadd w5, w4, [sp]
+    ldaddal w5, w4, [sp]
     add sp, sp, #32
-    ldadd w1, w1, [sp]
+    ldadda w1, w1, [sp]
     add sp, sp, #32
     ldaddl w7, w6, [sp]
     add sp, sp, #32
-    ldaddl w3, w3, [sp]
+    ldadd w3, w3, [sp]
   )");
 
   EXPECT_EQ(getGeneralRegister<uint32_t>(0), 16);
@@ -613,6 +614,85 @@ TEST_P(InstLoad, ldadd) {
             176);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 928),
             128);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    sub sp, sp, #1024
+    mov x0, #16
+    mov x1, #32
+    mov x2, #48
+    mov x3, #64
+    mov x4, #80
+    mov x5, #96
+    mov x6, #112
+    mov x7, #128
+
+    str x0, [sp], #64
+    str x1, [sp], #64
+    str x2, [sp], #64
+    str x3, [sp], #64
+
+    sub sp, sp, #256
+
+    ldaddal x5, x4, [sp]
+    add sp, sp, #64
+    ldadda x1, x1, [sp]
+    add sp, sp, #64
+    ldaddl x7, x6, [sp]
+    add sp, sp, #64
+    ldadd x3, x3, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 96);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 128);
+
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
+            112);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 960),
+            64);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 896),
+            176);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 832),
+            128);
+}
+
+TEST_P(InstLoad, ldset) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    sub sp, sp, #1024
+    mov w0, #16
+    mov w1, #32
+    mov w2, #48
+    mov w3, #64
+    mov w4, #10
+    mov w5, #20
+    mov w6, #30
+    mov w7, #40
+
+    str w0, [sp], #32
+    str w1, [sp], #32
+    str w2, [sp], #32
+    str w3, [sp], #32
+
+    sub sp, sp, #128
+
+    ldseta w4, w4, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), 16);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 48);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 64);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 16);
+
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1024),
+            26);
 }
 
 TEST_P(InstLoad, ldar) {
@@ -1277,17 +1357,20 @@ TEST_P(InstLoad, ldrsw) {
     mov x0, 0
     mov x8, 214
     svc #0
-    mov x5, 1
+    mov x6, 1
+    mov w7, 2
     # Load 32-bit values from heap and sign-extend to 64-bits
     ldrsw x1, [x0, #4]
     ldrsw x2, [x0], #4
     ldrsw x3, [x0]
-    ldrsw x4, [x0, x5, lsl #2]
+    ldrsw x4, [x0, x6, lsl #2]
+    ldrsw x5, [x0, w7, sxtw #2]
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(1), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 256);
 
   // ldursw
   RUN_AARCH64(R"(
@@ -1305,6 +1388,29 @@ TEST_P(InstLoad, ldrsw) {
   EXPECT_EQ(getGeneralRegister<int64_t>(2), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), -5);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), 256);
+}
+
+TEST_P(InstLoad, ldaxr) {
+  initialHeapData_.resize(8);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0xFEDCBA987654321;
+
+  // 8-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldaxrb w1, [x0]
+    ldaxrh w2, [x0]
+    ldaxr w3, [x0]
+    ldaxr x4, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x000000000000021);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x000000000004321);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x000000087654321);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xFEDCBA987654321);
 }
 
 TEST_P(InstLoad, ldxr) {
