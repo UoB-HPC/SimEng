@@ -231,6 +231,33 @@ std::array<uint64_t, 4> sveComparePredicated_vecsToPred(
   return out;
 }
 
+/** Helper function for SVE instructions with the format `cpy zd, pg/m,
+ * <w,x,v>n`
+ * T represents the type of the destination elements (e.g. for zd.d, T =
+ * int64_t).
+ * D represents the type of sourceValues (e.g. for x0, D = uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, typename D>
+RegisterValue sveCpy_reg(srcValContainer& sourceValues,
+                         const uint16_t VL_bits) {
+  const T* d = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const D scalar = sourceValues[2].get<D>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      out[i] = scalar;
+    } else {
+      out[i] = d[i];
+    }
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `cpy zd, pg/z, #imm{,
  * shift}`.
  * T represents the type of sourceValues (e.g. for zd.d, T = int64_t).
@@ -284,11 +311,21 @@ RegisterValue sveDup_immOrScalar(
     const uint16_t VL_bits, bool useImm) {
   bool isFP = std::is_floating_point<T>::value;
   T imm;
-  if (useImm)
-    imm = isFP ? metadata.operands[1].fp
-               : static_cast<int8_t>(metadata.operands[1].imm);
-  else
+  // Set the value to be duplicated
+  if (useImm) {
+    if (isFP) {
+      // Use the fp member variable if the source is a floating point
+      imm = metadata.operands[1].fp;
+    } else if (metadata.operands[1].imm < 0x100) {
+      // Read as a width of 8b if the immediate is less than 0x100
+      imm = static_cast<int8_t>(metadata.operands[1].imm);
+    } else {
+      // Read as a width of 16b if the immediate is greater than 0x100
+      imm = static_cast<int16_t>(metadata.operands[1].imm);
+    }
+  } else {
     imm = sourceValues[0].get<T>();
+  }
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
 
@@ -915,6 +952,34 @@ RegisterValue sveIndex(
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `lastb vd, pg, zn`.
+ * T represents the vector register type (e.g. zd.d would be uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveLastBScalar(srcValContainer& sourceValues,
+                             const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out;
+
+  // Get last active element
+  int lastElem = 0;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
+    }
+    // If no active lane has been found, select highest element instead
+    if (i == 0) lastElem = partition_num - 1;
+  }
+
+  out = n[lastElem];
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * pd, pg/z, pn, pm`.
  * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
@@ -1272,6 +1337,28 @@ std::array<uint64_t, 4> svePsel(
   return out;
 }
 
+/** Helper function for SVE instructions with the format `pfirst pdn, pg, pdn`.
+ * Returns an array of 4 uint64_t elements. */
+std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
+                                  const uint16_t VL_bits) {
+  const uint16_t partition_num = VL_bits / 8;
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
+  // Set destination d as source n to copy all false lanes and the active lanes
+  // beyond the first
+  std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
+
+  // Get the first active lane and set same lane in destination predicate
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64)));
+    if (p[i / 64] & shifted_active) {
+      out[i / 64] |= shifted_active;
+      break;
+    }
+  }
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `ptrue pd{,
  * pattern}.
  * T represents the type of sourceValues (e.g. for pd.d, T = uint64_t).
@@ -1400,6 +1487,70 @@ RegisterValue sveSminv(srcValContainer& sourceValues, const uint16_t VL_bits) {
   for (int i = 0; i < partition_num; i++) {
     uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
     if (p[i / (64 / sizeof(T))] & shifted_active) out = std::min(out, n[i]);
+  }
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `splice zd, pg, zn,
+ * zm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveSplice(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  // Get last active element
+  int lastElem = 0;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
+    }
+  }
+
+  // Extract region from n as denoted by predicate p. Copy region into the
+  // lowest elements of the destination operand
+  bool active = false;
+  int index = 0;
+  for (int i = 0; i <= lastElem; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) active = true;
+    if (active) {
+      out[index] = n[i];
+      index++;
+    }
+  }
+
+  // Set any unassigned elements to the lowest elements in m
+  int elemsLeft = partition_num - index;
+  for (int i = 0; i < elemsLeft; i++) {
+    out[index] = m[i];
+    index++;
+  }
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `sub zd, zn, #imm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveSub_imm(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T imm = static_cast<T>(metadata.operands[2].imm);
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+  for (int i = 0; i < partition_num; i++) {
+    out[i] = n[i] - imm;
   }
   return {out, 256};
 }
@@ -1586,6 +1737,47 @@ uint64_t sveUqdec(srcValContainer& sourceValues,
   return (uint64_t)(d - (imm * count));
 }
 
+/** Helper function for SVE instructions with the format `uzp<1,2> pd, pn,
+ * pm`.
+ * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+std::array<uint64_t, 4> sveUzp_preds(srcValContainer& sourceValues,
+                                     const uint16_t VL_bits, bool isUzp1) {
+  const uint64_t* n = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[1].getAsVector<uint64_t>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+  // Create a bit mask of ones of width sizeof(T)
+  const uint64_t bitmask = (1ull << sizeof(T)) - 1;
+  for (int i = 0; i < partition_num / 2; i++) {
+    // UZP1 concatenates even elements. UZP2 concatenates odd.
+    int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+    // Select start of element at index, move to LSB, and extract full element
+    // width with bitmask
+    const uint64_t value = (n[index / (64 / sizeof(T))] >>
+                            (index % (64 / sizeof(T)) * sizeof(T))) &
+                           bitmask;
+    // Shift extracted element to the correct destination element i
+    out[i / (64 / (sizeof(T)))] |= value << (i % (64 / sizeof(T)) * sizeof(T));
+  }
+  for (int i = 0; i < partition_num / 2; i++) {
+    int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+    int destIndex = partition_num / 2 + i;
+    // Select start of element at index, move to LSB, and extract full element
+    // width with bitmask
+    const uint64_t value = (m[index / (64 / sizeof(T))] >>
+                            (index % (64 / sizeof(T)) * sizeof(T))) &
+                           bitmask;
+    // Shift extracted element to the correct destination element i
+    out[destIndex / (64 / sizeof(T))] |=
+        value << (destIndex % (64 / sizeof(T)) * sizeof(T));
+  }
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `uzp<1,2> zd, zn,
  * zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
@@ -1611,33 +1803,64 @@ RegisterValue sveUzp_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `whilelo pd,
- * <w,x>n, <w,x>m`.
+/** Helper function for SVE instructions with the format `while<ge, gt, hi, hs,
+ * le, lo, ls, lt> pd, <w,x>n, <w,x>m`.
  * T represents the type of sourceValues n and m (e.g. for wn, T = uint32_t).
  * P represents the type of operand p (e.g. for pd.b, P = uint8_t).
  * Returns tuple of type [pred results (array of 4 uint64_t), nzcv]. */
 template <typename T, typename P>
-std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
-    srcValContainer& sourceValues, const uint16_t VL_bits, bool calcNZCV) {
+std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhile(
+    srcValContainer& sourceValues, const uint16_t VL_bits,
+    std::function<bool(T, T)> func) {
   const T n = sourceValues[0].get<T>();
   const T m = sourceValues[1].get<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(P) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
-  uint16_t index = 0;
 
   for (int i = 0; i < partition_num; i++) {
     // Determine whether lane should be active and shift to align with
     // element in predicate register.
     uint64_t shifted_active =
-        (n + i) < m ? 1ull << ((i % (64 / (sizeof(P))) * (sizeof(P)))) : 0;
-    out[index / (64 / (sizeof(P)))] =
-        out[index / (64 / (sizeof(P)))] | shifted_active;
-    index++;
+        func((n + i), m) ? 1ull << ((i % (64 / (sizeof(P))) * (sizeof(P)))) : 0;
+    out[i / (64 / (sizeof(P)))] |= shifted_active;
   }
   // Byte count = sizeof(P) as destination predicate is predicate of P
   // bytes.
-  uint8_t nzcv = calcNZCV ? getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
+  uint8_t nzcv = getNZCVfromPred(out, VL_bits, sizeof(P));
+  return {out, nzcv};
+}
+
+/** Helper function for SVE instructions with the format `while<rw, wr> pd, xn,
+ * xm`.
+ * T represents the type of operand p (e.g. for pd.b, P = uint8_t).
+ * Returns tuple of type [pred results (array of 4 uint64_t), nzcv]. */
+template <typename T>
+std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhileAddrConflict(
+    srcValContainer& sourceValues, const uint16_t VL_bits, bool isRW = false) {
+  const uint64_t n = sourceValues[0].get<uint64_t>();
+  const uint64_t m = sourceValues[1].get<uint64_t>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+  // Get the number of elements between the passed addresses
+  signed long long diff = m - n;
+  if (isRW) diff = std::abs(diff);
+  const int64_t addrDiff = diff / static_cast<int64_t>(sizeof(T));
+
+  for (int i = 0; i < partition_num; i++) {
+    // Determine whether the selected lane should be active and shift to align
+    // with element in predicate register.
+    uint64_t shifted_active =
+        (addrDiff <= 0 || i < addrDiff)
+            ? 1ull << ((i % (64 / (sizeof(T))) * (sizeof(T))))
+            : 0;
+    out[i / (64 / (sizeof(T)))] |= shifted_active;
+  }
+  // Byte count = sizeof(T) as destination predicate is predicate of T
+  // bytes.
+  uint8_t nzcv = getNZCVfromPred(out, VL_bits, sizeof(T));
   return {out, nzcv};
 }
 

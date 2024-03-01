@@ -455,7 +455,9 @@ void Instruction::decode() {
 
     // Check first operand access to determine if it's a load or store
     if (metadata_.operands[0].access & CS_AC_WRITE) {
-      if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR) {
+      if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR ||
+          metadata_.id == ARM64_INS_STLXRB ||
+          metadata_.id == ARM64_INS_STLXRH) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
@@ -476,18 +478,17 @@ void Instruction::decode() {
       }
     }
 
-    // LDADD* are considered to be both a load and a store
-    if (metadata_.id >= ARM64_INS_LDADD && metadata_.id <= ARM64_INS_LDADDLH) {
+    // LDADD* and LDSET* are considered to be both a load and a store
+    if ((metadata_.id >= ARM64_INS_LDADD &&
+         metadata_.id <= ARM64_INS_LDADDLH) ||
+        (metadata_.id >= ARM64_INS_LDSET &&
+         metadata_.id <= ARM64_INS_LDSETLH)) {
       setInstructionType(InsnType::isLoad);
     }
 
-    // CASAL* and  SWPL* are considered to be both a load and a store
-    if (metadata_.opcode == Opcode::AArch64_CASALW ||
-        metadata_.opcode == Opcode::AArch64_CASALX ||
-        metadata_.opcode == Opcode::AArch64_CASAW ||
-        metadata_.opcode == Opcode::AArch64_CASAX ||
-        metadata_.opcode == Opcode::AArch64_SWPLW ||
-        metadata_.opcode == Opcode::AArch64_SWPLX) {
+    // CASA* and SWPL* are considered to be both a load and a store
+    if ((metadata_.id >= ARM64_INS_CAS && metadata_.id <= ARM64_INS_CASPL) ||
+        (metadata_.id >= ARM64_INS_SWP && metadata_.id <= ARM64_INS_SWPLH)) {
       setInstructionType(InsnType::isLoad);
     }
 
