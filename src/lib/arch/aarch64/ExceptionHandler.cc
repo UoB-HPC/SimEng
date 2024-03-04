@@ -432,7 +432,9 @@ bool ExceptionHandler::init() {
             return fatal();
           }
           // The size of the internal representation of the affinity mask in
-          // bytes
+          // bytes. Although we only require a single byte to represent our bit
+          // mask, the size is up-aligned to a 8 byte boundary to be consistent
+          // with hardware behaviour
           size_t interalCpuSetBitMaskSize = 8;
           stateChange = {ChangeType::REPLACEMENT,
                          {R0},
