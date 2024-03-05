@@ -27,7 +27,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 PerceptronPredictor::~PerceptronPredictor() {
   ras_.clear();
   rasHistory_.clear();
-  FTQ_.clear();
+  ftq_.clear();
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
@@ -80,7 +80,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Store the global history for correct hashing in update() --
   // needs to be global history and not the hashed index as hashing loses
   // information at longer global history lengths
-  FTQ_.emplace_back(prediction.taken, globalHistory_);
+  ftq_.emplace_back(prediction.taken, globalHistory_);
 
   // speculatively update global history
   globalHistory_ =
@@ -92,9 +92,9 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
   // Get previous branch state and prediction from FTQ
-  bool prevPrediction = FTQ_.front().first;
-  uint64_t prevGlobalHistory = FTQ_.front().second;
-  FTQ_.pop_front();
+  bool prevPrediction = ftq_.front().first;
+  uint64_t prevGlobalHistory = ftq_.front().second;
+  ftq_.pop_front();
 
   // Work out hashed index
   uint64_t hashedIndex =
@@ -133,7 +133,7 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
   // We know how many predictions there have since been by the size of the FTQ
-  if (prevPrediction != taken) globalHistory_ ^= (1 << (FTQ_.size()));
+  if (prevPrediction != taken) globalHistory_ ^= (1 << (ftq_.size()));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -158,9 +158,7 @@ void PerceptronPredictor::flush(uint64_t address) {
     rasHistory_.erase(it);
   }
 
-  // If possible, pop instruction from FTQ
-  // if (!FTQ_.empty()) FTQ_.pop_back();
-  FTQ_.pop_back();
+  ftq_.pop_back();
 
   // Roll back global history
   globalHistory_ >>= 1;
@@ -168,7 +166,7 @@ void PerceptronPredictor::flush(uint64_t address) {
 
 void PerceptronPredictor::addToFTQ(uint64_t address, bool taken) {
   // Add instruction to the FTQ in event of reused prediction
-  FTQ_.emplace_back(taken, globalHistory_);
+  ftq_.emplace_back(taken, globalHistory_);
   globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
 }
 
