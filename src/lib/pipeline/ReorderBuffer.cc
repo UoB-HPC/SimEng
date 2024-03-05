@@ -151,7 +151,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     }
 
     // If it is a branch, now update the predictor (here to ensure order of
-    // updates is correct
+    // updates is correct)
     if (uop->isBranch()) {
       predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(),
                         uop->getBranchAddress(), uop->getBranchType());
