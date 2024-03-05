@@ -40,6 +40,7 @@ class GenericPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
+  /** Adds instruction to the Fetch Target Queue without making a new prediction */
   void addToFTQ(uint64_t address, bool taken) override;
 
  private:
@@ -52,7 +53,7 @@ class GenericPredictor : public BranchPredictor {
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
-  std::deque<std::pair<bool, uint64_t>> FTQ_;
+  std::deque<std::pair<bool, uint64_t>> ftq_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
