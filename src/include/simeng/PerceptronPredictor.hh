@@ -43,6 +43,7 @@ class PerceptronPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
+  /** Adds instruction to the Fetch Target Queue without making a new prediction */
   void addToFTQ(uint64_t address, bool taken) override;
 
  private:
@@ -63,7 +64,7 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
-  std::deque<std::pair<bool, uint64_t>> FTQ_;
+  std::deque<std::pair<bool, uint64_t>> ftq_;
 
   /** An n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_. */
@@ -72,6 +73,8 @@ class PerceptronPredictor : public BranchPredictor {
   /** The number of previous branch directions recorded globally. */
   uint64_t globalHistoryLength_;
 
+  /** A bit mask for truncating the global history to the correct size.
+   * Stored as a member variable to avoid duplicative calculation */
   uint64_t globalHistoryMask_;
 
   /** The magnitude of the dot product of the perceptron and the global history,
