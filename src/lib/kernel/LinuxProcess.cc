@@ -62,11 +62,16 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
+// TODO can this be marked as only usable by test? or is it used by SST??
 LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Set program command string to a relative path of "Default"
-  commandLine_.push_back("Default\0");
+  // TODO need to determine consequences of setting this as absolute and
+  // relative to simeng source directory
+  commandLine_.push_back("./SimEngDefaultProgram\0");
+  //  std::cerr << "command line = " << commandLine_.back().c_str() <<
+  //  std::endl;
 
   isValid_ = true;
 

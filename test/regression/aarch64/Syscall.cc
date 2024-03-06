@@ -608,26 +608,27 @@ TEST_P(Syscall, readlinkat) {
     exit(EXIT_FAILURE);
   }
 
-  std::string reference = std::string(cwd) + std::string("/Default");
+  std::string reference = cwd + std::string("/SimEngDefaultProgram");
+
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
 
   RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-    mov x20, x0
+     # Get heap address
+     mov x0, 0
+     mov x8, 214
+     svc #0
+     mov x20, x0
 
-    # readlinkat(dirfd=0, pathname=x20, buf=x20+15, bufsize=1024)
-    mov x0, #0
-    mov x1, x20
-    add x2, x20, #15
-    mov x3, #1024
-    mov x8, #78
-    svc #0
-  )");
+     # readlinkat(dirfd=0, pathname=x20, buf=x20+15, bufsize=1024)
+     mov x0, #0
+     mov x1, x20
+     add x2, x20, #15
+     mov x3, #1024
+     mov x8, #78
+     svc #0
+   )");
 
   EXPECT_EQ(getGeneralRegister<int64_t>(0), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;

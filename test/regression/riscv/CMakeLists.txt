@@ -31,3 +31,9 @@ target_compile_definitions(regression-riscv PRIVATE
   "SIMENG_RISCV_TEST_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 add_test(NAME regression-riscv-test COMMAND regression-riscv)
+
+add_custom_command(
+        TARGET regression-riscv
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/SimEngDefaultProgram ${CMAKE_CURRENT_BINARY_DIR}/SimEngDefaultProgram
+)

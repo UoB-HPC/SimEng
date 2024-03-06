@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 
 namespace simeng {
@@ -42,34 +43,27 @@ void Linux::createProcess(const LinuxProcess& process) {
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
-uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
-  // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  char* output = realpath(pathname.c_str(), absolutePath);
-  if (output == NULL) {
-    // Something went wrong
-    std::cerr << "[SimEng:getDirFd] realpath failed with errno = " << errno
-              << std::endl;
-    exit(EXIT_FAILURE);
+int64_t Linux::getHostDFD(int64_t vdfd, std::string pathname) {
+  if (vdfd == AT_FDCWD) {
+    // Early return if requesting current working directory
+    return AT_FDCWD;
   }
 
-  int64_t dfd_temp = AT_FDCWD;
-  // TODO unsure of where -100 comes from. Requires comment
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
-    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      // TODO incorrect comparison between int and size_t. Need to be sure dfd
-      // is not negative to allow type conversion and make this assertion
-      assert((size_t)dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
-      if (dfd_temp < 0) {
-        return -1;
-      }
+  if (vdfd < 0) {
+    // Invalid virtual file descriptor
+    return -1;
+  } else {
+    uint64_t unsignedVdfd = (uint64_t)vdfd;
+    if (unsignedVdfd < processStates_[0].fileDescriptorTable.size()) {
+      // Within bounds of table. Entry will be -1 if invalid
+      return processStates_[0].fileDescriptorTable[unsignedVdfd];
+    } else {
+      // Outside bounds of table
+      return -1;
+      // TODO potentially this should throw an error as per previous
+      // implementations assertion
     }
   }
-  return dfd_temp;
 }
 
 std::string Linux::getSpecialFile(const std::string filename) {
@@ -150,12 +144,12 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
   // special file)
   new_pathname = Linux::getSpecialFile(filename);
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // faccessat to deal with this
+  int64_t hostDfd = Linux::getHostDFD(dfd, filename);
 
   // Pass call through to host
-  int64_t retval = ::faccessat(dirfd, new_pathname.c_str(), mode, flag);
+  int64_t retval = ::faccessat(hostDfd, new_pathname.c_str(), mode, flag);
 
   return retval;
 }
@@ -192,13 +186,13 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   // special file)
   new_pathname = Linux::getSpecialFile(filename);
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // fstatat to deal with this
+  int64_t hostDfd = Linux::getHostDFD(dfd, filename);
 
   // Pass call through to host
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dirfd, new_pathname.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(hostDfd, new_pathname.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -459,11 +453,9 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
 
 int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
                       uint16_t mode) {
-  std::string new_pathname;
-
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
-  new_pathname = Linux::getSpecialFile(filename);
+  std::string new_pathname = Linux::getSpecialFile(filename);
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
@@ -503,14 +495,19 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
     newFlags = O_RDONLY | O_CLOEXEC;
   }
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // openat to deal with this
+  // TODO should this be new_pathname (resp. filename)
+  int64_t hDfd = Linux::getHostDFD(dfd, filename);
 
   // Pass call through to host
-  int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);
-  if (hfd < 0) {
-    return hfd;
+  int64_t hostFd = ::openat(hDfd, new_pathname.c_str(), newFlags, mode);
+  if (hostFd < 0) {
+    // An error occurred, pass this back to userspace don't allocate virtual
+    // file descriptor
+    // TODO possibly need to set errno for simulated program so that it can be
+    // handled correctly?? This may be relevant throughout
+    return hostFd;
   }
 
   LinuxProcessState& processState = processStates_[0];
@@ -521,11 +518,11 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
     // Take virtual descriptor from free pool
     auto first = processState.freeFileDescriptors.begin();
     vfd = processState.freeFileDescriptors.extract(first).value();
-    processState.fileDescriptorTable[vfd] = hfd;
+    processState.fileDescriptorTable[vfd] = hostFd;
   } else {
     // Extend file descriptor table for a new virtual descriptor
     vfd = processState.fileDescriptorTable.size();
-    processState.fileDescriptorTable.push_back(hfd);
+    processState.fileDescriptorTable.push_back(hostFd);
   }
 
   return vfd;
@@ -538,9 +535,9 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
     // Resolve absolute path
     char absolutePath[LINUX_PATH_MAX];
     char* output = realpath(processState.path.c_str(), absolutePath);
-    if (output == NULL) {
+    if (output == nullptr) {
       // Something went wrong
-      std::cerr << "[SimEng:getDirFd] realpath failed with errno = " << errno
+      std::cerr << "[SimEng:readlinkat] realpath failed with errno = " << errno
                 << std::endl;
       exit(EXIT_FAILURE);
     }
@@ -551,7 +548,8 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
     return std::min(std::strlen(absolutePath), bufsize);
   }
 
-  // TODO: resolve symbolic link for other paths
+  // TODO: resolve symbolic link for other paths - get hostfd then pass to real
+  // readlinkat
   return -1;
 }
 

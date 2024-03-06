@@ -89,7 +89,8 @@ struct LinuxProcessState {
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
 
-  /** The virtual file descriptor mapping table. */
+  /** The virtual file descriptor mapping table. Maps virtual file descriptors
+   * to host file descriptors */
   std::vector<int64_t> fileDescriptorTable;
   /** Set of deallocated virtual file descriptors available for reuse. */
   std::set<int64_t> freeFileDescriptors;
@@ -204,7 +205,7 @@ class Linux {
                 off_t offset);
 
   /** openat syscall: open/create a file. */
-  int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
+  int64_t openat(int64_t vdfd, const std::string& filename, int64_t flags,
                  uint16_t mode);
 
   /** readlinkat syscall: read value of a symbolic link. */
@@ -240,9 +241,10 @@ class Linux {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
-  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
-   * syscall. */
-  uint64_t getDirFd(int64_t dfd, std::string pathname);
+  /** Return the host directory file descriptor depending on given pathname and
+   * virtual dfd given to syscall. If vdfd is AT_FDCWD then AT_FDCWD is returned
+   */
+  int64_t getHostDFD(int64_t vdfd, std::string pathname);
 
   /** If the given filepath points to a special file, the filepath is replaced
    * to point to the SimEng equivalent. */

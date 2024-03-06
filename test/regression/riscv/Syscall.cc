@@ -621,7 +621,8 @@ TEST_P(Syscall, readlinkat) {
     exit(EXIT_FAILURE);
   }
 
-  std::string reference = std::string(cwd) + std::string("/Default");
+  std::string reference =
+      std::string(cwd) + std::string("/SimEngDefaultProgram");
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);

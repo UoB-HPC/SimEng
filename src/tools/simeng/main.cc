@@ -68,6 +68,7 @@ int main(int argc, char** argv) {
     // Without a config file, no executable can be supplied so pass default
     // (empty) values for executable information
     configFilePath = DEFAULT_STR;
+    executablePath = "./SimEngDefaultProgram";
   }
 
   coreInstance =

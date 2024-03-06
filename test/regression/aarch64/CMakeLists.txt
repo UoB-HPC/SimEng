@@ -37,3 +37,9 @@ target_compile_definitions(regression-aarch64 PRIVATE
   "SIMENG_AARCH64_TEST_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 add_test(NAME regression-aarch64-test COMMAND regression-aarch64)
+
+add_custom_command(
+        TARGET regression-aarch64
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/SimEngDefaultProgram ${CMAKE_CURRENT_BINARY_DIR}/SimEngDefaultProgram
+)

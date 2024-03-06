@@ -105,6 +105,7 @@ void CoreInstance::createProcess(std::string executablePath,
       exit(1);
     }
   } else {
+    // TODO remove once default binary in use
     // Create a process image from the set of instructions held in hex_
     process_ = std::make_unique<kernel::LinuxProcess>(
         span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)), config_);
