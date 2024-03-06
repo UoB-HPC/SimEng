@@ -366,18 +366,24 @@ TEST_F(ReorderBufferTest, branch) {
   // First pass through ROB -- seen count reset to 0 as new branch
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Second pass through ROB -- seen count = 1
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Third pass through ROB -- seen count = 2
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -385,6 +391,8 @@ TEST_F(ReorderBufferTest, branch) {
   // loopBoundaryAddr updated
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
@@ -398,18 +406,24 @@ TEST_F(ReorderBufferTest, branch) {
   // First pass through ROB -- seen count reset to 0 as new branch
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Second pass through ROB -- seen count = 1
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
   // Third pass through ROB -- seen count = 2
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -417,6 +431,8 @@ TEST_F(ReorderBufferTest, branch) {
   // loopBoundaryAddr updated
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
+  EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
+                                uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 }
