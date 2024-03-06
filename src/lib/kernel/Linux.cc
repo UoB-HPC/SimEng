@@ -44,7 +44,9 @@ void Linux::createProcess(const LinuxProcess& process) {
 }
 
 int64_t Linux::getHostDFD(int64_t vdfd, std::string pathname) {
-  if (vdfd == AT_FDCWD) {
+  // -100 = AT_FCWD on linux. Pass back AT_FDCWD for host platform e.g. -2 for
+  // MAC
+  if (vdfd == -100) {
     // Early return if requesting current working directory
     return AT_FDCWD;
   }
