@@ -36,8 +36,7 @@ class ReorderBufferTest : public testing::Test {
         reorderBuffer(
             maxROBSize, rat, lsq,
             [this](auto insn) { exceptionHandler.raiseException(insn); },
-            [this](auto branchAddress) { loopBoundaryAddr = branchAddress; },
-            predictor, 4, 2) {}
+            predictor) {}
 
  protected:
   const uint8_t maxLSQLoads = 32;
@@ -347,78 +346,6 @@ TEST_F(ReorderBufferTest, violatingLoad) {
   EXPECT_EQ(lsq.getViolatingLoad(), uopPtr2);
   EXPECT_EQ(reorderBuffer.getFlushAddress(), 4096);
   EXPECT_EQ(reorderBuffer.getFlushInsnId(), 0);
-}
-
-// Test that a branch is treated as expected, will trigger the loop buffer when
-// seen enough times (loop detection threshold set to 2)
-TEST_F(ReorderBufferTest, branch) {
-  // Set up branch instruction
-  const uint64_t insnAddr = 4096;
-  const uint64_t branchAddr = 1024;
-  BranchPrediction pred = {true, branchAddr};
-  ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
-  uopPtr->setSequenceId(0);
-  uopPtr->setInstructionId(0);
-  uopPtr->setInstructionAddress(insnAddr);
-  uopPtr->setBranchPrediction(pred);
-  uopPtr->setCommitReady();
-
-  // First pass through ROB -- seen count reset to 0 as new branch
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Second pass through ROB -- seen count = 1
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Third pass through ROB -- seen count = 2
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
-  // loopBoundaryAddr updated
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_EQ(loopBoundaryAddr, insnAddr);
-
-  // Update prediction & reset loopBoundaryAddr. Flush ROB to reset loopDetected
-  pred = {false, branchAddr + 64};
-  uopPtr->setBranchPrediction(pred);
-  loopBoundaryAddr = 0;
-  reorderBuffer.flush(0);
-
-  // Re-do loop detecition
-  // First pass through ROB -- seen count reset to 0 as new branch
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Second pass through ROB -- seen count = 1
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Third pass through ROB -- seen count = 2
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_NE(loopBoundaryAddr, insnAddr);
-
-  // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
-  // loopBoundaryAddr updated
-  reorderBuffer.reserve(uopPtr);
-  EXPECT_CALL(*uop, isBranch()).Times(1);
-  reorderBuffer.commit(1);
-  EXPECT_EQ(loopBoundaryAddr, insnAddr);
 }
 
 // Tests that only those destination registers which have been renamed are

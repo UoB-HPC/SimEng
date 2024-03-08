@@ -35,7 +35,7 @@ class PipelineFetchUnitTest
         isa(linux),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
-        fetchUnit(output, memory, 1024, 0, blockSize, isa, predictor),
+        fetchUnit(output, memory, 1024, 0, blockSize, isa, predictor, 8, 11),
         uop(new MockInstruction),
         uopPtr(uop),
         uop2(new MockInstruction),
@@ -123,7 +123,6 @@ TEST_P(PipelineFetchUnitTest, FetchUnaligned) {
   EXPECT_CALL(memory,
               requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
       .Times(1);
-  fetchUnit.requestFromPC();
 
   // Tick again, expecting that decoding will now resume
   memory::MemoryReadResult nextBlockValue = {{16, blockSize}, 0, 1};
@@ -163,7 +162,6 @@ TEST_P(PipelineFetchUnitTest, fetchAligned) {
 
   // Request block from Memory
   fetchUnit.updatePC(pc);
-  fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
   memory::MemoryReadResult memReadResult = {
@@ -211,7 +209,6 @@ TEST_P(PipelineFetchUnitTest, halted) {
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
-  fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
   memory::MemoryReadResult memReadResult = {
@@ -247,7 +244,6 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
 
   // Request block from memory
   fetchUnit.updatePC(pc);
-  fetchUnit.requestFromPC();
 
   MacroOp mOp = {uopPtr};
   memory::MemoryReadResult memReadResult = {
@@ -296,172 +292,6 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(isa, getMaxInstructionSize()).Times(1);
   EXPECT_CALL(isa, getMinInstructionSize()).Times(0);
   EXPECT_CALL(memory, requestRead(target, _)).Times(1);
-  fetchUnit.requestFromPC();
-}
-
-// Tests the functionality of the supplying from the Loop Buffer
-TEST_P(PipelineFetchUnitTest, supplyFromLoopBuffer) {
-  // Set instructions to be fetched from memory
-  memory::MemoryReadResult memReadResult = {
-      {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<memory::MemoryReadResult> nextBlock = {&memReadResult, 1};
-  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(nextBlock));
-
-  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
-
-  // Register loop boundary
-  fetchUnit.registerLoopBoundary(0xC);
-
-  // Set the instructions, within the loop body, to be returned from predecode
-  MacroOp mOp2 = {uopPtr2};
-  ON_CALL(isa, predecode(_, _, 0xC, _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
-  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
-
-  MacroOp mOp = {uopPtr};
-  ON_CALL(isa, predecode(_, _, Ne(0xC), _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
-  ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
-
-  // Set the expectation from the predictor to be true so a loop body will
-  // be detected
-  ON_CALL(predictor, predict(_, _, _))
-      .WillByDefault(Return(BranchPrediction({true, 0x0})));
-
-  // Set Loop Buffer state to be LoopBufferState::FILLING
-  // Tick 4 times to process all 16 bytes of fetched data
-  for (int i = 0; i < 4; i++) {
-    fetchUnit.tick();
-  }
-
-  // Fetch the next block of instructions from memory
-  fetchUnit.requestFromPC();
-
-  // Fill Loop Buffer and set its state to be LoopBufferState::SUPPLYING
-  // Tick 4 times to process all 16 bytes of fetched data
-  for (int i = 0; i < 4; i++) {
-    fetchUnit.tick();
-  }
-
-  // Whilst the Loop Buffer state is LoopBufferState::SUPPLYING, the request
-  // read should never be called
-  EXPECT_CALL(memory, requestRead(_, _)).Times(0);
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(0);
-  EXPECT_CALL(memory, getCompletedReads()).Times(0);
-  fetchUnit.requestFromPC();
-
-  // Empty output buffer and ensure the correct instructions are supplied from
-  // the Loop Buffer
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
-
-  // Flush the Loop Buffer and ensure correct instructions are fetched from
-  // memory
-  fetchUnit.flushLoopBuffer();
-  fetchUnit.updatePC(0x0);
-  EXPECT_CALL(memory, requestRead(_, _)).Times(AtLeast(1));
-  EXPECT_CALL(isa, getMaxInstructionSize()).Times(AtLeast(1));
-  EXPECT_CALL(memory, getCompletedReads()).Times(AtLeast(1));
-  fetchUnit.requestFromPC();
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
-}
-
-// Tests the functionality of idling the supply to the Loop Buffer one of not
-// taken branch at the loopBoundaryAddress_
-TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
-  // Set instructions to be fetched from memory
-  memory::MemoryReadResult memReadResultA = {
-      {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<memory::MemoryReadResult> nextBlockA = {&memReadResultA, 1};
-  memory::MemoryReadResult memReadResultB = {
-      {0x10, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
-  span<memory::MemoryReadResult> nextBlockB = {&memReadResultB, 1};
-  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockA));
-
-  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
-
-  // Register loop boundary
-  fetchUnit.registerLoopBoundary(0xC);
-
-  // Set the instructions, within the loop body, to be returned from predecode
-  MacroOp mOp2 = {uopPtr2};
-  ON_CALL(isa, predecode(_, _, Gt(0x8), _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
-  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
-
-  MacroOp mOp = {uopPtr};
-  ON_CALL(isa, predecode(_, _, Lt(0xC), _))
-      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
-  ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
-
-  // Set the first expectation from the predictor to be true so a loop body will
-  // be detected
-  EXPECT_CALL(predictor, predict(_, _, _))
-      .WillOnce(Return(BranchPrediction({true, 0x0})));
-
-  // Set Loop Buffer state to be LoopBufferState::FILLING
-  // Tick 4 times to process all 16 bytes of fetched data
-  for (int i = 0; i < 4; i++) {
-    fetchUnit.tick();
-  }
-
-  // Fetch the next block of instructions from memory and change the expected
-  // outcome of the branch predictor
-  fetchUnit.requestFromPC();
-  EXPECT_CALL(predictor, predict(_, _, _))
-      .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
-
-  // Attempt to fill Loop Buffer but prevent it on a not taken outcome at the
-  // loopBoundaryAddress_ branch
-  // Tick 4 times to process all 16 bytes of fetched data
-  for (int i = 0; i < 4; i++) {
-    fetchUnit.tick();
-  }
-
-  // Set the expectation for the next block to be fetched after the Loop Buffer
-  // state has been reset
-  const memory::MemoryAccessTarget target = {0x10, blockSize};
-  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockB));
-  EXPECT_CALL(memory, requestRead(target, _)).Times(1);
-
-  // Fetch the next block of instructions from memory
-  fetchUnit.requestFromPC();
-
-  // Empty output buffer and ensure the correct instructions are fetched from
-  // memory
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
-  output.fill({});
-  fetchUnit.tick();
-  EXPECT_EQ(output.getTailSlots()[0], mOp2);
 }
 
 // Tests that a min sized instruction held at the end of the fetch buffer is
@@ -491,7 +321,6 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
   fetchUnit.tick();
 
   // Buffer should now be empty as all bytes predecoded
-  EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
   EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
 
   // Expect a block starting at address 16 to be requested when we fetch again
@@ -499,7 +328,6 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
   EXPECT_CALL(memory,
               requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
       .Times(1);
-  fetchUnit.requestFromPC();
 
   // Tick again, expecting that decoding will now resume
   MacroOp mOp2 = {uopPtr2};
@@ -520,7 +348,6 @@ TEST_P(PipelineFetchUnitTest, minSizeInstructionAtEndOfBuffer) {
 
   // Initially 0 bytes, 16 bytes added, max bytes predecoded leaving (16 - max)
   // bytes left
-  EXPECT_EQ(fetchUnit.bufferedBytes_, 16 - insnMaxSizeBytes);
   EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
 }
 
@@ -559,7 +386,6 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
     fetchUnit.tick();
 
     // No data consumed
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
 
     // Expect that memory is requested even though there is data in the buffer
@@ -568,7 +394,6 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
     EXPECT_CALL(memory,
                 requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
         .Times(1);
-    fetchUnit.requestFromPC();
 
     // Tick again expecting buffer to be filled and a word is predecoded
     MacroOp mOp = {uopPtr};
@@ -586,8 +411,6 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesAtEndOfBuffer) {
     fetchUnit.tick();
 
     // Initially min bytes, 16 bytes added, max bytes predecoded
-    EXPECT_EQ(fetchUnit.bufferedBytes_,
-              (insnMinSizeBytes + 16) - insnMaxSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
   }
 }
@@ -625,7 +448,6 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
     fetchUnit.tick();
 
     // Ensure max bytes consumed
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp);
 
@@ -635,9 +457,7 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
     EXPECT_CALL(memory,
                 requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
         .Times(1);
-    fetchUnit.requestFromPC();
 
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
 
     // Memory doesn't complete reads in next cycle but buffered bytes should be
@@ -662,7 +482,6 @@ TEST_P(PipelineFetchUnitTest, validMinSizeReadsDontComplete) {
     fetchUnit.tick();
 
     // Ensure min bytes are consumed
-    EXPECT_EQ(fetchUnit.bufferedBytes_, 0);
     EXPECT_EQ(fetchUnit.pc_, 16);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], mOp2);
   }
@@ -701,7 +520,6 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
     fetchUnit.tick();
 
     // No data consumed
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
 
@@ -711,9 +529,7 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
     EXPECT_CALL(memory,
                 requestRead(Field(&memory::MemoryAccessTarget::address, 16), _))
         .Times(1);
-    fetchUnit.requestFromPC();
 
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
 
     // Memory doesn't complete reads in next cycle but buffered bytes should
@@ -738,7 +554,6 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
     fetchUnit.tick();
 
     // Ensure min bytes are not consumed
-    EXPECT_EQ(fetchUnit.bufferedBytes_, insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.pc_, blockSize - insnMinSizeBytes);
     EXPECT_EQ(fetchUnit.output_.getTailSlots()[0], MacroOp());
   }
