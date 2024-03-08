@@ -388,6 +388,15 @@ void ModelConfig::setExpectations(bool isDefault) {
       4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768});
 
   expectations_["Fetch"].addChild(
+      ExpectationNode::createExpectation<uint16_t>(2, "MOP-Queue-Size"));
+  expectations_["Fetch"]["MOP-Queue-Size"].setValueBounds<uint16_t>(1,
+                                                                    UINT16_MAX);
+
+  expectations_["Fetch"].addChild(
+      ExpectationNode::createExpectation<uint8_t>(8, "MOP-Cache-Tag-Bits"));
+  expectations_["Fetch"]["MOP-Cache-Tag-Bits"].setValueBounds<uint8_t>(1, 64);
+
+  expectations_["Fetch"].addChild(
       ExpectationNode::createExpectation<uint16_t>(32, "Loop-Buffer-Size"));
   expectations_["Fetch"]["Loop-Buffer-Size"].setValueBounds<uint16_t>(
       0, UINT16_MAX);

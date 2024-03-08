@@ -41,16 +41,14 @@ class FetchUnit {
   FetchUnit(PipelineBuffer<MacroOp>& output,
             memory::MemoryInterface& instructionMemory,
             uint64_t programByteLength, uint64_t entryPoint, uint16_t blockSize,
-            const arch::Architecture& isa, BranchPredictor& branchPredictor);
+            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+            uint16_t mopQueueSize, uint8_t mopCacheTagBits);
 
   ~FetchUnit();
 
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
    * current program counter. */
   void tick();
-
-  /** Function handle to retrieve branch that represents loop boundary. */
-  void registerLoopBoundary(uint64_t branchAddress);
 
   /** Check whether the program has ended. Returns `true` if the current PC is
    * outside of instruction memory. */
@@ -59,15 +57,9 @@ class FetchUnit {
   /** Update the program counter to the specified address. */
   void updatePC(uint64_t address);
 
-  /** Request instructions at the current program counter for a future cycle. */
-  void requestFromPC();
-
   /** Retrieve the number of cycles fetch terminated early due to a predicted
    * branch. */
   uint64_t getBranchStalls() const;
-
-  /** Clear the loop buffer. */
-  void flushLoopBuffer();
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
@@ -88,14 +80,15 @@ class FetchUnit {
   /** Reference to the current branch predictor. */
   BranchPredictor& branchPredictor_;
 
-  /** A loop buffer to supply a detected loop instruction stream. */
-  std::deque<loopBufferEntry> loopBuffer_;
+  uint16_t mopQueueSize_ = 0;
 
-  /** State of the loop buffer. */
-  LoopBufferState loopBufferState_ = LoopBufferState::IDLE;
+  std::deque<MacroOp> mopQueue_;
 
-  /** The branch instruction that forms the loop. */
-  uint64_t loopBoundaryAddress_ = 0;
+  uint8_t mopCacheTagBits_ = 0;
+
+  std::vector<std::pair<uint64_t, uint64_t>> mopCache_;
+
+  std::vector<uint64_t> requestedBlocks_;
 
   /** The current program halt state. Set to `true` when the PC leaves the
    * instruction memory region, and set back to `false` if the PC is returned to
@@ -111,12 +104,6 @@ class FetchUnit {
   /** A mask of the bits of the program counter to use for obtaining the block
    * address to fetch. */
   uint64_t blockMask_;
-
-  /** The buffer used to hold fetched instruction data. */
-  uint8_t* fetchBuffer_;
-
-  /** The amount of data currently in the fetch buffer. */
-  uint16_t bufferedBytes_ = 0;
 
   /** Let the following PipelineFetchUnitTest derived classes be a friend of
    * this class to allow proper testing of 'tick' function. */

@@ -34,7 +34,11 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
+                 isa, branchPredictor,
+                 config::SimInfo::getConfig()["Fetch"]["MOP-Queue-Size"]
+                     .as<uint16_t>(),
+                 config::SimInfo::getConfig()["Fetch"]["MOP-Cache-Tag-Bits"]
+                     .as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -48,11 +52,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
           loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
-          [this](auto branchAddress) {
-            fetchUnit_.registerLoopBoundary(branchAddress);
-          },
-          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
-          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
+          branchPredictor),
       loadStoreQueue_(
           config["Queue-Sizes"]["Load"].as<uint32_t>(),
           config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
@@ -150,12 +150,10 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
-    fetchUnit_.requestFromPC();
     return;
   }
 
   flushIfNeeded();
-  fetchUnit_.requestFromPC();
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
@@ -310,7 +308,6 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
@@ -343,7 +340,6 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -369,7 +365,6 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);

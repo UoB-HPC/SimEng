@@ -22,7 +22,11 @@ Core::Core(memory::MemoryInterface& instructionMemory,
                  entryPoint,
                  config::SimInfo::getConfig()["Fetch"]["Fetch-Block-Size"]
                      .as<uint16_t>(),
-                 isa, branchPredictor),
+                 isa, branchPredictor,
+                 config::SimInfo::getConfig()["Fetch"]["MOP-Queue-Size"]
+                     .as<uint16_t>(),
+                 config::SimInfo::getConfig()["Fetch"]["MOP-Cache-Tag-Bits"]
+                     .as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -74,7 +78,6 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
-    fetchUnit_.requestFromPC();
     return;
   }
 
@@ -84,7 +87,6 @@ void Core::tick() {
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
     auto targetAddress = executeUnit_.getFlushAddress();
 
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
@@ -96,14 +98,12 @@ void Core::tick() {
     // Update PC and wipe Fetch/Decode buffer.
     auto targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
     flushes_++;
   }
 
-  fetchUnit_.requestFromPC();
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
@@ -208,7 +208,6 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
-    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
