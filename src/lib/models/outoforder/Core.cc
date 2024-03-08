@@ -224,14 +224,9 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
+  uint64_t totalBranchesExecuted = reorderBuffer_.getBranchExecutedCount();
+  uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
                         static_cast<float>(totalBranchesExecuted);
   std::ostringstream branchMissRateStr;
