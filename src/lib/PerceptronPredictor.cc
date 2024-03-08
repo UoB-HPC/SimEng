@@ -20,11 +20,14 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (uint64_t)((1.93 * globalHistoryLength_) + 14);
+
+  globalHistoryMask_ = (globalHistoryLength_ * 2) - 1;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
   ras_.clear();
   rasHistory_.clear();
+  FTQ_.clear();
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
@@ -34,11 +37,6 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // the output to keep it in bounds of the prediction table.
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
-
-  // Store the global history for correct hashing in update() --
-  // needs to be global history and not the hashed index as hashing loses
-  // information at longer global history lengths
-  btbHistory_[address] = globalHistory_;
 
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
@@ -78,13 +76,27 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   } else if (type == BranchType::Conditional) {
     if (!prediction.taken) prediction.target = address + 4;
   }
+
+  // Store the global history for correct hashing in update() --
+  // needs to be global history and not the hashed index as hashing loses
+  // information at longer global history lengths
+  FTQ_.emplace_back(prediction.taken, globalHistory_);
+
+  // speculatively update global history
+  globalHistory_ =
+      ((globalHistory_ << 1) | prediction.taken) & globalHistoryMask_;
+
   return prediction;
 }
 
 void PerceptronPredictor::update(uint64_t address, bool taken,
                                  uint64_t targetAddress, BranchType type) {
-  // Work out hash index
-  uint64_t prevGlobalHistory = btbHistory_[address];
+  // Get previous branch state and prediction from FTQ
+  bool prevPrediction = FTQ_.front().first;
+  uint64_t prevGlobalHistory = FTQ_.front().second;
+  FTQ_.pop_front();
+
+  // Work out hashed index
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
 
@@ -117,9 +129,10 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex].first = perceptron;
   btb_[hashedIndex].second = targetAddress;
 
-  globalHistory_ =
-      ((globalHistory_ << 1) | taken) & ((1 << globalHistoryLength_) - 1);
-  return;
+  // Update global history if prediction was incorrect
+  // Bit-flip the global history bit corresponding to this prediction
+  // We know how many predictions there have since been by the size of the FTQ
+  if (prevPrediction != taken) globalHistory_ ^= (1 << (FTQ_.size()));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -143,6 +156,19 @@ void PerceptronPredictor::flush(uint64_t address) {
     }
     rasHistory_.erase(it);
   }
+
+  // If possible, pop instruction from FTQ
+  // if (!FTQ_.empty()) FTQ_.pop_back();
+  FTQ_.pop_back();
+
+  // Roll back global history
+  globalHistory_ >>= 1;
+}
+
+void PerceptronPredictor::addToFTQ(uint64_t address, bool taken) {
+  // Add instruction to the FTQ in event of reused prediction
+  FTQ_.emplace_back(taken, globalHistory_);
+  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
 }
 
 int64_t PerceptronPredictor::getDotProduct(

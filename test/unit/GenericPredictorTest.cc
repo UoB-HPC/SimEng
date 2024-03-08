@@ -82,15 +82,20 @@ TEST_F(GenericPredictorTest, RAS) {
 // correctly, when no address aliasing has occurred
 TEST_F(GenericPredictorTest, Hit) {
   simeng::config::SimInfo::addToConfig(
-      "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 11, "
+      "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 5, "
       "Saturating-Count-Bits: 2, Global-History-Length: 1, RAS-entries: 5, "
       "Fallback-Static-Predictor: Always-Taken}}");
   auto predictor = simeng::GenericPredictor();
+  predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.update(0, false, 16, BranchType::Conditional);
+  predictor.predict(0, BranchType::Conditional, 0);
+  predictor.update(0, true, 16, BranchType::Conditional);
 
   auto prediction = predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.taken);
@@ -101,60 +106,120 @@ TEST_F(GenericPredictorTest, Hit) {
 // behaviours of the same branch but in different states of the program
 TEST_F(GenericPredictorTest, GlobalIndexing) {
   simeng::config::SimInfo::addToConfig(
-      "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 11, "
-      "Saturating-Count-Bits: 2, Global-History-Length: 5, RAS-entries: 5, "
+      "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 10, "
+      "Saturating-Count-Bits: 2, Global-History-Length: 10, RAS-entries: 5, "
       "Fallback-Static-Predictor: Always-Not-Taken}}");
   auto predictor = simeng::GenericPredictor();
   // Spool up first global history pattern
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
-  auto prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
+  auto prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
   EXPECT_FALSE(prediction.taken);
-  EXPECT_EQ(prediction.target, 0x23);
+  EXPECT_EQ(prediction.target, 0x80);
   // Set entry in BTB
-  predictor.update(0x1F, true, 0xAB, BranchType::Conditional);
+  predictor.update(0x7C, true, 0xAB, BranchType::Conditional);
 
   // Spool up second global history pattern
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
   // Ensure default behaviour for re-encounter but with different global history
-  prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
+  prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
   EXPECT_FALSE(prediction.taken);
-  EXPECT_EQ(prediction.target, 0x23);
+  EXPECT_EQ(prediction.target, 0x80);
   // Set entry in BTB
-  predictor.update(0x1F, true, 0xBA, BranchType::Conditional);
+  predictor.update(0x7C, true, 0xBA, BranchType::Conditional);
 
   // Recreate first global history pattern
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
   // Get prediction
-  prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
+  prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.taken);
   EXPECT_EQ(prediction.target, 0xAB);
   // Set entry in BTB
-  predictor.update(0x1F, true, 0xAB, BranchType::Conditional);
+  predictor.update(0x7C, true, 0xAB, BranchType::Conditional);
 
   // Recreate second global history pattern
-  predictor.update(0, false, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, true, 4, BranchType::Unconditional);
-  predictor.update(0, false, 4, BranchType::Unconditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 16, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, false, 16, BranchType::Conditional);
   // Get prediction
-  prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
+  prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.taken);
   EXPECT_EQ(prediction.target, 0xBA);
-  predictor.update(0x1F, true, 0xBA, BranchType::Conditional);
+  predictor.update(0x7C, true, 0xBA, BranchType::Conditional);
 }
 
 // Test Flush of RAS functionality
@@ -193,6 +258,54 @@ TEST_F(GenericPredictorTest, flush) {
   prediction = predictor.predict(16, BranchType::Return, 0);
   EXPECT_TRUE(prediction.taken);
   EXPECT_EQ(prediction.target, 12);
+}
+
+// Test that update correctly corrects the speculatively updated gloabl history
+TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
+  simeng::config::SimInfo::addToConfig(
+      "{Branch-Predictor: {BTB-Tag-Bits: 2, Saturating-Count-Bits: 6, "
+      "Global-History-Length: 6, RAS-entries: 10, Fallback-Static-Predictor: "
+      "Always-Taken}}");
+  auto predictor = simeng::GenericPredictor();
+  // spool up a global history to set the target address
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, true);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  // Ensure default behaviour for first encounter
+  auto prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 0x4);
+  // Set entry in BTB
+  predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
+
+  // recreate this global history but with incorrect predictions
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  predictor.addToFTQ(0, false);
+  predictor.update(0, true, 4, BranchType::Conditional);
+  // Ensure default behaviour for first encounter
+  prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
+  EXPECT_TRUE(prediction.taken);
+  EXPECT_EQ(prediction.target, 0xAB);
+  // Set entry in BTB
+  predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
 }
 
 }  // namespace simeng
