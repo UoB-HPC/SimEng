@@ -361,6 +361,7 @@ TEST_F(ReorderBufferTest, branch) {
   uopPtr->setInstructionId(0);
   uopPtr->setInstructionAddress(insnAddr);
   uopPtr->setBranchPrediction(pred);
+  uop->setExecuted(true);
   uopPtr->setCommitReady();
 
   // First pass through ROB -- seen count reset to 0 as new branch
@@ -435,6 +436,10 @@ TEST_F(ReorderBufferTest, branch) {
                                 uop->getBranchAddress(), uop->getBranchType()));
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
+
+  // Check that branch metrics have been correctly collected
+  EXPECT_EQ(reorderBuffer.getBranchExecutedCount(), 8);
+  EXPECT_EQ(reorderBuffer.getBranchMispredictedCount(), 8);
 }
 
 // Tests that only those destination registers which have been renamed are

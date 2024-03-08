@@ -146,8 +146,6 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
 
   EXPECT_EQ(executeUnit.shouldFlush(), false);
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
-  EXPECT_EQ(executeUnit.getBranchExecutedCount(), 1);
-  EXPECT_EQ(executeUnit.getBranchMispredictedCount(), 0);
 }
 
 // Test that an instruction that already encountered an exception will raise it
@@ -293,8 +291,6 @@ TEST_F(PipelineExecuteUnitTest, mispredictedBranch) {
 
   EXPECT_EQ(executeUnit.shouldFlush(), true);
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
-  EXPECT_EQ(executeUnit.getBranchExecutedCount(), 1);
-  EXPECT_EQ(executeUnit.getBranchMispredictedCount(), 1);
   EXPECT_EQ(executeUnit.getFlushAddress(), pc);
   EXPECT_EQ(executeUnit.getFlushInsnId(), insnID);
 }
