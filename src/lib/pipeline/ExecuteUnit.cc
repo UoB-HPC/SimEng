@@ -138,15 +138,11 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
-    // Update the branch instruction counter
-    branchesExecuted_++;
 
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfter_ = uop->getInstructionId();
-      // Update the branch misprediction counter
-      branchMispredicts_++;
     }
   }
 
@@ -206,13 +202,6 @@ void ExecuteUnit::purgeFlushed() {
     pipeline_.back().insn = std::move(uop);
     operationsStalled_.front() = pipeline_.back().insn;
   }
-}
-
-uint64_t ExecuteUnit::getBranchExecutedCount() const {
-  return branchesExecuted_;
-}
-uint64_t ExecuteUnit::getBranchMispredictedCount() const {
-  return branchMispredicts_;
 }
 
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
