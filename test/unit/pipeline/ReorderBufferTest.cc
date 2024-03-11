@@ -428,7 +428,7 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
-  // Fourth pass through ROB -- seen count = 3; exceeds detection theshold,
+  // Fourth pass through ROB -- seen count = 3; exceeds detection threshold,
   // loopBoundaryAddr updated
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
