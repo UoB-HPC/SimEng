@@ -266,9 +266,7 @@ void FetchUnit::flushLoopBuffer() {
   loopBoundaryAddress_ = 0;
 }
 
-uint64_t FetchUnit::getBranchExecutedCount() const {
-  return branchesExecuted_;
-}
+uint64_t FetchUnit::getBranchExecutedCount() const { return branchesExecuted_; }
 
 }  // namespace pipeline
 }  // namespace simeng
