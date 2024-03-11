@@ -61,7 +61,8 @@ class BranchPredictor {
    */
   virtual void flush(uint64_t address) = 0;
 
-  /** Adds instruction to the Fetch Target Queue without making a new prediction */
+  /** Adds instruction to the Fetch Target Queue without making a new prediction
+   */
   virtual void addToFTQ(uint64_t address, bool taken) = 0;
 };
 
