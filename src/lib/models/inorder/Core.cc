@@ -150,7 +150,7 @@ std::map<std::string, std::string> Core::getStats() const {
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)};
+          {"flushes", std::to_string(flushes_)}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

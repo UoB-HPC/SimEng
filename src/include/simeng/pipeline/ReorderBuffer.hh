@@ -85,9 +85,6 @@ class ReorderBuffer {
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
 
-  /** Retrieve the number of branch instructions that have been executed. */
-  uint64_t getBranchExecutedCount() const;
-
   /** Retrieve the number of branch mispredictions. */
   uint64_t getBranchMispredictedCount() const;
 
@@ -150,9 +147,6 @@ class ReorderBuffer {
 
   /** The number of speculative loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
-
-  /** The number of branch instructions that were executed. */
-  uint64_t branchesExecuted_ = 0;
 
   /** The number of branch mispredictions that were observed. */
   uint64_t branchMispredicts_ = 0;
