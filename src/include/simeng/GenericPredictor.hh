@@ -40,7 +40,8 @@ class GenericPredictor : public BranchPredictor {
   /** Provides RAS rewinding behaviour. */
   void flush(uint64_t address) override;
 
-  /** Adds instruction to the Fetch Target Queue without making a new prediction */
+  /** Adds instruction to the Fetch Target Queue without making a new prediction
+   */
   void addToFTQ(uint64_t address, bool taken) override;
 
  private:

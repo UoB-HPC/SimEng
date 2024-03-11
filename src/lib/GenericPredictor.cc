@@ -35,9 +35,10 @@ GenericPredictor::~GenericPredictor() {
 
 BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
                                            int64_t knownOffset) {
-  // Get index via an XOR hash between the global history and the instruction address.
-  // This hash is then ANDed to keep it within bounds of the btb
-  uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+  // Get index via an XOR hash between the global history and the instruction
+  // address. This hash is then ANDed to keep it within bounds of the btb
+  uint64_t hashedIndex =
+      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
   // Get prediction from BTB
   bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
