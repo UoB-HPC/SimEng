@@ -155,8 +155,6 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     if (uop->isBranch()) {
       predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(),
                         uop->getBranchAddress(), uop->getBranchType());
-      // Update the branch instruction counter
-      branchesExecuted_++;
       // Update the branch misprediction counter
       if (uop->wasBranchMispredicted()) branchMispredicts_++;
     }
@@ -213,10 +211,6 @@ uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
 
 uint64_t ReorderBuffer::getViolatingLoadsCount() const {
   return loadViolations_;
-}
-
-uint64_t ReorderBuffer::getBranchExecutedCount() const {
-  return branchesExecuted_;
 }
 uint64_t ReorderBuffer::getBranchMispredictedCount() const {
   return branchMispredicts_;
