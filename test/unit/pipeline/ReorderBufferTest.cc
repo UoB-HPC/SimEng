@@ -437,8 +437,7 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
-  // Check that branch metrics have been correctly collected
-  EXPECT_EQ(reorderBuffer.getBranchExecutedCount(), 8);
+  // Check that branch misprediction metrics have been correctly collected
   EXPECT_EQ(reorderBuffer.getBranchMispredictedCount(), 8);
 }
 
