@@ -46,6 +46,11 @@ void FetchUnit::tick() {
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
+        // Let the branch predictor know the prediction is being reused so that
+        // the FTQ can be kept up to date
+        branchPredictor_.addToFTQ(macroOp[0]->getInstructionAddress(),
+                                  macroOp[0]->getBranchPrediction().taken);
+        branchesExecuted_++;
       }
 
       // Cycle queue by moving front entry to back
@@ -136,6 +141,7 @@ void FetchUnit::tick() {
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                             macroOp[0]->getKnownOffset());
+      branchesExecuted_++;
       macroOp[0]->setBranchPrediction(prediction);
     }
 
@@ -259,6 +265,8 @@ void FetchUnit::flushLoopBuffer() {
   loopBufferState_ = LoopBufferState::IDLE;
   loopBoundaryAddress_ = 0;
 }
+
+uint64_t FetchUnit::getBranchExecutedCount() const { return branchesExecuted_; }
 
 }  // namespace pipeline
 }  // namespace simeng

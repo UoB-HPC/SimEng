@@ -85,6 +85,9 @@ class ReorderBuffer {
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
 
+  /** Retrieve the number of branch mispredictions. */
+  uint64_t getBranchMispredictedCount() const;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -144,6 +147,9 @@ class ReorderBuffer {
 
   /** The number of speculative loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  /** The number of branch mispredictions that were observed. */
+  uint64_t branchMispredicts_ = 0;
 };
 
 }  // namespace pipeline

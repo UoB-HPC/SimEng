@@ -13,15 +13,13 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor, bool pipelined,
-    const std::vector<uint16_t>& blockingGroups)
+    bool pipelined, const std::vector<uint16_t>& blockingGroups)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
       handleLoad_(handleLoad),
       handleStore_(handleStore),
       raiseException_(raiseException),
-      predictor_(predictor),
       pipelined_(pipelined),
       blockingGroups_(blockingGroups) {}
 
@@ -141,19 +139,10 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
 
-    // Update branch predictor with branch results
-    predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc_,
-                      uop->getBranchType());
-
-    // Update the branch instruction counter
-    branchesExecuted_++;
-
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfter_ = uop->getInstructionId();
-      // Update the branch misprediction counter
-      branchMispredicts_++;
     }
   }
 
@@ -213,13 +202,6 @@ void ExecuteUnit::purgeFlushed() {
     pipeline_.back().insn = std::move(uop);
     operationsStalled_.front() = pipeline_.back().insn;
   }
-}
-
-uint64_t ExecuteUnit::getBranchExecutedCount() const {
-  return branchesExecuted_;
-}
-uint64_t ExecuteUnit::getBranchMispredictedCount() const {
-  return branchMispredicts_;
 }
 
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
