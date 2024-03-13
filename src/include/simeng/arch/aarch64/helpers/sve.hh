@@ -540,11 +540,15 @@ RegisterValue sveFcvtPredicated(srcValContainer& sourceValues,
  * int32_t).
  * N represents the source vector register type (e.g. zn.d would be double).
  * Returns correctly formatted RegisterValue. */
+// INT, DOUBLE
 template <typename D, typename N>
 RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
+  static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
+                "N not of valid type float or double");
   const D* d = sourceValues[0].getAsVector<D>();
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  // DOUBLE
   const N* n = sourceValues[2].getAsVector<N>();
 
   // Stores size of largest type out of D and N
@@ -561,7 +565,8 @@ RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
     int indexN = ((!sourceLarger) & (!sameType)) ? (2 * i) : i;
 
     if (p[i / (64 / lts)] & shifted_active) {
-      if (n[indexN] > std::numeric_limits<D>::max())
+      // DOUBLE > (DOUBLE)INT = DOUBLE > (DOUBLE)..807 = DOUBLE > ..808.00
+      if (n[indexN] >= (N)std::numeric_limits<D>::max())
         out[indexOut] = std::numeric_limits<D>::max();
       else if (n[indexN] < std::numeric_limits<D>::lowest())
         out[indexOut] = std::numeric_limits<D>::lowest();
