@@ -157,6 +157,8 @@ RegisterValue scvtf_FixedPoint(
  * Returns single value of type D. */
 template <typename D, typename N>
 D fcvtzu_integer(srcValContainer& sourceValues) {
+  static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
+                "N not of valid type float or double");
   N input = sourceValues[0].get<N>();
   D result = static_cast<D>(0);
 
@@ -165,7 +167,7 @@ D fcvtzu_integer(srcValContainer& sourceValues) {
     if (std::isinf(input)) {
       // Account for Infinity
       result = std::numeric_limits<D>::max();
-    } else if (input > std::numeric_limits<D>::max()) {
+    } else if (input >= (N)std::numeric_limits<D>::max()) {
       // Account for the source value being larger than the
       // destination register can support
       result = std::numeric_limits<D>::max();
