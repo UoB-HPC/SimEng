@@ -728,9 +728,9 @@ TEST_P(InstNeon, cmhs) {
   heap[3] = 1;
   heap[4] = -128;
   heap[5] = -1;
-  heap[6] = 0xAA;
-  heap[7] = 0xBB;
-  heap[8] = 0xCC;
+  heap[6] = (int8_t)0xAA;
+  heap[7] = (int8_t)0xBB;
+  heap[8] = (int8_t)0xCC;
   heap[9] = INT8_MAX;
   heap[10] = INT8_MAX - 1;
   heap[11] = INT8_MAX - 2;
@@ -746,9 +746,9 @@ TEST_P(InstNeon, cmhs) {
   heap[19] = -128;
   heap[20] = 1;
   heap[21] = 0;
-  heap[22] = 0xAA;
-  heap[23] = 0xBB;
-  heap[24] = 0xCC;
+  heap[22] = (int8_t)0xAA;
+  heap[23] = (int8_t)0xBB;
+  heap[24] = (int8_t)0xCC;
   heap[25] = 0;
   heap[26] = 1;
   heap[27] = 2;

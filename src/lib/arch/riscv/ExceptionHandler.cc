@@ -613,15 +613,16 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
         size_t buflen = registerFileSet.get(R1).get<size_t>();
 
-        char buf[buflen];
+        std::vector<char> buf;
         for (size_t i = 0; i < buflen; i++) {
-          buf[i] = (uint8_t)rand();
+          buf.push_back((uint8_t)rand());
         }
 
         stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
 
         stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
-        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+        stateChange.memoryAddressValues.push_back(
+            RegisterValue(buf.data(), buflen));
 
         break;
       }

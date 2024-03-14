@@ -826,7 +826,7 @@ RegisterValue vecTbl(
 
   // Create table from vectors. All table sourceValues must be of 16b format.
   int16_t tableSize = 16 * n_table_regs;
-  uint8_t table[tableSize];
+  std::vector<uint8_t> table(tableSize, 0);
   for (int i = 0; i < n_table_regs; i++) {
     const int8_t* currentVector = sourceValues[i].getAsVector<int8_t>();
     for (int j = 0; j < 16; j++) {
