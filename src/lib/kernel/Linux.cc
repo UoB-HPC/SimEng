@@ -15,7 +15,11 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#if __GNUC__ < 8
+#include <experimental/filesystem>
+#else
 #include <filesystem>
+#endif
 #include <iostream>
 
 namespace simeng {
