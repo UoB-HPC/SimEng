@@ -72,7 +72,7 @@ set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Enable additional compiler warnings for all targets
-add_compile_options(-Wall)
+#add_compile_options(-Wall)
 
 # Disable RTTI for all targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)

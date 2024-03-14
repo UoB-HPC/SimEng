@@ -56,6 +56,9 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(libsimeng capstone)
+# TODO TOML check this
+# Only enable compiler warnings for our code
+target_compile_options(libsimeng PRIVATE -Wall -pedantic) #-Werror)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
