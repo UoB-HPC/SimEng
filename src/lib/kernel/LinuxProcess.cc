@@ -68,8 +68,9 @@ LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Set program command string to a relative path of "Default"
   // TODO need to determine consequences of setting this as absolute and
-  // relative to simeng source directory
-  commandLine_.push_back("./SimEngDefaultProgram\0");
+  // relative to simeng source directory. Should the default prog be in the
+  // source or copied to the build dir?
+  commandLine_.push_back(SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
   //  std::cerr << "command line = " << commandLine_.back().c_str() <<
   //  std::endl;
 

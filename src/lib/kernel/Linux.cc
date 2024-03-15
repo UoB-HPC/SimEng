@@ -28,7 +28,7 @@ namespace kernel {
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  // Can't use designated intialisers as is C++ 20
+  // Can't use designated intialisers as is C++20
   processStates_.push_back({0,  // TODO: create unique PIDs
                             process.getPath(), process.getHeapStart(),
                             process.getHeapStart(),

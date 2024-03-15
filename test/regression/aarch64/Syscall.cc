@@ -597,18 +597,19 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  // Get current directory and append the default program's command line
-  // argument 0 value
-  char cwd[LINUX_PATH_MAX];
-  char* output = getcwd(cwd, LINUX_PATH_MAX);
-  if (output == NULL) {
-    // Something went wrong
-    std::cerr << "[SimEng:syscall] getcwd failed with errno = " << errno
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
+  //  // Get current directory and append the default program's command line
+  //  // argument 0 value
+  //  char cwd[LINUX_PATH_MAX];
+  //  char* output = getcwd(cwd, LINUX_PATH_MAX);
+  //  if (output == NULL) {
+  //    // Something went wrong
+  //    std::cerr << "[SimEng:syscall] getcwd failed with errno = " << errno
+  //              << std::endl;
+  //    exit(EXIT_FAILURE);
+  //  }
 
-  std::string reference = cwd + std::string("/SimEngDefaultProgram");
+  std::string reference =
+      SIMENG_SOURCE_DIR + std::string("/SimEngDefaultProgram");
 
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);

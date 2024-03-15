@@ -65,14 +65,14 @@ int main(int argc, char** argv) {
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     } else {
       configFilePath = DEFAULT_STR;
-      executablePath = "./SimEngDefaultProgram";
+      executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
       // This runs hex_ otherwise
     }
   } else {
     // Without a config file, no executable can be supplied so pass default
     // default values for executable information
     configFilePath = DEFAULT_STR;
-    executablePath = "./SimEngDefaultProgram";
+    executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   }
 
   coreInstance =
