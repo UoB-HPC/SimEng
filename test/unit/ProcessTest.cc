@@ -50,7 +50,7 @@ TEST_F(ProcessTest, createProcess_hex) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(
       span(reinterpret_cast<char*>(demoHex), sizeof(demoHex)));
   EXPECT_TRUE(proc.isValid());
-  EXPECT_EQ(proc.getPath(), "./SimEngDefaultProgram\0");
+  EXPECT_EQ(proc.getPath(), SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
 }
 
 // Tests get{Heap, Stack, Mmap}Start() functions

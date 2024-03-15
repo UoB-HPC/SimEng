@@ -67,7 +67,7 @@ TEST_F(OSTest, processElf_stackPointer) {
 
 TEST_F(OSTest, processHex_stackPointer) {
   os.createProcess(proc_hex);
-  EXPECT_EQ(os.getInitialStackPointer(), 1074790208);
+  EXPECT_EQ(os.getInitialStackPointer(), 1074790176);
   EXPECT_EQ(os.getInitialStackPointer(), proc_hex.getInitialStackPointer());
 }
 
