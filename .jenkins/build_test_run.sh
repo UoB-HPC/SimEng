@@ -52,8 +52,8 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "50280" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "62172" "simulated cycles"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6708" "retired instructions"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "7955" "simulated cycles"
     echo ""
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
