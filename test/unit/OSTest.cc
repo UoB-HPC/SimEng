@@ -23,6 +23,9 @@ class OSTest : public testing::Test {
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 
+  std::vector<std::string> defaultCmdLine = {SIMENG_SOURCE_DIR
+                                             "/SimEngDefaultProgram\0"};
+
   simeng::kernel::Linux os;
   simeng::kernel::LinuxProcess proc_elf;
   simeng::kernel::LinuxProcess proc_hex;
@@ -49,7 +52,7 @@ TEST_F(OSTest, processElf_stackPointer) {
   // cmdLine[0] length will change depending on the host system so final stack
   // pointer needs to be calculated manually
   // cmdLineSize + 1 for null seperator
-  const uint64_t cmdLineSize = cmdLine[0].size() + 1;
+  const uint64_t cmdLineSize = defaultCmdLine[0].size() + 1;
   // "OMP_NUM_THREADS=1" + 1 for null seperator
   const uint64_t envStringsSize = 18;
   // Size of initial stack frame as per LinuxProcess.cc:createStack()
