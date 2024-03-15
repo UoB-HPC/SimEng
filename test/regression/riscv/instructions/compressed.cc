@@ -626,7 +626,8 @@ TEST_P(InstCompressed, nop) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 199776);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2),
+            process_->getInitialStackPointer());
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
@@ -672,7 +673,8 @@ TEST_P(InstCompressed, nop) {
   // Ensure state hasn't changed except the number of ticks
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 199776);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2),
+            process_->getInitialStackPointer());
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
