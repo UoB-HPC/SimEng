@@ -46,5 +46,6 @@ target_include_directories(unittests PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(unittests PUBLIC ${PROJECT_SOURCE_DIR}/src/lib)
 target_link_libraries(unittests libsimeng)
 target_link_libraries(unittests gmock_main)
+target_compile_options(unittests PRIVATE -Wall -pedantic -Werror)
 
 add_test(NAME unit_tests COMMAND unittests)

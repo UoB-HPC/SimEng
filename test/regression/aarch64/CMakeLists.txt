@@ -31,6 +31,7 @@ target_include_directories(regression-aarch64 PRIVATE
                             ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(regression-aarch64 regression-test-base)
+target_compile_options(regression-aarch64 PRIVATE -Wall -pedantic -Werror)
 
 # Define a macro so that tests can find data files
 target_compile_definitions(regression-aarch64 PRIVATE
