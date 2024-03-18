@@ -15,3 +15,7 @@ module load tools/cmake
 build armclang armclang++
 test
 run
+
+buildRelease armclang armclang++
+test
+run
