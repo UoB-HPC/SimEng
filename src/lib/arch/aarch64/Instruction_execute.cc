@@ -110,6 +110,7 @@ void Instruction::execute() {
     switch (metadata_.opcode) {
       case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
         auto [result, nzcv] = addCarry_3ops<uint64_t>(sourceValues_);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -207,30 +208,35 @@ void Instruction::execute() {
       case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
         auto [result, nzcv] =
             addShift_imm<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
         auto [result, nzcv] =
             addShift_3ops<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_ADDWrx: {  // add wd, wn, wm{, extend #amount}
         auto [result, nzcv] =
             addExtend_3ops<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
         auto [result, nzcv] =
             addShift_imm<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
       case Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
         auto [result, nzcv] =
             addShift_3ops<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -238,6 +244,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
         auto [result, nzcv] =
             addExtend_3ops<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -384,6 +391,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -391,6 +399,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -398,6 +407,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -405,6 +415,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -502,12 +513,14 @@ void Instruction::execute() {
       case Opcode::AArch64_BICWrs: {  // bic wd, wn, wm{, shift #amount}
         auto [result, nzcv] =
             bicShift_3ops<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_BICXrs: {  // bic xd, xn, xm{, shift #amount}
         auto [result, nzcv] =
             bicShift_3ops<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -1138,6 +1151,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -1145,6 +1159,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -1152,6 +1167,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -1159,6 +1175,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -3929,6 +3946,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x | (~y); });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -3936,6 +3954,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOpShift_3ops<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x | (~y); });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -3943,6 +3962,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint32_t>(
             sourceValues_, metadata_, false,
             [](uint32_t x, uint32_t y) -> uint32_t { return x | y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -3954,6 +3974,7 @@ void Instruction::execute() {
         auto [result, nzcv] = logicOp_imm<uint64_t>(
             sourceValues_, metadata_, false,
             [](uint64_t x, uint64_t y) -> uint64_t { return x | y; });
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
@@ -5190,24 +5211,28 @@ void Instruction::execute() {
       case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm{, <shift>}
         auto [result, nzcv] =
             subShift_imm<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_SUBWrs: {  // sub wd, wn, wm{, shift #amount}
         auto [result, nzcv] =
             subShift_3ops<uint32_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = {result, 8};
         break;
       }
       case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm{, <shift>}
         auto [result, nzcv] =
             subShift_imm<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
       case Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
         auto [result, nzcv] =
             subShift_3ops<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
@@ -5215,6 +5240,7 @@ void Instruction::execute() {
       case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
         auto [result, nzcv] =
             subExtend_3ops<uint64_t>(sourceValues_, metadata_, false);
+        (void) nzcv; // Prevent unused variable warnings in GCC7
         results_[0] = result;
         break;
       }
