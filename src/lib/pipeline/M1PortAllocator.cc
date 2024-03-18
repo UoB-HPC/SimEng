@@ -59,7 +59,7 @@ void M1PortAllocator::issued(uint16_t port) {
   weights[port]--;
 }
 
-void M1PortAllocator::deallocate(uint16_t port) { issued(port); };
+void M1PortAllocator::deallocate(uint16_t port) { issued(port); }
 
 void M1PortAllocator::setRSSizeGetter(
     std::function<void(std::vector<uint64_t>&)> rsSizes) {
