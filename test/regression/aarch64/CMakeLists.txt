@@ -31,16 +31,10 @@ target_include_directories(regression-aarch64 PRIVATE
                             ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(regression-aarch64 regression-test-base)
-target_compile_options(regression-aarch64 PRIVATE -Wall -pedantic -Werror)
+target_compile_options(regression-aarch64 PRIVATE ${SIMENG_COMPILE_OPTIONS})
 
 # Define a macro so that tests can find data files
 target_compile_definitions(regression-aarch64 PRIVATE
   "SIMENG_AARCH64_TEST_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
 
 add_test(NAME regression-aarch64-test COMMAND regression-aarch64)
-
-#add_custom_command(
-#        TARGET regression-aarch64
-#        POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/SimEngDefaultProgram ${CMAKE_CURRENT_BINARY_DIR}/SimEngDefaultProgram
-#)
