@@ -21,7 +21,7 @@ TEST(AArch64OperandContainerTest, correctInit) {
         { cont.resize(MAX_SOURCE_REGISTERS * 2); },
         "resize can only be called when the active member is std::vector");
   }
-};
+}
 
 TEST(AArch64OperandContainerTest, useVec) {
   operandContainer<std::string, MAX_SOURCE_REGISTERS> cont;
