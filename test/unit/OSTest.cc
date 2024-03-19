@@ -12,8 +12,8 @@ class OSTest : public testing::Test {
       : os(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
                .as<std::string>()),
         proc_elf(simeng::kernel::LinuxProcess(cmdLine)),
-        proc_hex(simeng::span<char>(reinterpret_cast<char*>(demoHex),
-                                    sizeof(demoHex))) {}
+        proc_hex(simeng::span(reinterpret_cast<const uint8_t*>(demoHex),
+                              sizeof(demoHex))) {}
 
  protected:
   ConfigInit configInit = ConfigInit(
@@ -32,7 +32,7 @@ class OSTest : public testing::Test {
 
   // A simple program used to test the functionality of creating a process with
   // a stream of hex instructions.
-  uint32_t demoHex[7] = {
+  const uint32_t demoHex[7] = {
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1

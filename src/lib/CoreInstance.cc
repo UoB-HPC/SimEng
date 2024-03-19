@@ -11,7 +11,7 @@ CoreInstance::CoreInstance(std::string executablePath,
   generateCoreModel(executablePath, executableArgs);
 }
 
-CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
+CoreInstance::CoreInstance(uint8_t* assembledSource, size_t sourceSize,
                            ryml::ConstNodeRef config)
     : config_(config),
       kernel_(kernel::Linux(
@@ -96,7 +96,7 @@ void CoreInstance::createProcess(std::string executablePath,
   } else if (assembledSource_) {
     // Create a process image from the source code assembled by LLVM.
     process_ = std::make_unique<kernel::LinuxProcess>(
-        span<const char>(source_, sourceSize_), config_);
+        span<const uint8_t>(source_, sourceSize_), config_);
     // Raise error if created process is not valid
     if (!process_->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not create process based on "
@@ -108,7 +108,8 @@ void CoreInstance::createProcess(std::string executablePath,
     // TODO remove once default binary in use
     // Create a process image from the set of instructions held in hex_
     process_ = std::make_unique<kernel::LinuxProcess>(
-        span<const char>(reinterpret_cast<const char*>(hex_), sizeof(hex_)),
+        span<const uint8_t>(reinterpret_cast<const uint8_t*>(hex_),
+                            sizeof(hex_)),
         config_);
 
     // Raise error if created process is not valid

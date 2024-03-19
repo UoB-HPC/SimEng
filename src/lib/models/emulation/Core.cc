@@ -79,7 +79,7 @@ void Core::tick() {
     }
 
     const auto& instructionBytes = fetched[fetchIndex].data;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
                                     FETCH_SIZE, pc_, macroOp_);
 
     // Clear the fetched data

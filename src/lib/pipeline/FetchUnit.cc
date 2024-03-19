@@ -41,8 +41,10 @@ void FetchUnit::tick() {
       // TODO bytes read not used in release mode producing warning. Should
       // assertion become if?
       [[maybe_unused]] auto bytesRead = isa_.predecode(
-          &(loopBuffer_.front().encoding), loopBuffer_.front().instructionSize,
-          loopBuffer_.front().address, macroOp);
+          // TODO CHANGE THIS TO BE THE CORRECT TYPE
+          reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
+          loopBuffer_.front().instructionSize, loopBuffer_.front().address,
+          macroOp);
       assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling

@@ -52,7 +52,7 @@ class Architecture {
    * Writes into the supplied macro-op vector, and returns the number of bytes
    * consumed to produce it; a value of 0 indicates too few bytes were present
    * for a valid decoding. */
-  virtual uint8_t predecode(const void* ptr, uint16_t bytesAvailable,
+  virtual uint8_t predecode(const uint8_t* ptr, uint16_t bytesAvailable,
                             uint64_t instructionAddress,
                             MacroOp& output) const = 0;
 

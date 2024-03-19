@@ -61,13 +61,13 @@ class RiscVArchitectureTest : public testing::Test {
   })YAML");
 
   // addi	sp, ra, 2000
-  std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
+  const std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
   std::array<uint8_t, 4> invalidInstrBytes = {0x7f, 0x00, 0x81, 0xbb};
 
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
   kernel::LinuxProcess process = kernel::LinuxProcess(
-      span((char*)validInstrBytes.data(), validInstrBytes.size()));
+      span(validInstrBytes.data(), validInstrBytes.size()));
 };
 
 TEST_F(RiscVArchitectureTest, predecode) {

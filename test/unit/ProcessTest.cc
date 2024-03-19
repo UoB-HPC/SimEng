@@ -19,7 +19,7 @@ class ProcessTest : public testing::Test {
 
   // Program used when no executable is provided; counts down from
   // 1024*1024, with an independent `orr` at the start of each branch.
-  uint32_t demoHex[7] = {
+  const uint32_t demoHex[7] = {
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1
@@ -48,7 +48,7 @@ TEST_F(ProcessTest, createProcess_elf) {
 // Tests createProcess(), isValid(), and getPath() functions.
 TEST_F(ProcessTest, createProcess_hex) {
   kernel::LinuxProcess proc = kernel::LinuxProcess(
-      span(reinterpret_cast<char*>(demoHex), sizeof(demoHex)));
+      span(reinterpret_cast<const uint8_t*>(demoHex), sizeof(demoHex)));
   EXPECT_TRUE(proc.isValid());
   EXPECT_EQ(proc.getPath(), SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
 }

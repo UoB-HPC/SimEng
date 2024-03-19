@@ -47,7 +47,7 @@ class CoreInstance {
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
-  CoreInstance(char* assembledSource, size_t sourceSize,
+  CoreInstance(uint8_t* assembledSource, size_t sourceSize,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~CoreInstance();
@@ -112,7 +112,7 @@ class CoreInstance {
   simeng::kernel::Linux kernel_;
 
   /** Reference to source assembled by LLVM. */
-  char* source_ = nullptr;
+  uint8_t* source_ = nullptr;
 
   /** Size of the source code assembled by LLVM. */
   size_t sourceSize_ = 0;
