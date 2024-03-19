@@ -718,7 +718,8 @@ bool ExceptionHandler::init() {
          static_cast<uint16_t>(arch.getSystemRegisterTag(ARM64_SYSREG_SVCR))});
     regValues.push_back(RegisterValue(newSVCR, 8));
 
-    ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
+    ProcessStateChange stateChange = {
+        ChangeType::REPLACEMENT, regs, regValues, {}, {}};
     return concludeSyscall(stateChange);
   }
 

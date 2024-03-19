@@ -448,6 +448,7 @@ bool ExceptionHandler::init() {
       case 131: {  // tgkill
         // TODO currently returns success without action
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0}};
+        break;
       }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the

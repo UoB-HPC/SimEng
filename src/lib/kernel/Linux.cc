@@ -45,7 +45,7 @@ void Linux::createProcess(const LinuxProcess& process) {
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
-int64_t Linux::getHostDFD(int64_t vdfd, std::string pathname) {
+int64_t Linux::getHostDFD(int64_t vdfd) {
   // -100 = AT_FCWD on linux. Pass back AT_FDCWD for host platform e.g. -2 for
   // MAC
   if (vdfd == -100) {
@@ -150,7 +150,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 
   // Get host dirfd. May return -1 in case of no mapping, pass through to host
   // faccessat to deal with this
-  int64_t hostDfd = Linux::getHostDFD(dfd, filename);
+  int64_t hostDfd = Linux::getHostDFD(dfd);
 
   // Pass call through to host
   int64_t retval = ::faccessat(hostDfd, new_pathname.c_str(), mode, flag);
@@ -192,7 +192,7 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 
   // Get host dirfd. May return -1 in case of no mapping, pass through to host
   // fstatat to deal with this
-  int64_t hostDfd = Linux::getHostDFD(dfd, filename);
+  int64_t hostDfd = Linux::getHostDFD(dfd);
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -415,8 +415,9 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
   return 0;
 }
 
-uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
-                     off_t offset) {
+uint64_t Linux::mmap(uint64_t addr, size_t length, [[maybe_unused]] int prot,
+                     [[maybe_unused]] int flags, [[maybe_unused]] int fd,
+                     [[maybe_unused]] off_t offset) {
   LinuxProcessState* lps = &processStates_[0];
   std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
   if (addr == 0) {  // Kernel decides allocation
@@ -502,7 +503,7 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
   // Get host dirfd. May return -1 in case of no mapping, pass through to host
   // openat to deal with this
   // TODO should this be new_pathname (resp. filename)
-  int64_t hDfd = Linux::getHostDFD(dfd, filename);
+  int64_t hDfd = Linux::getHostDFD(dfd);
 
   // Pass call through to host
   int64_t hostFd = ::openat(hDfd, new_pathname.c_str(), newFlags, mode);

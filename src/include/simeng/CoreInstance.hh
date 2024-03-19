@@ -24,7 +24,7 @@
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
 // TODO unsure of why this is producing a warning when it is used
-[[maybe_unused]] static uint32_t hex_[] = {
+static const uint32_t hex_[] = {
     0x320C03E0,  // orr w0, wzr, #1048576
     0x320003E1,  // orr w0, wzr, #1
     0x71000400,  // subs w0, w0, #1
@@ -76,10 +76,10 @@ class CoreInstance {
   std::shared_ptr<char> getProcessImage() const;
 
   /** Getter for the size of the created process image. */
-  const uint64_t getProcessImageSize() const;
+  uint64_t getProcessImageSize() const;
 
   /* Getter for heap start. */
-  const uint64_t getHeapStart() const;
+  uint64_t getHeapStart() const;
 
  private:
   /** Generate the appropriate simulation objects as parameterised by the

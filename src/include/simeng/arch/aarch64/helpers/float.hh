@@ -157,10 +157,12 @@ RegisterValue scvtf_FixedPoint(
  * Returns single value of type D. */
 template <typename D, typename N>
 D fcvtzu_integer(srcValContainer& sourceValues) {
+  // Ensure type of N so that we know behaviour of type conversions
   static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
                 "N not of valid type float or double");
-  N input = sourceValues[0].get<N>();
-  D result = static_cast<D>(0);
+  // TODO do we need to static assert D to be uint32 or uint64
+  N input = sourceValues[0].get<N>();  // float
+  D result = static_cast<D>(0);        // uint
 
   // Check for nan and less than 0
   if (!std::isnan(input) && (input > static_cast<N>(0))) {
@@ -168,6 +170,16 @@ D fcvtzu_integer(srcValContainer& sourceValues) {
       // Account for Infinity
       result = std::numeric_limits<D>::max();
     } else if (input >= (N)std::numeric_limits<D>::max()) {
+      // max() will be either 4294967295 or 18446744073709551615
+      // Casting to float results in the following (incorrect) values 4294967296
+      // (+1) or 18446744073709551616 (+1)
+      //
+      // Casting to double results in no erroneous conversion.
+
+      //
+      //
+      // the following values 4294967295 or 18446744073709551615
+
       // Account for the source value being larger than the
       // destination register can support
       result = std::numeric_limits<D>::max();

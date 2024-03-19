@@ -244,7 +244,7 @@ class Linux {
   /** Return the host directory file descriptor depending on given pathname and
    * virtual dfd given to syscall. If vdfd is AT_FDCWD then AT_FDCWD is returned
    */
-  int64_t getHostDFD(int64_t vdfd, std::string pathname);
+  int64_t getHostDFD(int64_t vdfd);
 
   /** If the given filepath points to a special file, the filepath is replaced
    * to point to the SimEng equivalent. */

@@ -63,7 +63,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 }
 
 // TODO can this be marked as only usable by test? or is it used by SST??
-LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
+LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
+                           ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Set program command string to a relative path of "Default"
