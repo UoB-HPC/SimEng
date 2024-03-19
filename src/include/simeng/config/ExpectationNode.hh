@@ -549,7 +549,7 @@ class ExpectationNode {
    */
   // TODO needs initialisation in case validation called before setting. Unsure
   // whether this is a good solution
-  std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_ = {0, 0};
+  std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_ = {};
 
   /** The instances of ExpectationNodes held within this node. Considered to be
    * the children of this node. */
