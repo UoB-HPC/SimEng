@@ -157,31 +157,31 @@ RegisterValue scvtf_FixedPoint(
  * Returns single value of type D. */
 template <typename D, typename N>
 D fcvtzu_integer(srcValContainer& sourceValues) {
-  // Ensure type of N so that we know behaviour of type conversions
+  // Ensure types so that we know behaviour of inaccurate type conversions
   static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
                 "N not of valid type float or double");
   static_assert((std::is_same<uint32_t, D>() || std::is_same<uint64_t, D>()) &&
                 "D not of valid type uint32_t or uint64_t");
-  N input =
-      sourceValues[0].get<N>();  // float, TODO potentially cast to double all
-                                 // the time to prevent the below issue
-  D result = static_cast<D>(0);  // uint
+
+  N input = sourceValues[0].get<N>();
+  D result = static_cast<D>(0);
 
   // Check for nan and less than 0
   if (!std::isnan(input) && (input > static_cast<N>(0))) {
     if (std::isinf(input)) {
       // Account for Infinity
       result = std::numeric_limits<D>::max();
-    } else if (input >= static_cast<N>(std::numeric_limits<D>::max())) {
+    } else if (static_cast<double>(input) >=
+               static_cast<double>(std::numeric_limits<D>::max())) {
+      // Cast to double to ensure no precision errors. Float can't store uint32
+      // or uint64 max values accurately as not enough bits available. This
+      // causes unwanted comparison behaviour
+      //
       // max() will be either 4294967295 or 18446744073709551615
       // Casting to float results in the following (incorrect) values 4294967296
       // (+1) or 18446744073709551616 (+1)
       //
       // Casting to double results in no erroneous conversion.
-
-      //
-      //
-      // the following values 4294967295 or 18446744073709551615
 
       // Account for the source value being larger than the
       // destination register can support

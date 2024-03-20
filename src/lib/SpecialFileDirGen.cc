@@ -4,7 +4,11 @@
 
 namespace simeng {
 
-int systemWrapper(const char* __command) {
+// Wrapper around calls to "system(__command)". Checks that a shell is available
+// before calling "system" and checking the output for any issues.
+// ensureExitSuccess is used to check for a successful termination status (0)
+// from the child shell, defaults to on
+int systemWrapper(const char* __command, const bool ensureExitSuccess = true) {
   // Check that there is a shell available
   if (!system(NULL)) {
     std::cerr
@@ -15,23 +19,39 @@ int systemWrapper(const char* __command) {
 
   int output = system(__command);
 
-  switch (output) {
-    case -1:
-      std::cerr << "Child process could not be created, or its status could "
-                   "not  be retrieved. errno = "
-                << errno << std::endl;
+  if (output == -1) {
+    std::cerr << "[SimEng:SpecialFileDirGen] Child process could not be "
+                 "created, or its status could "
+                 "not  be retrieved. errno = "
+              << errno << std::endl;
+    exit(EXIT_FAILURE);
+  } else if (WIFEXITED(output) && WEXITSTATUS(output) == 127) {
+    std::cerr << "[SimEng:SpecialFileDirGen] Shell command could not be "
+                 "executed in child shell"
+              << std::endl;
+    exit(EXIT_FAILURE);
+  } else {
+    if (ensureExitSuccess) {
+      if (WIFEXITED(output) && WEXITSTATUS(output) == 0) {
+        // Success
+        return output;
+      } else if (WIFSIGNALED(output)) {
+        std::cerr << "[SimEng:SpecialFileDirGen] Child process terminated by "
+                     "signal: "
+                  << WTERMSIG(output) << "when running command: " << __command
+                  << std::endl;
+      } else {
+        // Macros providing more information can be found in "man 2 waitpid"
+        std::cerr << "[SimEng:SpecialFileDirGen] Call to system(" << __command
+                  << ") returned failure. Return value: " << output
+                  << ", if exited: " << WIFEXITED(output)
+                  << " , exit status: " << WEXITSTATUS(output) << std::endl;
+      }
       exit(EXIT_FAILURE);
-      break;
-      // TODO Unsure of how to check for this
-      //    case 2:
-      //      std::cerr << "Shell could not be executed in the child process,
-      //      then the  re‐\n"
-      //                   "          turn  value  is  as  though  the  child
-      //                   shell terminated by calling\n" "          _exit(2)
-      //                   with the status 127." << std::endl;
-    default:
-      // Success
-      return output;
+    }
+
+    // Success
+    return output;
   }
 }
 
@@ -52,7 +72,7 @@ SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
   const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
-  if (systemWrapper(exist_input.c_str())) {
+  if (systemWrapper(exist_input.c_str(), false)) {
     const std::string rm_input = "rm -r " + specialFilesDir_;
     systemWrapper(rm_input.c_str());
   }

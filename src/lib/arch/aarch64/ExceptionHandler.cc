@@ -146,24 +146,18 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totRead = linux_.read(fd, dataBuffer_.data(), count);
+          int64_t totalRead = linux_.read(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totRead}};
+              ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
-          if (totRead < 0) {
+          if (totalRead < 0) {
             return concludeSyscall(stateChange);
           }
 
-          uint64_t totalRead = (uint64_t)totRead;
-
-          uint64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t iLength = static_cast<uint64_t>(totalRead);
 
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
@@ -223,19 +217,18 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t totRead = linux_.readv(fd, iovec.data(), iovcnt);
+          int64_t totalRead = linux_.readv(fd, iovec.data(), iovcnt);
           ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totRead}};
+              ChangeType::REPLACEMENT, {R0}, {totalRead}};
 
           // Check for failure
-          if (totRead < 0) {
+          if (totalRead < 0) {
             return concludeSyscall(stateChange);
           }
 
-          uint64_t totalRead = (uint64_t)totRead;
-
           // Build list of memory write operations
-          uint64_t bytesRemaining = totalRead;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t bytesRemaining = static_cast<uint64_t>(totalRead);
           for (int64_t i = 0; i < iovcnt; i++) {
             // Get pointer and size of the buffer
             uint64_t iDst = iovdata[i * 2 + 0];

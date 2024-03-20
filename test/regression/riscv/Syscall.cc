@@ -189,7 +189,7 @@ TEST_P(Syscall, faccessat) {
 
   char* output =
       realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -223,7 +223,7 @@ TEST_P(Syscall, faccessat) {
   char dirPath[LINUX_PATH_MAX];
 
   output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -609,17 +609,6 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  //  // Get current directory and append the default program's comannd line
-  //  // argument 0 value
-  //  char cwd[LINUX_PATH_MAX];
-  //
-  //  char* output = getcwd(cwd, LINUX_PATH_MAX);
-  //  if (output == NULL) {
-  //    // Something went wrong
-  //    std::cerr << "[SimEng:syscall] getcwd failed with errno = " << errno
-  //              << std::endl;
-  //    exit(EXIT_FAILURE);
-  //  }
 
   std::string reference =
       SIMENG_SOURCE_DIR + std::string("/SimEngDefaultProgram");
@@ -756,7 +745,7 @@ TEST_P(Syscall, newfstatat) {
   char dirPath[LINUX_PATH_MAX];
 
   char* output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;

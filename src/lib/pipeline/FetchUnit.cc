@@ -38,10 +38,10 @@ void FetchUnit::tick() {
     auto outputSlots = output_.getTailSlots();
     for (size_t slot = 0; slot < output_.getWidth(); slot++) {
       auto& macroOp = outputSlots[slot];
-      // TODO bytes read not used in release mode producing warning. Should
-      // assertion become if?
+      // TODO Should the assertion become if?
+      // bytesRead only used by assertion, mark maybe unused to prevent warnings
+      // in release mode
       [[maybe_unused]] auto bytesRead = isa_.predecode(
-          // TODO CHANGE THIS TO BE THE CORRECT TYPE
           reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
           loopBuffer_.front().instructionSize, loopBuffer_.front().address,
           macroOp);
@@ -59,8 +59,7 @@ void FetchUnit::tick() {
     return;
   }
 
-  // Pointer to the instruction data to decode from
-  // TODO unsure of why buffer exists and fetchBuffer_ isn't used everywhere
+  // Const reference to the instruction data to decode from
   const uint8_t* buffer;
   uint16_t bufferOffset;
 

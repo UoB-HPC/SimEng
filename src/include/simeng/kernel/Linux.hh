@@ -160,7 +160,7 @@ class Linux {
                     int64_t flag);
 
   /** close syscall: close a file descriptor. */
-  int64_t close(int64_t fd);
+  int64_t close(int64_t vfd);
 
   /** newfstatat syscall: get file status; AKA fstatat. */
   int64_t newfstatat(int64_t dfd, const std::string& filename, stat& out,
@@ -205,7 +205,7 @@ class Linux {
                 off_t offset);
 
   /** openat syscall: open/create a file. */
-  int64_t openat(int64_t vdfd, const std::string& filename, int64_t flags,
+  int64_t openat(int64_t vdfd, const std::string& pathname, int64_t flags,
                  uint16_t mode);
 
   /** readlinkat syscall: read value of a symbolic link. */
@@ -244,7 +244,7 @@ class Linux {
   /** Return the host directory file descriptor depending on given pathname and
    * virtual dfd given to syscall. If vdfd is AT_FDCWD then AT_FDCWD is returned
    */
-  int64_t getHostDFD(int64_t vdfd);
+  int64_t getHostDirFD(int64_t vdfd);
 
   /** If the given filepath points to a special file, the filepath is replaced
    * to point to the SimEng equivalent. */

@@ -508,8 +508,8 @@ RegisterValue sveFcvtPredicated(srcValContainer& sourceValues,
 
   // Stores size of largest type out of D and N
   int lts = std::max(sizeof(D), sizeof(N));
-  bool sourceLarger = (sizeof(D) < sizeof(N)) ? true : false;
-  bool sameDandN = (sizeof(D) == sizeof(N)) ? true : false;
+  bool sourceLarger = (sizeof(D) < sizeof(N));
+  bool sameDandN = (sizeof(D) == sizeof(N));
 
   const uint16_t partition_num = VL_bits / (lts * 8);
   D out[256 / sizeof(D)] = {0};
@@ -540,21 +540,22 @@ RegisterValue sveFcvtPredicated(srcValContainer& sourceValues,
  * int32_t).
  * N represents the source vector register type (e.g. zn.d would be double).
  * Returns correctly formatted RegisterValue. */
-// INT, DOUBLE
 template <typename D, typename N>
 RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
   static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
                 "N not of valid type float or double");
+  static_assert((std::is_same<int32_t, D>() || std::is_same<int64_t, D>()) &&
+                "D not of valid type int32_t or int64_t");
+
   const D* d = sourceValues[0].getAsVector<D>();
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  // DOUBLE
   const N* n = sourceValues[2].getAsVector<N>();
 
   // Stores size of largest type out of D and N
   int lts = std::max(sizeof(D), sizeof(N));
-  bool sameType = (sizeof(D) == sizeof(N)) ? true : false;
-  bool sourceLarger = (sizeof(D) < sizeof(N)) ? true : false;
+  bool sameType = (sizeof(D) == sizeof(N));
+  bool sourceLarger = (sizeof(D) < sizeof(N));
 
   const uint16_t partition_num = VL_bits / (lts * 8);
   D out[256 / sizeof(D)] = {0};
@@ -565,8 +566,21 @@ RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
     int indexN = ((!sourceLarger) & (!sameType)) ? (2 * i) : i;
 
     if (p[i / (64 / lts)] & shifted_active) {
-      // DOUBLE > (DOUBLE)INT = DOUBLE > (DOUBLE)..807 = DOUBLE > ..808.00
-      if (n[indexN] >= (N)std::numeric_limits<D>::max())
+      if (static_cast<double>(n[indexN]) >=
+          static_cast<double>(std::numeric_limits<D>::max()))
+        // Cast to double to reduce precision errors. Float can't store int32
+        // or int64 max values accurately as not enough bits available. This
+        // causes unwanted comparison behaviour. Double also can't accurately
+        // represent int64.MaxValue. Non-strict comparison used to capture this
+        // case
+        //
+        // max() will be either 2147483647 or 9223372036854775807
+        // Casting to float results in the following (incorrect) values
+        // 2147483648 (+1) or 9223372036854775808 (+1)
+        //
+        // Casting to double results in 2147483647 (+0) or incorrect
+        // 9223372036854775808(+1)
+
         out[indexOut] = std::numeric_limits<D>::max();
       else if (n[indexN] < std::numeric_limits<D>::lowest())
         out[indexOut] = std::numeric_limits<D>::lowest();

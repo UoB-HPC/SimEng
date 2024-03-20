@@ -189,7 +189,7 @@ TEST_P(Syscall, faccessat) {
   char abs_filepath[LINUX_PATH_MAX];
   char* output =
       realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -222,7 +222,7 @@ TEST_P(Syscall, faccessat) {
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
   output = realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -597,16 +597,6 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  //  // Get current directory and append the default program's command line
-  //  // argument 0 value
-  //  char cwd[LINUX_PATH_MAX];
-  //  char* output = getcwd(cwd, LINUX_PATH_MAX);
-  //  if (output == NULL) {
-  //    // Something went wrong
-  //    std::cerr << "[SimEng:syscall] getcwd failed with errno = " << errno
-  //              << std::endl;
-  //    exit(EXIT_FAILURE);
-  //  }
 
   std::string reference =
       SIMENG_SOURCE_DIR + std::string("/SimEngDefaultProgram");
@@ -616,20 +606,20 @@ TEST_P(Syscall, readlinkat) {
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
 
   RUN_AARCH64(R"(
-     # Get heap address
-     mov x0, 0
-     mov x8, 214
-     svc #0
-     mov x20, x0
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
 
-     # readlinkat(dirfd=0, pathname=x20, buf=x20+15, bufsize=1024)
-     mov x0, #0
-     mov x1, x20
-     add x2, x20, #15
-     mov x3, #1024
-     mov x8, #78
-     svc #0
-   )");
+    # readlinkat(dirfd=0, pathname=x20, buf=x20+15, bufsize=1024)
+    mov x0, #0
+    mov x1, x20
+    add x2, x20, #15
+    mov x3, #1024
+    mov x8, #78
+    svc #0
+  )");
 
   EXPECT_EQ(getGeneralRegister<int64_t>(0), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
@@ -743,7 +733,7 @@ TEST_P(Syscall, newfstatat) {
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
   char* output = realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
-  if (output == NULL) {
+  if (output == nullptr) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
