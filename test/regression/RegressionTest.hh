@@ -10,16 +10,15 @@
 #include "llvm/MC/MCCodeEmitter.h"
 
 #if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wall"
 #endif
 
 #include "llvm/MC/MCContext.h"
 
 #if defined(__clang__)
-# pragma clang diagnostic pop
+#pragma clang diagnostic pop
 #endif
-
 
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
