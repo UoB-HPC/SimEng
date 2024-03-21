@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#if __GNUC__ < 8
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 8
 #include <experimental/filesystem>
 #else
 #include <filesystem>

@@ -183,6 +183,8 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_ENABLE_BINDINGS OFF)
     set(LLVM_INSTALL_UTILS OFF)
 
+    set(LLVM_ENABLE_WARNINGS OFF)
+
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
     # make sure we get the headers too
