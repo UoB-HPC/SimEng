@@ -6,20 +6,13 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
 #include <sys/termios.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 8
-#include <experimental/filesystem>
-#else
-#include <filesystem>
-#endif
 #include <iostream>
 
 namespace simeng {
@@ -163,8 +156,8 @@ int64_t Linux::close(int64_t vfd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (vfd != STDERR_FILENO && vfd != STDOUT_FILENO) {
-    assert(vfd >= 0 &&
-           (size_t)vfd < processStates_[0].fileDescriptorTable.size());
+    assert(vfd >= 0 && static_cast<size_t>(vfd) <
+                           processStates_[0].fileDescriptorTable.size());
     int64_t hfd = processStates_[0].fileDescriptorTable[vfd];
     if (hfd < 0) {
       // Early return, can't deallocate vfd that isn't in fileDescriptorTable
@@ -234,7 +227,8 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 }
 
 int64_t Linux::fstat(int64_t fd, stat& out) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -330,7 +324,8 @@ int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
 }
 
 int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -365,7 +360,8 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
 }
 
 uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -559,7 +555,8 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
 }
 
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -615,7 +612,8 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -624,7 +622,8 @@ int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -655,7 +654,8 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
 }
 
 int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -664,7 +664,8 @@ int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd > 0 && (size_t)fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;

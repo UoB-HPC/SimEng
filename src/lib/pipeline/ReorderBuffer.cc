@@ -37,7 +37,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
     // Could be size_t or uint64_t
-    uint64_t firstOp;
+    uint64_t firstOp = UINT64_MAX;
     bool validForCommit = false;
     bool foundFirstInstance = false;
 
@@ -63,6 +63,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       }
       if (!validForCommit) return;
 
+      assert(firstOp != UINT64_MAX && "firstOp hasn't been populated");
       // No early return thus all uops are committable
       for (; firstOp < buffer_.size(); firstOp++) {
         if (buffer_[firstOp]->getInstructionId() != insnId) break;

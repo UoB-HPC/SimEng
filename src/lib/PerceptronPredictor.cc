@@ -97,7 +97,7 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   // Update the perceptron if the prediction was wrong, or the dot product's
   // magnitude was not greater than the training threshold
   if ((directionPrediction != taken) ||
-      (static_cast<uint64_t>(abs(Pout)) < trainingThreshold_)) {
+      (static_cast<uint64_t>(std::abs(Pout)) < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
 
     for (uint64_t i = 0; i < globalHistoryLength_; i++) {

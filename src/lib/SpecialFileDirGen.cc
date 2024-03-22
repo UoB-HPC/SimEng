@@ -4,11 +4,12 @@
 
 namespace simeng {
 
-// Wrapper around calls to "system(__command)". Checks that a shell is available
+// Wrapper around calls to "system(command)". Checks that a shell is available
 // before calling "system" and checking the output for any issues.
 // ensureExitSuccess is used to check for a successful termination status (0)
 // from the child shell, defaults to on
-int systemWrapper(const char* __command, const bool ensureExitSuccess = true) {
+int systemWrapper(const std::string& command,
+                  const bool ensureExitSuccess = true) {
   // Check that there is a shell available
   if (!system(NULL)) {
     std::cerr
@@ -17,7 +18,7 @@ int systemWrapper(const char* __command, const bool ensureExitSuccess = true) {
     exit(EXIT_FAILURE);
   }
 
-  int output = system(__command);
+  int output = system(command.c_str());
 
   if (output == -1) {
     std::cerr << "[SimEng:SpecialFileDirGen] Child process could not be "
@@ -38,11 +39,11 @@ int systemWrapper(const char* __command, const bool ensureExitSuccess = true) {
       } else if (WIFSIGNALED(output)) {
         std::cerr << "[SimEng:SpecialFileDirGen] Child process terminated by "
                      "signal: "
-                  << WTERMSIG(output) << "when running command: " << __command
+                  << WTERMSIG(output) << "when running command: " << command
                   << std::endl;
       } else {
         // Macros providing more information can be found in "man 2 waitpid"
-        std::cerr << "[SimEng:SpecialFileDirGen] Call to system(" << __command
+        std::cerr << "[SimEng:SpecialFileDirGen] Call to system(" << command
                   << ") returned failure. Return value: " << output
                   << ", if exited: " << WIFEXITED(output)
                   << " , exit status: " << WEXITSTATUS(output) << std::endl;
@@ -72,27 +73,27 @@ SpecialFileDirGen::SpecialFileDirGen(ryml::ConstNodeRef config)
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
   const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
-  if (systemWrapper(exist_input.c_str(), false)) {
+  if (systemWrapper(exist_input, false)) {
     const std::string rm_input = "rm -r " + specialFilesDir_;
-    systemWrapper(rm_input.c_str());
+    systemWrapper(rm_input);
   }
   return;
 }
 
 void SpecialFileDirGen::GenerateSFDir() {
   // Create root special files directory
-  systemWrapper(("mkdir -p " + specialFilesDir_).c_str());
+  systemWrapper("mkdir -p " + specialFilesDir_);
   // Define frequently accessed root directories in special file tree
   const std::string proc_dir = specialFilesDir_ + "/proc/";
   const std::string online_dir = specialFilesDir_ + "/sys/devices/system/cpu/";
   const std::string cpu_base_dir =
       specialFilesDir_ + "/sys/devices/system/cpu/cpu";
 
-  systemWrapper(("mkdir " + proc_dir).c_str());
-  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/").c_str());
-  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/devices/").c_str());
-  systemWrapper(("mkdir " + specialFilesDir_ + "/sys/devices/system/").c_str());
-  systemWrapper(("mkdir " + online_dir).c_str());
+  systemWrapper("mkdir " + proc_dir);
+  systemWrapper("mkdir " + specialFilesDir_ + "/sys/");
+  systemWrapper("mkdir " + specialFilesDir_ + "/sys/devices/");
+  systemWrapper("mkdir " + specialFilesDir_ + "/sys/devices/system/");
+  systemWrapper("mkdir " + online_dir);
 
   // Create '/proc/cpuinfo' file.
   std::ofstream cpuinfo_File(proc_dir + "cpuinfo");
@@ -140,9 +141,8 @@ void SpecialFileDirGen::GenerateSFDir() {
 
   // Create sub directory for each CPU core and required files.
   for (uint64_t i = 0; i < coreCount_ * socketCount_ * smt_; i++) {
-    systemWrapper(("mkdir " + cpu_base_dir + std::to_string(i) + "/").c_str());
-    systemWrapper(
-        ("mkdir " + cpu_base_dir + std::to_string(i) + "/topology/").c_str());
+    systemWrapper("mkdir " + cpu_base_dir + std::to_string(i) + "/");
+    systemWrapper("mkdir " + cpu_base_dir + std::to_string(i) + "/topology/");
   }
 
   // Create '/sys/devices/system/cpu/cpuX/topology/{core_id,
