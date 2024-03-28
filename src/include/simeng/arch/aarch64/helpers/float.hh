@@ -159,9 +159,9 @@ template <typename D, typename N>
 D fcvtzu_integer(srcValContainer& sourceValues) {
   // Ensure types so that we know behaviour of inaccurate type conversions
   static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
-                "N not of valid type float or double");
+                "N is not a valid type which should be float or double");
   static_assert((std::is_same<uint32_t, D>() || std::is_same<uint64_t, D>()) &&
-                "D not of valid type uint32_t or uint64_t");
+                "D is not a valid type which should be int32_t or int64_t");
 
   N input = sourceValues[0].get<N>();
   D result = static_cast<D>(0);

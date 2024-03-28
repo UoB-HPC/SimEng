@@ -544,9 +544,9 @@ template <typename D, typename N>
 RegisterValue sveFcvtzsPredicated(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
   static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
-                "N not of valid type float or double");
+                "N is not a valid type which should be float or double");
   static_assert((std::is_same<int32_t, D>() || std::is_same<int64_t, D>()) &&
-                "D not of valid type int32_t or int64_t");
+                "D is not a valid type which should be int32_t or int64_t");
 
   const D* d = sourceValues[0].getAsVector<D>();
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();

@@ -23,7 +23,7 @@ int systemWrapper(const std::string& command,
   if (output == -1) {
     std::cerr << "[SimEng:SpecialFileDirGen] Child process could not be "
                  "created, or its status could "
-                 "not  be retrieved. errno = "
+                 "not be retrieved. errno = "
               << errno << std::endl;
     exit(EXIT_FAILURE);
   } else if (WIFEXITED(output) && WEXITSTATUS(output) == 127) {
