@@ -59,7 +59,7 @@ class A64FXPortAllocator : public PortAllocator {
   /** Mapping from reservation station to ports. */
   std::vector<std::vector<uint16_t>> rsToPort_;
 
-  /** Vector of free entires across all reservation stations. */
+  /** Vector of free entries across all reservation stations. */
   std::vector<uint64_t> freeEntries_;
 
   /** Reservation station classifications as detailed in manual. */

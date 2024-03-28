@@ -25,7 +25,7 @@ const uint8_t addressAlignMask = 0x3;
 const uint8_t addressAlignMaskCompressed = 0x1;
 const uint8_t minInstWidthBytes = 4;
 const uint8_t minInstWidthBytesCompressed = 2;
-};  // namespace constantsPool
+}  // namespace constantsPool
 
 /** A class to hold and generate riscv specific architecture configuration
  * options. */

@@ -44,7 +44,7 @@ class ReorderBuffer {
   /** Constructs a reorder buffer of maximum size `maxSize`, supplying a
    * reference to the register alias table. */
   ReorderBuffer(
-      unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
+      uint64_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       std::function<void(uint64_t branchAddress)> sendLoopBoundary,
       BranchPredictor& predictor, uint16_t loopBufSize,
@@ -93,7 +93,7 @@ class ReorderBuffer {
   LoadStoreQueue& lsq_;
 
   /** The maximum size of the ROB. */
-  unsigned int maxSize_;
+  uint64_t maxSize_;
 
   /** A function to call upon exception generation. */
   std::function<void(std::shared_ptr<Instruction>)> raiseException_;

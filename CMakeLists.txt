@@ -71,8 +71,8 @@ set(CMAKE_MACOSX_RPATH 1)
 # Enable PIC for libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Enable additional compiler warnings for all targets
-add_compile_options(-Wall)
+# Create variable to enable additional compiler warnings for SimEng targets only
+set(SIMENG_COMPILE_OPTIONS -Wall -pedantic -Werror) #-Wextra
 
 # Disable RTTI for all targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
@@ -182,6 +182,8 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_INCLUDE_DOCS OFF)
     set(LLVM_ENABLE_BINDINGS OFF)
     set(LLVM_INSTALL_UTILS OFF)
+
+    set(LLVM_ENABLE_WARNINGS OFF)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)

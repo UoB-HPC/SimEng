@@ -28,7 +28,7 @@ class Assembler {
   ~Assembler();
 
   /** Returns the assembled source as a char array. */
-  char* getAssembledSource();
+  uint8_t* getAssembledSource();
 
   /** Returns the size of the assembled source. */
   size_t getAssembledSourceSize();

@@ -20,7 +20,8 @@ enum class LoopBufferState {
 // Struct to hold information about a fetched instruction
 struct loopBufferEntry {
   // Encoding of the instruction
-  const uint64_t encoding;
+  // TODO could be updated to uint8_t encoding[4]
+  const uint32_t encoding;
 
   // Size of the instruction
   const uint16_t instructionSize;

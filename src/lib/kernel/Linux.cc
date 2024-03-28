@@ -6,9 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
 #include <sys/termios.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -23,14 +21,13 @@ namespace kernel {
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  processStates_.push_back(
-      {.pid = 0,  // TODO: create unique PIDs
-       .path = process.getPath(),
-       .startBrk = process.getHeapStart(),
-       .currentBrk = process.getHeapStart(),
-       .initialStackPointer = process.getInitialStackPointer(),
-       .mmapRegion = process.getMmapStart(),
-       .pageSize = process.getPageSize()});
+  // Can't use designated intialisers as is C++20
+  // TODO remove comment after reviews
+  processStates_.push_back({0,  // TODO: create unique PIDs
+                            process.getPath(), process.getHeapStart(),
+                            process.getHeapStart(),
+                            process.getInitialStackPointer(),
+                            process.getMmapStart(), process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
@@ -42,31 +39,35 @@ void Linux::createProcess(const LinuxProcess& process) {
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
-uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
-  // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(pathname.c_str(), absolutePath);
+int64_t Linux::getHostDirFD(int64_t vdfd) {
+  // -100 = AT_FCWD on linux. Pass back AT_FDCWD for host platform e.g. -2 for
+  // MAC
+  if (vdfd == -100) {
+    // Early return if requesting current working directory
+    return AT_FDCWD;
+  }
 
-  int64_t dfd_temp = AT_FDCWD;
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
-    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
-      if (dfd_temp < 0) {
-        return -1;
-      }
+  if (vdfd < 0) {
+    // Invalid virtual file descriptor
+    return -1;
+  } else {
+    uint64_t unsignedVdfd = static_cast<uint64_t>(vdfd);
+    if (unsignedVdfd < processStates_[0].fileDescriptorTable.size()) {
+      // Within bounds of table. Entry will be -1 if invalid
+      return processStates_[0].fileDescriptorTable[unsignedVdfd];
+    } else {
+      // Outside bounds of table
+      return -1;
+      // TODO potentially this should throw an error as per previous
+      // implementation's assertion
     }
   }
-  return dfd_temp;
 }
 
 std::string Linux::getSpecialFile(const std::string filename) {
   for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
-      for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
+      for (size_t i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
           std::cerr << "[SimEng:Linux] Using Special File: " << filename.c_str()
                     << std::endl;
@@ -141,30 +142,32 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
   // special file)
   new_pathname = Linux::getSpecialFile(filename);
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // faccessat to deal with this
+  int64_t hostDfd = Linux::getHostDirFD(dfd);
 
   // Pass call through to host
-  int64_t retval = ::faccessat(dirfd, new_pathname.c_str(), mode, flag);
+  int64_t retval = ::faccessat(hostDfd, new_pathname.c_str(), mode, flag);
 
   return retval;
 }
 
-int64_t Linux::close(int64_t fd) {
+int64_t Linux::close(int64_t vfd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
-  if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processStates_[0].fileDescriptorTable.size());
-    int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (vfd != STDERR_FILENO && vfd != STDOUT_FILENO) {
+    assert(vfd >= 0 && static_cast<size_t>(vfd) <
+                           processStates_[0].fileDescriptorTable.size());
+    int64_t hfd = processStates_[0].fileDescriptorTable[vfd];
     if (hfd < 0) {
+      // Early return, can't deallocate vfd that isn't in fileDescriptorTable
       return EBADF;
     }
 
     // Deallocate the virtual file descriptor
-    assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
-    processStates_[0].freeFileDescriptors.insert(fd);
-    processStates_[0].fileDescriptorTable[fd] = -1;
+    assert(processStates_[0].freeFileDescriptors.count(vfd) == 0);
+    processStates_[0].freeFileDescriptors.insert(vfd);
+    processStates_[0].fileDescriptorTable[vfd] = -1;
 
     return ::close(hfd);
   }
@@ -182,13 +185,13 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   // special file)
   new_pathname = Linux::getSpecialFile(filename);
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // fstatat to deal with this
+  int64_t hostDfd = Linux::getHostDirFD(dfd);
 
   // Pass call through to host
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dirfd, new_pathname.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(hostDfd, new_pathname.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -224,7 +227,8 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 }
 
 int64_t Linux::fstat(int64_t fd, stat& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -320,7 +324,8 @@ int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
 }
 
 int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -355,7 +360,8 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
 }
 
 uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -369,7 +375,8 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
     // addr must be a multiple of the process page size
     return -1;
   }
-  int i;
+  // TODO i defined twice. Need to determine correct usage of second
+  size_t i;
   vm_area_struct alloc;
   // Find addr in allocations
   for (i = 0; i < lps->contiguousAllocations.size(); i++) {
@@ -388,15 +395,16 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
     }
   }
 
-  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-    alloc = lps->nonContiguousAllocations[i];
+  // TODO check redefinition of i is correct
+  for (size_t j = 0; j < lps->nonContiguousAllocations.size(); j++) {
+    alloc = lps->nonContiguousAllocations[j];
     if (alloc.vm_start == addr) {
       if ((alloc.vm_end - alloc.vm_start) < length) {
         // length must not be larger than the original allocation
         return -1;
       }
       lps->nonContiguousAllocations.erase(
-          lps->nonContiguousAllocations.begin() + i);
+          lps->nonContiguousAllocations.begin() + j);
       return 0;
     }
   }
@@ -404,8 +412,9 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
   return 0;
 }
 
-uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
-                     off_t offset) {
+uint64_t Linux::mmap(uint64_t addr, size_t length, [[maybe_unused]] int prot,
+                     [[maybe_unused]] int flags, [[maybe_unused]] int fd,
+                     [[maybe_unused]] off_t offset) {
   LinuxProcessState* lps = &processStates_[0];
   std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
   if (addr == 0) {  // Kernel decides allocation
@@ -444,13 +453,11 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
   return newAlloc->vm_start;
 }
 
-int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
+int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
                       uint16_t mode) {
-  std::string new_pathname;
-
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
-  new_pathname = Linux::getSpecialFile(filename);
+  std::string new_pathname = Linux::getSpecialFile(pathname);
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
@@ -486,18 +493,22 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
 
   // If Special File (or Special File Directory) is being opened then need to
   // set flags to O_RDONLY and O_CLOEXEC only.
-  if (new_pathname != filename) {
+  if (new_pathname != pathname) {
     newFlags = O_RDONLY | O_CLOEXEC;
   }
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == -1) return EBADF;
+  // Get host dirfd. May return -1 in case of no mapping, pass through to host
+  // openat to deal with this
+  int64_t hDfd = Linux::getHostDirFD(dfd);
 
   // Pass call through to host
-  int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);
-  if (hfd < 0) {
-    return hfd;
+  int64_t hostFd = ::openat(hDfd, new_pathname.c_str(), newFlags, mode);
+  if (hostFd < 0) {
+    // An error occurred, pass this back to userspace don't allocate virtual
+    // file descriptor
+    // TODO possibly need to set errno for simulated program so that it can be
+    // handled correctly?? This may be relevant throughout
+    return hostFd;
   }
 
   LinuxProcessState& processState = processStates_[0];
@@ -508,11 +519,11 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
     // Take virtual descriptor from free pool
     auto first = processState.freeFileDescriptors.begin();
     vfd = processState.freeFileDescriptors.extract(first).value();
-    processState.fileDescriptorTable[vfd] = hfd;
+    processState.fileDescriptorTable[vfd] = hostFd;
   } else {
     // Extend file descriptor table for a new virtual descriptor
     vfd = processState.fileDescriptorTable.size();
-    processState.fileDescriptorTable.push_back(hfd);
+    processState.fileDescriptorTable.push_back(hostFd);
   }
 
   return vfd;
@@ -524,7 +535,13 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   if (pathname == "/proc/self/exe") {
     // Resolve absolute path
     char absolutePath[LINUX_PATH_MAX];
-    realpath(processState.path.c_str(), absolutePath);
+    char* output = realpath(processState.path.c_str(), absolutePath);
+    if (output == nullptr) {
+      // Something went wrong
+      std::cerr << "[SimEng:readlinkat] realpath failed with errno = " << errno
+                << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
     // Copy executable path to buffer
     std::strncpy(buf, absolutePath, bufsize);
@@ -532,12 +549,14 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
     return std::min(std::strlen(absolutePath), bufsize);
   }
 
-  // TODO: resolve symbolic link for other paths
+  // TODO: resolve symbolic link for other paths - get hostfd then pass to real
+  // readlinkat
   return -1;
 }
 
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -593,7 +612,8 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -602,7 +622,8 @@ int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -633,7 +654,8 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
 }
 
 int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
@@ -642,7 +664,8 @@ int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
+  assert(fd > 0 && static_cast<size_t>(fd) <
+                       processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;

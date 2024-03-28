@@ -12,8 +12,8 @@ class OSTest : public testing::Test {
       : os(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
                .as<std::string>()),
         proc_elf(simeng::kernel::LinuxProcess(cmdLine)),
-        proc_hex(simeng::span<char>(reinterpret_cast<char*>(demoHex),
-                                    sizeof(demoHex))) {}
+        proc_hex(simeng::span(reinterpret_cast<const uint8_t*>(demoHex),
+                              sizeof(demoHex))) {}
 
  protected:
   ConfigInit configInit = ConfigInit(
@@ -23,13 +23,16 @@ class OSTest : public testing::Test {
   const std::vector<std::string> cmdLine = {
       SIMENG_SOURCE_DIR "/test/unit/data/stream-aarch64.elf"};
 
+  std::vector<std::string> defaultCmdLine = {SIMENG_SOURCE_DIR
+                                             "/SimEngDefaultProgram"};
+
   simeng::kernel::Linux os;
   simeng::kernel::LinuxProcess proc_elf;
   simeng::kernel::LinuxProcess proc_hex;
 
   // A simple program used to test the functionality of creating a process with
   // a stream of hex instructions.
-  uint32_t demoHex[7] = {
+  const uint32_t demoHex[7] = {
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1
@@ -67,7 +70,22 @@ TEST_F(OSTest, processElf_stackPointer) {
 
 TEST_F(OSTest, processHex_stackPointer) {
   os.createProcess(proc_hex);
-  EXPECT_EQ(os.getInitialStackPointer(), 1074790240);
+  // cmdLine[0] length will change depending on the host system so final stack
+  // pointer needs to be calculated manually
+  // cmdLineSize + 1 for null seperator
+  const uint64_t cmdLineSize = defaultCmdLine[0].size() + 1;
+  // "OMP_NUM_THREADS=1" + 1 for null seperator
+  const uint64_t envStringsSize = 18;
+  // Size of initial stack frame as per LinuxProcess.cc:createStack()
+  // - (17 push_backs) * 8
+  // https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html
+  const uint64_t stackFrameSize = 17 * 8;
+  // cmd + Env needs +1 for null seperator
+  const uint64_t stackPointer =
+      proc_hex.getStackStart() -
+      kernel::alignToBoundary(cmdLineSize + envStringsSize + 1, 32) -
+      kernel::alignToBoundary(stackFrameSize, 32);
+  EXPECT_EQ(os.getInitialStackPointer(), stackPointer);
   EXPECT_EQ(os.getInitialStackPointer(), proc_hex.getInitialStackPointer());
 }
 

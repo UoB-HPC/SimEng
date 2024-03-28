@@ -257,7 +257,7 @@ void SimEngCoreWrapper::initialiseHeapData() {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-  char* assembled_source = NULL;
+  uint8_t* assembled_source = NULL;
   size_t assembled_source_size = 0;
   if (assembleWithSource_) {
     output_.verbose(CALL_INFO, 1, 0,

@@ -719,7 +719,7 @@ TEST_P(InstNeon, cmeq) {
 TEST_P(InstNeon, cmhs) {
   // cmhs vd.16b, vn.16b, vm.16b
   initialHeapData_.resize(32);
-  int8_t* heap = reinterpret_cast<int8_t*>(initialHeapData_.data());
+  uint8_t* heap = initialHeapData_.data();
 
   // v0
   heap[0] = 0;

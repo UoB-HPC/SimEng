@@ -39,7 +39,7 @@ RegisterAliasTable::RegisterAliasTable(
     historyTable_[type].resize(physCount);
     destinationTable_[type].resize(physCount);
   }
-};
+}
 
 Register RegisterAliasTable::getMapping(Register architectural) const {
   // Asserts to ensure mapping isn't attempted for an out-of-bound index (i.e.

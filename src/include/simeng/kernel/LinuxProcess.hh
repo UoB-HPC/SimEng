@@ -68,7 +68,7 @@ class LinuxProcess {
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions,
+  LinuxProcess(span<const uint8_t> instructions,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~LinuxProcess();

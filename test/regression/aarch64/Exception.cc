@@ -292,7 +292,7 @@ TEST_P(Exception, svcr) {
     smstop
     smstart
   )");
-  for (int i = 0; i < (SVL / 8); i++) {
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZA, i, uint32_t, fillNeon<uint32_t>({0}, SVL / 8));
   }
 
@@ -365,7 +365,7 @@ TEST_P(Exception, svcr) {
     msr svcr, x5
     msr svcr, x4
   )");
-  for (int i = 0; i < (SVL / 8); i++) {
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZA, i, uint32_t, fillNeon<uint32_t>({0}, SVL / 8));
   }
 }

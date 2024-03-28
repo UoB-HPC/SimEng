@@ -104,9 +104,7 @@ class SimInfo {
 
   /** A getter function to retrieve whether or not the special files
    * directories should be generated. */
-  static const bool getGenSpecFiles() {
-    return getInstance()->genSpecialFiles_;
-  }
+  static bool getGenSpecFiles() { return getInstance()->genSpecialFiles_; }
 
   /** A utility function to rebuild/construct member variables/classes. For use
    * if the configuration used changes during simulation (e.g. during the

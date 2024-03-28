@@ -15,3 +15,7 @@ module load tools/cmake
 build gcc g++
 test
 run
+
+buildRelease gcc g++
+test
+run

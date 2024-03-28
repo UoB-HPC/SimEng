@@ -239,7 +239,7 @@ void Instruction::decode() {
             destinationRegisters_.addSMEOperand(regs.size());
             sourceValues_.addSMEOperand(regs.size());
             results_.addSMEOperand(regs.size());
-            for (int i = 0; i < regs.size(); i++) {
+            for (size_t i = 0; i < regs.size(); i++) {
               destinationRegisters_[destinationRegisterCount_] = regs[i];
               destinationRegisterCount_++;
               // If WRITE, also need to add to source registers to maintain
@@ -266,7 +266,7 @@ void Instruction::decode() {
           // Update source operand structure sizes
           sourceRegisters_.addSMEOperand(regs.size());
           sourceValues_.addSMEOperand(regs.size());
-          for (int i = 0; i < regs.size(); i++) {
+          for (size_t i = 0; i < regs.size(); i++) {
             sourceRegisters_[sourceRegisterCount_] = regs[i];
             sourceRegisterCount_++;
             sourceOperandsPending_++;
@@ -312,7 +312,7 @@ void Instruction::decode() {
         results_.addSMEOperand(regs.size());
         sourceRegisters_.addSMEOperand(regs.size());
         sourceValues_.addSMEOperand(regs.size());
-        for (int i = 0; i < regs.size(); i++) {
+        for (size_t i = 0; i < regs.size(); i++) {
           // If READ access, we only need to add SME rows to source registers.
           // If WRITE access, then we need to add SME rows to destination
           // registers AND source registers. The latter is required to maintain

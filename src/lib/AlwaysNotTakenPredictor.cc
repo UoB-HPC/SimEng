@@ -2,9 +2,8 @@
 
 namespace simeng {
 
-BranchPrediction AlwaysNotTakenPredictor::predict(uint64_t address,
-                                                  BranchType type,
-                                                  int64_t knownOffset) {
+BranchPrediction AlwaysNotTakenPredictor::predict(
+    [[maybe_unused]] uint64_t address, BranchType type, int64_t knownOffset) {
   return {false, 0};
 }
 

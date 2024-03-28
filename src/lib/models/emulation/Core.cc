@@ -79,7 +79,7 @@ void Core::tick() {
     }
 
     const auto& instructionBytes = fetched[fetchIndex].data;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
                                     FETCH_SIZE, pc_, macroOp_);
 
     // Clear the fetched data
@@ -173,7 +173,7 @@ std::map<std::string, std::string> Core::getStats() const {
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)}};
-};
+}
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
