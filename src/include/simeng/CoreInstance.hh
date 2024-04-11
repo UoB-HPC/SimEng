@@ -5,6 +5,7 @@
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/SpecialFileDirGen.hh"
+#include "simeng/TAGEPredictor.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"

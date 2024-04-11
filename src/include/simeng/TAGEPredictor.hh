@@ -22,7 +22,6 @@ struct ftqEntry {
   bool altPrediction;
   uint64_t history;
   int8_t provider;
-  int8_t altPred;
 };
 
 /**

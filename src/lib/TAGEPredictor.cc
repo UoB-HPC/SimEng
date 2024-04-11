@@ -28,14 +28,12 @@ BranchPrediction TAGEPredictor::predict(uint64_t address, BranchType type,
   bool altTaken = false;
   uint64_t taggedTarget = 0;
   int8_t provider = -1;
-  int8_t altPred = -1;
 
   uint64_t tag = getTagHash(address, globalHistory_);
 
   for (int table = 0; table < numTables_; table++) {
     uint32_t index = getIndex(address, globalHistory_, table);
     if (taggedPredictors_[table][index].tag == tag) {
-      altPred = provider;
       altTaken = taggedTaken;
       provider = table;
       taggedTaken = (taggedPredictors_[table][index].counter >=
@@ -79,7 +77,7 @@ BranchPrediction TAGEPredictor::predict(uint64_t address, BranchType type,
 
   // store state information in FTQ
   ftqEntry state = {prediction.taken, prediction.target, altTaken,
-                    globalHistory_, provider, altPred};
+                    globalHistory_, provider};
   ftq_.push_back(state);
 
   // Speculatively update the global history on the basis of this prediction
@@ -100,7 +98,6 @@ void TAGEPredictor::update(uint64_t address, bool taken, uint64_t targetAddress,
   bool prevAltPrediction = prevState.altPrediction;
   uint64_t prevHistory = prevState.history;
   int8_t provider = prevState.provider;
-  int8_t altPred = prevState.altPred;
   predictorEntry* providerEntry = (provider != -1) ?
       &taggedPredictors_[provider][getIndex(address, prevHistory, provider)] :
       &T0Predictor_[address & 4095];
@@ -184,7 +181,7 @@ void TAGEPredictor::addToFTQ(uint64_t address, bool taken) {
   // passed down.
   // ToDo -- think if there is a more elegant way of implementing this to
   //  retain more info from the base prediction
-  ftqEntry newEntry = {taken, 0, false, globalHistory_, -1, -1};
+  ftqEntry newEntry = {taken, 0, false, globalHistory_, -1};
   ftq_.push_back(newEntry);
   globalHistory_ = (globalHistory_ << 1) | taken;
 }
