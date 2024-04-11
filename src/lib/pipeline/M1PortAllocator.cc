@@ -27,7 +27,8 @@ uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
   // stations
   // TODO Declaration shadows a field of 'simeng::pipeline::M1PortAllocator see
   // header file'
-  std::vector<uint64_t> rsFreeSpaces;
+  //  std::vector<uint64_t> rsFreeSpaces;
+  rsFreeSpaces.clear();
   rsSizes_(rsFreeSpaces);
 
   for (const auto& portIndex : ports) {

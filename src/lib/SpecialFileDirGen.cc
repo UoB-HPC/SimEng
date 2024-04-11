@@ -7,7 +7,7 @@ namespace simeng {
 // Wrapper around calls to "system(command)". Checks that a shell is available
 // before calling "system" and checking the output for any issues.
 // ensureExitSuccess is used to check for a successful termination status (0)
-// from the child shell, defaults to on
+// from the child shell, defaults to true
 int systemWrapper(const std::string& command,
                   const bool ensureExitSuccess = true) {
   // Check that there is a shell available

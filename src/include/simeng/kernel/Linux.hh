@@ -241,8 +241,9 @@ class Linux {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
-  /** Return the host directory file descriptor depending on given pathname and
-   * virtual dfd given to syscall. If vdfd is AT_FDCWD then AT_FDCWD is returned
+  /** Return the host directory file descriptor mapped to by the virtual dfd
+   * given to syscall. If vdfd is Linux::AT_FDCWD (-100) then Host::AT_FDCWD is
+   * returned
    */
   int64_t getHostDirFD(int64_t vdfd);
 

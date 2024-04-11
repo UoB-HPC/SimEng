@@ -326,20 +326,21 @@ bool ExceptionHandler::init() {
         int64_t flag = registerFileSet.get(R3).get<int64_t>();
 
         char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
-        return readStringThen(
-            filename, filenamePtr, kernel::Linux::LINUX_PATH_MAX,
-            [=](auto length) {
-              // Invoke the kernel
-              kernel::stat statOut;
-              uint64_t retval = linux_.newfstatat(dfd, filename, statOut, flag);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] filename;
-              stateChange.memoryAddresses.push_back(
-                  {statbufPtr, sizeof(statOut)});
-              stateChange.memoryAddressValues.push_back(statOut);
-              return concludeSyscall(stateChange);
-            });
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                kernel::stat statOut;
+                                uint64_t retval = linux_.newfstatat(
+                                    dfd, filename, statOut, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                stateChange.memoryAddresses.push_back(
+                                    {statbufPtr, sizeof(statOut)});
+                                stateChange.memoryAddressValues.push_back(
+                                    {statOut, sizeof(statOut)});
+                                return concludeSyscall(stateChange);
+                              });
 
         break;
       }

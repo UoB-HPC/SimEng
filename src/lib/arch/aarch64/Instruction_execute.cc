@@ -2567,7 +2567,7 @@ void Instruction::execute() {
         const uint64_t* pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
-        const uint32_t sliceNum =
+        const uint16_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
         const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
@@ -2584,7 +2584,7 @@ void Instruction::execute() {
         // All Slice vectors are added to results[] so need to update the
         // correct one
         // TODO updated based on == comparison
-        for (uint32_t i = 0; i < partition_num; i++) {
+        for (uint16_t i = 0; i < partition_num; i++) {
           if (i == sliceNum)
             results_[i] = {out, 256};
           else

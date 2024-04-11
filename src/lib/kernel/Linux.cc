@@ -41,7 +41,7 @@ void Linux::createProcess(const LinuxProcess& process) {
 
 int64_t Linux::getHostDirFD(int64_t vdfd) {
   // -100 = AT_FCWD on linux. Pass back AT_FDCWD for host platform e.g. -2 for
-  // MAC
+  // macOS
   if (vdfd == -100) {
     // Early return if requesting current working directory
     return AT_FDCWD;
@@ -374,16 +374,14 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
   if (addr % lps->pageSize != 0) {
     // addr must be a multiple of the process page size
     return -1;
-  }
-  // TODO i defined twice. Need to determine correct usage of second
-  size_t i;
+  };
   vm_area_struct alloc;
   // Find addr in allocations
-  for (i = 0; i < lps->contiguousAllocations.size(); i++) {
+  for (size_t i = 0; i < lps->contiguousAllocations.size(); i++) {
     alloc = lps->contiguousAllocations[i];
     if (alloc.vm_start == addr) {
       if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
+        // Length must not be larger than the original allocation
         return -1;
       }
       if (i != 0) {
@@ -395,12 +393,11 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
     }
   }
 
-  // TODO check redefinition of i is correct
   for (size_t j = 0; j < lps->nonContiguousAllocations.size(); j++) {
     alloc = lps->nonContiguousAllocations[j];
     if (alloc.vm_start == addr) {
       if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
+        // Length must not be larger than the original allocation
         return -1;
       }
       lps->nonContiguousAllocations.erase(
@@ -408,7 +405,7 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
       return 0;
     }
   }
-  // Not an error if the indicated range does no contain any mapped pages
+  // Not an error if the indicated range does not contain any mapped pages
   return 0;
 }
 

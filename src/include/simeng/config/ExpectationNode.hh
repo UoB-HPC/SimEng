@@ -465,7 +465,8 @@ class ExpectationNode {
         }
       }
       if (!foundInSet) {
-        // Construct a human-readable output denoted expected set failure
+        // Construct a human-readable output explaining failure to match the
+        // expected value set
         retStr << nodeVal << " not in set {";
         for (size_t i = 0; i < expectedSet_.size(); i++) {
           retStr << getByType<T>(expectedSet_[i]);
@@ -480,7 +481,8 @@ class ExpectationNode {
       // Check for value between bounds
       if (getByType<T>(expectedBounds_.first) > nodeVal ||
           getByType<T>(expectedBounds_.second) < nodeVal) {
-        // Construct a human-readable output denoted expected bounds failure
+        // Construct a human-readable output explaining failure to be within
+        // expected bounds
         retStr << nodeVal << " not in the bounds {"
                << getByType<T>(expectedBounds_.first) << " to "
                << getByType<T>(expectedBounds_.second) << "}";
@@ -549,7 +551,7 @@ class ExpectationNode {
    */
   // TODO needs initialisation in case validation called before setting. Unsure
   // whether this is a good solution
-  std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_ = {};
+  std::pair<DataTypeVariant, DataTypeVariant> expectedBounds_ = {0, 0};
 
   /** The instances of ExpectationNodes held within this node. Considered to be
    * the children of this node. */

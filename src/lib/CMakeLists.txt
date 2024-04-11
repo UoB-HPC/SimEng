@@ -68,5 +68,5 @@ install(TARGETS libsimeng DESTINATION lib)
 get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
 get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
 get_target_property(SIMENG_VERSION libsimeng VERSION)
-# TODO can this be moved to build folder? Cmake may not do full rebuild when compiling after a change, therefor version.hh and cmake options may differ e.g. BUILD_TYPE
+# TODO move this to build folder. Cmake may not reconfigure when rebuilding after a change, therefor version.hh and cmake options can differ. This is happens especially when using an IDEs when changing build types
 configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh)
