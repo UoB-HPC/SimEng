@@ -259,6 +259,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  // Check the buffer entries to see if they are branch instructions.  If so,
+  // flush them from the BP
   for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
     auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
     if (!macroOp.empty() && macroOp[0]->isBranch()) {
