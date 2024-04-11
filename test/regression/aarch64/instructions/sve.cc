@@ -3800,9 +3800,8 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<float> resultsA;
   std::vector<float> resultsB;
-  // Redundant initialisation to prevent warnings
-  float itemA = 5.0f + (5.0f * static_cast<float>(1));
-  float itemB = 5.0f + (5.0f * static_cast<float>(2));
+  float itemA = 0.f;
+  float itemB = 0.f;
   for (size_t i = 0; i < (VL / 32); i++) {
     if (i % 4 == 0) {
       itemA = 5.0f + (5.0f * static_cast<float>(i + 1));
@@ -3831,8 +3830,8 @@ TEST_P(InstSve, fmla_indexed) {
   std::vector<double> resultsC;
   std::vector<double> resultsD;
   // Redundant initialisation to prevent warnings
-  double itemC = 5.0 + (5.0 * static_cast<double>(0));
-  double itemD = 5.0 + (5.0 * static_cast<double>(1));
+  double itemC = 0.f;
+  double itemD = 0.f;
   for (size_t i = 0; i < (VL / 64); i++) {
     if (i % 2 == 0) {
       itemC = 5.0 + (5.0 * static_cast<double>(i));

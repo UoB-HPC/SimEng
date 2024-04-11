@@ -59,7 +59,7 @@ void FetchUnit::tick() {
     return;
   }
 
-  // Const reference to the instruction data to decode from
+  // Const pointer to the instruction data to decode from
   const uint8_t* buffer;
   uint16_t bufferOffset;
 

@@ -8,7 +8,7 @@ namespace simeng {
 namespace pipeline {
 
 ReorderBuffer::ReorderBuffer(
-    uint64_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
+    uint32_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     std::function<void(uint64_t branchAddress)> sendLoopBoundary,
     BranchPredictor& predictor, uint16_t loopBufSize,

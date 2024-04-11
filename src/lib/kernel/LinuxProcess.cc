@@ -62,15 +62,12 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-// TODO can this be marked as only usable by test? or is it used by SST??
 LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
                            ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
-  // Set program command string to a full path of default program
-  // TODO need to determine consequences of setting this as absolute and
-  // relative to simeng source directory. Should the default prog be in the
-  // source or copied to the build dir?
+  // Set program command string to the full path of the default program even
+  // though these aren't the instructions being executed
   commandLine_.push_back(SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
 
   isValid_ = true;
