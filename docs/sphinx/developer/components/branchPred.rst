@@ -17,6 +17,8 @@ The usage of these parameters within a branch predictor's ``predict`` function i
 
 The ``update`` function is passed the branch outcome, the instruction address, and the branch type. From this information, any algorithms or branch structures may be updated.
 
+The state of the branch predictor when ``predict`` is called on a branch is stored in the ``ftq`` to be used by the ``update`` function.  The ``ftq`` is a queue that has an entry for each in-flight branch.  A single entry is added to the top of the ftq on ``predict`` and ``addToFTQ``, and a single entry is removed from the bottow of the queue on ``update`` and ``flush``.
+
 Generic Predictor
 -----------------
 
