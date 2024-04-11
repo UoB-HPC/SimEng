@@ -260,7 +260,7 @@ TEST_F(GenericPredictorTest, flush) {
   EXPECT_EQ(prediction.target, 12);
 }
 
-// Test that update correctly corrects the speculatively updated gloabl history
+// Test that update correctly corrects the speculatively updated global history
 TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: {BTB-Tag-Bits: 2, Saturating-Count-Bits: 6, "
