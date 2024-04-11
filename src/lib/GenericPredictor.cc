@@ -36,7 +36,9 @@ GenericPredictor::~GenericPredictor() {
 BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
                                            int64_t knownOffset) {
   // Get index via an XOR hash between the global history and the instruction
-  // address. This hash is then ANDed to keep it within bounds of the btb
+  // address. This hash is then ANDed to keep it within bounds of the btb.
+  // The address is shifted to remove the two least-significant bits as these
+  // are always 0 in a 64 bit ISA.
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
@@ -83,7 +85,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
 void GenericPredictor::update(uint64_t address, bool taken,
                               uint64_t targetAddress, BranchType type) {
-  // Get previous prediciton and index calculated from the FTQ
+  // Get previous prediction and index calculated from the FTQ
   bool prevPrediction = ftq_.front().first;
   uint64_t hashedIndex = ftq_.front().second;
   ftq_.pop_front();
@@ -138,7 +140,8 @@ void GenericPredictor::flush(uint64_t address) {
 
 void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
   // Make the hashed index and add it to the FTQ
-  uint64_t hashedIndex = (address ^ globalHistory_) & ((1 << btbBits_) - 1);
+  uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_)
+                                                              - 1);
   ftq_.emplace_back(taken, hashedIndex);
   // Speculatively update the global history
   globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
