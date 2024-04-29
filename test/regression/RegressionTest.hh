@@ -10,6 +10,7 @@
 #include "llvm/MC/MCCodeEmitter.h"
 
 #if defined(__clang__)
+// Prevent errors due to warnings in included file when using clang
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"
 #endif
@@ -17,6 +18,7 @@
 #include "llvm/MC/MCContext.h"
 
 #if defined(__clang__)
+// Allow errors again
 #pragma clang diagnostic pop
 #endif
 

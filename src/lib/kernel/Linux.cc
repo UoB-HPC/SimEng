@@ -57,9 +57,8 @@ int64_t Linux::getHostDirFD(int64_t vdfd) {
       return processStates_[0].fileDescriptorTable[unsignedVdfd];
     } else {
       // Outside bounds of table
+      assert(false && "vdfd outside bounds of file descriptor table");
       return -1;
-      // TODO potentially this should throw an error as per previous
-      // implementation's assertion
     }
   }
 }

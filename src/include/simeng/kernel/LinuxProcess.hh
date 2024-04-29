@@ -67,7 +67,8 @@ class LinuxProcess {
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Construct a Linux process from region of instruction memory, with the
-   * entry point fixed at 0. For use in test suites. */
+   * entry point fixed at 0 and source directory set to the default programs'.
+   * For use in test suites. */
   LinuxProcess(span<const uint8_t> instructions,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 

@@ -38,13 +38,18 @@ void FetchUnit::tick() {
     auto outputSlots = output_.getTailSlots();
     for (size_t slot = 0; slot < output_.getWidth(); slot++) {
       auto& macroOp = outputSlots[slot];
-      // TODO Should the assertion become if?
-      // bytesRead only used by assertion, mark maybe unused to prevent warnings
-      // in release mode
-      [[maybe_unused]] auto bytesRead = isa_.predecode(
+      auto bytesRead = isa_.predecode(
           reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
           loopBuffer_.front().instructionSize, loopBuffer_.front().address,
           macroOp);
+
+      if (bytesRead == 0) {
+        std::cout << "[SimEng:FetchUnit] Predecode returned 0 bytes while loop "
+                     "buffer supplying"
+                  << std::endl;
+        exit(1);
+      }
+
       assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling
