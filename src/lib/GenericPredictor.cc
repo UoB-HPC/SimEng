@@ -26,7 +26,7 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
   // Multiply original globalHistoryLength_ by two so that extra branch
   // outcomes are stored to allow rolling back the speculatively updated
   // global history in the event of a misprediction.
-  globalHistoryLength_ = (1 << (globalHistoryLength_ * 2)) - 1;
+  globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
 }
 
 GenericPredictor::~GenericPredictor() {
@@ -81,7 +81,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
   // Speculatively update the global history
   globalHistory_ =
-      ((globalHistory_ << 1) | prediction.taken) & globalHistoryLength_;
+      ((globalHistory_ << 1) | prediction.taken) & globalHistoryMask_;
 
   return prediction;
 }
@@ -147,7 +147,7 @@ void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
                                                               - 1);
   ftq_.emplace_back(taken, hashedIndex);
   // Speculatively update the global history
-  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
+  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
 }
 
 }  // namespace simeng
