@@ -25,7 +25,7 @@ Generic Predictor
 The algorithm(s) held within a ``BranchPredictor`` class instance can be model-specific, however, SimEng provides a ``GenericPredictor`` which contains the following logic.
 
 Global History
-    For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.  The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
+    For indexing relevant prediction structures, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the most-significant bit being the oldest. The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR'ed with the current global branch history value.
