@@ -38,7 +38,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   // Get index via an XOR hash between the global history and the instruction
   // address. This hash is then ANDed to keep it within bounds of the btb.
   // The address is shifted to remove the two least-significant bits as these
-  // are always 0 in a 64 bit ISA.
+  // are always 0 in an ISA with 4-byte aligned instructions.
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 

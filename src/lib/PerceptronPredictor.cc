@@ -35,6 +35,8 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Get the hashed index for the prediction table.  XOR the global history with
   // the non-zero bits of the address, and then keep only the btbBits_ bits of
   // the output to keep it in bounds of the prediction table.
+  // The address is shifted to remove the two least-significant bits as these
+  // are always 0 in an ISA with 4-byte aligned instructions.
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
