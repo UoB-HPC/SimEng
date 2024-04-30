@@ -68,7 +68,8 @@ class PerceptronPredictor : public BranchPredictor {
   std::deque<std::pair<bool, uint64_t>> ftq_;
 
   /** An n-bit history of previous branch directions where n is equal to
-   * globalHistoryLength_. */
+   * globalHistoryLength_.  Each bit represents a branch taken (1) or not
+   * taken (0), with the most recent branch being the least-significant-bit */
   uint64_t globalHistory_ = 0;
 
   /** The number of previous branch directions recorded globally. */
