@@ -3,7 +3,7 @@ Core Instance
 
 The ``CoreInstance`` component supplies the functionality for instantiating all simulation objects and linking them together.
 
-The standard process taken to create an instance of the modelled core is as follows:
+The standard process isTaken to create an instance of the modelled core is as follows:
 
 Process the config file
     Either the passed configuration file path, or default configuration string, is used to generate the model configuration class. All subsequent parameterised instantiations of simulation objects utilise this configuration class.

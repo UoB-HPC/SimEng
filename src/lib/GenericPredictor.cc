@@ -11,8 +11,8 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
       globalHistoryLength_(
           config["Branch-Predictor"]["Global-History-Length"].as<uint16_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()) {
-  // Calculate the saturation counter boundary between weakly taken and
-  // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
+  // Calculate the saturation counter boundary between weakly isTaken and
+  // not-isTaken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly isTaken state
   // value
   uint8_t weaklyTaken = 1 << (satCntBits_ - 1);
   uint8_t satCntVal = (config["Branch-Predictor"]["Fallback-Static-Predictor"]
@@ -53,9 +53,9 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
-    prediction.taken = true;
+    prediction.isTaken = true;
   } else if (type == BranchType::Return) {
-    prediction.taken = true;
+    prediction.isTaken = true;
     // Return branches can use the RAS if an entry is available
     if (ras_.size() > 0) {
       prediction.target = ras_.back();
@@ -64,7 +64,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
       ras_.pop_back();
     }
   } else if (type == BranchType::SubroutineCall) {
-    prediction.taken = true;
+    prediction.isTaken = true;
     // Subroutine call branches must push their associated return address to RAS
     if (ras_.size() >= rasSize_) {
       ras_.pop_front();
@@ -73,20 +73,20 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
   } else if (type == BranchType::Conditional) {
-    if (!prediction.taken) prediction.target = address + 4;
+    if (!prediction.isTaken) prediction.target = address + 4;
   }
 
   // Store the hashed index for correct hashing in update()
-  ftq_.emplace_back(prediction.taken, hashedIndex);
+  ftq_.emplace_back(prediction.isTaken, hashedIndex);
 
   // Speculatively update the global history
   globalHistory_ =
-      ((globalHistory_ << 1) | prediction.taken) & globalHistoryMask_;
+      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
 
   return prediction;
 }
 
-void GenericPredictor::update(uint64_t address, bool taken,
+void GenericPredictor::update(uint64_t address, bool isTaken,
                               uint64_t targetAddress, BranchType type) {
   // Get previous prediction and index calculated from the FTQ
   bool prevPrediction = ftq_.front().first;
@@ -96,16 +96,16 @@ void GenericPredictor::update(uint64_t address, bool taken,
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[hashedIndex].first;
   // Only alter value if it would transition to a valid state
-  if (!((satCntVal == (1 << satCntBits_) - 1) && taken) &&
-      !(satCntVal == 0 && !taken)) {
-    satCntVal += taken ? 1 : -1;
+  if (!((satCntVal == (1 << satCntBits_) - 1) && isTaken) &&
+      !(satCntVal == 0 && !isTaken)) {
+    satCntVal += isTaken ? 1 : -1;
   }
 
   // Update BTB entry
   btb_[hashedIndex] = {satCntVal, targetAddress};
 
   // Update global history if prediction was incorrect
-  if (prevPrediction != taken) {
+  if (prevPrediction != isTaken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
     globalHistory_ ^= (1 << (ftq_.size()));
@@ -141,13 +141,13 @@ void GenericPredictor::flush(uint64_t address) {
   globalHistory_ >>= 1;
 }
 
-void GenericPredictor::addToFTQ(uint64_t address, bool taken) {
+void GenericPredictor::addToFTQ(uint64_t address, bool isTaken) {
   // Make the hashed index and add it to the FTQ
   uint64_t hashedIndex = ((address >> 2) ^ globalHistory_) & ((1 << btbBits_)
                                                               - 1);
-  ftq_.emplace_back(taken, hashedIndex);
+  ftq_.emplace_back(isTaken, hashedIndex);
   // Speculatively update the global history
-  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
+  globalHistory_ = ((globalHistory_ << 1) | isTaken) & globalHistoryMask_;
 }
 
 }  // namespace simeng
