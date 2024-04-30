@@ -66,6 +66,10 @@ class GenericPredictor : public BranchPredictor {
   /** The number of previous branch directions recorded globally. */
   uint16_t globalHistoryLength_;
 
+  /** A bit mask for truncating the global history to the correct size.
+   * Stored as a member variable to avoid duplicative calculation */
+  uint64_t globalHistoryMask_;
+
   /** A return address stack. */
   std::deque<uint64_t> ras_;
 
