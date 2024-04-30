@@ -224,7 +224,7 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesExecuted = fetchUnit_.getBranchExecutedCount();
+  uint64_t totalBranchesExecuted = fetchUnit_.getBranchFetchedCount();
   uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
