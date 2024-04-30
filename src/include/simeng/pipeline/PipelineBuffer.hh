@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include "simeng/BranchPredictor.hh"
+
 namespace simeng {
 namespace pipeline {
 
@@ -72,6 +74,32 @@ class PipelineBuffer {
 
   /** Get the width of the buffer slots. */
   uint16_t getWidth() const { return width; }
+
+  void flushBranchMicroOps(BranchPredictor& branchPredictor) {
+    for (size_t slot = 0; slot < width; slot++) {
+      auto& uop = getTailSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        branchPredictor.flush(uop->getInstructionAddress());
+      }
+      uop = getHeadSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        branchPredictor.flush(uop->getInstructionAddress());
+      }
+    }
+  }
+
+  void flushBranchMacroOps(BranchPredictor& branchPredictor) {
+    for (size_t slot = 0; slot < width; slot++) {
+      auto& macroOp = getTailSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        branchPredictor.flush(macroOp[0]->getInstructionAddress());
+      }
+      macroOp = getHeadSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        branchPredictor.flush(macroOp[0]->getInstructionAddress());
+      }
+    }
+  }
 
  private:
   /** The width of each row of slots. */
