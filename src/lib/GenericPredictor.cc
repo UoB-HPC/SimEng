@@ -23,6 +23,9 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
   btb_ =
       std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
   // Alter globalHistoryLength_ value to better suit required format in update()
+  // Multiply original globalHistoryLength_ by two so that extra branch
+  // outcomes are stored to allow rolling back the speculatively updated
+  // global history in the event of a misprediction.
   globalHistoryLength_ = (1 << (globalHistoryLength_ * 2)) - 1;
 }
 
