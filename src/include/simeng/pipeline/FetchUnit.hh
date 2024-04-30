@@ -69,8 +69,8 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
-  /** Retrieve the number of branch instructions that have been executed. */
-  uint64_t getBranchExecutedCount() const;
+  /** Retrieve the number of branch instructions that have been fetched. */
+  uint64_t getBranchFetchedCount() const;
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
