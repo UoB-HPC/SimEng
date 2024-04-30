@@ -52,13 +52,16 @@ class BranchPredictor {
                                    int64_t knownOffset) = 0;
 
   /** Provide branch results to update the prediction model for the specified
-   * instruction address. */
+   * instruction address. Update must be called on instructions in program
+   * order */
   virtual void update(uint64_t address, bool taken, uint64_t targetAddress,
                       BranchType type) = 0;
 
   /** Provides flushing behaviour for the implemented branch prediction schemes
-   * via the instruction address.
-   */
+   * via the instruction address.  Branches must be flushed in reverse
+   * program order (though, if a block of n instructions is being flushed at
+   * once, the exact order that the individual instructions within this block
+   * are flushed does not matter so long as they are all flushed) */
   virtual void flush(uint64_t address) = 0;
 
   /** Adds instruction to the Fetch Target Queue without making a new prediction
