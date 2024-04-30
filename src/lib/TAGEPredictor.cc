@@ -31,7 +31,7 @@ BranchPrediction TAGEPredictor::predict(uint64_t address, BranchType type,
 
   uint64_t tag = getTagHash(address, globalHistory_);
 
-  for (int table = 0; table < numTables_; table++) {
+  for (int8_t table = 0; table < numTables_; table++) {
     uint32_t index = getIndex(address, globalHistory_, table);
     if (taggedPredictors_[table][index].tag == tag) {
       altTaken = taggedTaken;
@@ -93,24 +93,25 @@ void TAGEPredictor::update(uint64_t address, bool taken, uint64_t targetAddress,
   // Get previous state from FTQ
   ftqEntry prevState = ftq_.front();
   ftq_.pop_front();
-  bool prevTaken = prevState.taken;
-  uint64_t prevTarget = prevState.target;
-  bool prevAltPrediction = prevState.altPrediction;
-  uint64_t prevHistory = prevState.history;
-  int8_t provider = prevState.provider;
-  predictorEntry* providerEntry = (provider != -1) ?
-      &taggedPredictors_[provider][getIndex(address, prevHistory, provider)] :
-      &T0Predictor_[address & 4095];
+
+  // Get a pointer to the provider entry
+  predictorEntry* providerEntry = (prevState.provider != -1) ?
+      &taggedPredictors_[prevState.provider][getIndex(address,
+                                                      prevState.history,
+                                                      prevState.provider)] :
+      &T0Predictor_[(address >> 2) & 4095];
 
   // Update the usefulness counter
   // If both provider and altPred are tagged predictors, and made different
   // predictions, increment/decrement usefulness counter of predictor on the
   // basis of the correctness of the prediction
-  if (provider != -1 && (prevTaken != prevAltPrediction)) {
-    if (!((prevTaken == taken) && (prevTarget == targetAddress)) &&
+  if (prevState.provider != -1 &&
+      (prevState.taken != prevState.altPrediction)) {
+    if (!((prevState.taken == taken) && (prevState.target == targetAddress)) &&
         (providerEntry->usefulness > 0)) {
       providerEntry->usefulness--;
-    } else if ((prevTaken == taken) && (prevTarget == targetAddress) &&
+    } else if ((prevState.taken == taken) &&
+               (prevState.target == targetAddress) &&
                (providerEntry->usefulness < 3)) {
       providerEntry->usefulness++;
     }
@@ -126,10 +127,12 @@ void TAGEPredictor::update(uint64_t address, bool taken, uint64_t targetAddress,
   // If predictor is using the longest possible history length, we try to
   // allocate an entry for the branch in a higher-order tagged predictor table
   // ToDo -- implement probabilistic allocation if more than one are available
-  if (provider < (numTables_ - 1)) {
-    for (int8_t table = provider + 1; table < numTables_; table++) {
+  if (prevState.provider < (numTables_ - 1)) {
+    for (int8_t table = prevState.provider + 1; table < numTables_; table++) {
       predictorEntry* tableEntry =
-          &taggedPredictors_[table][getIndex(address, prevHistory, table)];
+          &taggedPredictors_[table][getIndex(address,
+                                             prevState.history,
+                                             table)];
       if (tableEntry->usefulness == 0) {
         tableEntry->counter = (taken) ? 2 : 1; // Todo -- The paper says
                                                // always set to 2, but this
@@ -137,13 +140,13 @@ void TAGEPredictor::update(uint64_t address, bool taken, uint64_t targetAddress,
                                                // Investigate
         tableEntry->usefulness = 0;
         tableEntry->target = targetAddress;
-        tableEntry->tag = getTagHash(address, prevHistory);
+        tableEntry->tag = getTagHash(address, prevState.history);
         break;
       }
     }
   }
 
-  if (prevTaken != taken) globalHistory_ ^= (1 << (ftq_.size()));
+  if (prevState.taken != taken) globalHistory_ ^= (1 << (ftq_.size()));
 }
 
 void TAGEPredictor::flush(uint64_t address) {
@@ -187,18 +190,18 @@ void TAGEPredictor::addToFTQ(uint64_t address, bool taken) {
 }
 
 BranchPrediction TAGEPredictor::getDefaultPrediction(uint64_t address) {
-  uint64_t index = address & 4095;
+  uint64_t index = (address >> 2) & 4095;
   return {((T0Predictor_[index].counter & 2) > 0),
           T0Predictor_[index].target};
 }
 
 uint64_t TAGEPredictor::getTagHash(uint64_t address, uint64_t history) {
-  return ((address >> 9) ^ -history);
+  return address;
 }
 
 uint64_t TAGEPredictor::getIndex(uint64_t address, uint64_t history,
                                  int8_t predictor) {
-  return ((address ^ (history & (1 << (predictor + 1)) - 1)) & 1023);
+  return (((address >> 2) ^ (history & (1 << (predictor + 1)) - 1)) & 1023);
 }
 
 } // namespace simeng
