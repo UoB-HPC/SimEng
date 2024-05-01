@@ -2,13 +2,13 @@
 
 #include <string>
 
-#include "simeng/branchPredictors/AlwaysNotTakenPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/branchPredictors/AlwaysNotTakenPredictor.hh"
 #include "simeng/branchPredictors/GenericPredictor.hh"
 #include "simeng/branchPredictors/PerceptronPredictor.hh"
 #include "simeng/config/SimInfo.hh"
