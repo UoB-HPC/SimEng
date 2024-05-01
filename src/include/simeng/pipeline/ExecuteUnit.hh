@@ -3,7 +3,7 @@
 #include <deque>
 #include <functional>
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
