@@ -3,7 +3,7 @@
 #include <tuple>
 #include <vector>
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/ProcessStateChange.hh"

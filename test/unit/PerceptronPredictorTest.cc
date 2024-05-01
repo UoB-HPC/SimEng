@@ -1,6 +1,6 @@
 #include "MockInstruction.hh"
 #include "gtest/gtest.h"
-#include "simeng/PerceptronPredictor.hh"
+#include "simeng/branchPredictors/PerceptronPredictor.hh"
 
 namespace simeng {
 
