@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "capstone/capstone.h"
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
 #include "simeng/memory/MemoryInterface.hh"

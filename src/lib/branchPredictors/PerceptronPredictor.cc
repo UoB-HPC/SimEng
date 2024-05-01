@@ -1,4 +1,4 @@
-#include "simeng/PerceptronPredictor.hh"
+#include "simeng/branchPredictors/PerceptronPredictor.hh"
 
 namespace simeng {
 

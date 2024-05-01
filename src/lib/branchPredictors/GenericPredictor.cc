@@ -1,4 +1,4 @@
-#include "simeng/GenericPredictor.hh"
+#include "simeng/branchPredictors/GenericPredictor.hh"
 
 #include <iostream>
 
