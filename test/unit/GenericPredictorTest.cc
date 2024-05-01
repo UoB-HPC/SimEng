@@ -1,6 +1,6 @@
 #include "MockInstruction.hh"
 #include "gtest/gtest.h"
-#include "simeng/GenericPredictor.hh"
+#include "simeng/branchPredictors/GenericPredictor.hh"
 
 namespace simeng {
 

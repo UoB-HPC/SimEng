@@ -1,6 +1,6 @@
 #pragma once
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 
 namespace simeng {
 

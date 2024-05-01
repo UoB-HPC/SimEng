@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "simeng/GenericPredictor.hh"
-#include "simeng/PerceptronPredictor.hh"
+#include "simeng/branchPredictors/GenericPredictor.hh"
+#include "simeng/branchPredictors/PerceptronPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
