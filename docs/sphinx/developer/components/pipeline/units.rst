@@ -23,7 +23,7 @@ Behaviour
 
 The fetch unit fetches memory in discrete boundary-aligned blocks, according to the current program counter (PC); this is to prevent the fetched block overlapping an inaccessible or unmapped memory region that may result in the request incorrectly responding with a fault despite the validity of the initial region.
 
-Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor. If the instruction is predicted to be a isTaken branch, then the PC will be updated to the predicted target address and the cycle will end. If this is not the case, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
+Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor. If the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end. If this is not the case, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
 
 This standard process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
 
@@ -32,7 +32,7 @@ This standard process of pre-decoding, predicting, and updating the PC continues
   The maximum number of fetched macro-ops is reached
     The current block is saved and processing resumes in the next cycle.
 
-  A branch is predicted as isTaken
+  A branch is predicted as taken
     A block of memory from the new address may be requested, and processing will resume once the data is available.
 
   The fetched memory block is exhausted
@@ -43,7 +43,7 @@ This standard process of pre-decoding, predicting, and updating the PC continues
 Loop Buffer
 ***********
 
-Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is isTaken and increases the throughput of the fetch unit.
+Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is taken and increases the throughput of the fetch unit.
 
 Each entry of the loop buffer is the encoding of the Macro-Op. Therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing each others class members.
 
@@ -59,7 +59,7 @@ FILLING
   The branch representing the loop has been found and the buffer is being filled until it is seen again.
 
 SUPPLYING
-  The supply of instructions from the fetch unit has been handed over to the loop buffer. The stream of instructions is isTaken from the loop buffer in order and resets to the top of the buffer once it reaches the end of the loop body.
+  The supply of instructions from the fetch unit has been handed over to the loop buffer. The stream of instructions is taken from the loop buffer in order and resets to the top of the buffer once it reaches the end of the loop body.
 
 The detection of a loop and the branch which represents it comes from the ROB. More information can be found :ref:`here <loopDetect>`.
 
@@ -81,7 +81,7 @@ Behaviour
 
 Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of ``Instruction`` objects or micro-ops. These ``Instruction`` objects are passed into an internal buffer.
 
-Once all macro-ops in the input buffer have been passed into the internal ``Instruction`` buffer or the ``Instruction`` buffer size exceeds the size of the output buffer, ``Instruction`` objects are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a isTaken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.
+Once all macro-ops in the input buffer have been passed into the internal ``Instruction`` buffer or the ``Instruction`` buffer size exceeds the size of the output buffer, ``Instruction`` objects are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.
 
 The cycle ends when all ``Instruction`` objects in the internal buffer have been processed, or a misprediction is identified and all remaining ``Instruction`` objects are flushed.
 

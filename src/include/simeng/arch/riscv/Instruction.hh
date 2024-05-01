@@ -5,9 +5,9 @@
 #include <functional>
 #include <unordered_map>
 
-#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/riscv/InstructionGroups.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 
 namespace simeng {
 namespace arch {

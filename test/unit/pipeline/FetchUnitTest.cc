@@ -232,7 +232,7 @@ TEST_P(PipelineFetchUnitTest, halted) {
   EXPECT_TRUE(fetchUnit.hasHalted());
 }
 
-// Tests that fetching a branch instruction (predicted isTaken) mid block causes a
+// Tests that fetching a branch instruction (predicted taken) mid block causes a
 // branch stall + discards the remaining fetched instructions
 TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   const uint8_t pc = 16;
@@ -266,7 +266,7 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
   fetchUnit.tick();
 
-  // For second tick, process a isTaken branch meaning rest of block is discarded
+  // For second tick, process a taken branch meaning rest of block is discarded
   // & a new memory block is requested
   EXPECT_CALL(memory, getCompletedReads()).Times(0);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
@@ -388,7 +388,7 @@ TEST_P(PipelineFetchUnitTest, supplyFromLoopBuffer) {
 }
 
 // Tests the functionality of idling the supply to the Loop Buffer one of not
-// isTaken branch at the loopBoundaryAddress_
+// taken branch at the loopBoundaryAddress_
 TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // Set instructions to be fetched from memory
   memory::MemoryReadResult memReadResultA = {
@@ -432,7 +432,7 @@ TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   EXPECT_CALL(predictor, predict(_, _, _))
       .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
 
-  // Attempt to fill Loop Buffer but prevent it on a not isTaken outcome at the
+  // Attempt to fill Loop Buffer but prevent it on a not taken outcome at the
   // loopBoundaryAddress_ branch
   // Tick 4 times to process all 16 bytes of fetched data
   for (int i = 0; i < 4; i++) {
