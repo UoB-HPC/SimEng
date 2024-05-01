@@ -183,10 +183,10 @@ void FetchUnit::tick() {
     bufferedBytes_ -= bytesRead;
 
     if (!prediction.isTaken) {
-      // Predicted as not isTaken; increment PC to next instruction
+      // Predicted as not taken; increment PC to next instruction
       pc_ += bytesRead;
     } else {
-      // Predicted as isTaken; set PC to predicted target address
+      // Predicted as taken; set PC to predicted target address
       pc_ = prediction.target;
     }
 

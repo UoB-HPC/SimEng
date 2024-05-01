@@ -55,12 +55,12 @@ Additional information
 
 The ``FP`` primary identifier is a placeholder to denote both the ``SCALAR`` and ``VECTOR`` primary identifiers such that, amongst the other combinations, ``FP_SIMPLE_ARTH`` expands to be ``SCALAR_SIMPLE_ARTH`` and ``VECTOR_SIMPLE_ARTH``. In some cases it was unnecessary and inconvenient to separate ``SCALAR`` and ``VECTOR`` operations within configuration options, therefore, this instruction group option was provided to solve the issue.
 
-When setting the latencies for instruction groups, within the :ref:`Latencies <config-latencies>` section of the configurable options, the inheritance between instruction groups is isTaken into account (e.g. the ``VECTOR`` group latency assignment would be inherited by all ``VECTOR_*`` groups). If multiple entries could assign a latency value to an instruction group, the option with the least levels of inheritance to the instruction group takes priority. As an example, take the groups ``INT_SIMPLE`` and ``INT_SIMPLE_ARTH``. ``INT_SIMPLE_ARTH_NOSHIFT`` inherits from both of these groups but because ``INT_SIMPLE_ARTH`` has one less level of inheritance to traverse, ``INT_SIMPLE_ARTH_NOSHIFT`` inherits ``INT_SIMPLE_ARTH`` latency values.
+When setting the latencies for instruction groups, within the :ref:`Latencies <config-latencies>` section of the configurable options, the inheritance between instruction groups is taken into account (e.g. the ``VECTOR`` group latency assignment would be inherited by all ``VECTOR_*`` groups). If multiple entries could assign a latency value to an instruction group, the option with the least levels of inheritance to the instruction group takes priority. As an example, take the groups ``INT_SIMPLE`` and ``INT_SIMPLE_ARTH``. ``INT_SIMPLE_ARTH_NOSHIFT`` inherits from both of these groups but because ``INT_SIMPLE_ARTH`` has one less level of inheritance to traverse, ``INT_SIMPLE_ARTH_NOSHIFT`` inherits ``INT_SIMPLE_ARTH`` latency values.
 
 Instruction Splitting
 *********************
 
-Instruction splitting is performed within the ``decode`` function in ``MicroDecoder.cc``. A macro-op is isTaken into the ``decode`` function and one or more micro-ops, taking the form of SimEng ``Instruction`` objects, are returned. The following instruction splitting is supported:
+Instruction splitting is performed within the ``decode`` function in ``MicroDecoder.cc``. A macro-op is taken into the ``decode`` function and one or more micro-ops, taking the form of SimEng ``Instruction`` objects, are returned. The following instruction splitting is supported:
 
 - Load pair for X/W/S/D/Q registers.
   
