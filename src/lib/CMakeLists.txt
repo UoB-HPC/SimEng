@@ -14,6 +14,7 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
+    branchPredictors/AlwaysNotTakenPredictor.cc
     branchPredictors/GenericPredictor.cc
     branchPredictors/PerceptronPredictor.cc
     config/ModelConfig.cc
@@ -37,7 +38,6 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
-        branchPredictors/AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc

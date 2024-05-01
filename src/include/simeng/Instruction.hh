@@ -3,9 +3,9 @@
 #include <vector>
 
 #include "capstone/capstone.h"
-#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/span.hh"
 
@@ -147,15 +147,15 @@ class Instruction {
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const { return branchAddress_; }
 
-  /** Was the branch isTaken? */
+  /** Was the branch taken? */
   bool wasBranchTaken() const { return branchTaken_; }
 
   /** Check for misprediction. */
   bool wasBranchMispredicted() const {
     assert(executed_ &&
            "Branch misprediction check requires instruction to have executed");
-    // Flag as mispredicted if isTaken state was wrongly predicted, or isTaken and
-    // predicted target is wrong
+    // Flag as mispredicted if taken state was wrongly predicted, or taken
+    // and predicted target is wrong
     return (branchTaken_ != prediction_.isTaken ||
             (branchTaken_ && (prediction_.target != branchAddress_)));
   }

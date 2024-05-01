@@ -69,7 +69,7 @@ Once a completion slot is available, the load will be executed, the results broa
 Stores
 ******
 
-As with loads, stores are considered pending when initially added to the LSQ. Whilst like load operations the generation of addresses to be accessed must occur before commitment, an additional operation of supplying the data to be stored must also occur. The ``supplyStoreData`` function facilitates this by placing the data to be stored within the ``storeQueue_`` entry of the associated store. Once the store is committed, the data is isTaken from the ``storeQueue_`` entry.
+As with loads, stores are considered pending when initially added to the LSQ. Whilst like load operations the generation of addresses to be accessed must occur before commitment, an additional operation of supplying the data to be stored must also occur. The ``supplyStoreData`` function facilitates this by placing the data to be stored within the ``storeQueue_`` entry of the associated store. Once the store is committed, the data is taken from the ``storeQueue_`` entry.
 
 The generation of store instruction write requests are carried out after its commitment. The reasoning for this design decision is as followed. With SimEng supporting speculative execution, processed store instruction may come from an incorrectly speculated branch direction and will inevitably be removed from the pipeline. Therefore, it is important to ensure any write requests are valid, concerning speculative execution, as the performance cost of reversing a completed write request is high.
 

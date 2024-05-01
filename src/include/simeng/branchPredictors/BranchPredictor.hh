@@ -17,7 +17,7 @@ enum class BranchType {
 
 /** A branch result prediction for an instruction. */
 struct BranchPrediction {
-  /** Whether the branch will be isTaken. */
+  /** Whether the branch will be taken. */
   bool isTaken;
 
   /** The branch instruction's target address. If `isTaken = false`, the value
