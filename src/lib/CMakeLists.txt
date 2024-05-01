@@ -37,7 +37,7 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
-    AlwaysNotTakenPredictor.cc
+        branchPredictors/AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc
