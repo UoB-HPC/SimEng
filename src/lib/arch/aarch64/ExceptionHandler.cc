@@ -431,15 +431,16 @@ bool ExceptionHandler::init() {
                       << std::endl;
             return fatal();
           }
-          uint64_t retval = (pid == 0) ? 1 : 0;
-          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-          stateChange.memoryAddresses.push_back({mask, 1});
+          uint64_t retval = static_cast<uint64_t>(bitmask);
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {sizeof(retval)}};
+          stateChange.memoryAddresses.push_back({mask, 8});
           stateChange.memoryAddressValues.push_back(bitmask);
         } else {
           stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
         }
         break;
       }
+
       case 131: {  // tgkill
         // TODO: Functionality temporarily omitted since simeng only has a
         // single thread at the moment
