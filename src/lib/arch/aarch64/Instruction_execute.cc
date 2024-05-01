@@ -3307,6 +3307,11 @@ void Instruction::execute() {
         results_[0] = memoryData_[0];
         break;
       }
+      case Opcode::AArch64_LDAXRB: {  // ldaxrb wt, [xn]
+        // LOAD
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
+        break;
+      }
       case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
@@ -3575,6 +3580,12 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
+                                        // {#amount}}]
+        // LOAD
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+        break;
+      }
+      case Opcode::AArch64_LDRSWroW: {  // ldrsw xt, [xn, wm, {extend
                                         // {#amount}}]
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
@@ -4914,6 +4925,7 @@ void Instruction::execute() {
         memoryData_[0] = sourceValues_[0];
         break;
       }
+      case Opcode::AArch64_STLXRB:    // stlxrb ws, wt, [xn]
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE
