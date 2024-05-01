@@ -43,7 +43,7 @@ Perceptron Predictor
 The ``PerceptronPredictor`` has the same overall structure as the ``GenericPredictor`` but replaces the saturating counter as a means for direction prediction with a perceptron.  The ``PerceptronPredictor`` contains the following logic.
 
 Global History
-    For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the left-most bit being the oldest.  The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
+    For indexing relevant prediction structures and for retrieving a direction from the perceptrons, a global history can be utilised. The global history value uses n-bits to store the n most recent branch direction outcomes, with the most-significant bit being the oldest.  The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with a perceptron for an associated direction. The indexing of this structure uses the lower, non-zero bits of an instruction address XOR'ed with the current global branch history value.
