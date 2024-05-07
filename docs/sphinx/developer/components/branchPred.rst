@@ -3,9 +3,9 @@ Branch prediction
 
 SimEng's fetch unit is supplied with an instance of the abstract ``BranchPredictor`` class to enable speculative execution. 
 
-Access to the ``BranchPredictor`` is supported through the ``predict``, ``update``, ``flush``, and ``addToFTQ``` functions. ``predict`` provides a branch prediction, both target and direction, ``update`` updates an instructions' prediction, ``flush`` provides optional algorithm specific flushing functionality, and ``addToFTQ`` adds an instruction to the predictor's Fetch Target Queue (FTQ) when a new prediction is not needed.
+Access to the ``BranchPredictor`` is supported through the ``predict``, ``update``, and ``flush`` functions. ``predict`` provides a branch prediction, both target and direction, for a branch instruction. ``update`` updates the branch predictor's prediction mechanism on the actual outcome of a branch. ``flush`` provides algorithm specific flushing functionality.
 
-The ``predict`` function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:
+The ``predict`` function is passed an instruction address, branch type, a possible known target, and optionally whether the branch is in a loop. The branch type argument currently supports the following types:
 
 - ``Conditional``
 - ``LoopClosing``
@@ -13,11 +13,11 @@ The ``predict`` function is passed an instruction address, branch type, and a po
 - ``SubroutineCall``
 - ``Unconditional``
 
-The usage of these parameters within a branch predictor's ``predict`` function is algorithm specific.
+The usage of these parameters within a branch predictor's ``predict`` function is algorithm specific.  If the branch is a part of a loop, then only a dummy branch prediction is returned by ``predict``, as the fetch unit will reuse a previous branch prediction and so no new branch prediction is needed.
 
 The ``update`` function is passed the branch outcome, the instruction address, and the branch type. From this information, any algorithms or branch structures may be updated.
 
-The state of the branch predictor when ``predict`` is called on a branch is stored in the ``ftq`` to be used by the ``update`` function.  The ``ftq`` is a queue that has an entry for each in-flight branch.  A single entry is added to the front of the ftq on ``predict`` and ``addToFTQ``, and a single entry is removed from the back of the queue on ``update`` and from the front of the queue on ``flush``.
+The state of the branch predictor when ``predict`` is called on a branch is stored in the ``ftq`` to be used by the ``update`` function.  The ``ftq`` is a queue that has an entry for each in-flight branch.  A single entry is added to the back of the ftq on ``predict``, and a single entry is removed from the front of the queue on ``update`` and from the back of the queue on ``flush``.
 
 Generic Predictor
 -----------------
