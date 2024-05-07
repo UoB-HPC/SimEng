@@ -56,7 +56,7 @@ uint8_t ccmp_reg(srcValContainer& sourceValues,
 
 /** Helper function for instructions with the format `cb<z,nz> rn, #imm`.
  * T represents the type of sourceValues (e.g. for xn, T = uint64_t).
- * Returns tuple of type [bool branch isTaken, uint64_t address]. */
+ * Returns tuple of type [bool branch taken, uint64_t address]. */
 template <typename T>
 std::tuple<bool, uint64_t> condBranch_cmpToZero(
     srcValContainer& sourceValues,
@@ -91,7 +91,7 @@ T cs_4ops(srcValContainer& sourceValues,
 /** Helper function for instructions with the format `tb<z,nz> rn, #imm,
  * label`.
  * T represents the type of sourceValues (e.g. for xn, T = uint64_t).
- * Returns tuple of type [bool branch isTaken, uint64_t address]. */
+ * Returns tuple of type [bool branch taken, uint64_t address]. */
 template <typename T>
 std::tuple<bool, uint64_t> tbnz_tbz(
     srcValContainer& sourceValues,
