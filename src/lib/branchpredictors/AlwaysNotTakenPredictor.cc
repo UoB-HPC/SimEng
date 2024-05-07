@@ -1,10 +1,10 @@
-#include "simeng/branchPredictors/AlwaysNotTakenPredictor.hh"
+#include "simeng/branchpredictors/AlwaysNotTakenPredictor.hh"
 
 namespace simeng {
 
-BranchPrediction AlwaysNotTakenPredictor::predict(uint64_t address,
-                                                  BranchType type,
-                                                  int64_t knownOffset) {
+BranchPrediction AlwaysNotTakenPredictor::predict(
+    uint64_t address, BranchType type, int64_t knownOffset,
+    bool getPrediction) {
   return {false, 0};
 }
 

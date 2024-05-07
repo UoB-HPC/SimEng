@@ -1,4 +1,4 @@
-#include "simeng/branchPredictors/PerceptronPredictor.hh"
+#include "simeng/branchpredictors/PerceptronPredictor.hh"
 
 namespace simeng {
 
@@ -22,6 +22,10 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   trainingThreshold_ = (uint64_t)((1.93 * globalHistoryLength_) + 14);
 
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
+
+  // Set dummy lastFtqEntry value, needed to ensure that non-prediction
+  // getting predict() calls in tests work.
+  lastFtqEntry_ = {1, 0};
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -31,7 +35,24 @@ PerceptronPredictor::~PerceptronPredictor() {
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
-                                              int64_t knownOffset) {
+                                              int64_t knownOffset,
+                                              bool getPrediction) {
+  // If no prediction required, add branch to ftq and return dummy
+  // prediction, which will not be used by the fetch unit
+  if (!getPrediction) {
+    // Add branch to the ftq using the past dot product in lieu of a new
+    // prediction.  Because the loop buffer only supplies if there have been
+    // no branch instructions since the branch defining the loop, we know
+    // that the past dot product is the one most recently added to the ftq_
+    ftq_.emplace_back(lastFtqEntry_.first, globalHistory_);
+    // Update global history
+    globalHistory_ =
+        ((globalHistory_ << 1) | (lastFtqEntry_.first >= 0)) &
+        globalHistoryMask_;
+    // Return dummy prediction
+    return {false, 0};
+  }
+
   // Get the hashed index for the prediction table.  XOR the global history with
   // the non-zero bits of the address, and then keep only the btbBits_ bits of
   // the output to keep it in bounds of the prediction table.
@@ -48,7 +69,8 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // Determine direction prediction based on its sign
   bool direction = (Pout >= 0);
 
-  // Retrieve target prediction
+  // If there is a known offset then calculate target accordingly, otherwise
+  // retrieve the target prediction from the btb.
   uint64_t target =
       (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
 
@@ -79,12 +101,14 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
-  // Store the global history for correct hashing in update() --
+  // Store the Pout and global history for correct update() --
   // needs to be global history and not the hashed index as hashing loses
-  // information at longer global history lengths
-  ftq_.emplace_back(prediction.isTaken, globalHistory_);
+  // information and the global history is required for updating perceptrons.
+  ftq_.emplace_back(Pout, globalHistory_);
+  lastFtqEntry_ = {Pout, globalHistory_};
 
-  // speculatively update global history
+  // Speculatively update the global history based on the direction
+  // prediction being made
   globalHistory_ =
       ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
 
@@ -93,8 +117,9 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
 void PerceptronPredictor::update(uint64_t address, bool isTaken,
                                  uint64_t targetAddress, BranchType type) {
-  // Get previous branch state and prediction from FTQ
-  bool prevPrediction = ftq_.front().first;
+  // Retrieve the previous global history and branch direction prediction from
+  // the front of the ftq (assumes branches are updated in program order).
+  int64_t prevPout = ftq_.front().first;
   uint64_t prevGlobalHistory = ftq_.front().second;
   ftq_.pop_front();
 
@@ -102,15 +127,16 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
 
+
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
   // Work out the most recent prediction
-  int64_t Pout = getDotProduct(perceptron, prevGlobalHistory);
-  bool directionPrediction = (Pout >= 0);
+  bool directionPrediction = (prevPout >= 0);
 
   // Update the perceptron if the prediction was wrong, or the dot product's
   // magnitude was not greater than the training threshold
-  if ((directionPrediction != isTaken) || (abs(Pout) < trainingThreshold_)) {
+  if ((directionPrediction != isTaken) ||
+      (abs(prevPout) < trainingThreshold_)) {
     int8_t t = (isTaken) ? 1 : -1;
 
     for (int i = 0; i < globalHistoryLength_; i++) {
@@ -134,7 +160,7 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
   // We know how many predictions there have since been by the size of the FTQ
-  if (prevPrediction != isTaken) globalHistory_ ^= (1 << (ftq_.size()));
+  if (directionPrediction != isTaken) globalHistory_ ^= (1 << (ftq_.size()));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -163,12 +189,6 @@ void PerceptronPredictor::flush(uint64_t address) {
 
   // Roll back global history
   globalHistory_ >>= 1;
-}
-
-void PerceptronPredictor::addToFTQ(uint64_t address, bool isTaken) {
-  // Add instruction to the FTQ in event of reused prediction
-  ftq_.emplace_back(isTaken, globalHistory_);
-  globalHistory_ = ((globalHistory_ << 1) | isTaken) & globalHistoryMask_;
 }
 
 int64_t PerceptronPredictor::getDotProduct(

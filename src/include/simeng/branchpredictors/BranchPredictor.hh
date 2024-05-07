@@ -47,9 +47,13 @@ class BranchPredictor {
   virtual ~BranchPredictor(){};
 
   /** Generate a branch prediction for the specified instruction address with a
-   * branch type and possible known branch offset. */
-  virtual BranchPrediction predict(uint64_t address, BranchType type,
-                                   int64_t knownOffset) = 0;
+   * branch type and possible known branch offset.  There is and optional
+   * boolean argument for if no prediction is needed from the branch
+   * predictor (e.g., in the event that the fetch unit has identified this
+   * branch as being a part of a queue and so reusing a previous prediction).*/
+  virtual BranchPrediction predict(
+      uint64_t address, BranchType type, int64_t knownOffset,
+      bool getPrediction = true) = 0;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. Update must be called on instructions in program
@@ -63,10 +67,6 @@ class BranchPredictor {
    * once, the exact order that the individual instructions within this block
    * are flushed does not matter so long as they are all flushed) */
   virtual void flush(uint64_t address) = 0;
-
-  /** Adds instruction to the Fetch Target Queue without making a new prediction
-   */
-  virtual void addToFTQ(uint64_t address, bool isTaken) = 0;
 };
 
 }  // namespace simeng
