@@ -10,6 +10,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // Build BTB based on config options
   uint32_t btbSize = (1 << btbBits_);
   btb_.resize(btbSize);
+
   // Initialise perceptron values with 0 for the global history weights, and 1
   // for the bias weight; and initialise the target with 0 (i.e., unknown)
   for (int i = 0; i < btbSize; i++) {
@@ -37,17 +38,19 @@ PerceptronPredictor::~PerceptronPredictor() {
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
                                               int64_t knownOffset,
                                               bool isLoop) {
-  // If branch is in a loop then a new prediction is not required.  Just need
+  // If branch is in a loop then a new prediction is not required. Just need
   // to update ftq and global history
   if (isLoop) {
     // Add branch to the ftq using the past dot product in lieu of a new
-    // prediction.  Because the loop buffer supplies only if there have been
+    // prediction. Because the loop buffer supplies only if there have been
     // no branch instructions since the branch defining the loop, we know
     // that the past dot product is the one most recently added to the ftq_
     ftq_.emplace_back(lastFtqEntry_.first, globalHistory_);
+
     // Update global history
     globalHistory_ = ((globalHistory_ << 1) | (lastFtqEntry_.first >= 0)) &
                      globalHistoryMask_;
+
     // Return dummy prediction
     return {false, 0};
   }
@@ -65,6 +68,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
   // Get dot product of perceptron and history
   int64_t Pout = getDotProduct(perceptron, globalHistory_);
+
   // Determine direction prediction based on its sign
   bool direction = (Pout >= 0);
 
@@ -183,6 +187,9 @@ void PerceptronPredictor::flush(uint64_t address) {
     rasHistory_.erase(it);
   }
 
+  assert((ftq_.size() > 0) &&
+         "Cannot flush instruction from Branch Predictor "
+         "when the ftq is empty");
   ftq_.pop_back();
 
   // Roll back global history
