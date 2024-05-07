@@ -31,13 +31,12 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Generate a branch prediction for the supplied instruction address, a
    * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address.  Optional
-   * arguments of getPrediction and pastDirection for use in the event that a
-   * new prediction is not required from the BP for a branch (e.g., if the
-   * fetch unit has identified the branch as being a part of a loop and so is
-   * reusing a previous prediction).  If no prediction is required, then the
-   * direction prediction that is being used in lieu of a new prediction must
-   * be provided as an argument to predict. */
+   * known. Returns a branch direction and branch target address.  There is
+   * also an optional boolean argument for whether or not the branch has
+   * been identified as being a part of a loop.  If the branch is a loop
+   * branch, then the fetch unit will reuse a previous prediction and so no
+   * new prediction is required.  Therefore, predict() returns only a dummy
+   * prediction. */
   BranchPrediction predict(uint64_t address, BranchType type,
                                           int64_t knownOffset = 0,
                                           bool isLoop = false) override;

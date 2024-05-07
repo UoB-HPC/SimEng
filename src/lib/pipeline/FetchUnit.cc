@@ -51,7 +51,7 @@ void FetchUnit::tick() {
         branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
                                  macroOp[0]->getBranchType(),
                                  macroOp[0]->getKnownOffset(), true);
-        branchesExecuted_++;
+        branchesFetched_++;
       }
 
       // Cycle queue by moving front entry to back
@@ -142,7 +142,7 @@ void FetchUnit::tick() {
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                             macroOp[0]->getKnownOffset());
-      branchesExecuted_++;
+      branchesFetched_++;
       macroOp[0]->setBranchPrediction(prediction);
     }
 
@@ -267,7 +267,7 @@ void FetchUnit::flushLoopBuffer() {
   loopBoundaryAddress_ = 0;
 }
 
-uint64_t FetchUnit::getBranchFetchedCount() const { return branchesExecuted_; }
+uint64_t FetchUnit::getBranchFetchedCount() const { return branchesFetched_; }
 
 }  // namespace pipeline
 }  // namespace simeng
