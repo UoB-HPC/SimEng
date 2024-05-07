@@ -111,25 +111,25 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
       "Fallback-Static-Predictor: Always-Not-Taken}}");
   auto predictor = simeng::GenericPredictor();
   // Spool up first global history pattern
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
   auto prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -139,25 +139,25 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, true, 0xAB, BranchType::Conditional);
 
   // Spool up second global history pattern
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
   // Ensure default behaviour for re-encounter but with different global history
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -167,25 +167,25 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, true, 0xBA, BranchType::Conditional);
 
   // Recreate first global history pattern
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Get prediction
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -195,25 +195,25 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, true, 0xAB, BranchType::Conditional);
 
   // Recreate second global history pattern
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 16, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, false, 16, BranchType::Conditional);
   // Get prediction
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -268,17 +268,17 @@ TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
       "Always-Taken}}");
   auto predictor = simeng::GenericPredictor();
   // spool up a global history to set the target address
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
   auto prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
@@ -288,17 +288,17 @@ TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
   predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
 
   // recreate this global history but with incorrect predictions
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.predict(0, BranchType::Conditional, 0, false);
+  predictor.predict(0, BranchType::Conditional, 0, true);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
   prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
