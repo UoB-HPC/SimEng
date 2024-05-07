@@ -28,8 +28,8 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
   // global history in the event of a misprediction.
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
 
-  // Set dummy lastFtqEntry value, needed to ensure that non-prediction
-  // getting predict() calls in tests work.
+  // Set dummy lastFtqEntry value, needed to ensure that in-loop predict()
+  // calls in tests work.
   lastFtqEntry_ = {true, 0};
 }
 
@@ -50,14 +50,15 @@ BranchPrediction GenericPredictor::predict(
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
-  // If a branch prediction is not required, then we can avoid a lot of the
-  // logic, and just determine the direction, and add the branch to the ftq
+  // If branch is in a loop then a new prediction is not required.  Just need
+  // to update ftq and global history
   if (isLoop) {
     // Add branch to the back of the ftq
     ftq_.emplace_back(lastFtqEntry_.first, hashedIndex);
     // Speculatively update the global history
     globalHistory_ = ((globalHistory_ << 1) | lastFtqEntry_.first) &
                      globalHistoryMask_;
+    // prediction not required so return dummy prediction
     return {false, 0};
   }
 
