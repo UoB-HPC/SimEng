@@ -5,8 +5,7 @@
 namespace simeng {
 
 /** An "Always Not Taken" branch predictor; predicts all branches as not
- * taken.
- */
+ * taken. */
 class AlwaysNotTakenPredictor : public BranchPredictor {
  public:
   /** Generate a branch prediction for the specified instruction address; will
