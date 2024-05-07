@@ -122,7 +122,7 @@ class FetchUnit {
   uint16_t bufferedBytes_ = 0;
 
   /** The number of branch instructions that were executed. */
-  uint64_t branchesExecuted_ = 0;
+  uint64_t branchesFetched_ = 0;
 
   /** Let the following PipelineFetchUnitTest derived classes be a friend of
    * this class to allow proper testing of 'tick' function. */

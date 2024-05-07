@@ -75,6 +75,8 @@ class PipelineBuffer {
   /** Get the width of the buffer slots. */
   uint16_t getWidth() const { return width; }
 
+  /** flush branches in the buffer from the branch predictor, where the
+   * buffer contains microops */
   void flushBranchMicroOps(BranchPredictor& branchPredictor) {
     for (size_t slot = 0; slot < width; slot++) {
       auto& uop = getTailSlots()[slot];
@@ -88,6 +90,8 @@ class PipelineBuffer {
     }
   }
 
+  /** flush branches in the buffer from the branch predictor, where the
+   * buffer contains macroops */
   void flushBranchMacroOps(BranchPredictor& branchPredictor) {
     for (size_t slot = 0; slot < width; slot++) {
       auto& macroOp = getTailSlots()[slot];

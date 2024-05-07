@@ -23,8 +23,8 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
 
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
 
-  // Set dummy lastFtqEntry value, needed to ensure that non-prediction
-  // getting predict() calls in tests work.
+  // Set dummy lastFtqEntry value, needed to ensure that in-loop predict()
+  // calls in tests work.
   lastFtqEntry_ = {1, 0};
 }
 
@@ -37,11 +37,11 @@ PerceptronPredictor::~PerceptronPredictor() {
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
                                               int64_t knownOffset,
                                               bool isLoop) {
-  // If no prediction required, add branch to ftq and return dummy
-  // prediction, which will not be used by the fetch unit
+  // If branch is in a loop then a new prediction is not required.  Just need
+  // to update ftq and global history
   if (isLoop) {
     // Add branch to the ftq using the past dot product in lieu of a new
-    // prediction.  Because the loop buffer only supplies if there have been
+    // prediction.  Because the loop buffer supplies only if there have been
     // no branch instructions since the branch defining the loop, we know
     // that the past dot product is the one most recently added to the ftq_
     ftq_.emplace_back(lastFtqEntry_.first, globalHistory_);
