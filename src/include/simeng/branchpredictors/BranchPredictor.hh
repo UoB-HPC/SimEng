@@ -51,9 +51,9 @@ class BranchPredictor {
    * boolean argument for if the branch is a part of a loop, in which case
    * the fetch unit does not require a new prediction and so only a dummy
    * prediction is returned. */
-  virtual BranchPrediction predict(
-      uint64_t address, BranchType type, int64_t knownOffset,
-      bool isLoop = false) = 0;
+  virtual BranchPrediction predict(uint64_t address, BranchType type,
+                                   int64_t knownOffset,
+                                   bool isLoop = false) = 0;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. Update must be called on instructions in program
