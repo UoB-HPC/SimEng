@@ -50,7 +50,7 @@ void FetchUnit::tick() {
         // the FTQ can be kept up to date
         branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
                                  macroOp[0]->getBranchType(),
-                                 macroOp[0]->getKnownOffset(), false);
+                                 macroOp[0]->getKnownOffset(), true);
         branchesExecuted_++;
       }
 
