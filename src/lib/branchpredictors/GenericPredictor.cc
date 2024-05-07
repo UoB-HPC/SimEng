@@ -151,7 +151,9 @@ void GenericPredictor::flush(uint64_t address) {
     rasHistory_.erase(it);
   }
 
-  // If possible, pop instruction from FTQ
+  assert((ftq_.size() > 0) &&
+         "Cannot flush instruction from Branch Predictor "
+         "when the ftq is empty");
   ftq_.pop_back();
 
   // Roll back global history
