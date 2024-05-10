@@ -259,8 +259,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  // Check the buffer entries to see if they are branch instructions.  If so,
-  // flush them from the BP
+  // Check for branch instructions in buffer, and flush them from the BP.
+  // Then empty the buffers
   fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
@@ -343,31 +343,15 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
+    // Check for branch instructions in buffer, and flush them from the BP.
+    // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-      auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
-      if (!macroOp.empty() && macroOp[0]->isBranch()) {
-        predictor_.flush(macroOp[0]->getInstructionAddress());
-      }
-      macroOp = fetchToDecodeBuffer_.getHeadSlots()[slot];
-      if (!macroOp.empty() && macroOp[0]->isBranch()) {
-        predictor_.flush(macroOp[0]->getInstructionAddress());
-      }
-    }
+    fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
-    for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
-      auto& uop = decodeToRenameBuffer_.getTailSlots()[slot];
-      if (uop != nullptr && uop->isBranch()) {
-        predictor_.flush(uop->getInstructionAddress());
-      }
-      uop = decodeToRenameBuffer_.getHeadSlots()[slot];
-      if (uop != nullptr && uop->isBranch()) {
-        predictor_.flush(uop->getInstructionAddress());
-      }
-    }
+    decodeToRenameBuffer_.flushBranchMicroOps(predictor_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -389,18 +373,11 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
+    // Check for branch instructions in buffer, and flush them from the BP.
+    // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-      auto& macroOp = fetchToDecodeBuffer_.getTailSlots()[slot];
-      if (!macroOp.empty() && macroOp[0]->isBranch()) {
-        predictor_.flush(macroOp[0]->getInstructionAddress());
-      }
-      macroOp = fetchToDecodeBuffer_.getHeadSlots()[slot];
-      if (!macroOp.empty() && macroOp[0]->isBranch()) {
-        predictor_.flush(macroOp[0]->getInstructionAddress());
-      }
-    }
+    fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
