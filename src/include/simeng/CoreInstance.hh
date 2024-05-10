@@ -21,19 +21,6 @@
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
-// Program used when no executable is provided; counts down from
-// 1024*1024, with an independent `orr` at the start of each branch.
-static const uint32_t hex_[] = {
-    0x320C03E0,  // orr w0, wzr, #1048576
-    0x320003E1,  // orr w0, wzr, #1
-    0x71000400,  // subs w0, w0, #1
-    0x54FFFFC1,  // b.ne -8
-                 // .exit:
-    0xD2800000,  // mov x0, #0
-    0xD2800BC8,  // mov x8, #94
-    0xD4000001,  // svc #0
-};
-
 namespace simeng {
 
 /** A class to create a SimEng core instance from a supplied config. */

@@ -64,9 +64,9 @@ int main(int argc, char** argv) {
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     } else {
+      // Use the default program if not
       configFilePath = DEFAULT_STR;
       executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
-      // This runs hex_ otherwise
     }
   } else {
     // Without a config file, no executable can be supplied so pass default

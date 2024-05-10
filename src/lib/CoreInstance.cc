@@ -105,20 +105,12 @@ void CoreInstance::createProcess(std::string executablePath,
       exit(1);
     }
   } else {
-    // TODO remove once default binary in use
-    // Create a process image from the set of instructions held in hex_
-    process_ = std::make_unique<kernel::LinuxProcess>(
-        span<const uint8_t>(reinterpret_cast<const uint8_t*>(hex_),
-                            sizeof(hex_)),
-        config_);
-
-    // Raise error if created process is not valid
-    if (!process_->isValid()) {
-      std::cerr << "[SimEng:CoreInstance] Could not create process based on "
-                   "supplied instruction span"
-                << std::endl;
-      exit(1);
-    }
+    // This case shouldn't be reached as the default program should always be
+    // provided
+    std::cerr << "[SimEng:CoreInstance] Unexpected parameters given to core "
+                 "instance. No default program and no assembled source"
+              << std::endl;
+    exit(1);
   }
 
   // Create the process memory space from the generated process image
