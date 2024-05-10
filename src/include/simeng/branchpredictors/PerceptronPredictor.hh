@@ -71,7 +71,10 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Fetch Target Queue containing the dot product of the perceptron and the
    * global history; and the global history, both at the time of prediction,
-   * for each of the branches that are currently unresolved. */
+   * for each of the branch instructions that are currently unresolved.  The dot
+   * product represents the confidence of the perceptrons direction
+   * prediction and is needed for a correct update when the branch
+   * instruction is resolved. */
   std::deque<std::pair<int64_t, uint64_t>> ftq_;
 
   /** Keep the last ftq entry as a separate variable to be reused for loops
