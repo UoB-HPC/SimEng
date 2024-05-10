@@ -357,6 +357,8 @@ void Core::flushIfNeeded() {
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
+    // Instructions in this buffer are already accounted for in the ROB so no
+    // need to check for branch instructions in this buffer
     renameToDispatchBuffer_.fill(nullptr);
     renameToDispatchBuffer_.stall(false);
 
