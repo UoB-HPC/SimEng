@@ -22,6 +22,10 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (uint64_t)((1.93 * globalHistoryLength_) + 14);
 
+  // Generate a bitmask that is used to ensure only the relevant number of
+  // bits are stored in the global history. This is two times the
+  // globalHistoryLength_ to allow rolling back of the speculatively updated
+  // global history in the event of a misprediction.
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
 
   // Set dummy lastFtqEntry value, needed to ensure that in-loop predict()
