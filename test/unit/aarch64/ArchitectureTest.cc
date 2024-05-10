@@ -80,7 +80,7 @@ class AArch64ArchitectureTest : public testing::Test {
 
   // fdivr z1.s, p0/m, z1.s, z0.s
   const std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
-  std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
+  const std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;

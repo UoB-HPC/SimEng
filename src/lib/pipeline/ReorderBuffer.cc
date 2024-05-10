@@ -36,7 +36,6 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
-    // Could be size_t or uint64_t
     uint64_t firstOp = UINT64_MAX;
     bool validForCommit = false;
     bool foundFirstInstance = false;

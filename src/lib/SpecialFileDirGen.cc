@@ -39,7 +39,7 @@ int systemWrapper(const std::string& command,
       } else if (WIFSIGNALED(output)) {
         std::cerr << "[SimEng:SpecialFileDirGen] Child process terminated by "
                      "signal: "
-                  << WTERMSIG(output) << "when running command: " << command
+                  << WTERMSIG(output) << " when running command: " << command
                   << std::endl;
       } else {
         // Macros providing more information can be found in "man 2 waitpid"

@@ -62,7 +62,7 @@ class RiscVArchitectureTest : public testing::Test {
 
   // addi	sp, ra, 2000
   const std::array<uint8_t, 4> validInstrBytes = {0x13, 0x81, 0x00, 0x7d};
-  std::array<uint8_t, 4> invalidInstrBytes = {0x7f, 0x00, 0x81, 0xbb};
+  const std::array<uint8_t, 4> invalidInstrBytes = {0x7f, 0x00, 0x81, 0xbb};
 
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
