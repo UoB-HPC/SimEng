@@ -121,7 +121,7 @@ class FetchUnit {
   /** The amount of data currently in the fetch buffer. */
   uint16_t bufferedBytes_ = 0;
 
-  /** The number of branch instructions that were executed. */
+  /** The number of branch instructions that were fetched. */
   uint64_t branchesFetched_ = 0;
 
   /** Let the following PipelineFetchUnitTest derived classes be a friend of
