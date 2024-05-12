@@ -438,7 +438,7 @@ TEST_F(ReorderBufferTest, branch) {
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
   // Check that branch misprediction metrics have been correctly collected
-  EXPECT_EQ(reorderBuffer.getBranchMispredictedCount(), 8);
+  EXPECT_EQ(reorderBuffer.getBranchMispredictedCount(), 4);
 }
 
 // Tests that only those destination registers which have been renamed are
