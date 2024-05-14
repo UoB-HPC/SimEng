@@ -178,7 +178,7 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const { return stallCycles_; }
 
-  /** Retrieve the number of cycles this instruction will take to be prcoessed
+  /** Retrieve the number of cycles this instruction will take to be processed
    * by the LSQ. */
   uint16_t getLSQLatency() const { return lsqExecutionLatency_; }
 
