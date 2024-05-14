@@ -161,7 +161,9 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   }
 
   btb_[hashedIndex].first = perceptron;
-  btb_[hashedIndex].second = targetAddress;
+  if (isTaken) {
+    btb_[hashedIndex].second = targetAddress;
+  }
 
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
