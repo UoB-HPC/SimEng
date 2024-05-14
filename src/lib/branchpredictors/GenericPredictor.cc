@@ -120,7 +120,10 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
   }
 
   // Update BTB entry
-  btb_[hashedIndex] = {satCntVal, targetAddress};
+  btb_[hashedIndex].first = satCntVal;
+  if (isTaken) {
+    btb_[hashedIndex].second = targetAddress;
+  }
 
   // Update global history if prediction was incorrect
   if (prevPrediction != isTaken) {
