@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+# ToDo -- check who should be listed here, and get their ORCIDS
+- family-names: "McIntosh-Smith"
+  given-names: "Simon"
+  orcid: "https://orcid.org/0000-0002-5312-0378"
+- family-names: "Jones"
+  given-names: "Jack"
+  orcid:
+title: "SimEng"
+version: 0.9.6
+# Todo -- add DOI via Zenodo
+doi:
+date-released: 2024-02-21
+url: "https://github.com/UoB-HPC/SimEng"
