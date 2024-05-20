@@ -456,6 +456,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FCPY_ZPmI_S:
       [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_S:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_D:
+      [[fallthrough]];
     case Opcode::AArch64_FNEG_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNEG_ZPmZ_S:
@@ -2056,10 +2064,10 @@ void InstructionMetadata::revertAliasing() {
                                                  : static_cast<int16_t>(value);
         return;
       }
-      if (opcode == Opcode ::AArch64_CPY_ZPmV_B ||
-          opcode == Opcode ::AArch64_CPY_ZPmV_D ||
-          opcode == Opcode ::AArch64_CPY_ZPmV_H ||
-          opcode == Opcode ::AArch64_CPY_ZPmV_S) {
+      if (opcode == Opcode::AArch64_CPY_ZPmV_B ||
+          opcode == Opcode::AArch64_CPY_ZPmV_D ||
+          opcode == Opcode::AArch64_CPY_ZPmV_H ||
+          opcode == Opcode::AArch64_CPY_ZPmV_S) {
         // mov zd.T, pg/m, Vn; alias of cpy zd.T, pg/m, Vn;
         return;
       }

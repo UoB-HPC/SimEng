@@ -1065,7 +1065,7 @@ TEST_P(Syscall, sched_getaffinity) {
     )");
   EXPECT_EQ(getGeneralRegister<int64_t>(21), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(22), -1);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), 1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 8);
 }
 
 // TODO: write tgkill test
