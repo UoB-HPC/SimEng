@@ -936,6 +936,22 @@ void Instruction::execute() {
         results_[0] = sveCpy_imm<int32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
+      case Opcode::AArch64_CPY_ZPmV_B: {  // cpy zd.b, pg/m, vn.b
+        results_[0] = sveCpy_Scalar<int8_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_D: {  // cpy zd.d, pg/m, vn.d
+        results_[0] = sveCpy_Scalar<int64_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_H: {  // cpy zd.h, pg/m, vn.h
+        results_[0] = sveCpy_Scalar<int16_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_S: {  // cpy zd.s, pg/m, vn.s
+        results_[0] = sveCpy_Scalar<int32_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_DUPi32: {  // dup vd, vn.s[index]
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 1>(sourceValues_, metadata_, false);

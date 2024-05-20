@@ -2037,10 +2037,10 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias of dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode ::AArch64_CPY_ZPzI_B ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_D ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_H ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_S) {
+      if (opcode == Opcode::AArch64_CPY_ZPzI_B ||
+          opcode == Opcode::AArch64_CPY_ZPzI_D ||
+          opcode == Opcode::AArch64_CPY_ZPzI_H ||
+          opcode == Opcode::AArch64_CPY_ZPzI_S) {
         // mov zd.T, pg/z, #imm{, shift}; alias of cpy zd.T, pg/z, #imm{,
         // shift}
         operandCount = 3;
@@ -2054,6 +2054,13 @@ void InstructionMetadata::revertAliasing() {
         auto value = std::stoi(tmpOpStr, 0, 16);
         operands[2].imm = tmpOpStr.length() == 4 ? static_cast<int8_t>(value)
                                                  : static_cast<int16_t>(value);
+        return;
+      }
+      if (opcode == Opcode ::AArch64_CPY_ZPmV_B ||
+          opcode == Opcode ::AArch64_CPY_ZPmV_D ||
+          opcode == Opcode ::AArch64_CPY_ZPmV_H ||
+          opcode == Opcode ::AArch64_CPY_ZPmV_S) {
+        // mov zd.T, pg/m, Vn; alias of cpy zd.T, pg/m, Vn;
         return;
       }
       if (opcode == Opcode::AArch64_DUPM_ZI ||

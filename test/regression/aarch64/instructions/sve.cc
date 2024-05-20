@@ -1543,6 +1543,123 @@ TEST_P(InstSve, cpy) {
   CHECK_NEON(4, int64_t, fillNeon<int64_t>({12}, VL / 8));
   CHECK_NEON(5, int64_t,
              fillNeon<int64_t>({static_cast<int16_t>(-2048)}, VL / 16));
+
+  // SIMD & FP scalar
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+
+    dup z1.b, #10
+    dup z2.b, #-8
+
+    cpy z0.b, p0/m, z1.b
+    cpy z1.b, p0/m, z2.b
+    cpy z2.b, p1/m, z1.b
+    cpy z3.b, p1/m, z2.b
+
+    # Test Alias
+    mov z4.b, p0/m, z1.b
+    mov z5.b, p1/m, z2.b
+  )");
+  CHECK_NEON(0, int8_t, fillNeon<int8_t>({10}, VL / 8));
+  CHECK_NEON(1, int8_t, fillNeon<int8_t>({-8}, VL / 8));
+  CHECK_NEON(2, int8_t, fillNeon<int8_t>({10}, VL / 16));
+  CHECK_NEON(3, int8_t, fillNeon<int8_t>({-8}, VL / 16));
+  CHECK_NEON(4, int8_t, fillNeon<int8_t>({-8}, VL / 8));
+  CHECK_NEON(5, int8_t, fillNeon<int8_t>({-8}, VL / 16));
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.h
+    whilelo p1.h, xzr, x0
+
+    dup z1.h, #10
+    dup z2.h, #2048
+
+    cpy z0.h, p0/m, z1.h
+    cpy z1.h, p0/m, z2.h
+    cpy z2.h, p1/m, z1.h
+    cpy z3.h, p1/m, z2.h
+
+    # Test Alias
+    mov z4.h, p0/m, z1.h
+    mov z5.h, p1/m, z2.h
+  )");
+  CHECK_NEON(0, int16_t, fillNeon<int16_t>({10}, VL / 8));
+  CHECK_NEON(1, int16_t, fillNeon<int16_t>({2048}, VL / 8));
+  CHECK_NEON(2, int16_t, fillNeon<int16_t>({10}, VL / 16));
+  CHECK_NEON(3, int16_t, fillNeon<int16_t>({2048}, VL / 16));
+  CHECK_NEON(4, int16_t, fillNeon<int16_t>({2048}, VL / 8));
+  CHECK_NEON(5, int16_t, fillNeon<int16_t>({2048}, VL / 16));
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #0
+    mov x1, #8
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    dup z1.s, #10
+    dup z2.s, #2048
+
+    cpy z0.s, p0/m, z1.s
+    cpy z1.s, p0/m, z2.s
+    cpy z2.s, p1/m, z1.s
+    cpy z3.s, p1/m, z2.s
+
+    # Test Alias
+    mov z4.s, p0/m, z1.s
+    mov z5.s, p1/m, z2.s
+  )");
+  CHECK_NEON(0, int32_t, fillNeon<int32_t>({10}, VL / 8));
+  CHECK_NEON(1, int32_t, fillNeon<int32_t>({2048}, VL / 8));
+  CHECK_NEON(2, int32_t, fillNeon<int32_t>({10}, VL / 16));
+  CHECK_NEON(3, int32_t, fillNeon<int32_t>({2048}, VL / 16));
+  CHECK_NEON(4, int32_t, fillNeon<int32_t>({2048}, VL / 8));
+  CHECK_NEON(5, int32_t, fillNeon<int32_t>({2048}, VL / 16));
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #0
+    mov x1, #16
+    addvl x0, x0, #1
+    sdiv x0, x0, x1
+
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    dup z1.d, #10
+    dup z2.d, #2048
+
+    cpy z0.d, p0/m, z1.d
+    cpy z1.d, p0/m, z2.d
+    cpy z2.d, p1/m, z1.d
+    cpy z3.d, p1/m, z2.d
+
+    # Test Alias
+    mov z4.d, p0/m, z1.d
+    mov z5.d, p1/m, z2.d
+  )");
+  CHECK_NEON(0, int64_t, fillNeon<int64_t>({10}, VL / 8));
+  CHECK_NEON(1, int64_t, fillNeon<int64_t>({2048}, VL / 8));
+  CHECK_NEON(2, int64_t, fillNeon<int64_t>({10}, VL / 16));
+  CHECK_NEON(3, int64_t, fillNeon<int64_t>({2048}, VL / 16));
+  CHECK_NEON(4, int64_t, fillNeon<int64_t>({2048}, VL / 8));
+  CHECK_NEON(5, int64_t, fillNeon<int64_t>({2048}, VL / 16));
 }
 
 TEST_P(InstSve, fcpy) {
