@@ -257,6 +257,32 @@ RegisterValue sveCpy_imm(
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `cpy zd, pg/m, vn
+ * T represents the type of sourceValues (e.g. for zd.d, T = int64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveCpy_Scalar(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const T* zd = sourceValues[0].getAsVector<T>();
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const T vn = sourceValues[2].get<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      out[i] = vn;
+    } else {
+      out[i] = zd[i];
+    }
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `dec<b,d,h,s> xdn{,
  * pattern{, MUL #imm}}`.
  * T represents the type of operation (e.g. for DECD, T = uint64_t).
