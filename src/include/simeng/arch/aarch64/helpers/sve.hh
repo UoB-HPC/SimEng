@@ -941,6 +941,34 @@ RegisterValue sveIndex(
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `lastb vd, pg, zn`.
+ * T represents the vector register type (e.g. zd.d would be uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveLastBScalar(srcValContainer& sourceValues,
+                             const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out;
+
+  // Get last active element
+  int lastElem = 0;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
+    }
+    // If no active lane has been found, select highest element instead
+    if (i == 0) lastElem = partition_num - 1;
+  }
+
+  out = n[lastElem];
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * pd, pg/z, pn, pm`.
  * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).
@@ -1430,6 +1458,51 @@ RegisterValue sveSminv(srcValContainer& sourceValues, const uint16_t VL_bits) {
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `splice zd, pg, zn,
+ * zm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveSplice(srcValContainer& sourceValues, const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  // Get last active element
+  int lastElem = 0;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
+    }
+  }
+
+  // Extract region from n as denoted by predicate p. Copy region into the
+  // lowest elements of the destination operand
+  bool active = false;
+  int index = 0;
+  for (int i = 0; i <= lastElem; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) active = true;
+    if (active) {
+      out[index] = n[i];
+      index++;
+    }
+  }
+
+  // Set any unassigned elements to the lowest elements in m
+  int elemsLeft = partition_num - index;
+  for (int i = 0; i < elemsLeft; i++) {
+    out[index] = m[i];
+    index++;
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `Sub zd, zn,
  * zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
@@ -1637,33 +1710,31 @@ RegisterValue sveUzp_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `whilelo pd,
- * <w,x>n, <w,x>m`.
+/** Helper function for SVE instructions with the format `while<ge, gt, hi, hs,
+ * le, lo, ls, lt> pd, <w,x>n, <w,x>m`.
  * T represents the type of sourceValues n and m (e.g. for wn, T = uint32_t).
  * P represents the type of operand p (e.g. for pd.b, P = uint8_t).
  * Returns tuple of type [pred results (array of 4 uint64_t), nzcv]. */
 template <typename T, typename P>
-std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
-    srcValContainer& sourceValues, const uint16_t VL_bits, bool calcNZCV) {
+std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhile(
+    srcValContainer& sourceValues, const uint16_t VL_bits,
+    std::function<bool(T, T)> func) {
   const T n = sourceValues[0].get<T>();
   const T m = sourceValues[1].get<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(P) * 8);
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
-  uint16_t index = 0;
 
   for (int i = 0; i < partition_num; i++) {
     // Determine whether lane should be active and shift to align with
     // element in predicate register.
     uint64_t shifted_active =
-        (n + i) < m ? 1ull << ((i % (64 / (sizeof(P))) * (sizeof(P)))) : 0;
-    out[index / (64 / (sizeof(P)))] =
-        out[index / (64 / (sizeof(P)))] | shifted_active;
-    index++;
+        func((n + i), m) ? 1ull << ((i % (64 / (sizeof(P))) * (sizeof(P)))) : 0;
+    out[i / (64 / (sizeof(P)))] |= shifted_active;
   }
   // Byte count = sizeof(P) as destination predicate is predicate of P
   // bytes.
-  uint8_t nzcv = calcNZCV ? getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
+  uint8_t nzcv = getNZCVfromPred(out, VL_bits, sizeof(P));
   return {out, nzcv};
 }
 
