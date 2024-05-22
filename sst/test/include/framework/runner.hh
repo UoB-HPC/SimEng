@@ -25,10 +25,12 @@ class Runner {
    * Returns the current executing TestContext.
    * The TestContext for a Group changes everytime a new test is run
    */
-  virtual std::unique_ptr<TestContext>& getCurrContext() {
-    std::unique_ptr<TestContext> ptr = std::make_unique<TestContext>();
-    return ptr;
-  };
+  // TODO commented out as unused and causing warnings due to return of a stack
+  // variable
+  //  virtual std::unique_ptr<TestContext>& getCurrContext() {
+  //    std::unique_ptr<TestContext> ptr = std::make_unique<TestContext>();
+  //    return ptr;
+  //  };
 };
 
 /** GroupConfig used to provide configuration options to a Group. */
