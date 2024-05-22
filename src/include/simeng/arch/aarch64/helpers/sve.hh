@@ -1326,6 +1326,28 @@ std::array<uint64_t, 4> svePsel(
   return out;
 }
 
+/** Helper function for SVE instructions with the format `pfirst pdn, pg, pdn`.
+ * Returns an array of 4 uint64_t elements. */
+std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
+                                  const uint16_t VL_bits) {
+  const uint16_t partition_num = VL_bits / 8;
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
+  // Set destination d as source n to copy all false lanes and the active lanes
+  // beyond the first
+  std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
+
+  // Get the first active lane and set same lane in destination predicate
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64)));
+    if (p[i / 64] & shifted_active) {
+      out[i / 64] |= shifted_active;
+      break;
+    }
+  }
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `ptrue pd{,
  * pattern}.
  * T represents the type of sourceValues (e.g. for pd.d, T = uint64_t).

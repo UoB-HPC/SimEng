@@ -820,6 +820,38 @@ void Instruction::execute() {
         results_[1] = output;
         break;
       }
+      case Opcode::AArch64_CMPHS_PPzZZ_B: {  // cmphs pd.b, pg/z, zn.b, zm.b
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint8_t>(
+            sourceValues_, metadata_, VL_bits, true,
+            [](uint8_t x, uint8_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_D: {  // cmphs pd.d, pg/z, zn.d, zm.d
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint64_t>(
+            sourceValues_, metadata_, VL_bits, true,
+            [](uint64_t x, uint64_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_H: {  // cmphs pd.h, pg/z, zn.h, zm.h
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint16_t>(
+            sourceValues_, metadata_, VL_bits, true,
+            [](uint16_t x, uint16_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_S: {  // cmphs pd.s, pg/z, zn.s, zm.s
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint32_t>(
+            sourceValues_, metadata_, VL_bits, true,
+            [](uint32_t x, uint32_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
       case Opcode::AArch64_CMPNE_PPzZI_B: {  // cmpne pd.b, pg/z. zn.b, #imm
         auto [output, nzcv] = sveCmpPredicated_toPred<int8_t>(
             sourceValues_, metadata_, VL_bits, true,
@@ -4027,6 +4059,10 @@ void Instruction::execute() {
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
         uint64_t out[4] = {0, 0, 0, 0};
         results_[0] = out;
+        break;
+      }
+      case Opcode::AArch64_PFIRST_B: {  // pfirst pdn.b, pg, pdn.b
+        results_[0] = svePfirst(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
