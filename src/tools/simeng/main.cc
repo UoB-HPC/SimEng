@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
     }
   } else {
     // Without a config file, no executable can be supplied so pass default
-    // default values for executable information
+    // values for executable information
     configFilePath = DEFAULT_STR;
     executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   }
