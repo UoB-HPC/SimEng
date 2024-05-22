@@ -116,7 +116,7 @@ TEST_F(RiscVArchitectureTest, handleException) {
   EXPECT_EQ(insn[0]->exceptionEncountered(), true);
 
   // Get Core
-  std::string executablePath = "";
+  std::string executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   std::vector<std::string> executableArgs = {};
   std::unique_ptr<CoreInstance> coreInstance =
       std::make_unique<CoreInstance>(executablePath, executableArgs);

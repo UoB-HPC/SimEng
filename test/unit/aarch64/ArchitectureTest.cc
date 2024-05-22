@@ -142,7 +142,7 @@ TEST_F(AArch64ArchitectureTest, handleException) {
             InstructionException::EncodingUnallocated);
 
   // Get Core
-  std::string executablePath = "";
+  std::string executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   std::vector<std::string> executableArgs = {};
   std::unique_ptr<CoreInstance> coreInstance =
       std::make_unique<CoreInstance>(executablePath, executableArgs);
