@@ -25,8 +25,8 @@ class Runner {
    * Returns the current executing TestContext.
    * The TestContext for a Group changes everytime a new test is run
    */
-  // TODO commented out as unused and causing warnings due to return of a stack
-  // variable
+  // TODO commented out as seemingly unused and causing warnings due to return
+  // of a stack variable. This needs to be rewritten
   //  virtual std::unique_ptr<TestContext>& getCurrContext() {
   //    std::unique_ptr<TestContext> ptr = std::make_unique<TestContext>();
   //    return ptr;
