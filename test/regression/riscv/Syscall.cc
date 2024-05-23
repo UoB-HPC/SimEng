@@ -187,9 +187,7 @@ TEST_P(Syscall, faccessat) {
 
   char abs_filepath[LINUX_PATH_MAX];
 
-  char* output =
-      realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
-  if (output == nullptr) {
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath)) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -222,8 +220,7 @@ TEST_P(Syscall, faccessat) {
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
 
-  output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
-  if (output == nullptr) {
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath)) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;
@@ -744,8 +741,7 @@ TEST_P(Syscall, newfstatat) {
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
 
-  char* output = realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
-  if (output == nullptr) {
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath)) {
     // Something went wrong
     std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
               << std::endl;

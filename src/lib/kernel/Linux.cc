@@ -531,15 +531,12 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   if (pathname == "/proc/self/exe") {
     // Resolve absolute path
     char absolutePath[LINUX_PATH_MAX];
-    //    char* output =
-    realpath(processState.path.c_str(), absolutePath);
-    //    if (output == nullptr) {
-    //      // Something went wrong
-    //      std::cerr << "[SimEng:readlinkat] realpath failed with errno = " <<
-    //      errno
-    //                << std::endl;
-    //      exit(EXIT_FAILURE);
-    //    }
+    if (!realpath(processState.path.c_str(), absolutePath)) {
+      // Something went wrong
+      std::cerr << "[SimEng:readlinkat] realpath failed with errno = " << errno
+                << std::endl;
+      exit(EXIT_FAILURE);
+    }
 
     // Copy executable path to buffer
     std::strncpy(buf, absolutePath, bufsize);
