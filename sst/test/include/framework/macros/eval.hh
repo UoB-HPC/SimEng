@@ -9,7 +9,7 @@
 #define GENERIC_EXPECT_WITH_LINE(A, OP, B, line, SRC)        \
   {                                                          \
     ExpressionHandler handler = ExpressionHandler();         \
-    handler.handleExpression(ExprBuilder() << (A OP B), SRC, \
+    handler.handleExpression(ExprBuilder() << A OP B, SRC, \
                              static_cast<uint64_t>(line));   \
   }
 
