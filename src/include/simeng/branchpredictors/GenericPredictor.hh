@@ -45,9 +45,11 @@ class GenericPredictor : public BranchPredictor {
   void update(uint64_t address, bool isTaken, uint64_t targetAddress,
               BranchType type) override;
 
-  /** Flushes the most recently predicted branch from the BP.  Address is
-   * required to ensure that only the correct branch is removed from the RAS.
-   * */
+  /** Provides flushing behaviour for the implemented branch prediction schemes
+   * via the instruction address.  Branches must be flushed in reverse
+   * program order (though, if a block of n instructions is being flushed at
+   * once, the exact order that the individual instructions within this block
+   * are flushed does not matter so long as they are all flushed). */
   void flush(uint64_t address) override;
 
  private:
