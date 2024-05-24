@@ -505,8 +505,9 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       break;
     case Opcode::RISCV_C_MV:
       // add rd, x0, rs2
-      // rs2 == zero and rd == zero are hints
       // C.MV rd, rs2, _ -> ADD rd, zero, rs2
+
+      // rs2 != zero and rd == zero are hints
 
       // rs2 = zero corresponds to C.JR
       if (operands[1].type != RISCV_OP_REG ||
@@ -553,12 +554,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.LI rd, imm, _ -> addi rd, zero, imm
 
       // rd = zero encodes hints
-      if (operands[0].type != RISCV_OP_REG ||
-          operands[0].reg == RISCV_REG_ZERO) {
-        illegalAlias(
-            "C.LI has rd=x0 which encodes hints which currently aren't "
-            "implemented");
-      }
 
       opcode = Opcode::RISCV_ADDI;
 
@@ -592,19 +587,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.SLLI rd, shamt, _ -> slli rd, rd, shamt
 
       // shamt = zero is reserved for hints
-      if (operands[1].type != RISCV_OP_IMM || operands[1].imm == 0) {
-        illegalAlias(
-            "C.SLLI has shamt=0 which is reserved for hints which currently "
-            "aren't implemented");
-      }
-
       // rd = zero encodes hints
-      if (operands[0].type != RISCV_OP_REG ||
-          operands[0].reg == RISCV_REG_ZERO) {
-        illegalAlias(
-            "C.SLLI has rd=x0 which is reserved for hints  which currently "
-            "aren't implemented");
-      }
 
       opcode = Opcode::RISCV_SLLI;
 
@@ -646,15 +629,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
         illegalAlias("C.ADD has rs2=x0 which is invalid");
       }
 
-      // rs2 = zero AND rd = zero are reserved for hints
-      if ((operands[0].type != RISCV_OP_REG ||
-           operands[0].reg == RISCV_REG_ZERO) &&
-          (operands[1].type != RISCV_OP_REG ||
-           operands[1].reg == RISCV_REG_ZERO)) {
-        illegalAlias(
-            "C.ADD has rs2=x0 and rd=x0 which is reserved for hints which "
-            "currently aren't implemented");
-      }
+      // rs2 != zero AND rd = zero are reserved for hints
 
       opcode = Opcode::RISCV_ADD;
 
@@ -683,11 +658,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       }
 
       // nzimm = zero is reserved for hints
-      if (operands[1].type != RISCV_OP_IMM || operands[1].imm == 0) {
-        illegalAlias(
-            "C.ADDI has nzimm=0 which is reserved for hints which currently "
-            "aren't implemented");
-      }
 
       opcode = Opcode::RISCV_ADDI;
 
@@ -738,12 +708,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       }
 
       // rd = zero is reserved for hints
-      if (operands[0].type != RISCV_OP_REG ||
-          operands[0].reg == RISCV_REG_ZERO) {
-        illegalAlias(
-            "C.LUI has rd=x0 which is reserved for hints which currently "
-            "aren't implemented");
-      }
 
       // rd = x2 encodes C.ADDI16SP
       if (operands[0].type != RISCV_OP_REG || operands[0].reg == RISCV_REG_SP) {
@@ -837,11 +801,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.SRLI rd, imm, _ -> srli rd, rd, imm
 
       // shamt = zero is reserved for hints
-      if (operands[1].type != RISCV_OP_IMM || operands[1].imm == 0) {
-        illegalAlias(
-            "C.SRLI has shamt=0 which is reserved for hints which currently "
-            "aren't implemented");
-      }
 
       opcode = Opcode::RISCV_SRLI;
 
@@ -910,11 +869,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // C.SRAI rd, imm, _ -> srai rd, rd, imm
 
       // shamt = zero is reserved for hints
-      if (operands[1].type != RISCV_OP_IMM || operands[1].imm == 0) {
-        illegalAlias(
-            "C.SRAI has shamt=0 which is reserved for hints which currently "
-            "aren't implemented");
-      }
 
       opcode = Opcode::RISCV_SRAI;
 
