@@ -14,9 +14,9 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
-        branchpredictors/AlwaysNotTakenPredictor.cc
-        branchpredictors/GenericPredictor.cc
-        branchpredictors/PerceptronPredictor.cc
+    branchpredictors/AlwaysNotTakenPredictor.cc
+    branchpredictors/GenericPredictor.cc
+    branchpredictors/PerceptronPredictor.cc
     config/ModelConfig.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
