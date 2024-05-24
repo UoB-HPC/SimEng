@@ -73,7 +73,8 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
     ras_.push_back(address + 4);
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
-  } else if (type == BranchType::Conditional) {
+  } else if (type == BranchType::Conditional ||
+             type == BranchType::LoopClosing) {
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
