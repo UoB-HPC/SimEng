@@ -72,37 +72,53 @@ const uint16_t LOAD_SVE = 62;
 const uint16_t STORE_ADDRESS_SVE = 63;
 const uint16_t STORE_DATA_SVE = 64;
 const uint16_t STORE_SVE = 65;
-const uint16_t PREDICATE = 66;
-const uint16_t LOAD = 67;
-const uint16_t STORE_ADDRESS = 68;
-const uint16_t STORE_DATA = 69;
-const uint16_t STORE = 70;
-const uint16_t BRANCH = 71;
-const uint16_t SME = 72;
-const uint16_t SME_SIMPLE = 73;
-const uint16_t SME_SIMPLE_ARTH = 74;
-const uint16_t SME_SIMPLE_ARTH_NOSHIFT = 75;
-const uint16_t SME_SIMPLE_LOGICAL = 76;
-const uint16_t SME_SIMPLE_LOGICAL_NOSHIFT = 77;
-const uint16_t SME_SIMPLE_CMP = 78;
-const uint16_t SME_SIMPLE_CVT = 79;
-const uint16_t SME_MUL = 80;
-const uint16_t SME_DIV_OR_SQRT = 81;
-const uint16_t LOAD_SME = 82;
-const uint16_t STORE_ADDRESS_SME = 83;
-const uint16_t STORE_DATA_SME = 84;
-const uint16_t STORE_SME = 85;
-const uint16_t ALL = 86;
-const uint16_t NONE = 87;
+const uint16_t STREAMING_SVE = 66;
+const uint16_t STREAMING_SVE_SIMPLE = 67;
+const uint16_t STREAMING_SVE_SIMPLE_ARTH = 68;
+const uint16_t STREAMING_SVE_SIMPLE_ARTH_NOSHIFT = 69;
+const uint16_t STREAMING_SVE_SIMPLE_LOGICAL = 70;
+const uint16_t STREAMING_SVE_SIMPLE_LOGICAL_NOSHIFT = 71;
+const uint16_t STREAMING_SVE_SIMPLE_CMP = 72;
+const uint16_t STREAMING_SVE_SIMPLE_CVT = 73;
+const uint16_t STREAMING_SVE_MUL = 74;
+const uint16_t STREAMING_SVE_DIV_OR_SQRT = 75;
+const uint16_t LOAD_STREAMING_SVE = 76;
+const uint16_t STORE_ADDRESS_STREAMING_SVE = 77;
+const uint16_t STORE_DATA_STREAMING_SVE = 78;
+const uint16_t STORE_STREAMING_SVE = 79;
+const uint16_t SME = 80;
+const uint16_t SME_SIMPLE = 81;
+const uint16_t SME_SIMPLE_ARTH = 82;
+const uint16_t SME_SIMPLE_ARTH_NOSHIFT = 83;
+const uint16_t SME_SIMPLE_LOGICAL = 84;
+const uint16_t SME_SIMPLE_LOGICAL_NOSHIFT = 85;
+const uint16_t SME_SIMPLE_CMP = 86;
+const uint16_t SME_SIMPLE_CVT = 87;
+const uint16_t SME_MUL = 88;
+const uint16_t SME_DIV_OR_SQRT = 89;
+const uint16_t LOAD_SME = 90;
+const uint16_t STORE_ADDRESS_SME = 91;
+const uint16_t STORE_DATA_SME = 92;
+const uint16_t STORE_SME = 93;
+const uint16_t PREDICATE = 94;
+const uint16_t STREAMING_PREDICATE = 95;
+const uint16_t LOAD = 96;
+const uint16_t STORE_ADDRESS = 97;
+const uint16_t STORE_DATA = 98;
+const uint16_t STORE = 99;
+const uint16_t BRANCH = 100;
+const uint16_t ALL = 101;
+const uint16_t NONE = 102;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-static constexpr uint8_t NUM_GROUPS = 88;
+static constexpr uint8_t NUM_GROUPS = 103;
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
     {InstructionGroups::ALL,
      {InstructionGroups::INT, InstructionGroups::FP, InstructionGroups::SVE,
-      InstructionGroups::PREDICATE, InstructionGroups::SME,
+      InstructionGroups::STREAMING_SVE, InstructionGroups::SME,
+      InstructionGroups::PREDICATE, InstructionGroups::STREAMING_PREDICATE,
       InstructionGroups::LOAD, InstructionGroups::STORE,
       InstructionGroups::BRANCH}},
     {InstructionGroups::INT,
@@ -176,6 +192,19 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
      {InstructionGroups::SVE_SIMPLE_ARTH_NOSHIFT}},
     {InstructionGroups::SVE_SIMPLE_LOGICAL,
      {InstructionGroups::SVE_SIMPLE_LOGICAL_NOSHIFT}},
+    {InstructionGroups::STREAMING_SVE,
+     {InstructionGroups::STREAMING_SVE_SIMPLE,
+      InstructionGroups::STREAMING_SVE_DIV_OR_SQRT,
+      InstructionGroups::STREAMING_SVE_MUL}},
+    {InstructionGroups::STREAMING_SVE_SIMPLE,
+     {InstructionGroups::STREAMING_SVE_SIMPLE_ARTH,
+      InstructionGroups::STREAMING_SVE_SIMPLE_LOGICAL,
+      InstructionGroups::STREAMING_SVE_SIMPLE_CMP,
+      InstructionGroups::STREAMING_SVE_SIMPLE_CVT}},
+    {InstructionGroups::STREAMING_SVE_SIMPLE_ARTH,
+     {InstructionGroups::STREAMING_SVE_SIMPLE_ARTH_NOSHIFT}},
+    {InstructionGroups::STREAMING_SVE_SIMPLE_LOGICAL,
+     {InstructionGroups::STREAMING_SVE_SIMPLE_LOGICAL_NOSHIFT}},
     {InstructionGroups::SME,
      {InstructionGroups::SME_SIMPLE, InstructionGroups::SME_DIV_OR_SQRT,
       InstructionGroups::SME_MUL}},
@@ -189,11 +218,11 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
     {InstructionGroups::LOAD,
      {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_SCALAR,
       InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE,
-      InstructionGroups::LOAD_SME}},
+      InstructionGroups::LOAD_STREAMING_SVE, InstructionGroups::LOAD_SME}},
     {InstructionGroups::STORE,
      {InstructionGroups::STORE_INT, InstructionGroups::STORE_SCALAR,
       InstructionGroups::STORE_VECTOR, InstructionGroups::STORE_SVE,
-      InstructionGroups::STORE_SME}},
+      InstructionGroups::STORE_STREAMING_SVE, InstructionGroups::STORE_SME}},
     {InstructionGroups::STORE_INT,
      {InstructionGroups::STORE_ADDRESS_INT, InstructionGroups::STORE_DATA_INT}},
     {InstructionGroups::STORE_SCALAR,
@@ -204,6 +233,9 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
       InstructionGroups::STORE_DATA_VECTOR}},
     {InstructionGroups::STORE_SVE,
      {InstructionGroups::STORE_ADDRESS_SVE, InstructionGroups::STORE_DATA_SVE}},
+    {InstructionGroups::STORE_STREAMING_SVE,
+     {InstructionGroups::STORE_ADDRESS_STREAMING_SVE,
+      InstructionGroups::STORE_DATA_STREAMING_SVE}},
     {InstructionGroups::STORE_SME,
      {InstructionGroups::STORE_ADDRESS_SME, InstructionGroups::STORE_DATA_SME}},
     {InstructionGroups::STORE_ADDRESS,
@@ -211,10 +243,12 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance_ = {
       InstructionGroups::STORE_ADDRESS_SCALAR,
       InstructionGroups::STORE_ADDRESS_VECTOR,
       InstructionGroups::STORE_ADDRESS_SVE,
+      InstructionGroups::STORE_ADDRESS_STREAMING_SVE,
       InstructionGroups::STORE_ADDRESS_SME}},
     {InstructionGroups::STORE_DATA,
      {InstructionGroups::STORE_DATA_INT, InstructionGroups::STORE_DATA_SCALAR,
       InstructionGroups::STORE_DATA_VECTOR, InstructionGroups::STORE_DATA_SVE,
+      InstructionGroups::STORE_DATA_STREAMING_SVE,
       InstructionGroups::STORE_DATA_SME}}};
 
 }  // namespace aarch64
