@@ -224,11 +224,11 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesExecuted = fetchUnit_.getBranchFetchedCount();
+  uint64_t totalBranchesFetched = fetchUnit_.getBranchFetchedCount();
   uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
+                        static_cast<float>(totalBranchesFetched);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
@@ -246,7 +246,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.fetched", std::to_string(totalBranchesFetched)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
