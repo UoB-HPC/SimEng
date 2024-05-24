@@ -58,9 +58,9 @@ class BranchPredictor {
                                    int64_t knownOffset,
                                    bool isLoop = false) = 0;
 
-  /** Provide branch results to update the prediction model for the specified
-   * instruction address. Update must be called on instructions in program
-   * order. */
+  /** Updates appropriate predictor model objects based on the address, type and
+   * outcome of the branch instruction.  Update must be called on branches in
+   * program order. */
   virtual void update(uint64_t address, bool isTaken, uint64_t targetAddress,
                       BranchType type) = 0;
 
