@@ -4,7 +4,6 @@
 #include <functional>
 
 #include "simeng/Instruction.hh"
-#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
