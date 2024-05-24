@@ -46,11 +46,14 @@ class BranchPredictor {
  public:
   virtual ~BranchPredictor(){};
 
-  /** Generate a branch prediction for the specified instruction address with a
-   * branch type and possible known branch offset.  There is an optional
-   * boolean argument for if the branch is a part of a loop, in which case
-   * the fetch unit does not require a new prediction and so only a dummy
-   * prediction is returned. */
+  /** Generate a branch prediction for the supplied instruction address, a
+   * branch type, and a known branch offset; defaults to 0 meaning offset is not
+   * known. Returns a branch direction and branch target address.  There is
+   * also an optional boolean argument for whether or not the branch has
+   * been identified as being a part of a loop.  If the branch is a loop
+   * branch, then the fetch unit will reuse a previous prediction and so no
+   * new prediction is required.  Therefore, predict() returns only a dummy
+   * prediction. */
   virtual BranchPrediction predict(uint64_t address, BranchType type,
                                    int64_t knownOffset,
                                    bool isLoop = false) = 0;
