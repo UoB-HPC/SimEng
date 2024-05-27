@@ -2,6 +2,7 @@
 .vscode
 .idea
 .DS_Store
+.cache
 obj
 build
 xcode-build

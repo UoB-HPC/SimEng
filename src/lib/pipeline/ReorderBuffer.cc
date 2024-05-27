@@ -2,7 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
+#include <cstddef>
+#include <cstdint>
 
 namespace simeng {
 namespace pipeline {
@@ -34,39 +35,31 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 }
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  if (buffer_.size()) {
-    size_t index = 0;
-    int firstOp = -1;
-    bool validForCommit = false;
+  size_t bsize = buffer_.size();
+  if (!bsize) return;
 
-    // Find first instance of uop belonging to macro-op instruction
-    for (; index < buffer_.size(); index++) {
-      if (buffer_[index]->getInstructionId() == insnId) {
-        firstOp = index;
-        break;
-      }
+  size_t index = 0;
+  uint8_t ins_cnt = 0;
+
+  while (index < bsize) {
+    auto& uop = buffer_[index];
+    uint64_t mop_id = uop->getInstructionId();
+
+    if (mop_id == insnId) {
+      if (!uop->isWaitingCommit()) return;
+      ins_cnt++;
+    } else if (ins_cnt && mop_id != insnId) {
+      break;
     }
-
-    if (firstOp > -1) {
-      // If found, see if all uops are committable
-      for (; index < buffer_.size(); index++) {
-        if (buffer_[index]->getInstructionId() != insnId) break;
-        if (!buffer_[index]->isWaitingCommit()) {
-          return;
-        } else if (buffer_[index]->isLastMicroOp()) {
-          // all microOps must be in ROB for the commit to be valid
-          validForCommit = true;
-        }
-      }
-      if (!validForCommit) return;
-
-      // No early return thus all uops are committable
-      for (; firstOp < buffer_.size(); firstOp++) {
-        if (buffer_[firstOp]->getInstructionId() != insnId) break;
-        buffer_[firstOp]->setCommitReady();
-      }
-    }
+    index++;
   }
+
+  index = index - ins_cnt;
+  for (int x = 0; x < ins_cnt; x++) {
+    buffer_[index]->setCommitReady();
+    index++;
+  }
+
   return;
 }
 
