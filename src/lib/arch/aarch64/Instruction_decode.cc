@@ -1,10 +1,5 @@
 #include "InstructionMetadata.hh"
 
-#define NOT(bits, length) (~bits & (1 << length - 1))
-#define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
-#define ONES(n) ((1 << (n)) - 1)
-#define ROR(x, shift, size) ((x >> shift) | (x << (size - shift)))
-
 namespace simeng {
 namespace arch {
 namespace aarch64 {
