@@ -252,6 +252,9 @@ class Instruction : public simeng::Instruction {
    * the `InsnType` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint16_t instructionIdentifier_ = 0;
+
+  /** The instruction group this instruction belongs to. */
+  uint16_t instructionGroup_ = InstructionGroups::NONE;
 };
 
 }  // namespace riscv

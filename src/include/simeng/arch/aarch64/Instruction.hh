@@ -453,7 +453,7 @@ class Instruction : public simeng::Instruction {
   uint32_t instructionIdentifier_ = 0;
 
   /** The instruction group this instruction belongs to. */
-  uint16_t instructionGroup_ = InstructionGroups::ALL;
+  uint16_t instructionGroup_ = InstructionGroups::NONE;
 };
 
 }  // namespace aarch64
