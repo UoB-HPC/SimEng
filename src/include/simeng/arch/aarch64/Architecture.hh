@@ -70,6 +70,12 @@ class Architecture : public arch::Architecture {
   /** Returns the current value of SVCRval_. */
   uint64_t getSVCRval() const;
 
+  /** Returns if SVE Streaming Mode is enabled. */
+  bool isStreamingModeEnabled() const;
+
+  /** Returns if the SME ZA Register is enabled. */
+  bool isZA_RegisterEnabled() const;
+
   /** Update the value of SVCRval_. */
   void setSVCRval(const uint64_t newVal) const;
 
