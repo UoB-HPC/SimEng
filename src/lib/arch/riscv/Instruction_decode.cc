@@ -310,6 +310,33 @@ void Instruction::decode() {
       knownOffset_ = sourceImm_;
       break;
   }
+
+  // Calculate the instruction's group based on identifiers
+  // Set base group
+  uint16_t group = InstructionGroups::INT;
+  if (isInstruction(InsnType::isFloat)) group = InstructionGroups::FLOAT;
+  // Identify subgroup type
+  if (isInstruction(InsnType::isBranch))
+    group = InstructionGroups::BRANCH;
+  else if (isInstruction(InsnType::isLoad))
+    group += 8;
+  else if (isInstruction(InsnType::isStore))
+    group += 9;
+  else if (isInstruction(InsnType::isDivide))
+    group += 7;
+  else if (isInstruction(InsnType::isMultiply))
+    group += 6;
+  else if (isInstruction(InsnType::isShift) ||
+           isInstruction(InsnType::isConvert))
+    group += 5;
+  else if (isInstruction(InsnType::isLogical))
+    group += 4;
+  else if (isInstruction(InsnType::isCompare))
+    group += 3;
+  else
+    group += 2;  // Default return is {Data type}_SIMPLE_ARTH
+
+  instructionGroup_ = group;
 }
 
 }  // namespace riscv

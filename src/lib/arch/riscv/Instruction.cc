@@ -126,24 +126,7 @@ bool Instruction::isLoad() const { return isInstruction(InsnType::isLoad); }
 
 bool Instruction::isBranch() const { return isInstruction(InsnType::isBranch); }
 
-uint16_t Instruction::getGroup() const {
-  uint16_t base = InstructionGroups::INT;
-
-  if (isInstruction(InsnType::isFloat)) {
-    base = InstructionGroups::FLOAT;
-  }
-
-  if (isInstruction(InsnType::isBranch)) return InstructionGroups::BRANCH;
-  if (isInstruction(InsnType::isLoad)) return base + 8;
-  if (isInstruction(InsnType::isStore)) return base + 9;
-  if (isInstruction(InsnType::isDivide)) return base + 7;
-  if (isInstruction(InsnType::isMultiply)) return base + 6;
-  if (isInstruction(InsnType::isShift) || isInstruction(InsnType::isConvert))
-    return base + 5;
-  if (isInstruction(InsnType::isLogical)) return base + 4;
-  if (isInstruction(InsnType::isCompare)) return base + 3;
-  return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
-}
+uint16_t Instruction::getGroup() const { return instructionGroup_; }
 
 bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
 
