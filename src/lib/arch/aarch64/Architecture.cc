@@ -281,6 +281,12 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_ = newVal;
 }
 
+// 0th bit of SVCR register determines if streaming-mode is enabled.
+bool Architecture::isStreamingModeEnabled() const { return SVCRval_ & 1; }
+
+// 1st bit of SVCR register determines if ZA register is enabled.
+bool Architecture::isZA_RegisterEnabled() const { return SVCRval_ & 2; }
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

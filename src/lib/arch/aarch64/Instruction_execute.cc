@@ -67,9 +67,9 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
   // 0th bit of SVCR register determines if streaming-mode is enabled.
-  const bool SMenabled = architecture_.getSVCRval() & 1;
+  const bool SMenabled = architecture_.isStreamingModeEnabled();
   // 1st bit of SVCR register determines if ZA register is enabled.
-  const bool ZAenabled = architecture_.getSVCRval() & 2;
+  const bool ZAenabled = architecture_.isZA_RegisterEnabled();
   // When streaming mode is enabled, the architectural vector length goes from
   // SVE's VL to SME's SVL.
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
