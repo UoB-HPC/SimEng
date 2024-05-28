@@ -73,7 +73,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
               .as<uint16_t>()),
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()),
-      predictor_(branchPredictor) {
+      branchPredictor_(branchPredictor) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -261,11 +261,11 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   // Check for branch instructions in buffer, and flush them from the BP.
   // Then empty the buffers
-  fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
+  fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
-  decodeToRenameBuffer_.flushBranchMicroOps(predictor_);
+  decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
@@ -349,11 +349,11 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
+    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
-    decodeToRenameBuffer_.flushBranchMicroOps(predictor_);
+    decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -381,7 +381,7 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.flushBranchMacroOps(predictor_);
+    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
