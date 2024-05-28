@@ -131,35 +131,7 @@ bool Instruction::isLoad() const { return isInstruction(InsnType::isLoad); }
 
 bool Instruction::isBranch() const { return isInstruction(InsnType::isBranch); }
 
-uint16_t Instruction::getGroup() const {
-  // Use identifiers to decide instruction group
-  // Set base
-  uint16_t base = InstructionGroups::INT;
-  if (isInstruction(InsnType::isScalarData))
-    base = InstructionGroups::SCALAR;
-  else if (isInstruction(InsnType::isVectorData))
-    base = InstructionGroups::VECTOR;
-  else if (isInstruction(InsnType::isSVEData))
-    base = InstructionGroups::SVE;
-  else if (isInstruction(InsnType::isSMEData))
-    base = InstructionGroups::SME;
-
-  if (isInstruction(InsnType::isLoad)) return base + 10;
-  if (isInstruction(InsnType::isStoreAddress)) return base + 11;
-  if (isInstruction(InsnType::isStoreData)) return base + 12;
-  if (isInstruction(InsnType::isBranch)) return InstructionGroups::BRANCH;
-  if (isInstruction(InsnType::isPredicate)) return InstructionGroups::PREDICATE;
-  if (isInstruction(InsnType::isDivideOrSqrt)) return base + 9;
-  if (isInstruction(InsnType::isMultiply)) return base + 8;
-  if (isInstruction(InsnType::isConvert)) return base + 7;
-  if (isInstruction(InsnType::isCompare)) return base + 6;
-  if (isInstruction(InsnType::isLogical)) {
-    if (isInstruction(InsnType::isShift)) return base + 4;
-    return base + 5;
-  }
-  if (isInstruction(InsnType::isShift)) return base + 2;
-  return base + 3;  // Default return is {Data type}_SIMPLE_ARTH
-}
+uint16_t Instruction::getGroup() const { return instructionGroup_; }
 
 bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
 
