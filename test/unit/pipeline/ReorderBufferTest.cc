@@ -368,7 +368,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -376,7 +377,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -384,7 +386,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -393,7 +396,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
@@ -408,7 +412,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -416,7 +421,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -424,7 +430,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_NE(loopBoundaryAddr, insnAddr);
 
@@ -433,7 +440,8 @@ TEST_F(ReorderBufferTest, branch) {
   reorderBuffer.reserve(uopPtr);
   EXPECT_CALL(*uop, isBranch()).Times(2);
   EXPECT_CALL(predictor, update(4096, uop->wasBranchTaken(),
-                                uop->getBranchAddress(), uop->getBranchType()));
+                                uop->getBranchAddress(), uop->getBranchType(),
+                                uop->getInstructionId()));
   reorderBuffer.commit(1);
   EXPECT_EQ(loopBoundaryAddr, insnAddr);
 
