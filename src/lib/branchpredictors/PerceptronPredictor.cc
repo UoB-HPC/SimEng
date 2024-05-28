@@ -123,7 +123,14 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 }
 
 void PerceptronPredictor::update(uint64_t address, bool isTaken,
-                                 uint64_t targetAddress, BranchType type) {
+                                 uint64_t targetAddress, BranchType type,
+                                 uint64_t instructionId) {
+  // Make sure that this function is called in program order; and then update
+  // the lastUpdatedInstructionId variable
+  assert(instructionId >= lastUpdatedInstructionId &&
+         (lastUpdatedInstructionId = instructionId) >= 0 &&
+         "Update not called on branch instructions in program order");
+
   // Retrieve the previous global history and branch direction prediction from
   // the front of the ftq (assumes branches are updated in program order).
   int64_t prevPout = ftq_.front().first;

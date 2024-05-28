@@ -40,10 +40,11 @@ class GenericPredictor : public BranchPredictor {
                            bool isLoop = false) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
-   * outcome of the branch instruction.  Update must be called on branches in
-   * program order. */
+   * outcome of the branch instruction.  Update must be called on
+   * branches in program order.  To check this, instructionId is also passed
+   * to this function. */
   void update(uint64_t address, bool isTaken, uint64_t targetAddress,
-              BranchType type) override;
+              BranchType type, uint64_t instructionId) override;
 
   /** Provides flushing behaviour for the implemented branch prediction schemes
    * via the instruction address.  Branches must be flushed in reverse
@@ -94,6 +95,10 @@ class GenericPredictor : public BranchPredictor {
 
   /** The size of the RAS. */
   uint16_t rasSize_;
+
+  /** The Id of the last instruction that update was called on -- used to
+   * ensure that update is called in program order. */
+  uint64_t lastUpdatedInstructionId = 0;
 };
 
 }  // namespace simeng

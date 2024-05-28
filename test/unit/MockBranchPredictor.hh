@@ -11,8 +11,9 @@ class MockBranchPredictor : public BranchPredictor {
   MOCK_METHOD4(predict,
                BranchPrediction(uint64_t address, BranchType type,
                                 int64_t knownTarget, bool getPrediction));
-  MOCK_METHOD4(update, void(uint64_t address, bool taken,
-                            uint64_t targetAddress, BranchType type));
+  MOCK_METHOD5(update, void(uint64_t address, bool taken,
+                            uint64_t targetAddress, BranchType type,
+                            uint64_t instructionId));
   MOCK_METHOD1(flush, void(uint64_t address));
 };
 

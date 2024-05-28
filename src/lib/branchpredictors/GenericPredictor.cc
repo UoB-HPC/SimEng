@@ -105,7 +105,14 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 }
 
 void GenericPredictor::update(uint64_t address, bool isTaken,
-                              uint64_t targetAddress, BranchType type) {
+                              uint64_t targetAddress, BranchType type,
+                              uint64_t instructionId) {
+  // Make sure that this function is called in program order; and then update
+  // the lastUpdatedInstructionId variable
+  assert(instructionId >= lastUpdatedInstructionId &&
+         (lastUpdatedInstructionId = instructionId) >= 0 &&
+         "Update not called on branch instructions in program order");
+
   // Get previous prediction and index calculated from the FTQ
   bool prevPrediction = ftq_.front().first;
   uint64_t hashedIndex = ftq_.front().second;

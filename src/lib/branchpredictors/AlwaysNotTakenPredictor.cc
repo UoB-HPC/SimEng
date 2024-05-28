@@ -8,7 +8,8 @@ BranchPrediction AlwaysNotTakenPredictor::predict(
 }
 
 void AlwaysNotTakenPredictor::update(uint64_t address, bool taken,
-                                     uint64_t targetAddress, BranchType type) {}
+                                     uint64_t targetAddress, BranchType type,
+                                     uint64_t instructionId) {}
 
 void AlwaysNotTakenPredictor::flush(uint64_t address) {}
 

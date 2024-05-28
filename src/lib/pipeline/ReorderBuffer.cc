@@ -157,7 +157,8 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     // updates is correct)
     if (uop->isBranch()) {
       predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(),
-                        uop->getBranchAddress(), uop->getBranchType());
+                        uop->getBranchAddress(), uop->getBranchType(),
+                        uop->getInstructionId());
       // Update the branch misprediction counter
       if (uop->wasBranchMispredicted()) branchMispredicts_++;
     }

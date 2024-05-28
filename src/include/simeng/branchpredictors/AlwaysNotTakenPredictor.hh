@@ -13,10 +13,12 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
   BranchPrediction predict(uint64_t address, BranchType type,
                            int64_t knownOffset, bool isLoop = false) override;
 
-  /** Provide branch results to update the prediction model for the specified
-   * instruction address. As this model is static, this does nothing. */
-  void update(uint64_t address, bool taken, uint64_t targetAddress,
-              BranchType type) override;
+  /** Updates appropriate predictor model objects based on the address, type and
+   * outcome of the branch instruction.  Update must be called on
+   * branches in program order.  To check this, instructionId is also passed
+   * to this function. */
+  void update(uint64_t address, bool isTaken, uint64_t targetAddress,
+              BranchType type, uint64_t instructionId) override;
 
   /** Provide flush logic for branch prediction scheme. As there's no flush
    * logic for an always taken predictor, this does nothing. */
