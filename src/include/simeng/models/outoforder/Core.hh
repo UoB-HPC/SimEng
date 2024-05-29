@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <fstream>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
@@ -91,7 +92,7 @@ class Core : public simeng::Core {
   uint64_t getCurrentProcTicks() const override;
 
   /** Retrieve the CPU context for the currently scheduled process. */
-  simeng::OS::cpuContext getCurrentContext() const override;
+  simeng::OS::cpuContext getCurrentContext(bool clearTID = false) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -230,6 +231,8 @@ class Core : public simeng::Core {
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;
 
+  uint64_t exception_ticks_ = 0;
+
   /** Number of times a context switch was performed. */
   uint64_t contextSwitches_ = 0;
 
@@ -241,7 +244,11 @@ class Core : public simeng::Core {
   std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
       updateCoreDescInOS_;
 
+  bool printing_ = false;
+
   uint64_t noactivity_ = 0;
+
+  std::ofstream outputFile_;
 };
 
 }  // namespace outoforder

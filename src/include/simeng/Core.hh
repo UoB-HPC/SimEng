@@ -73,7 +73,7 @@ class Core {
   virtual uint64_t getCurrentProcTicks() const = 0;
 
   /** Retrieve the CPU context for the currently scheduled process. */
-  virtual simeng::OS::cpuContext getCurrentContext() const = 0;
+  virtual simeng::OS::cpuContext getCurrentContext(bool clearTID = false) = 0;
 };
 
 }  // namespace simeng

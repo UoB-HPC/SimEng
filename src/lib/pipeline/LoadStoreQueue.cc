@@ -120,10 +120,6 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     // No conflict found, process load
     requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(insn);
     // Register active load
-    // if (tid_ == 3)
-    //   std::cerr << tickCounter_ << "|LSQ Register 0x" << std::hex
-    //             << insn->getSequenceId() << std::dec << ":0x" << std::hex
-    //             << insn->getInstructionId() << std::dec << std::endl;
     requestedLoads_.emplace(
         insn->getSequenceId(),
         std::pair<std::shared_ptr<Instruction>, uint64_t>({insn, 0}));
@@ -243,10 +239,6 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     for (auto load : ldVec) {
       requestLoadQueue_[tickCounter_ + 1 + load->getLSQLatency()].push_back(
           load);
-      // if (tid_ == 3)
-      //   std::cerr << tickCounter_ << "|LSQ conflict 0x" << std::hex
-      //             << load->getSequenceId() << std::dec << ":0x" << std::hex
-      //             << load->getInstructionId() << std::dec << std::endl;
       requestedLoads_.emplace(
           load->getSequenceId(),
           std::pair<std::shared_ptr<Instruction>, uint64_t>({load, 0}));
@@ -270,10 +262,6 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
   while (it != loadQueue_.end()) {
     const auto& entry = *it;
     if (entry->isLoad()) {
-      // if (tid_ == 3)
-      //   std::cerr << tickCounter_ << "|LSQ Commit 0x" << std::hex
-      //             << entry->getSequenceId() << std::dec << ":0x" << std::hex
-      //             << entry->getInstructionId() << std::dec << std::endl;
       requestedLoads_.erase(entry->getSequenceId());
       it = loadQueue_.erase(it);
       break;
@@ -289,10 +277,6 @@ void LoadStoreQueue::purgeFlushed() {
   while (itLd != loadQueue_.end()) {
     const auto& entry = *itLd;
     if (entry->isFlushed()) {
-      // if (tid_ == 3)
-      //   std::cerr << tickCounter_ << "|LSQ PURGED 0x" << std::hex
-      //             << entry->getSequenceId() << std::dec << ":0x" << std::hex
-      //             << entry->getInstructionId() << std::dec << std::endl;
       requestedLoads_.erase(entry->getSequenceId());
       itLd = loadQueue_.erase(itLd);
     } else {
@@ -402,30 +386,6 @@ void LoadStoreQueue::tick() {
         } else {
           accepted = mmu_->requestRead((*itInsn));
         }
-        // if (accepted) {
-        //   if (tid_ == 24)
-        //     std::cerr << tickCounter_ << "|LSQ REQ accepted for 0x" <<
-        //     std::hex
-        //               << (*itInsn)->getSequenceId() << std::dec << ":0x"
-        //               << std::hex << (*itInsn)->getInstructionId() <<
-        //               std::dec
-        //               << " at 0x" << std::hex
-        //               << (*itInsn)->getGeneratedAddresses()[0].vaddr <<
-        //               std::dec
-        //               << std::endl;
-        // } else {
-        //   if (tid_ == 24)
-        //     std::cerr << tickCounter_ << "|LSQ REQ rejected for 0x" <<
-        //     std::hex
-        //               << (*itInsn)->getSequenceId() << std::dec << ":0x"
-        //               << std::hex << (*itInsn)->getInstructionId() <<
-        //               std::dec
-        //               << " at 0x" << std::hex
-        //               << (*itInsn)->getGeneratedAddresses()[0].vaddr <<
-        //               std::dec
-        //               << std::endl;
-        // }
-        // requestedLoads_[(*itInsn)->getSequenceId()].second = tickCounter_;
         // Remove entry from vector if accepted (available bandwidth this
         // cycle)
         if (accepted) {
@@ -475,19 +435,6 @@ void LoadStoreQueue::tick() {
     // if (load->second.first->getInstructionId() == 0x58d3) found = true;
     if (load->second.first->hasAllData() &&
         !load->second.first->hasExecuted()) {
-      // if (tid_ == 3)
-      //   std::cerr << tickCounter_ << "|LSQ RET for 0x" << std::hex
-      //             << load->second.first->getSequenceId() << std::dec << ":0x"
-      //             << std::hex << load->second.first->getInstructionId()
-      //             << std::dec << " at 0x" << std::hex
-      //             << load->second.first->getGeneratedAddresses()[0].vaddr
-      //             << std::dec << std::endl;
-      // uint64_t lat = tickCounter_ - load->second.second;
-      // if (latencies_.find(lat) == latencies_.end())
-      //   latencies_[lat] = 1;
-      // else
-      //   latencies_[lat]++;
-
       // This load has completed
       load->second.first->execute();
       if (load->second.first->isStoreData()) {
@@ -496,25 +443,9 @@ void LoadStoreQueue::tick() {
       // If the completion order is OoO, add entry to completedRequests_
       if (completionOrder_ == CompletionOrder::OUTOFORDER)
         completedRequests_.push(load->second.first);
-    } else {
-      // if (tid_ == 3)
-      //   std::cerr << tickCounter_ << "|LSQ WAITING for 0x" << std::hex
-      //             << load->second.first->getSequenceId() << std::dec << ":0x"
-      //             << std::hex << load->second.first->getInstructionId()
-      //             << std::dec << " at 0x" << std::hex
-      //             << load->second.first->getGeneratedAddresses()[0].vaddr
-      //             << std::dec
-      //             << ", hasAllData: " << load->second.first->hasAllData()
-      //             << ", hasExecuted: " << load->second.first->hasExecuted()
-      //             << std::endl;
     }
     load++;
   }
-
-  // if (tid_ == 3 && found)
-  //   std::cerr << tickCounter_ << "|LSQ FOUND 0x58d3" << std::endl;
-  // else if (tid_ == 3)
-  //   std::cerr << tickCounter_ << "|LSQ NOT FOUND 0x58d3" << std::endl;
 
   // Pop from the front of the completed loads queue and send to writeback
   while (completedRequests_.size() > 0 && count < completionSlots_.size()) {
@@ -541,14 +472,6 @@ void LoadStoreQueue::tick() {
     if (insn->isStoreCond() && !insn->isCondResultReady()) {
       break;
     }
-
-    // if (tid_ == 24 && insn->getGeneratedAddresses().size())
-    //   std::cerr << tickCounter_ << "|LSQ RET for 0x" << std::hex
-    //             << insn->getSequenceId() << std::dec << ":0x" << std::hex
-    //             << insn->getInstructionId() << std::dec << " at 0x" <<
-    //             std::hex
-    //             << insn->getGeneratedAddresses()[0].vaddr << std::dec
-    //             << std::endl;
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());

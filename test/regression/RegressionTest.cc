@@ -41,12 +41,20 @@ void RegressionTest::run(const char* source, const char* triple,
   // Initialise the simulation memory
   memory_ = std::make_shared<simeng::memory::FixedLatencyMemory>(memorySize, 4);
 
+  // Get simulation objects needed to forward simulation
+  auto sendSyscallResultToCore =
+      [this](const simeng::OS::SyscallResult result) {
+        core_->receiveSyscallResult(result);
+        return;
+      };
+
   // Initialise a SimOS object & create initial process from test assembly code.
-  simeng::OS::SimOS OS = simeng::OS::SimOS(
-      memory_, simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+  OS_ = std::make_shared<simeng::OS::SimOS>(
+      memory_, simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_),
+      sendSyscallResultToCore, []() {});
 
   uint64_t procTID = 1;  // Initial process always has TID = 1
-  process_ = OS.getProcess(procTID);
+  process_ = OS_->getProcess(procTID);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 
@@ -55,7 +63,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create MMU
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(OS.getVAddrTranslator());
+      std::make_shared<simeng::memory::MMU>(OS_->getVAddrTranslator());
   mmu->setTid(procTID);
 
   // Set up MMU->Memory connection
@@ -64,6 +72,14 @@ void RegressionTest::run(const char* source, const char* triple,
   auto port1 = mmu->initPort();
   auto port2 = memory_->initMemPort();
   connection.connect(port1, port2);
+
+  std::function<void(simeng::OS::cpuContext, uint16_t, simeng::CoreStatus,
+                     uint64_t)>
+      haltCoreDescInOS = [this](simeng::OS::cpuContext ctx, uint16_t coreId,
+                                simeng::CoreStatus status, uint64_t ticks) {
+        OS_->updateCoreDesc(ctx, coreId, status, ticks);
+        return;
+      };
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
@@ -82,29 +98,53 @@ void RegressionTest::run(const char* source, const char* triple,
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_shared<simeng::models::emulation::Core>(
-          *architecture_, mmu, OS.getSyscallReceiver());
+          *architecture_, mmu, OS_->getSyscallReceiver());
       break;
     case INORDER:
       core_ = std::make_shared<simeng::models::inorder::Core>(
           *architecture_, predictor, mmu, *portAllocator,
-          OS.getSyscallReceiver());
+          OS_->getSyscallReceiver());
       break;
     case OUTOFORDER:
       core_ = std::make_shared<simeng::models::outoforder::Core>(
           *architecture_, predictor, mmu, *portAllocator,
-          OS.getSyscallReceiver());
+          OS_->getSyscallReceiver(), haltCoreDescInOS);
       break;
   }
 
-  // Schedule Process on core
-  OS.registerCore(core_);
-  core_->schedule(process_->context_);
+  core_->setCoreId(1);
+
+  proxy_ = std::make_shared<simeng::OS::CoreProxy>();
+
+  proxy_->getCoreInfo = [this](uint16_t coreId, bool forClone) {
+    uint64_t ticks = core_->getCurrentProcTicks();
+    simeng::OS::cpuContext ctx = core_->getCurrentContext();
+    simeng::CoreStatus status = core_->getStatus();
+    simeng::OS::CoreInfo info = {coreId, status, ctx, ticks};
+    OS_->recieveCoreInfo(info, forClone);
+    return;
+  };
+
+  proxy_->interrupt = [this](uint16_t coreId) {
+    OS_->recieveInterruptResponse(core_->interrupt(), coreId);
+    return;
+  };
+
+  proxy_->schedule = [this](uint16_t coreId, simeng::OS::cpuContext ctx) {
+    core_->schedule(ctx);
+    return;
+  };
+
+  OS_->registerCore(core_->getCoreId(), core_->getStatus(),
+                    core_->getCurrentContext(), true);
+
+  OS_->registerCoreProxy(*proxy_);
 
   // Run the OS and core model until the program is complete
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
          mmu->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
-    OS.tick();
+    OS_->tick();
     core_->tick();
     mmu->tick();
     memory_->tick();

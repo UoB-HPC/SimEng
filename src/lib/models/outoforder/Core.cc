@@ -137,9 +137,8 @@ void Core::tick() {
         // Update status of corresponding CoreDesc in SimOS as there is no
         // causal action originating from SimOS which caused this change in
         // Core.
-        updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
-                            0);
-        currentTID_ = -1;
+        updateCoreDescInOS_(getCurrentContext(true), getCoreId(),
+                            CoreStatus::idle, 0);
         return;
       }
       break;
@@ -154,6 +153,7 @@ void Core::tick() {
   procTicks_++;
 
   if (exceptionGenerated_) {
+    exception_ticks_++;
     processException();
     return;
   }
@@ -195,12 +195,12 @@ void Core::tick() {
 
   // Commit instructions from ROB
   // reorderBuffer_.commit(commitWidth_);
-  if (reorderBuffer_.commit(commitWidth_) == 0)
+  if (reorderBuffer_.commit(commitWidth_, ticks_) == 0)
     noactivity_++;
   else
     noactivity_ = 0;
 
-  if (noactivity_ != 0 && (noactivity_ % 100000 == 0)) {
+  if (noactivity_ != 0 && (noactivity_ == 1000000)) {
     // status_ = CoreStatus::halted;
     // Update status of corresponding CoreDesc in SimOS as there is no
     // causal action originating from SimOS which caused this change in
@@ -346,6 +346,15 @@ void Core::processException() {
   }
 
   const auto& result = exceptionHandler_->getResult();
+  // if (getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>() != 98) {
+  //   outputFile_ << "\tSyscall "
+  //               << getArchitecturalRegisterFileSet().get({0,
+  //               8}).get<uint64_t>()
+  //               << " results" << std::endl;
+  //   outputFile_ << "\tfatal: " << result.fatal << std::endl;
+  //   outputFile_ << "\tidleAftersycall: " << result.idleAfterSyscall
+  //               << std::endl;
+  // }
 
   if (result.fatal) {
     status_ = CoreStatus::halted;
@@ -354,7 +363,6 @@ void Core::processException() {
     // Core.
     updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
                         0);
-    currentTID_ = -1;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.updatePC(result.instructionAddress);
@@ -363,18 +371,14 @@ void Core::processException() {
       // Update status of corresponding CoreDesc in SimOS as there is no
       // causal action originating from SimOS which caused this change in
       // Core.
-      // std::cerr << getCurrentContext().TID << "| Idling on Core " << coreId_
-      //           << ". Return PC is " << std::hex << getCurrentContext().pc
-      //           << std::dec << std::endl;
-      updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
-                          0);
-      currentTID_ = -1;
       // Enusre all pipeline stages are flushed
       dispatchIssueUnit_.flush();
       writebackUnit_.flush();
       // Update core status
       status_ = CoreStatus::idle;
       contextSwitches_++;
+      updateCoreDescInOS_(getCurrentContext(true), getCoreId(),
+                          CoreStatus::idle, 0);
     }
   }
 
@@ -407,6 +411,18 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
     default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        // outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+        //             << ":" << change.modifiedRegisters[i].tag << "}"
+        //             << " <- " << std::hex;
+        // for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+        // j--) {
+        //   if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] <
+        //   16)
+        //     outputFile_ << "0";
+        //   outputFile_ << unsigned(
+        //       change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+        // }
+        // outputFile_ << std::dec << std::endl;
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
                                    change.modifiedRegisterValues[i]);
       }
@@ -418,6 +434,15 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    // outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].vaddr
+    //             << std::dec << " <- " << std::hex;
+    // for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+    //   if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16)
+    //     outputFile_ << "0";
+    //   outputFile_ << unsigned(
+    //       change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+    // }
+    // outputFile_ << std::dec << std::endl;
     mmu_->requestWrite(change.memoryAddresses[i],
                        change.memoryAddressValues[i]);
   }
@@ -429,8 +454,8 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 void Core::microOpWriteback(const std::shared_ptr<Instruction>& insn) {
-  // If the passed instruction is a micro-op, communicate to the ROB that it is
-  // ready to commit
+  // If the passed instruction is a micro-op, communicate to the ROB that it
+  // is ready to commit
   if (insn->isMicroOp()) {
     insn->setWaitingCommit();
     reorderBuffer_.commitMicroOps(insn->getInstructionId());
@@ -505,6 +530,7 @@ std::map<std::string, std::string> Core::getStats() const {
       {"lsq.loadViolations",
        std::to_string(reorderBuffer_.getViolatingLoadsCount())},
       {"idle.ticks", std::to_string(idle_ticks_)},
+      {"exception.ticks", std::to_string(exception_ticks_)},
       {"context.switches", std::to_string(contextSwitches_)},
       {"rob.numLoadsRetired", std::to_string(reorderBuffer_.getNumLoads())},
       {"rob.numStoresRetired", std::to_string(reorderBuffer_.getNumStores())}};
@@ -523,9 +549,9 @@ std::map<std::string, std::string> Core::getStats() const {
     stats[key.str()] = val.str();
   }
 
-  // std::map<uint64_t, uint64_t> lsqLatencies = loadStoreQueue_.getLatencies();
-  // std::map<uint64_t, uint64_t>::iterator it;
-
+  // std::map<uint64_t, uint64_t> lsqLatencies =
+  // loadStoreQueue_.getLatencies(); std::map<uint64_t, uint64_t>::iterator
+  // it;
   // for (it = lsqLatencies.begin(); it != lsqLatencies.end(); it++) {
   //   if (it->second > 10) {
   //     std::ostringstream key;
@@ -545,6 +571,12 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
                             physicalRegisterQuantities_);
 
   currentTID_ = newContext.TID;
+
+  // outputFile_.close();
+  // std::ostringstream str;
+  // str << "/Users/jj16791/workspace/simeng" << currentTID_ << "Retire.out";
+  // outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+
   reorderBuffer_.setTid(currentTID_);
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
@@ -576,7 +608,7 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::OS::cpuContext Core::getCurrentContext() const {
+simeng::OS::cpuContext Core::getCurrentContext(bool clearTID) {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc =
@@ -597,6 +629,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           mappedRegisterFileSet_.get({(uint8_t)type, (uint16_t)tag});
     }
   }
+  if (clearTID) currentTID_ = -1;
   // Do not need to explicitly set newContext.sp as it will be included in
   // regFile
   return newContext;

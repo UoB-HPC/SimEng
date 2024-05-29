@@ -43,8 +43,8 @@ void CoreInstance::createCore() {
 
   // Construct the core object based on the defined simulation mode
   if (config::SimInfo::getSimMode() == config::simMode::emulation) {
-    core_ = std::make_shared<simeng::models::emulation::Core>(*arch_, mmu_,
-                                                              handleSyscall_);
+    core_ = std::make_shared<simeng::models::emulation::Core>(
+        *arch_, mmu_, handleSyscall_, updateCoreDescInOS_);
   } else if (config::SimInfo::getSimMode() == config::simMode::inorder) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);

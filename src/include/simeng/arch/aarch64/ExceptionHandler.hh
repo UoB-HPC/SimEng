@@ -76,6 +76,8 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
 
   /** The results of the exception. */
   ExceptionResult result_;
+
+  uint64_t cyclesElapsed_ = 0;
 };
 
 }  // namespace aarch64

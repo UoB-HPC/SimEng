@@ -42,6 +42,9 @@ void SpecialFileDirGen::GenerateSFDir() {
   system(("mkdir " + specialFilesDir_ + "/sys/").c_str());
   system(("mkdir " + specialFilesDir_ + "/sys/devices/").c_str());
   system(("mkdir " + specialFilesDir_ + "/sys/devices/system/").c_str());
+  system(("mkdir " + specialFilesDir_ + "/dev" + " && mkdir " +
+          specialFilesDir_ + "/dev/shm")
+             .c_str());
   system(("mkdir " + online_dir).c_str());
 
   // Create '/proc/cpuinfo' file.

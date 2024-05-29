@@ -2,6 +2,14 @@
 
 #include <signal.h>
 
+#ifdef __MACH__
+#include <sys/mount.h>
+#include <sys/param.h>
+#else
+#include <sys/statfs.h>
+#include <sys/vfs.h>
+#endif
+
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
@@ -23,7 +31,7 @@ SyscallHandler::SyscallHandler(
       supportedSpecialFiles_.end(),
       {"/proc/cpuinfo", "proc/stat", "proc/self/maps", "maps",
        "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
-       "physical_package_id"});
+       "physical_package_id", "/dev/shm", "/dev/shm/__KMP_REGISTERED_LIB_1_0"});
 
   resumeHandling_ = [this]() { return handleSyscall(); };
 }
@@ -52,6 +60,7 @@ void SyscallHandler::receiveSyscall(SyscallInfo info) {
 }
 
 void SyscallHandler::tick() {
+  if (!syscallQueue_.empty()) cyclesElapsed_++;
   if (reqMemAccess_) return;
   resumeHandling_();
 }
@@ -62,12 +71,10 @@ void SyscallHandler::handleSyscall() {
   if (currentInfo_.started) {
     return;
   }
+  cyclesElapsed_ = 0;
 
   syscallQueue_.front().started = true;
   currentInfo_ = syscallQueue_.front();
-
-  // std::cerr << currentInfo_.threadId << "| Starting Syscall "
-  //           << currentInfo_.syscallId << std::endl;
 
   ProcessStateChange stateChange = {};
 
@@ -87,6 +94,27 @@ void SyscallHandler::handleSyscall() {
       stateChange.memoryAddresses.push_back({argp, outSize});
       stateChange.memoryAddressValues.push_back(
           RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+      break;
+    }
+    case 43: {  // statfs
+      uint64_t filenamePtr = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t statFsBufPtr = currentInfo_.registerArguments[1].get<uint64_t>();
+
+      char* filename = (char*)malloc(PATH_MAX_LEN * sizeof(char));
+      return readStringThen(
+          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+            // Invoke the kernel
+            OS::statfs statFsOut;
+            uint64_t retval =
+                statfsLocal(std::string(filename, length), statFsOut);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
+            stateChange.memoryAddresses.push_back(
+                {statFsBufPtr, sizeof(statFsOut)});
+            stateChange.memoryAddressValues.push_back(statFsOut);
+            concludeSyscall(stateChange);
+          });
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1}};
       break;
     }
     case 46: {  // ftruncate
@@ -421,9 +449,9 @@ void SyscallHandler::handleSyscall() {
       // TODO: Flush all open `stdio` streams when supported
       // TODO: Remove files created by `tmpfile` when supported
       OS_->terminateThread(tid);
-      std::cout << "[SimEng:SyscallHandler] Received exit syscall on Thread "
-                << tid << ". Terminating with exit code " << exitCode
-                << std::endl;
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] Received exit syscall on Thread " << tid
+                << ". Terminating with exit code " << exitCode << std::endl;
       return concludeSyscall({}, false, true);
     }
     case 94: {  // exit_group
@@ -434,7 +462,8 @@ void SyscallHandler::handleSyscall() {
       // TODO: Flush all open `stdio` streams when supported
       // TODO: Remove files created by `tmpfile` when supported
       OS_->terminateThreadGroup(tgid);
-      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall on "
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] Received exit_group syscall on "
                    "Thread Group "
                 << tgid << ". Terminating with exit code " << exitCode
                 << std::endl;
@@ -463,7 +492,8 @@ void SyscallHandler::handleSyscall() {
 
       if (!syscallSupported) {
         std::cerr
-            << "[SimEng:SyscallHandler] Arguments supplied to futex syscall "
+            << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+            << "] Arguments supplied to futex syscall "
                "not supported.\n"
             << "\tSupported Arguments:\n"
             << "\t\t futex_op:  FUTEX_WAIT, FUTEX_WAKE, FUTEX_WAKE_PRIVATE\n"
@@ -478,7 +508,8 @@ void SyscallHandler::handleSyscall() {
 
       uint64_t paddr = OS_->handleVAddrTranslation(addr, currentInfo_.threadId);
       if (masks::faults::hasFault(paddr)) {
-        std::cerr << "[SimEng:SyscallHandler] Fatal error occured during "
+        std::cerr << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                  << "] Fatal error occured during "
                      "virtual address translation in futex syscall: uaddr = "
                   << addr << std::endl;
         return concludeSyscall({}, true);
@@ -567,7 +598,8 @@ void SyscallHandler::handleSyscall() {
         if (tgid == -1) {
           // Terminate all processes in thread group
           OS_->terminateThreadGroup(procTgid);
-          std::cout << "[SimEng:SyscallHandler] Received tgkill syscall on "
+          std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                    << "] Received tgkill syscall on "
                        "Thread Group "
                     << procTgid << ". Terminating with signal " << signal
                     << std::endl;
@@ -576,10 +608,10 @@ void SyscallHandler::handleSyscall() {
           if (proc->getTGID() == tgid) {
             idleOnComplete = (proc->status_ == procStatus::executing);
             OS_->terminateThread(tid);
-            std::cout
-                << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
-                << tid << " in Thread Group " << tgid
-                << ". Terminating with signal " << signal << std::endl;
+            std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                      << "] Received tgkill syscall on Thread " << tid
+                      << " in Thread Group " << tgid
+                      << ". Terminating with signal " << signal << std::endl;
           } else {
             retVal = -ESRCH;
           }
@@ -738,7 +770,8 @@ void SyscallHandler::handleSyscall() {
 
       int error = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
       if (error < 0) {
-        std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
+        std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                  << "] Error creating new thread via "
                      "clone syscall."
                   << std::endl;
         currentInfo_.started = false;
@@ -795,7 +828,8 @@ void SyscallHandler::handleSyscall() {
         stateChange.modifiedRegisterValues[0] = -EPERM;
       } else {
         if (resource != RLIMIT_STACK) {
-          std::cout << "[SimEng:SyscallHandler] Un-supported resource used in "
+          std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                    << "] Un-supported resource used in "
                        "prlimit64 syscall."
                     << std::endl;
           stateChange.modifiedRegisterValues[0] = -EINVAL;
@@ -828,11 +862,6 @@ void SyscallHandler::handleSyscall() {
           }
           if (oldLimit) {
             // Update rlimit struct pointed to by oldLimit
-            // uint64_t physAddr =
-            //     OS_->handleVAddrTranslation(oldLimit, currentInfo_.threadId);
-            // if (masks::faults::hasFault(physAddr)) {
-            //   stateChange.modifiedRegisterValues[0] = -EFAULT;
-            // } else {
             rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
             std::vector<uint8_t> vec(sizeof(rlimit), '\0');
             std::memcpy(vec.data(), &rlim, sizeof(rlimit));
@@ -841,13 +870,6 @@ void SyscallHandler::handleSyscall() {
               stateChange.memoryAddresses.push_back({oldLimit + i, 1});
               stateChange.memoryAddressValues.push_back({vec[i], 1});
             }
-            // std::unique_ptr<simeng::memory::MemPacket> request =
-            //     simeng::memory::MemPacket::createWriteRequest(
-            //         oldLimit, sizeof(rlimit), currentInfo_.threadId, 0, 0,
-            //         vec);
-            // request->paddr_ = physAddr;
-            // memPort_->send(std::move(request));
-            // }
           }
         }
       }
@@ -933,7 +955,7 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
     for (int i = 0; i < memRead_.data.size(); i++) {
       buffer[i] = data[i];
       // End of string; call onwards
-      if (buffer[i] == '\0') return then(i + 1);
+      if (data[i] == '\0') return then(i + 1);
     }
 
     // Reached max length; call onwards
@@ -943,12 +965,14 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
 
 void SyscallHandler::resumeClone(int64_t tid) {
   if (tid > 0) {
-    std::cout << "[SimEng:SyscallHandler] Clone syscall executed, new "
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] Clone syscall executed, new "
                  "thread created : TGID "
               << OS_->getProcess(tid)->getTGID() << ", TID " << tid
               << std::endl;
   } else {
-    std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] Error creating new thread via "
                  "clone syscall."
               << std::endl;
   }
@@ -969,72 +993,82 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
   // Vector to hold data read from memory, will be inserted at the end of
   // dataBuffer_
-  std::vector<char> data;
 
-  // Translate the passed virtual address, `ptr`
-  uint64_t translatedAddr =
-      OS_->handleVAddrTranslation(ptr, currentInfo_.threadId);
+  // Get data from the simulation memory and read into dataBuffer_
+  // If the read memory target does not equal the data required,
+  // request it and resume the `readBufferThen` call after its return
+  if (memRead_.target.vaddr != ptr) {
+    uint64_t numBytes = length;
 
-  // Don't process the syscall if the virtual address translation comes back
-  // wih a DATA_ABORT fault. If the address `translatedAddr` is not mapped, then
-  // we cannot insert any data at the end of `dataBuffer_`.
-  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(translatedAddr);
-  if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    return concludeSyscall({}, true);
-  } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
-    // If the translated address lies within the ignored region, read in
-    // zero'ed out data of the correct length.
-    data.resize(length);
-    std::fill(data.begin(), data.end(), 0);
-  } else {
-    // Get data from the simulation memory and read into dataBuffer_
-    // If the read memory target does not equal the data required,
-    // request it and resume the `readBufferThen` call after its return
-    if (memRead_.target.vaddr != ptr) {
+    // Check to see if we cross a page boundary, split into multiple requests if
+    // so Assumes the page size is a power of 2
+    uint64_t pageMask = -1 ^ (OS::defaults::PAGE_SIZE - 1);
+    if ((ptr & pageMask) != ((ptr + numBytes) & pageMask))
+      numBytes = (ptr & pageMask) + OS::defaults::PAGE_SIZE - ptr;
+
+    // Translate the passed virtual address, `ptr`
+    uint64_t translatedAddr =
+        OS_->handleVAddrTranslation(ptr, currentInfo_.threadId);
+
+    // Don't process the syscall if the virtual address translation comes back
+    // wih a DATA_ABORT fault. If the address `translatedAddr` is not mapped,
+    // then we cannot insert any data at the end of `dataBuffer_`.
+    uint64_t faultCode =
+        simeng::OS::masks::faults::getFaultCode(translatedAddr);
+    if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+      return concludeSyscall({}, true);
+    } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+      // If the translated address lies within the ignored region, read in
+      // zero'ed out data of the correct length.
+      std::vector<char> data(numBytes, 0);
+      dataBuffer_.insert(dataBuffer_.end(), data.begin(),
+                         data.begin() + numBytes);
+
+      readBufferThen(ptr + numBytes, length - numBytes, then);
+      return;
+    } else {
       std::unique_ptr<simeng::memory::MemPacket> request =
           simeng::memory::MemPacket::createReadRequest(
-              ptr, length, currentInfo_.threadId, 0, 0);
+              ptr, numBytes, currentInfo_.threadId, 0, 0);
       request->paddr_ = translatedAddr;
       reqMemAccess_ = true;
       memPort_->send(std::move(request));
+      // Check if we still need to wait for memory access
       if (reqMemAccess_) {
         resumeHandling_ = [=]() { readBufferThen(ptr, length, then); };
         return;
       }
     }
-
-    const char* readData = memRead_.data.getAsVector<char>();
-    data = std::vector<char>(readData, readData + memRead_.data.size());
   }
-  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + length);
 
-  // Read in data, call onwards
-  return then();
+  const char* readData = memRead_.data.getAsVector<char>();
+  uint32_t bytesRead = memRead_.target.size;
+  dataBuffer_.insert(dataBuffer_.end(), readData, readData + bytesRead);
+  memRead_ = {{0, 0}, {}, (uint64_t)-1};
+
+  readBufferThen(ptr + bytesRead, length - bytesRead, then);
+  return;
 }
 
 void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
                                      bool fatal, bool idleAftersycall) {
   currentInfo_.started = false;
-  // std::cerr << currentInfo_.threadId << "| Syscall " <<
-  // currentInfo_.syscallId
-  //           << " results" << std::endl;
-  // std::cerr << currentInfo_.threadId << "|\t fatal: " << fatal << std::endl;
-  // std::cerr << currentInfo_.threadId
-  //           << "|\t idleAftersycall: " << idleAftersycall << std::endl;
   sendSyscallResultToCore_({fatal, idleAftersycall, currentInfo_.syscallId,
                             currentInfo_.coreId, change});
   // Remove syscall from queue and reset handler to default state
+  // std::cerr << "Syscall " << currentInfo_.syscallId << " took "
+  //           << cyclesElapsed_ << " cycles" << std::endl;
   syscallQueue_.pop();
   dataBuffer_ = {};
-  memRead_ = {{0, 0}, RegisterValue(), (uint64_t)-1};
+  memRead_ = {{0, 0}, {}, (uint64_t)-1};
   resumeHandling_ = [this]() { return handleSyscall(); };
 }
 
 void SyscallHandler::readLinkAt(std::string path, size_t length) {
   if (length == PATH_MAX_LEN) {
     // TODO: Handle PATH_MAX_LEN case
-    std::cout << "[SimEng:SyscallHandler] Path exceeds PATH_MAX_LEN"
-              << std::endl;
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] Path exceeds PATH_MAX_LEN" << std::endl;
     return concludeSyscall({}, true);
   }
 
@@ -1047,8 +1081,8 @@ void SyscallHandler::readLinkAt(std::string path, size_t length) {
 
   if (result < 0) {
     // TODO: Handle error case
-    std::cout << "[SimEng:SyscallHandler] Error generated by readlinkat"
-              << std::endl;
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] Error generated by readlinkat" << std::endl;
     return concludeSyscall({}, true);
   }
 
@@ -1091,12 +1125,13 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
 }
 
 std::string SyscallHandler::getSpecialFile(const std::string filename) {
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+  for (auto prefix : {"/dev/", "/proc/", "/sys/", "/etc/"}) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cout << "[SimEng:SyscallHandler] Using Special File: "
-                    << filename.c_str() << std::endl;
+          std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                    << "] Using Special File: " << filename.c_str()
+                    << std::endl;
           // Hijack proc/self/maps and replace self with PID
           if (filename.find("proc/self/maps") != std::string::npos) {
             std::string newFileName = filename;
@@ -1108,14 +1143,25 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
           return specialFilesDir_ + filename;
         }
       }
-      std::cout
-          << "[SimEng:SyscallHandler] WARNING: unable to open unsupported "
-             "special file: "
-          << "'" << filename.c_str() << "'" << std::endl
-          << "[SimEng:SyscallHandler]           allowing simulation to "
-             "continue"
-          << std::endl;
-      break;
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] WARNING: unable to open unsupported "
+                   "special file: "
+                << "'" << filename.c_str() << "'" << std::endl
+                << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "]           allowing simulation to "
+                   "continue"
+                << std::endl;
+      return "";
+    }
+  }
+
+  for (auto prefix : {"/lib/", "/lib64/", "/opt/", "/vol0005/"}) {
+    if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] Using Special File: " << filename.c_str() << std::endl;
+      return "/Users/jj16791/workspace/riken/files/"
+             "study2_fugaku_llvm15_scalable.libs" +
+             filename;
     }
   }
   return filename;
@@ -1124,7 +1170,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 int64_t SyscallHandler::brk(uint64_t address) {
   return OS_->getProcess(currentInfo_.threadId)
       ->getMemRegion()
-      .updateBrkRegion(address);
+      ->updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -1142,7 +1188,8 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
     return 0;
   } else {
     assert(false &&
-           "[SimEng:SyscallHandler] Unhandled clk_id in clock_gettime syscall");
+           "[SimEng:SyscallHandler] Unhandled clk_id in clock_gettime "
+           "syscall");
     return -1;
   }
 }
@@ -1166,6 +1213,8 @@ int64_t SyscallHandler::faccessat(int64_t dfd, const std::string& filename,
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
+
+  if (new_pathname == "") return -1;
 
   // Get correct dirfd
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
@@ -1197,6 +1246,8 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
+
+  if (new_pathname == "") return -1;
 
   // Get correct dirfd
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
@@ -1390,7 +1441,7 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
   return OS_->getProcess(currentInfo_.threadId)
       ->getMemRegion()
-      .unmapRegion(addr, length);
+      ->unmapRegion(addr, length);
 }
 
 int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
@@ -1402,7 +1453,8 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
                       syscalls::clone::flags::f_CLONE_FILES |
                       syscalls::clone::flags::f_CLONE_THREAD;
   if ((flags & reqFlags) != reqFlags) {
-    std::cout << "[SimEng:SyscallHandler] One or more of the following flags "
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] One or more of the following flags "
                  "required for clone not provided :"
               << std::endl;
     std::cout << "\tCLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD"
@@ -1411,7 +1463,8 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
   }
   // Must specify a child stack - won't support copy-on-write with parent
   if (stackPtr == 0) {
-    std::cout << "[SimEng:SyscallHandler] Must provide a child stack address "
+    std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+              << "] Must provide a child stack address "
                  "to clone syscall."
               << std::endl;
     return -1;
@@ -1432,7 +1485,8 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (!entry.isValid()) {
-      std::cout << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] Invalid virtual file descriptor "
                    "given to mmap"
                 << std::endl;
       return -1;
@@ -1440,58 +1494,68 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
     hostfile = OS_->hfmmap_->mapfd(entry.getFd(), length, offset);
   }
   uint64_t ret =
-      process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
+      process->getMemRegion()->mmapRegion(addr, length, prot, flags, hostfile);
   return ret;
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
                                int64_t flags, uint16_t mode) {
-  std::string new_pathname;
+  std::string new_pathname = "";
 
   // Alter special file path to point to SimEng one (if filename points to
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
+  if (new_pathname == "") return -1;
+
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
+
   if (flags & 0x0) newFlags |= O_RDONLY;
   if (flags & 0x1) newFlags |= O_WRONLY;
   if (flags & 0x2) newFlags |= O_RDWR;
-  if (flags & 0x400) newFlags |= O_APPEND;
-  if (flags & 0x2000) newFlags |= O_ASYNC;
-  if (flags & 0x80000) newFlags |= O_CLOEXEC;
+  if (flags & 0x40) newFlags |= O_CREAT;
+  if (flags & 0x40) newFlags |= O_CREAT;
+  if (flags & 0x10000) newFlags |= O_DIRECTORY;
+  if (flags & 0x1000) newFlags |= O_DSYNC;
   if (flags & 0x40) newFlags |= O_CREAT;
   if (flags & 0x10000) newFlags |= O_DIRECTORY;
   if (flags & 0x1000) newFlags |= O_DSYNC;
   if (flags & 0x80) newFlags |= O_EXCL;
   if (flags & 0x100) newFlags |= O_NOCTTY;
-  if (flags & 0x20000) newFlags |= O_NOFOLLOW;
+  if (flags & 0x200) newFlags |= O_TRUNC;
+  if (flags & 0x400) newFlags |= O_APPEND;
   if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
+  if (flags & 0x1000) newFlags |= O_DSYNC;
+  if (flags & 0x2000) newFlags |= O_ASYNC;
+  if (flags & 0x4000) newFlags |= O_DIRECTORY;
+  if (flags & 0x8000) newFlags |= O_NOFOLLOW;
+  if (flags & 0x80000) newFlags |= O_CLOEXEC;
+  if (flags & 0x101000) newFlags |= O_SYNC;
+  if (flags & 0x101000) newFlags |= O_SYNC;
+  if (flags & 0x200) newFlags |= O_TRUNC;
+
   if (flags & 0x101000) newFlags |= O_SYNC;
   if (flags & 0x200) newFlags |= O_TRUNC;
 
 #ifdef __MACH__
-  // Apple only flags
-  if (flags & 0x0010) newFlags |= O_SHLOCK;
-  if (flags & 0x0020) newFlags |= O_EXLOCK;
-  if (flags & 0x200000) newFlags |= O_SYMLINK;
+    // Apple only flags
+    // if (flags & 0x0010) newFlags |= O_SHLOCK;
+    // if (flags & 0x0020) newFlags |= O_EXLOCK;
+    // if (flags & 0x200000) newFlags |= O_SYMLINK;
 #else
   // Linux only flags
-  if (flags & 0x4000) newFlags |= O_DIRECT;
-  if (flags & 0x0) newFlags |= O_LARGEFILE;
+  if (flags & 0x10000) newFlags |= O_DIRECT;
   if (flags & 0x40000) newFlags |= O_NOATIME;
   if (flags & 0x200000) newFlags |= O_PATH;
-  if (flags & 0x410000) newFlags |= O_TMPFILE;
+  if (flags & 0x404000) newFlags |= O_TMPFILE;
 #endif
 
-  // If Special File (or Special File Directory) is being opened then need to
-  // set flags to O_RDONLY and O_CLOEXEC only.
-  if (new_pathname != filename) {
-    newFlags = O_RDONLY | O_CLOEXEC;
-  }
+  // If Special File (or Special File Directory) is being opened then need
+  // to set flags to O_RDONLY and O_CLOEXEC only.
 
   // Get correct dirfd
-  int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
+  int64_t dirfd = SyscallHandler::getDirFd(dfd, new_pathname);
   if (dirfd == -1) return EBADF;
 
   auto proc = OS_->getProcess(currentInfo_.threadId);
@@ -1520,8 +1584,8 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
   }
   int64_t hfd = entry.getFd();
 
-  // Need alternative implementation as not all systems support the getdents64
-  // syscall
+  // Need alternative implementation as not all systems support the
+  // getdents64 syscall
   DIR* dir_stream = ::fdopendir(hfd);
   // Check for error
   if (dir_stream == NULL) return -1;
@@ -1637,6 +1701,53 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
+int64_t SyscallHandler::statfsLocal(const std::string& filename,
+                                    OS::statfs& out) {
+  // Resolve absolute path to target file
+  std::string new_pathname = "";
+
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = SyscallHandler::getSpecialFile(filename);
+
+  if (new_pathname == "") return -1;
+
+  // Pass call through to host
+  struct ::statfs statBuf;
+  int64_t retval = ::statfs(new_pathname.c_str(), &statBuf);
+
+  out.f_type = static_cast<uint64_t>(0x0000000001021994);
+  out.f_bsize = static_cast<uint64_t>(statBuf.f_bsize);
+  out.f_blocks = static_cast<uint64_t>(statBuf.f_blocks);
+  out.f_bfree = static_cast<uint64_t>(statBuf.f_bfree);
+  out.f_bavail = static_cast<uint64_t>(statBuf.f_bavail);
+  out.f_files = static_cast<uint64_t>(statBuf.f_files);
+  out.f_ffree = static_cast<uint64_t>(statBuf.f_ffree);
+  out.f_flags = static_cast<uint64_t>(statBuf.f_flags);
+
+#ifdef __MACH__
+  out.f_fsid.val[0] = static_cast<uint32_t>(statBuf.f_fsid.val[0]);
+  out.f_fsid.val[1] = static_cast<uint32_t>(statBuf.f_fsid.val[0]);
+  out.f_namelen = MAXPATHLEN;
+  out.f_frsize = static_cast<uint64_t>(statBuf.f_bsize);
+  out.f_spare[0] = static_cast<uint64_t>(statBuf.f_reserved[0]);
+  out.f_spare[1] = static_cast<uint64_t>(statBuf.f_reserved[1]);
+  out.f_spare[2] = static_cast<uint64_t>(statBuf.f_reserved[2]);
+  out.f_spare[3] = static_cast<uint64_t>(statBuf.f_reserved[3]);
+#else
+  out.f_fsid.val[0] = static_cast<uint32_t>(statBuf.f_fsid.__val[0]);
+  out.f_fsid.val[1] = static_cast<uint32_t>(statBuf.f_fsid.__val[0]);
+  out.f_namelen = static_cast<uint64_t>(statBuf.f_namelen);
+  out.f_frsize = static_cast<uint64_t>(statBuf.f_frsize);
+  out.f_spare[0] = static_cast<uint64_t>(statBuf.f_spare[0]);
+  out.f_spare[1] = static_cast<uint64_t>(statBuf.f_spare[1]);
+  out.f_spare[2] = static_cast<uint64_t>(statBuf.f_spare[2]);
+  out.f_spare[3] = static_cast<uint64_t>(statBuf.f_spare[3]);
+#endif
+
+  return retval;
+}
+
 std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
                                             uint32_t val, uint64_t tid,
                                             const struct timespec* timeout,
@@ -1682,17 +1793,22 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     uint32_t futexWord{};
     std::memcpy(&futexWord, memRead_.data.getAsVector<char>(),
                 sizeof(uint32_t));
-    // As per the linux futex specification, if the value of the futex word is
-    // not equal to the value specified in the arguments, the syscall should
-    // exit with a failure value (-1).
-    // Source: https://man7.org/linux/man-pages/man2/futex.2.html
+    // As per the linux futex specification, if the value of the futex word
+    // is not equal to the value specified in the arguments, the syscall
+    // should exit with a failure value (-1). Source:
+    // https://man7.org/linux/man-pages/man2/futex.2.html
     if (val != futexWord) {
       std::cerr << "[SimEng:SyscallHandler:TID " << currentInfo_.threadId
                 << "] Value of the futex word did not match "
                    "with the value specified in the futex argument:\n"
                 << "\tFutex word: " << futexWord << "\n"
                 << "\tArgument value: " << val << std::endl;
-      return {false, -1};
+      // Return -11 as that maps to
+      // EAGAIN (FUTEX_WAIT, FUTEX_WAIT_BITSET, FUTEX_WAIT_REQUEUE_PI) The
+      //         value pointed to by uaddr was not equal to the expected
+      //         value val at the time of the call.
+      // Source https://man7.org/linux/man-pages/man2/futex.2.html
+      return {false, -11};
     }
     if (ftableItr == futexTable_.end()) {
       ftableItr = futexTable_.insert({tgid, std::list<FutexInfo>()}).first;
@@ -1714,8 +1830,8 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
       size_t maxItr = std::min(castedVal, ftableItr->second.size());
       for (size_t t = 0; t < maxItr; t++) {
         auto futexInfo = ftableItr->second.front();
-        // Awaken the process by changing the status to procStatus::waiting and
-        // adding it to the waitingProcs_ queue.
+        // Awaken the process by changing the status to procStatus::waiting
+        // and adding it to the waitingProcs_ queue.
         futexInfo.process->status_ = procStatus::waiting;
         OS_->addProcessToWaitQueue(futexInfo.process);
         ftableItr->second.pop_front();

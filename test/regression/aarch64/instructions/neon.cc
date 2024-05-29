@@ -594,6 +594,27 @@ TEST_P(InstNeon, bsl) {
 }
 
 TEST_P(InstNeon, cmeq) {
+  // 64-bit, 1 lane
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEF;
+  heap64[1] = 0xABCDEF01;
+  heap64[2] = 0x0;
+  heap64[3] = 0xABBACAFE;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d0, [x0]
+    ldr d1, [x0, #16]
+    cmeq d2, d0, 0
+    cmeq d3, d1, 0
+  )");
+  CHECK_NEON(2, uint64_t, {0xFF});
+  CHECK_NEON(3, uint64_t, {0x0});
+
   // 8-bit, 16 lane
   initialHeapData_.resize(32);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());

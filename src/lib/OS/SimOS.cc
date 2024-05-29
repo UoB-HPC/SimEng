@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <iomanip>
+#include <memory>
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/RegisterFileSet.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
@@ -267,8 +269,8 @@ void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
   desc.info.ticks = ticks;
 
   if (status == CoreStatus::idle || status == CoreStatus::halted) {
-    // std::cerr << "DeSchedule TID " << ctx.TID << " from " << coreId
-    //           << std::endl;
+    // std::cout << "[SimEng:SimOS] DeSchedule TID " << ctx.TID << " from "
+    //           << coreId << std::endl;
     recieveCoreInfo({coreId, status, ctx, ticks}, false);
   }
 }
@@ -332,7 +334,7 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   // present
   newProc->clearChildTid_ = childTidPtr;
 
-  // Update stackPtr, stackSize and stackEnd
+  // Update stackPtr
   newProc->updateStack(stackPtr);
 
   // Store child tid at parentTidPtr if required
@@ -379,12 +381,12 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
   processes_.emplace(newChildTid, newProc);
-  // std::cerr << "Adding " << newProc->getTID()
+  // std::cout << "[SimEng:SimOS] Adding " << newProc->getTID()
   //           << " to waitingProcs_ via resumeClone" << std::endl;
   waitingProcs_.push(newProc);
 
   // Add stack to `proc/tgid/maps`
-  VMA vma = newProc->getMemRegion().getVMAFromAddr(stackPtr);
+  VMA vma = newProc->getMemRegion()->getVMAFromAddr(stackPtr);
   const std::string procTgid_filename = specialFilesDir_ + "/proc/" +
                                         std::to_string(newProc->getTGID()) +
                                         "/maps";
@@ -403,9 +405,10 @@ void SimOS::resumeClone(CoreInfo cinfo) {
 }
 
 void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
-  // std::cerr << "recieveCoreInfo call from " << cinfo.coreId << std::endl;
+  // std::cout << "[SimEng:SimOS] recieveCoreInfo call from " << cinfo.coreId
+  //           << std::endl;
   if (forClone) {
-    // std::cerr << "\tclone" << std::endl;
+    // std::cout << "[SimEng:SimOS]\tclone" << std::endl;
     resumeClone(cinfo);
     return;
   };
@@ -417,6 +420,10 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
   cpuContext currContext = cinfo.ctx;
 
   if (currContext.TID != -1) {
+    if (cinfo.status == CoreStatus::halted) {
+      terminateThread(currContext.TID);
+      return;
+    }
     // Find the corresponding process in map
     auto procItr = processes_.find(currContext.TID);
     // If proccess can't be found then it has been terminated so no
@@ -429,7 +436,7 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
       // Change status from Executing to Waiting
       if (currProc->status_ == procStatus::executing) {
         currProc->status_ = procStatus::waiting;
-        // std::cerr << "Adding " << currProc->getTID()
+        // std::cout << "[SimEng:SimOS] Adding " << currProc->getTID()
         //           << " to waitingProcs_ via recieveCoreInfo" << std::endl;
         waitingProcs_.push(currProc);
       }
@@ -440,10 +447,10 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     // Schedule new process on core
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    // std::cerr << "schedule " << scheduledProcs_.front()->context_.TID << "
-    // to
-    // "
-    //           << cinfo.coreId << " from scheduledProcs_" << std::endl;
+    // std::cout << "[SimEng:SimOS] schedule "
+    //           << scheduledProcs_.front()->context_.TID << " to " <<
+    //           cinfo.coreId
+    //           << " from scheduledProcs_" << std::endl;
     coreProxy_.schedule(cinfo.coreId, scheduledProcs_.front()->context_);
     // Update newly scheduled process' status
     scheduledProcs_.front()->status_ = procStatus::executing;
@@ -457,9 +464,10 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     // processes inside waitingProcs which can jump ahead
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    // std::cerr << "schedule " << waitingProcs_.front()->context_.TID << " to
-    // "
-    //           << cinfo.coreId << " from waitingProcs_" << std::endl;
+    // std::cout << "[SimEng:SimOS] schedule "
+    //           << waitingProcs_.front()->context_.TID << " to " <<
+    //           cinfo.coreId
+    //           << " from waitingProcs_" << std::endl;
     coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
     // Update newly scheduled process' status
     waitingProcs_.front()->status_ = procStatus::executing;
@@ -481,6 +489,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     request->paddr_ = pAddr;
     request->markAsUntimed();
     processImageAddrs_.push_back(vAddr);
+    // std::cout << "Wrote Proc image addr " << std::hex << vAddr << std::dec
+    //           << " to " << std::hex << vAddr + size << std::dec << std::endl;
     memPort_->send(std::move(request));
   };
 
@@ -488,14 +498,20 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   uint64_t tid = nextFreeTID_;
   nextFreeTID_++;
 
+  auto process = std::make_shared<Process>(this, tid, tid, sendToMem);
+  process->status_ = procStatus::waiting;
   if (!instructionBytes.empty()) {
     // Construct Process from `instructionBytes`. As this is a new process, the
     // TID = TGID.
-    processes_.emplace(
-        tid, std::make_shared<Process>(instructionBytes, this, tid, tid,
-                                       sendToMem, memory_->getMemorySize()));
+    if (config::SimInfo::getISA() == config::ISA::RV64) {
+      process->init<arch::riscv::Architecture>(instructionBytes,
+                                               memory_->getMemorySize());
+    } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
+      process->init<arch::aarch64::Architecture>(instructionBytes,
+                                                 memory_->getMemorySize());
+    }
     // Raise error if created process is not valid
-    if (!processes_[tid]->isValid()) {
+    if (!process->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create process based on "
                    "supplied instruction span"
                 << std::endl;
@@ -513,39 +529,25 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
                        executableArgs_.end());
 
     // Create new Process. As this is a new process, the TID = TGID.
-    processes_.emplace(
-        tid, std::make_shared<Process>(commandLine, this, tid, tid, sendToMem,
-                                       memory_->getMemorySize()));
+    if (config::SimInfo::getISA() == config::ISA::RV64) {
+      process->init<arch::riscv::Architecture>(commandLine,
+                                               memory_->getMemorySize());
+    } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
+      process->init<arch::aarch64::Architecture>(commandLine,
+                                                 memory_->getMemorySize());
+    }
 
     // Raise error if created process is not valid
-    if (!processes_[tid]->isValid()) {
+    if (!process->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not read/parse " << commandLine[0]
                 << std::endl;
       exit(1);
     }
   }
 
-  // Set Initial state of registers
-  if (config::SimInfo::getISA() == config::ISA::RV64) {
-    // Set the stack pointer register
-    processes_[tid]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
-        processes_[tid]->context_.sp, 8};
-  } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
-    // Set the stack pointer register
-    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
-                                     [31] = {processes_[tid]->context_.sp, 8};
-    // Set the system registers
-    // Temporary: state that DCZ can support clearing 64 bytes at a time,
-    // but is disabled due to bit 4 being set
-    processes_[tid]
-        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                          [config::SimInfo::getSysRegVecIndex(
-                              arm64_sysreg::ARM64_SYSREG_DCZID_EL0)] = {
-        static_cast<uint64_t>(0b10100), 8};
-  }
-
-  processes_[tid]->status_ = procStatus::waiting;
-  waitingProcs_.push(processes_[tid]);
+  process->status_ = procStatus::waiting;
+  processes_.insert({tid, process});
+  waitingProcs_.push(process);
 
   return tid;
 }
@@ -673,6 +675,20 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
   return addr;
 }
 
+uint64_t SimOS::handleVAddrTranslationWithoutPageAllocation(uint64_t vaddr,
+                                                            uint64_t tid) {
+  const auto& processItr = processes_.find(tid);
+  // If no process exists for the supplied TID, consider it to be a data abort
+  // fault
+  if (processItr == processes_.end()) {
+    return masks::faults::pagetable::FAULT |
+           masks::faults::pagetable::DATA_ABORT;
+  }
+  auto process = processItr->second;
+  uint64_t translation = process->pageTable_->translate(vaddr);
+  return translation;
+}
+
 VAddrTranslator SimOS::getVAddrTranslator() {
   auto fn = [this](uint64_t vaddr, uint64_t pid) -> uint64_t {
     return handleVAddrTranslation(vaddr, pid);
@@ -697,6 +713,8 @@ uint64_t SimOS::getSystemTimer() const {
            1e9) /
           1e9);
 }
+
+uint64_t SimOS::getTicks() const { return ticks_; }
 
 void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {
   syscallHandler_->receiveSyscall(syscallInfo);

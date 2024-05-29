@@ -58,3 +58,13 @@ static constexpr T upAlign(const T& val, const U& align) {
   T mask = (T)align - 1;
   return (val + mask) & ~mask;
 }
+
+template <class T, class U>
+static constexpr T pageOffset(const T& val, const U& align) {
+  if (!isPow2(align)) {
+    std::cerr << "[SimEng:Math] Alignment value is not power of 2" << std::endl;
+    std::exit(1);
+  }
+  T mask = (T)align - 1;
+  return (val & mask);
+}

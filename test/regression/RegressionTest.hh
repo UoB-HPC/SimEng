@@ -115,8 +115,12 @@ class RegressionTest
   /** The process that was executed. */
   std::shared_ptr<simeng::OS::Process> process_;
 
+  std::shared_ptr<simeng::OS::SimOS> OS_ = nullptr;
+
   /** The core model used to execute the test code. */
   std::shared_ptr<simeng::Core> core_ = nullptr;
+
+  std::shared_ptr<simeng::OS::CoreProxy> proxy_ = nullptr;
 
   /** The output written to stdout during the test. */
   std::string stdout_;

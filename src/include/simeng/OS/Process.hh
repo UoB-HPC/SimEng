@@ -2,6 +2,8 @@
 
 #include <sys/resource.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 
@@ -112,23 +114,60 @@ class Process {
   friend class SimOS;
 
  public:
-  /** Construct a SimOS Process from a vector of command-line arguments. The
-   * first argument is a path to an executable ELF file. Size of the simulation
-   * memory is also passed to check if the process image can fit inside the
-   * simulation memory. */
-  Process(const std::vector<std::string>& commandLine, SimOS* OS, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
-
-  /** Construct a SimOS Process from region of instruction memory, with the
-   * entry point fixed at 0. Size of the simulation memory is also passed to
-   * check if the process image can fit inside the simulation memory.*/
-  Process(span<char> instructions, SimOS* OS, uint64_t TGID, uint64_t TID,
-          sendToMemory sendToMem, size_t simulationMemSize);
+  Process(SimOS* OS, uint64_t TGID, uint64_t TID, sendToMemory sendToMem);
 
   /** Default copy constructor for Process class. */
   Process(const Process& proc) = default;
 
   ~Process();
+
+  /** Construct a SimOS Process from a vector of command-line arguments. The
+   * first argument is a path to an executable ELF file. Size of the simulation
+   * memory is also passed to check if the process image can fit inside the
+   * simulation memory. */
+  template <class T>
+  void init(const std::vector<std::string>& commandLine, size_t simMemSize) {
+    commandLine_ = commandLine;
+    // Parse the Elf file.
+    assert(commandLine.size() > 0);
+    Elf elf(commandLine[0]);
+
+    std::function<uint64_t(uint64_t, size_t)> unmapFn =
+        [this](uint64_t vaddr, size_t size) -> uint64_t {
+      uint64_t value = pageTable_->deleteMapping(vaddr, size);
+      if (value ==
+          (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
+        std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: "
+                  << vaddr << " and length: " << size << std::endl;
+      }
+      return value;
+    };
+
+    uint64_t stack_top = setupMemRegion<T>(getBrkFromElf(elf));
+
+    loadElf(elf);
+    initStackPtr_ = createStack(stack_top);
+
+    // Initialise context
+    initContext(initStackPtr_);
+
+    // Setup architecture stuff
+    archSetup<T>();
+    isValid_ = true;
+  }
+
+  template <class T>
+  void init(span<char> instructions, size_t simMemSize) {
+    // Parse the Elf file.
+    commandLine_.push_back("\0");
+
+    loadInstructions(instructions, simMemSize);
+
+    // initContext(stackPtr);
+    initContext(initStackPtr_);
+    archSetup<T>();
+    isValid_ = true;
+  }
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
@@ -155,7 +194,7 @@ class Process {
   std::string getPath() const;
 
   /** Get the memory region for this process. */
-  MemRegion& getMemRegion() { return memRegion_; }
+  std::shared_ptr<MemRegion> getMemRegion() { return memRegion_; }
 
   /** Check whether the process image was created successfully. */
   bool isValid() const;
@@ -176,8 +215,10 @@ class Process {
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
   /** Updates a Processes stack space. */
-  void updateStack(const uint64_t stackPtr) {
-    memRegion_.updateStack(stackPtr);
+  void updateStack(const uint64_t stackPtr) { initStackPtr_ = stackPtr; }
+
+  bool vmHasFile(uint64_t vaddr) {
+    return memRegion_->getVMAFromAddr(vaddr).hasFile();
   }
 
   /** Unique pointer to FileDescArray class.*/
@@ -215,14 +256,34 @@ class Process {
    * pointer. */
   uint64_t createStack(uint64_t stackStart);
 
+  void mapStack(uint64_t stack_top, uint64_t stack_size);
+
   /** Initialises the Process' context_ arguments to the appropriate values. */
   void initContext(const uint64_t stackPtr);
 
+  template <class T>
+  uint64_t setupMemRegion(uint64_t brk);
+
+  void loadInterpreter(Elf& elf);
+
+  void loadElf(Elf& elf);
+
+  void loadInstructions(span<char>& instructions, size_t simMemSize);
+
+  uint64_t getBrkFromElf(Elf& elf);
+
+  template <class T>
+  void archSetup();
+
   /** MemRegion of the Process Image. */
-  MemRegion memRegion_;
+  std::shared_ptr<MemRegion> memRegion_;
+
+  bool isDynamic_ = false;
 
   /** The entry point of the process. */
-  uint64_t entryPoint_ = 0;
+  uint64_t elfEntryPoint_ = 0;
+
+  uint64_t interpEntryPoint_ = 0;
 
   /** Program header table virtual address */
   uint64_t progHeaderTableAddress_ = 0;
@@ -259,6 +320,8 @@ class Process {
    * also used to write file data (if present) to the simulation memory after
    * handling a page fault */
   sendToMemory sendToMem_;
+
+  uint64_t initStackPtr_ = 0;
 };
 
 }  // namespace OS

@@ -27,6 +27,17 @@ struct Range {
     size = range_size;
   }
 
+  /** Constructor which creates the Range struct with specific values. */
+  Range(T range_start, T range_end) {
+    // Static assert which checks if the template type is an arithmetic type.
+    static_assert(
+        std::is_arithmetic_v<T>,
+        "[SimEng:Range] Range should be declared with an arithmetic type");
+    start = range_start;
+    end = range_end;
+    size = range_end - range_start;
+  }
+
   /** Empty constructor for the Range struct. */
   Range() : start(0), end(0), size(0) {}
 

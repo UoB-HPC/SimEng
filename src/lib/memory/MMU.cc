@@ -42,6 +42,7 @@ MMU::MMU(VAddrTranslator fn)
 }
 
 void MMU::tick() {
+  ticks_++;
   /** NOTE: The number of instructions present in each of the load / store
    * vectors is limited inside the `requestRead()` and `requestWrite()`
    * functions when we add to these vectors.
@@ -151,13 +152,6 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   // Check space left for a store
   if (loadsStores_[STR].size() >= storeRequestLimit_) return false;
 
-  const auto& checkTargets = uop->getGeneratedAddresses();
-  for (const auto& trg : checkTargets) {
-    if (simeng::OS::masks::faults::getFaultCode(translate_(trg.vaddr, tid_)) ==
-        simeng::OS::masks::faults::pagetable::PENDING)
-      return false;
-  }
-
   // Initialise space in stores
   loadsStores_[STR].push_back({});
   // Create and fire off requests
@@ -221,12 +215,15 @@ const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
 }
 
 void MMU::supplyDelayedTranslation(uint64_t vaddr, uint64_t paddr) {
-  auto it = pendingRequests_.find(vaddr);
+  uint64_t alignedVaddr = downAlign(vaddr, simeng::OS::defaults::PAGE_SIZE);
+  uint64_t alignedPaddr = downAlign(paddr, simeng::OS::defaults::PAGE_SIZE);
+  auto it = pendingRequests_.find(alignedVaddr);
   if (it != pendingRequests_.end()) {
     // If a delayed virtual address translation exists, re-issue the request so
     // that the new translation can be supplied
     for (int i = 0; i < it->second.size(); i++) {
-      issueRequest(std::move(it->second[i]));
+      issueRequest(std::move(it->second[i].first),
+                   alignedPaddr + it->second[i].second);
     }
     pendingRequests_.erase(it);
   }
@@ -300,10 +297,13 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
   return port_;
 }
 
-void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
+void MMU::issueRequest(std::unique_ptr<MemPacket> request,
+                       uint64_t delayedTranslation) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request->vaddr_, tid_);
+  uint64_t paddr = (delayedTranslation != -1)
+                       ? delayedTranslation
+                       : translate_(request->vaddr_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
@@ -315,7 +315,10 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
   if (faultCode == simeng::OS::masks::faults::pagetable::PENDING) {
     // Record the wanted translation if it is currently bein resolved
     // asynchronously
-    pendingRequests_[request->vaddr_].push_back(std::move(request));
+    uint64_t alignedVaddr =
+        downAlign(request->vaddr_, simeng::OS::defaults::PAGE_SIZE);
+    pendingRequests_[alignedVaddr].push_back(
+        {std::move(request), request->vaddr_ - alignedVaddr});
     return;
   }
 
@@ -329,28 +332,9 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request) {
     numInsnReads_++;
   else if (request->isRead()) {
     numDataReads_++;
-    // if (request->tid_ == 24)
-    //   std::cerr << "\tType: Read, PhysAddr: 0x" << std::hex <<
-    //   request->paddr_
-    //             << std::dec << ", VirtAddr: 0x" << std::hex <<
-    //             request->vaddr_
-    //             << std::dec << ", Size: " << request->size_ << ", InstPtr:
-    //             0x"
-    //             << std::hex << request->insnSeqId_ << std::dec
-    //             << ", ThreadID: " << request->tid_ << std::endl;
   } else if (request->isWrite()) {
     numDataWrites_++;
-    // if (request->tid_ == 24)
-    //   std::cerr << "\tType: Write, PhysAddr: 0x" << std::hex <<
-    //   request->paddr_
-    //             << std::dec << ", VirtAddr: 0x" << std::hex <<
-    //             request->vaddr_
-    //             << std::dec << ", Size: " << request->size_ << ", InstPtr:
-    //             0x"
-    //             << std::hex << request->insnSeqId_ << std::dec
-    //             << ", ThreadID: " << request->tid_ << std::endl;
   }
-
   port_->send(std::move(request));
 }
 
@@ -486,15 +470,6 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     // Supply data to instruction
     if (!isFaulty) {
       insn->supplyData(addr, {mergedData.data(), mergedSize});
-      // if (tid_ == 3)
-      //   std::cerr << "\tData supply for 0x" << std::hex <<
-      //   insn->getSequenceId()
-      //             << std::dec << ":0x" << std::hex <<
-      //             insn->getInstructionId()
-      //             << std::dec << " at addr 0x" << std::hex << addr <<
-      //             std::dec
-      //             << ", hasAllData: " << insn->hasAllData()
-      //             << ", hasExecuted: " << insn->hasExecuted() << std::endl;
     }
   }
   assert(insn->hasAllData() &&

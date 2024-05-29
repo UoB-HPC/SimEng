@@ -24,7 +24,8 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
-       arch::sendSyscallToHandler handleSyscall);
+       arch::sendSyscallToHandler handleSyscall,
+       std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>);
 
   /** Tick the core. */
   void tick() override;
@@ -76,7 +77,7 @@ class Core : public simeng::Core {
   uint64_t getCurrentProcTicks() const override;
 
   /** Retrieve the CPU context for the currently scheduled process. */
-  simeng::OS::cpuContext getCurrentContext() const override;
+  simeng::OS::cpuContext getCurrentContext(bool clearTID = false) override;
 
  private:
   /** Execute an instruction. */
@@ -177,8 +178,13 @@ class Core : public simeng::Core {
   /** TID of the process currently executing on the core. */
   uint64_t currentTID_ = -1;
 
+  std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+      updateCoreDescInOS_;
+
   /** The number of in-flight store-conditional requests. */
   uint64_t inFlightStoreCondReqs_ = 0;
+
+  bool printing_ = false;
 };
 
 }  // namespace emulation

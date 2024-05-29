@@ -89,7 +89,8 @@ class MMU {
   void processRequests(const bool isStore);
 
   /** Method used to buffer data requests to memory. */
-  void issueRequest(std::unique_ptr<MemPacket> request);
+  void issueRequest(std::unique_ptr<MemPacket> request,
+                    uint64_t delayedTranslation = -1);
 
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow(uint64_t a, uint64_t b) const {
@@ -139,7 +140,9 @@ class MMU {
 
   /** A map of virtual addresses to SimEng MemPacket objects helf whilst a
    * address translation is being retrieved asynchronously. */
-  std::map<uint64_t, std::vector<std::unique_ptr<MemPacket>>> pendingRequests_;
+  std::map<uint64_t,
+           std::vector<std::pair<std::unique_ptr<MemPacket>, uint64_t>>>
+      pendingRequests_;
 
   /** A map containing all store instructions waiting for their results.
    * Key = Instruction sequenceID
@@ -200,6 +203,8 @@ class MMU {
   uint64_t numDataReads_ = 0;
   uint64_t numInsnReads_ = 0;
   uint64_t numDataWrites_ = 0;
+
+  uint64_t ticks_ = 0;
 };
 
 }  // namespace memory

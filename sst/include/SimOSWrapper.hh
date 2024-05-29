@@ -106,6 +106,8 @@ class SimOSWrapper : public SST::Component {
    * from the network. */
   void handleNetworkEvent(SST::Event* netEvent);
 
+  void processTranslationQueue();
+
   /**
    * SST supplied MACRO used to register custom SST:Components with
    * the SST Core.
@@ -247,6 +249,10 @@ class SimOSWrapper : public SST::Component {
 
   std::unique_ptr<simeng::OS::SimOS> simOS_;
 
+  std::pair<transEv*, uint16_t> pendingTranslationRes_ = {nullptr, -1};
+
+  std::queue<SST::Event*> translationEventQueue_;
+
   std::function<void(const simeng::OS::SyscallResult)> sendSyscallResultToCore_;
 
   std::function<void()> processImageSent_;
@@ -257,6 +263,8 @@ class SimOSWrapper : public SST::Component {
   simeng::OS::PageFrameAllocator pageFrameAllocator_;
 
   bool initialProcessImageWritten_ = false;
+
+  bool largeBlockInFlight_ = false;
 };
 
 }  // namespace SSTSimEng

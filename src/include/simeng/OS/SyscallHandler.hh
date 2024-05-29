@@ -104,6 +104,27 @@ struct stat {
   uint32_t padding4;   // offset = 124
 };
 
+/** Fixed-width definition of `statfs`.
+ * Defined by Linux kernel in include/uapi/asm-generic/statfs.h */
+typedef struct {
+  int32_t val[2];
+} kernel_fsid_t;
+
+struct statfs {
+  uint64_t f_type;
+  uint64_t f_bsize;
+  uint64_t f_blocks;
+  uint64_t f_bfree;
+  uint64_t f_bavail;
+  uint64_t f_files;
+  uint64_t f_ffree;
+  kernel_fsid_t f_fsid;
+  uint64_t f_namelen;
+  uint64_t f_frsize;
+  uint64_t f_flags;
+  uint64_t f_spare[4];
+};
+
 /** Fixed-width definition of `termios`.
  * Defined by Linux kernel in `include/uapi/asm-generic/termbits.h` */
 struct ktermios {
@@ -409,6 +430,8 @@ class SyscallHandler {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
+  int64_t statfsLocal(const std::string& filename, statfs& out);
+
   /** futex syscall: Mutex like thread scheduling in the user space.
    * This method returns a pair<bool, long>. The 'bool' signifies whether the
    * core status should set to idle after the syscall result has been received
@@ -475,6 +498,8 @@ class SyscallHandler {
 
   /** Function used to send a syscall result back to simulation core. */
   std::function<void(const SyscallResult)> sendSyscallResultToCore_;
+
+  uint64_t cyclesElapsed_ = 0;
 };
 
 }  // namespace OS

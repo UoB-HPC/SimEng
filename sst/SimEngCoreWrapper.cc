@@ -16,7 +16,7 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + ":@p:@l ", 999, 0,
+  output_.init("[SSTSimEng:SimEngCoreWrapper:" + getName() + "] @p:@l ", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -117,9 +117,9 @@ void SimEngCoreWrapper::finish() {
       statsF32[key]->addData(std::stof(value));
     }
   }
-  statsU64["mmu_numInsnReads"]->addData(mmu_->getNumInsnReads());
-  statsU64["mmu_numDataReads"]->addData(mmu_->getNumDataReads());
-  statsU64["mmu_numDataWrites"]->addData(mmu_->getNumDataWrites());
+  statsU64["mmu.numInsnReads"]->addData(mmu_->getNumInsnReads());
+  statsU64["mmu.numDataReads"]->addData(mmu_->getNumDataReads());
+  statsU64["mmu.numDataWrites"]->addData(mmu_->getNumDataWrites());
   statsU64["duration"]->addData(duration);
   statsF32["frequency"]->addData(std::round(khz));
   statsF32["mips"]->addData(mips);
@@ -244,16 +244,28 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
         //     " "VAddr: %llx (%llx)\n\t- PID: %llu\n\t- PAddr: %llx (% llx)\n
         //     ", translation->getSource().c_str(), translation->getSourceId(),
         //     translation->getVirtualAddr(),
-        //     downAlign(vaddr, simeng::OS::PAGE_SIZE), translation->getPID(),
-        //     translation->getPhysicalAddr(),
-        //     downAlign(paddr, simeng::OS::PAGE_SIZE));
+        //     downAlign(vaddr, simeng::OS::defaults::PAGE_SIZE),
+        //     translation->getPID(), translation->getPhysicalAddr(),
+        //     downAlign(paddr, simeng::OS::defaults::PAGE_SIZE));
       }
-
-      fakeTLB_[downAlign(vaddr, simeng::OS::PAGE_SIZE)] =
-          downAlign(paddr, simeng::OS::PAGE_SIZE);
+      uint64_t alignedVaddr = downAlign(vaddr, simeng::OS::defaults::PAGE_SIZE);
+      if (simeng::OS::masks::faults::getFaultCode(paddr) ==
+              simeng::OS::masks::faults::pagetable::IGNORED ||
+          simeng::OS::masks::faults::getFaultCode(paddr) ==
+              simeng::OS::masks::faults::pagetable::NO_FAULT) {
+        fakeTLB_[alignedVaddr] =
+            downAlign(paddr, simeng::OS::defaults::PAGE_SIZE);
+        // if (downAlign(vaddr, simeng::OS::defaults::PAGE_SIZE) ==
+        //     downAlign(0x10102464c4500, simeng::OS::defaults::PAGE_SIZE))
+        // std::cerr << "\t\tCaching " << std::hex << vaddr << std::dec
+        //           << " block translation: 0x" << std::hex
+        //           << downAlign(paddr, simeng::OS::defaults::PAGE_SIZE) <<
+        //           std::dec
+        //           << std::endl;
+      }
       auto it = pendingTranslation_.begin();
       while (it != pendingTranslation_.end()) {
-        if (*it == vaddr) {
+        if (*it == alignedVaddr) {
           pendingTranslation_.erase(it);
           break;
         } else
@@ -317,24 +329,48 @@ void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
 
 uint64_t SimEngCoreWrapper::translateVAddr(uint64_t vaddr, uint64_t pid) {
   // std::cerr << "Translating " << std::hex << vaddr << std::dec << std::endl;
-  uint64_t alignedVaddr = downAlign(vaddr, simeng::OS::PAGE_SIZE);
+  uint64_t alignedVaddr = downAlign(vaddr, simeng::OS::defaults::PAGE_SIZE);
+  // if (vaddr == 0x10102464c4500)
+  // std::cerr << core_->getCoreId() << "|" << iterations_
+  //           << " translating 0x10102464c4500 aligned to 0x" << std::hex
+  //           << alignedVaddr << std::dec << std::endl;
   if (fakeTLB_.find(alignedVaddr) != fakeTLB_.end()) {
+    // if (vaddr == 0x1fd68) {
+    //   std::cerr << iterations_ << " returning 0x" << std::hex << vaddr
+    //             << std::dec << ": 0x" << std::hex
+    //             << (vaddr & (simeng::OS::defaults::PAGE_SIZE - 1)) +
+    //                    fakeTLB_[alignedVaddr]
+    //             << std::dec << std::endl;
+    // }
     // std::cerr << "\tReturning " << std::hex
-    //           << (vaddr & (simeng::OS::PAGE_SIZE - 1)) +
+    //           << (vaddr & (simeng::OS::defaults::PAGE_SIZE - 1)) +
     //           fakeTLB_[alignedVaddr]
     //           << std::dec << std::endl;
-    return (vaddr & (simeng::OS::PAGE_SIZE - 1)) + fakeTLB_[alignedVaddr];
+    return (vaddr & (simeng::OS::defaults::PAGE_SIZE - 1)) +
+           fakeTLB_[alignedVaddr];
   } else if (std::find(pendingTranslation_.begin(), pendingTranslation_.end(),
-                       vaddr) != pendingTranslation_.end()) {
+                       alignedVaddr) != pendingTranslation_.end()) {
+    // if (vaddr == 0x1fd68) {
+    //   std::cerr << "Pending 0x" << std::hex << vaddr << std::dec <<
+    //   std::endl;
+    // }
     uint64_t retVal = simeng::OS::masks::faults::pagetable::FAULT;
     retVal = retVal | simeng::OS::masks::faults::pagetable::PENDING;
     return retVal;
   } else {
+    // std::cerr << "\t\tRequest 0x" << std::hex << vaddr << std::dec << " (0x"
+    //           << std::hex << alignedVaddr << std::dec << ") block
+    //           translation"
+    //           << std::endl;
     transEv* translation = new transEv(getName(), core_->getCoreId());
     translation->setVirtualAddr(vaddr, pid);
+    // if (vaddr == 0x1fd68) {
+    //   std::cerr << "Request translate 0x" << std::hex << vaddr << std::dec
+    //             << std::endl;
+    // }
     sstNoc_->send(translation, 0);
 
-    pendingTranslation_.push_back(vaddr);
+    pendingTranslation_.push_back(alignedVaddr);
 
     uint64_t retVal = simeng::OS::masks::faults::pagetable::FAULT;
     retVal = retVal | simeng::OS::masks::faults::pagetable::PENDING;
@@ -356,6 +392,23 @@ void SimEngCoreWrapper::updateCoreDescInOS(simeng::OS::cpuContext ctx,
 void SimEngCoreWrapper::sendSyscall(simeng::OS::SyscallInfo info) {
   syscallInfoEv* sysInfo = new syscallInfoEv(getName(), core_->getCoreId());
   sysInfo->setPayload(info);
+  if (sysInfo->getPayload().syscallId == 215 ||
+      sysInfo->getPayload().syscallId == 222) {
+    for (size_t i = 0;
+         i < sysInfo->getPayload().registerArguments[1].get<size_t>();
+         i += simeng::OS::defaults::PAGE_SIZE) {
+      auto it = fakeTLB_.find(downAlign(
+          sysInfo->getPayload().registerArguments[0].get<uint64_t>() + i,
+          simeng::OS::defaults::PAGE_SIZE));
+      if (it != fakeTLB_.end()) {
+        // std::cerr
+        //     << "\t\tRemoving 0x" << std::hex
+        //     << sysInfo->getPayload().registerArguments[0].get<uint64_t>() + i
+        //     << std::dec << " tlb entry" << std::endl;
+        fakeTLB_.erase(it);
+      }
+    }
+  }
   sstNoc_->send(sysInfo, 0);
 }
 
@@ -433,8 +486,9 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
            characters/strings are escaped properly within a set single or
            double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
-    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index "
-              << index << " of the argument string - substring: "
+    std::cerr << "[SSTSimEng:SimEngCoreWrapper:" << getName()
+              << "] Error occured at index " << index
+              << " of the argument string - substring: "
               << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
   }

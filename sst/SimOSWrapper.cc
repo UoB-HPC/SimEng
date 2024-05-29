@@ -125,8 +125,7 @@ void SimOSWrapper::setup() {
 
 bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
   sstNoc_->clockTick(current_cycle);
-  // output_.verbose(CALL_INFO, 1, 0, "tick %llu\n", current_cycle);
-  if (!initialProcessImageWritten_) {
+  if (largeBlockInFlight_ && !initialProcessImageWritten_) {
     // Tick Memory
     memInterface_->tick();
 
@@ -134,20 +133,27 @@ bool SimOSWrapper::clockTick(SST::Cycle_t current_cycle) {
 
     return false;
   }
-  // for (int i = 0; i < numCores_; i++) {
-  //   emptyEv* cntx = new emptyEv(getName());
-  //   sstNoc_->send(cntx, i);
-  // }
-  // for (int i = 0; i < numCores_; i++) {
-  //   contextEv* cntx = new contextEv(getName());
-  //   uint64_t i64 = i;
-  //   cntx->setPayload({i64,
-  //                     i64 * 2,
-  //                     i64 * 3,
-  //                     i64 * 4,
-  //                     {{{i, 4}, {i * 2, 4}}, {{i64 * 3, 8}, {i64 * 4, 8}}}});
-  //   sstNoc_->send(cntx, i);
-  // }
+
+  initialProcessImageWritten_ = true;
+
+  if (!largeBlockInFlight_) {
+    if (pendingTranslationRes_.first != nullptr) {
+      sstNoc_->send(pendingTranslationRes_.first,
+                    pendingTranslationRes_.second);
+      // if (((pendingTranslationRes_.first->getVirtualAddr() < 0xfffffed5f010)
+      // &&
+      //      (pendingTranslationRes_.first->getVirtualAddr() >
+      //      0xfffffed5eff0))) {
+      //   std::cout << iterations_ << " SUPPLIED TRANS AT VADDR " << std::hex
+      //             << pendingTranslationRes_.first->getVirtualAddr() <<
+      //             std::dec
+      //             << std::endl;
+      // }
+      pendingTranslationRes_ = {nullptr, -1};
+    }
+    processTranslationQueue();
+  }
+
   // Tick the core and memory interfaces until the program has halted
   if (!simOS_->hasHalted()) {
     // Tick SimOS
@@ -186,7 +192,7 @@ void SimOSWrapper::fabricateSimOS() {
     return;
   };
 
-  processImageSent_ = [&]() { initialProcessImageWritten_ = true; };
+  processImageSent_ = [&]() { largeBlockInFlight_ = false; };
 
   if (executablePath_ == DEFAULT_STR) {
     // Use default program
@@ -199,6 +205,9 @@ void SimOSWrapper::fabricateSimOS() {
         memInterface_, executablePath_, executableArgs_,
         sendSyscallResultToCore_, processImageSent_);
   }
+  // Process memory space has been sent. Wait for signal that it's been written
+  // before starting simulation of SimEng objects
+  largeBlockInFlight_ = true;
 
   proxy_.getCoreInfo = [&](uint16_t coreId, bool forClone) {
     coreInfoReqEv* cinfoReq = new coreInfoReqEv(getName(), 0, forClone);
@@ -245,106 +254,166 @@ void SimOSWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
 
 void SimOSWrapper::handleNetworkEvent(SST::Event* netEvent) {
   simengNetEv* event = static_cast<simengNetEv*>(netEvent);
-  switch (event->getType()) {
-    case PacketType::Empty: {
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::Empty from %s\n\t- CoreId: %u\n",
-                        event->getSource().c_str(), event->getSourceId());
+  if (event->getType() == PacketType::Translate) {
+    translationEventQueue_.push(netEvent);
+    transEv* translationReq = static_cast<transEv*>(netEvent);
+    // if (translationReq->getVirtualAddr() == 0x10102464c4500) {
+    //   std::cerr << iterations_ << " PUSHED TRANS FOR VADDR " << std::hex
+    //             << translationReq->getVirtualAddr() << std::dec << " INTO
+    //             QUEUE"
+    //             << std::endl;
+    // }
+  } else {
+    switch (event->getType()) {
+      case PacketType::Empty: {
+        if (debug_) {
+          output_.verbose(
+              CALL_INFO, 1, 0,
+              "Received PacketType::Empty from %s\n\t- CoreId: %u\n",
+              event->getSource().c_str(), event->getSourceId());
+        }
+        break;
       }
-      break;
-    }
-    case PacketType::Context: {
-      contextEv* cntxEv = static_cast<contextEv*>(netEvent);
-      simeng::OS::cpuContext cntx = cntxEv->getPayload();
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::Context msg from %s\n\t- CoreId: "
-                        "%u\n\t- TID: %lu\n",
-                        cntxEv->getSource().c_str(), cntxEv->getSourceId(),
-                        cntxEv->getPayload().TID);
+      case PacketType::Context: {
+        contextEv* cntxEv = static_cast<contextEv*>(netEvent);
+        simeng::OS::cpuContext cntx = cntxEv->getPayload();
+        if (debug_) {
+          output_.verbose(
+              CALL_INFO, 1, 0,
+              "Received PacketType::Context msg from %s\n\t- CoreId: "
+              "%u\n\t- TID: %lu\n",
+              cntxEv->getSource().c_str(), cntxEv->getSourceId(),
+              cntxEv->getPayload().TID);
+        }
+        break;
       }
-      break;
-    }
-    case PacketType::Syscall: {
-      syscallInfoEv* sysInfo = static_cast<syscallInfoEv*>(netEvent);
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::Syscall msg from %s\n\t- CoreId: "
-                        "%u\n\t- SyscallId: %lu\n",
-                        sysInfo->getSource().c_str(), sysInfo->getSourceId(),
-                        sysInfo->getPayload().syscallId);
+      case PacketType::Syscall: {
+        syscallInfoEv* sysInfo = static_cast<syscallInfoEv*>(netEvent);
+        if (debug_) {
+          output_.verbose(
+              CALL_INFO, 1, 0,
+              "Received PacketType::Syscall msg from %s\n\t- CoreId: "
+              "%u\n\t- SyscallId: %lu\n",
+              sysInfo->getSource().c_str(), sysInfo->getSourceId(),
+              sysInfo->getPayload().syscallId);
+        }
+        simOS_->receiveSyscall(sysInfo->getPayload());
+        break;
       }
-      simOS_->receiveSyscall(sysInfo->getPayload());
-      break;
-    }
-    case PacketType::Translate: {
-      transEv* translationReq = static_cast<transEv*>(netEvent);
-      uint64_t paddr = simOS_->handleVAddrTranslation(
-          translationReq->getVirtualAddr(), translationReq->getPID());
-      // if (debug_) {
-      //   output_.verbose(
-      //       CALL_INFO, 1, 0,
-      //       "Received PacketType::Translate msg from %s\n\t- CoreId: "
-      //       "%u\n\t- VAddr: %llx\n\t- PID: %llu\n\t- PAddr: %llx\n",
-      //       translationReq->getSource().c_str(),
-      //       translationReq->getSourceId(), translationReq->getVirtualAddr(),
-      //       translationReq->getPID(), paddr);
-      // }
-      transEv* translationRes = static_cast<transEv*>(translationReq->clone());
-      translationRes->setPhysicalAddr(paddr);
-      sstNoc_->send(translationRes, translationReq->getSourceId());
-      break;
-    }
-    case PacketType::CoreInfo: {
-      coreInfoEv* cinfoEv = static_cast<coreInfoEv*>(netEvent);
-      simeng::OS::CoreInfo cinfo = cinfoEv->getPayload();
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::CoreInfo msg from %s\n\t- "
-                        "CoreId: %u\n\t- FromOS: %u\n\t- TID: %lu\n",
-                        cinfoEv->getSource().c_str(), cinfoEv->getSourceId(),
-                        cinfoEv->isReqFromOS(), cinfo.ctx.TID);
+      case PacketType::CoreInfo: {
+        coreInfoEv* cinfoEv = static_cast<coreInfoEv*>(netEvent);
+        simeng::OS::CoreInfo cinfo = cinfoEv->getPayload();
+        if (debug_) {
+          output_.verbose(CALL_INFO, 1, 0,
+                          "Received PacketType::CoreInfo msg from %s\n\t- "
+                          "CoreId: %u\n\t- FromOS: %u\n\t- TID: %lu\n",
+                          cinfoEv->getSource().c_str(), cinfoEv->getSourceId(),
+                          cinfoEv->isReqFromOS(), cinfo.ctx.TID);
+        }
+        if (!cinfoEv->isReqFromOS()) {
+          simOS_->updateCoreDesc(cinfo.ctx, cinfo.coreId, cinfo.status,
+                                 cinfo.ticks);
+        } else {
+          simOS_->recieveCoreInfo(cinfo, cinfoEv->isForClone());
+        }
+        break;
       }
-      if (!cinfoEv->isReqFromOS()) {
-        simOS_->updateCoreDesc(cinfo.ctx, cinfo.coreId, cinfo.status,
-                               cinfo.ticks);
-      } else {
-        simOS_->recieveCoreInfo(cinfo, cinfoEv->isForClone());
+      case PacketType::Interrupt: {
+        interruptEv* intrpt = static_cast<interruptEv*>(netEvent);
+        if (debug_) {
+          output_.verbose(CALL_INFO, 1, 0,
+                          "Received PacketType::Interrupt msg from %s\n\t- "
+                          "CoreId: %u\n\t- WasSuccess: %u\n",
+                          intrpt->getSource().c_str(), intrpt->getSourceId(),
+                          intrpt->wasSuccess());
+        }
+        simOS_->recieveInterruptResponse(intrpt->wasSuccess(),
+                                         intrpt->getSourceId());
+        break;
       }
-      break;
-    }
-    case PacketType::Interrupt: {
-      interruptEv* intrpt = static_cast<interruptEv*>(netEvent);
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::Interrupt msg from %s\n\t- "
-                        "CoreId: %u\n\t- WasSuccess: %u\n",
-                        intrpt->getSource().c_str(), intrpt->getSourceId(),
-                        intrpt->wasSuccess());
+      case PacketType::Register: {
+        registerEv* regReq = static_cast<registerEv*>(netEvent);
+        if (debug_) {
+          output_.verbose(CALL_INFO, 1, 0,
+                          "Received PacketType::Register msg from %s\n\t- "
+                          "CoreId: %u\n\t- TID: %lu\n\t- Status: %u\n",
+                          regReq->getSource().c_str(), regReq->getCoreId(),
+                          regReq->getContext().TID,
+                          unsigned(regReq->getCoreStatus()));
+        }
+        simOS_->registerCore(regReq->getCoreId(), regReq->getCoreStatus(),
+                             regReq->getContext(), true);
+        break;
       }
-      simOS_->recieveInterruptResponse(intrpt->wasSuccess(),
-                                       intrpt->getSourceId());
-      break;
+      default:
+        break;
     }
-    case PacketType::Register: {
-      registerEv* regReq = static_cast<registerEv*>(netEvent);
-      if (debug_) {
-        output_.verbose(CALL_INFO, 1, 0,
-                        "Received PacketType::Register msg from %s\n\t- "
-                        "CoreId: %u\n\t- TID: %lu\n\t- Status: %u\n",
-                        regReq->getSource().c_str(), regReq->getCoreId(),
-                        regReq->getContext().TID,
-                        unsigned(regReq->getCoreStatus()));
-      }
-      simOS_->registerCore(regReq->getCoreId(), regReq->getCoreStatus(),
-                           regReq->getContext(), true);
-      break;
-    }
-    default:
-      break;
+    delete event;
   }
-  delete event;
+}
+
+void SimOSWrapper::processTranslationQueue() {
+  if (translationEventQueue_.size() == 0) return;
+  SST::Event* netEvent = translationEventQueue_.front();
+  transEv* translationReq = static_cast<transEv*>(netEvent);
+  uint64_t paddr = simOS_->handleVAddrTranslationWithoutPageAllocation(
+      translationReq->getVirtualAddr(), translationReq->getPID());
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
+  if (faultCode != simeng::OS::masks::faults::pagetable::TRANSLATE) {
+    transEv* translationRes = static_cast<transEv*>(translationReq->clone());
+    translationRes->setPhysicalAddr(paddr);
+    // if (translationReq->getVirtualAddr() == 0x10102464c4500) {
+    //   std::cerr << iterations_ << " SUPPLYING TRANS FOR VADDR " << std::hex
+    //             << translationReq->getVirtualAddr() << std::dec << std::endl;
+    // }
+    sstNoc_->send(translationRes, translationReq->getSourceId());
+  } else {
+    paddr = simOS_->handleVAddrTranslation(translationReq->getVirtualAddr(),
+                                           translationReq->getPID());
+
+    // if (debug_) {
+    // output_.verbose(
+    //     CALL_INFO, 1, 0,
+    //     "Received PacketType::Translate msg from %s\n\t- CoreId: "
+    //     "%u\n\t- VAddr: %llx\n\t- PID: %llu\n\t- PAddr: %llx\n",
+    //     translationReq->getSource().c_str(),
+    //     translationReq->getSourceId(),
+    // translationReq->getVirtualAddr(),
+    //     translationReq->getPID(), paddr);
+    // }
+
+    pendingTranslationRes_ = {static_cast<transEv*>(translationReq->clone()),
+                              translationReq->getSourceId()};
+    pendingTranslationRes_.first->setPhysicalAddr(paddr);
+
+    if (simOS_->vmHasFile(translationReq->getVirtualAddr(),
+                          translationReq->getPID())) {
+      // if (translationReq->getVirtualAddr() == 0x10102464c4500) {
+      //   std::cerr << iterations_ << " WAITING FOR FILE MAP AT VADDR "
+      //             << std::hex << translationReq->getVirtualAddr() << std::dec
+      //             << std::endl;
+      // }
+      // if (((translationReq->getVirtualAddr() < 0xfffffed5f010) &&
+      //      (translationReq->getVirtualAddr() > 0xfffffed5eff0))) {
+      //   std::cout << iterations_ << " WAITING FOR FILE MAP AT VADDR "
+      //             << std::hex << translationReq->getVirtualAddr() << std::dec
+      //             << std::endl;
+      // }
+      largeBlockInFlight_ = true;
+    } else {
+      // if (translationReq->getVirtualAddr() == 0x10102464c4500) {
+      //   std::cerr << iterations_ << " SUPPLYING TRANS FOR VADDR " << std::hex
+      //             << translationReq->getVirtualAddr() << std::dec <<
+      //             std::endl;
+      // }
+
+      sstNoc_->send(pendingTranslationRes_.first,
+                    pendingTranslationRes_.second);
+      pendingTranslationRes_ = {nullptr, -1};
+    }
+  }
+  delete netEvent;
+  translationEventQueue_.pop();
 }
 
 std::string SimOSWrapper::trimSpaces(std::string strArgs) {

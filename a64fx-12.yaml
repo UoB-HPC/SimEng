@@ -1,6 +1,6 @@
+
 # The following resources where utilised to create the config file and naming schemes:
 # https://github.com/fujitsu/A64FX
-
 Core:
   ISA: AArch64
   Simulation-Mode: outoforder
@@ -255,7 +255,7 @@ CPU-Info:
   # (Not generating the special files directory may require the user to copy over files manually)
   Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
-  Core-Count: 1
+  Core-Count: 12
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
   Socket-Count: 1
   # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
@@ -272,10 +272,10 @@ CPU-Info:
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 Interpreter:
-  Path: "/Users/jj16791/workspace/dynLibs/llvm/ld-linux-aarch64.so.1"
+  Path: "/home/br-jjones/workspac/dynLibs/llvm/ld-linux-aarch64.so.1"
   Debug: False
   LD_LIBRARY_PATH:
-    - "/Users/jj16791/workspace/dynLibs/llvm"
+    - "/home/br-jjones/workspac/dynLibs/llvm"
   Extra-Env-Vars:
 Environment-Variables:
-  - "OMP_NUM_THREADS=1"
+  - "OMP_NUM_THREADS=12"

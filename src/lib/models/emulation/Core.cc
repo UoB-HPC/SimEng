@@ -9,12 +9,15 @@ namespace models {
 namespace emulation {
 
 Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
-           arch::sendSyscallToHandler handleSyscall)
+           arch::sendSyscallToHandler handleSyscall,
+           std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
+               updateCoreDescInOS)
     : mmu_(mmu),
       isa_(isa),
       registerFileSet_(config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
-      handleSyscall_(handleSyscall) {
+      handleSyscall_(handleSyscall),
+      updateCoreDescInOS_(updateCoreDescInOS) {
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(config::SimInfo::getISA());
 }
@@ -36,6 +39,8 @@ void Core::tick() {
         pendingReads_ = 0;
         previousAddresses_.clear();
         status_ = CoreStatus::idle;
+        updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::idle,
+                            0);
         return;
       }
       break;
@@ -50,6 +55,7 @@ void Core::tick() {
 
   if (pc_ >= programByteLength_) {
     status_ = CoreStatus::idle;
+    std::exit(1);
     return;
   }
 
@@ -69,6 +75,18 @@ void Core::tick() {
       auto destinations = uop->getDestinationRegisters();
       for (size_t i = 0; i < results.size(); i++) {
         auto reg = destinations[i];
+
+        // if (currentTID_ == 1) {
+        //   std::cerr << "\tREG " << unsigned(reg.type) << ":" << reg.tag
+        //             << " = 0x";
+        //   for (size_t j = results[i].size(); j > 0; j--) {
+        //     if (results[i].getAsVector<uint8_t>()[j - 1] < 16) std::cerr <<
+        //     "0"; std::cerr << std::hex
+        //               << unsigned(results[i].getAsVector<uint8_t>()[j - 1])
+        //               << std::dec;
+        //   }
+        //   std::cerr << std::endl;
+        // }
         registerFileSet_.set(reg, results[i]);
       }
       instructionsExecuted_++;
@@ -194,6 +212,14 @@ void Core::tick() {
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
+  // if (currentTID_ == 1) {
+  //   std::cerr << currentTID_ << "|" << std::hex <<
+  //   uop->getInstructionAddress()
+  //             << std::dec;
+  //   // std::cerr << ":0x" << std::hex << uop->getSequenceId() << std::dec;
+  //   // std::cerr << ":0x" << std::hex << uop->getInstructionId() << std::dec;
+  //   std::cerr << std::endl;
+  // }
 
   if (uop->exceptionEncountered()) {
     handleException(uop);
@@ -203,6 +229,17 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isStoreData()) {
     auto data = uop->getData();
     if (data.size() != 0) {
+      // if (currentTID_ == 1) {
+      //   for (int i = 0; i < previousAddresses_.size(); i++) {
+      //     std::cerr << currentTID_ << "|\tAddr " << std::hex
+      //               << previousAddresses_[i].vaddr << std::dec << " <- "
+      //               << std::hex;
+      //     for (int j = data[i].size() - 1; j >= 0; j--) {
+      //       std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]);
+      //     }
+      //     std::cerr << std::dec << std::endl;
+      //   }
+      // }
       uop->setMemoryAddresses(previousAddresses_);
       mmu_->requestWrite(uop, data);
       if (uop->isStoreCond()) {
@@ -228,6 +265,16 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
     auto reg = destinations[i];
+    // if (currentTID_ == 1) {
+    //   std::cerr << currentTID_ << "|\t{" << unsigned(reg.type) << ":" <<
+    //   reg.tag
+    //             << "}"
+    //             << " <- " << std::hex;
+    //   for (int j = results[i].size() - 1; j >= 0; j--) {
+    //     std::cerr << unsigned(results[i].getAsVector<uint8_t>()[j]);
+    //   }
+    //   std::cerr << std::dec << std::endl;
+    // }
     registerFileSet_.set(reg, results[i]);
   }
 
@@ -263,6 +310,8 @@ void Core::processException() {
   if (result.fatal) {
     pc_ = programByteLength_;
     status_ = CoreStatus::halted;
+    updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
+                        0);
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
@@ -277,6 +326,8 @@ void Core::processException() {
     if (result.idleAfterSyscall) {
       status_ = CoreStatus::idle;
       contextSwitches_++;
+      updateCoreDescInOS_(getCurrentContext(true), getCoreId(),
+                          CoreStatus::idle, 0);
     }
   }
 
@@ -309,6 +360,18 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
     default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        // if (currentTID_ == 1) {
+        //   std::cerr << currentTID_ << "|\t{"
+        //             << unsigned(change.modifiedRegisters[i].type) << ":"
+        //             << change.modifiedRegisters[i].tag << "}"
+        //             << " <- " << std::hex;
+        //   for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+        //        j--) {
+        //     std::cerr << unsigned(
+        //         change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+        //   }
+        //   std::cerr << std::dec << std::endl;
+        // }
         registerFileSet_.set(change.modifiedRegisters[i],
                              change.modifiedRegisterValues[i]);
       }
@@ -320,6 +383,18 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    // if (currentTID_ == 1) {
+    //   for (int i = 0; i < change.memoryAddresses.size(); i++) {
+    //     std::cerr << currentTID_ << "|\tAddr " << std::hex
+    //               << change.memoryAddresses[i].vaddr << std::dec << " <- "
+    //               << std::hex;
+    //     for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+    //       std::cerr << unsigned(
+    //           change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+    //     }
+    //     std::cerr << std::dec << std::endl;
+    //   }
+    // }
     mmu_->requestWrite(change.memoryAddresses[i],
                        change.memoryAddressValues[i]);
   }
@@ -393,7 +468,7 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::OS::cpuContext Core::getCurrentContext() const {
+simeng::OS::cpuContext Core::getCurrentContext(bool clearTID) {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc = pc_;
@@ -411,6 +486,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           registerFileSet_.get({(uint8_t)type, (uint16_t)tag});
     }
   }
+  if (clearTID) currentTID_ = -1;
   // Do not need to explicitly set newContext.sp as it will be included in
   // regFile
   return newContext;

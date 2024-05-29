@@ -430,7 +430,9 @@ void Instruction::decode() {
 
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
-      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
+      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STXRB ||
+          metadata.id == ARM64_INS_STXRH || metadata.id == ARM64_INS_STLXR ||
+          metadata.id == ARM64_INS_STLXRB || metadata.id == ARM64_INS_STLXRH) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
@@ -499,7 +501,9 @@ void Instruction::decode() {
     // failure to do so)
 
     // Identify Load-Reserved instructions (aka Load-Link / Load-Locked)
-    if (metadata.opcode == Opcode::AArch64_LDAXRW ||
+    if (metadata.opcode == Opcode::AArch64_LDAXRB ||
+        metadata.opcode == Opcode::AArch64_LDAXRH ||
+        metadata.opcode == Opcode::AArch64_LDAXRW ||
         metadata.opcode == Opcode::AArch64_LDAXRX ||
         metadata.opcode == Opcode::AArch64_LDXRW ||
         metadata.opcode == Opcode::AArch64_LDXRX) {
@@ -507,7 +511,9 @@ void Instruction::decode() {
     }
 
     // Identify Store-Conditional instructions
-    if (metadata.opcode == Opcode::AArch64_STLXRW ||
+    if (metadata.opcode == Opcode::AArch64_STLXRB ||
+        metadata.opcode == Opcode::AArch64_STLXRH ||
+        metadata.opcode == Opcode::AArch64_STLXRW ||
         metadata.opcode == Opcode::AArch64_STLXRX ||
         metadata.opcode == Opcode::AArch64_STXRW ||
         metadata.opcode == Opcode::AArch64_STXRX) {
@@ -527,6 +533,8 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDARB ||
         metadata.opcode == Opcode::AArch64_LDARW ||
         metadata.opcode == Opcode::AArch64_LDARX ||
+        metadata.opcode == Opcode::AArch64_LDAXRB ||
+        metadata.opcode == Opcode::AArch64_LDAXRH ||
         metadata.opcode == Opcode::AArch64_LDAXRW ||
         metadata.opcode == Opcode::AArch64_LDAXRX ||
         metadata.opcode == Opcode::AArch64_LDCLRALW ||
@@ -553,6 +561,8 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_STLRB ||
         metadata.opcode == Opcode::AArch64_STLRW ||
         metadata.opcode == Opcode::AArch64_STLRX ||
+        metadata.opcode == Opcode::AArch64_STLXRB ||
+        metadata.opcode == Opcode::AArch64_STLXRH ||
         metadata.opcode == Opcode::AArch64_STLXRW ||
         metadata.opcode == Opcode::AArch64_STLXRX) {
       insnTypeMetadata |= isReleaseMask;

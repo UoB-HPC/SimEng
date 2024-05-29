@@ -161,6 +161,9 @@ class SimOS {
   /** Method which handles process specific page table translation. */
   uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t tid);
 
+  uint64_t handleVAddrTranslationWithoutPageAllocation(uint64_t vaddr,
+                                                       uint64_t tid);
+
   /** This method returns a callback function that is passed to the MMU.
    * The callback function will be used by the MMU to handle TLB misses. The
    * callback invokes SimOS for virtual address translations. */
@@ -184,6 +187,8 @@ class SimOS {
 
   /** Retrieve the simulated nanoseconds elapsed since the core started. */
   uint64_t getSystemTimer() const;
+
+  uint64_t getTicks() const;
 
   /** Receive the syscall from a core and pass onto the syscall handler. */
   void receiveSyscall(SyscallInfo syscallInfo) const;
@@ -218,6 +223,12 @@ class SimOS {
 
   /** Method used to inform SimOS of the return of a requested write request. */
   void informWriteResponse(std::unique_ptr<simeng::memory::MemPacket> packet);
+
+  bool vmHasFile(uint64_t vaddr, uint64_t tid) {
+    const auto& processItr = processes_.find(tid);
+    if (processItr == processes_.end()) return false;
+    return processItr->second->vmHasFile(vaddr);
+  }
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */

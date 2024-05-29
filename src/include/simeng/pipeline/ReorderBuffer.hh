@@ -56,7 +56,7 @@ class ReorderBuffer {
   void commitMicroOps(uint64_t insnId);
 
   /** Commit and remove up to `maxCommitSize` instructions. */
-  unsigned int commit(unsigned int maxCommitSize);
+  unsigned int commit(unsigned int maxCommitSize, uint64_t ticks = 0);
 
   /** Flush all instructions with a instruction ID greater than `afterInsnId`.
    */
@@ -168,9 +168,13 @@ class ReorderBuffer {
   uint64_t numStores_ = 0;
   uint64_t numLoads_ = 0;
 
-  std::ofstream fileOut_;
-
   uint64_t lastAddr_ = 0;
+
+  uint64_t printTid_ = 1024;
+
+  std::ofstream outputFile_;
+
+  uint64_t lastInsnId_ = -1;
 };
 
 }  // namespace pipeline

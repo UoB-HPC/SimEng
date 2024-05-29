@@ -25,6 +25,7 @@ bool ExceptionHandler::tick() {
   // the simulated Operating System's syscall handler, conclude the syscall only
   // once the result has been returned
   if (invokingSycallHandler_) {
+    cyclesElapsed_++;
     if (!syscallReturned_) return false;
     return concludeSyscall();
   }
@@ -33,13 +34,16 @@ bool ExceptionHandler::tick() {
   // otherwise, handle the registered exception.
   if (instruction_ == nullptr)
     return false;
-  else
+  else {
+    cyclesElapsed_++;
     return handleException();
+  }
 }
 
 void ExceptionHandler::registerException(
     std::shared_ptr<simeng::Instruction> instruction) {
   instruction_ = std::static_pointer_cast<aarch64::Instruction>(instruction);
+  cyclesElapsed_ = 0;
 }
 
 bool ExceptionHandler::handleException() {
@@ -56,6 +60,7 @@ bool ExceptionHandler::handleException() {
     simeng::OS::ProcessStateChange stateChange = {};
     switch (syscallId) {
       case 29:     // ioctl
+      case 43:     // statfs
       case 46:     // ftruncate
       case 48:     // faccessat
       case 56:     // openat
@@ -137,8 +142,8 @@ bool ExceptionHandler::handleException() {
       }
       default:
         printException();
-        std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
-                  << syscallId << std::endl;
+        std::cout << "\n[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+                  << "] Unrecognised syscall: " << syscallId << std::endl;
         return fatal();
     }
 
@@ -232,8 +237,8 @@ bool ExceptionHandler::concludeSyscall() {
         int op = registerFileSet.get(R1).get<int>();
         if (op != 129) {
           printException();
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
+          std::cout << "\n[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+                    << "] Unsupported arguments for syscall: "
                     << syscallResult_.syscallId << std::endl;
         }
         break;
@@ -244,56 +249,23 @@ bool ExceptionHandler::concludeSyscall() {
         // Currently, only a single CPU bitmask is supported
         if (bitmask != 1) {
           printException();
-          std::cout << "[SimEng:SyscallHandler] Unexpected CPU affinity mask "
+          std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
+                    << "] Unexpected CPU affinity mask "
                        "returned in exception handler"
                     << std::endl;
         }
         break;
       }
       case 220: {
-        std::cout << "[SimEng:SyscallHandler] Unsupported Flags for syscall: "
+        std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
+                  << "] Unsupported Flags for syscall: "
                   << syscallResult_.syscallId << std::endl;
       }
     }
     return fatal();
   }
-
-  if (core_.getCurrentTID() == 1024) {
-    std::cerr << core_.getCurrentTID() << "|" << std::hex
-              << instruction_->getInstructionAddress() << std::dec;
-    std::cerr << ":" << instruction_->getSequenceId();
-    std::cerr << std::endl;
-    for (int i = 0; i < syscallResult_.stateChange.modifiedRegisters.size();
-         i++) {
-      std::cerr << "\t{"
-                << unsigned(
-                       syscallResult_.stateChange.modifiedRegisters[i].type)
-                << ":" << syscallResult_.stateChange.modifiedRegisters[i].tag
-                << "}"
-                << " <- " << std::hex;
-      for (int j =
-               syscallResult_.stateChange.modifiedRegisterValues[i].size() - 1;
-           j >= 0; j--) {
-        std::cerr << unsigned(
-            syscallResult_.stateChange.modifiedRegisterValues[i]
-                .getAsVector<uint8_t>()[j]);
-      }
-      std::cerr << std::endl;
-    }
-
-    for (int i = 0; i < syscallResult_.stateChange.memoryAddresses.size();
-         i++) {
-      std::cerr << "\tAddr " << std::hex
-                << syscallResult_.stateChange.memoryAddresses[i].vaddr
-                << std::dec << " <- " << std::hex;
-      for (int j = syscallResult_.stateChange.memoryAddressValues[i].size() - 1;
-           j >= 0; j--) {
-        std::cerr << unsigned(syscallResult_.stateChange.memoryAddressValues[i]
-                                  .getAsVector<uint8_t>()[j]);
-      }
-      std::cerr << std::endl;
-    }
-  }
+  // std::cerr << "Exception " << syscallResult_.syscallId << " took "
+  //           << cyclesElapsed_ << " cycles" << std::endl;
 
   uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
   result_ = {false, syscallResult_.idleAfterSyscall, nextInstructionAddress,
@@ -308,7 +280,8 @@ const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 void ExceptionHandler::printException() const {
   auto exception = instruction_->getException();
   std::cout << std::endl;
-  std::cout << "[SimEng:ExceptionHandler] Encountered ";
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
       std::cout << "illegal instruction";
@@ -358,10 +331,23 @@ void ExceptionHandler::printException() const {
   }
   std::cout << " exception" << std::endl;
 
-  std::cout << "[SimEng:ExceptionHandler]   Generated by instruction:"
-            << std::endl;
-  std::cout << "[SimEng:ExceptionHandler]     0x" << std::hex
-            << std::setfill('0') << std::setw(16)
+  if (exception == InstructionException::DataAbort) {
+    std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+              << "] Errored address(es):" << std::endl;
+    const auto& addrs = instruction_->getGeneratedAddresses();
+    const auto& data = instruction_->getData();
+    for (size_t i = 0; i < data.size(); i++) {
+      if (data[i].get<int>() == 0)
+        std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+                  << "]\t0x" << std::hex << addrs[i].vaddr << std::dec
+                  << std::endl;
+    }
+  }
+
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "]   Generated by instruction:" << std::endl;
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "]     0x" << std::hex << std::setfill('0') << std::setw(16)
             << instruction_->getInstructionAddress() << ": ";
 
   auto& metadata = instruction_->getMetadata();
@@ -376,7 +362,10 @@ void ExceptionHandler::printException() const {
     std::cout << metadata.mnemonic << " " << metadata.operandStr;
   }
   std::cout << std::endl;
-  std::cout << "[SimEng:ExceptionHandler]       opcode ID: " << metadata.opcode
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "]       opcode ID: " << metadata.opcode << std::endl;
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "]       sequence ID: " << instruction_->getSequenceId()
             << std::endl;
 }
 

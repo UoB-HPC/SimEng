@@ -247,9 +247,12 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     const char* data = aggrReq->data_.getAsVector<char>();
     memcpy((void*)&payload[0], &(data[dataIndex]), currReqSize);
     uint32_t flags = 0;
-    if (aggrReq->pkt_->isUntimed()) {
-      flags = 2;
-    }
+    // Removed for now as values weren't being updated in the cache (cahce lines
+    // weren't being invalidated). Triggered once DL was in use, needs for
+    // investigating
+    // if (aggrReq->pkt_->isUntimed()) {
+    //   flags = 2;
+    // }
     StandardMem::Request* writeReq;
     // The underlying class of the StandardMem::Request pointer depends on
     // whether the access is atomic
@@ -500,10 +503,26 @@ uint64_t SimEngMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
 };
 
 void SimEngMemInterface::printLatencies() const {
+  // Get top 10
+  std::vector<uint64_t> top10 = {};
   for (auto const& x : latMap_) {
-    if (x.second > 100)
-      std::cout << "[SSTSimEng::SimEngMemInterface] " << dataMem_->getName()
-                << "Memory latency of " << x.first << " occured " << x.second
-                << " times" << std::endl;
+    if (top10.size()) {
+      if (top10.size() < 10 || x.second > top10.back()) {
+        auto it = top10.begin();
+        for (; it < top10.end(); it++) {
+          if (x.second > latMap_.at(*it)) {
+            top10.insert(it, x.first);
+            break;
+          }
+        }
+      }
+      if (top10.size() > 10) top10.pop_back();
+    } else
+      top10.push_back(x.first);
+  }
+  for (auto& x : top10) {
+    std::cout << "[SSTSimEng::SimEngMemInterface] " << dataMem_->getName()
+              << "Memory latency of " << x << " occured " << latMap_.at(x)
+              << " times" << std::endl;
   }
 }

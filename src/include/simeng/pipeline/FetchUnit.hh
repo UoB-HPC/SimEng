@@ -86,18 +86,18 @@ class FetchUnit {
   void pause() {
     paused_ = true;
     flushLoopBuffer();
-  };
+  }
 
   /** Unpause the fetch unit. */
-  void unpause() { paused_ = false; };
+  void unpause() { paused_ = false; }
 
   /** Get the current PC value. */
   uint64_t getPC() const {
-    if (mOpBuffer_.empty())
+    if (mopQueue_.empty())
       return pc_;
     else
-      return mOpBuffer_.front()[0]->getInstructionAddress();
-  };
+      return mopQueue_.front()[0]->getInstructionAddress();
+  }
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
@@ -115,11 +115,15 @@ class FetchUnit {
   /** Reference to the currently used ISA. */
   const arch::Architecture& isa_;
 
-  /** A queue to store an in-program order instruction stream. */
-  std::deque<simeng::MacroOp> mOpBuffer_;
+  uint16_t mopQueueSize_ = 32;
 
-  /** A map of instruction blocks fetched from memory. */
-  std::map<uint64_t, fetchBlock> requestedBlocks_;
+  std::deque<simeng::MacroOp> mopQueue_;
+
+  uint8_t mopCacheTagBits_ = 11;
+
+  std::vector<std::pair<uint64_t, uint64_t>> mopCache_;
+
+  std::vector<uint64_t> requestedBlocks_;
 
   /** Reference to the current branch predictor. */
   BranchPredictor& branchPredictor_;
@@ -154,6 +158,8 @@ class FetchUnit {
    * scheduled. This ensures the correct architectural state can be captured
    * during a context switch. */
   bool paused_ = false;
+
+  bool printing_ = false;
 };
 
 }  // namespace pipeline

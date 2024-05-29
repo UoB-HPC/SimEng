@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 
 #include "InstructionMetadata.hh"
@@ -517,6 +518,14 @@ Instruction::generateAddresses() {
         setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
+      case Opcode::AArch64_LDAXRB: {  // ldaxrb wd, [xn]
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 1}});
+        break;
+      }
+      case Opcode::AArch64_LDAXRH: {  // ldaxrh wd, [xn]
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 2}});
+        break;
+      }
       case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
         setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
         break;
@@ -921,6 +930,26 @@ Instruction::generateAddresses() {
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
           if (p[i / 64] & shifted_active) {
+            addresses.push_back({base + (offset + i), 1});
+          }
+        }
+
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST1B_H: {  // st1b {zt.h}, pg, [xn, xm]
+        const uint64_t* p = operands[1].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 16;
+
+        const uint64_t base = operands[2].get<uint64_t>();
+        const uint64_t offset = operands[3].get<uint64_t>();
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (p[i / 32] & shifted_active) {
             addresses.push_back({base + (offset + i), 1});
           }
         }
@@ -1406,6 +1435,14 @@ Instruction::generateAddresses() {
       }
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
         setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        break;
+      }
+      case Opcode::AArch64_STLXRB: {  // stlxrb ws, wt, [xn]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 1}});
+        break;
+      }
+      case Opcode::AArch64_STLXRH: {  // stlxrh ws, wt, [xn]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 2}});
         break;
       }
       case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]

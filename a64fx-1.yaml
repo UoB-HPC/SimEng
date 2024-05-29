@@ -40,10 +40,10 @@ Branch-Predictor:
 Memory-Hierarchy:
   Cache-Line-Width: 256
   L1-Data: # Currently not in use
-    Access-Latency: 5
+    Access-Latency: 1
     Size: 65536 # 64 KiB
   DRAM:
-    Access-Latency: 5
+    Access-Latency: 1
     Size: 3221225472 # 3 GiB
 LSQ-Memory-Interface:
   Exclusive: True
@@ -272,10 +272,10 @@ CPU-Info:
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 Interpreter:
-  Path: "/Users/jj16791/workspace/dynLibs/llvm/ld-linux-aarch64.so.1"
+  Path: "/Users/jj16791/workspace/isambardLibs/ld-linux-aarch64.so.1"
   Debug: False
   LD_LIBRARY_PATH:
-    - "/Users/jj16791/workspace/dynLibs/llvm"
+    - "/Users/jj16791/workspace/isambardLibs"
   Extra-Env-Vars:
 Environment-Variables:
-  - "OMP_NUM_THREADS=1"
+  - "OMP_NUM_THREADS=128"

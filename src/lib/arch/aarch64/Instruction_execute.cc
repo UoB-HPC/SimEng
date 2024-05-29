@@ -3,7 +3,9 @@
 #include <iostream>
 #endif
 
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 #include "simeng/arch/aarch64/helpers/arithmetic.hh"
 #include "simeng/arch/aarch64/helpers/auxiliaryFunctions.hh"
@@ -188,6 +190,14 @@ void Instruction::execute() {
         // convert VL from LEN (number of 128-bits) to bytes
         const uint64_t VL = VL_bits / 8;
         results[0] = x + (VL * y);
+        break;
+      }
+      case Opcode::AArch64_ADDVv4i16v: {  // addv hd, vn.4h
+        results[0] = neonHelp::vecSumElems_2ops<uint16_t, 4>(operands);
+        break;
+      }
+      case Opcode::AArch64_ADDVv4i32v: {  // addv sd, vn.4s
+        results[0] = neonHelp::vecSumElems_2ops<uint32_t, 4>(operands);
         break;
       }
       case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
@@ -674,6 +684,12 @@ void Instruction::execute() {
         results[0] = neonHelp::vecCompare<uint8_t, 16>(
             operands, true,
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
+        break;
+      }
+      case Opcode::AArch64_CMEQv1i64rz: {  // cmeq d1, d2, #0
+        results[0] = neonHelp::vecCompare<uint64_t, 1>(
+            operands, true,
+            [](int64_t x, int64_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMEQv4i32: {  // cmeq vd.4s, vn.4s, vm.4s
@@ -1739,6 +1755,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd, vd.2d
         results[0] = neonHelp::vecMaxnmp_2ops<double, 2>(operands);
+        break;
+      }
+      case Opcode::AArch64_FMAXNM_ZPmZ_S: {
+        results[0] = sveHelp::sveFmaxnm_vec<float>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FMAXNMSrr: {  // fmaxnm sd, sn, sm
@@ -3107,6 +3127,16 @@ void Instruction::execute() {
         results[0] = memoryData_[0];
         break;
       }
+      case Opcode::AArch64_LDAXRB: {  // ldaxrb wd, [xn]
+        // LOAD
+        results[0] = memoryData_[0].zeroExtend(1, 8);
+        break;
+      }
+      case Opcode::AArch64_LDAXRH: {  // ldaxrh wd, [xn]
+        // LOAD
+        results[0] = memoryData_[0].zeroExtend(2, 8);
+        break;
+      }
       case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
         // LOAD
         results[0] = memoryData_[0].zeroExtend(4, 8);
@@ -4355,6 +4385,22 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_ST1B_H: {  // st1b {zt.h}, pg, [xn, xm]
+        // STORE
+        const uint16_t* d = operands[0].getAsVector<uint16_t>();
+        const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 16;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (p[i / 32] & shifted_active) {
+            memoryData_[index] = static_cast<uint8_t>(d[i]);
+            index++;
+          }
+        }
+        break;
+      }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
@@ -4612,6 +4658,8 @@ void Instruction::execute() {
         memoryData_[0] = operands[0];
         break;
       }
+      case Opcode::AArch64_STLXRB:    // stlxb ws, wt, [xn]
+      case Opcode::AArch64_STLXRH:    // stlxh ws, wt, [xn]
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE

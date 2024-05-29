@@ -66,7 +66,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   return;
 }
 
-unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
+unsigned int ReorderBuffer::commit(unsigned int maxCommitSize, uint64_t ticks) {
   shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
@@ -76,9 +76,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     auto& uop = buffer_.front();
 
     if (uop->exceptionEncountered()) {
-      // std::cerr << "Raise exception on " << std::hex
-      //           << uop->getInstructionAddress() << std::dec << ":"
-      //           << uop->getSequenceId() << std::endl;
+      // outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      // outputFile_ << std::endl;
+      // lastInsnId_ = uop->getInstructionId();
+      // std::cerr << "&:" << uop->getInstructionAddress() << std::endl;
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
@@ -99,8 +100,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    lastAddr_ = uop->getInstructionAddress();
-
     // If the uop is a store address operation, begin the processing of its
     // memory accesses
     if (uop->isStoreAddress() && !startedStore_) {
@@ -118,54 +117,59 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (uop->isLastMicroOp()) {
       instructionsCommitted_++;
     }
-    // if (tid_ == 3) {
-    //   std::cerr << tid_ << "|" << std::hex << uop->getInstructionAddress()
-    //             << std::dec << ":" << std::hex << uop->getSequenceId()
-    //             << std::dec << std::endl;
-    // }
+    lastAddr_ = uop->getInstructionAddress();
 
     const auto& destinations = uop->getDestinationRegisters();
+    const auto& results = uop->getResults();
+    // if (lastInsnId_ != uop->getInstructionId()) {
+    //   outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+    //   outputFile_ << std::endl;
+    // }
 
-    // if (tid_ == 24) {
-    if (false) {
-      // if (fileOut_.is_open()) {
-      const auto& results = uop->getResults();
-      std::cerr << tid_ << "|" << std::hex << uop->getInstructionAddress()
-                << std::dec;
-      std::cerr << ":0x" << std::hex << uop->getSequenceId() << std::dec;
-      std::cerr << ":0x" << std::hex << uop->getInstructionId() << std::dec;
-      std::cerr << std::endl;
-      for (int i = 0; i < destinations.size(); i++) {
-        std::cerr << tid_ << "|\t{" << unsigned(destinations[i].type) << ":"
-                  << rat_.reverseMapping(destinations[i]) << "}"
-                  << " <- " << std::hex;
-        for (int j = results[i].size() - 1; j >= 0; j--) {
-          std::cerr << unsigned(results[i].getAsVector<uint8_t>()[j]);
-        }
-        std::cerr << std::dec << std::endl;
-      }
+    // if (uop->isLoad()) {
+    //   const auto& addrs = uop->getGeneratedAddresses();
+    //   for (int i = 0; i < addrs.size(); i++) {
+    //     outputFile_ << "\tAddr " << std::hex << addrs[i].vaddr << std::dec
+    //                 << std::endl;
+    //   }
+    // }
+    // if (uop->isStoreAddress()) {
+    //   const auto& addrs = uop->getGeneratedAddresses();
 
-      if (uop->isLoad()) {
-        const auto& addrs = uop->getGeneratedAddresses();
-        for (int i = 0; i < addrs.size(); i++) {
-          std::cerr << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
-                    << std::dec << std::endl;
-        }
-      }
-      if (uop->isStoreAddress()) {
-        const auto& addrs = uop->getGeneratedAddresses();
-        const auto& data = uop->getData();
+    //   for (int i = 0; i < addrs.size(); i++) {
+    //     outputFile_ << "\tAddr " << std::hex << addrs[i].vaddr << std::dec
+    //                 << " <- " << std::hex;
+    //     if (uop->isStoreData()) {
+    //       const auto& data = uop->getData();
+    //       for (int j = data[i].size() - 1; j >= 0; j--) {
+    //         if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+    //         outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+    //       }
+    //       outputFile_ << std::dec << std::endl;
+    //     }
+    //   }
+    // } else if (uop->isStoreData()) {
+    //   const auto& data = uop->getData();
+    //   for (int i = 0; i < data.size(); i++) {
+    //     for (int j = data[i].size() - 1; j >= 0; j--) {
+    //       if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+    //       outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+    //     }
+    //   }
+    //   outputFile_ << std::dec << std::endl;
+    // }
+    // for (int i = 0; i < destinations.size(); i++) {
+    //   outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
+    //               << rat_.reverseMapping(destinations[i]).tag << "}"
+    //               << " <- " << std::hex;
+    //   for (int j = results[i].size() - 1; j >= 0; j--) {
+    //     if (results[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+    //     outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+    //   }
+    //   outputFile_ << std::dec << std::endl;
+    // }
 
-        for (int i = 0; i < addrs.size(); i++) {
-          std::cerr << tid_ << "|\tAddr " << std::hex << addrs[i].vaddr
-                    << std::dec << " <- " << std::hex;
-          for (int j = data[i].size() - 1; j >= 0; j--) {
-            std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]);
-          }
-          std::cerr << std::dec << std::endl;
-        }
-      }
-    }
+    // lastInsnId_ = uop->getInstructionId();
 
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
@@ -300,11 +304,11 @@ uint64_t ReorderBuffer::getViolatingLoadsCount() const {
 }
 
 void ReorderBuffer::setTid(uint64_t tid) {
-  fileOut_.close();
   tid_ = tid;
-  std::ostringstream str;
-  str << "/projects/bristol/br-jjones/simeng" << tid_ << ".out";
-  fileOut_.open(str.str(), std::ofstream::out | std::ofstream::app);
+  // outputFile_.close();
+  // std::ostringstream str;
+  // str << "/Users/jj16791/workspace/simeng" << tid_ << "Retire.out";
+  // outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
 }
 
 }  // namespace pipeline

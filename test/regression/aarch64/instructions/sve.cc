@@ -6094,6 +6094,7 @@ TEST_P(InstSve, st1b) {
                               0x32, 0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB};
   fillHeap<uint8_t>(heap8, src, VL / 8);
 
+  // 8-bit arrangement
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -6125,6 +6126,15 @@ TEST_P(InstSve, st1b) {
   for (int i = 0; i < (VL / 16); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>((VL / 16) + i), src[i % 16]);
   }
+
+  // 16-bit arrangement
+  RUN_AARCH64(R"(
+    ptrue p0.h, all
+    # mov x2, #5
+    # mov x1, #6
+    # st1b {z2.h}, p0, [x2, x1]
+    # st1b {z2.h}, p0, [x0, x1]
+  )");
 }
 
 TEST_P(InstSve, st1b_scatter) {

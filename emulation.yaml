@@ -3,12 +3,12 @@
 
 Core:
   ISA: AArch64
-  Simulation-Mode: outoforder
+  Simulation-Mode: emulation
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
-  Micro-Operations: True
+  Micro-Operations: False
   Vector-Length: 512
 Fetch:
   Fetch-Block-Size: 32
@@ -273,9 +273,10 @@ CPU-Info:
   Package-Count: 1
 Interpreter:
   Path: "/Users/jj16791/workspace/dynLibs/llvm/ld-linux-aarch64.so.1"
-  Debug: False
+  Debug: True
   LD_LIBRARY_PATH:
-    - "/Users/jj16791/workspace/dynLibs/llvm"
+    # - "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/"
+    - "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/opt/FJSVxtclanga/tcsds-1.2.37/lib64/"
   Extra-Env-Vars:
 Environment-Variables:
   - "OMP_NUM_THREADS=1"

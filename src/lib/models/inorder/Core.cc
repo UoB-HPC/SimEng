@@ -369,6 +369,7 @@ void Core::processException() {
   if (result.fatal) {
     status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
+    std::exit(1);
   } else {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
@@ -495,7 +496,7 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::OS::cpuContext Core::getCurrentContext() const {
+simeng::OS::cpuContext Core::getCurrentContext(bool clearTID) {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc =
