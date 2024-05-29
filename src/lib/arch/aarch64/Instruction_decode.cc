@@ -692,6 +692,7 @@ void Instruction::decode() {
   }
 
   // Calculate the instruction's group based on identifiers
+  bool smEnabled = architecture_.isStreamingModeEnabled();
   // Set base group
   uint16_t group = InstructionGroups::INT;
   if (isInstruction(InsnType::isScalarData))
@@ -699,7 +700,8 @@ void Instruction::decode() {
   else if (isInstruction(InsnType::isVectorData))
     group = InstructionGroups::VECTOR;
   else if (isInstruction(InsnType::isSVEData))
-    group = InstructionGroups::SVE;
+    group =
+        smEnabled ? InstructionGroups::STREAMING_SVE : InstructionGroups::SVE;
   else if (isInstruction(InsnType::isSMEData))
     group = InstructionGroups::SME;
   // Identify subgroup type
@@ -712,7 +714,8 @@ void Instruction::decode() {
   else if (isInstruction(InsnType::isBranch))
     group = InstructionGroups::BRANCH;
   else if (isInstruction(InsnType::isPredicate))
-    group = InstructionGroups::PREDICATE;
+    group = smEnabled ? InstructionGroups::STREAMING_PREDICATE
+                      : InstructionGroups::PREDICATE;
   else if (isInstruction(InsnType::isDivideOrSqrt))
     group += 9;
   else if (isInstruction(InsnType::isMultiply))

@@ -370,6 +370,11 @@ class Instruction : public simeng::Instruction {
    * processing this instruction. */
   InstructionException getException() const;
 
+  /** Checks whether the current SVE Streaming Mode status is different to when
+   * this instruction was first decoded, and updates the instruction group
+   * accordingly if required. */
+  void checkStreamingGroup();
+
  private:
   /** Process the instruction's metadata to determine source/destination
    * registers. */
