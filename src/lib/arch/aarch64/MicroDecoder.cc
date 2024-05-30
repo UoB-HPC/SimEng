@@ -610,6 +610,29 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         }
       }
     }
+    // TODO: When SVE instructions have micro-op support, include the
+    // following code to ensure instruction groups are correct in SVE
+    // Streaming Mode
+    //
+    /* else {
+      std::vector<Instruction>& cachedUops = microDecodeCache_.at(word);
+      for (size_t uop = 0; uop < iter->second.size(); uop++) {
+        // Check if SVE or Predicate instructions need their group updating due
+        // to SVE Streaming Mode activeness being different from when the
+        // instruction was first decoded.
+        if (cachedUops[uop].checkStreamingGroup()) {
+          // If the instruction's group has changed then update its execution
+          // info. The newly set group is most likely to be the most accurate,
+          // as an incorrect group allocation is only achieved when an
+          // exception/flush is triggered by changing the SVE Streaming Mode
+          // state.
+          cachedUops[uop].setExecutionInfo(
+              architecture.getExecutionInfo(cachedUops[uop]));
+        }
+      }
+      // Need to re-set iterator after updating the microDecodeCache_
+      structure iter = microDecodeCache_.find(word);
+    } */
     // Get the number of micro-operations split into and transfer into passed
     // output vector
     num_ops = iter->second.size();

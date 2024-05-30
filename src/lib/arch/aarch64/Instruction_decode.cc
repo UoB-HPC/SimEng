@@ -733,7 +733,6 @@ void Instruction::decode() {
     group += 2;
   else
     group += 3;  // Default is {Data type}_SIMPLE_ARTH
-
   instructionGroup_ = group;
 }
 

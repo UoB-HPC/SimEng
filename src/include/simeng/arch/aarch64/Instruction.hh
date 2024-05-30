@@ -372,8 +372,9 @@ class Instruction : public simeng::Instruction {
 
   /** Checks whether the current SVE Streaming Mode status is different to when
    * this instruction was first decoded, and updates the instruction group
-   * accordingly if required. */
-  void checkStreamingGroup();
+   * accordingly if required.
+   * Returns TRUE if the group was updated, FALSE otherwise. */
+  bool checkStreamingGroup();
 
  private:
   /** Process the instruction's metadata to determine source/destination

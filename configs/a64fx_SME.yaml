@@ -62,7 +62,12 @@ Ports:
     Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
-    - STORE_DATA
+    - STORE_DATA_INT
+    - STORE_DATA_SCALAR
+    - STORE_DATA_VECTOR
+    - STORE_DATA_SVE
+    - STORE_DATA_STREAMING_SVE
+    - STORE_DATA_SME
   3:
     Portname: FLB
     Instruction-Group-Support:
@@ -77,17 +82,37 @@ Ports:
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support: 
-    - LOAD
-    - STORE_ADDRESS
+    Instruction-Group-Support: 
+    - LOAD_INT
+    - LOAD_SCALAR
+    - LOAD_VECTOR
+    - LOAD_SVE
+    - LOAD_STREAMING_SVE
+    - LOAD_SME
+    - STORE_ADDRESS_INT
+    - STORE_ADDRESS_SCALAR
+    - STORE_ADDRESS_VECTOR
+    - STORE_ADDRESS_SVE
+    - STORE_ADDRESS_STREAMING_SVE
+    - STORE_ADDRESS_SME
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
-    Instruction-Support:
-    - LOAD
-    - STORE_ADDRESS
+    Instruction-Group-Support:
+    - LOAD_INT
+    - LOAD_SCALAR
+    - LOAD_VECTOR
+    - LOAD_SVE
+    - LOAD_STREAMING_SVE
+    - LOAD_SME
+    - STORE_ADDRESS_INT
+    - STORE_ADDRESS_SCALAR
+    - STORE_ADDRESS_VECTOR
+    - STORE_ADDRESS_SVE
+    - STORE_ADDRESS_STREAMING_SVE
+    - STORE_ADDRESS_SME
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
@@ -95,10 +120,24 @@ Ports:
     Portname: BR
     Instruction-Group-Support:
     - BRANCH
+# Define example SME / SVE Streaming Mode units
   8:
     Portname: SME
     Instruction-Group-Support:
     - SME
+  9:
+    Portname: PR_S
+    Instruction-Group-Support:
+    - STREAMING_PREDICATE
+  10:
+    Portname: FLA_S
+    Instruction-Group-Support:
+    - STREAMING_SVE
+  11:
+    Portname: FLB_S
+    Instruction-Group-Support:
+    - STREAMING_SVE_SIMPLE
+    - STREAMING_SVE_MUL
 Reservation-Stations:
   0:
     Size: 20
@@ -133,6 +172,13 @@ Reservation-Stations:
     Dispatch-Rate: 1
     Ports:
     - SME
+  6:
+    Size: 40
+    Dispatch-Rate: 3
+    Ports:
+    - FLA_S
+    - FLB_S
+    - PR_S
 Execution-Units:
   0:
     Pipelined: True
@@ -188,6 +234,24 @@ Execution-Units:
     - INT_DIV_OR_SQRT
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT
+  9:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  10:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  11:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
 Latencies:
   0:
     Instruction-Groups: 
@@ -216,9 +280,11 @@ Latencies:
     - SCALAR_SIMPLE
     - VECTOR_SIMPLE_LOGICAL
     - SVE_SIMPLE_LOGICAL
+    - STREAMING_SVE_SIMPLE_LOGICAL
     - SME_SIMPLE_LOGICAL
     - VECTOR_SIMPLE_CMP
     - SVE_SIMPLE_CMP
+    - STREAMING_SVE_SIMPLE_CMP
     - SME_SIMPLE_CMP
     Execution-Latency: 4
     Execution-Throughput: 1
@@ -232,21 +298,25 @@ Latencies:
     - SCALAR_SIMPLE_CVT
     - VECTOR_SIMPLE
     - SVE_SIMPLE
+    - STREAMING_SVE_SIMPLE
     - SME_SIMPLE
     - FP_MUL
     - SVE_MUL
+    - STREAMING_SVE_MUL
     - SME_MUL
     Execution-Latency: 9
     Execution-Throughput: 1
   7:
     Instruction-Groups: 
     - SVE_DIV_OR_SQRT
+    - STREAMING_SVE_DIV_OR_SQRT
     - SME_DIV_OR_SQRT
     Execution-Latency: 98
     Execution-Throughput: 98
   8:
     Instruction-Groups: 
     - PREDICATE
+    - STREAMING_PREDICATE
     Execution-Latency: 3
     Execution-Throughput: 1
   9:
@@ -260,8 +330,10 @@ Latencies:
   10:
     Instruction-Groups: 
     - LOAD_SVE
+    - LOAD_STREAMING_SVE
     - LOAD_SME
     - STORE_ADDRESS_SVE
+    - STORE_ADDRESS_STREAMING_SVE
     - STORE_ADDRESS_SME
     Execution-Latency: 6
     Execution-Throughput: 1

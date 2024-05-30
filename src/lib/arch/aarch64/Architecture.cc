@@ -189,10 +189,19 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
     // Cache the instruction
     iter = decodeCache_.insert({insn, newInsn}).first;
   } else {
+    Instruction& cachedInsn = decodeCache_.at(insn);
     // Check if SVE or Predicate instructions need their group updating due to
     // SVE Streaming Mode activeness being different from when the instruction
     // was first decoded.
-    iter->second.checkStreamingGroup();
+    if (cachedInsn.checkStreamingGroup()) {
+      // If the instruction's group has changed then update its execution info.
+      // The newly set group is most likely to be the most accurate, as an
+      // incorrect group allocation is only achieved when an exception/flush is
+      // triggered by changing the SVE Streaming Mode state.
+      cachedInsn.setExecutionInfo(getExecutionInfo(cachedInsn));
+    }
+    // Need to re-set iterator after updating the decodeCache_ structure
+    iter = decodeCache_.find(insn);
   }
 
   // Split instruction into 1 or more defined micro-ops
