@@ -167,32 +167,28 @@ InstructionException Instruction::getException() const { return exception_; }
 bool Instruction::checkStreamingGroup() {
   // Only instruction groups that depend on SVE Streaming Mode are SVE and
   // PREDICATE
-  if (architecture_.isStreamingModeEnabled()) {
-    if (instructionGroup_ == InstructionGroups::PREDICATE) {
-      instructionGroup_ = InstructionGroups::STREAMING_PREDICATE;
-      return true;
-    } else if (instructionGroup_ >= InstructionGroups::SVE &&
-               instructionGroup_ <= InstructionGroups::STORE_SVE) {
-      // As STREAMING_SVE and SVE groups have the exact same sub-groups and
-      // order, we can minus the value of SVE and add the value of STREAMING_SVE
-      instructionGroup_ = instructionGroup_ - InstructionGroups::SVE +
-                          InstructionGroups::STREAMING_SVE;
-      return true;
-    }
-  } else {
-    if (instructionGroup_ == InstructionGroups::STREAMING_PREDICATE) {
-      instructionGroup_ = InstructionGroups::PREDICATE;
-      return true;
-    } else if (instructionGroup_ >= InstructionGroups::STREAMING_SVE &&
-               instructionGroup_ <= InstructionGroups::STORE_STREAMING_SVE) {
-      // As STREAMING_SVE and SVE groups have the exact same sub-groups and
-      // order, we can minus the value of STREAMING_SVE and add the value of SVE
-      instructionGroup_ = instructionGroup_ - InstructionGroups::STREAMING_SVE +
-                          InstructionGroups::SVE;
-      return true;
-    }
+  const uint16_t currentGroup = instructionGroup_;
+  const bool smEnabled = architecture_.isStreamingModeEnabled();
+  if (isInstruction(InsnType::isPredicate)) {
+    // Decide on predicate group based on whether SVE Streaming Mode is enabled.
+    instructionGroup_ = smEnabled ? InstructionGroups::STREAMING_PREDICATE
+                                  : InstructionGroups::PREDICATE;
+  } else if (isInstruction(InsnType::isSVEData)) {
+    assert((instructionGroup_ >= InstructionGroups::SVE &&
+            instructionGroup_ <= InstructionGroups::STORE_SVE) ||
+           (instructionGroup_ >= InstructionGroups::STREAMING_SVE &&
+            instructionGroup_ <= InstructionGroups::STORE_STREAMING_SVE) &&
+               "Invalid instruction group for SVE instruction.");
+    // Get instruction group offset.
+    instructionGroup_ -= (instructionGroup_ >= InstructionGroups::STREAMING_SVE)
+                             ? InstructionGroups::STREAMING_SVE
+                             : InstructionGroups::SVE;
+    // Add instruction group base depending on whether SVE Streaming Mode is
+    // enabled.
+    instructionGroup_ +=
+        smEnabled ? InstructionGroups::STREAMING_SVE : InstructionGroups::SVE;
   }
-  return false;
+  return (currentGroup != instructionGroup_);
 }
 
 }  // namespace aarch64
