@@ -2603,6 +2603,22 @@ void Instruction::execute() {
         results_[0] = sveLastBScalar<uint8_t>(sourceValues_, VL_bits);
         break;
       }
+      case Opcode::AArch64_CLASTB_VPZ_D: {  // clastb dd, pg, dn, zn.d
+        results_[0] = sveCLastBScalar<uint64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_S: {  // clastb sd, pg, sn, zn.s
+        results_[0] = sveCLastBScalar<uint32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_H: {  // clastb hd, pg, hn, zn.h
+        results_[0] = sveCLastBScalar<uint16_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_B: {  // clastb bd, pg, bn, zn.b
+        results_[0] = sveCLastBScalar<uint8_t>(sourceValues_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, LOAD

@@ -969,6 +969,37 @@ RegisterValue sveLastBScalar(srcValContainer& sourceValues,
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `clastb vd, pg, vd,
+ * zn`. T represents the vector register type (e.g. zd.d would be uint64_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T>
+RegisterValue sveCLastBScalar(srcValContainer& sourceValues,
+                              const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* m = sourceValues[2].getAsVector<uint64_t>();
+  const T* n = sourceValues[3].getAsVector<T>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out;
+
+  // Get last active element
+  int lastElem = -1;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
+    }
+  }
+
+  if (lastElem < 0) {
+    out = static_cast<uint64_t>(static_cast<T>(m[0]));
+  } else {
+    out = static_cast<uint64_t>(static_cast<T>(n[lastElem]));
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `<AND, EOR, ...>
  * pd, pg/z, pn, pm`.
  * T represents the type of sourceValues (e.g. for pn.d, T = uint64_t).

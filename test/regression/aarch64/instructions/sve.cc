@@ -6297,6 +6297,36 @@ TEST_P(InstSve, smulh) {
              fillNeonCombined<int32_t>({-12}, {-1076902265}, VL / 8));
 }
 
+TEST_P(InstSve, clastb) {
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z0.d, x0
+        dup z1.d, x1
+        
+        pfalse p0.b
+        clastb d0, p0, d0, z1.d
+        mov z4.d, z0.d
+
+        ptrue p0.d
+        clastb d0, p0, d0, z1.d
+        mov z5.d, z0.d
+    )");
+  // EXPECT_EQ(getGeneralRegister<int64_t>(0), (0x0123456789ABCDEF));
+  CHECK_NEON(4, uint64_t,
+             fillNeon<uint64_t>({0x0123456789ABCDEF}, 8));  // False
+
+  CHECK_NEON(5, uint64_t, fillNeon<uint64_t>({0x1FEDCBA987654321}, 8));  //
+  // True
+}
+
 TEST_P(InstSve, st1b) {
   initialHeapData_.resize(VL / 4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
