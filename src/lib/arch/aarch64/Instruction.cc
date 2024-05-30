@@ -164,30 +164,35 @@ const Architecture& Instruction::getArchitecture() const {
 
 InstructionException Instruction::getException() const { return exception_; }
 
-void Instruction::checkStreamingGroup() {
+bool Instruction::checkStreamingGroup() {
   // Only instruction groups that depend on SVE Streaming Mode are SVE and
   // PREDICATE
   if (architecture_.isStreamingModeEnabled()) {
     if (instructionGroup_ == InstructionGroups::PREDICATE) {
       instructionGroup_ = InstructionGroups::STREAMING_PREDICATE;
+      return true;
     } else if (instructionGroup_ >= InstructionGroups::SVE &&
                instructionGroup_ <= InstructionGroups::STORE_SVE) {
       // As STREAMING_SVE and SVE groups have the exact same sub-groups and
       // order, we can minus the value of SVE and add the value of STREAMING_SVE
       instructionGroup_ = instructionGroup_ - InstructionGroups::SVE +
                           InstructionGroups::STREAMING_SVE;
+      return true;
     }
   } else {
     if (instructionGroup_ == InstructionGroups::STREAMING_PREDICATE) {
       instructionGroup_ = InstructionGroups::PREDICATE;
+      return true;
     } else if (instructionGroup_ >= InstructionGroups::STREAMING_SVE &&
                instructionGroup_ <= InstructionGroups::STORE_STREAMING_SVE) {
       // As STREAMING_SVE and SVE groups have the exact same sub-groups and
       // order, we can minus the value of STREAMING_SVE and add the value of SVE
       instructionGroup_ = instructionGroup_ - InstructionGroups::STREAMING_SVE +
                           InstructionGroups::SVE;
+      return true;
     }
   }
+  return false;
 }
 
 }  // namespace aarch64
