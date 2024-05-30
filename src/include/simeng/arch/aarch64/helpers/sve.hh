@@ -1379,6 +1379,51 @@ std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
   return out;
 }
 
+/** Helper function for SVE instructions with the format `pnext pdn, pv, pdn`.
+ * Returns an array of 4 uint64_t elements. */
+template <typename T>
+std::array<uint64_t, 4> svePnext(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
+  std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
+
+  // Get pattern
+  const uint16_t count =
+      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+  // Exit early if count == 0
+  if (count == 0) return out;
+
+  // Create mask so we can zero the pattern
+  uint64_t mask = ~((1ULL << (64 - count * 8)) - 1);
+  out[0] &= mask;
+
+  // Get last active element of dn.pattern
+  int lastElem = -1;
+  for (int i = partition_num - 1; i >= 0; i--) {
+    if (i < count) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (dn[i / (64 / sizeof(T))] & shifted_active) {
+        lastElem = i;
+        break;
+      }
+    }
+  }
+  // Get next active element of p, starting from last of dn.pattern
+  for (int i = lastElem + 1; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (p[i / (64 / sizeof(T))] & shifted_active) {
+      out[i / (64 / sizeof(T))] |= shifted_active;
+      break;
+    }
+  }
+
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `ptrue pd{,
  * pattern}.
  * T represents the type of sourceValues (e.g. for pd.d, T = uint64_t).
