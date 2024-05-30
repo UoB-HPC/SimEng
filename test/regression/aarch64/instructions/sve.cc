@@ -6298,6 +6298,7 @@ TEST_P(InstSve, smulh) {
 }
 
 TEST_P(InstSve, clastb) {
+  // 64 bit
   RUN_AARCH64(R"(
         movz    x0, #0xCDEF
         movk    x0, #0x89AB, LSL #16
@@ -6308,23 +6309,94 @@ TEST_P(InstSve, clastb) {
         movk x1, #0xCBA9, LSL #32
         movk x1, #0x1FED, LSL #48
 
-        dup z0.d, x0
-        dup z1.d, x1
+        dup z2.d, x0
+        dup z3.d, x1
         
         pfalse p0.b
-        clastb d0, p0, d0, z1.d
-        mov z4.d, z0.d
+        clastb d2, p0, d2, z3.d
+        mov z0.d, z2.d
 
         ptrue p0.d
-        clastb d0, p0, d0, z1.d
-        mov z5.d, z0.d
+        clastb d2, p0, d2, z3.d
+        mov z1.d, z2.d
     )");
-  // EXPECT_EQ(getGeneralRegister<int64_t>(0), (0x0123456789ABCDEF));
-  CHECK_NEON(4, uint64_t,
-             fillNeon<uint64_t>({0x0123456789ABCDEF}, 8));  // False
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x0123456789ABCDEF}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FEDCBA987654321}, 8));
 
-  CHECK_NEON(5, uint64_t, fillNeon<uint64_t>({0x1FEDCBA987654321}, 8));  //
-  // True
+  // 32 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        clastb s2, p0, s2, z3.s
+        mov z0.d, z2.d
+
+        ptrue p0.s
+        clastb s2, p0, s2, z3.s
+        mov z1.d, z2.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x89ABCDEF}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FEDCBA9}, 8));
+
+  // 16 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        clastb h2, p0, h2, z3.h
+        mov z0.d, z2.d
+
+        ptrue p0.h
+        clastb h2, p0, h2, z3.h
+        mov z1.d, z2.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0xCDEF}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FED}, 8));
+
+  // 8 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        clastb b2, p0, b2, z3.b
+        mov z0.d, z2.d
+
+        ptrue p0.b
+        clastb b2, p0, b2, z3.b
+        mov z1.d, z2.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0xEF}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
 }
 
 TEST_P(InstSve, st1b) {
