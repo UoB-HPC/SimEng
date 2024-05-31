@@ -218,18 +218,13 @@ void CoreInstance::createCore() {
 
   std::string predictorType =
       config_["Branch-Predictor"]["Type"].as<std::string>();
-  switch(predictorType) {
-    case "Generic":
-      predictor_ = std::make_unique<GenericPredictor>();
-      break;
-    case "Perceptron":
-      predictor_ = std::make_unique<PerceptronPredictor>();
-      break;
-    case "Tage":
-      predictor_ = std::make_unique<TagePredictor>();
-      break;
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<PerceptronPredictor>();
+  } else if (predictorType == "Tage") {
+    predictor_ = std::make_unique<TagePredictor>();
   }
-
 
   // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
