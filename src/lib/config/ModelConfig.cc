@@ -504,7 +504,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
   expectations_["Branch-Predictor"]["Type"].setValueSet(
-      std::vector<std::string>{"Generic", "Perceptron", "TAGE"});
+      std::vector<std::string>{"Generic", "Perceptron", "Tage"});
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
