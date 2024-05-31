@@ -117,6 +117,51 @@ TEST_F(AArch64ArchitectureTest, predecode) {
   EXPECT_EQ(result, 4);
   EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
   EXPECT_EQ(output[0]->exceptionEncountered(), false);
+  EXPECT_EQ(output[0]->getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+
+  // Test that a cached (when SVE Streaming Mode was disabled) SVE instruction
+  // has its group changed to a STREAMING group when SVE Streaming Mode is
+  // enabled
+  output = MacroOp();
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  arch->setSVCRval(3);  // SVCR.SMZA = 1
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  result = arch->predecode(validInstrBytes.data(), validInstrBytes.size(), 0x4,
+                           output);
+  EXPECT_EQ(result, 4);
+  EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
+  EXPECT_EQ(output[0]->exceptionEncountered(), false);
+  EXPECT_EQ(output[0]->getGroup(),
+            InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
+
+  // Test that the same cached SVE instruction has its group reverted to
+  // non-STREAMING when SVE Streaming Mode is disabled again
+  output = MacroOp();
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  arch->setSVCRval(2);  // SVCR.ZA = 1, SVCR.SM = 0
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  result = arch->predecode(validInstrBytes.data(), validInstrBytes.size(), 0x4,
+                           output);
+  EXPECT_EQ(result, 4);
+  EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
+  EXPECT_EQ(output[0]->exceptionEncountered(), false);
+  EXPECT_EQ(output[0]->getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+}
+
+TEST_F(AArch64ArchitectureTest, predecode_streamingMode) {
+  // Test that an un-cached SVE instruction is put into a STREAMING group when
+  // SVE Streaming Mode is enabled
+  MacroOp output;
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  arch->setSVCRval(3);
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  uint8_t result = arch->predecode(validInstrBytes.data(),
+                                   validInstrBytes.size(), 0x4, output);
+  EXPECT_EQ(result, 4);
+  EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
+  EXPECT_EQ(output[0]->exceptionEncountered(), false);
+  EXPECT_EQ(output[0]->getGroup(),
+            InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
 }
 
 TEST_F(AArch64ArchitectureTest, getSystemRegisterTag) {
@@ -237,6 +282,23 @@ TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
   EXPECT_EQ(arch->getSVCRval(), 0);
   arch->setSVCRval(3);
   EXPECT_EQ(arch->getSVCRval(), 3);
+}
+
+TEST_F(AArch64ArchitectureTest, isSM_ZA_enabled) {
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZA_RegisterEnabled());
+  arch->setSVCRval(1);
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZA_RegisterEnabled());
+  arch->setSVCRval(2);
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_TRUE(arch->isZA_RegisterEnabled());
+  arch->setSVCRval(3);
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  EXPECT_TRUE(arch->isZA_RegisterEnabled());
+  arch->setSVCRval(0);
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZA_RegisterEnabled());
 }
 
 }  // namespace aarch64
