@@ -58,6 +58,18 @@ class AArch64InstructionTest : public testing::Test {
                    &rawInsn_cbz);
     cbzMetadata = std::make_unique<InstructionMetadata>(rawInsn_cbz);
 
+    // psel
+    cs_insn rawInsn_psel;
+    cs_detail rawDetail_psel;
+    rawInsn_psel.detail = &rawDetail_psel;
+    size_t size_psel = 4;
+    uint64_t address_psel = 0;
+    const uint8_t* encoding_psel =
+        reinterpret_cast<const uint8_t*>(pselInstrBytes.data());
+    cs_disasm_iter(capstoneHandle, &encoding_psel, &size_psel, &address_psel,
+                   &rawInsn_psel);
+    pselMetadata = std::make_unique<InstructionMetadata>(rawInsn_psel);
+
     const uint8_t* badEncoding =
         reinterpret_cast<const uint8_t*>(invalidInstrBytes.data());
     invalidMetadata = std::make_unique<InstructionMetadata>(badEncoding);
@@ -74,6 +86,8 @@ class AArch64InstructionTest : public testing::Test {
   std::array<uint8_t, 4> ldpInstrBytes = {0x61, 0x08, 0x40, 0xA9};
   // cbz x2, #0x28
   std::array<uint8_t, 4> cbzInstrBytes = {0x42, 0x01, 0x00, 0xB4};
+  // psel	p4, p0, p2.s[w13, 0]
+  std::array<uint8_t, 4> pselInstrBytes = {0x44, 0x40, 0x31, 0x25};
   std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
   // A Capstone decoding library handle, for decoding instructions.
@@ -85,6 +99,7 @@ class AArch64InstructionTest : public testing::Test {
   std::unique_ptr<InstructionMetadata> fdivMetadata;
   std::unique_ptr<InstructionMetadata> ldpMetadata;
   std::unique_ptr<InstructionMetadata> cbzMetadata;
+  std::unique_ptr<InstructionMetadata> pselMetadata;
   std::unique_ptr<InstructionMetadata> invalidMetadata;
   std::unique_ptr<MicroOpInfo> uopInfo;
   InstructionException exception;
@@ -625,6 +640,74 @@ TEST_F(AArch64InstructionTest, setters) {
   EXPECT_FALSE(insn.isWaitingCommit());
   insn.setWaitingCommit();
   EXPECT_TRUE(insn.isWaitingCommit());
+}
+
+TEST_F(AArch64InstructionTest, checkStreamingGroup) {
+  EXPECT_FALSE(arch.isStreamingModeEnabled());
+  // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
+  Instruction SVE_insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+  // insn is `cbz x2, #0x28`
+  Instruction nonSVE_insn =
+      Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  // insn is `psel	p4, p0, p2.s[w13, 0]`
+  Instruction PRED_insn = Instruction(arch, *pselMetadata.get(), MicroOpInfo());
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
+
+  // Without changing SVE Streaming Mode, calling checkStreamingGroup should
+  // have no effect
+  EXPECT_FALSE(arch.isStreamingModeEnabled());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
+  EXPECT_FALSE(SVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(nonSVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(PRED_insn.checkStreamingGroup());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
+
+  // Updating SVE Streaming Mode should mean calling checkStreamingGroup changes
+  // SVE and PRED groups
+  arch.setSVCRval(3);
+  EXPECT_TRUE(arch.isStreamingModeEnabled());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
+  EXPECT_TRUE(SVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(nonSVE_insn.checkStreamingGroup());
+  EXPECT_TRUE(PRED_insn.checkStreamingGroup());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
+
+  // Calling checkStreamingGroup again should have no effect on SVE and PRED
+  // groups, and should return false as a result
+  EXPECT_TRUE(arch.isStreamingModeEnabled());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
+  EXPECT_FALSE(SVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(nonSVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(PRED_insn.checkStreamingGroup());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
+
+  // Disabling SVE Streaming Mode should cause SVE and PRED groups to be updated
+  // again to non-STREAMING, and true returned as a result
+  arch.setSVCRval(0);
+  EXPECT_FALSE(arch.isStreamingModeEnabled());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
+  EXPECT_TRUE(SVE_insn.checkStreamingGroup());
+  EXPECT_FALSE(nonSVE_insn.checkStreamingGroup());
+  EXPECT_TRUE(PRED_insn.checkStreamingGroup());
+  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
+  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
+  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
 }
 
 }  // namespace aarch64
