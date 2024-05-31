@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <iostream>
 
 #include "simeng/Pool.hh"
 

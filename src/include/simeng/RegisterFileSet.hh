@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"

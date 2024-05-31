@@ -123,6 +123,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       uop->generateAddresses();
     }
     if (uop->isStoreData()) {
+
       uop->execute();
     }
     handleStore_(uop);
