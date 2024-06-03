@@ -4082,19 +4082,31 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PNEXT_B: {  // pnext pdn.b, pv, pdn.b
-        results_[0] = svePnext<uint8_t>(sourceValues_, metadata_, VL_bits);
+        auto [result, nzcv] =
+            svePnext<uint8_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PNEXT_H: {  // pnext pdn.h, pv, pdn.h
-        results_[0] = svePnext<uint16_t>(sourceValues_, metadata_, VL_bits);
+        auto [result, nzcv] =
+            svePnext<uint16_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PNEXT_S: {  // pnext pdn.s, pv, pdn.s
-        results_[0] = svePnext<uint32_t>(sourceValues_, metadata_, VL_bits);
+        auto [result, nzcv] =
+            svePnext<uint32_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PNEXT_D: {  // pnext pdn.d, pv, pdn.d
-        results_[0] = svePnext<uint64_t>(sourceValues_, metadata_, VL_bits);
+        auto [result, nzcv] =
+            svePnext<uint64_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]

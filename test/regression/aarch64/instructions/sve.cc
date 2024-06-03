@@ -5824,9 +5824,10 @@ TEST_P(InstSve, pnext) {
                   fillPredFromSource<uint64_t>({0x02, 0, 0, 0}, 32));
   CHECK_PREDICATE(1, uint64_t,
                   fillPredFromSource<uint64_t>({0x0200, 0, 0, 0}, 32));
+  EXPECT_EQ(getNZCV(), 0b0010);
 
   //      H arrangement
-  src = {0x5555, 0x0, 0x0, 0x0, 0x3333, 0x0, 0x0, 0x0};
+  src = {0x555, 0x0, 0x0, 0x0, 0x333, 0x0, 0x0, 0x0};
   fillHeap<uint64_t>(heap64, src, 8);
   RUN_AARCH64(R"(
         # Get heap address
@@ -5841,7 +5842,8 @@ TEST_P(InstSve, pnext) {
         pnext p0.h, p1, p0.h
   )");
   CHECK_PREDICATE(0, uint64_t,
-                  fillPredFromSource<uint64_t>({0x4000, 0, 0, 0}, 32));
+                  fillPredFromSource<uint64_t>({0x400, 0, 0, 0}, 32));
+  EXPECT_EQ(getNZCV(), 0b0010);
 
   //      S arrangement
   src = {0x9, 0x0, 0x0, 0x0, 0x6, 0x0, 0x0, 0x0};
@@ -5860,10 +5862,11 @@ TEST_P(InstSve, pnext) {
   )");
   CHECK_PREDICATE(0, uint64_t,
                   fillPredFromSource<uint64_t>({0x1, 0, 0, 0}, 32));
+  EXPECT_EQ(getNZCV(), 0b1010);
 
   //      D arrangement
-  src = {0x3,   0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,
-         0xFF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+  src = {0x3,  0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,
+         0xF3, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
   fillHeap<uint64_t>(heap64, src, 12);
   RUN_AARCH64(R"(
         # Get heap address
@@ -5886,7 +5889,8 @@ TEST_P(InstSve, pnext) {
   )");
   CHECK_PREDICATE(0, uint64_t, fillPredFromSource<uint64_t>({0, 0, 0, 0}, 32));
   CHECK_PREDICATE(1, uint64_t,
-                  fillPredFromSource<uint64_t>({0x100, 0, 0, 0}, 32));
+                  fillPredFromSource<uint64_t>({0x1, 0, 0, 0}, 32));
+  EXPECT_EQ(getNZCV(), 0b1010);
 }
 
 TEST_P(InstSve, punpk) {

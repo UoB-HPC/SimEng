@@ -1380,9 +1380,9 @@ std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
 }
 
 /** Helper function for SVE instructions with the format `pnext pdn, pv, pdn`.
- * Returns an array of 4 uint64_t elements. */
+ * Returns an array of 4 uint64_t elements, and updates the NZCV flags. */
 template <typename T>
-std::array<uint64_t, 4> svePnext(
+std::tuple<std::array<uint64_t, 4>, uint8_t> svePnext(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
@@ -1397,8 +1397,7 @@ std::array<uint64_t, 4> svePnext(
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
 
   // Exit early if count == 0
-  if (count == 0) return out;
-
+  if (count == 0) return {out, getNZCVfromPred(out, VL_bits, sizeof(T))};
   // Get last active element of dn.pattern
   int lastElem = -1;
   for (int i = partition_num - 1; i >= 0; i--) {
@@ -1418,7 +1417,7 @@ std::array<uint64_t, 4> svePnext(
       break;
     }
   }
-  return out;
+  return {out, getNZCVfromPred(out, VL_bits, sizeof(T))};
 }
 
 /** Helper function for SVE instructions with the format `ptrue pd{,
