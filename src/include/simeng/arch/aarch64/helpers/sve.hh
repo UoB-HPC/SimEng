@@ -1387,19 +1387,17 @@ std::array<uint64_t, 4> svePnext(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
-  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
-  std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[2].getAsVector<uint64_t>();
+  // Set destination elements to 0
+  std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
   // Get pattern
   const uint16_t count =
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+
   // Exit early if count == 0
   if (count == 0) return out;
-
-  // Create mask so we can zero the pattern
-  uint64_t mask = ~((1ULL << (64 - count * 8)) - 1);
-  out[0] &= mask;
 
   // Get last active element of dn.pattern
   int lastElem = -1;
@@ -1420,7 +1418,6 @@ std::array<uint64_t, 4> svePnext(
       break;
     }
   }
-
   return out;
 }
 

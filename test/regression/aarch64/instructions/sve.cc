@@ -5793,6 +5793,102 @@ TEST_P(InstSve, ptrue) {
   CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 2));
 }
 
+TEST_P(InstSve, pnext) {
+  initialHeapData_.resize(1024);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+
+  //      B arrangement
+  // Allow 32 Byte space for each predicate register for when VL=2048
+  std::vector<uint64_t> src = {0xAAAA, 0x0, 0x0,    0x0, 0x0, 0x0,
+                               0x0,    0x0, 0xAA00, 0x0, 0x0, 0x0};
+  fillHeap<uint64_t>(heap64, src, 12);
+  RUN_AARCH64(R"(
+        # Get heap address
+        mov x0, 0
+        mov x8, 214
+        svc #0
+
+        ldr p2, [x0]
+        add x0, x0, #32
+        ldr p0, [x0]
+
+        pnext p0.b, p2, p0.b
+
+        ldr p1, [x0]
+        add x0, x0, #32
+        ldr p3, [x0]
+
+        pnext p1.b, p3, p1.b
+  )");
+  CHECK_PREDICATE(0, uint64_t,
+                  fillPredFromSource<uint64_t>({0x02, 0, 0, 0}, 32));
+  CHECK_PREDICATE(1, uint64_t,
+                  fillPredFromSource<uint64_t>({0x0200, 0, 0, 0}, 32));
+
+  //      H arrangement
+  src = {0x5555, 0x0, 0x0, 0x0, 0x3333, 0x0, 0x0, 0x0};
+  fillHeap<uint64_t>(heap64, src, 8);
+  RUN_AARCH64(R"(
+        # Get heap address
+        mov x0, 0
+        mov x8, 214
+        svc #0
+
+        ldr p1, [x0]
+        add x0, x0, #32
+        ldr p0, [x0]
+
+        pnext p0.h, p1, p0.h
+  )");
+  CHECK_PREDICATE(0, uint64_t,
+                  fillPredFromSource<uint64_t>({0x4000, 0, 0, 0}, 32));
+
+  //      S arrangement
+  src = {0x9, 0x0, 0x0, 0x0, 0x6, 0x0, 0x0, 0x0};
+  fillHeap<uint64_t>(heap64, src, 8);
+  RUN_AARCH64(R"(
+        # Get heap address
+        mov x0, 0
+        mov x8, 214
+        svc #0
+
+        ldr p1, [x0]
+        add x0, x0, #32
+        ldr p0, [x0]
+
+        pnext p0.s, p1, p0.s
+  )");
+  CHECK_PREDICATE(0, uint64_t,
+                  fillPredFromSource<uint64_t>({0x1, 0, 0, 0}, 32));
+
+  //      D arrangement
+  src = {0x3,   0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,
+         0xFF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+  fillHeap<uint64_t>(heap64, src, 12);
+  RUN_AARCH64(R"(
+        # Get heap address
+        mov x0, 0
+        mov x8, 214
+        svc #0
+
+        ldr p2, [x0]
+        add x0, x0, #32
+        ldr p0, [x0]
+
+        pnext p0.d, p2, p0.d
+
+        add x0, x0, #32
+        ldr p3, [x0]
+        add x0, x0, #32
+        ldr p1, [x0]
+
+        pnext p1.d, p3, p1.d
+  )");
+  CHECK_PREDICATE(0, uint64_t, fillPredFromSource<uint64_t>({0, 0, 0, 0}, 32));
+  CHECK_PREDICATE(1, uint64_t,
+                  fillPredFromSource<uint64_t>({0x100, 0, 0, 0}, 32));
+}
+
 TEST_P(InstSve, punpk) {
   RUN_AARCH64(R"(
     ptrue p0.b
