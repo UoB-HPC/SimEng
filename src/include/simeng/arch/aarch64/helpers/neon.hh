@@ -816,9 +816,9 @@ RegisterValue vecTbl(
   assert(I == 8 || I == 16);
 
   // Vm contains the indices to fetch from table
-  const int8_t* Vm =
+  const uint8_t* Vm =
       sourceValues[metadata.operandCount - 2]
-          .getAsVector<int8_t>();  // final operand is vecMovi_imm
+          .getAsVector<uint8_t>();  // final operand is vecMovi_imm
 
   // All sourceValues except the first and last are the vector registers to
   // construct the table from
@@ -827,16 +827,16 @@ RegisterValue vecTbl(
   // Create table from vectors. All table sourceValues must be of 16b format.
   const uint16_t tableSize = 16 * n_table_regs;
   std::vector<uint8_t> table(tableSize, 0);
-  for (int i = 0; i < n_table_regs; i++) {
-    const int8_t* currentVector = sourceValues[i].getAsVector<int8_t>();
-    for (int j = 0; j < 16; j++) {
+  for (uint8_t i = 0; i < n_table_regs; i++) {
+    const uint8_t* currentVector = sourceValues[i].getAsVector<uint8_t>();
+    for (uint8_t j = 0; j < 16; j++) {
       table[16 * i + j] = currentVector[j];
     }
   }
 
-  int8_t out[16 / sizeof(int8_t)] = {0};
+  uint8_t out[16 / sizeof(uint8_t)] = {0};
   for (int i = 0; i < I; i++) {
-    int8_t index = Vm[i];
+    uint8_t index = Vm[i];
 
     // If an index is out of range for the table, the result for that lookup
     // is 0
