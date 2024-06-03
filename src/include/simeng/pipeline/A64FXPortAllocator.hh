@@ -39,7 +39,7 @@ class A64FXPortAllocator : public PortAllocator {
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
   void setRSSizeGetter(
-      std::function<void(std::vector<uint64_t>&)> rsSizes) override;
+      std::function<void(std::vector<uint32_t>&)> rsSizes) override;
 
   /** Tick the port allocator to allow it to process internal tasks. */
   void tick() override;
@@ -54,13 +54,13 @@ class A64FXPortAllocator : public PortAllocator {
   uint8_t dispatchSlot_;
 
   /** Get the current sizes an capacity of the reservation stations. */
-  std::function<void(std::vector<uint64_t>&)> rsSizes_;
+  std::function<void(std::vector<uint32_t>&)> rsSizes_;
 
   /** Mapping from reservation station to ports. */
   std::vector<std::vector<uint16_t>> rsToPort_;
 
   /** Vector of free entries across all reservation stations. */
-  std::vector<uint64_t> freeEntries_;
+  std::vector<uint32_t> freeEntries_;
 
   /** Reservation station classifications as detailed in manual. */
   /** RSE with most free entries. */
