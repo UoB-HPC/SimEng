@@ -4,8 +4,7 @@ namespace simeng {
 
 BranchPrediction AlwaysNotTakenPredictor::predict(uint64_t address,
                                                   BranchType type,
-                                                  int64_t knownOffset,
-                                                  bool isLoop) {
+                                                  int64_t knownOffset) {
   return {false, 0};
 }
 

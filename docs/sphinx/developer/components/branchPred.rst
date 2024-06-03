@@ -5,7 +5,7 @@ SimEng's fetch unit is supplied with an instance of the abstract ``BranchPredict
 
 Access to the ``BranchPredictor`` is supported through the ``predict``, ``update``, and ``flush`` functions. ``predict`` provides a branch prediction, both target and direction, for a branch instruction. ``update`` updates the branch predictor's prediction mechanism on the actual outcome of a branch. ``flush`` provides algorithm specific flushing functionality.
 
-The ``predict`` function is passed an instruction address, branch type, a possible known target, and optionally whether the branch is in a loop. The branch type argument currently supports the following types:
+The ``predict`` function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:
 
 - ``Conditional``
 - ``LoopClosing``
@@ -13,7 +13,7 @@ The ``predict`` function is passed an instruction address, branch type, a possib
 - ``SubroutineCall``
 - ``Unconditional``
 
-The usage of these parameters within a branch predictor's ``predict`` function is algorithm specific.  If the branch is a part of a loop, then only a dummy branch prediction is returned by ``predict``, as the fetch unit will reuse a previous branch prediction and so no new branch prediction is needed.
+The usage of these parameters within a branch predictor's ``predict`` function is algorithm specific.
 
 The ``update`` function is passed the branch outcome, the instruction address, and the branch type. From this information, any algorithms or branch structures may be updated.
 
