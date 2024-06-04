@@ -17,7 +17,8 @@ set(SIMENG_SOURCES
     branchpredictors/AlwaysNotTakenPredictor.cc
     branchpredictors/GenericPredictor.cc
     branchpredictors/PerceptronPredictor.cc
-        config/ModelConfig.cc
+    branchpredictors/TagePredictor.cc
+    config/ModelConfig.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     memory/FixedLatencyMemoryInterface.cc

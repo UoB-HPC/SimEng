@@ -10,6 +10,12 @@
 
 namespace simeng {
 
+struct TageEntry {
+  uint8_t satCnt;
+  uint64_t tags;
+  uint8_t usefulness;
+  uint64_t target;
+};
 /** ToDo -- Explain TAGE */
 
 class TagePredictor : public BranchPredictor {
@@ -39,12 +45,17 @@ class TagePredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
+  /** Returns a btb prediction for this branch */
+  BranchPrediction getBtbPrediction(uint64_t hashedIndex);
+
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint8_t btbBits_;
 
   /** A 2^bits length vector of pairs containing a satCntBits_-bit saturating
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
+
+  std::vector<std::vector<TageEntry>> TageTables_;
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */

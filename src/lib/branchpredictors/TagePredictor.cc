@@ -25,10 +25,6 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
-
-  // Set dummy lastFtqEntry value, needed to ensure that in-loop predict()
-  // calls in tests work.
-  lastFtqEntry_ = {true, 0};
 }
 
 TagePredictor::~TagePredictor() {
@@ -39,7 +35,7 @@ TagePredictor::~TagePredictor() {
 }
 
 BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
-                                        int64_t knownOffset, bool isLoop) {
+                                        int64_t knownOffset) {
   // Get index via an XOR hash between the global history and the instruction
   // address. This hash is then ANDed to keep it within bounds of the btb.
   // The address is shifted to remove the two least-significant bits as these
@@ -47,23 +43,9 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
-  // If branch is in a loop then a new prediction is not required.  Just need
-  // to update ftq and global history
-  if (isLoop) {
-    // Add branch to the back of the ftq
-    ftq_.emplace_back(lastFtqEntry_.first, hashedIndex);
-    // Speculatively update the global history
-    globalHistory_ =
-        ((globalHistory_ << 1) | lastFtqEntry_.first) & globalHistoryMask_;
-    // prediction not required so return dummy prediction
-    return {false, 0};
-  }
+  BranchPrediction prediction = getBtbPrediction(hashedIndex);
 
-  // Get prediction from BTB
-  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
-  uint64_t target =
-      (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
-  BranchPrediction prediction = {direction, target};
+  if (knownOffset != 0) prediction.target = address + knownOffset;
 
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
@@ -92,7 +74,6 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
 
   // Store the hashed index for correct hashing in update()
   ftq_.emplace_back(prediction.isTaken, hashedIndex);
-  lastFtqEntry_ = {prediction.isTaken, hashedIndex};
 
   // Speculatively update the global history
   globalHistory_ =
@@ -170,5 +151,11 @@ void TagePredictor::flush(uint64_t address) {
 
 }
 
+BranchPrediction TagePredictor::getBtbPrediction(uint64_t hashedIndex) {
+  // Get prediction from BTB
+  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
+  uint64_t target = btb_[hashedIndex].second;
+  return {direction, target};
+}
 
 } // namespace simeng
