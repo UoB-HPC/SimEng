@@ -26,5 +26,4 @@ void RegisterFileSet::set(Register reg, const RegisterValue& value) {
   registerFiles[reg.type][reg.tag] = value;
 }
 
-
 }  // namespace simeng

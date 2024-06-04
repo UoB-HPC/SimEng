@@ -67,10 +67,7 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
   // ToDo -- delete the below, it is for debuggin only!
-  bool print = (instructionAddress_ >= 0x550618 && instructionAddress_ <= 0x550658) ||
-               (instructionAddress_ >= 0x550c50 && instructionAddress_ <= 0x550c5c) ||
-               (instructionAddress_ >= 0x550c68 && instructionAddress_ <=
-                                                       0x550ccc);
+  bool print = (true);
 
   // 0th bit of SVCR register determines if streaming-mode is enabled.
   const bool SMenabled = architecture_.getSVCRval() & 1;
@@ -143,32 +140,29 @@ void Instruction::execute() {
       case Opcode::AArch64_ADDPv2i64: {  // addp vd.2d, vn.2d, vm.2d
         results_[0] = vecAddp_3ops<uint64_t, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDPv2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDPv2i64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDPv2i64p: {  // addp dd, vn.2d
         results_[0] = vecSumElems_2ops<uint64_t, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDPv2i64p" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDPv2i64p"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDPv4i32: {  // addp vd.4s, vn.4s, vm.4s
         results_[0] = vecAddp_3ops<uint32_t, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDPv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDPv4i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDPv8i16: {  // addp vd.8h, vn.8h, vm.8h
         results_[0] = vecAddp_3ops<uint16_t, 8>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDPv8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDPv8i16" << std::endl;
         }
         break;
       }
@@ -229,8 +223,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = RegisterValue(result, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDSXrx64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDSXrx64" << std::endl;
         }
         break;
       }
@@ -241,32 +234,30 @@ void Instruction::execute() {
         const uint64_t VL = VL_bits / 8;
         results_[0] = x + (VL * y);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDVL_XXI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDVL_XXI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDVv4i16v: {  // addv hd, vn.4h
         results_[0] = vecSumElems_2ops<uint16_t, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDVv4i16v" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDVv4i16v"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDVv4i32v: {  // addv sd, vn.4s
         results_[0] = vecSumElems_2ops<uint32_t, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDVv4i32v" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDVv4i32v"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
         results_[0] = vecSumElems_2ops<uint8_t, 8>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADDVv8i8v" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADDVv8i8v" << std::endl;
         }
         break;
       }
@@ -356,64 +347,59 @@ void Instruction::execute() {
       case Opcode::AArch64_ADD_ZPmZ_B: {  // add zdn.b, pg/m, zdn.b, zm.b
         results_[0] = sveAddPredicated_vecs<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AD_ZPmZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AD_ZPmZ_B" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZPmZ_D: {  // add zdn.d, pg/m, zdn.d, zm.d
         results_[0] = sveAddPredicated_vecs<uint64_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZPmZ_H: {  // add zdn.h, pg/m, zdn.h, zm.h
         results_[0] = sveAddPredicated_vecs<uint16_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_H"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZPmZ_S: {  // add zdn.s, pg/m, zdn.s, zm.s
         results_[0] = sveAddPredicated_vecs<uint32_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZZZ_B: {  // add zd.b, zn.b, zm.b
         results_[0] = sveAdd_3ops<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_B" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZZZ_D: {  // add zd.d, zn.d, zm.d
         results_[0] = sveAdd_3ops<uint64_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_D" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZZZ_H: {  // add zd.h, zn.h, zm.h
         results_[0] = sveAdd_3ops<uint16_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_H" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ADD_ZZZ_S: {  // add zd.s, zn.s, zm.s
         results_[0] = sveAdd_3ops<uint32_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADD_ZZZ_S" << std::endl;
         }
         break;
       }
@@ -497,8 +483,8 @@ void Instruction::execute() {
         results_[0] =
             sveAdr_packedOffsets<uint64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADR_LSL_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADR_LSL_ZZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -509,8 +495,8 @@ void Instruction::execute() {
         results_[0] =
             sveAdr_packedOffsets<uint32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ADR_LSL_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ADR_LSL_ZZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -521,8 +507,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDSWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDSWri" << std::endl;
         }
         break;
       }
@@ -533,8 +518,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDSWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDSWrs" << std::endl;
         }
         break;
       }
@@ -545,8 +529,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDSXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDSXri" << std::endl;
         }
         break;
       }
@@ -557,8 +540,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDSXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDSXrs" << std::endl;
         }
         break;
       }
@@ -568,8 +550,7 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDWri" << std::endl;
         }
         break;
       }
@@ -579,8 +560,7 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDWrs" << std::endl;
         }
         break;
       }
@@ -590,8 +570,7 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDXri" << std::endl;
         }
         break;
       }
@@ -601,8 +580,7 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDXrs" << std::endl;
         }
         break;
       }
@@ -611,8 +589,7 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_PPzPP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_PPzPP" << std::endl;
         }
         break;
       }
@@ -627,8 +604,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_ZI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_ZI" << std::endl;
         }
         break;
       }
@@ -637,8 +613,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -647,8 +623,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -657,8 +633,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint16_t x, uint16_t y) -> uint16_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -667,8 +643,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_AND_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -677,8 +653,7 @@ void Instruction::execute() {
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDv16i8" << std::endl;
         }
         break;
       }
@@ -687,24 +662,21 @@ void Instruction::execute() {
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ANDv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ANDv8i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
         results_[0] = {asrv_3gpr<int32_t>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ASRVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ASRVWr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ASRVXr: {  // asrv xd, xn, xm
         results_[0] = asrv_3gpr<int64_t>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ASRVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ASRVXr" << std::endl;
         }
         break;
       }
@@ -712,8 +684,7 @@ void Instruction::execute() {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_B" << std::endl;
         }
         break;
       }
@@ -721,8 +692,7 @@ void Instruction::execute() {
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, false, false), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BFMWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BFMWri" << std::endl;
         }
         break;
       }
@@ -730,8 +700,7 @@ void Instruction::execute() {
         results_[0] =
             bfm_2imms<uint64_t>(sourceValues_, metadata_, false, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BFMXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BFMXri" << std::endl;
         }
         break;
       }
@@ -741,8 +710,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICSWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICSWrs" << std::endl;
         }
         break;
       }
@@ -752,8 +720,7 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICSXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICSXrs" << std::endl;
         }
         break;
       }
@@ -762,8 +729,7 @@ void Instruction::execute() {
             bicShift_3ops<uint32_t>(sourceValues_, metadata_, false);
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICWrs" << std::endl;
         }
         break;
       }
@@ -772,64 +738,56 @@ void Instruction::execute() {
             bicShift_3ops<uint64_t>(sourceValues_, metadata_, false);
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICXrs" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BICv16i8: {  // bic vd.16b, vn.16b, vm.16b
         results_[0] = vecBic_3ops<uint8_t, 16>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICv16i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BICv4i32: {  // bic vd.4s, #imm{, lsl #shift}
         results_[0] = vecBicShift_imm<uint32_t, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICv4i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BICv8i16: {  // bic vd.8h, #imm{, lsl #shift}
         results_[0] = vecBicShift_imm<uint16_t, 8>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICv8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICv8i16" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BICv8i8: {  // bic vd.8b, vn.8b, vm.8b
         results_[0] = vecBic_3ops<uint8_t, 8>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BICv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BICv8i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BIFv16i8: {  // bif vd.16b, vn.16b, vm.16b
         results_[0] = vecBitwiseInsert<16>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BIFv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BIFv16i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BITv16i8: {  // bit vd.16b, vn.16b, vm.16b
         results_[0] = vecBitwiseInsert<16>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BITv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BITv16i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BITv8i8: {  // bit vd.8b, vn.8b, vm.8b
         results_[0] = vecBitwiseInsert<8>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BITv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BITv8i8" << std::endl;
         }
         break;
       }
@@ -838,8 +796,7 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
         results_[0] = static_cast<uint64_t>(instructionAddress_ + 4);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BL" << std::endl;
         }
         break;
       }
@@ -848,8 +805,7 @@ void Instruction::execute() {
         branchAddress_ = sourceValues_[0].get<uint64_t>();
         results_[0] = static_cast<uint64_t>(instructionAddress_ + 4);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BLR" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BLR" << std::endl;
         }
         break;
       }
@@ -857,24 +813,21 @@ void Instruction::execute() {
         branchTaken_ = true;
         branchAddress_ = sourceValues_[0].get<uint64_t>();
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BR" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BR" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BRK: {
         // TODO: Generate breakpoint exception
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BRK" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BRK" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_BSLv16i8: {  // bsl vd.16b, vn.16b, vm.16b
         results_[0] = vecBsl<16>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_BSLv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_BSLv16i8" << std::endl;
         }
         break;
       }
@@ -887,8 +840,7 @@ void Instruction::execute() {
           branchAddress_ = instructionAddress_ + 4;
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_Bcc" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_Bcc" << std::endl;
         }
         break;
       }
@@ -899,8 +851,7 @@ void Instruction::execute() {
         const uint32_t n = memoryData_[0].get<uint32_t>();
         if (n == s) memoryData_[0] = t;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CASALW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CASALW" << std::endl;
         }
         break;
       }
@@ -911,8 +862,7 @@ void Instruction::execute() {
         const uint64_t n = memoryData_[0].get<uint64_t>();
         if (n == s) memoryData_[0] = t;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CASALX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CASALX" << std::endl;
         }
         break;
       }
@@ -923,8 +873,7 @@ void Instruction::execute() {
         branchTaken_ = taken;
         branchAddress_ = addr;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CBNZW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CBNZW" << std::endl;
         }
         break;
       }
@@ -935,8 +884,7 @@ void Instruction::execute() {
         branchTaken_ = taken;
         branchAddress_ = addr;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CBNZX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CBNZX" << std::endl;
         }
         break;
       }
@@ -947,8 +895,7 @@ void Instruction::execute() {
         branchTaken_ = taken;
         branchAddress_ = addr;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CBZW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CBZW" << std::endl;
         }
         break;
       }
@@ -959,64 +906,56 @@ void Instruction::execute() {
         branchTaken_ = taken;
         branchAddress_ = addr;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CBZX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CBZX" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMNWi: {  // ccmn wn, #imm, #nzcv, cc
         results_[0] = ccmn_imm<uint32_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMNWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMNWi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMNXi: {  // ccmn xn, #imm, #nzcv, cc
         results_[0] = ccmn_imm<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMNXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMNXi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMPWi: {  // ccmp wn, #imm, #nzcv, cc
         results_[0] = ccmp_imm<uint32_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMPWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMPWi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMPWr: {  // ccmp wn, wm, #nzcv, cc
         results_[0] = ccmp_reg<uint32_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMPWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMPWr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMPXi: {  // ccmp xn, #imm, #nzcv, cc
         results_[0] = ccmp_imm<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMPXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMPXi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CCMPXr: {  // ccmp xn, xm, #nzcv, cc
         results_[0] = ccmp_reg<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CCMPXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CCMPXr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CLZXr: {  // clz xd, xn
         results_[0] = clz_reg<int64_t>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CLZXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CLZXr" << std::endl;
         }
         break;
       }
@@ -1025,8 +964,7 @@ void Instruction::execute() {
             sourceValues_, false,
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMEWv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMEWv16i8" << std::endl;
         }
         break;
       }
@@ -1035,8 +973,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMEWv16i8rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMEWv16i8rz"
+                    << std::endl;
         }
         break;
       }
@@ -1045,8 +983,7 @@ void Instruction::execute() {
             sourceValues_, false,
             [](uint32_t x, uint32_t y) -> bool { return (x == y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMEWv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMEWv4i32" << std::endl;
         }
         break;
       }
@@ -1055,8 +992,7 @@ void Instruction::execute() {
             sourceValues_, false,
             [](int8_t x, int8_t y) -> bool { return (x == y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMEQv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMEQv8i8" << std::endl;
         }
         break;
       }
@@ -1065,8 +1001,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](int8_t x, int8_t y) -> bool { return (x == y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMEQv8i8rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMEQv8i8rz"
+                    << std::endl;
         }
         break;
       }
@@ -1075,8 +1011,7 @@ void Instruction::execute() {
             sourceValues_, false,
             [](uint32_t x, uint32_t y) -> bool { return (x > y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMHIv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMHIv4i32" << std::endl;
         }
         break;
       }
@@ -1085,8 +1020,7 @@ void Instruction::execute() {
             sourceValues_, false,
             [](int8_t x, int8_t y) -> bool { return (x >= y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMHSv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMHSv16i8" << std::endl;
         }
         break;
       }
@@ -1097,8 +1031,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_B"
+                    << std::endl;
         }
         break;
       }
@@ -1109,8 +1043,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_D"
+                    << std::endl;
         }
         break;
       }
@@ -1121,8 +1055,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_H"
+                    << std::endl;
         }
         break;
       }
@@ -1133,8 +1067,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZI_S"
+                    << std::endl;
         }
         break;
       }
@@ -1145,8 +1079,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -1157,8 +1091,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -1169,8 +1103,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -1181,8 +1115,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPEQ_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -1193,8 +1127,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -1205,8 +1139,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -1217,8 +1151,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -1229,8 +1163,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPGT_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -1241,8 +1175,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -1253,8 +1187,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -1265,8 +1199,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -1277,8 +1211,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPHI_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -1289,8 +1223,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_B"
+                    << std::endl;
         }
         break;
       }
@@ -1301,8 +1235,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_D"
+                    << std::endl;
         }
         break;
       }
@@ -1313,8 +1247,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_H"
+                    << std::endl;
         }
         break;
       }
@@ -1325,8 +1259,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZI_S"
+                    << std::endl;
         }
         break;
       }
@@ -1337,8 +1271,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -1349,8 +1283,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -1361,8 +1295,8 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -1373,112 +1307,107 @@ void Instruction::execute() {
         results_[0] = nzcv;
         results_[1] = output;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CMPNE_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTB_XPiI: {  // cntb xd{, pattern{, #imm}}
         results_[0] = sveCnt_gpr<uint8_t>(metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTB_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTB_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTD_XPiI: {  // cntd xd{, pattern{, #imm}}
         results_[0] = sveCnt_gpr<uint64_t>(metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTD_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTD_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTH_XPiI: {  // cnth xd{, pattern{, #imm}}
         results_[0] = sveCnt_gpr<uint16_t>(metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTH_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTH_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTP_XPP_B: {  // cntp xd, pg, pn.b
         results_[0] = sveCntp<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_B"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTP_XPP_D: {  // cntp xd, pg, pn.d
         results_[0] = sveCntp<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTP_XPP_H: {  // cntp xd, pg, pn.h
         results_[0] = sveCntp<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_H"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTP_XPP_S: {  // cntp xd, pg, pn.s
         results_[0] = sveCntp<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTP_XPP_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTW_XPiI: {  // cntw xd{, pattern{, #imm}}
         results_[0] = sveCnt_gpr<uint32_t>(metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTW_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTW_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CNTv8i8: {  // cnt vd.8b, vn.8b
         results_[0] = vecCountPerByte<uint8_t, 8>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CNTv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CNTv8i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CPY_ZPzI_B: {  // cpy zd.b, pg/z, #imm{, shift}
         results_[0] = sveCpy_imm<int8_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_B"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CPY_ZPzI_D: {  // cpy zd.d, pg/z, #imm{, shift}
         results_[0] = sveCpy_imm<int64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CPY_ZPzI_H: {  // cpy zd.h, pg/z, #imm{, shift}
         results_[0] = sveCpy_imm<int16_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_H"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_CPY_ZPzI_S: {  // cpy zd.s, pg/z, #imm{, shift}
         results_[0] = sveCpy_imm<int32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CPY_ZPzI_S"
+                    << std::endl;
         }
         break;
       }
@@ -1486,8 +1415,7 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 1>(sourceValues_, metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPi32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPi32" << std::endl;
         }
         break;
       }
@@ -1495,8 +1423,7 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint64_t, 1>(sourceValues_, metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPi64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPi64" << std::endl;
         }
         break;
       }
@@ -1506,8 +1433,7 @@ void Instruction::execute() {
                               [](uint32_t x) -> uint32_t { return x; }),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSELWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSELWr" << std::endl;
         }
         break;
       }
@@ -1515,8 +1441,7 @@ void Instruction::execute() {
         results_[0] = cs_4ops<uint64_t>(
             sourceValues_, metadata_, [](uint64_t x) -> uint64_t { return x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSELXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSELXr" << std::endl;
         }
         break;
       }
@@ -1526,8 +1451,7 @@ void Instruction::execute() {
                               [](uint32_t x) -> uint32_t { return x + 1; }),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSINCWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSINCWr" << std::endl;
         }
         break;
       }
@@ -1536,8 +1460,7 @@ void Instruction::execute() {
             cs_4ops<uint64_t>(sourceValues_, metadata_,
                               [](uint64_t x) -> uint64_t { return x + 1; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSINCXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSINCXr" << std::endl;
         }
         break;
       }
@@ -1547,8 +1470,7 @@ void Instruction::execute() {
                               [](uint32_t x) -> uint32_t { return ~x; }),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSINVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSINVWr" << std::endl;
         }
         break;
       }
@@ -1557,8 +1479,7 @@ void Instruction::execute() {
             cs_4ops<uint64_t>(sourceValues_, metadata_,
                               [](uint64_t x) -> uint64_t { return ~x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSINVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSINVXr" << std::endl;
         }
         break;
       }
@@ -1568,8 +1489,7 @@ void Instruction::execute() {
                              [](int32_t x) -> int32_t { return -x; }),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSNEGWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSNEGWr" << std::endl;
         }
         break;
       }
@@ -1578,32 +1498,28 @@ void Instruction::execute() {
             cs_4ops<uint64_t>(sourceValues_, metadata_,
                               [](uint64_t x) -> uint64_t { return -x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_CSNEGXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_CSNEGXr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_DECB_XPiI: {  // decb xdn{, pattern{, MUL #imm}}
         results_[0] = sveDec_scalar<int8_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DECB_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DECB_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_DECD_XPiI: {  // decd xdn{, pattern{, MUL #imm}}
         results_[0] = sveDec_scalar<int64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DECD_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DECD_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_DMB: {  // dmb option|#imm
         // TODO: Respect memory barriers
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DMB" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DMB" << std::endl;
         }
         break;
       }
@@ -1615,8 +1531,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPM_ZI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPM_ZI" << std::endl;
         }
         break;
       }
@@ -1624,8 +1539,7 @@ void Instruction::execute() {
         results_[0] =
             sveDup_immOrScalar<int8_t>(sourceValues_, metadata_, VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZI_B" << std::endl;
         }
         break;
       }
@@ -1633,8 +1547,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int64_t>(sourceValues_, metadata_,
                                                   VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZI_D" << std::endl;
         }
         break;
       }
@@ -1642,8 +1555,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int16_t>(sourceValues_, metadata_,
                                                   VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZI_H" << std::endl;
         }
         break;
       }
@@ -1651,8 +1563,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int32_t>(sourceValues_, metadata_,
                                                   VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZI_S" << std::endl;
         }
         break;
       }
@@ -1660,8 +1571,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int8_t>(sourceValues_, metadata_,
                                                  VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZR_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZR_B" << std::endl;
         }
         break;
       }
@@ -1669,8 +1579,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int64_t>(sourceValues_, metadata_,
                                                   VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZR_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZR_D" << std::endl;
         }
         break;
       }
@@ -1678,8 +1587,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int16_t>(sourceValues_, metadata_,
                                                   VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZR_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZR_H" << std::endl;
         }
         break;
       }
@@ -1687,8 +1595,7 @@ void Instruction::execute() {
         results_[0] = sveDup_immOrScalar<int32_t>(sourceValues_, metadata_,
                                                   VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZR_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZR_S" << std::endl;
         }
         break;
       }
@@ -1696,8 +1603,7 @@ void Instruction::execute() {
         results_[0] =
             sveDup_vecIndexed<uint64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_D" << std::endl;
         }
         break;
       }
@@ -1721,8 +1627,7 @@ void Instruction::execute() {
         }
         results_[0] = out;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_Q" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_Q" << std::endl;
         }
         break;
       }
@@ -1730,8 +1635,7 @@ void Instruction::execute() {
         results_[0] =
             sveDup_vecIndexed<uint32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUP_ZZI_S" << std::endl;
         }
         break;
       }
@@ -1739,8 +1643,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint8_t, 16>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv16i8gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv16i8gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1748,8 +1652,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 2>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv2i32gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv2i32gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1757,8 +1661,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 2>(sourceValues_, metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv2i32lane" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv2i32lane"
+                    << std::endl;
         }
         break;
       }
@@ -1766,8 +1670,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint64_t, 2>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv2i64gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv2i64gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1775,8 +1679,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint64_t, 2>(sourceValues_, metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv2i62lane" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv2i62lane"
+                    << std::endl;
         }
         break;
       }
@@ -1784,8 +1688,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint16_t, 4>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv4i16gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv4i16gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1793,8 +1697,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 4>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv4i32gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv4i32gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1802,8 +1706,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint32_t, 4>(sourceValues_, metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv4i32lane" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv4i32lane"
+                    << std::endl;
         }
         break;
       }
@@ -1811,8 +1715,8 @@ void Instruction::execute() {
         results_[0] =
             vecDup_gprOrIndex<uint16_t, 8>(sourceValues_, metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_DUPv8i16gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_DUPv8i16gpr"
+                    << std::endl;
         }
         break;
       }
@@ -1822,8 +1726,7 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORWri" << std::endl;
         }
         break;
       }
@@ -1833,8 +1736,7 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORWrs" << std::endl;
         }
         break;
       }
@@ -1844,8 +1746,7 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORXri" << std::endl;
         }
         break;
       }
@@ -1855,8 +1756,7 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORXrs" << std::endl;
         }
         break;
       }
@@ -1865,8 +1765,7 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_PPzPP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_PPzPP" << std::endl;
         }
         break;
       }
@@ -1875,8 +1774,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -1885,8 +1784,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -1895,8 +1794,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint16_t x, uint16_t y) -> uint16_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -1905,8 +1804,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -1915,8 +1814,7 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EOR_ZZZ" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EOR_ZZZ" << std::endl;
         }
         break;
       }
@@ -1925,8 +1823,7 @@ void Instruction::execute() {
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORv16i8" << std::endl;
         }
         break;
       }
@@ -1935,8 +1832,7 @@ void Instruction::execute() {
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EORv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EORv8i8" << std::endl;
         }
         break;
       }
@@ -1968,8 +1864,8 @@ void Instruction::execute() {
 
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EXTRACT_ZPMXI_H_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EXTRACT_ZPMXI_H_B"
+                    << std::endl;
         }
         break;
       }
@@ -1977,184 +1873,170 @@ void Instruction::execute() {
         results_[0] = {extrLSB_registers<uint32_t>(sourceValues_, metadata_),
                        8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EXTRWrri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EXTRWrri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_EXTRXrri: {  // extr xd, xn, xm, #lsb
         results_[0] = extrLSB_registers<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EXTRXrri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EXTRXrri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_EXTv16i8: {  // ext vd.16b, vn.16b, vm.16b, #index
         results_[0] = vecExtVecs_index<uint8_t, 16>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EXTv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EXTv16i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_EXTv8i8: {  // ext vd.8b, vn.8b, vm.8b, #index
         results_[0] = vecExtVecs_index<uint8_t, 8>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_EXTv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_EXTv8i8" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABDv2f64: {  // fabd vd.2d, vn.2d, vm.2d
         results_[0] = vecFabd<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABDv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABDv2f64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABDv4f32: {  // fabd vd.4s, vn.4s, vm.4s
         results_[0] = vecFabd<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABDv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABDv4f32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
         results_[0] = fabd_3ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABD32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABD32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABD64: {  // fabd dd, dn, dm
         results_[0] = fabd_3ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABD64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABD64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABSDr: {  // fabs dd, dn
         results_[0] = fabs_2ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABSDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABSDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABSSr: {  // fabs sd, sn
         results_[0] = fabs_2ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABSSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABSSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABS_ZPmZ_D: {  // fabs zd.d, pg/m, zn.d
         results_[0] = sveFabsPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABS_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABS_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABS_ZPmZ_S: {  // fabs zd.s, pg/m, zn.s
         results_[0] = sveFabsPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABS_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABS_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABSv2f64: {  // fabs vd.2d, vn.2d
         results_[0] = vecFabs_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABSv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABSv2f64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FABSv4f32: {  // fabs vd.4s, vn.4s
         results_[0] = vecFabs_2ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FABSv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FABSv4f32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDA_VPZ_D: {  // fadda dd, pg/m, dn, zm.d
         results_[0] = sveFaddaPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDA_VPZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDA_VPZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDA_VPZ_S: {  // fadda sd, pg/m, sn, zm.s
         results_[0] = sveFaddaPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDA_VPZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDA_VPZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
         results_[0] = {add_3ops<double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDPv2f32: {  // faddp vd.2s, vn.2s, vm.2s
         results_[0] = vecAddp_3ops<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDPv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDPv2f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDPv2f64: {  // faddp vd.2d, vn.2d, vm.2d
         results_[0] = vecAddp_3ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDPv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDPv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDPv2i32p: {  // faddp dd, vn.2s
         results_[0] = vecSumElems_2ops<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDPv2i32p" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDPv2i32p"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDPv2i64p: {  // faddp dd, vn.2d
         results_[0] = vecSumElems_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDPv2i64p" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDPv2i64p"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDPv4f32: {  // faddp vd.4s, vn.4s, vm.4s
         results_[0] = vecAddp_3ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDPv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDPv4f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
         results_[0] = {add_3ops<float>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDSrr" << std::endl;
         }
         break;
       }
@@ -2162,8 +2044,8 @@ void Instruction::execute() {
         results_[0] =
             sveAddPredicated_const<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZPmI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZPmI_D"
+                    << std::endl;
         }
         break;
       }
@@ -2171,64 +2053,61 @@ void Instruction::execute() {
         results_[0] =
             sveAddPredicated_const<float>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZPmI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZPmI_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADD_ZPmZ_D: {  // fadd zdn.d, pg/m, zdn.d, zm.d
         results_[0] = sveAddPredicated_vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADD_ZPmZ_S: {  // fadd zdn.s, pg/m, zdn.s, zm.s
         results_[0] = sveAddPredicated_vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADD_ZZZ_D: {  // fadd zd.d, zn.d, zm.d
         results_[0] = sveAdd_3ops<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADD_ZZZ_S: {  // fadd zd.s, zn.s, zm.s
         results_[0] = sveAdd_3ops<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADD_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADD_ZZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDv2f32: {  // fadd vd.2s, vn.2s, vm.2s
         results_[0] = vecAdd_3ops<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDv2f32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
         results_[0] = vecAdd_3ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDv2f64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FADDv4f32: {  // fadd vd.4s, vn.4s, vm.4s
         results_[0] = vecAdd_3ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FADDv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FADDv4f32" << std::endl;
         }
         break;
       }
@@ -2237,8 +2116,8 @@ void Instruction::execute() {
         results_[0] =
             sveFcaddPredicated<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCADD_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCADD_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -2246,24 +2125,21 @@ void Instruction::execute() {
       case Opcode::AArch64_FCCMPEDrr: {  // fccmpe sn, sm, #nzcv, cc
         results_[0] = fccmp<double>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCCMPDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCCMPDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCCMPESrr: {  // fccmpe sn, sm, #nzcv, cc
         results_[0] = fccmp<float>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCCMPESrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCCMPESrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCCMPSrr: {  // fccmp sn, sm, #nzcv, cc
         results_[0] = fccmp<float>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCCMPSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCCMPSrr" << std::endl;
         }
         break;
       }
@@ -2272,8 +2148,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x == y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMEQv2i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMEQv2i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2282,8 +2158,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x == y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMEQv4i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMEQv4i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2292,8 +2168,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](double x, double y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZ0_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZ0_D"
+                    << std::endl;
         }
         break;
       }
@@ -2302,8 +2178,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](float x, float y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZ0_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZ0_S"
+                    << std::endl;
         }
         break;
       }
@@ -2312,8 +2188,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, false,
             [](double x, double y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -2322,8 +2198,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, false,
             [](float x, float y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGE_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -2332,8 +2208,8 @@ void Instruction::execute() {
             sourceValues_, false,
             [](float x, float y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGEv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGEv2f32"
+                    << std::endl;
         }
         break;
       }
@@ -2342,8 +2218,8 @@ void Instruction::execute() {
             sourceValues_, false,
             [](float x, double y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGEv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGEv2f64"
+                    << std::endl;
         }
         break;
       }
@@ -2352,8 +2228,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](double x, double y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGEv2i64rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGEv2i64rz"
+                    << std::endl;
         }
         break;
       }
@@ -2362,8 +2238,8 @@ void Instruction::execute() {
             sourceValues_, false,
             [](float x, float y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGEv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGEv4f32"
+                    << std::endl;
         }
         break;
       }
@@ -2372,8 +2248,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x >= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGEv4i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGEv4i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2382,8 +2258,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](double x, double y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZ0_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZ0_D"
+                    << std::endl;
         }
         break;
       }
@@ -2392,8 +2268,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](float x, float y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZ0_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZ0_S"
+                    << std::endl;
         }
         break;
       }
@@ -2402,8 +2278,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, false,
             [](double x, double y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -2412,8 +2288,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, false,
             [](float x, float y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGT_PPzZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -2422,8 +2298,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGTv2i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGTv2i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2432,8 +2308,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](double x, double y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGTv2i64rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGTv2i64rz"
+                    << std::endl;
         }
         break;
       }
@@ -2442,8 +2318,8 @@ void Instruction::execute() {
             sourceValues_, false,
             [](double x, double y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGTv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGTv2f64"
+                    << std::endl;
         }
         break;
       }
@@ -2452,8 +2328,8 @@ void Instruction::execute() {
             sourceValues_, false,
             [](float x, float y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGTv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGTv4f32"
+                    << std::endl;
         }
         break;
       }
@@ -2462,8 +2338,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x > y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMGTv4i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMGTv4i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2471,8 +2347,8 @@ void Instruction::execute() {
         results_[0] =
             sveFcmlaPredicated<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLA_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLA_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -2481,8 +2357,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](double x, double y) -> bool { return x <= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLE_PPzZ0_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLE_PPzZ0_D"
+                    << std::endl;
         }
         break;
       }
@@ -2491,8 +2367,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](float x, float y) -> bool { return x <= y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLE_PPzZ0_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLE_PPzZ0_S"
+                    << std::endl;
         }
         break;
       }
@@ -2501,8 +2377,8 @@ void Instruction::execute() {
             sourceValues_, metadata_, VL_bits, true,
             [](float x, float y) -> bool { return x < y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLT_PPzZ0_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLT_PPzZ0_S"
+                    << std::endl;
         }
         break;
       }
@@ -2511,8 +2387,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x < y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLTv2i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLTv2i32rz"
+                    << std::endl;
         }
         break;
       }
@@ -2521,8 +2397,8 @@ void Instruction::execute() {
             sourceValues_, true,
             [](double x, double y) -> bool { return x < y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLTv2i64rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLTv2i64rz"
+                    << std::endl;
         }
         break;
       }
@@ -2531,88 +2407,80 @@ void Instruction::execute() {
             sourceValues_, true,
             [](float x, float y) -> bool { return x < y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMLTv4i32rz" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMLTv4i32rz"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
         results_[0] = fcmp<double>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPDri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPDrr: {  // fcmp dn, dm
         results_[0] = fcmp<double>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPEDri: {  // fcmpe dn, #imm
         results_[0] = fcmp<double>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPEDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPEDri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPEDrr: {  // fcmpe dn, dm
         results_[0] = fcmp<double>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPEDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPEDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPESri: {  // fcmpe sn, #imm
         results_[0] = fcmp<float>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPESri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPESri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPESrr: {  // fcmpe sn, sm
         results_[0] = fcmp<float>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPESrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPESrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPSri: {  // fcmp sn, #imm
         results_[0] = fcmp<float>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPSri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCMPSrr: {  // fcmp sn, sm
         results_[0] = fcmp<float>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCMPSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCMPSrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCPY_ZPmI_D: {  // fcpy zd.d, pg/m, #const
         results_[0] = sveFcpy_imm<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCPY_ZPmI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCPY_ZPmI_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCPY_ZPmI_S: {  // fcpy zd.s, pg/m, #const
         results_[0] = sveFcpy_imm<float>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCPY_ZPmI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCPY_ZPmI_S"
+                    << std::endl;
         }
         break;
       }
@@ -2621,8 +2489,7 @@ void Instruction::execute() {
                                        [](double x) -> double { return x; }),
                        256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCSELDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCSELDrrr" << std::endl;
         }
         break;
       }
@@ -2631,8 +2498,7 @@ void Instruction::execute() {
                                       [](float x) -> float { return x; }),
                        256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCSELSrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCSELSrrr" << std::endl;
         }
         break;
       }
@@ -2640,8 +2506,8 @@ void Instruction::execute() {
         results_[0] = {
             static_cast<int32_t>(round(sourceValues_[0].get<double>())), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTASUWDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTASUWDr"
+                    << std::endl;
         }
         break;
       }
@@ -2649,8 +2515,8 @@ void Instruction::execute() {
         results_[0] =
             static_cast<int64_t>(round(sourceValues_[0].get<double>()));
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTASUXDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTASUXDr"
+                    << std::endl;
         }
         break;
       }
@@ -2658,40 +2524,39 @@ void Instruction::execute() {
         // TODO: Handle NaNs, denorms, and saturation?
         results_[0] = vecFcvtl<double, float, 1>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTDSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTDSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTLv2i32: {  // fcvtl vd.2d, vn.2s
         results_[0] = vecFcvtl<double, float, 2>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTLv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTLv2i32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTLv4i32: {  // fcvtl2 vd.2d, vn.4s
         results_[0] = vecFcvtl<double, float, 2>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTLv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTLv4i32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTNv2i32: {  // fcvtn vd.2s, vn.2d
         results_[0] = vecFcvtn<float, double, 2>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTNv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTNv2i32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTNv4i32: {  // fcvtn2 vd.4s, vn.2d
         results_[0] = vecFcvtn<float, double, 4>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTNv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTNv4i32"
+                    << std::endl;
         }
         break;
       }
@@ -2699,8 +2564,7 @@ void Instruction::execute() {
         // TODO: Handle NaNs, denorms, and saturation?
         results_[0] = vecFcvtl<float, double, 1>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTSDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTSDr" << std::endl;
         }
         break;
       }
@@ -2710,8 +2574,8 @@ void Instruction::execute() {
             static_cast<int32_t>(std::trunc(sourceValues_[0].get<double>())),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZSUWDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZSUWDr"
+                    << std::endl;
         }
         break;
       }
@@ -2720,8 +2584,8 @@ void Instruction::execute() {
         results_[0] = {
             static_cast<int32_t>(std::trunc(sourceValues_[0].get<float>())), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZSUWSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZSUWSr"
+                    << std::endl;
         }
         break;
       }
@@ -2731,8 +2595,8 @@ void Instruction::execute() {
             static_cast<int64_t>(std::trunc(sourceValues_[0].get<double>())),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZSUXDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZSUXDr"
+                    << std::endl;
         }
         break;
       }
@@ -2740,8 +2604,8 @@ void Instruction::execute() {
         results_[0] =
             sveFcvtzsPredicated<int64_t, double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_DtoD" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_DtoD"
+                    << std::endl;
         }
         break;
       }
@@ -2749,8 +2613,8 @@ void Instruction::execute() {
         results_[0] =
             sveFcvtzsPredicated<int32_t, double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_DtoS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_DtoS"
+                    << std::endl;
         }
         break;
       }
@@ -2758,8 +2622,8 @@ void Instruction::execute() {
         results_[0] =
             sveFcvtzsPredicated<int64_t, float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_StoD" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_StoD"
+                    << std::endl;
         }
         break;
       }
@@ -2767,120 +2631,117 @@ void Instruction::execute() {
         results_[0] =
             sveFcvtzsPredicated<int32_t, float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_StoS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZS_ZPmZ_StoS"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZSv2f64: {  // fcvtzs vd.2d, vn.2d
         results_[0] = vecFcvtzs<int64_t, double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZSv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZSv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZUUWDr: {  // fcvtzu wd, dn
         results_[0] = {fcvtzu_integer<uint32_t, double>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZUUWDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZUUWDr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZUUWSr: {  // fcvtzu wd, sn
         results_[0] = {fcvtzu_integer<uint32_t, float>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZUUWSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZUUWSr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZUUXDr: {  // fcvtzu xd, dn
         results_[0] = {fcvtzu_integer<uint64_t, double>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZUUXDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZUUXDr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZUUXSr: {  // fcvtzu xd, sn
         results_[0] = {fcvtzu_integer<uint64_t, float>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZUUXSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZUUXSr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
         results_[0] = {fcvtzu_integer<uint64_t, double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVTZUv1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVTZUv1i64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
         results_[0] = sveFcvtPredicated<float, double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVT_ZPmZ_DtoS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVT_ZPmZ_DtoS"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FCVT_ZPmZ_StoD: {  // fcvt zd.d, pg/m, zn.s
         results_[0] = sveFcvtPredicated<double, float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FCVT_ZPmZ_StoD" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FCVT_ZPmZ_StoD"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIVDrr: {  // fdiv dd, dn, dm
         results_[0] = {div_3ops<double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIVDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIVDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIVR_ZPmZ_D: {  // fdivr zdn.d, pg/m, zdn.d, zm.d
         results_[0] = sveFDivPredicated<double, true>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIVR_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIVR_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
         results_[0] = sveFDivPredicated<float, true>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIVR_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIVR_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIVSrr: {  // fdiv sd, sn, sm
         results_[0] = {div_3ops<float>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIVSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIVSrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zdn.d, pg/m, zdn.d, zm.d
         results_[0] = sveFDivPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIV_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIV_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
         results_[0] = vecFDiv<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDIVv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDIVv2f64" << std::endl;
         }
         break;
       }
@@ -2888,8 +2749,7 @@ void Instruction::execute() {
         results_[0] =
             sveDup_immOrScalar<double>(sourceValues_, metadata_, VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDUP_ZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDUP_ZI_D" << std::endl;
         }
         break;
       }
@@ -2897,64 +2757,59 @@ void Instruction::execute() {
         results_[0] =
             sveDup_immOrScalar<float>(sourceValues_, metadata_, VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FDUP_ZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FDUP_ZI_S" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
         results_[0] = {madd_4ops<double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMADDDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMADDDrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMADDSrrr: {  // fmadd sn, sm, sa
         results_[0] = {madd_4ops<float>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMADDSrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMADDSrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMAD_ZPmZZ_D: {  // fmad zd.d, pg/m, zn.d, zm.d
         results_[0] = sveFmadPredicated_vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAD_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAD_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMAD_ZPmZZ_S: {  // fmad zd.s, pg/m, zn.s, zm.s
         results_[0] = sveFmadPredicated_vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAD_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAD_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMAXNMDrr: {  // fmaxnm dd, dn, dm
         results_[0] = fmaxnm_3ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAXNMDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAXNMDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd, vd.2d
         results_[0] = vecMaxnmp_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAXNMPv2i64p" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAXNMPv2i64p"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMAXNMSrr: {  // fmaxnm sd, sn, sm
         results_[0] = fmaxnm_3ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAXNMSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAXNMSrr" << std::endl;
         }
         break;
       }
@@ -2963,32 +2818,30 @@ void Instruction::execute() {
             sourceValues_,
             [](double x, double y) -> double { return std::fmax(x, y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMAXNMv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMAXNMv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMINNMDrr: {  // fminnm dd, dn, dm
         results_[0] = fminnm_3ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMINNMDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMINNMDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMINNMPv2i64p: {  // fminnmp dd, vd.2d
         results_[0] = vecMinv_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMINNMPv2i64p" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMINNMPv2i64p"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMINNMSrr: {  // fminnm sd, sn, sm
         results_[0] = fminnm_3ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMINNMSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMINNMSrr" << std::endl;
         }
         break;
       }
@@ -2997,32 +2850,31 @@ void Instruction::execute() {
             sourceValues_,
             [](double x, double y) -> double { return std::fmin(x, y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMINNMv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMINNMv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLA_ZPmZZ_D: {  // fmla zd.d, pg/m, zn.d, zm.d
         results_[0] = sveMlaPredicated_vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
         results_[0] = sveMlaPredicated_vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLAv2f32: {  // fmla vd.2s, vn.2s, vm.2s
         results_[0] = vecFmla_3vecs<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv2f32" << std::endl;
         }
         break;
       }
@@ -3030,8 +2882,8 @@ void Instruction::execute() {
         results_[0] =
             sveMlaIndexed_vecs<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZZZI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZZZI_D"
+                    << std::endl;
         }
         break;
       }
@@ -3039,16 +2891,15 @@ void Instruction::execute() {
         results_[0] =
             sveMlaIndexed_vecs<float>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZZZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZZZI_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
         results_[0] = vecFmla_3vecs<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv2f64" << std::endl;
         }
         break;
       }
@@ -3056,8 +2907,8 @@ void Instruction::execute() {
                                                  // vm.2s[index]
         results_[0] = vecFmlaIndexed_3vecs<float, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv2i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv2i32_indexed"
+                    << std::endl;
         }
         break;
       }
@@ -3065,16 +2916,15 @@ void Instruction::execute() {
                                                  // vm.d[index]
         results_[0] = vecFmlaIndexed_3vecs<double, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv2i64_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv2i64_indexed"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLAv4f32: {  // fmla vd.4s, vn.4s, vm.4s
         results_[0] = vecFmla_3vecs<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv4f32" << std::endl;
         }
         break;
       }
@@ -3082,48 +2932,46 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results_[0] = vecFmlaIndexed_3vecs<float, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLAv4i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLAv4i32_indexed"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLS_ZPmZZ_D: {  // fmls zd.d, pg/m, zn.d, zm.d
         results_[0] = sveFmlsPredicated_vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLS_ZPmZZ_S: {  // fmls zd.s, pg/m, zn.s, zm.s
         results_[0] = sveFmlsPredicated_vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLA_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLSv2f64: {  // fmls vd.2d, vn.2d, vm.2d
         results_[0] = vecFmls_3vecs<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLSv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLSv2f64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLSv2i64_indexed: {
         results_[0] = vecFmlsIndexed_3vecs<double, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLSv2i64_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLSv2i64_indexed"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMLSv4f32: {  // fmls vd.4s, vn.4s, vm.4s
         results_[0] = vecFmls_3vecs<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLSv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLSv4f32" << std::endl;
         }
         break;
       }
@@ -3131,8 +2979,8 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results_[0] = vecFmlsIndexed_3vecs<float, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMLSv4i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMLSv4i32_indexed"
+                    << std::endl;
         }
         break;
       }
@@ -3167,8 +3015,8 @@ void Instruction::execute() {
           results_[row] = {outRow, 256};
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOPA_MPPZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOPA_MPPZZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -3203,72 +3051,65 @@ void Instruction::execute() {
           results_[row] = {outRow, 256};
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOPA_MPPZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOPA_MPPZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
         results_[0] = sourceValues_[0].getAsVector<double>()[1];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVDXHighr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVDXHighr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVDXr: {  // fmov xd, dn
         results_[0] = sourceValues_[0].get<double>();
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVDXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVDXr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
         results_[0] = {metadata_.operands[1].fp, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVDi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVDi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVDr: {  // fmov dd, dn
         results_[0] = {sourceValues_[0].get<double>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVSWr: {  // fmov wd, sn
         results_[0] = {sourceValues_[0].get<float>(), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVSWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVSWr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVSi: {  // fmov sn, #imm
         results_[0] = {static_cast<float>(metadata_.operands[1].fp), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVSi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVSi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVSr: {  // fmov sd, sn
         results_[0] = {sourceValues_[0].get<float>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVWSr: {  // fmov sd, wn
         results_[0] = {sourceValues_[0].get<float>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVWSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVWSr" << std::endl;
         }
         break;
       }
@@ -3277,88 +3118,83 @@ void Instruction::execute() {
                          sourceValues_[1].get<double>()};
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVXDHighr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVXDHighr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVXDr: {  // fmov dd, xn
         results_[0] = {sourceValues_[0].get<double>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVXDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVXDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVv2f32_ns: {  // fmov vd.2s, #imm
         results_[0] = vecMovi_imm<float, 2>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVv2f32_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVv2f32_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
         results_[0] = vecMovi_imm<double, 2>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVv2f64_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVv2f64_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMOVv4f32_ns: {  // fmov vd.4s, #imm
         results_[0] = vecMovi_imm<float, 4>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMOVv4f32_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMOVv4f32_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMSB_ZPmZZ_D: {  // fmsb zd.d, pg/m, zn.d, zm.d
         results_[0] = sveFmsbPredicated_vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMBS_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMBS_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMSB_ZPmZZ_S: {  // fmsb zd.s, pg/m, zn.s, zm.s
         results_[0] = sveFmsbPredicated_vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMBS_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMBS_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMSUBDrrr: {  // fmsub dn, dm, da
         results_[0] = {msub_4ops<double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMSUBDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMSUBDrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMSUBSrrr: {  // fmsub sn, sm, sa
         results_[0] = {msub_4ops<float>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMSUBSrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMSUBSrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMULDrr: {  // fmul dd, dn, dm
         results_[0] = {mul_3ops<double>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULDrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMULSrr: {  // fmul sd, sn, sm
         results_[0] = {mul_3ops<float>(sourceValues_), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULSrr" << std::endl;
         }
         break;
       }
@@ -3366,8 +3202,8 @@ void Instruction::execute() {
         results_[0] =
             sveMulPredicated<double>(sourceValues_, metadata_, VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmI_D"
+                    << std::endl;
         }
         break;
       }
@@ -3375,8 +3211,8 @@ void Instruction::execute() {
         results_[0] =
             sveMulPredicated<float>(sourceValues_, metadata_, VL_bits, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_SPmI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_SPmI_S"
+                    << std::endl;
         }
         break;
       }
@@ -3384,8 +3220,8 @@ void Instruction::execute() {
         results_[0] =
             sveMulPredicated<double>(sourceValues_, metadata_, VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -3393,40 +3229,40 @@ void Instruction::execute() {
         results_[0] =
             sveMulPredicated<float>(sourceValues_, metadata_, VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMUL_ZZZ_D: {  // fmul zd.d, zn.d, zm.d
         results_[0] = sveFmul_3ops<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_ZZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMUL_ZZZ_S: {  // fmul zd.s, zn.s, zm.s
         results_[0] = sveFmul_3ops<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_ZZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMULv1i32_indexed: {  // fmul sd, sn, vm.s[index]
         results_[0] = vecFmulIndexed_vecs<float, 1>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMUL_v1i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMUL_v1i32_indexed"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FMULv1i64_indexed: {  // fmul dd, dn, vm.d[index]
         results_[0] = vecFmulIndexed_vecs<double, 1>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv1i64_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv1i64_indexed"
+                    << std::endl;
         }
         break;
       }
@@ -3434,8 +3270,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 2>(
             sourceValues_, [](float x, float y) -> float { return x * y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv2f32" << std::endl;
         }
         break;
       }
@@ -3443,8 +3278,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<double, 2>(
             sourceValues_, [](double x, double y) -> double { return x * y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv2f64" << std::endl;
         }
         break;
       }
@@ -3452,8 +3286,8 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results_[0] = vecFmulIndexed_vecs<float, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv2i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv2i32_indexed"
+                    << std::endl;
         }
         break;
       }
@@ -3461,8 +3295,8 @@ void Instruction::execute() {
                                                  // vm.d[index]
         results_[0] = vecFmulIndexed_vecs<double, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv2i64_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv2i64_indexed"
+                    << std::endl;
         }
         break;
       }
@@ -3470,8 +3304,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 4>(
             sourceValues_, [](float x, float y) -> float { return x * y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv4f32" << std::endl;
         }
         break;
       }
@@ -3479,120 +3312,116 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results_[0] = vecFmulIndexed_vecs<float, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FMULv4i32_indexed" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FMULv4i32_indexed"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
         results_[0] = {-sourceValues_[0].get<double>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEGDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEGDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEGSr: {  // fneg sd, sn
         results_[0] = {-sourceValues_[0].get<float>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEGSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEGSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEG_ZPmZ_D: {  // fneg zd.d, pg/m, zn.d
         results_[0] = sveFnegPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEG_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEG_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEG_ZPmZ_S: {  // fneg zd.s, pg/m, zn.s
         results_[0] = sveFnegPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEG_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEG_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
         results_[0] = vecFneg_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEGv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEGv2f64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNEGv4f32: {  // fneg vd.4s, vn.4s
         results_[0] = vecFneg_2ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNEGv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNEGv4f32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMADDDrrr: {  // fnmadd dd, dn, dm, da
         results_[0] = fnmadd_4ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMADDDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMADDDrrr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMADDSrrr: {  // fnmadd sd, sn, sm, sa
         results_[0] = fnmadd_4ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMADDSrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMADDSrrr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMLS_ZPmZZ_D: {  // fnmls zd.d, pg/m, zn.d, zm.d
         results_[0] = sveFnmlsPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMLS_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMLS_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMLS_ZPmZZ_S: {  // fnmls zd.s, pg/m, zn.s, zm.s
         results_[0] = sveFnmlsPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMLS_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMLS_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMSB_ZPmZZ_D: {  // fnmsb zdn.d, pg/m, zm.d, za.d
         results_[0] = sveFnmsbPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMSB_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMSB_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMSB_ZPmZZ_S: {  // fnmsb zdn.s, pg/m, zm.s, za.s
         results_[0] = sveFnmsbPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMSB_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMSB_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMSUBDrrr: {  // fnmsub dd, dn, dm, da
         results_[0] = fnmsub_4ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMSUBDrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMSUBDrrr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FNMSUBSrrr: {  // fnmsub sd, sn, sm, sa
         results_[0] = fnmsub_4ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMSUBSrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMSUBSrrr"
+                    << std::endl;
         }
         break;
       }
@@ -3601,8 +3430,7 @@ void Instruction::execute() {
             sourceValues_,
             [](double x, double y) -> double { return -(x * y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMULDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMULDrr" << std::endl;
         }
         break;
       }
@@ -3610,176 +3438,168 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 1>(
             sourceValues_, [](float x, float y) -> float { return -(x * y); });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FNMULSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FNMULSrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
         results_[0] = {round(sourceValues_[0].get<double>()), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRINTADr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRINTADr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRINTN_ZPmZ_D: {  // frintn zd.d, pg/m, zn.d
         results_[0] = sveFrintnPredicated<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRINTN_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRINTN_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRINTN_ZPmZ_S: {  // frintn zd.s, pg/m, zn.s
         results_[0] = sveFrintnPredicated<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRINTN_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRINTN_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRINTPDr: {  // frintp dd, dn
         results_[0] = frintpScalar_2ops<double>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRINTPDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRINTPDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRINTPSr: {  // frintp sd, sn
         results_[0] = frintpScalar_2ops<float>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRINTPSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRINTPSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn
         results_[0] = vecFrsqrte_2ops<float, 1>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTEv1i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTEv1i32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTEv1i64: {  // frsqrte dd, dn
         results_[0] = vecFrsqrte_2ops<double, 1>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTEv1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTEv1i64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTEv2f32: {  // frsqrte vd.2s, vn.2s
         results_[0] = vecFrsqrte_2ops<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTEv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTEv2f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTEv2f64: {  // frsqrte vd.2d, vn.2d
         results_[0] = vecFrsqrte_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTEv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTEv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTEv4f32: {  // frsqrte vd.4s, vn.4s
         results_[0] = vecFrsqrte_2ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTEv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTEv4f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTS32: {  // frsqrts sd, sn, sm
         results_[0] = vecFrsqrts_3ops<float, 1>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTS32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTS32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTS64: {  // frsqrts dd, dn, dm
         results_[0] = vecFrsqrts_3ops<double, 1>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTS64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTS64" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTSv2f32: {  // frsqrts vd.2s, vn.2s, vn.2s
         results_[0] = vecFrsqrts_3ops<float, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTSv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTSv2f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTSv2f64: {  // frsqrts vd.2d, vn.2d, vm.2d
         results_[0] = vecFrsqrts_3ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTSv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTSv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FRSQRTSv4f32: {  // frsqrts vd.4s, vn.4s, vm.4s
         results_[0] = vecFrsqrts_3ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FRSQRTSv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FRSQRTSv4f32"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRTDr: {  // fsqrt dd, dn
         results_[0] = {::sqrt(sourceValues_[0].get<double>()), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRTDr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRTDr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRTSr: {  // fsqrt sd, sn
         results_[0] = {::sqrtf(sourceValues_[0].get<float>()), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRTSr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRTSr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRT_ZPmZ_D: {  // fsqrt zd.d, pg/m, zn.d
         results_[0] = sveFsqrtPredicated_2vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRT_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRT_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fsqrt zd.s, pg/m, zn.s
         results_[0] = sveFsqrtPredicated_2vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRT_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRT_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRTv2f64: {  // fsqrt vd.2d, vn.2d
         results_[0] = vecFsqrt_2ops<double, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRTv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRTv2f64"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSQRTv4f32: {  // fsqrt vd.4s, vn.4s
         results_[0] = vecFsqrt_2ops<float, 4>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSQRTv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSQRTv4f32"
+                    << std::endl;
         }
         break;
       }
@@ -3787,24 +3607,23 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<double, 1>(
             sourceValues_, [](double x, double y) -> double { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBDrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBDrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSUBR_ZPmZ_D: {  // fsubr zdn.d, pg/m, zdn.d, zm.d
         results_[0] = sveSubrPredicated_3vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBR_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBR_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSUBR_ZPmZ_S: {  // fsubr zdn.s, pg/m, zdn.s, zm.s
         results_[0] = sveSubrPredicated_3vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBR_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBR_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -3812,8 +3631,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 1>(
             sourceValues_, [](double x, double y) -> double { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBSrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBSrr" << std::endl;
         }
         break;
       }
@@ -3821,8 +3639,8 @@ void Instruction::execute() {
         results_[0] =
             sveSubPredicated_imm<double>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmI_D"
+                    << std::endl;
         }
         break;
       }
@@ -3830,8 +3648,8 @@ void Instruction::execute() {
         results_[0] =
             sveSubPredicated_imm<float>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmI_S"
+                    << std::endl;
         }
         break;
       }
@@ -3840,8 +3658,8 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](double x, double y) -> double { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -3850,24 +3668,24 @@ void Instruction::execute() {
             sourceValues_, VL_bits,
             [](float x, float y) -> float { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSUB_ZZZ_D: {  // fsub zd.d, zn.d, zm.d
         results_[0] = sveSub_3vecs<double>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_FSUB_ZZZ_S: {  // fsub zd.s, zn.s, zm.s
         results_[0] = sveSub_3vecs<float>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUB_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUB_ZZZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -3875,8 +3693,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 2>(
             sourceValues_, [](float x, float y) -> float { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBv2f32" << std::endl;
         }
         break;
       }
@@ -3884,8 +3701,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<double, 2>(
             sourceValues_, [](double x, double y) -> double { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBv2f64" << std::endl;
         }
         break;
       }
@@ -3893,8 +3709,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<float, 4>(
             sourceValues_, [](float x, float y) -> float { return x - y; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_FSUBv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_FSUBv4f32" << std::endl;
         }
         break;
       }
@@ -3915,8 +3730,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_GLD1D_IMM_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_GLD1D_IMM_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -3942,8 +3757,8 @@ void Instruction::execute() {
 
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_GLD1D_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_GLD1D_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -3964,8 +3779,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_GLD1SW_D_IMM_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_GLD1SW_D_IMM_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -3986,8 +3801,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_GLD1W_D_SCALED_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_GLD1W_D_SCALED_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -4008,104 +3823,92 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_GLD1W_SXTW_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_GLD1W_SXTW_REAL"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // TODO: Observe hints
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_HINT" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_HINT" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
         results_[0] = sveInc_gprImm<int8_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INBC_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INBC_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCD_XPiI: {  // incd xdn{, pattern{, #imm}}
         results_[0] = sveInc_gprImm<int64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCD_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCD_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
         results_[0] = sveInc_imm<int64_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCD_ZPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCD_ZPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
         results_[0] = sveInc_gprImm<int16_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCH_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCH_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
         results_[0] = sveInc_imm<int16_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCH_ZPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCH_ZPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCP_XP_B: {  // incp xdn, pm.b
         results_[0] = sveIncp_gpr<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCP_XP_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCP_XP_B" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCP_XP_D: {  // incp xdn, pm.d
         results_[0] = sveIncp_gpr<uint64_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCP_XP_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCP_XP_D" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCP_XP_H: {  // incp xdn, pm.h
         results_[0] = sveIncp_gpr<uint16_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCP_XP_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCP_XP_H" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCP_XP_S: {  // incp xdn, pm.s
         results_[0] = sveIncp_gpr<uint32_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCP_XP_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCP_XP_S" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
         results_[0] = sveInc_gprImm<int32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCW_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCW_XPiI" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}
         results_[0] = sveInc_imm<int32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INCW_ZPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INCW_ZPiI" << std::endl;
         }
         break;
       }
@@ -4113,8 +3916,8 @@ void Instruction::execute() {
         results_[0] =
             sveIndex<int8_t>(sourceValues_, metadata_, VL_bits, true, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_II_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_II_B"
+                    << std::endl;
         }
         break;
       }
@@ -4122,8 +3925,8 @@ void Instruction::execute() {
         results_[0] =
             sveIndex<int64_t>(sourceValues_, metadata_, VL_bits, true, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_II_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_II_D"
+                    << std::endl;
         }
         break;
       }
@@ -4131,8 +3934,8 @@ void Instruction::execute() {
         results_[0] =
             sveIndex<int16_t>(sourceValues_, metadata_, VL_bits, true, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_II_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_II_H"
+                    << std::endl;
         }
         break;
       }
@@ -4140,8 +3943,8 @@ void Instruction::execute() {
         results_[0] =
             sveIndex<int32_t>(sourceValues_, metadata_, VL_bits, true, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_II_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_II_S"
+                    << std::endl;
         }
         break;
       }
@@ -4149,8 +3952,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int8_t, int32_t>(sourceValues_, metadata_,
                                                 VL_bits, true, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_IR_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_IR_B"
+                    << std::endl;
         }
         break;
       }
@@ -4158,8 +3961,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int64_t, int64_t>(sourceValues_, metadata_,
                                                  VL_bits, true, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_IR_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_IR_D"
+                    << std::endl;
         }
         break;
       }
@@ -4167,8 +3970,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int16_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, true, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_IR_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_IR_H"
+                    << std::endl;
         }
         break;
       }
@@ -4176,8 +3979,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int32_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, true, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_IR_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_IR_S"
+                    << std::endl;
         }
         break;
       }
@@ -4185,8 +3988,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int8_t, int32_t>(sourceValues_, metadata_,
                                                 VL_bits, false, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RI_B"
+                    << std::endl;
         }
         break;
       }
@@ -4194,8 +3997,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int64_t, int64_t>(sourceValues_, metadata_,
                                                  VL_bits, false, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RI_D"
+                    << std::endl;
         }
         break;
       }
@@ -4203,8 +4006,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int16_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, false, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RI_H"
+                    << std::endl;
         }
         break;
       }
@@ -4212,8 +4015,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int32_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, false, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RI_S"
+                    << std::endl;
         }
         break;
       }
@@ -4221,8 +4024,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int8_t, int32_t>(sourceValues_, metadata_,
                                                 VL_bits, false, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RR_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RR_B"
+                    << std::endl;
         }
         break;
       }
@@ -4230,8 +4033,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int64_t, int64_t>(sourceValues_, metadata_,
                                                  VL_bits, false, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RR_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RR_D"
+                    << std::endl;
         }
         break;
       }
@@ -4239,8 +4042,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int16_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, false, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RR_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RR_H"
+                    << std::endl;
         }
         break;
       }
@@ -4248,8 +4051,8 @@ void Instruction::execute() {
         results_[0] = sveIndex<int32_t, int32_t>(sourceValues_, metadata_,
                                                  VL_bits, false, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INDEX_RR_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INDEX_RR_S"
+                    << std::endl;
         }
         break;
       }
@@ -4257,8 +4060,8 @@ void Instruction::execute() {
         results_[0] =
             vecInsIndex_gpr<uint16_t, uint32_t, 8>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INNSvi16gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INNSvi16gpr"
+                    << std::endl;
         }
         break;
       }
@@ -4266,16 +4069,16 @@ void Instruction::execute() {
         results_[0] =
             vecInsIndex_gpr<uint32_t, uint32_t, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INSvi32gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INSvi32gpr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INSvi32lane: {  // ins vd.s[index1], vn.s[index2]
         results_[0] = vecIns_2Index<uint32_t, 4>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INSv32lane" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INSv32lane"
+                    << std::endl;
         }
         break;
       }
@@ -4283,16 +4086,16 @@ void Instruction::execute() {
         results_[0] =
             vecInsIndex_gpr<uint64_t, uint64_t, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INSvi64gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INSvi64gpr"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_INSvi64lane: {  // ins vd.d[index1], vn.d[index2]
         results_[0] = vecIns_2Index<uint64_t, 2>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INSvi64lane" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INSvi64lane"
+                    << std::endl;
         }
         break;
       }
@@ -4300,8 +4103,7 @@ void Instruction::execute() {
         results_[0] =
             vecInsIndex_gpr<uint8_t, uint32_t, 16>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_INSvi8gpr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_INSvi8gpr" << std::endl;
         }
         break;
       }
@@ -4340,8 +4142,8 @@ void Instruction::execute() {
             results_[i] = sourceValues_[i];
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_H_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_H_D"
+                    << std::endl;
         }
         break;
       }
@@ -4372,8 +4174,8 @@ void Instruction::execute() {
           results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_V_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_V_D"
+                    << std::endl;
         }
         break;
       }
@@ -4412,8 +4214,8 @@ void Instruction::execute() {
             results_[i] = sourceValues_[i];
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_H_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_H_S"
+                    << std::endl;
         }
         break;
       }
@@ -4444,8 +4246,8 @@ void Instruction::execute() {
           results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
         }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_V_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1_MXIPXX_V_S"
+                    << std::endl;
         }
         break;
       }
@@ -4467,8 +4269,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1B" << std::endl;
         }
         break;
       }
@@ -4490,8 +4291,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1B_IMM_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1B_IMM_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -4513,8 +4314,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1D" << std::endl;
         }
         break;
       }
@@ -4537,8 +4337,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1D_IMM_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1D_IMM_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -4560,16 +4360,15 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1H" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LD1Onev16b: {  // ld1 {vt.16b} [xn]
         results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Onev16b" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Onev16b"
+                    << std::endl;
         }
         break;
       }
@@ -4582,16 +4381,15 @@ void Instruction::execute() {
                                        : 16;
         results_[1] = sourceValues_[0].get<uint64_t>() + postIndex;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Onev6b_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Onev6b_POST"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1RD_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1RD_IMM" << std::endl;
         }
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
@@ -4621,8 +4419,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1RQ_D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1RQ_D_IMM"
+                    << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
@@ -4649,8 +4447,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1RQ_W: {  // ld1rqw {zd.s}, pg/z, [xn, xm, lsl #2]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1RQ_W" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1RQ_W" << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
@@ -4679,8 +4476,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1RQ_W_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1RQ_W_IMM"
+                    << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
@@ -4709,8 +4506,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1RW_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1RW_IMM" << std::endl;
         }
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
@@ -4737,8 +4533,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv16b" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv16b" << std::endl;
         }
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
@@ -4749,8 +4544,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv16b_POST: {  // ld1r {vt.16b}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv16b_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv16b_POST"
+                    << std::endl;
         }
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
@@ -4763,8 +4558,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv1d" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv1d" << std::endl;
         }
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
@@ -4774,8 +4568,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv1d_POST: {  // ld1r {vt.1d}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv1d_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv1d_POST"
+                    << std::endl;
         }
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
@@ -4787,8 +4581,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv2d" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv2d" << std::endl;
         }
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
@@ -4798,8 +4591,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv2d_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv2d_POST"
+                    << std::endl;
         }
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
@@ -4811,8 +4604,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv2s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv2s" << std::endl;
         }
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
@@ -4822,8 +4614,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv2s_POST: {  // ld1r {vt.2s}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv2s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv2s_POST"
+                    << std::endl;
         }
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
@@ -4835,8 +4627,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv4h" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv4h" << std::endl;
         }
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
@@ -4846,8 +4637,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv4h_POST: {  // ld1r {vt.4h}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv4h_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv4h_POST"
+                    << std::endl;
         }
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
@@ -4859,8 +4650,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv4s" << std::endl;
         }
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
@@ -4870,8 +4660,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv4s_POST: {  // ld1r {vt.4s}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv4s_POST"
+                    << std::endl;
         }
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
@@ -4883,8 +4673,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv8b" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv8b" << std::endl;
         }
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
@@ -4895,8 +4684,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv8b_POST: {  // ld1r {vt.8b}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv8b_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv8b_POST"
+                    << std::endl;
         }
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
@@ -4909,8 +4698,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv8h" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv8h" << std::endl;
         }
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
@@ -4920,8 +4708,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Rv8h_POST: {  // ld1r {vt.8h}, [xn], #imm
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Rv8h_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Rv8h_POST"
+                    << std::endl;
         }
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
@@ -4944,8 +4732,8 @@ void Instruction::execute() {
         results_[2] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
         results_[3] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Fourv4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Fourv4s"
+                    << std::endl;
         }
         break;
       }
@@ -4968,8 +4756,8 @@ void Instruction::execute() {
                                        : 64;
         results_[4] = sourceValues_[0].get<uint64_t>() + postIndex;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Fourv4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Fourv4s_POST"
+                    << std::endl;
         }
         break;
       }
@@ -4982,8 +4770,7 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDTwov4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDTwov4s" << std::endl;
         }
         break;
       }
@@ -5005,8 +4792,8 @@ void Instruction::execute() {
                                        : 32;
         results_[2] = sourceValues_[0].get<uint64_t>() + postIndex;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1Twov4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1Twov4s_POST"
+                    << std::endl;
         }
         break;
       }
@@ -5028,8 +4815,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1W" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1W" << std::endl;
         }
         break;
       }
@@ -5052,8 +4838,8 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1W_IMM_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1W_IMM_REAL"
+                    << std::endl;
         }
         break;
       }
@@ -5067,8 +4853,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1i32" << std::endl;
         }
         break;
       }
@@ -5082,8 +4867,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1i64" << std::endl;
         }
         break;
       }
@@ -5099,8 +4883,8 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[1].get<uint64_t>() + metadata_.operands[2].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD1i64_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD1i64_POST"
+                    << std::endl;
         }
         break;
       }
@@ -5110,8 +4894,7 @@ void Instruction::execute() {
                                         // #imm, mul vl}]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD2D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD2D" << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
@@ -5145,8 +4928,7 @@ void Instruction::execute() {
         results_[0] = {t1, 256};
         results_[1] = {t2, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD2Twov4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD2Twov4s" << std::endl;
         }
         break;
       }
@@ -5165,8 +4947,8 @@ void Instruction::execute() {
         }
         results_[2] = sourceValues_[2].get<uint64_t>() + offset;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD2Twov4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD2Twov4s_POST"
+                    << std::endl;
         }
         break;
       }
@@ -5174,8 +4956,7 @@ void Instruction::execute() {
                                         // [xn|sp{, #imm, MUL VL}]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD3D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD3D_IMM" << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
@@ -5204,8 +4985,7 @@ void Instruction::execute() {
                                         // pg/z, [xn|sp{, #imm, MUL VL}]
         // LOAD
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LD4D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LD4D_IMM" << std::endl;
         }
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
@@ -5241,8 +5021,7 @@ void Instruction::execute() {
             memoryData_[0].get<uint32_t>() + sourceValues_[0].get<uint32_t>(),
             4);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDADDW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDADDW" << std::endl;
         }
         break;
       }
@@ -5250,8 +5029,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(1, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDARB" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDARB" << std::endl;
         }
         break;
       }
@@ -5259,8 +5037,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDARW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDARW" << std::endl;
         }
         break;
       }
@@ -5268,8 +5045,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDARX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDARX" << std::endl;
         }
         break;
       }
@@ -5277,8 +5053,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDAXRW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDAXRW" << std::endl;
         }
         break;
       }
@@ -5286,8 +5061,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDAXRX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDAXRX" << std::endl;
         }
         break;
       }
@@ -5296,8 +5070,7 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(4, 256);
         results_[1] = memoryData_[1].zeroExtend(4, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDNPSi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDNPSi" << std::endl;
         }
         break;
       }
@@ -5314,8 +5087,7 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         results_[1] = memoryData_[1].zeroExtend(dataSize_, regSize);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDPi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDPi" << std::endl;
         }
         break;
       }
@@ -5334,8 +5106,7 @@ void Instruction::execute() {
         results_[2] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[3].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDPpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDPpost" << std::endl;
         }
         break;
       }
@@ -5354,8 +5125,7 @@ void Instruction::execute() {
         results_[2] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].mem.disp;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDPpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDPpre" << std::endl;
         }
         break;
       }
@@ -5364,8 +5134,7 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         results_[1] = memoryData_[1].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDPSWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDPSWi" << std::endl;
         }
         break;
       }
@@ -5375,8 +5144,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRBBpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRBBpost" << std::endl;
         }
         break;
       }
@@ -5386,8 +5154,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRBBpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRBBpre" << std::endl;
         }
         break;
       }
@@ -5396,8 +5163,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(1, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRBBroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRBBroW" << std::endl;
         }
         break;
       }
@@ -5406,8 +5172,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(1, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRBBroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRBBroX" << std::endl;
         }
         break;
       }
@@ -5415,8 +5180,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(1, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRBBui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRBBui" << std::endl;
         }
         break;
       }
@@ -5434,8 +5198,7 @@ void Instruction::execute() {
                                : 8;
         results_[0] = memoryData_[0].zeroExtend(dataSize_, regSize);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRui" << std::endl;
         }
         break;
       }
@@ -5455,8 +5218,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRpost" << std::endl;
         }
         break;
       }
@@ -5476,8 +5238,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRpre" << std::endl;
         }
         break;
       }
@@ -5485,8 +5246,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(memoryAddresses_[0].size, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRDroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRDroW" << std::endl;
         }
         break;
       }
@@ -5494,8 +5254,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(memoryAddresses_[0].size, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRDroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRDroX" << std::endl;
         }
         break;
       }
@@ -5505,8 +5264,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHHpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHHpost" << std::endl;
         }
         break;
       }
@@ -5516,8 +5274,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHHpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHHpre" << std::endl;
         }
         break;
       }
@@ -5525,8 +5282,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(2, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHHroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHHroW" << std::endl;
         }
         break;
       }
@@ -5534,8 +5290,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(2, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHHroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHHroX" << std::endl;
         }
         break;
       }
@@ -5543,8 +5298,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(2, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHHui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHHui" << std::endl;
         }
         break;
       }
@@ -5552,8 +5306,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(16, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRQroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRQroX" << std::endl;
         }
         break;
       }
@@ -5564,8 +5317,7 @@ void Instruction::execute() {
             RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
                 .zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSBWroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSBWroX" << std::endl;
         }
         break;
       }
@@ -5575,8 +5327,7 @@ void Instruction::execute() {
             RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()))
                 .zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSBWui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSBWui" << std::endl;
         }
         break;
       }
@@ -5584,8 +5335,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int8_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSBXui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSBXui" << std::endl;
         }
         break;
       }
@@ -5597,8 +5347,7 @@ void Instruction::execute() {
                           4)
                 .zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSHWroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSHWroW" << std::endl;
         }
         break;
       }
@@ -5610,8 +5359,7 @@ void Instruction::execute() {
                           4)
                 .zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSHWroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSHWroX" << std::endl;
         }
         break;
       }
@@ -5622,8 +5370,7 @@ void Instruction::execute() {
                           4)
                 .zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSHWui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSHWui" << std::endl;
         }
         break;
       }
@@ -5632,8 +5379,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSHXroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSHXroW" << std::endl;
         }
         break;
       }
@@ -5642,8 +5388,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSHXroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSHXroX" << std::endl;
         }
         break;
       }
@@ -5651,8 +5396,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRHXiu" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRHXiu" << std::endl;
         }
         break;
       }
@@ -5660,8 +5404,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSWL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSWL" << std::endl;
         }
         break;
       }
@@ -5671,8 +5414,7 @@ void Instruction::execute() {
         results_[1] =
             sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSWpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSWpost" << std::endl;
         }
         break;
       }
@@ -5681,8 +5423,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSWroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSWroX" << std::endl;
         }
         break;
       }
@@ -5690,8 +5431,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSWui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSWui" << std::endl;
         }
         break;
       }
@@ -5699,8 +5439,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSroW" << std::endl;
         }
         break;
       }
@@ -5708,8 +5447,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRSroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRSroX" << std::endl;
         }
         break;
       }
@@ -5717,8 +5455,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRWroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRWroW" << std::endl;
         }
         break;
       }
@@ -5726,8 +5463,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRWroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRWroX" << std::endl;
         }
         break;
       }
@@ -5735,8 +5471,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRXL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRXL" << std::endl;
         }
         break;
       }
@@ -5744,8 +5479,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRXroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRXroW" << std::endl;
         }
         break;
       }
@@ -5753,8 +5487,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDRXroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDRXroX" << std::endl;
         }
         break;
       }
@@ -5773,8 +5506,7 @@ void Instruction::execute() {
         }
         results_[0] = out;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDR_PXI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDR_PXI" << std::endl;
         }
         break;
       }
@@ -5789,8 +5521,7 @@ void Instruction::execute() {
         }
         results_[0] = {out, 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDR_ZXI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDR_ZXI" << std::endl;
         }
         break;
       }
@@ -5799,8 +5530,7 @@ void Instruction::execute() {
         // TODO: implement
         results_[0] = RegisterValue(0, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDTRSBXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDTRSBXi" << std::endl;
         }
         break;
       }
@@ -5808,8 +5538,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(1, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURBBi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURBBi" << std::endl;
         }
         break;
       }
@@ -5817,8 +5546,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(8, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURDi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURDi" << std::endl;
         }
         break;
       }
@@ -5826,8 +5554,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(2, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURHHi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURHHi" << std::endl;
         }
         break;
       }
@@ -5835,8 +5562,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(16, 256);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURQi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURQi" << std::endl;
         }
         break;
       }
@@ -5844,8 +5570,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURSWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURSWi" << std::endl;
         }
         break;
       }
@@ -5853,8 +5578,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = {memoryData_[0].get<float>(), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURSi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURSi" << std::endl;
         }
         break;
       }
@@ -5862,8 +5586,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURWi" << std::endl;
         }
         break;
       }
@@ -5871,8 +5594,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDURXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDURXi" << std::endl;
         }
         break;
       }
@@ -5880,8 +5602,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDXRW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDXRW" << std::endl;
         }
         break;
       }
@@ -5889,160 +5610,147 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LDXRX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LDXRX" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
         results_[0] = {logicalShiftLR_3ops<uint32_t>(sourceValues_, true), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LSLVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LSLVWr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
         results_[0] = logicalShiftLR_3ops<uint64_t>(sourceValues_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LSLVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LSLVXr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LSL_ZZI_S: {  // lsl zd.s, zn.s, #imm
         results_[0] = sveLsl_imm<uint32_t>(sourceValues_, metadata_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LSL_ZZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LSL_ZZI_S" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
         results_[0] = {logicalShiftLR_3ops<uint32_t>(sourceValues_, false), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LSRVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LSRVWr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
         results_[0] = logicalShiftLR_3ops<uint64_t>(sourceValues_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_LSRVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_LSRVXr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
         results_[0] = {madd_4ops<uint32_t>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MADDWrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MADDWrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
         results_[0] = madd_4ops<uint64_t>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MADDXrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MADDXrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MLA_ZPmZZ_B: {  // mla zda.b, pg/m, zn.b, zm.b
         results_[0] = sveMlaPredicated_vecs<uint8_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_B"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MLA_ZPmZZ_D: {  // mla zda.d, pg/m, zn.d, zm.d
         results_[0] = sveMlaPredicated_vecs<uint64_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_D"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MLA_ZPmZZ_H: {  // mla zda.h, pg/m, zn.h, zm.h
         results_[0] = sveMlaPredicated_vecs<uint16_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_H"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MLA_ZPmZZ_S: {  // mla zda.s, pg/m, zn.s, zm.s
         results_[0] = sveMlaPredicated_vecs<uint32_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MLA_ZPmZZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVID: {  // movi dd, #imm
         results_[0] = {static_cast<uint64_t>(metadata_.operands[1].imm), 256};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVID" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVID" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVIv16b_ns: {  // movi vd.16b, #imm
         results_[0] = vecMovi_imm<uint8_t, 16>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVIv6b_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVIv6b_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
         results_[0] = vecMovi_imm<uint64_t, 2>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVIv2d_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVIv2d_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVIv2i32: {  // movi vd.2s, #imm{, lsl #shift}
         results_[0] = vecMoviShift_imm<uint32_t, 2>(metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVEv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVEv2i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVIv4i32: {  // movi vd.4s, #imm{, LSL #shift}
         results_[0] = vecMoviShift_imm<uint32_t, 4>(metadata_, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVIv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVIv4i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVIv8b_ns: {  // movi vd.8b, #imm
         results_[0] = vecMovi_imm<uint8_t, 8>(metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVIv8b_ns" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVIv8b_ns"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVKWi: {  // movk wd, #imm
         results_[0] = {movkShift_imm<uint32_t>(sourceValues_, metadata_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVKWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVKWi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
         results_[0] = movkShift_imm<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVKXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVKXi" << std::endl;
         }
         break;
       }
@@ -6052,8 +5760,7 @@ void Instruction::execute() {
                                     [](uint64_t x) -> uint32_t { return ~x; }),
             8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVNWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVNWi" << std::endl;
         }
         break;
       }
@@ -6061,8 +5768,7 @@ void Instruction::execute() {
         results_[0] = movnShift_imm<uint64_t>(
             metadata_, [](uint64_t x) -> uint64_t { return ~x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVNXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVNXi" << std::endl;
         }
         break;
       }
@@ -6070,8 +5776,8 @@ void Instruction::execute() {
         results_[0] = sveMovprfxPredicated_destUnchanged<uint64_t>(
             sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -6079,8 +5785,8 @@ void Instruction::execute() {
         results_[0] =
             sveMovprfxPredicated_destToZero<uint64_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPzZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPzZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -6088,8 +5794,8 @@ void Instruction::execute() {
         results_[0] =
             sveMovprfxPredicated_destToZero<uint32_t>(sourceValues_, VL_bits);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPzZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZPzZ_S"
+                    << std::endl;
         }
         break;
       }
@@ -6097,8 +5803,8 @@ void Instruction::execute() {
         // TODO: Adopt hint logic of the MOVPRFX instruction
         results_[0] = sourceValues_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZZ" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVPRFX_ZZ"
+                    << std::endl;
         }
         break;
       }
@@ -6107,8 +5813,7 @@ void Instruction::execute() {
                            metadata_, [](uint64_t x) -> uint32_t { return x; }),
                        8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVZWi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVZWi" << std::endl;
         }
         break;
       }
@@ -6116,16 +5821,14 @@ void Instruction::execute() {
         results_[0] = movnShift_imm<uint64_t>(
             metadata_, [](uint64_t x) -> uint64_t { return x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MOVZXi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MOVZXi" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
         results_[0] = sourceValues_[0];
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MRS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MRS" << std::endl;
         }
         break;
       }
@@ -6133,8 +5836,7 @@ void Instruction::execute() {
         // Handle case where SVCR is being updated as this invokes additional
         // functionality
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MSR" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MSR" << std::endl;
         }
         if (metadata_.operands[0].reg ==
             static_cast<arm64_reg>(ARM64_SYSREG_SVCR)) {
@@ -6147,24 +5849,22 @@ void Instruction::execute() {
       case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
         results_[0] = {msub_4ops<uint32_t>(sourceValues_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MSUBWrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MSUBWrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
         results_[0] = msub_4ops<uint64_t>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MSUBXrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MSUBXrrr" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MSRpstatesvcrImm1: {  // msr svcr<sm|za|smza>, #imm
         // This instruction is always used by SMSTART and SMSTOP aliases.
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MSRpstatesvcrImm1" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MSRpstatesvcrImm1"
+                    << std::endl;
         }
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata_.operands[0].svcr);
@@ -6187,8 +5887,8 @@ void Instruction::execute() {
         results_[0] =
             sveMulPredicated<uint8_t>(sourceValues_, metadata_, VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_B"
+                    << std::endl;
         }
         break;
       }
@@ -6196,8 +5896,8 @@ void Instruction::execute() {
         results_[0] = sveMulPredicated<uint64_t>(sourceValues_, metadata_,
                                                  VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_D"
+                    << std::endl;
         }
         break;
       }
@@ -6205,8 +5905,8 @@ void Instruction::execute() {
         results_[0] = sveMulPredicated<uint16_t>(sourceValues_, metadata_,
                                                  VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_H"
+                    << std::endl;
         }
         break;
       }
@@ -6214,64 +5914,59 @@ void Instruction::execute() {
         results_[0] = sveMulPredicated<uint32_t>(sourceValues_, metadata_,
                                                  VL_bits, false);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MUL_ZPmZ_S"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv2i32: {  // mvni vd.2s, #imm{, lsl #shift}
         results_[0] = vecMoviShift_imm<uint32_t, 2>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv2i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv2s_msl: {  // mvni vd.2s, #imm, msl #amount
         results_[0] = vecMoviShift_imm<uint32_t, 2>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv2s_msl" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv2s_msl"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv4i16: {  // mvni vd.4h, #imm{, lsl #shift}
         results_[0] = vecMoviShift_imm<uint16_t, 4>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv4i16" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv4i32: {  // mvni vd.4s, #imm{, lsl #shift}
         results_[0] = vecMoviShift_imm<uint32_t, 4>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv4i32" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv4s_msl: {  // mvni vd.4s #imm, msl #amount
         results_[0] = vecMoviShift_imm<uint32_t, 4>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv4s_msl" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv4s_msl"
+                    << std::endl;
         }
         break;
       }
       case Opcode::AArch64_MVNIv8i16: {  // mvni vd.8h, #imm{, lsl #shift}
         results_[0] = vecMoviShift_imm<uint16_t, 8>(metadata_, true);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_MVNIv8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_MVNIv8i16" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_NEGv2i64: {  // neg vd.2d, vn.2d
         results_[0] = vecFneg_2ops<int64_t, 2>(sourceValues_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_NEGv2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_NEGv2i64" << std::endl;
         }
         break;
       }
@@ -6279,8 +5974,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_2vecs<uint8_t, 16>(
             sourceValues_, [](uint8_t x) -> uint8_t { return ~x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_NOTv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_NOTv16i8" << std::endl;
         }
         break;
       }
@@ -6288,8 +5982,7 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_2vecs<uint8_t, 8>(
             sourceValues_, [](uint8_t x) -> uint8_t { return ~x; });
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_NOTv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_NOTv8i8" << std::endl;
         }
         break;
       }
@@ -6299,8 +5992,7 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x | (~y); });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORNWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORNWrs" << std::endl;
         }
         break;
       }
@@ -6310,8 +6002,7 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x | (~y); });
         results_[0] = result;
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORNXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORNXrs" << std::endl;
         }
         break;
       }
@@ -6321,16 +6012,14 @@ void Instruction::execute() {
             [](uint32_t x, uint32_t y) -> uint32_t { return x | y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRWri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{ #amount}}
         results_[0] = {orrShift_3ops<uint32_t>(sourceValues_, metadata_), 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRWrs" << std::endl;
         }
         break;
       }
@@ -6340,23 +6029,20 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x | y; });
         results_[0] = {result, 8};
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRXri" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{ #amount}}
         results_[0] = orrShift_3ops<uint64_t>(sourceValues_, metadata_);
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRXrs" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_ORR_PPzPP: {  // orr pd.b, pg/z, pn.b, pm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORR_PPzPP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORR_PPzPP" << std::endl;
         }
         results_[0] = sveLogicOp_preds<uint8_t>(
             sourceValues_, VL_bits,
@@ -6365,16 +6051,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ORR_ZZZ: {  // orr zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORR_ZZZ" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORR_ZZZ" << std::endl;
         }
         results_[0] = sveOrr_3vecs<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_ORRv16i8: {  // orr vd.16b, Vn.16b, Vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRv16i8" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint8_t, 16>(
             sourceValues_,
@@ -6383,8 +6067,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ORRv8i8: {  // orr vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ORRv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ORRv8i8" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
             sourceValues_,
@@ -6393,8 +6076,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PFALSE" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PFALSE" << std::endl;
         }
         uint64_t out[4] = {0, 0, 0, 0};
         results_[0] = out;
@@ -6402,47 +6084,45 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PRFMui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PRFMui" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_B: {  // psel pd, pn, pm.b[wa, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_B"
+                    << std::endl;
         }
         results_[0] = svePsel<uint8_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_D: {  // psel pd, pn, pm.d[wa, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_D"
+                    << std::endl;
         }
         results_[0] = svePsel<uint64_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_H: {  // psel pd, pn, pm.h[wa, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_H"
+                    << std::endl;
         }
         results_[0] = svePsel<uint16_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PSEL_PPPRI_S: {  // psel pd, pn, pm.s[wa, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PSEL_PPPRI_S"
+                    << std::endl;
         }
         results_[0] = svePsel<uint32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PTEST_PP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PTEST_PP" << std::endl;
         }
         const uint64_t* g = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* s = sourceValues_[1].getAsVector<uint64_t>();
@@ -6454,72 +6134,65 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_PTRUE_B: {  // ptrue pd.b{, pattern}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PTRUE_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PTRUE_B" << std::endl;
         }
         results_[0] = svePtrue<uint8_t>(metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_D: {  // ptrue pd.d{, pattern}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PTRUE_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PTRUE_D" << std::endl;
         }
         results_[0] = svePtrue<uint64_t>(metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_H: {  // ptrue pd.h{, pattern}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PTRUE_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PTRUE_H" << std::endl;
         }
         results_[0] = svePtrue<uint16_t>(metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PTRUE_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PTRUE_S" << std::endl;
         }
         results_[0] = svePtrue<uint32_t>(metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_PUNPKHI_PP: {  // punpkhi pd.h, pn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PUNPKHI_PP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PUNPKHI_PP"
+                    << std::endl;
         }
         results_[0] = svePunpk(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_PUNPKLO_PP: {  // punpklo pd.h, pn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_PUNPKLO_PP" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_PUNPKLO_PP"
+                    << std::endl;
         }
         results_[0] = svePunpk(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_RBITWr: {  // rbit wd, wn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RBITWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RBITWr" << std::endl;
         }
         results_[0] = {rbit<uint32_t>(sourceValues_, metadata_), 8};
         break;
       }
       case Opcode::AArch64_RBITXr: {  // rbit xd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RBITXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RBITXr" << std::endl;
         }
         results_[0] = rbit<uint64_t>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_RDVLI_XI: {  // rdvl xd, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RDLVI_XI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RDLVI_XI" << std::endl;
         }
         int8_t imm = static_cast<int8_t>(metadata_.operands[1].imm);
         results_[0] = (uint64_t)(imm * (VL_bits / 8));
@@ -6527,8 +6200,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_RET: {  // ret {xr}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RET" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RET" << std::endl;
         }
         branchTaken_ = true;
         branchAddress_ = sourceValues_[0].get<uint64_t>();
@@ -6536,208 +6208,191 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_REV16v16i8: {  // rev16 Vd.16b, Vn.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV16v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV16v16i8"
+                    << std::endl;
         }
         results_[0] = vecRev<int8_t, 16, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV16v8i8: {  // rev16 Vd.8b, Vn.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV16v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV16v8i8" << std::endl;
         }
         results_[0] = vecRev<int8_t, 16, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV32v16i8: {  // rev32 Vd.16b, Vn.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV32v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV32v16i8"
+                    << std::endl;
         }
         results_[0] = vecRev<int8_t, 32, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV32v4i16: {  // rev32 Vd.4h, Vn.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV32v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV32v4i16"
+                    << std::endl;
         }
         results_[0] = vecRev<int16_t, 32, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV32v8i16: {  // rev32 Vd.8h, Vn.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV32v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV32v8i16"
+                    << std::endl;
         }
         results_[0] = vecRev<int16_t, 32, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV32v8i8: {  // rev32 Vd.8b, Vn.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV32v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV32v8i8" << std::endl;
         }
         results_[0] = vecRev<int8_t, 32, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v16i8: {  // rev64 Vd.16b, Vn.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v16i8"
+                    << std::endl;
         }
         results_[0] = vecRev<int8_t, 64, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v2i32: {  // rev64 Vd.2s, Vn.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v2i32"
+                    << std::endl;
         }
         results_[0] = vecRev<int32_t, 64, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v4i16: {  // rev64 Vd.4h, Vn.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v4i16"
+                    << std::endl;
         }
         results_[0] = vecRev<int16_t, 64, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v4i32: {  // rev64 Vd.4s, Vn.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v4i32"
+                    << std::endl;
         }
         results_[0] = vecRev<int32_t, 64, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v8i16: {  // rev64 Vd.8h, Vn.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v8i16"
+                    << std::endl;
         }
         results_[0] = vecRev<int16_t, 64, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV64v8i8: {  // rev64 Vd.8b Vn.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV64v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV64v8i8" << std::endl;
         }
         results_[0] = vecRev<int8_t, 64, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REVXr: {  // rev xd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REVXr" << std::endl;
         }
         results_[0] = rev<uint64_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_REV_PP_B: {  // rev pd.b, pn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_PP_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_PP_B" << std::endl;
         }
         results_[0] = sveRev_predicates<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_PP_D: {  // rev pd.d, pn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_PP_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_PP_D" << std::endl;
         }
         results_[0] = sveRev_predicates<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_PP_H: {  // rev pd.h, pn.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64REV_PP_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64REV_PP_H" << std::endl;
         }
         results_[0] = sveRev_predicates<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_PP_S: {  // rev pd.s, pn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_PP_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_PP_S" << std::endl;
         }
         results_[0] = sveRev_predicates<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_ZZ_B: {  // rev zd.b, zn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_ZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_ZZ_B" << std::endl;
         }
         results_[0] = sveRev_vecs<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_ZZ_D: {  // rev zd.d, zn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_ZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_ZZ_D" << std::endl;
         }
         results_[0] = sveRev_vecs<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_ZZ_H: {  // rev zd.h, zn.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_ZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_ZZ_H" << std::endl;
         }
         results_[0] = sveRev_vecs<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_REV_ZZ_S: {  // rev zd.s, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_REV_ZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_REV_ZZ_S" << std::endl;
         }
         results_[0] = sveRev_vecs<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_RORVWr: {  // rorv wd, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RORVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RORVWr" << std::endl;
         }
         results_[0] = {rorv_3ops<uint32_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_RORVXr: {  // rorv xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_RORVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_RORVXr" << std::endl;
         }
         results_[0] = rorv_3ops<uint64_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_SBCWr: {  // sbc wd, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SBCWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SBCWr" << std::endl;
         }
         results_[0] = {sbc<uint32_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_SBCXr: {  // sbc xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SBCXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SBCXr" << std::endl;
         }
         results_[0] = sbc<uint64_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SBFMWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SBFMWri" << std::endl;
         }
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, true, true), 8};
@@ -6745,16 +6400,15 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SBFMXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SBFMXri" << std::endl;
         }
         results_[0] = bfm_2imms<uint64_t>(sourceValues_, metadata_, true, true);
         break;
       }
       case Opcode::AArch64_SCVTFSWSri: {  // scvtf sd, wn, #fbits
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFSWSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFSWSri"
+                    << std::endl;
         }
         results_[0] =
             scvtf_FixedPoint<float, int32_t>(sourceValues_, metadata_);
@@ -6762,8 +6416,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFSXDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFSXDri"
+                    << std::endl;
         }
         results_[0] =
             scvtf_FixedPoint<double, int64_t>(sourceValues_, metadata_);
@@ -6771,8 +6425,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFSXSri: {  // scvtf sd, xn, #fbits
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFSXSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFSXSri"
+                    << std::endl;
         }
         results_[0] =
             scvtf_FixedPoint<float, int64_t>(sourceValues_, metadata_);
@@ -6780,8 +6434,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFUWDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFUWDri"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<int32_t>()),
                        256};
@@ -6789,8 +6443,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFUWSri: {  // scvtf sd, wn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFUWSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFUWSri"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<int32_t>()),
                        256};
@@ -6798,8 +6452,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFUXDri: {  // scvtf dd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFUXDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFUXDri"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<int64_t>()),
                        256};
@@ -6807,8 +6461,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFUXSri: {  // scvtf sd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFUXSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFUXSri"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<int64_t>()),
                        256};
@@ -6816,8 +6470,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTF_ZPmZ_DtoD: {  // scvtf zd.d, pg/m, zn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_DtoD" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_DtoD"
+                    << std::endl;
         }
         results_[0] =
             sveFcvtPredicated<double, int64_t>(sourceValues_, VL_bits);
@@ -6825,16 +6479,16 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTF_ZPmZ_DtoS: {  // scvtf zd.s, pg/m, zn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_DtoS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_DtoS"
+                    << std::endl;
         }
         results_[0] = sveFcvtPredicated<float, int64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SCVTF_ZPmZ_StoD: {  // scvtf zd.d, pg/m, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_StoD" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_StoD"
+                    << std::endl;
         }
         results_[0] =
             sveFcvtPredicated<double, int32_t>(sourceValues_, VL_bits);
@@ -6842,16 +6496,16 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTF_ZPmZ_StoS: {  // scvtf zd.s, pg/m, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_StoS" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTF_ZPmZ_StoS"
+                    << std::endl;
         }
         results_[0] = sveFcvtPredicated<float, int32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SCVTFv1i32: {  // scvtf sd, sn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFv1i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFv1i32"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<int32_t>()),
                        256};
@@ -6859,8 +6513,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFv1i64: {  // scvtf dd, dn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFv1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFv1i64"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<int64_t>()),
                        256};
@@ -6868,8 +6522,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFv2f32: {  // scvtf vd.2s, vn.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFv2f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFv2f32"
+                    << std::endl;
         }
         results_[0] = vecScvtf_2vecs<float, int32_t, 2>(
             sourceValues_,
@@ -6878,8 +6532,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFv2f64: {  // scvtf vd.2d, vn.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFv2f64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFv2f64"
+                    << std::endl;
         }
         results_[0] = vecScvtf_2vecs<double, int64_t, 2>(
             sourceValues_,
@@ -6888,8 +6542,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SCVTFv4f32: {  // scvtf vd.4s, vn.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SCVTFv4f32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SCVTFv4f32"
+                    << std::endl;
         }
         results_[0] = vecScvtf_2vecs<float, int32_t, 4>(
             sourceValues_,
@@ -6898,80 +6552,74 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SDIVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SDIVWr" << std::endl;
         }
         results_[0] = {div_3ops<int32_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SDIVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SDIVXr" << std::endl;
         }
         results_[0] = {div_3ops<int64_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_SEL_ZPZZ_D: {  // sel zd.d, pg, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SEL_ZPZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SEL_ZPZZ_D"
+                    << std::endl;
         }
         results_[0] = sveSel_zpzz<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SEL_ZPZZ_S: {  // sel zd.s, pg, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SEL_ZPZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SEL_ZPZZ_S"
+                    << std::endl;
         }
         results_[0] = sveSel_zpzz<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SHLd: {  // shl dd, dn #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SHLd" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SHLd" << std::endl;
         }
         results_[0] = vecShlShift_vecImm<uint64_t, 1>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_SHLv4i32_shift: {  // shl vd.4s, vn.4s, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SHLv4i32_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SHLv4i32_shift"
+                    << std::endl;
         }
         results_[0] = vecShlShift_vecImm<uint32_t, 4>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMADDLrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMADDLrrr" << std::endl;
         }
         results_[0] = maddl_4ops<int64_t, int32_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_SMAX_ZI_S: {  // smax zdn.s, zdn.s, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMAX_ZI_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMAX_ZI_S" << std::endl;
         }
         results_[0] = sveMax_vecImm<int32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMAX_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMAX_ZPmZ_S"
+                    << std::endl;
         }
         results_[0] = sveMaxPredicated_vecs<int32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SMAXv4i32: {  // smax vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMAXv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMAXv4i32" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<int32_t, 4>(
             sourceValues_,
@@ -6980,24 +6628,24 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMINV_VPZ_S: {  // sminv sd, pg, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMINV_VPZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMINV_VPZ_S"
+                    << std::endl;
         }
         results_[0] = sveSminv<int32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SMINVv4i32v: {  // sminv sd, vn.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMINVv4i32v" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMINVv4i32v"
+                    << std::endl;
         }
         results_[0] = vecMinv_2ops<int32_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_SMIN_ZPmZ_S: {  // smin zd.s, pg/m, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMIN_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMIN_ZPmZ_S"
+                    << std::endl;
         }
         results_[0] = sveLogicOpPredicated_3vecs<int32_t>(
             sourceValues_, VL_bits,
@@ -7006,8 +6654,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMINv4i32: {  // smin vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMINv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMINv4i32" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<int32_t, 4>(
             sourceValues_,
@@ -7016,16 +6663,15 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMSUBLrrr: {  // smsubl xd, wn, wm, xa
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMSUBLrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMSUBLrrr" << std::endl;
         }
         results_[0] = msubl_4ops<int64_t, int32_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_SMULH_ZPmZ_B: {  // smulh zdn.b, pg/m, zdn.b, zm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_B"
+                    << std::endl;
         }
         results_[0] =
             sveMulhPredicated<int8_t, int16_t>(sourceValues_, VL_bits);
@@ -7033,8 +6679,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMULH_ZPmZ_H: {  // smulh zdn.h, pg/m, zdn.h, zm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_H"
+                    << std::endl;
         }
         results_[0] =
             sveMulhPredicated<int16_t, int32_t>(sourceValues_, VL_bits);
@@ -7042,8 +6688,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMULH_ZPmZ_S: {  // smulh zdn.s, pg/m, zdn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMULH_ZPmZ_S"
+                    << std::endl;
         }
         results_[0] =
             sveMulhPredicated<int32_t, int64_t>(sourceValues_, VL_bits);
@@ -7051,8 +6697,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SMULHrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SMULHrr" << std::endl;
         }
         // TODO: signed
         results_[0] = mulhi(sourceValues_[0].get<uint64_t>(),
@@ -7061,8 +6706,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SSHLLv2i32_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SSHLLv2i32_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<int64_t, int32_t, 2>(
             sourceValues_, metadata_, false);
@@ -7070,8 +6715,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SSHLLv4i32_shift: {  // sshll2 vd.2d, vn.4s, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SSHLLv4i32_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SSHLLv4i32_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<int64_t, int32_t, 2>(sourceValues_,
                                                                metadata_, true);
@@ -7079,8 +6724,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SHRNv8i8_shift: {  // shrn vd.8b, vn.8h, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SHRNv8i8_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SHRNv8i8_shift"
+                    << std::endl;
         }
         results_[0] =
             vecShrnShift_imm<uint16_t, uint8_t, 8>(sourceValues_, metadata_);
@@ -7088,16 +6733,16 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SSHRv4i32_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SSHRv4i32_shift"
+                    << std::endl;
         }
         results_[0] = vecSshrShift_imm<int32_t, 4>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_SST1B_D_REAL: {  // st1b {zd.d}, pg, [xn, zm.d]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SST1B_D_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SST1B_D_REAL"
+                    << std::endl;
         }
         // STORE
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
@@ -7116,8 +6761,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1D_REAL: {  // st1d {zt.d}, pg, [xn, zm.d]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SST1D_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SST1D_REAL"
+                    << std::endl;
         }
         // STORE
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
@@ -7136,8 +6781,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1D_IMM: {  // st1d {zd.d}, pg, [zn.d{, #imm}]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SST1D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SST1D_IMM" << std::endl;
         }
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
@@ -7159,9 +6803,10 @@ void Instruction::execute() {
                                                         // 3]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " "
-                                              "AArch64_SST1D_SCALED_SCALED_REAL" <<
-              std::endl;
+          std::cout << instructionAddress_
+                    << " "
+                       "AArch64_SST1D_SCALED_SCALED_REAL"
+                    << std::endl;
         }
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7182,8 +6827,8 @@ void Instruction::execute() {
         // SME, STORE
         // Not in right context mode. Raise exception
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_H_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_H_D"
+                    << std::endl;
         }
         if (!ZAenabled) return ZAdisabled();
 
@@ -7206,8 +6851,8 @@ void Instruction::execute() {
         // SME, STORE
         // Not in right context mode. Raise exception
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_V_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_V_D"
+                    << std::endl;
         }
         if (!ZAenabled) return ZAdisabled();
 
@@ -7245,8 +6890,8 @@ void Instruction::execute() {
         // SME, STORE
         // Not in right context mode. Raise exception
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_H_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_H_S"
+                    << std::endl;
         }
         if (!ZAenabled) return ZAdisabled();
 
@@ -7269,8 +6914,8 @@ void Instruction::execute() {
         // SME, STORE
         // Not in right context mode. Raise exception
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_V_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1_MXIPXX_V_S"
+                    << std::endl;
         }
         if (!ZAenabled) return ZAdisabled();
 
@@ -7307,8 +6952,8 @@ void Instruction::execute() {
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SST1W_D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SST1W_D_IMM"
+                    << std::endl;
         }
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7327,8 +6972,7 @@ void Instruction::execute() {
       case Opcode::AArch64_SST1W_IMM: {  // st1w {zt.s}, pg, [zn.s{, #imm}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SST1W_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SST1W_IMM" << std::endl;
         }
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7347,8 +6991,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1B: {  // st1b {zt.b}, pg, [xn, xm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1B" << std::endl;
         }
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7359,8 +7002,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1B_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1B_IMM" << std::endl;
         }
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7371,8 +7013,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1D" << std::endl;
         }
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7383,8 +7024,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1D_IMM" << std::endl;
         }
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7396,8 +7036,8 @@ void Instruction::execute() {
                                            // vt4.16b}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv16b" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv16b"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7411,8 +7051,8 @@ void Instruction::execute() {
                                                 // <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv16b_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv16b_POST"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7430,8 +7070,8 @@ void Instruction::execute() {
                                           // vt4.2d}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv2d" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv2d"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7444,8 +7084,8 @@ void Instruction::execute() {
                                                // vt4.2d}, [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv2d_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv2d_POST"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7463,8 +7103,8 @@ void Instruction::execute() {
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv2s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv2s_POST"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7482,8 +7122,8 @@ void Instruction::execute() {
                                           // vt4.4s}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv4s"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7496,8 +7136,8 @@ void Instruction::execute() {
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Fourv4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Fourv4s_POST"
+                    << std::endl;
         }
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
@@ -7514,8 +7154,8 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov16b" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov16b"
+                    << std::endl;
         }
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
@@ -7527,8 +7167,8 @@ void Instruction::execute() {
                                                // [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov16b_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov16b_POST"
+                    << std::endl;
         }
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
@@ -7545,8 +7185,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov2d: {  // st1 {vt.2d, vt2.2d}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov2d" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov2d" << std::endl;
         }
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
@@ -7558,8 +7197,8 @@ void Instruction::execute() {
                                               // [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov2d_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov2d_POST"
+                    << std::endl;
         }
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
@@ -7576,8 +7215,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov4s" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov4s" << std::endl;
         }
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
@@ -7589,8 +7227,8 @@ void Instruction::execute() {
                                               // [xn|sp], <#imm|xm>
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1Twov4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1Twov4s_POST"
+                    << std::endl;
         }
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
@@ -7607,8 +7245,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1W" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1W" << std::endl;
         }
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7619,8 +7256,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1W_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1W_D" << std::endl;
         }
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7631,8 +7267,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1W_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1W_IMM" << std::endl;
         }
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
@@ -7643,8 +7278,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i16" << std::endl;
         }
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7654,8 +7288,8 @@ void Instruction::execute() {
                                            // st1 {vt.h}[index], [xn], #2
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i16_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i16_POST"
+                    << std::endl;
         }
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7669,8 +7303,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_St1i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_St1i32" << std::endl;
         }
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7680,8 +7313,8 @@ void Instruction::execute() {
                                            // st1 {vt.s}[index], [xn], #4
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i32_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i32_POST"
+                    << std::endl;
         }
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7695,8 +7328,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i64" << std::endl;
         }
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7706,8 +7338,8 @@ void Instruction::execute() {
                                            // st1 {vt.d}[index], [xn], #8
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i64_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i64_POST"
+                    << std::endl;
         }
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7721,8 +7353,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST1i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST1i8" << std::endl;
         }
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7732,8 +7363,8 @@ void Instruction::execute() {
                                           // st1 {vt.b}[index], [xn], #1
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_St1i8_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_St1i8_POST"
+                    << std::endl;
         }
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
@@ -7749,8 +7380,7 @@ void Instruction::execute() {
                                         // #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST2D_IMM" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST2D_IMM" << std::endl;
         }
         const uint64_t* d1 = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* d2 = sourceValues_[1].getAsVector<uint64_t>();
@@ -7789,8 +7419,8 @@ void Instruction::execute() {
                                               // #imm
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ST2Twov4s_POST" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ST2Twov4s_POST"
+                    << std::endl;
         }
         const float* t1 = sourceValues_[0].getAsVector<float>();
         const float* t2 = sourceValues_[1].getAsVector<float>();
@@ -7808,8 +7438,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STLRB" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STLRB" << std::endl;
         }
         // STORE
         memoryData_[0] = sourceValues_[0];
@@ -7818,8 +7447,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STLR" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STLR" << std::endl;
         }
         // STORE
         memoryData_[0] = sourceValues_[0];
@@ -7828,8 +7456,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STLXR" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STLXR" << std::endl;
         }
         // STORE
         memoryData_[0] = sourceValues_[0];
@@ -7843,8 +7470,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STPWi:    // stp wt1, wt2, [xn, #imm]
       case Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STPi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STPi" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         memoryData_[1] = sourceValues_[1];
@@ -7856,8 +7482,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STPWpost:    // stp wt1, wt2, [xn], #imm
       case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STPpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STPpost" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         memoryData_[1] = sourceValues_[1];
@@ -7871,8 +7496,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STPWpre:    // stp wt1, wt2, [xn, #imm]!
       case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STPpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STPpre" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         memoryData_[1] = sourceValues_[1];
@@ -7882,8 +7506,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STRBBpost: {  // strb wd, [xn], #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRBBpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRBBpost" << std::endl;
         }
         // STORE
         memoryData_[0] = sourceValues_[0];
@@ -7893,8 +7516,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STRBBpre: {  // strb wd, [xn, #imm]!
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRBBpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRBBpre" << std::endl;
         }
         // STORE
         memoryData_[0] = sourceValues_[0];
@@ -7906,8 +7528,7 @@ void Instruction::execute() {
                                         //  [xn, wm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRBBroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRBBroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7916,8 +7537,7 @@ void Instruction::execute() {
                                         //  [xn, xm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRBBroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRBBroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7925,8 +7545,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRBBui: {  // strb wd, [xn, #imm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRBBui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRBBui" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7939,8 +7558,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRWui:    // str wt, [xn, #imm]
       case Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRui" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7953,8 +7571,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRWpost:    // str wt, [xn], #imm
       case Opcode::AArch64_STRXpost: {  // str xt, [xn], #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRpost" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         results_[0] =
@@ -7969,8 +7586,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRWpre:    // str wt, [xn, #imm]!
       case Opcode::AArch64_STRXpre: {  // str xt, [xn, #imm]!
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRpre" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         results_[0] =
@@ -7980,8 +7596,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRDroW: {  // str dt, [xn, wm{, #extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRDroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRDroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7989,8 +7604,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRDroX: {  // str dt, [xn, xm{, #extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRDroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRDroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -7998,8 +7612,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRHHpost: {  // strh wt, [xn], #imm
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRHHpost" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRHHpost" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         results_[0] =
@@ -8009,8 +7622,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRHHpre: {  // strh wd, [xn, #imm]!
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRHHpre" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRHHpre" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         results_[0] =
@@ -8021,8 +7633,7 @@ void Instruction::execute() {
                                         //  [xn, wm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRHHroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRHHroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8031,8 +7642,7 @@ void Instruction::execute() {
                                         //  [xn, xm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRHHroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRHHroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8040,8 +7650,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRHHui" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRHHui" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8049,8 +7658,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRQroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRQroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8058,8 +7666,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRSroW: {  // str st, [xn, wm{, #extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRSroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRSroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8067,8 +7674,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRSroX: {  // str st, [xn, xm{, #extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRSroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRSroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8076,8 +7682,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRWroW: {  // str wd, [xn, wm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRWroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRWroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8085,8 +7690,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRWroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRWroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8094,8 +7698,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRXroW: {  // str xd, [xn, wm{, extend {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRXroW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRXroW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8103,8 +7706,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STRXroX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STRXroX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8112,8 +7714,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STR_PXI: {  // str pt, [xn{, #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STR_PXI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STR_PXI" << std::endl;
         }
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
@@ -8124,8 +7725,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STR_ZXI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STR_ZXI" << std::endl;
         }
         const uint16_t partition_num = VL_bits / 8;
         const uint8_t* z = sourceValues_[0].getAsVector<uint8_t>();
@@ -8135,8 +7735,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STURBBi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STURBBi" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8145,8 +7744,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STURi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STURi" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8157,8 +7755,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STURXi: {  // stur xt, [xn, #imm]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STURi" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STURi" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         break;
@@ -8166,8 +7763,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STXRW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STXRW" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         // TODO: Implement atomic memory access
@@ -8177,8 +7773,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STXRX: {  // stxr ws, xt, [xn]
         // STORE
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_STXRX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_STXRX" << std::endl;
         }
         memoryData_[0] = sourceValues_[0];
         // TODO: Implement atomic memory access
@@ -8187,8 +7782,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSWri" << std::endl;
         }
         auto [result, nzcv] =
             subShift_imm<uint32_t>(sourceValues_, metadata_, true);
@@ -8198,8 +7792,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBSWrs: {  // subs wd, wn, wm{, shift #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSWrs" << std::endl;
         }
         auto [result, nzcv] =
             subShift_3ops<uint32_t>(sourceValues_, metadata_, true);
@@ -8209,8 +7802,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBSWrx: {  // subs wd, wn, wm{, extend #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSWrx" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSWrx" << std::endl;
         }
         auto [result, nzcv] =
             subExtend_3ops<uint32_t>(sourceValues_, metadata_, true);
@@ -8220,8 +7812,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSXri" << std::endl;
         }
         auto [result, nzcv] =
             subShift_imm<uint64_t>(sourceValues_, metadata_, true);
@@ -8231,8 +7822,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBSXrs: {  // subs xd, xn, xm{, shift #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSXrs" << std::endl;
         }
         auto [result, nzcv] =
             subShift_3ops<uint64_t>(sourceValues_, metadata_, true);
@@ -8243,8 +7833,7 @@ void Instruction::execute() {
       case Opcode::AArch64_SUBSXrx:      // subs xd, xn, wm{, extend #amount}
       case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBSXrx" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBSXrx" << std::endl;
         }
         auto [result, nzcv] =
             subExtend_3ops<uint64_t>(sourceValues_, metadata_, true);
@@ -8254,8 +7843,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm{, <shift>}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBWri" << std::endl;
         }
         auto [result, nzcv] =
             subShift_imm<uint32_t>(sourceValues_, metadata_, false);
@@ -8264,8 +7852,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBWrs: {  // sub wd, wn, wm{, shift #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBWrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBWrs" << std::endl;
         }
         auto [result, nzcv] =
             subShift_3ops<uint32_t>(sourceValues_, metadata_, false);
@@ -8274,8 +7861,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm{, <shift>}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBXri" << std::endl;
         }
         auto [result, nzcv] =
             subShift_imm<uint64_t>(sourceValues_, metadata_, false);
@@ -8284,8 +7870,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBXrs" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBXrs" << std::endl;
         }
         auto [result, nzcv] =
             subShift_3ops<uint64_t>(sourceValues_, metadata_, false);
@@ -8295,8 +7880,7 @@ void Instruction::execute() {
       case Opcode::AArch64_SUBXrx:      // sub xd, xn, wm{, extend #amount}
       case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBXrx" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBXrx" << std::endl;
         }
         auto [result, nzcv] =
             subExtend_3ops<uint64_t>(sourceValues_, metadata_, false);
@@ -8305,40 +7889,35 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUB_ZZZ_B: {  // sub zd.b, zn.b, zm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_B" << std::endl;
         }
         results_[0] = sveSub_3vecs<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SUB_ZZZ_D: {  // sub zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_D" << std::endl;
         }
         results_[0] = sveSub_3vecs<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SUB_ZZZ_H: {  // sub zd.h, zn.h, zm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_H" << std::endl;
         }
         results_[0] = sveSub_3vecs<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SUB_ZZZ_S: {  // sub zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUB_ZZZ_S" << std::endl;
         }
         results_[0] = sveSub_3vecs<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SUBv16i8: {  // sub vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv16i8" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint8_t, 16>(
             sourceValues_,
@@ -8347,8 +7926,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv1i64: {  // sub dd, dn, dm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv1i64" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint64_t, 1>(
             sourceValues_,
@@ -8357,8 +7935,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv2i32: {  // sub vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv2i32" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint32_t, 2>(
             sourceValues_,
@@ -8367,8 +7944,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv2i64: {  // sub vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv2i64" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint64_t, 2>(
             sourceValues_,
@@ -8377,8 +7953,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv4i16: {  // sub vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv4i16" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint16_t, 4>(
             sourceValues_,
@@ -8387,8 +7962,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv4i32: {  // sub vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv4i32" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint32_t, 4>(
             sourceValues_,
@@ -8397,8 +7971,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv8i16: {  // sub vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv8i16" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint16_t, 8>(
             sourceValues_,
@@ -8407,8 +7980,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SUBv8i8: {  // sub vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SUBv8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SUBv8i8" << std::endl;
         }
         results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
             sourceValues_,
@@ -8417,8 +7989,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SVC: {  // svc #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SVC" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SVC" << std::endl;
         }
         exceptionEncountered_ = true;
         exception_ = InstructionException::SupervisorCall;
@@ -8426,8 +7997,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SXTW_ZPmZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SXTW_ZPmZ_D"
+                    << std::endl;
         }
         results_[0] =
             sveSxtPredicated<int64_t, int32_t>(sourceValues_, VL_bits);
@@ -8445,24 +8016,23 @@ void Instruction::execute() {
         //   }
         // }
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_SYSxt" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_SYSxt" << std::endl;
         }
         break;
       }
       case Opcode::AArch64_TBLv16i8Four: {  // tbl Vd.16b {Vn.16b, Vn+1.16b,
                                             // Vn+2.16b,Vn+3.16b } Vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv16i8Four" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv16i8Four"
+                    << std::endl;
         }
         results_[0] = vecTbl<16>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_TBLv16i8One: {  // tbl Vd.16b {Vn.16b} Vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TLBv16i8One" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TLBv16i8One"
+                    << std::endl;
         }
         results_[0] = vecTbl<16>(sourceValues_, metadata_);
         break;
@@ -8470,8 +8040,8 @@ void Instruction::execute() {
       case Opcode::AArch64_TBLv16i8Three: {  // tbl Vd.16b {Vn.16b, Vn+1.16b,
                                              // Vn+2.16b } Vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv16i8Three" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv16i8Three"
+                    << std::endl;
         }
         results_[0] = vecTbl<16>(sourceValues_, metadata_);
         break;
@@ -8479,8 +8049,8 @@ void Instruction::execute() {
       case Opcode::AArch64_TBLv16i8Two: {  // tbl Vd.16b {Vn.16b, Vn+1.16b }
                                            // Vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv16i8Two" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv16i8Two"
+                    << std::endl;
         }
         results_[0] = vecTbl<16>(sourceValues_, metadata_);
         break;
@@ -8488,16 +8058,16 @@ void Instruction::execute() {
       case Opcode::AArch64_TBLv8i8Four: {  // tbl Vd.8b {Vn.16b, Vn+1.16b,
                                            // Vn+2.16b,Vn+3.16b } Vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv8i8Four" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv8i8Four"
+                    << std::endl;
         }
         results_[0] = vecTbl<8>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_TBLv8i8One: {  // tbl Vd.8b {Vn.16b} Vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv8i8One" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv8i8One"
+                    << std::endl;
         }
         results_[0] = vecTbl<8>(sourceValues_, metadata_);
         break;
@@ -8505,24 +8075,23 @@ void Instruction::execute() {
       case Opcode::AArch64_TBLv8i8Three: {  // tbl Vd.8b {Vn.16b, Vn+1.16b,
                                             // Vn+2.16b } Vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv8i8Three" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv8i8Three"
+                    << std::endl;
         }
         results_[0] = vecTbl<8>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_TBLv8i8Two: {  // tbl Vd.8b {Vn.16b, Vn+1.16b } Vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBLv8i8Two" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBLv8i8Two"
+                    << std::endl;
         }
         results_[0] = vecTbl<8>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBNZW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBNZW" << std::endl;
         }
         auto [taken, addr] = tbnz_tbz<uint32_t>(sourceValues_, metadata_,
                                                 instructionAddress_, true);
@@ -8532,8 +8101,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_TBNZX: {  // tbnz xn, #imm, label
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBNZX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBNZX" << std::endl;
         }
         auto [taken, addr] = tbnz_tbz<uint64_t>(sourceValues_, metadata_,
                                                 instructionAddress_, true);
@@ -8543,8 +8111,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_TBZW: {  // tbz wn, #imm, label
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBZW" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBZW" << std::endl;
         }
         auto [taken, addr] = tbnz_tbz<uint32_t>(sourceValues_, metadata_,
                                                 instructionAddress_, false);
@@ -8554,8 +8121,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TBZX" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TBZX" << std::endl;
         }
         auto [taken, addr] = tbnz_tbz<uint64_t>(sourceValues_, metadata_,
                                                 instructionAddress_, false);
@@ -8565,216 +8131,201 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_TRN1_ZZZ_B: {  // trn1 zd.b, zn.b, zm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_B"
+                    << std::endl;
         }
         results_[0] = sveTrn1_3vecs<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_D: {  // trn1 zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_D"
+                    << std::endl;
         }
         results_[0] = sveTrn1_3vecs<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_H: {  // trn1 zd.h, zn.h, zm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_H"
+                    << std::endl;
         }
         results_[0] = sveTrn1_3vecs<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_S: {  // trn1 zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1_ZZZ_S"
+                    << std::endl;
         }
         results_[0] = sveTrn1_3vecs<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1v16i8: {  // trn1 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v16i8" << std::endl;
         }
         results_[0] = vecTrn1<uint8_t, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v2i32: {  // trn1 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v2i32" << std::endl;
         }
         results_[0] = vecTrn1<uint32_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v2i64: {  // trn1 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v2i64" << std::endl;
         }
         results_[0] = vecTrn1<uint64_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v4i16: {  // trn1 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v4i16" << std::endl;
         }
         results_[0] = vecTrn1<uint16_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v4i32: {  // trn1 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v4i32" << std::endl;
         }
         results_[0] = vecTrn1<uint32_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v8i16: {  // trn1 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v8i16" << std::endl;
         }
         results_[0] = vecTrn1<uint16_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN1v8i8: {  // trn1 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN1v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN1v8i8" << std::endl;
         }
         results_[0] = vecTrn1<uint8_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2_ZZZ_B: {  // trn2 zd.b, zn.b, zm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_B"
+                    << std::endl;
         }
         results_[0] = sveTrn2_3vecs<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN2_ZZZ_D: {  // trn2 zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_D"
+                    << std::endl;
         }
         results_[0] = sveTrn2_3vecs<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN2_ZZZ_H: {  // trn2 zd.h, zn.h, zm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_H"
+                    << std::endl;
         }
         results_[0] = sveTrn2_3vecs<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN2_ZZZ_S: {  // trn2 zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2_ZZZ_S"
+                    << std::endl;
         }
         results_[0] = sveTrn2_3vecs<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN2v16i8: {  // trn2 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v16i8" << std::endl;
         }
         results_[0] = vecTrn2<uint8_t, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v2i32: {  // trn2 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v2i32" << std::endl;
         }
         results_[0] = vecTrn2<uint32_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v2i64: {  // trn2 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v2i64" << std::endl;
         }
         results_[0] = vecTrn2<uint64_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v4i16: {  // trn2 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v4i16" << std::endl;
         }
         results_[0] = vecTrn2<uint16_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v4i32: {  // trn2 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v4i32" << std::endl;
         }
         results_[0] = vecTrn2<uint32_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v8i16: {  // trn2 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v8i16" << std::endl;
         }
         results_[0] = vecTrn2<uint16_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_TRN2v8i8: {  // trn2 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_TRN2v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_TRN2v8i8" << std::endl;
         }
         results_[0] = vecTrn2<uint8_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_B: {  // uaddv dd, pg, zn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_B"
+                    << std::endl;
         }
         results_[0] = sveAddvPredicated<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_D: {  // uaddv dd, pg, zn.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_D"
+                    << std::endl;
         }
         results_[0] = sveAddvPredicated<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_H: {  // uaddv dd, pg, zn.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_H"
+                    << std::endl;
         }
         results_[0] = sveAddvPredicated<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDV_VPZ_S: {  // uaddv dd, pg, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UADDV_VPZ_S"
+                    << std::endl;
         }
         results_[0] = sveAddvPredicated<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UBFMWri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UBFMWri" << std::endl;
         }
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, false, true), 8};
@@ -8782,8 +8333,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UBFMXri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UBFMXri" << std::endl;
         }
         results_[0] =
             bfm_2imms<uint64_t>(sourceValues_, metadata_, false, true);
@@ -8791,8 +8341,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFUWDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFUWDri"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<uint32_t>()),
                        256};
@@ -8800,8 +8350,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFUWSri: {  // ucvtf sd, wn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFUWSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFUWSri"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<uint32_t>()),
                        256};
@@ -8809,8 +8359,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFUXDri: {  // ucvtf dd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFUXDri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFUXDri"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<uint64_t>()),
                        256};
@@ -8818,8 +8368,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFUXSri: {  // ucvtf sd, xn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFUZSri" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFUZSri"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<uint64_t>()),
                        256};
@@ -8827,8 +8377,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFv1i32: {  // ucvtf sd, sn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFv1i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFv1i32"
+                    << std::endl;
         }
         results_[0] = {static_cast<float>(sourceValues_[0].get<uint32_t>()),
                        256};
@@ -8836,8 +8386,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UCVTFv1i64: {  // ucvtf dd, dn
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UCVTFv1i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UCVTFv1i64"
+                    << std::endl;
         }
         results_[0] = {static_cast<double>(sourceValues_[0].get<uint64_t>()),
                        256};
@@ -8845,40 +8395,37 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UDIVWr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UDIVWr" << std::endl;
         }
         results_[0] = {div_3ops<uint32_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UDIVXr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UDIVXr" << std::endl;
         }
         results_[0] = {div_3ops<uint64_t>(sourceValues_), 8};
         break;
       }
       case Opcode::AArch64_UMADDLrrr: {  // umaddl xd, wn, wm, xa
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMADDLrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMADDLrrr" << std::endl;
         }
         results_[0] = maddl_4ops<uint64_t, uint32_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMAXPv16i8: {  // umaxp vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMAXPv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMAXPv16i8"
+                    << std::endl;
         }
         results_[0] = vecUMaxP<uint8_t, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMINPv16i8: {  // uminp vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMINPv16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMINPv16i8"
+                    << std::endl;
         }
         results_[0] = vecUMinP<uint8_t, 16>(sourceValues_);
         break;
@@ -8886,8 +8433,7 @@ void Instruction::execute() {
       case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]
       case Opcode::AArch64_UMOVvi32: {     // umov wd, vn.s[index]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMOVvi32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMOVvi32" << std::endl;
         }
         const uint32_t* vec = sourceValues_[0].getAsVector<uint32_t>();
         results_[0] = {vec[metadata_.operands[1].vector_index], 8};
@@ -8896,8 +8442,7 @@ void Instruction::execute() {
       case Opcode::AArch64_UMOVvi64_idx0:  // umov xd, vn.d[0]
       case Opcode::AArch64_UMOVvi64: {     // umov xd, vn.d[index]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMOVvi64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMOVvi64" << std::endl;
         }
         const uint64_t* vec = sourceValues_[0].getAsVector<uint64_t>();
         results_[0] = vec[metadata_.operands[1].vector_index];
@@ -8906,8 +8451,7 @@ void Instruction::execute() {
       case Opcode::AArch64_UMOVvi8_idx0:  // umov wd, vn.b[0]
       case Opcode::AArch64_UMOVvi8: {     // umov wd, vn.b[index]
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMOVvi8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMOVvi8" << std::endl;
         }
         const uint8_t* vec = sourceValues_[0].getAsVector<uint8_t>();
         results_[0] = {vec[metadata_.operands[1].vector_index], 8};
@@ -8915,16 +8459,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMSUBLrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMSUBLrrr" << std::endl;
         }
         results_[0] = msubl_4ops<uint64_t, uint32_t>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UMULHrrr" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UMULHrrr" << std::endl;
         }
         results_[0] = mulhi(sourceValues_[0].get<uint64_t>(),
                             sourceValues_[1].get<uint64_t>());
@@ -8932,8 +8474,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UQDECD_WPiI: {  // uqdecd wd{, pattern{, MUL #imm}}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UQDECD_WPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UQDECD_WPiI"
+                    << std::endl;
         }
         results_[0] =
             sveUqdec<uint32_t, 64u>(sourceValues_, metadata_, VL_bits);
@@ -8941,8 +8483,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UQDECD_XPiI: {  // uqdecd xd{, pattern{, MUL #imm}}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UQDECD_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UQDECD_XPiI"
+                    << std::endl;
         }
         results_[0] =
             sveUqdec<uint64_t, 64u>(sourceValues_, metadata_, VL_bits);
@@ -8950,8 +8492,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UQDECH_XPiI: {  // uqdech xd{, pattern{, MUL #imm}}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UQDECH_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UQDECH_XPiI"
+                    << std::endl;
         }
         results_[0] =
             sveUqdec<uint64_t, 16u>(sourceValues_, metadata_, VL_bits);
@@ -8959,8 +8501,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UQDECW_XPiI: {  // uqdecw xd{, pattern{, MUL #imm}}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UQDECW_XPiI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UQDECW_XPiI"
+                    << std::endl;
         }
         results_[0] =
             sveUqdec<uint64_t, 32u>(sourceValues_, metadata_, VL_bits);
@@ -8968,8 +8510,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_USHLLv16i8_shift: {  // ushll2 vd.8h, vn.16b, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_USHLLv16i8_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_USHLLv16i8_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<uint16_t, uint8_t, 8>(
             sourceValues_, metadata_, true);
@@ -8977,8 +8519,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_USHLLv4i16_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_USHLLv4i16_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<uint32_t, uint16_t, 4>(
             sourceValues_, metadata_, false);
@@ -8986,8 +8528,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_USHLLv8i16_shift: {  // ushll2 vd.4s, vn.8h, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_USHLLv8i16_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_USHLLv8i16_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<uint32_t, uint16_t, 4>(
             sourceValues_, metadata_, true);
@@ -8995,8 +8537,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_USHLLv8i8_shift: {  // ushll vd.8h, vn.8b, #imm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_USHLLv8i8_shift" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_USHLLv8i8_shift"
+                    << std::endl;
         }
         results_[0] = vecShllShift_vecImm<uint16_t, uint8_t, 8>(
             sourceValues_, metadata_, false);
@@ -9004,8 +8546,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKHI_ZZ_D: {  // uunpkhi zd.d, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_D"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint64_t, uint32_t>(sourceValues_, VL_bits, true);
@@ -9013,8 +8555,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKHI_ZZ_H: {  // uunpkhi zd.h, zn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_H"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint16_t, uint8_t>(sourceValues_, VL_bits, true);
@@ -9022,8 +8564,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKHI_ZZ_S: {  // uunpkhi zd.s, zn.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKHI_ZZ_S"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint32_t, uint16_t>(sourceValues_, VL_bits, true);
@@ -9031,8 +8573,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKLO_ZZ_D: {  // uunpklo zd.d, zn.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_D"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint64_t, uint32_t>(sourceValues_, VL_bits, false);
@@ -9040,8 +8582,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKLO_ZZ_H: {  // uunpklo zd.h, zn.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_H"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint16_t, uint8_t>(sourceValues_, VL_bits, false);
@@ -9049,8 +8591,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UUNPKLO_ZZ_S: {  // uunpklo zd.s, zn.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UUNPKLO_ZZ_S"
+                    << std::endl;
         }
         results_[0] =
             sveUnpk_vecs<uint32_t, uint16_t>(sourceValues_, VL_bits, false);
@@ -9058,128 +8600,114 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UZP1_ZZZ_S: {  // uzp1 zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1_ZZZ_S"
+                    << std::endl;
         }
         results_[0] = sveUzp_vecs<uint32_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_UZP1v16i8: {  // uzp1 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v16i8" << std::endl;
         }
         results_[0] = vecUzp<int8_t, 16>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v2i32: {  // uzp1 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v2i32" << std::endl;
         }
         results_[0] = vecUzp<int32_t, 2>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v2i64: {  // uzp1 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v2i64" << std::endl;
         }
         results_[0] = vecUzp<int64_t, 2>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v4i16: {  // uzp1 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v4i16" << std::endl;
         }
         results_[0] = vecUzp<int16_t, 4>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v4i32: {  // uzp1 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v4i32" << std::endl;
         }
         results_[0] = vecUzp<int32_t, 4>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v8i16: {  // uzp1 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v8i16" << std::endl;
         }
         results_[0] = vecUzp<int16_t, 8>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP1v8i8: {  // uzp1 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP1v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP1v8i8" << std::endl;
         }
         results_[0] = vecUzp<int8_t, 8>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_UZP2v16i8: {  // uzp2 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v16i8" << std::endl;
         }
         results_[0] = vecUzp<int8_t, 16>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v2i32: {  // uzp2 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v2i32" << std::endl;
         }
         results_[0] = vecUzp<int32_t, 2>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v2i64: {  // uzp2 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v2i64" << std::endl;
         }
         results_[0] = vecUzp<int64_t, 2>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v4i16: {  // uzp2 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v4i16" << std::endl;
         }
         results_[0] = vecUzp<int16_t, 4>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v4i32: {  // uzp2 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v4i32" << std::endl;
         }
         results_[0] = vecUzp<int32_t, 4>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v8i16: {  // uzp2 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v8i16" << std::endl;
         }
         results_[0] = vecUzp<int16_t, 8>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_UZP2v8i8: {  // uzp2 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_UZP2v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_UZP2v8i8" << std::endl;
         }
         results_[0] = vecUzp<int8_t, 8>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_WHILELO_PWW_B: {  // whilelo pd.b, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_B"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint32_t, uint8_t>(sourceValues_, VL_bits, true);
@@ -9189,8 +8717,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PWW_D: {  // whilelo pd.d, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_D"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint32_t, uint64_t>(sourceValues_, VL_bits, true);
@@ -9200,8 +8728,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PWW_H: {  // whilelo pd.h, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_H"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint32_t, uint16_t>(sourceValues_, VL_bits, true);
@@ -9211,8 +8739,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PWW_S: {  // whilelo pd.s, wn, wm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PWW_S"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint32_t, uint32_t>(sourceValues_, VL_bits, true);
@@ -9222,8 +8750,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PXX_B: {  // whilelo pd.b, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_B"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint64_t, uint8_t>(sourceValues_, VL_bits, true);
@@ -9233,8 +8761,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PXX_D: {  // whilelo pd.d, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_D"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint64_t, uint64_t>(sourceValues_, VL_bits, true);
@@ -9244,8 +8772,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PXX_H: {  // whilelo pd.h, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_H"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint64_t, uint16_t>(sourceValues_, VL_bits, true);
@@ -9255,8 +8783,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELO_PXX_S: {  // whilelo pd.s, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELO_PXX_S"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<uint64_t, uint32_t>(sourceValues_, VL_bits, true);
@@ -9266,8 +8794,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELT_PXX_B: {  // whilelt pd.b, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_B"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<int64_t, int8_t>(sourceValues_, VL_bits, true);
@@ -9277,8 +8805,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELT_PXX_D: {  // whilelt pd.d, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_D"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<int64_t, int64_t>(sourceValues_, VL_bits, true);
@@ -9288,8 +8816,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELT_PXX_H: {  // whilelt pd.h, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_H"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<int64_t, int16_t>(sourceValues_, VL_bits, true);
@@ -9299,8 +8827,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_WHILELT_PXX_S: {  // whilelt pd.s, xn, xm
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_WHILELT_PXX_S"
+                    << std::endl;
         }
         auto [output, nzcv] =
             sveWhilelo<int64_t, int32_t>(sourceValues_, VL_bits, true);
@@ -9310,248 +8838,231 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_XPACLRI: {  // xpaclri
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_XPACLRI" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_XPACLRI" << std::endl;
         }
         // SimEng doesn't support PAC, so do nothing
         break;
       }
       case Opcode::AArch64_XTNv2i32: {  // xtn vd.2s, vn.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_XTNv2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_XTNv2i32" << std::endl;
         }
         results_[0] = vecXtn<uint32_t, uint64_t, 2>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_XTNv4i16: {  // xtn vd.4h, vn.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_XTNv4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_XTNv4i16" << std::endl;
         }
         results_[0] = vecXtn<uint16_t, uint32_t, 4>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_XTNv4i32: {  // xtn2 vd.4s, vn.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_XTNv4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_XTNv4i32" << std::endl;
         }
         results_[0] = vecXtn<uint32_t, uint64_t, 4>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP1_PPP_B: {  // zip1 pd.b, pn.b, pm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_B"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint8_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1_PPP_D: {  // zip1 pd.d, pn.d, pm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_D"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint64_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1_PPP_H: {  // zip1 pd.h, pn.h, pm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_H"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint16_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1_PPP_S: {  // zip1 pd.s, pn.s, pm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_PPP_S"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint32_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1_ZZZ_D: {  // zip1 zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_D"
+                    << std::endl;
         }
         results_[0] = sveZip_vecs<uint64_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1_ZZZ_S: {  // zip1 zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_S"
+                    << std::endl;
         }
         results_[0] = sveZip_vecs<uint32_t>(sourceValues_, VL_bits, false);
         break;
       }
       case Opcode::AArch64_ZIP1v16i8: {  // zip1 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1v16i8" << std::endl;
         }
         results_[0] = vecZip<uint8_t, 16>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v2i32: {  // zip1 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1v2i32" << std::endl;
         }
         results_[0] = vecZip<uint32_t, 2>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v2i64: {  // zip1 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1v2i64" << std::endl;
         }
         results_[0] = vecZip<uint64_t, 2>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v4i16: {  // zip1 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_v4i16"
+                    << std::endl;
         }
         results_[0] = vecZip<uint16_t, 4>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v4i32: {  // zip1 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_v4i32"
+                    << std::endl;
         }
         results_[0] = vecZip<uint32_t, 4>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v8i16: {  // zip1 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_IP_v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_IP_v8i16" << std::endl;
         }
         results_[0] = vecZip<uint16_t, 8>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP1v8i8: {  // zip1 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1v8i8" << std::endl;
         }
         results_[0] = vecZip<uint8_t, 8>(sourceValues_, false);
         break;
       }
       case Opcode::AArch64_ZIP2_PPP_B: {  // zip2 pd.b, pn.b, pm.b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_B" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_B"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint8_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_PPP_D: {  // zip2 pd.d, pn.d, pm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_D"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint64_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_PPP_H: {  // zip2 pd.h, pn.h, pm.h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_H" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_H"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint16_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_PPP_S: {  // zip2 pd.s, pn.s, pm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2_PPP_S"
+                    << std::endl;
         }
         results_[0] = sveZip_preds<uint32_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_ZZZ_D: {  // zip2 zd.d, zn.d, zm.d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2_ZZZZ_D" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2_ZZZZ_D"
+                    << std::endl;
         }
         results_[0] = sveZip_vecs<uint64_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_ZZZ_S: {  // zip2 zd.s, zn.s, zm.s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_S" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1_ZZZ_S"
+                    << std::endl;
         }
         results_[0] = sveZip_vecs<uint32_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2v16i8: {  // zip2 vd.16b, vn.16b, vm.16b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v16i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v16i8" << std::endl;
         }
         results_[0] = vecZip<uint8_t, 16>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v2i32: {  // zip2 vd.2s, vn.2s, vm.2s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v2i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v2i32" << std::endl;
         }
         results_[0] = vecZip<uint32_t, 2>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v2i64: {  // zip2 vd.2d, vn.2d, vm.2d
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v2i64" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v2i64" << std::endl;
         }
         results_[0] = vecZip<uint64_t, 2>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v4i16: {  // zip2 vd.4h, vn.4h, vm.4h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP1v4i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP1v4i16" << std::endl;
         }
         results_[0] = vecZip<uint16_t, 4>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v4i32: {  // zip2 vd.4s, vn.4s, vm.4s
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v4i32" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v4i32" << std::endl;
         }
         results_[0] = vecZip<uint32_t, 4>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v8i16: {  // zip2 vd.8h, vn.8h, vm.8h
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v8i16" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v8i16" << std::endl;
         }
         results_[0] = vecZip<uint16_t, 8>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZIP2v8i8: {  // zip2 vd.8b, vn.8b, vm.8b
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZIP2v8i8" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZIP2v8i8" << std::endl;
         }
         results_[0] = vecZip<uint8_t, 8>(sourceValues_, true);
         break;
       }
       case Opcode::AArch64_ZERO_M: {  // zero {mask}
         if (print) {
-          std::cout << instructionAddress_ << " AArch64_ZERO_M" <<
-              std::endl;
+          std::cout << instructionAddress_ << " AArch64_ZERO_M" << std::endl;
         }
         // SME
         // Not in right context mode. Raise exception

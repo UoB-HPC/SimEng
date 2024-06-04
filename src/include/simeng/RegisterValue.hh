@@ -4,8 +4,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <memory>
 #include <iostream>
+#include <memory>
 
 #include "simeng/Pool.hh"
 
