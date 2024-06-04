@@ -20,7 +20,7 @@ struct BranchPrediction {
   /** Whether the branch will be taken. */
   bool isTaken;
 
-  /** The branch instruction's target address. If `isTaken = false`, the value
+  /** The branch instruction's target address. If `isTaken == false`, the value
    * will be ignored. */
   uint64_t target;
 
