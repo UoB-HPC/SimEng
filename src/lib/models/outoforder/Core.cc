@@ -91,7 +91,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
-  portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
+  portAllocator.setRSSizeGetter([this](std::vector<uint32_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
 

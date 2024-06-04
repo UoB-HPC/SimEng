@@ -27,11 +27,11 @@ struct ReservationStationPort {
 /** A reservation station */
 struct ReservationStation {
   /** Size of reservation station */
-  uint16_t capacity;
+  uint32_t capacity;
   /** Number of instructions that can be dispatched to this unit per cycle. */
   uint16_t dispatchRate;
   /** Current number of instructions in reservation station */
-  uint16_t currentSize;
+  uint32_t currentSize;
   /** Issue ports belonging to reservation station */
   std::vector<ReservationStationPort> ports;
 };
@@ -94,7 +94,7 @@ class DispatchIssueUnit {
   uint64_t getPortBusyStalls() const;
 
   /** Retrieve the current sizes and capacities of the reservation stations*/
-  void getRSSizes(std::vector<uint64_t>&) const;
+  void getRSSizes(std::vector<uint32_t>&) const;
 
  private:
   /** A buffer of instructions to dispatch and read operands for. */

@@ -707,9 +707,9 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation<uint16_t>(0, wildcard));
 
   expectations_["Reservation-Stations"][wildcard].addChild(
-      ExpectationNode::createExpectation<uint16_t>(32, "Size"));
+      ExpectationNode::createExpectation<uint32_t>(32, "Size"));
   expectations_["Reservation-Stations"][wildcard]["Size"]
-      .setValueBounds<uint16_t>(1, UINT16_MAX);
+      .setValueBounds<uint32_t>(1, UINT32_MAX);
 
   expectations_["Reservation-Stations"][wildcard].addChild(
       ExpectationNode::createExpectation<uint16_t>(4, "Dispatch-Rate"));

@@ -243,14 +243,14 @@ void Instruction::execute() {
     case Opcode::RISCV_SLLW: {  // SLLW rd,rs1,rs2
       const int32_t rs1 = sourceValues_[0].get<int32_t>();
       const int32_t rs2 =
-          sourceValues_[1].get<int32_t>() & 63;  // Only use lowest 6 bits
+          sourceValues_[1].get<int32_t>() & 31;  // Only use lowest 5 bits
       int64_t out = signExtendW(static_cast<int32_t>(rs1 << rs2));
       results_[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SLLIW: {  // SLLIW rd,rs1,shamt
       const int32_t rs1 = sourceValues_[0].get<uint32_t>();
-      const int32_t shamt = sourceImm_ & 63;  // Only use lowest 6 bits
+      const int32_t shamt = sourceImm_ & 31;  // Only use lowest 5 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 << shamt));
       results_[0] = RegisterValue(out, 8);
       break;
@@ -273,14 +273,14 @@ void Instruction::execute() {
     case Opcode::RISCV_SRLW: {  // SRLW rd,rs1,rs2
       const uint32_t rs1 = sourceValues_[0].get<uint32_t>();
       const uint32_t rs2 =
-          sourceValues_[1].get<uint32_t>() & 63;  // Only use lowest 6 bits
+          sourceValues_[1].get<uint32_t>() & 31;  // Only use lowest 5 bits
       uint64_t out = signExtendW(static_cast<uint64_t>(rs1 >> rs2));
       results_[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRLIW: {  // SRLIW rd,rs1,shamt
       const uint32_t rs1 = sourceValues_[0].get<uint32_t>();
-      const uint32_t shamt = sourceImm_ & 63;  // Only use lowest 6 bits
+      const uint32_t shamt = sourceImm_ & 31;  // Only use lowest 5 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 >> shamt));
       results_[0] = RegisterValue(out, 8);
       break;
@@ -303,14 +303,14 @@ void Instruction::execute() {
     case Opcode::RISCV_SRAW: {  // SRAW rd,rs1,rs2
       const int32_t rs1 = sourceValues_[0].get<int32_t>();
       const int32_t rs2 =
-          sourceValues_[1].get<int32_t>() & 63;  // Only use lowest 6 bits
+          sourceValues_[1].get<int32_t>() & 31;  // Only use lowest 5 bits
       int64_t out = static_cast<int32_t>(rs1 >> rs2);
       results_[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRAIW: {  // SRAIW rd,rs1,shamt
       const int32_t rs1 = sourceValues_[0].get<int32_t>();
-      const int32_t shamt = sourceImm_ & 63;  // Only use lowest 6 bits
+      const int32_t shamt = sourceImm_ & 31;  // Only use lowest 5 bits
       int64_t out = static_cast<int32_t>(rs1 >> shamt);
       results_[0] = RegisterValue(out, 8);
       break;

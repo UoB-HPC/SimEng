@@ -8,16 +8,16 @@ class M1PortAllocatorTest : public testing::Test {
  public:
   M1PortAllocatorTest() : portAllocator(portArrangement, rsArrangement) {
     portAllocator.setRSSizeGetter(
-        [this](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+        [this](std::vector<uint32_t>& sizeVec) { rsSizes(sizeVec); });
   }
 
-  void rsSizes(std::vector<uint64_t>& sizeVec) const {
+  void rsSizes(std::vector<uint32_t>& sizeVec) const {
     sizeVec = rsFreeEntries;
   }
 
  protected:
   // Representation of the M1 Firestorm reservation station layout
-  std::vector<uint64_t> rsFreeEntries = {24, 26, 16, 12, 28, 28, 12,
+  std::vector<uint32_t> rsFreeEntries = {24, 26, 16, 12, 28, 28, 12,
                                          12, 12, 12, 36, 36, 36, 36};
   // Representation of the M1 Firestorm port layout
   const std::vector<std::vector<uint16_t>> portArrangement = {

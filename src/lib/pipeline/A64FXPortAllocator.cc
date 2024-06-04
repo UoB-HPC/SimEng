@@ -25,17 +25,18 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
 
   if (attribute == InstructionAttribute::RSX) {
     // Get difference between free entries of RSE{0|1} and RSA{0|1}
-    int diffRSE = (freeEntries_[0] + freeEntries_[1]) -
-                  (freeEntries_[2] + freeEntries_[3]);
-    int diffRSA = (freeEntries_[2] + freeEntries_[3]) -
-                  (freeEntries_[0] + freeEntries_[1]);
+    int32_t totalRSE = freeEntries_[0] + freeEntries_[1];
+    int32_t totalRSA = freeEntries_[2] + freeEntries_[3];
+    int32_t diffRSE = totalRSE - totalRSA;
+    int32_t diffRSA = totalRSA - totalRSE;
+
     // Set threshold values
-    int thresholdA = 4;
-    int thresholdB = 4;
-    int thresholdC = 4;
+    int32_t thresholdA = 4;
+    int32_t thresholdB = 4;
+    int32_t thresholdC = 4;
 
     if (diffRSE >= thresholdA) {
-      if (((int64_t)freeEntries_[0] - (int64_t)freeEntries_[1]) >= thresholdB) {
+      if (((int32_t)freeEntries_[0] - (int32_t)freeEntries_[1]) >= thresholdB) {
         rs = RSEm_;  // Table 1
       } else {
         rs = dispatchSlot_ % 2 == 0 ? RSEm_ : RSEf_;  // Table 2
@@ -179,7 +180,7 @@ uint8_t A64FXPortAllocator::attributeMapping(
 }
 
 void A64FXPortAllocator::setRSSizeGetter(
-    std::function<void(std::vector<uint64_t>&)> rsSizes) {
+    std::function<void(std::vector<uint32_t>&)> rsSizes) {
   rsSizes_ = rsSizes;
 }
 
