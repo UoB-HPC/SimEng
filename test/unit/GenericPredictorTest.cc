@@ -263,49 +263,51 @@ TEST_F(GenericPredictorTest, flush) {
 // Test that update correctly corrects the speculatively updated global history
 TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
   simeng::config::SimInfo::addToConfig(
-      "{Branch-Predictor: {BTB-Tag-Bits: 2, Saturating-Count-Bits: 6, "
+      "{Branch-Predictor: {BTB-Tag-Bits: 6, Saturating-Count-Bits: 2, "
       "Global-History-Length: 6, RAS-entries: 10, Fallback-Static-Predictor: "
       "Always-Taken}}");
   auto predictor = simeng::GenericPredictor();
-  // spool up a global history to set the target address
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 0);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 1);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 2);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 3);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 4);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 5);
-  // Ensure default behaviour for first encounter
-  auto prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
-  EXPECT_TRUE(prediction.isTaken);
-  EXPECT_EQ(prediction.target, 0x4);
-  // Set entry in BTB
-  predictor.update(0xFF, true, 0xAB, BranchType::Conditional, 6);
+  BranchPrediction pred;
 
-  // recreate this global history but with incorrect predictions
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 7);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 8);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 9);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 10);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 11);
-  predictor.predict(0, BranchType::Conditional, 0);
-  predictor.update(0, true, 4, BranchType::Conditional, 12);
-  // Ensure default behaviour for first encounter
-  prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
-  EXPECT_TRUE(prediction.isTaken);
-  EXPECT_EQ(prediction.target, 0xAB);
-  // Set entry in BTB
-  predictor.update(0xFF, true, 0xAB, BranchType::Conditional, 13);
+  // Set up the target prediction for btb entry 000111 to be 65536.  No other
+  // target predictions will be set during this test, so we can confirm that
+  // we are accessing this btb entry by on the basis of this target prediction
+  pred = predictor.predict(28, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken); // Default behaviour is to predict taken
+  EXPECT_EQ(pred.target, 0); // Target prediction not yet set
+  predictor.update(28, true, 65536, BranchType::Conditional, 0);
+
+  // Set up a speculative global history of 111111 on the basis of predictions
+  pred = predictor.predict(4, BranchType::Conditional, 0); // GH = 000011
+  EXPECT_TRUE(pred.isTaken);
+  EXPECT_EQ(pred.target, 0);
+  pred = predictor.predict(4, BranchType::Conditional, 0); // GH = 000111
+  EXPECT_TRUE(pred.isTaken);
+  EXPECT_EQ(pred.target, 0);
+  pred = predictor.predict(4, BranchType::Conditional, 0); // GH = 001111
+  EXPECT_TRUE(pred.isTaken);
+  EXPECT_EQ(pred.target, 0);
+  pred = predictor.predict(4, BranchType::Conditional, 0); // GH = 011111
+  EXPECT_TRUE(pred.isTaken);
+  EXPECT_EQ(pred.target, 0);
+  pred = predictor.predict(4, BranchType::Conditional, 0); // GH = 111111
+  EXPECT_TRUE(pred.isTaken);
+  EXPECT_EQ(pred.target, 0);
+
+  // Get prediction for address 224 to access btb entry 000111
+  pred = predictor.predict(224, BranchType::Conditional, 0); // GH = 111111
+  // Confirm prediction target is 65536
+  EXPECT_EQ(pred.target, 65536);
+  EXPECT_TRUE(pred.isTaken);
+
+  // Now correct the speculative global history using updates
+  predictor.update(4, false, 8, BranchType::Conditional, 1); // GH = 011111
+  predictor.update(4, false, 8, BranchType::Conditional, 2); // GH = 001111
+  predictor.update(4, false, 8, BranchType::Conditional, 3); // GH = 000111
+
+  // Now a prediction for address 0 should access btb entry 000111
+  pred = predictor.predict(0, BranchType::Conditional, 0);
+  EXPECT_EQ(pred.target, 65536);
 }
 
 }  // namespace simeng
