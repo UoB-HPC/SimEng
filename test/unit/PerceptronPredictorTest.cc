@@ -261,32 +261,32 @@ TEST_F(PerceptronPredictorTest, speculativeGlobalHistory) {
   // prediction.  This takes a bit more setting up than the Generic predictor
   // as perceptrons are more complicated than saturating counters.
   predictor.predict(0, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(0, false, 4, BranchType::Conditional, 0);  // GH = 000000
+
   predictor.predict(0, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(0, false, 4, BranchType::Conditional, 1);  // GH = 000000
+
   predictor.predict(0, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(0, false, 4, BranchType::Conditional, 2);  // GH = 000000
+
   predictor.predict(28, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(28, true, 65536, BranchType::Conditional, 3);  // GH = 000001
+
   predictor.predict(24, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(24, true, 65536, BranchType::Conditional, 4);  // GH = 000011
+
   predictor.predict(16, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(16, true, 65536, BranchType::Conditional, 5);  // GH = 000111
+
   predictor.predict(0, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(0, true, 65536, BranchType::Conditional, 6);  // GH = 001111
+
   predictor.predict(32, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(32, true, 65536, BranchType::Conditional, 7);  // GH = 011111
+
   predictor.predict(96, BranchType::Conditional, 0);
-  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
   predictor.update(96, true, 65536, BranchType::Conditional, 8);  // GH = 111111
+
   pred = predictor.predict(224, BranchType::Conditional, 0);
   EXPECT_TRUE(pred.isTaken);      // Should be set to taken
   EXPECT_EQ(pred.target, 65536);  // Should be set to 65536
