@@ -279,8 +279,7 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(*uop, getBranchType()).WillOnce(Return(bType));
   EXPECT_CALL(*uop, getKnownOffset()).WillOnce(Return(knownOff));
   BranchPrediction pred = {true, pc + knownOff};
-  EXPECT_CALL(predictor, predict(20, bType, knownOff))
-      .WillOnce(Return(pred));
+  EXPECT_CALL(predictor, predict(20, bType, knownOff)).WillOnce(Return(pred));
   fetchUnit.tick();
 
   // Ensure on next tick, predecode is not called
