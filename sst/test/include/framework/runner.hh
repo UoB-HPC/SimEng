@@ -180,6 +180,7 @@ class Group : public Runner {
     return true;
   };
 
+  // TODO remove this as implements broken function
   /** Returns the TestContext of the current executing test case. */
   std::unique_ptr<TestContext>& getCurrContext() { return ctx_; };
 
