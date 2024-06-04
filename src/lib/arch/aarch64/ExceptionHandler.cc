@@ -154,14 +154,10 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t iLength = static_cast<uint64_t>(totalRead);
 
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
@@ -231,7 +227,8 @@ bool ExceptionHandler::init() {
           }
 
           // Build list of memory write operations
-          int64_t bytesRemaining = totalRead;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t bytesRemaining = static_cast<uint64_t>(totalRead);
           for (int64_t i = 0; i < iovcnt; i++) {
             // Get pointer and size of the buffer
             uint64_t iDst = iovdata[i * 2 + 0];
@@ -329,20 +326,21 @@ bool ExceptionHandler::init() {
         int64_t flag = registerFileSet.get(R3).get<int64_t>();
 
         char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
-        return readStringThen(
-            filename, filenamePtr, kernel::Linux::LINUX_PATH_MAX,
-            [=](auto length) {
-              // Invoke the kernel
-              kernel::stat statOut;
-              uint64_t retval = linux_.newfstatat(dfd, filename, statOut, flag);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] filename;
-              stateChange.memoryAddresses.push_back(
-                  {statbufPtr, sizeof(statOut)});
-              stateChange.memoryAddressValues.push_back(statOut);
-              return concludeSyscall(stateChange);
-            });
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                kernel::stat statOut;
+                                uint64_t retval = linux_.newfstatat(
+                                    dfd, filename, statOut, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                stateChange.memoryAddresses.push_back(
+                                    {statbufPtr, sizeof(statOut)});
+                                stateChange.memoryAddressValues.push_back(
+                                    {statOut, sizeof(statOut)});
+                                return concludeSyscall(stateChange);
+                              });
 
         break;
       }
@@ -615,15 +613,16 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
         size_t buflen = registerFileSet.get(R1).get<size_t>();
 
-        char buf[buflen];
+        std::vector<char> buf;
         for (size_t i = 0; i < buflen; i++) {
-          buf[i] = (uint8_t)rand();
+          buf.push_back((uint8_t)rand());
         }
 
         stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
 
         stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
-        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+        stateChange.memoryAddressValues.push_back(
+            RegisterValue(buf.data(), buflen));
 
         break;
       }

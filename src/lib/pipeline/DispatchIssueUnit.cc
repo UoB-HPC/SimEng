@@ -30,9 +30,9 @@ DispatchIssueUnit::DispatchIssueUnit(
     auto reservation_station = config["Reservation-Stations"][i];
     // Create ReservationStation struct to be stored
     ReservationStation rs = {
-        reservation_station["Size"].as<uint16_t>(),
+        reservation_station["Size"].as<uint32_t>(),
         reservation_station["Dispatch-Rate"].as<uint16_t>(),
-        0,
+        0ul,
         {}};
     // Resize rs port attribute to match what's defined in config file
     rs.ports.resize(reservation_station["Port-Nums"].num_children());
@@ -42,7 +42,7 @@ DispatchIssueUnit::DispatchIssueUnit(
       uint16_t issue_port = reservation_station["Port-Nums"][j].as<uint16_t>();
       rs.ports[j].issuePort = issue_port;
       // Add port mapping entry, resizing vector if needed
-      if ((issue_port + 1) > portMapping_.size()) {
+      if ((size_t)(issue_port + 1) > portMapping_.size()) {
         portMapping_.resize((issue_port + 1));
       }
       portMapping_[issue_port] = {i, j};
@@ -257,7 +257,7 @@ uint64_t DispatchIssueUnit::getPortBusyStalls() const {
   return portBusyStalls_;
 }
 
-void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
+void DispatchIssueUnit::getRSSizes(std::vector<uint32_t>& sizes) const {
   for (auto& rs : reservationStations_) {
     sizes.push_back(rs.capacity - rs.currentSize);
   }

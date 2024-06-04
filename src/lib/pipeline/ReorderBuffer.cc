@@ -8,7 +8,7 @@ namespace simeng {
 namespace pipeline {
 
 ReorderBuffer::ReorderBuffer(
-    unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
+    uint32_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     std::function<void(uint64_t branchAddress)> sendLoopBoundary,
     BranchPredictor& predictor, uint16_t loopBufSize,
@@ -36,18 +36,20 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
-    int firstOp = -1;
+    uint64_t firstOp = UINT64_MAX;
     bool validForCommit = false;
+    bool foundFirstInstance = false;
 
     // Find first instance of uop belonging to macro-op instruction
     for (; index < buffer_.size(); index++) {
       if (buffer_[index]->getInstructionId() == insnId) {
         firstOp = index;
+        foundFirstInstance = true;
         break;
       }
     }
 
-    if (firstOp > -1) {
+    if (foundFirstInstance) {
       // If found, see if all uops are committable
       for (; index < buffer_.size(); index++) {
         if (buffer_[index]->getInstructionId() != insnId) break;
@@ -60,6 +62,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       }
       if (!validForCommit) return;
 
+      assert(firstOp != UINT64_MAX && "firstOp hasn't been populated");
       // No early return thus all uops are committable
       for (; firstOp < buffer_.size(); firstOp++) {
         if (buffer_[firstOp]->getInstructionId() != insnId) break;
@@ -91,7 +94,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     }
 
     const auto& destinations = uop->getDestinationRegisters();
-    for (int i = 0; i < destinations.size(); i++) {
+    for (size_t i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
 

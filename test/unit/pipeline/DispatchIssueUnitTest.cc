@@ -80,7 +80,7 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
   // As per a64fx.yaml
   const uint16_t EAGA = 5;    // Maps to RS index 2
   const uint8_t RS_EAGA = 2;  // RS associated with EAGA in A64FX
-  const std::vector<uint64_t> refRsSizes = {20, 20, 10, 10, 19};
+  const std::vector<uint32_t> refRsSizes = {20, 20, 10, 10, 19};
 
   const Register r0 = {0, 0};
   const Register r1 = {0, 1};
@@ -90,7 +90,7 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
 // No instruction issued due to empty input buffer
 TEST_F(PipelineDispatchIssueUnitTest, emptyTick) {
   // Ensure empty Reservation stations pre tick()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
 
@@ -140,7 +140,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
   EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
 
   // Ensure empty reservation stations pre tick()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
 
@@ -200,7 +200,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_exception) {
   EXPECT_TRUE(uop->canCommit());
   EXPECT_TRUE(uop->exceptionEncountered());
   // Ensure all reservation stations are empty post tick()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
   // Ensure input buffer has been emptied
@@ -213,7 +213,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_exception) {
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure frontend stall recorded
@@ -230,7 +230,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
 
   // Artificially fill Reservation station with index 2
   std::vector<std::shared_ptr<MockInstruction>> insns(refRsSizes[RS_EAGA]);
-  for (int i = 0; i < insns.size(); i++) {
+  for (size_t i = 0; i < insns.size(); i++) {
     // Initialise instruction
     insns[i] = std::make_shared<MockInstruction>();
     // All expected calls to instruction during tick()
@@ -248,10 +248,10 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
   }
   // Ensure Reservation station index 2 is full post tick, and all others are
   // empty
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -277,7 +277,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
   rsSizes.clear();
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -313,10 +313,10 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
   diUnit.tick();
 
   // Ensure correct RS sizes post tick()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -338,7 +338,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
   rsSizes.clear();
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -346,7 +346,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
     }
   }
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure portBusyStall and backend stall recorded in issue()
@@ -403,10 +403,10 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   diUnit.tick();
   diUnit.issue();
   // Ensure correct RS sizes post tick() & issue()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -414,7 +414,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
     }
   }
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure backend stall recorded in issue()
@@ -437,7 +437,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
   // Ensure all output ports are empty except EAGA
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     if (i != EAGA)
       EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
     else
@@ -495,10 +495,10 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   EXPECT_EQ(input.getHeadSlots()[0], nullptr);
 
   // Ensure correct RS sizes post tick()
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes.size(), refRsSizes.size());
-  for (int i = 0; i < refRsSizes.size(); i++) {
+  for (size_t i = 0; i < refRsSizes.size(); i++) {
     if (i != RS_EAGA) {
       EXPECT_EQ(rsSizes[i], refRsSizes[i]);
     } else {
@@ -506,7 +506,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
     }
   }
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure no stalls recorded
@@ -529,7 +529,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   // Perform issue to see if `uop` is still present
   diUnit.issue();
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure frontend stall recorded in issue()
@@ -549,7 +549,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
 
   diUnit.issue();
   // Ensure all output ports are empty
-  for (int i = 0; i < output.size(); i++) {
+  for (size_t i = 0; i < output.size(); i++) {
     EXPECT_EQ(output[i].getTailSlots()[0], nullptr);
   }
   // Ensure frontend stall recorded in issue()
@@ -561,7 +561,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
 
 // Test based on a64fx config file reservation staion configuration
 TEST_F(PipelineDispatchIssueUnitTest, getRSSizes) {
-  std::vector<uint64_t> rsSizes;
+  std::vector<uint32_t> rsSizes;
   diUnit.getRSSizes(rsSizes);
   EXPECT_EQ(rsSizes, refRsSizes);
 }

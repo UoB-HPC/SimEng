@@ -63,11 +63,16 @@ int main(int argc, char** argv) {
       int numberofArgs = argc - 3;
       executableArgs =
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
+    } else {
+      // Use the default program if not
+      configFilePath = DEFAULT_STR;
+      executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
     }
   } else {
     // Without a config file, no executable can be supplied so pass default
-    // (empty) values for executable information
+    // values for executable information
     configFilePath = DEFAULT_STR;
+    executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   }
 
   coreInstance =

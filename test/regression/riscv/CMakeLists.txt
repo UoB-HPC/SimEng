@@ -25,6 +25,7 @@ target_include_directories(regression-riscv PRIVATE
                             ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(regression-riscv regression-test-base)
+target_compile_options(regression-riscv PRIVATE ${SIMENG_COMPILE_OPTIONS})
 
 # Define a macro so that tests can find data files
 target_compile_definitions(regression-riscv PRIVATE

@@ -186,7 +186,14 @@ TEST_P(Syscall, faccessat) {
   unlink(filepath);
 
   char abs_filepath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
+
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   initialHeapData_.resize(strlen(abs_filepath) + 1);
   // Copy abs_filepath to heap
   memcpy(initialHeapData_.data(), abs_filepath, strlen(abs_filepath) + 1);
@@ -212,7 +219,13 @@ TEST_P(Syscall, faccessat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
@@ -593,11 +606,9 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  // Get current directory and append the default program's comannd line
-  // argument 0 value
-  char cwd[LINUX_PATH_MAX];
-  getcwd(cwd, LINUX_PATH_MAX);
-  std::string reference = std::string(cwd) + std::string("/Default");
+
+  std::string reference =
+      SIMENG_SOURCE_DIR + std::string("/SimEngDefaultProgram");
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
@@ -620,7 +631,7 @@ TEST_P(Syscall, readlinkat) {
 
   EXPECT_EQ(getGeneralRegister<int64_t>(10), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
-  for (int i = 0; i < reference.size(); i++) {
+  for (size_t i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
 }
@@ -729,7 +740,13 @@ TEST_P(Syscall, newfstatat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
+
+  if (!realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
@@ -1119,28 +1136,28 @@ TEST_P(Syscall, uname) {
   // Check utsname struct in memory
   char* data = processMemory_ + process_->getHeapStart();
   const char sysname[] = "Linux";
-  for (int i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
+  for (size_t i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
 
   // Add 65 to data pointer for reserved length of each string field in Linux
   data += 65;
   const char nodename[] = "fedora-riscv";
-  for (int i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
+  for (size_t i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
 
   data += 65;
   const char release[] = "5.5.0-0.rc5.git0.1.1.riscv64.fc32.riscv64";
-  for (int i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
+  for (size_t i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
 
   data += 65;
   const char version[] = "#1 SMP Mon Jan 6 17:31:22 UTC 2020";
-  for (int i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
+  for (size_t i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
 
   data += 65;
   const char machine[] = "riscv64";
-  for (int i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
+  for (size_t i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
 
   data += 65;
   const char domainname[] = "(none)";
-  for (int i = 0; i < strlen(domainname); i++)
+  for (size_t i = 0; i < strlen(domainname); i++)
     EXPECT_EQ(data[i], domainname[i]);
 }
 

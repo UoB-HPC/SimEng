@@ -54,7 +54,7 @@ class RegisterValue {
    */
   RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
       : bytes(capacity) {
-    assert(capacity >= bytes && "Capacity is less then requested bytes");
+    assert(capacity >= bytes && "Capacity is less than requested bytes");
     char* dest;
     if (isLocal()) {
       dest = this->value;

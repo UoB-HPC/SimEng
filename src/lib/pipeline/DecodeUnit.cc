@@ -8,7 +8,7 @@ namespace pipeline {
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
                        PipelineBuffer<std::shared_ptr<Instruction>>& output,
                        BranchPredictor& predictor)
-    : input_(input), output_(output), predictor_(predictor){};
+    : input_(input), output_(output), predictor_(predictor) {}
 
 void DecodeUnit::tick() {
   // Stall if output buffer is stalled
@@ -91,7 +91,7 @@ void DecodeUnit::tick() {
 
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
-uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
+uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; }
 
 void DecodeUnit::purgeFlushed() { microOps_.clear(); }
 

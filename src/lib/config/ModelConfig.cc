@@ -707,9 +707,9 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation<uint16_t>(0, wildcard));
 
   expectations_["Reservation-Stations"][wildcard].addChild(
-      ExpectationNode::createExpectation<uint16_t>(32, "Size"));
+      ExpectationNode::createExpectation<uint32_t>(32, "Size"));
   expectations_["Reservation-Stations"][wildcard]["Size"]
-      .setValueBounds<uint16_t>(1, UINT16_MAX);
+      .setValueBounds<uint32_t>(1, UINT32_MAX);
 
   expectations_["Reservation-Stations"][wildcard].addChild(
       ExpectationNode::createExpectation<uint16_t>(4, "Dispatch-Rate"));
@@ -950,7 +950,7 @@ void ModelConfig::postValidation() {
           groupInheritance.end()) {
         std::vector<uint16_t> inheritedGroups =
             groupInheritance.at(blockingGroups.front());
-        for (int k = 0; k < inheritedGroups.size(); k++) {
+        for (size_t k = 0; k < inheritedGroups.size(); k++) {
           blockingGroups.push(inheritedGroups[k]);
           node["Blocking-Group-Nums"].append_child() << inheritedGroups[k];
         }
@@ -999,7 +999,7 @@ void ModelConfig::postValidation() {
     } else {
       node.append_child() << ryml::key("Port-Nums") |= ryml::SEQ;
     }
-    for (int i = 0; i < node["Ports"].num_children(); i++) {
+    for (size_t i = 0; i < node["Ports"].num_children(); i++) {
       std::string portname = node["Ports"][i].as<std::string>();
       std::vector<std::string>::iterator itr =
           std::find(portnames.begin(), portnames.end(), portname);
@@ -1225,7 +1225,7 @@ void ModelConfig::createGroupMapping() {
   // uint16_t starting from 0. Therefore, the index of each groupOptions_
   // entry is also its <isa>::InstructionGroups value (assuming groupOptions_
   // is ordered exactly as <isa>::InstructionGroups is).
-  for (int grp = 0; grp < groupOptions_.size(); grp++) {
+  for (size_t grp = 0; grp < groupOptions_.size(); grp++) {
     groupMapping_[groupOptions_[grp]] = grp;
   }
 }

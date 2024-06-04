@@ -49,7 +49,7 @@ void RegressionTest::run(const char* source, const char* triple,
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+      simeng::span(reinterpret_cast<const uint8_t*>(code_), codeSize_));
 
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
