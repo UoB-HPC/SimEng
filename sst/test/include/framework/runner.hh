@@ -21,16 +21,6 @@ class Runner {
   Runner() {}
   /** Method used to run the test(s) inside a runner. */
   virtual void run(){};
-  /**
-   * Returns the current executing TestContext.
-   * The TestContext for a Group changes everytime a new test is run
-   */
-  // TODO commented out as seemingly unused and causing warnings due to return
-  // of a stack variable. This needs to be rewritten
-  //  virtual std::unique_ptr<TestContext>& getCurrContext() {
-  //    std::unique_ptr<TestContext> ptr = std::make_unique<TestContext>();
-  //    return ptr;
-  //  };
 };
 
 /** GroupConfig used to provide configuration options to a Group. */
@@ -179,10 +169,6 @@ class Group : public Runner {
     getArgs()->push_back(arg);
     return true;
   };
-
-  // TODO remove this as implements broken function
-  /** Returns the TestContext of the current executing test case. */
-  std::unique_ptr<TestContext>& getCurrContext() { return ctx_; };
 
   /**
    * This method returns a reference of GroupConfig. This method gets overriden
