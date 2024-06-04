@@ -2,7 +2,8 @@
 
 namespace simeng {
 
-GDBStub::GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory)
+GDBStub::GDBStub(simeng::Core& core,
+                 simeng::memory::MemoryInterface& dataMemory)
     : core_(core), dataMemory_(dataMemory) {}
 
 int GDBStub::run() {

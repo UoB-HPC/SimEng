@@ -45,8 +45,7 @@ int main(int argc, char** argv) {
 #ifdef GDB_ENABLED
   // If using GDB, keep as default emulation mode as it's all it currently
   // supports
-  std::cout << "[SimEng] \t GDB Enabled" << std::endl;
-  return;
+  std::cout << "[SimEng] \tGDB Enabled" << std::endl;
 #endif
   std::cout << std::endl;
 

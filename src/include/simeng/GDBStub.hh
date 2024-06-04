@@ -11,7 +11,7 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
+#include "simeng/memory/MemoryInterface.hh"
 
 // colour codes for pretty printing
 #define RESET "\033[0m"
@@ -32,7 +32,7 @@ class GDBStub {
   /** Construct a GDBStub with pointers to a core and memory interface.  N.B.
    * There is currently only support for an emulation core and a
    * FlatMemoryInterface. */
-  GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory);
+  GDBStub(simeng::Core& core, simeng::memory::MemoryInterface& dataMemory);
 
   /** Run the GDBStub using the core and dataMemory properties.  This gives
    * control of the emulation core and hands it to a GDB client that connects to
@@ -95,7 +95,7 @@ class GDBStub {
 
   /** The memory interface used for the simulation.  Currently only supports a
    * FlatMemoryInterface. */
-  simeng::MemoryInterface& dataMemory_;
+  simeng::memory::MemoryInterface& dataMemory_;
 
   /** A set of breakpoints provided by the GDB client. */
   std::vector<std::string> breakpoints_;
