@@ -17,7 +17,7 @@ set(SIMENG_SOURCES
     branchpredictors/AlwaysNotTakenPredictor.cc
     branchpredictors/GenericPredictor.cc
     branchpredictors/PerceptronPredictor.cc
-    config/ModelConfig.cc
+        config/ModelConfig.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     memory/FixedLatencyMemoryInterface.cc
@@ -45,7 +45,6 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
-    TAGEPredictor.cc
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
