@@ -1,5 +1,4 @@
-#include "simeng/branchpredictors/TagePredictor.hh"
-
+#include "simeng/branchpredictors/TagePredictor"
 
 namespace simeng {
 TagePredictor::TagePredictor(ryml::ConstNodeRef config)
