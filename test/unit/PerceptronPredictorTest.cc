@@ -257,23 +257,53 @@ TEST_F(PerceptronPredictorTest, speculativeGlobalHistory) {
 
   // Set up the target prediction for btb entry 000111 to be 65536.  No other
   // target predictions will be set during this test, so we can confirm that
-  // we are accessing this btb entry by on the basis of this target prediction
-  pred = predictor.predict(28, BranchType::Conditional, 0);
+  // we are accessing this btb entry by on the basis of this target
+  // prediction.  This takes a bit more setting up than the Generic predictor
+  // as perceptrons are more complicated than saturating counters.
+  predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
-  EXPECT_EQ(pred.target, 0);  // Target prediction not yet set
-  predictor.update(28, true, 65536, BranchType::Conditional, 0);
+  predictor.update(0, false, 4, BranchType::Conditional, 0);  // GH = 000000
+  predictor.predict(0, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(0, false, 4, BranchType::Conditional, 1);  // GH = 000000
+  predictor.predict(0, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(0, false, 4, BranchType::Conditional, 2);  // GH = 000000
+  predictor.predict(28, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(28, true, 65536, BranchType::Conditional, 3);  // GH = 000001
+  predictor.predict(24, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(24, true, 65536, BranchType::Conditional, 4);  // GH = 000011
+  predictor.predict(16, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(16, true, 65536, BranchType::Conditional, 5);  // GH = 000111
+  predictor.predict(0, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(0, true, 65536, BranchType::Conditional, 6);  // GH = 001111
+  predictor.predict(32, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(32, true, 65536, BranchType::Conditional, 7);  // GH = 011111
+  predictor.predict(96, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);  // Default behaviour is to predict taken
+  predictor.update(96, true, 65536, BranchType::Conditional, 8);  // GH = 111111
+  pred = predictor.predict(224, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);      // Should be set to taken
+  EXPECT_EQ(pred.target, 65536);  // Should be set to 65536
+  predictor.update(224, true, 65536, BranchType::Conditional,
+                   9);  // GH = 111111
 
   // Set up a speculative global history of 111111 on the basis of predictions
-  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 000011
+  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 111111
   EXPECT_TRUE(pred.isTaken);
   EXPECT_EQ(pred.target, 0);
-  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 000111
+  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 111111
   EXPECT_TRUE(pred.isTaken);
   EXPECT_EQ(pred.target, 0);
-  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 001111
+  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 111111
   EXPECT_TRUE(pred.isTaken);
   EXPECT_EQ(pred.target, 0);
-  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 011111
+  pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 111111
   EXPECT_TRUE(pred.isTaken);
   EXPECT_EQ(pred.target, 0);
   pred = predictor.predict(4, BranchType::Conditional, 0);  // GH = 111111
@@ -287,12 +317,13 @@ TEST_F(PerceptronPredictorTest, speculativeGlobalHistory) {
   EXPECT_TRUE(pred.isTaken);
 
   // Now correct the speculative global history using updates
-  predictor.update(4, false, 8, BranchType::Conditional, 1);  // GH = 011111
-  predictor.update(4, false, 8, BranchType::Conditional, 2);  // GH = 001111
-  predictor.update(4, false, 8, BranchType::Conditional, 3);  // GH = 000111
+  predictor.update(4, false, 8, BranchType::Conditional, 10);  // GH = 011111
+  predictor.update(4, false, 8, BranchType::Conditional, 11);  // GH = 001111
+  predictor.update(4, false, 8, BranchType::Conditional, 12);  // GH = 000111
 
   // Now a prediction for address 0 should access btb entry 000111
   pred = predictor.predict(0, BranchType::Conditional, 0);
+  EXPECT_TRUE(pred.isTaken);
   EXPECT_EQ(pred.target, 65536);
 }
 
