@@ -449,7 +449,7 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, [[maybe_unused]] int prot,
 
 int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
                       uint16_t mode) {
-  // Alter special file path to point to SimEng one (if filename points to
+  // Alter special file path to point to SimEng one (if pathname points to
   // special file)
   std::string new_pathname = Linux::getSpecialFile(pathname);
 

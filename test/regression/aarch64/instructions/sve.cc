@@ -3800,6 +3800,7 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<float> resultsA;
   std::vector<float> resultsB;
+  // Redundant initialisation to prevent warnings
   float itemA = 0.f;
   float itemB = 0.f;
   for (size_t i = 0; i < (VL / 32); i++) {
