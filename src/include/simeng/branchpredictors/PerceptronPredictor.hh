@@ -103,7 +103,7 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** The Id of the last instruction that update was called on -- used to
    * ensure that update is called in program order. */
-  uint64_t lastUpdatedInstructionId = 0;
+  [[maybe_unused]] uint64_t lastUpdatedInstructionId_ = 0;
 };
 
 }  // namespace simeng
