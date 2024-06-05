@@ -104,8 +104,8 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
                                  uint64_t instructionId) {
   // Make sure that this function is called in program order; and then update
   // the lastUpdatedInstructionId variable
-  assert(instructionId >= lastUpdatedInstructionId &&
-         (lastUpdatedInstructionId = instructionId) >= 0 &&
+  assert(instructionId >= lastUpdatedInstructionId_ &&
+         (lastUpdatedInstructionId_ = instructionId) >= 0 &&
          "Update not called on branch instructions in program order");
 
   // Retrieve the previous global history and branch direction prediction from
@@ -126,11 +126,8 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   // Update the perceptron if the prediction was wrong, or the dot product's
   // magnitude was not greater than the training threshold
   if ((directionPrediction != isTaken) ||
-      (abs(prevPout) < trainingThreshold_)) {
+      (static_cast<uint64_t>(std::abs(prevPout)) < trainingThreshold_)) {
     int8_t t = (isTaken) ? 1 : -1;
-  if ((directionPrediction != taken) ||
-      (static_cast<uint64_t>(std::abs(Pout)) < trainingThreshold_)) {
-    int8_t t = (taken) ? 1 : -1;
 
     for (uint64_t i = 0; i < globalHistoryLength_; i++) {
       int8_t xi =
