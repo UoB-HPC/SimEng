@@ -7,7 +7,7 @@
 
 #include "simeng/Instruction.hh"
 #include "simeng/arch/riscv/InstructionGroups.hh"
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 
 namespace simeng {
 namespace arch {

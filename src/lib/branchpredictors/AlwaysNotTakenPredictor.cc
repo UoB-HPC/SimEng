@@ -1,4 +1,4 @@
-#include "simeng/branchPredictors/AlwaysNotTakenPredictor.hh"
+#include "simeng/branchpredictors/AlwaysNotTakenPredictor.hh"
 
 namespace simeng {
 

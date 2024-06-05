@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -28,21 +28,27 @@ class GenericPredictor : public BranchPredictor {
 
   /** Generate a branch prediction for the supplied instruction address, a
    * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
+   * known. Returns a branch direction and branch target address.  Optional
+   * arguments of getPrediction and pastDirection for use in the event that a
+   * new prediction is not required from the BP for a branch (e.g., if the
+   * fetch unit has identified the branch as being a part of a loop and so is
+   * reusing a previous prediction).  If no prediction is required, then the
+   * direction prediction that is being used in lieu of a new prediction must
+   * be provided as an argument to predict. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0) override;
+                                          int64_t knownOffset = 0,
+                                          bool getPrediction = true) override;
 
-  /** Updates appropriate predictor model objects based on the address and
-   * outcome of the branch instruction. */
+  /** Updates appropriate predictor model objects based on the address, type and
+   * outcome of the branch instruction.  Update must be called on branches in
+   * program order. */
   void update(uint64_t address, bool isTaken, uint64_t targetAddress,
               BranchType type) override;
 
-  /** Provides RAS rewinding behaviour. */
+  /** Flushes the most recently predicted branch from the BP.  Address is
+   * required to ensure that only the correct branch is removed from the RAS.
+   * */
   void flush(uint64_t address) override;
-
-  /** Adds instruction to the Fetch Target Queue without making a new prediction
-   */
-  void addToFTQ(uint64_t address, bool isTaken) override;
 
  private:
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
@@ -55,6 +61,11 @@ class GenericPredictor : public BranchPredictor {
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
   std::deque<std::pair<bool, uint64_t>> ftq_;
+
+  /** Keep the last ftq entry as a separate variable to be reused for loops
+   * in the event that the ftq_ is empty by the time the next predict() is
+   * called */
+  std::pair<bool, uint64_t> lastFtqEntry_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
