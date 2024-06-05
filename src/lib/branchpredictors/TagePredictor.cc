@@ -27,7 +27,18 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   // bits are stored in the global history. This is two times the
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
-  globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
+  uint64_t longestHistoryNeeded = std::max((uint64_t)globalHistoryLength_,
+                                      (uint64_t)std::pow(2, numTageTables_));
+  globalHistoryMask_ = (1 << (longestHistoryNeeded * 2)) - 1;
+
+  for (uint32_t i = 0; i < numTageTables_; i++) {
+    std::vector<TageEntry> newTable;
+    for (uint32_t j = 0; j < tageTableSize_; j++) {
+      TageEntry newEntry = {2, 0, 1, 0};
+      newTable.push_back(newEntry);
+    }
+    tageTables_.push_back(newTable);
+  }
 }
 
 TagePredictor::~TagePredictor() {
@@ -46,7 +57,13 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
 
+  // Get the default prediction from the btb structure (analogous to the
+  // generic branch preditor's prediction)
   BranchPrediction prediction = getBtbPrediction(hashedIndex);
+
+  // Check to see if there i a better prediction available from the tagged
+  // predictor tables
+  prediction = getTaggedPrediction(prediction);
 
   if (knownOffset != 0) prediction.target = address + knownOffset;
 
@@ -159,6 +176,12 @@ BranchPrediction TagePredictor::getBtbPrediction(uint64_t hashedIndex) {
   bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
   uint64_t target = btb_[hashedIndex].second;
   return {direction, target};
+}
+
+BranchPrediction TagePredictor::getTaggedPrediction(BranchPrediction
+                                                        basePrediction) {
+
+  return basePrediction;
 }
 
 } // namespace simeng

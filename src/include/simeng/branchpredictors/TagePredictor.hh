@@ -4,6 +4,7 @@
 #include <deque>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 #include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/config/SimInfo.hh"
@@ -48,6 +49,9 @@ class TagePredictor : public BranchPredictor {
   /** Returns a btb prediction for this branch */
   BranchPrediction getBtbPrediction(uint64_t hashedIndex);
 
+  /**  */
+  BranchPrediction getTaggedPrediction(BranchPrediction basePrediction);
+
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint8_t btbBits_;
 
@@ -55,7 +59,10 @@ class TagePredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  std::vector<std::vector<TageEntry>> TageTables_;
+  uint64_t tageTableSize_ = 1024;
+  uint8_t numTageTables_ = 1;
+
+  std::vector<std::vector<TageEntry>> tageTables_;
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
