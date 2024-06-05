@@ -38,8 +38,8 @@ class PerceptronPredictor : public BranchPredictor {
    * new prediction is required.  Therefore, predict() returns only a dummy
    * prediction. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                                          int64_t knownOffset = 0,
-                                          bool isLoop = false) override;
+                           int64_t knownOffset = 0,
+                           bool isLoop = false) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on branches in
@@ -76,7 +76,7 @@ class PerceptronPredictor : public BranchPredictor {
   /** Keep the last ftq entry as a separate variable to be reused for loops
    * in the event that the ftq_ is empty by the time the next predict() is
    * called */
-   std::pair<int64_t, uint64_t> lastFtqEntry_;
+  std::pair<int64_t, uint64_t> lastFtqEntry_;
 
   /** An n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_.  Each bit represents a branch taken (1) or not

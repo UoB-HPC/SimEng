@@ -46,9 +46,8 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
     // that the past dot product is the one most recently added to the ftq_
     ftq_.emplace_back(lastFtqEntry_.first, globalHistory_);
     // Update global history
-    globalHistory_ =
-        ((globalHistory_ << 1) | (lastFtqEntry_.first >= 0)) &
-        globalHistoryMask_;
+    globalHistory_ = ((globalHistory_ << 1) | (lastFtqEntry_.first >= 0)) &
+                     globalHistoryMask_;
     // Return dummy prediction
     return {false, 0};
   }
@@ -126,7 +125,6 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   // Work out hashed index
   uint64_t hashedIndex =
       ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
-
 
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
