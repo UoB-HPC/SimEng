@@ -52,12 +52,9 @@ void FetchUnit::tick() {
 
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
-        macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
-        // Let the branch predictor know the prediction is being reused so that
-        // the FTQ can be kept up to date
-        branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
-                                 macroOp[0]->getBranchType(),
-                                 macroOp[0]->getKnownOffset(), true);
+        macroOp[0]->setBranchPrediction(branchPredictor_.predict(
+            macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
+            macroOp[0]->getKnownOffset()));
         branchesFetched_++;
       }
 

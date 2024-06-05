@@ -27,10 +27,6 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
-
-  // Set dummy lastFtqEntry value, needed to ensure that in-loop predict()
-  // calls in tests work.
-  lastFtqEntry_ = {1, 0};
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -40,25 +36,7 @@ PerceptronPredictor::~PerceptronPredictor() {
 }
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
-                                              int64_t knownOffset,
-                                              bool isLoop) {
-  // If branch is in a loop then a new prediction is not required. Just need
-  // to update ftq and global history
-  if (isLoop) {
-    // Add branch to the ftq using the past dot product in lieu of a new
-    // prediction. Because the loop buffer supplies only if there have been
-    // no branch instructions since the branch defining the loop, we know
-    // that the past dot product is the one most recently added to the ftq_
-    ftq_.emplace_back(lastFtqEntry_.first, globalHistory_);
-
-    // Update global history
-    globalHistory_ = ((globalHistory_ << 1) | (lastFtqEntry_.first >= 0)) &
-                     globalHistoryMask_;
-
-    // Return dummy prediction
-    return {false, 0};
-  }
-
+                                              int64_t knownOffset) {
   // Get the hashed index for the prediction table.  XOR the global history with
   // the non-zero bits of the address, and then keep only the btbBits_ bits of
   // the output to keep it in bounds of the prediction table.
@@ -112,7 +90,6 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // needs to be global history and not the hashed index as hashing loses
   // information and the global history is required for updating perceptrons.
   ftq_.emplace_back(Pout, globalHistory_);
-  lastFtqEntry_ = {Pout, globalHistory_};
 
   // Speculatively update the global history based on the direction
   // prediction being made
