@@ -50,18 +50,11 @@ TagePredictor::~TagePredictor() {
 
 BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
                                         int64_t knownOffset) {
-  // Get index via an XOR hash between the global history and the instruction
-  // address. This hash is then ANDed to keep it within bounds of the btb.
-  // The address is shifted to remove the two least-significant bits as these
-  // are always 0 in an ISA with 4-byte aligned instructions.
-  uint64_t hashedIndex =
-      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
-
   // Get the default prediction from the btb structure (analogous to the
-  // generic branch preditor's prediction)
-  BranchPrediction prediction = getBtbPrediction(hashedIndex);
+  // generic branch predictor's prediction)
+  BranchPrediction prediction = getBtbPrediction(address);
 
-  // Check to see if there i a better prediction available from the tagged
+  // Check to see if there is a better prediction available from the tagged
   // predictor tables
   prediction = getTaggedPrediction(prediction);
 
@@ -93,7 +86,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   }
 
   // Store the hashed index for correct hashing in update()
-  ftq_.emplace_back(prediction.isTaken, hashedIndex);
+  ftq_.emplace_back(prediction.isTaken, globalHistory_);
 
   // Speculatively update the global history
   globalHistory_ =
@@ -113,7 +106,7 @@ void TagePredictor::update(uint64_t address, bool isTaken, uint64_t
 
   // Get previous prediction and index calculated from the FTQ
   bool prevPrediction = ftq_.front().first;
-  uint64_t hashedIndex = ftq_.front().second;
+  uint64_t globalHistory = ftq_.front().second;
   ftq_.pop_front();
 
   // Calculate 2-bit saturating counter value
@@ -171,10 +164,11 @@ void TagePredictor::flush(uint64_t address) {
 
 }
 
-BranchPrediction TagePredictor::getBtbPrediction(uint64_t hashedIndex) {
+BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
   // Get prediction from BTB
-  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
-  uint64_t target = btb_[hashedIndex].second;
+  uint64_t index = (address >> 2) & ((1 << btbBits_) - 1);
+  bool direction = (btb_[index].first >= (1 << (satCntBits_ - 1)));
+  uint64_t target = btb_[index].second;
   return {direction, target};
 }
 

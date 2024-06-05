@@ -17,6 +17,12 @@ struct TageEntry {
   uint8_t usefulness;
   uint64_t target;
 };
+
+struct ftqEntry {
+  bool isTaken;
+  uint64_t globalHistory;
+};
+
 /** ToDo -- Explain TAGE */
 
 class TagePredictor : public BranchPredictor {
@@ -47,7 +53,7 @@ class TagePredictor : public BranchPredictor {
 
  private:
   /** Returns a btb prediction for this branch */
-  BranchPrediction getBtbPrediction(uint64_t hashedIndex);
+  BranchPrediction getBtbPrediction(uint64_t address);
 
   /**  */
   BranchPrediction getTaggedPrediction(BranchPrediction basePrediction);
@@ -66,7 +72,7 @@ class TagePredictor : public BranchPredictor {
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
-  std::deque<std::pair<bool, uint64_t>> ftq_;
+  std::deque<ftqEntry> ftq_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
