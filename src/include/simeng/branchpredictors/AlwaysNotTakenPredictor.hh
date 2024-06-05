@@ -12,7 +12,7 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
    * always predict not taken. */
   BranchPrediction predict(uint64_t address, BranchType type,
                                           int64_t knownOffset,
-                                          bool getPrediction = true) override;
+                                          bool isLoop = false) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on

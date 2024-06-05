@@ -279,7 +279,7 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(*uop, getBranchType()).WillOnce(Return(bType));
   EXPECT_CALL(*uop, getKnownOffset()).WillOnce(Return(knownOff));
   BranchPrediction pred = {true, pc + knownOff};
-  EXPECT_CALL(predictor, predict(20, bType, knownOff, true)).WillOnce
+  EXPECT_CALL(predictor, predict(20, bType, knownOff, false)).WillOnce
       (Return(pred));
   fetchUnit.tick();
 
