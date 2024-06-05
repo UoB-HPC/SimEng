@@ -35,8 +35,8 @@ class GenericPredictor : public BranchPredictor {
    * new prediction is required.  Therefore, predict() returns only a dummy
    * prediction. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                                          int64_t knownOffset = 0,
-                                          bool isLoop = false) override;
+                           int64_t knownOffset = 0,
+                           bool isLoop = false) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on branches in
