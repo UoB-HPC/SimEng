@@ -14,6 +14,7 @@ class MockBranchPredictor : public BranchPredictor {
                void(uint64_t address, bool taken, uint64_t targetAddress,
                     BranchType type, uint64_t instructionId));
   MOCK_METHOD1(flush, void(uint64_t address));
+  MOCK_METHOD1(addToFTQ, void(uint64_t address));
 };
 
 }  // namespace simeng
