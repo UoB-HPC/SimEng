@@ -28,10 +28,6 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
   globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
-
-  // Set dummy lastFtqEntry value, needed to ensure that non-prediction
-  // getting predict() calls in tests work.
-  lastFtqEntry_ = {true, 0};
 }
 
 GenericPredictor::~GenericPredictor() {
@@ -42,25 +38,13 @@ GenericPredictor::~GenericPredictor() {
 }
 
 BranchPrediction GenericPredictor::predict(
-    uint64_t address, BranchType type, int64_t knownOffset,
-    bool isLoop) {
+    uint64_t address, BranchType type, int64_t knownOffset) {
   // Get index via an XOR hash between the global history and the instruction
   // address. This hash is then ANDed to keep it within bounds of the btb.
   // The address is shifted to remove the two least-significant bits as these
   // are always 0 in an ISA with 4-byte aligned instructions.
   uint64_t hashedIndex =
       ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
-
-  // If a branch prediction is not required, then we can avoid a lot of the
-  // logic, and just determine the direction, and add the branch to the ftq
-  if (isLoop) {
-    // Add branch to the back of the ftq
-    ftq_.emplace_back(lastFtqEntry_.first, hashedIndex);
-    // Speculatively update the global history
-    globalHistory_ = ((globalHistory_ << 1) | lastFtqEntry_.first) &
-                     globalHistoryMask_;
-    return {false, 0};
-  }
 
   // Get prediction from BTB
   bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
@@ -95,7 +79,6 @@ BranchPrediction GenericPredictor::predict(
 
   // Store the hashed index for correct hashing in update()
   ftq_.emplace_back(prediction.isTaken, hashedIndex);
-  lastFtqEntry_ = {prediction.isTaken, hashedIndex};
 
   // Speculatively update the global history
   globalHistory_ =

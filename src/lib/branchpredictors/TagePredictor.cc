@@ -1,6 +1,9 @@
 #include "simeng/branchpredictors/TagePredictor.hh"
 
+#include <iostream>
+
 namespace simeng {
+
 TagePredictor::TagePredictor(ryml::ConstNodeRef config)
     : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint8_t>()),
       satCntBits_(
