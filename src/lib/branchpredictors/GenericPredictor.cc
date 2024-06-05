@@ -92,8 +92,8 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
                               uint64_t instructionId) {
   // Make sure that this function is called in program order; and then update
   // the lastUpdatedInstructionId variable
-  assert(instructionId >= lastUpdatedInstructionId &&
-         (lastUpdatedInstructionId = instructionId) >= 0 &&
+  assert(instructionId >= lastUpdatedInstructionId_ &&
+         (lastUpdatedInstructionId_ = instructionId) >= 0 &&
          "Update not called on branch instructions in program order");
 
   // Get previous prediction and index calculated from the FTQ
