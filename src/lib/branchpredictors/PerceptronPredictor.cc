@@ -36,10 +36,10 @@ PerceptronPredictor::~PerceptronPredictor() {
 
 BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
                                               int64_t knownOffset,
-                                              bool getPrediction) {
+                                              bool isLoop) {
   // If no prediction required, add branch to ftq and return dummy
   // prediction, which will not be used by the fetch unit
-  if (!getPrediction) {
+  if (isLoop) {
     // Add branch to the ftq using the past dot product in lieu of a new
     // prediction.  Because the loop buffer only supplies if there have been
     // no branch instructions since the branch defining the loop, we know
