@@ -37,7 +37,7 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Updates appropriate predictor model objects based on the address and
    * outcome of the branch instruction. */
-  void update(uint64_t address, bool taken, uint64_t targetAddress,
+  void update(uint64_t address, bool isTaken, uint64_t targetAddress,
               BranchType type) override;
 
   /** Provides RAS rewinding behaviour. */
@@ -45,7 +45,7 @@ class PerceptronPredictor : public BranchPredictor {
 
   /** Adds instruction to the Fetch Target Queue without making a new prediction
    */
-  void addToFTQ(uint64_t address, bool taken) override;
+  void addToFTQ(uint64_t address, bool isTaken) override;
 
  private:
   /** Returns the dot product of a perceptron and a history vector.  Used to

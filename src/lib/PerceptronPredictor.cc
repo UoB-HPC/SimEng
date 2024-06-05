@@ -21,7 +21,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // Set up training threshold according to empirically determined formula
   trainingThreshold_ = (uint64_t)((1.93 * globalHistoryLength_) + 14);
 
-  globalHistoryMask_ = (globalHistoryLength_ * 2) - 1;
+  globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -56,9 +56,9 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
 
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
-    prediction.taken = true;
+    prediction.isTaken = true;
   } else if (type == BranchType::Return) {
-    prediction.taken = true;
+    prediction.isTaken = true;
     // Return branches can use the RAS if an entry is available
     if (ras_.size() > 0) {
       prediction.target = ras_.back();
@@ -67,7 +67,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
       ras_.pop_back();
     }
   } else if (type == BranchType::SubroutineCall) {
-    prediction.taken = true;
+    prediction.isTaken = true;
     // Subroutine call branches must push their associated return address to RAS
     if (ras_.size() >= rasSize_) {
       ras_.pop_front();
@@ -76,22 +76,22 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
   } else if (type == BranchType::Conditional) {
-    if (!prediction.taken) prediction.target = address + 4;
+    if (!prediction.isTaken) prediction.target = address + 4;
   }
 
   // Store the global history for correct hashing in update() --
   // needs to be global history and not the hashed index as hashing loses
   // information at longer global history lengths
-  ftq_.emplace_back(prediction.taken, globalHistory_);
+  ftq_.emplace_back(prediction.isTaken, globalHistory_);
 
   // speculatively update global history
   globalHistory_ =
-      ((globalHistory_ << 1) | prediction.taken) & globalHistoryMask_;
+      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
 
   return prediction;
 }
 
-void PerceptronPredictor::update(uint64_t address, bool taken,
+void PerceptronPredictor::update(uint64_t address, bool isTaken,
                                  uint64_t targetAddress, BranchType type) {
   // Get previous branch state and prediction from FTQ
   bool prevPrediction = ftq_.front().first;
@@ -110,6 +110,8 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
 
   // Update the perceptron if the prediction was wrong, or the dot product's
   // magnitude was not greater than the training threshold
+  if ((directionPrediction != isTaken) || (abs(Pout) < trainingThreshold_)) {
+    int8_t t = (isTaken) ? 1 : -1;
   if ((directionPrediction != taken) ||
       (static_cast<uint64_t>(std::abs(Pout)) < trainingThreshold_)) {
     int8_t t = (taken) ? 1 : -1;
@@ -135,7 +137,7 @@ void PerceptronPredictor::update(uint64_t address, bool taken,
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
   // We know how many predictions there have since been by the size of the FTQ
-  if (prevPrediction != taken) globalHistory_ ^= (1 << (ftq_.size()));
+  if (prevPrediction != isTaken) globalHistory_ ^= (1 << (ftq_.size()));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -166,10 +168,10 @@ void PerceptronPredictor::flush(uint64_t address) {
   globalHistory_ >>= 1;
 }
 
-void PerceptronPredictor::addToFTQ(uint64_t address, bool taken) {
+void PerceptronPredictor::addToFTQ(uint64_t address, bool isTaken) {
   // Add instruction to the FTQ in event of reused prediction
-  ftq_.emplace_back(taken, globalHistory_);
-  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryMask_;
+  ftq_.emplace_back(isTaken, globalHistory_);
+  globalHistory_ = ((globalHistory_ << 1) | isTaken) & globalHistoryMask_;
 }
 
 int64_t PerceptronPredictor::getDotProduct(
