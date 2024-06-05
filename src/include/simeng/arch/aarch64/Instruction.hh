@@ -6,7 +6,7 @@
 #include "simeng/Instruction.hh"
 #include "simeng/arch/aarch64/InstructionGroups.hh"
 #include "simeng/arch/aarch64/operandContainer.hh"
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 
 struct cs_arm64_op;
 

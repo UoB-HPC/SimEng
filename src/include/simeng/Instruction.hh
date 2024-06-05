@@ -5,7 +5,7 @@
 #include "capstone/capstone.h"
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/span.hh"
 

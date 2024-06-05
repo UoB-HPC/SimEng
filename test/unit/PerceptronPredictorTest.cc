@@ -1,6 +1,6 @@
 #include "MockInstruction.hh"
 #include "gtest/gtest.h"
-#include "simeng/branchPredictors/PerceptronPredictor.hh"
+#include "simeng/branchpredictors/PerceptronPredictor.hh"
 
 namespace simeng {
 
@@ -99,25 +99,25 @@ TEST_F(PerceptronPredictorTest, GlobalIndexing) {
       "Global-History-Length: 10, RAS-entries: 5}}");
   auto predictor = simeng::PerceptronPredictor();
   // Spool up first global history pattern
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
   auto prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -127,25 +127,25 @@ TEST_F(PerceptronPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, false, 0x80, BranchType::Conditional);
 
   // Spool up second global history pattern
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
   // Ensure default behaviour for re-encounter but with different global history
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -155,25 +155,25 @@ TEST_F(PerceptronPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, true, 0xBA, BranchType::Conditional);
 
   // Recreate first global history pattern
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Get prediction
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -183,25 +183,25 @@ TEST_F(PerceptronPredictorTest, GlobalIndexing) {
   predictor.update(0x7C, true, 0x80, BranchType::Conditional);
 
   // Recreate second global history pattern
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, false, 4, BranchType::Conditional);
   // Get prediction
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
@@ -254,17 +254,17 @@ TEST_F(PerceptronPredictorTest, speculativeGlobalHistory) {
       "Global-History-Length: 6, RAS-entries: 5}}");
   auto predictor = simeng::PerceptronPredictor();
   // spool up a global history to set the target address
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, true);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure default behaviour for first encounter
   auto prediction = predictor.predict(0xFF, BranchType::Conditional, 0);
@@ -276,17 +276,17 @@ TEST_F(PerceptronPredictorTest, speculativeGlobalHistory) {
   predictor.update(0xFF, true, 0xAB, BranchType::Conditional);
 
   // recreate this global history but with incorrect predictions
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
-  predictor.addToFTQ(0, false);
+  predictor.predict(0, BranchType::Conditional, 0, false);
   predictor.update(0, true, 4, BranchType::Conditional);
   // Ensure prediction is correct with new target address
   prediction = predictor.predict(0xFF, BranchType::Conditional, 0);

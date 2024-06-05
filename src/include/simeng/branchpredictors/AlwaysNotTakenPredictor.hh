@@ -1,6 +1,6 @@
 #pragma once
 
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 
 namespace simeng {
 
@@ -12,7 +12,8 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
   /** Generate a branch prediction for the specified instruction address; will
    * always predict not taken. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset) override;
+                                          int64_t knownOffset,
+                                          bool getPrediction = true) override;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. As this model is static, this does nothing. */

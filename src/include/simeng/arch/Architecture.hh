@@ -6,7 +6,7 @@
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/ProcessStateChange.hh"
-#include "simeng/branchPredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/memory/MemoryInterface.hh"
 
