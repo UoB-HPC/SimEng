@@ -42,7 +42,7 @@ GenericPredictor::~GenericPredictor() {
 
 BranchPrediction GenericPredictor::predict(
     uint64_t address, BranchType type, int64_t knownOffset,
-    bool getPrediction) {
+    bool isLoop) {
   // Get index via an XOR hash between the global history and the instruction
   // address. This hash is then ANDed to keep it within bounds of the btb.
   // The address is shifted to remove the two least-significant bits as these
@@ -52,7 +52,7 @@ BranchPrediction GenericPredictor::predict(
 
   // If a branch prediction is not required, then we can avoid a lot of the
   // logic, and just determine the direction, and add the branch to the ftq
-  if (!getPrediction) {
+  if (isLoop) {
     // Add branch to the back of the ftq
     ftq_.emplace_back(lastFtqEntry_.first, hashedIndex);
     // Speculatively update the global history

@@ -37,7 +37,7 @@ class GenericPredictor : public BranchPredictor {
    * be provided as an argument to predict. */
   BranchPrediction predict(uint64_t address, BranchType type,
                                           int64_t knownOffset = 0,
-                                          bool getPrediction = true) override;
+                                          bool isLoop = false) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on branches in

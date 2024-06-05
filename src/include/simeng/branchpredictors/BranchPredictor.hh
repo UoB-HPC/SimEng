@@ -53,7 +53,7 @@ class BranchPredictor {
    * branch as being a part of a queue and so reusing a previous prediction).*/
   virtual BranchPrediction predict(
       uint64_t address, BranchType type, int64_t knownOffset,
-      bool getPrediction = true) = 0;
+      bool isLoop = false) = 0;
 
   /** Provide branch results to update the prediction model for the specified
    * instruction address. Update must be called on instructions in program
