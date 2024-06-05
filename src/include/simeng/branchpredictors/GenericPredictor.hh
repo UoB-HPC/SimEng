@@ -29,15 +29,9 @@ class GenericPredictor : public BranchPredictor {
 
   /** Generate a branch prediction for the supplied instruction address, a
    * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address.  There is
-   * also an optional boolean argument for whether or not the branch has
-   * been identified as being a part of a loop.  If the branch is a loop
-   * branch, then the fetch unit will reuse a previous prediction and so no
-   * new prediction is required.  Therefore, predict() returns only a dummy
-   * prediction. */
+   * known. Returns a branch direction and branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0,
-                           bool isLoop = false) override;
+                           int64_t knownOffset = 0) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
@@ -64,11 +58,6 @@ class GenericPredictor : public BranchPredictor {
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */
   std::deque<std::pair<bool, uint64_t>> ftq_;
-
-  /** Keep the last ftq entry as a separate variable to be reused for loops
-   * in the event that the ftq_ is empty by the time the next predict() is
-   * called */
-  std::pair<bool, uint64_t> lastFtqEntry_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;

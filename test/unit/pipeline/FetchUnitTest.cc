@@ -94,7 +94,7 @@ TEST_P(PipelineFetchUnitTest, TickStalled) {
 
   EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
 
-  EXPECT_CALL(predictor, predict(_, _, _, false)).Times(0);
+  EXPECT_CALL(predictor, predict(_, _, _)).Times(0);
 
   fetchUnit.tick();
 
@@ -279,7 +279,7 @@ TEST_P(PipelineFetchUnitTest, fetchTakenBranchMidBlock) {
   EXPECT_CALL(*uop, getBranchType()).WillOnce(Return(bType));
   EXPECT_CALL(*uop, getKnownOffset()).WillOnce(Return(knownOff));
   BranchPrediction pred = {true, pc + knownOff};
-  EXPECT_CALL(predictor, predict(20, bType, knownOff, false))
+  EXPECT_CALL(predictor, predict(20, bType, knownOff))
       .WillOnce(Return(pred));
   fetchUnit.tick();
 
@@ -326,7 +326,7 @@ TEST_P(PipelineFetchUnitTest, supplyFromLoopBuffer) {
 
   // Set the expectation from the predictor to be true so a loop body will
   // be detected
-  ON_CALL(predictor, predict(_, _, _, _))
+  ON_CALL(predictor, predict(_, _, _))
       .WillByDefault(Return(BranchPrediction({true, 0x0})));
 
   // Set Loop Buffer state to be LoopBufferState::FILLING
@@ -418,7 +418,7 @@ TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
 
   // Set the first expectation from the predictor to be true so a loop body will
   // be detected
-  EXPECT_CALL(predictor, predict(_, _, _, false))
+  EXPECT_CALL(predictor, predict(_, _, _))
       .WillOnce(Return(BranchPrediction({true, 0x0})));
 
   // Set Loop Buffer state to be LoopBufferState::FILLING
@@ -430,7 +430,7 @@ TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // Fetch the next block of instructions from memory and change the expected
   // outcome of the branch predictor
   fetchUnit.requestFromPC();
-  EXPECT_CALL(predictor, predict(_, _, _, false))
+  EXPECT_CALL(predictor, predict(_, _, _))
       .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
 
   // Attempt to fill Loop Buffer but prevent it on a not taken outcome at the
@@ -769,7 +769,7 @@ TEST_P(PipelineFetchUnitTest, branchesFetchedCountedIncorrectly) {
   ON_CALL(isa, predecode(_, _, Lt(0xC), _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
   ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
-  EXPECT_CALL(predictor, predict(_, _, _, false))
+  EXPECT_CALL(predictor, predict(_, _, _))
       .WillOnce(Return(BranchPrediction({true, 0x0})));
 
   // Fetch instructions from data block -- one branch instruction
@@ -784,7 +784,7 @@ TEST_P(PipelineFetchUnitTest, branchesFetchedCountedIncorrectly) {
   // Fetch the next block of instructions from memory and change the expected
   // outcome of the branch predictor
   fetchUnit.requestFromPC();
-  EXPECT_CALL(predictor, predict(_, _, _, false))
+  EXPECT_CALL(predictor, predict(_, _, _))
       .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
 
   // Fetch instructions from data block -- one branch instruction
