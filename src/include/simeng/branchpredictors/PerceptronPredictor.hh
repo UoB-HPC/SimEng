@@ -101,9 +101,12 @@ class PerceptronPredictor : public BranchPredictor {
   /** The size of the RAS. */
   uint64_t rasSize_;
 
+  // This variable is used only in debug mode -- therefore hide behind ifdef
+#ifndef NDEBUG
   /** The Id of the last instruction that update was called on -- used to
    * ensure that update is called in program order. */
-  [[maybe_unused]] uint64_t lastUpdatedInstructionId_ = 0;
+  uint64_t lastUpdatedInstructionId_ = 0;
+#endif
 };
 
 }  // namespace simeng
