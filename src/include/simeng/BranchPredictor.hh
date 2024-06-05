@@ -17,16 +17,16 @@ enum class BranchType {
 
 /** A branch result prediction for an instruction. */
 struct BranchPrediction {
-  /** Whether the branch will be taken. */
-  bool taken;
+  /** Whether the branch will be isTaken. */
+  bool isTaken;
 
-  /** The branch instruction's target address. If `taken = false`, the value
+  /** The branch instruction's target address. If `isTaken = false`, the value
    * will be ignored. */
   uint64_t target;
 
   /** Check for equality of two branch predictions . */
   bool operator==(const BranchPrediction& other) {
-    if ((taken == other.taken) && (target == other.target))
+    if ((isTaken == other.isTaken) && (target == other.target))
       return true;
     else
       return false;
@@ -34,7 +34,7 @@ struct BranchPrediction {
 
   /** Check for inequality of two branch predictions . */
   bool operator!=(const BranchPrediction& other) {
-    if ((taken != other.taken) || (target != other.target))
+    if ((isTaken != other.isTaken) || (target != other.target))
       return true;
     else
       return false;
@@ -54,7 +54,7 @@ class BranchPredictor {
   /** Provide branch results to update the prediction model for the specified
    * instruction address. Update must be called on instructions in program
    * order */
-  virtual void update(uint64_t address, bool taken, uint64_t targetAddress,
+  virtual void update(uint64_t address, bool isTaken, uint64_t targetAddress,
                       BranchType type) = 0;
 
   /** Provides flushing behaviour for the implemented branch prediction schemes
@@ -66,7 +66,7 @@ class BranchPredictor {
 
   /** Adds instruction to the Fetch Target Queue without making a new prediction
    */
-  virtual void addToFTQ(uint64_t address, bool taken) = 0;
+  virtual void addToFTQ(uint64_t address, bool isTaken) = 0;
 };
 
 }  // namespace simeng

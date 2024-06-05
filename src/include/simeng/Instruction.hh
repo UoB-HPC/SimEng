@@ -147,16 +147,16 @@ class Instruction {
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const { return branchAddress_; }
 
-  /** Was the branch taken? */
+  /** Was the branch isTaken? */
   bool wasBranchTaken() const { return branchTaken_; }
 
   /** Check for misprediction. */
   bool wasBranchMispredicted() const {
     assert(executed_ &&
            "Branch misprediction check requires instruction to have executed");
-    // Flag as mispredicted if taken state was wrongly predicted, or taken and
+    // Flag as mispredicted if isTaken state was wrongly predicted, or isTaken and
     // predicted target is wrong
-    return (branchTaken_ != prediction_.taken ||
+    return (branchTaken_ != prediction_.isTaken ||
             (prediction_.target != branchAddress_));
   }
 
@@ -289,7 +289,7 @@ class Instruction {
   /** A branching address calculated by this instruction during execution. */
   uint64_t branchAddress_ = 0;
 
-  /** Was the branch taken? */
+  /** Was the branch isTaken? */
   bool branchTaken_ = false;
 
   /** What type of branch this instruction is. */

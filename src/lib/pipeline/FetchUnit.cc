@@ -56,7 +56,7 @@ void FetchUnit::tick() {
         // Let the branch predictor know the prediction is being reused so that
         // the FTQ can be kept up to date
         branchPredictor_.addToFTQ(macroOp[0]->getInstructionAddress(),
-                                  macroOp[0]->getBranchPrediction().taken);
+                                  macroOp[0]->getBranchPrediction().isTaken);
         branchesExecuted_++;
       }
 
@@ -165,7 +165,7 @@ void FetchUnit::tick() {
 
       if (pc_ == loopBoundaryAddress_) {
         if (macroOp[0]->isBranch() &&
-            !macroOp[0]->getBranchPrediction().taken) {
+            !macroOp[0]->getBranchPrediction().isTaken) {
           // loopBoundaryAddress_ has been fetched whilst filling the loop
           // buffer BUT this is a branch, predicted to branch out of the loop
           // being buffered. Stop filling the loop buffer and don't supply to
@@ -193,11 +193,11 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
-    if (!prediction.taken) {
-      // Predicted as not taken; increment PC to next instruction
+    if (!prediction.isTaken) {
+      // Predicted as not isTaken; increment PC to next instruction
       pc_ += bytesRead;
     } else {
-      // Predicted as taken; set PC to predicted target address
+      // Predicted as isTaken; set PC to predicted target address
       pc_ = prediction.target;
     }
 
@@ -206,7 +206,7 @@ void FetchUnit::tick() {
       break;
     }
 
-    if (prediction.taken) {
+    if (prediction.isTaken) {
       if (slot + 1 < output_.getWidth()) {
         branchStalls_++;
       }
