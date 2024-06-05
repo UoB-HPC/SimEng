@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "simeng/branchpredictors/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchHistory.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -21,6 +22,11 @@ struct TageEntry {
 struct ftqEntry {
   bool isTaken;
   uint64_t globalHistory;
+};
+
+struct history {
+  uint64_t numEntries;
+  std::vector<uint64_t> bits;
 };
 
 /** ToDo -- Explain TAGE */
@@ -80,7 +86,7 @@ class TagePredictor : public BranchPredictor {
   /** An n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_.  Each bit represents a branch taken (1) or not
    * taken (0), with the most recent branch being the least-significant-bit */
-  uint64_t globalHistory_ = 0;
+  BranchHistory globalHistory_;
 
   /** The number of previous branch directions recorded globally. */
   uint16_t globalHistoryLength_;
@@ -100,9 +106,12 @@ class TagePredictor : public BranchPredictor {
   /** The size of the RAS. */
   uint16_t rasSize_;
 
+  // This variable is used only in debug mode -- therefore hide behind ifdef
+#ifndef NDEBUG
   /** The Id of the last instruction that update was called on -- used to
    * ensure that update is called in program order. */
-  [[maybe_unused]] uint64_t lastUpdatedInstructionId = 0;
+  uint64_t lastUpdatedInstructionId = 0;
+#endif
 };
 
 }  // namespace simeng
