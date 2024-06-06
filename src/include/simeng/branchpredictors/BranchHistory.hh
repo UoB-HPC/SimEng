@@ -34,9 +34,9 @@ class BranchHistory {
 
   /** returns the global history folded over on itself to get a bitmap of the
    * size specified by numBits.  The global history is folded by taking an
-   * XOR hash with the overflowing bits.
+   * XOR hash with the overflowing bits to get an output of 'length' bits.
    * */
-  uint64_t getFolded(uint8_t numBits) {
+  uint64_t getFolded(uint8_t numBits, uint8_t length) {
 //    std::cout << "getFolded" << std::endl;
     assert(numBits <= size_ && "Cannot get more bits of branch history than "
            "the size of the history");
@@ -45,20 +45,22 @@ class BranchHistory {
     uint64_t startIndex = 0;
     uint64_t endIndex = numBits - 1;
 
-    while (startIndex <= size_) {
-      output ^= (history_[startIndex / 64] >> startIndex);
+    while (startIndex <= numBits) {
+//      std::cout << "in while loop :(" << std::endl;
+      output ^= ((history_[startIndex / 64] >> startIndex) &
+                 ((1 << (numBits - startIndex)) - 1));
 
       // Check to see if a second uint64_t value will need to be accessed
       if ((startIndex / 64) == (endIndex / 64)) {
         uint8_t leftOverBits = endIndex % 64;
         output ^= (history_[endIndex / 64] << (numBits - leftOverBits));
       }
-      startIndex += numBits;
-      endIndex += numBits;
+      startIndex += length;
+      endIndex += length;
     }
 
     // Trim the output to the desired size
-    output &= (1 << numBits) - 1;
+    output &= (1 << length) - 1;
     return output;
   }
 

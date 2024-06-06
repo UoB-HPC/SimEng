@@ -14,18 +14,13 @@ namespace simeng {
 
 struct TageEntry {
   uint8_t satCnt;
-  uint64_t tags;
+  uint64_t tag;
   uint8_t usefulness;
   uint64_t target;
 };
 
 struct ftqEntry {
   bool isTaken;
-};
-
-struct history {
-  uint64_t numEntries;
-  std::vector<uint64_t> bits;
 };
 
 /** ToDo -- Explain TAGE */
@@ -60,8 +55,23 @@ class TagePredictor : public BranchPredictor {
   /** Returns a btb prediction for this branch */
   BranchPrediction getBtbPrediction(uint64_t address);
 
-  /**  */
-  BranchPrediction getTaggedPrediction(BranchPrediction basePrediction);
+  /** Get a prediction for a given branch based on the tagged predictor
+   * tables.  Must provide a btbPrediction which will be used in the event
+   * that none of the tagged predictor tables have an entry matching the
+   * branch */
+  BranchPrediction getTaggedPrediction(uint64_t address);
+
+  /** Get the index of a branch for a given address and table */
+  uint64_t getTaggedIndex(uint64_t address, uint8_t table);
+
+  /** Return a hash of the address and the global history that is then trimmed
+    * to the length of the tags.  The tag varies depending on
+    * the table that is being accessed */
+  uint64_t getTag(uint64_t address, uint8_t table);
+
+  void updateBtb(uint64_t address, bool isTaken, uint64_t target);
+
+  void updateTaggedTables(uint64_t address, bool isTaken, uint64_t target);
 
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint8_t btbBits_;
@@ -70,7 +80,7 @@ class TagePredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  uint64_t tageTableSize_ = 1024;
+  uint64_t tageTableBits_ = 10;
   uint8_t numTageTables_ = 4;
 
   std::vector<std::vector<TageEntry>> tageTables_;
@@ -100,6 +110,8 @@ class TagePredictor : public BranchPredictor {
    * globalHistoryLength_.  Each bit represents a branch taken (1) or not
    * taken (0), with the most recent branch being the least-significant-bit */
   BranchHistory globalHistory_;
+
+  uint8_t tagLength_ = 8;
 
   // This variable is used only in debug mode -- therefore hide behind ifdef
 #ifndef NDEBUG
