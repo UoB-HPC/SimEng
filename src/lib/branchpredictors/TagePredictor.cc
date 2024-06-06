@@ -10,7 +10,8 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
           config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint8_t>()),
       globalHistoryLength_(
           config["Branch-Predictor"]["Global-History-Length"].as<uint16_t>()),
-      rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()) {
+      rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()),
+      globalHistory_((uint64_t)std::pow(2, numTageTables_)) {
   // Calculate the saturation counter boundary between weakly taken and
   // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
   // value
@@ -22,14 +23,6 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   // Create branch prediction structures
   btb_ =
       std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
-
-  // Generate a bitmask that is used to ensure only the relevant number of
-  // bits are stored in the global history. This is two times the
-  // globalHistoryLength_ to allow rolling back of the speculatively updated
-  // global history in the event of a misprediction.
-  uint64_t longestHistoryNeeded = std::max((uint64_t)globalHistoryLength_,
-                                      (uint64_t)std::pow(2, numTageTables_));
-  globalHistoryMask_ = (1 << (longestHistoryNeeded * 2)) - 1;
 
   // Set up Tagged tables
   for (uint32_t i = 0; i < numTageTables_; i++) {
@@ -87,12 +80,11 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   }
 
   // Store the hashed index for correct hashing in update()
-  ftq_.emplace_back(prediction.isTaken, globalHistory_);
+  ftqEntry newEntry = {prediction.isTaken};
+  ftq_.push_back(newEntry);
 
   // Speculatively update the global history
-  globalHistory_ =
-      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
-
+  globalHistory_.addHistory(prediction.isTaken);
   return prediction;
 }
 
@@ -106,12 +98,11 @@ void TagePredictor::update(uint64_t address, bool isTaken, uint64_t
          "Update not called on branch instructions in program order");
 
   // Get previous prediction and index calculated from the FTQ
-  bool prevPrediction = ftq_.front().first;
-  uint64_t globalHistory = ftq_.front().second;
+  bool prevPrediction = ftq_.front().isTaken;
   ftq_.pop_front();
 
   // Calculate 2-bit saturating counter value
-  uint8_t satCntVal = btb_[hashedIndex].first;
+  uint8_t satCntVal = btb_[((address >> 2) & ((1 << btbBits_) - 1))].first;
   // Only alter value if it would transition to a valid state
   if (!((satCntVal == (1 << satCntBits_) - 1) && isTaken) &&
       !(satCntVal == 0 && !isTaken)) {
@@ -119,16 +110,16 @@ void TagePredictor::update(uint64_t address, bool isTaken, uint64_t
   }
 
   // Update BTB entry
-  btb_[hashedIndex].first = satCntVal;
+  btb_[((address >> 2) & ((1 << btbBits_) - 1))].first = satCntVal;
   if (isTaken) {
-    btb_[hashedIndex].second = targetAddress;
+    btb_[((address >> 2) & ((1 << btbBits_) - 1))].second = targetAddress;
   }
 
   // Update global history if prediction was incorrect
   if (prevPrediction != isTaken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
-    globalHistory_ ^= (1 << (ftq_.size()));
+    globalHistory_.updateHistory(isTaken, ftq_.size());
   }
 
 }
@@ -161,7 +152,7 @@ void TagePredictor::flush(uint64_t address) {
   ftq_.pop_back();
 
   // Roll back global history
-  globalHistory_ >>= 1;
+  globalHistory_.rollBack();
 
 }
 

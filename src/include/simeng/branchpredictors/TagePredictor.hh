@@ -21,7 +21,6 @@ struct TageEntry {
 
 struct ftqEntry {
   bool isTaken;
-  uint64_t globalHistory;
 };
 
 struct history {
@@ -72,7 +71,7 @@ class TagePredictor : public BranchPredictor {
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
   uint64_t tageTableSize_ = 1024;
-  uint8_t numTageTables_ = 1;
+  uint8_t numTageTables_ = 4;
 
   std::vector<std::vector<TageEntry>> tageTables_;
 
@@ -83,17 +82,8 @@ class TagePredictor : public BranchPredictor {
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
 
-  /** An n-bit history of previous branch directions where n is equal to
-   * globalHistoryLength_.  Each bit represents a branch taken (1) or not
-   * taken (0), with the most recent branch being the least-significant-bit */
-  BranchHistory globalHistory_;
-
   /** The number of previous branch directions recorded globally. */
   uint16_t globalHistoryLength_;
-
-  /** A bit mask for truncating the global history to the correct size.
-   * Stored as a member variable to avoid duplicative calculation */
-  uint64_t globalHistoryMask_;
 
   /** A return address stack. */
   std::deque<uint64_t> ras_;
@@ -105,6 +95,11 @@ class TagePredictor : public BranchPredictor {
 
   /** The size of the RAS. */
   uint16_t rasSize_;
+
+  /** An n-bit history of previous branch directions where n is equal to
+   * globalHistoryLength_.  Each bit represents a branch taken (1) or not
+   * taken (0), with the most recent branch being the least-significant-bit */
+  BranchHistory globalHistory_;
 
   // This variable is used only in debug mode -- therefore hide behind ifdef
 #ifndef NDEBUG

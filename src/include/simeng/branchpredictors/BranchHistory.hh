@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 namespace simeng {
 /** A class for storing a branch history.  Needed for cases where a branch
  * history of more than 64 bits is required.  This class makes it easier to
@@ -23,6 +25,7 @@ class BranchHistory {
    * number of bits returnable is 64 to allow it to be provided in a 64-bit
    * integer. */
   uint64_t getHistory(uint8_t numBits) {
+//    std::cout << "getHistory" << std::endl;
     assert(numBits <= 64 && "Cannot get more than 64 bits without rolling");
     assert(numBits <= size_ && "Cannot get more bits of branch history than "
            "the size of the history");
@@ -34,6 +37,7 @@ class BranchHistory {
    * XOR hash with the overflowing bits.
    * */
   uint64_t getFolded(uint8_t numBits) {
+//    std::cout << "getFolded" << std::endl;
     assert(numBits <= size_ && "Cannot get more bits of branch history than "
            "the size of the history");
     uint64_t output = 0;
@@ -47,7 +51,7 @@ class BranchHistory {
       // Check to see if a second uint64_t value will need to be accessed
       if ((startIndex / 64) == (endIndex / 64)) {
         uint8_t leftOverBits = endIndex % 64;
-        output ^= (history[endIndex / 64] << (numBits - leftOverBits));
+        output ^= (history_[endIndex / 64] << (numBits - leftOverBits));
       }
       startIndex += numBits;
       endIndex += numBits;
@@ -55,12 +59,13 @@ class BranchHistory {
 
     // Trim the output to the desired size
     output &= (1 << numBits) - 1;
-    return output
+    return output;
   }
 
   /** Adds a branch outcome to the global history */
   void addHistory(bool isTaken) {
-    for (uint8_t i = size_ / 64; i >= 0; i--) {
+//    std::cout << "addHistory" << std::endl;
+    for (int8_t i = size_ / 64; i >= 0; i--) {
       history_[i] <<= 1;
       if (i == 0) {
         history_[i] |= ((isTaken) ? 1 : 0);
@@ -76,15 +81,17 @@ class BranchHistory {
    * outcome, position would be 0.
    * */
   void updateHistory(bool isTaken, uint64_t position) {
-    assert(position < size_ && "Cannot update branch history at a position "
-           "greater than the size of the history");
-    uint8_t vectIndex = position / 64;
-    uint8_t bitIndex = position % 64;
-    history_[vectIndex] ^= ((uint64_t)1 << bitIndex);
+//    std::cout << "updateHistory" << std::endl;
+    if (position < size_) {
+      uint8_t vectIndex = position / 64;
+      uint8_t bitIndex = position % 64;
+      history_[vectIndex] ^= ((uint64_t)1 << bitIndex);
+    }
   }
 
   /** removes the most recently added branch from the history */
   void rollBack() {
+//    std::cout << "rollBack" << std::endl;
     for (uint8_t i = 0; i <= (size_ / 64); i++) {
       history_[i] >>= 1;
       if (i < (size_ / 64)) {
