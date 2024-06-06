@@ -31,6 +31,7 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
                                       (uint64_t)std::pow(2, numTageTables_));
   globalHistoryMask_ = (1 << (longestHistoryNeeded * 2)) - 1;
 
+  // Set up Tagged tables
   for (uint32_t i = 0; i < numTageTables_; i++) {
     std::vector<TageEntry> newTable;
     for (uint32_t j = 0; j < tageTableSize_; j++) {
