@@ -20,7 +20,9 @@ struct TageEntry {
 };
 
 struct ftqEntry {
-  bool isTaken;
+  std::pair<uint8_t, uint8_t> predTables;
+  BranchPrediction prediction;
+  BranchPrediction altPrediction;
 };
 
 /** ToDo -- Explain TAGE */
@@ -55,11 +57,9 @@ class TagePredictor : public BranchPredictor {
   /** Returns a btb prediction for this branch */
   BranchPrediction getBtbPrediction(uint64_t address);
 
-  /** Get a prediction for a given branch based on the tagged predictor
-   * tables.  Must provide a btbPrediction which will be used in the event
-   * that none of the tagged predictor tables have an entry matching the
-   * branch */
-  BranchPrediction getTaggedPrediction(uint64_t address);
+  /** Todo */
+  std::pair<uint8_t, uint8_t> getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
+                           BranchPrediction* altPrediction);
 
   /** Get the index of a branch for a given address and table */
   uint64_t getTaggedIndex(uint64_t address, uint8_t table);

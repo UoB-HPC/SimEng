@@ -45,13 +45,17 @@ TagePredictor::~TagePredictor() {
 BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
                                         int64_t knownOffset) {
 //  std::cout << "Predicting" << std::endl;
-  BranchPrediction prediction = getTaggedPrediction(address);
+  BranchPrediction prediction;
+  BranchPrediction altPrediction;
+  std::pair<uint8_t, uint8_t> tableNums =
+      getTaggedPrediction(address, &prediction, &altPrediction);
 
   if (knownOffset != 0) prediction.target = address + knownOffset;
 
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
     prediction.isTaken = true;
+    tableNums = {0, 0};
   } else if (type == BranchType::Return) {
     prediction.isTaken = true;
     // Return branches can use the RAS if an entry is available
@@ -61,6 +65,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
       rasHistory_[address] = ras_.back();
       ras_.pop_back();
     }
+    tableNums = {0, 0};
   } else if (type == BranchType::SubroutineCall) {
     prediction.isTaken = true;
     // Subroutine call branches must push their associated return address to RAS
@@ -70,12 +75,13 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
     ras_.push_back(address + 4);
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
+    tableNums = {0, 0};
   } else if (type == BranchType::Conditional) {
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
   // Store the hashed index for correct hashing in update()
-  ftqEntry newEntry = {prediction.isTaken};
+  ftqEntry newEntry = {tableNums, prediction, altPrediction};
   ftq_.push_back(newEntry);
 
   // Speculatively update the global history
@@ -98,7 +104,7 @@ void TagePredictor::update(uint64_t address, bool isTaken,
   updateTaggedTables(address, isTaken, targetAddress);
 
   // Update global history if prediction was incorrect
-  if (ftq_.front().isTaken != isTaken) {
+  if (ftq_.front().prediction.isTaken != isTaken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
     globalHistory_.updateHistory(isTaken, ftq_.size());
@@ -150,9 +156,17 @@ BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
   return {direction, target};
 }
 
-BranchPrediction TagePredictor::getTaggedPrediction(uint64_t address) {
+std::pair<uint8_t, uint8_t> TagePredictor::getTaggedPrediction(uint64_t address,
+                                        BranchPrediction* prediction,
+                                        BranchPrediction* altPrediction) {
 //  std::cout << "Getting Prediction" << std::endl;
-  BranchPrediction bestPred = getBtbPrediction(address);
+  // Get a basic prediction from the btb
+  BranchPrediction basePrediction = getBtbPrediction(address);
+  prediction->isTaken = basePrediction.isTaken;
+  prediction->target = basePrediction.target;
+  uint8_t predTable = 0;
+  uint8_t altTable = 0;
+
   // Check each of the tagged predictor tables for an entry matching this
   // branch.  If found, update the best prediction.  The greater the table
   // number, the longer global history it has access to.  Therefore, the
@@ -162,11 +176,15 @@ BranchPrediction TagePredictor::getTaggedPrediction(uint64_t address) {
     uint64_t index = getTaggedIndex(address, table);
     if (tageTables_[table][index].tag == getTag(address, table)) {
 //      std::cout << "Tag match -- " << std::endl;
-      bestPred.isTaken = (tageTables_[table][index].satCnt >= 2);
-      bestPred.target = tageTables_[table][index].target;
+      altPrediction->isTaken = prediction->isTaken;
+      altPrediction->target = prediction->target;
+      altTable = predTable;
+      prediction->isTaken = (tageTables_[table][index].satCnt >= 2);
+      prediction->target = tageTables_[table][index].target;
+      predTable = table + 1;
     }
   }
-  return bestPred;
+  return {predTable, altTable};
 }
 
 uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
