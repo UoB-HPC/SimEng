@@ -47,15 +47,18 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
 //  std::cout << "Predicting" << std::endl;
   BranchPrediction prediction;
   BranchPrediction altPrediction;
-  std::pair<uint8_t, uint8_t> tableNums =
-      getTaggedPrediction(address, &prediction, &altPrediction);
+  uint8_t predTable;
+  std::vector<uint64_t> indices;
+  std::vector<uint64_t> tags;
+  getTaggedPrediction(address, &prediction, &altPrediction, &predTable,
+                      &indices, &tags);
 
   if (knownOffset != 0) prediction.target = address + knownOffset;
 
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
     prediction.isTaken = true;
-    tableNums = {0, 0};
+    predTable = 0;
   } else if (type == BranchType::Return) {
     prediction.isTaken = true;
     // Return branches can use the RAS if an entry is available
@@ -65,7 +68,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
       rasHistory_[address] = ras_.back();
       ras_.pop_back();
     }
-    tableNums = {0, 0};
+    predTable = 0;
   } else if (type == BranchType::SubroutineCall) {
     prediction.isTaken = true;
     // Subroutine call branches must push their associated return address to RAS
@@ -75,13 +78,13 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
     ras_.push_back(address + 4);
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
-    tableNums = {0, 0};
+    predTable = 0;
   } else if (type == BranchType::Conditional) {
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
   // Store the hashed index for correct hashing in update()
-  ftqEntry newEntry = {tableNums, prediction, altPrediction};
+  ftqEntry newEntry = {predTable, indices, tags, prediction, altPrediction};
   ftq_.push_back(newEntry);
 
   // Speculatively update the global history
@@ -156,16 +159,18 @@ BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
   return {direction, target};
 }
 
-std::pair<uint8_t, uint8_t> TagePredictor::getTaggedPrediction(uint64_t address,
+void TagePredictor::getTaggedPrediction(uint64_t address,
                                         BranchPrediction* prediction,
-                                        BranchPrediction* altPrediction) {
+                                        BranchPrediction* altPrediction,
+                                        uint8_t* predTable,
+                                        std::vector<uint64_t>* indices,
+                                        std::vector<uint64_t>* tags) {
 //  std::cout << "Getting Prediction" << std::endl;
   // Get a basic prediction from the btb
   BranchPrediction basePrediction = getBtbPrediction(address);
   prediction->isTaken = basePrediction.isTaken;
   prediction->target = basePrediction.target;
-  uint8_t predTable = 0;
-  uint8_t altTable = 0;
+  *predTable = 0;
 
   // Check each of the tagged predictor tables for an entry matching this
   // branch.  If found, update the best prediction.  The greater the table
@@ -174,17 +179,19 @@ std::pair<uint8_t, uint8_t> TagePredictor::getTaggedPrediction(uint64_t address,
   for (uint8_t table = 0; table < numTageTables_; table++) {
 //    std::cout << "Checking table " << (table + 1) << std::endl;
     uint64_t index = getTaggedIndex(address, table);
-    if (tageTables_[table][index].tag == getTag(address, table)) {
+    indices->push_back(index);
+    uint64_t tag = getTag(address, table);
+    tags->push_back(tag);
+    if (tageTables_[table][index].tag == tag) {
 //      std::cout << "Tag match -- " << std::endl;
       altPrediction->isTaken = prediction->isTaken;
       altPrediction->target = prediction->target;
-      altTable = predTable;
+
       prediction->isTaken = (tageTables_[table][index].satCnt >= 2);
       prediction->target = tageTables_[table][index].target;
-      predTable = table + 1;
+      *predTable = table;
     }
   }
-  return {predTable, altTable};
 }
 
 uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
@@ -230,12 +237,49 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
 
 void TagePredictor::updateTaggedTables(uint64_t address, bool isTaken,
                                        uint64_t target) {
-  // Update the usefulness counters
+  // Get stored information from the ftq
+  uint8_t predTable = ftq_.front().predTable;
+  std::vector<uint64_t> indices = ftq_.front().indices;
+  std::vector<uint64_t> tags = ftq_.front().tags;
+  BranchPrediction pred = ftq_.front().prediction;
+  BranchPrediction altPred = ftq_.front().altPrediction;
 
-  // Update the prediction counters
 
-  // Allocate tagged entries on a misprediction
+  // Update the prediction counter
+  uint64_t predIndex = indices[predTable];
+  if (isTaken && (tageTables_[predTable][predIndex].satCnt < 3)) {
+    (tageTables_[predTable][predIndex].satCnt)++;
+  } else if (!isTaken && (tageTables_[predTable][predIndex].satCnt > 0)) {
+    (tageTables_[predTable][predIndex].satCnt)--;
+  }
 
+  // Allocate new entry if prediction wrong and possible -- Check higher order
+  // tagged predictor tables to see if there is a non-useful entry that can
+  // be replaced
+  if (isTaken != pred.isTaken || (isTaken && (target != pred.target))) {
+    bool allocated = false;
+    for (uint8_t table = predTable + 1; table < numTageTables_; table++) {
+      if (!allocated && (tageTables_[table][indices[table]].u <= 1)) {
+        tageTables_[table][indices[table]] = {((isTaken) ? (uint8_t)2 :
+                                                         (uint8_t)1),
+                                              tags[table], (uint8_t)2, target};
+        allocated = true;
+      }
+    }
+  }
+
+  // Update the usefulness counters if prediction differs from alt-prediction
+  if (pred.isTaken != altPred.isTaken ||
+      (pred.isTaken && (pred.target != altPred.target))) {
+    bool wasUseful = (pred.isTaken == isTaken);
+    uint8_t currentU = tageTables_[predTable][indices[predTable]].u;
+    if (wasUseful && currentU < 3) {
+      (tageTables_[predTable][indices[predTable]].u)++;
+    } if (!wasUseful && currentU > 0) {
+      (tageTables_[predTable][indices[predTable]].u)--;
+    }
+
+  }
 }
 
 } // namespace simeng

@@ -15,12 +15,14 @@ namespace simeng {
 struct TageEntry {
   uint8_t satCnt;
   uint64_t tag;
-  uint8_t usefulness;
+  uint8_t u; // usefulness counter
   uint64_t target;
 };
 
 struct ftqEntry {
-  std::pair<uint8_t, uint8_t> predTables;
+  uint8_t predTable;
+  std::vector<uint64_t> indices;
+  std::vector<uint64_t> tags;
   BranchPrediction prediction;
   BranchPrediction altPrediction;
 };
@@ -58,8 +60,11 @@ class TagePredictor : public BranchPredictor {
   BranchPrediction getBtbPrediction(uint64_t address);
 
   /** Todo */
-  std::pair<uint8_t, uint8_t> getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
-                           BranchPrediction* altPrediction);
+  void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
+                           BranchPrediction* altPrediction,
+                           uint8_t* predTable,
+                           std::vector<uint64_t>* indices,
+                           std::vector<uint64_t>* tags);
 
   /** Get the index of a branch for a given address and table */
   uint64_t getTaggedIndex(uint64_t address, uint8_t table);
