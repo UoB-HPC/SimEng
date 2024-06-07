@@ -79,7 +79,8 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
     predTable = 0;
-  } else if (type == BranchType::Conditional) {
+  } else if (type == BranchType::Conditional ||
+             type == BranchType::LoopClosing) {
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
