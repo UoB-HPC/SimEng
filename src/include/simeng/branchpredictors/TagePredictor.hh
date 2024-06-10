@@ -85,8 +85,8 @@ class TagePredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  uint64_t tageTableBits_ = 10;
-  uint8_t numTageTables_ = 4;
+  uint64_t tageTableBits_ = 12;
+  uint8_t numTageTables_ = 6;
 
   std::vector<std::vector<TageEntry>> tageTables_;
 
