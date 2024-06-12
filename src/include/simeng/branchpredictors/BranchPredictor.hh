@@ -65,6 +65,15 @@ class BranchPredictor {
    * once, the exact order that the individual instructions within this block
    * are flushed does not matter so long as they are all flushed). */
   virtual void flush(uint64_t address) = 0;
+
+
+  // This variable is used only in debug mode to prevent errors -- therefore
+  // hide behind ifdef
+#ifndef NDEBUG
+  /** The Id of the last instruction that update was called on -- used to
+   * ensure that update is called in program order. */
+  uint64_t lastUpdatedInstructionId_ = 0;
+#endif
 };
 
 }  // namespace simeng
