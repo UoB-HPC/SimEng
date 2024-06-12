@@ -56,9 +56,9 @@ void FetchUnit::tick() {
         // Calling predict() in order to log the branch in the branch
         // predictor.  However, we are reusing the prediction from the loop
         // buffer so we do not use the return value from predict()
-        branchPredictor_.predict(
-            macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
-            macroOp[0]->getKnownOffset());
+        branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
+                                 macroOp[0]->getBranchType(),
+                                 macroOp[0]->getKnownOffset());
         assert(pred.isTaken == loopBuffer_.front().prediction.isTaken &&
                "New prediction differs from loop buffer prediction");
         branchesFetched_++;
