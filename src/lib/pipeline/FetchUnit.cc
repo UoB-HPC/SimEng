@@ -53,7 +53,10 @@ void FetchUnit::tick() {
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
-        [[maybe_unused]] BranchPrediction pred = branchPredictor_.predict(
+        // Calling predict() in order to log the branch in the branch
+        // predictor.  However, we are reusing the prediction from the loop
+        // buffer so we do not use the return value from predict()
+        branchPredictor_.predict(
             macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
             macroOp[0]->getKnownOffset());
         assert(pred.isTaken == loopBuffer_.front().prediction.isTaken &&
