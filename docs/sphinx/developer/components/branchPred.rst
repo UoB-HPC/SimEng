@@ -25,7 +25,7 @@ Generic Predictor
 The algorithm(s) held within a ``BranchPredictor`` class instance can be model-specific, however, SimEng provides a ``GenericPredictor`` which contains the following logic.
 
 Global History
-    For indexing relevant prediction structures, a global history can be utilised. The global history value stores the n most recent branch direction outcomes as a bitmap, with the least-significant bit being the most recent. The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.  To facilitate this speculative updating, and rolling-back on correction, for a global history of n the branch predictor keeps track of the 2n most recent branch outcomes.
+    For indexing relevant prediction structures, a global history can be utilised. The global history value stores the n most recent branch direction outcomes in an unsigned int, with the least-significant bit being the most recent branch direction. The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.  To facilitate this speculative updating, and rolling-back on correction, for a global history of n the branch predictor keeps track of the 2n most recent branch outcomes.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR'ed with the current global branch history value.
@@ -43,7 +43,7 @@ Perceptron Predictor
 The ``PerceptronPredictor`` has the same overall structure as the ``GenericPredictor`` but replaces the saturating counter as a means for direction prediction with a perceptron.  The ``PerceptronPredictor`` contains the following logic.
 
 Global History
-    For indexing relevant prediction structures, a global history can be utilised. The global history value stores the n most recent branch direction outcomes as a bitmap, with the least-significant bit being the most recent. The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.  To facilitate this speculative updating, and rolling-back on correction, for a global history of n the branch predictor keeps track of the 2n most recent branch outcomes.
+    For indexing relevant prediction structures, a global history can be utilised. The global history value stores the n most recent branch direction outcomes in an unsigned int, with the least-significant bit being the most recent. The global history is speculatively updated on ``predict``, and is corrected if needed on ``update`` and ``flush``.  To facilitate this speculative updating, and rolling-back on correction, for a global history of n the branch predictor keeps track of the 2n most recent branch outcomes.
 
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with a perceptron for an associated direction. The indexing of this structure uses the lower, non-zero bits of an instruction address XOR'ed with the current global branch history value.
