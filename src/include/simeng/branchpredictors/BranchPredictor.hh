@@ -66,7 +66,6 @@ class BranchPredictor {
    * are flushed does not matter so long as they are all flushed). */
   virtual void flush(uint64_t address) = 0;
 
-
   // This variable is used only in debug mode to prevent errors -- therefore
   // hide behind ifdef
 #ifndef NDEBUG
