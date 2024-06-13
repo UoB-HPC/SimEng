@@ -66,8 +66,10 @@ class BranchPredictor {
    * are flushed does not matter so long as they are all flushed). */
   virtual void flush(uint64_t address) = 0;
 
-  // This variable is used only in debug mode to prevent errors -- therefore
-  // hide behind ifdef
+  // This variable is used only in debug mode.  Hiding behind ifdef to avoid
+  // compiler errors.  Clang throws a warning (which becomes an error) for an
+  // unused variable.  If the [[maybe_unused]] flag is added to avoid this,
+  // then gcc throws an error because it does heed this flag.
 #ifndef NDEBUG
   /** The Id of the last instruction that update was called on -- used to
    * ensure that update is called in program order. */
