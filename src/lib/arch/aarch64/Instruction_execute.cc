@@ -348,6 +348,30 @@ void Instruction::execute() {
             sveAdr_packedOffsets<uint32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
+      case Opcode::AArch64_FTSMUL_ZZZ_S: {  // ftsmul zd.s, zn.s, zm.s
+        results_[0] = sveFTrigSMul<float, int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSMUL_ZZZ_D: {  // ftsmul zd.d, zn.d, zm.d
+        results_[0] = sveFTrigSMul<double, int64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSSEL_ZZZ_S: {  // ftssel zd.s, zn.s, zm.s
+        results_[0] = sveFTrigSSel<float, int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSSEL_ZZZ_D: {  // ftssel zd.d, zn.d, zm.d
+        results_[0] = sveFTrigSSel<double, int64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTMAD_ZZI_S: {  // ftmad zd.s, zn.s, zm.s, #imm
+        results_[0] = sveFTrigMad<float>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTMAD_ZZI_D: {  // ftmad zd.s, zn.s, zm.s, #imm
+        results_[0] = sveFTrigMad<double>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_ANDSWri: {  // ands wd, wn, #imm
         auto [result, nzcv] = logicOp_imm<uint32_t>(
             sourceValues_, metadata_, true,

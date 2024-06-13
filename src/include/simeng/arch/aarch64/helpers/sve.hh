@@ -856,6 +856,132 @@ RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& sourceValues,
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `ftsmul zd, zn, zm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
+ * Returns correctly formatted RegisterValue. U represents the same precision as
+ * T, but as an integer type for the second source register. */
+template <typename T, typename U>
+RegisterValue sveFTrigSMul(srcValContainer& sourceValues,
+                           const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const U* m = sourceValues[1].getAsVector<U>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  U bit_0_mask = 1ull << (sizeof(T) * 8 - 1);
+  // Square each element in the first source vector and then set the sign bit
+  // to a copy of bit 0 of the corresponding element in the second source
+  // register
+  for (int i = 0; i < partition_num; i++) {
+    out[i] = n[i] * n[i];
+    T sign_bit = m[i] & bit_0_mask ? 1.0 : -1.0;
+    out[i] = std::abs(out[i]) * sign_bit;
+  }
+
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `ftssel zd, zn, zm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
+ * Returns correctly formatted RegisterValue. U represents the same precision as
+ * T, but as an integer type for the second source register. */
+template <typename T, typename U>
+RegisterValue sveFTrigSSel(srcValContainer& sourceValues,
+                           const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const U* m = sourceValues[1].getAsVector<U>();
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+
+  U bit_0_mask = 1ull << (sizeof(T) * 8 - 1);
+  U bit_1_mask = 1ull << (sizeof(T) * 8 - 2);
+
+  // Place the value 1.0 or a copy of the first source vector element in the
+  // destination element, depending on bit 0 of the corresponding element of
+  // the second source vector. The sign bit of the destination element is
+  // copied from bit 1 of the second source vector
+  for (int i = 0; i < partition_num; i++) {
+    out[i] = m[i] & bit_0_mask ? 1.0 : n[i];
+    T sign_bit = m[i] & bit_1_mask ? 1.0 : -1.0;
+    out[i] = std::abs(out[i]) * sign_bit;
+  }
+
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `ftmad zd, zn, zm,
+ * #imm`. T represents the type of sourceValues (e.g. for zn.d, T = double).
+ * Returns correctly formatted RegisterValue. **/
+template <typename T>
+RegisterValue sveFTrigMad(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  const T* m = sourceValues[1].getAsVector<T>();
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+
+  const std::array<double, 8> sin64 = {1.0,
+                                       -0.1666666666666661,
+                                       0.8333333333320002e-02,
+                                       -0.1984126982840213e-03,
+                                       0.2755731329901505e-05,
+                                       -0.2505070584637887e-07,
+                                       0.1589413637195215e-09,
+                                       0.0};
+
+  const std::array<double, 8> cos64 = {1.0,
+                                       -0.5000000000000000,
+                                       0.4166666666666645e-01,
+                                       -0.1388888888886111e-02,
+                                       0.2480158728388683e-04,
+                                       -0.2755731309913950e-06,
+                                       0.2087558253975872e-08,
+                                       -0.1135338700720054e-10};
+
+  const std::array<float, 8> sin32 = {1.0,
+                                      -1.666666716337e-01,
+                                      8.333330973983e-03,
+                                      -1.983967522392e-04,
+                                      2.721174723774e-06,
+                                      0.0,
+                                      0.0,
+                                      0.0};
+
+  const std::array<float, 8> cos32 = {1.0,
+                                      -5.000000000000e-01,
+                                      4.166664928198e-02,
+                                      -1.388759003021e-03,
+                                      2.446388680255e-05,
+                                      0.0,
+                                      0.0,
+                                      0.0};
+
+  const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+  T out[256 / sizeof(T)] = {0};
+  // std::array<T, 8> lut;
+
+  for (int i = 0; i < partition_num; i++) {
+    T coeff;
+    const bool sign_bit = m[i] < 0 ? 1 : 0;
+    // If float then use those LUTs
+    if (sizeof(T) == 4) {
+      coeff = sign_bit ? cos32[imm] : sin32[imm];
+    }
+    // Else if double use those LUTs
+    else {
+      coeff = sign_bit ? cos64[imm] : sin64[imm];
+    }
+    // TODO: Add FP16 support if/when we eventually support these (may require
+    // C++23)
+    out[i] = n[i] * std::abs(m[i]) + coeff;
+  }
+
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `inc<b, d, h, w>
  * xdn{, pattern{, MUL #imm}}`.
  * T represents the type of operation (e.g. for INCB, T = int8_t).
