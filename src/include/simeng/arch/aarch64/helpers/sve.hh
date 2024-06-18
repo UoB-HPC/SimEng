@@ -114,6 +114,19 @@ RegisterValue sveAddvPredicated(srcValContainer& sourceValues,
   return {out, 256};
 }
 
+/** Helper function for NEON instructions with the format `uaddlv Vd, Vn.T`.
+ * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, typename U, int I>
+RegisterValue sveAddlv(srcValContainer& sourceValues) {
+  const U* n = sourceValues[0].getAsVector<U>();
+  T out = 0;
+  for (int i = 0; i < I; i++) {
+    out += n[i];
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `adr zd, [zn, zm{,
  * lsl #<1,2,3>}]`.
  * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
