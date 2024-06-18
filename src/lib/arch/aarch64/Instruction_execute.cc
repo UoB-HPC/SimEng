@@ -204,6 +204,10 @@ void Instruction::execute() {
         results_[0] = vecSumElems_2ops<uint8_t, 8>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_UADDLVv8i8v: {  // uaddlv hd, vn.8b
+        results_[0] = sveAddlv<uint32_t, uint8_t, 8>(sourceValues_);
+        break;
+      }
       case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
         auto [result, nzcv] =
             addShift_imm<uint32_t>(sourceValues_, metadata_, false);
@@ -686,6 +690,12 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         break;
       }
+      case Opcode::AArch64_CMEQv2i32rz: {  // cmeq vd.2s, vn.2s, #0
+        results_[0] = vecCompare<uint32_t, 2>(
+            sourceValues_, true,
+            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
+        break;
+      }
       case Opcode::AArch64_CMEQv4i32: {  // cmeq vd.4s, vn.4s, vm.4s
         results_[0] = vecCompare<uint32_t, 4>(
             sourceValues_, false,
@@ -702,6 +712,12 @@ void Instruction::execute() {
         results_[0] = vecCompare<int8_t, 8>(
             sourceValues_, true,
             [](int8_t x, int8_t y) -> bool { return (x == y); });
+        break;
+      }
+      case Opcode::AArch64_CMHIv2i32: {  // cmhi vd.2s, vn.2s, vm.2s
+        results_[0] = vecCompare<uint32_t, 2>(
+            sourceValues_, false,
+            [](uint32_t x, uint32_t y) -> bool { return (x > y); });
         break;
       }
       case Opcode::AArch64_CMHIv4i32: {  // cmhi vd.4s, vn.4s, vm.4s
@@ -4094,6 +4110,12 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
+        break;
+      }
+      case Opcode::AArch64_ORNv8i8: {  // orn vd.8b, vn.8b, vn.8b
+        results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
+            sourceValues_,
+            [](uint8_t x, uint8_t y) -> uint8_t { return x | (~y); });
         break;
       }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
