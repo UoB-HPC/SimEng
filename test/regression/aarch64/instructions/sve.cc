@@ -6397,6 +6397,49 @@ TEST_P(InstSve, smulh) {
              fillNeonCombined<int32_t>({-12}, {-1076902265}, VL / 8));
 }
 
+TEST_P(InstSve, umaxp) {
+  // umaxv vd, vn.t
+  initialHeapData_.resize(32);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+
+  // v0
+  heap[0] = 0x01;
+  heap[1] = 0x00;
+  heap[2] = 0xFF;
+  heap[3] = 0xAA;
+  heap[4] = 0xBB;
+  heap[5] = 0xCC;
+  heap[6] = 0xDD;
+  heap[7] = 0xEE;
+
+  // v1
+  heap[8] = 0x00;
+  heap[9] = 0x00;
+  heap[10] = 0xEE;
+  heap[11] = 0x11;
+  heap[12] = 0x22;
+  heap[13] = 0x33;
+  heap[14] = 0x44;
+  heap[15] = 0x55;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+    umaxv h2, v0.4h
+    umaxv h3, v1.4h
+
+  )");
+  CHECK_NEON(2, uint16_t,
+             {0xEEDD, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000});
+  CHECK_NEON(3, uint16_t,
+             {0x5544, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000});
+}
+
 TEST_P(InstSve, clastb) {
   // 64 bit
   RUN_AARCH64(R"(

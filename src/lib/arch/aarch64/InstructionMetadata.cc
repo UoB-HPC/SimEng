@@ -2437,6 +2437,19 @@ void InstructionMetadata::revertAliasing() {
         // identical so nothing to alter between the instructions.
         return;
       }
+      if (opcode == Opcode::AArch64_EXTRWrri ||
+          opcode == Opcode::AArch64_EXTRXrri) {
+        // ror wd, ws, #shift; alias for : extr wd, ws, ws, #shift
+        operandCount = 4;
+        operands[3] = operands[2];
+        operands[2] = operands[1];
+
+        operands[2].type = ARM64_OP_REG;
+        operands[2].access = CS_AC_READ;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SBFIZ:
       if (opcode == Opcode::AArch64_SBFMWri ||
