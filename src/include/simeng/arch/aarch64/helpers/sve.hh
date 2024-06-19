@@ -136,9 +136,7 @@ RegisterValue sveUMaxV(srcValContainer& sourceValues) {
   const T* n = sourceValues[0].getAsVector<T>();
   T out = n[0];
   for (int i = 1; i < I; i++) {
-    std::cout << "Comparing " << n[i] << " and " << out;
     out = std::max(n[i], out);
-    std::cout << ". " << out << " won\n";
   }
   return {out, 256};
 }
