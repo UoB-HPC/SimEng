@@ -68,8 +68,8 @@ class BranchPredictor {
 
   // This variable is used only in debug mode.  Hiding behind ifdef to avoid
   // compiler errors.  Clang throws a warning (which becomes an error) for an
-  // unused variable.  If the [[maybe_unused]] flag is added to avoid this,
-  // then gcc throws an error because it does heed this flag.
+  // unused variable.  If the [[maybe_unused]] attribute is added to avoid this,
+  // then gcc throws an error because it ignores this attribute.
 #ifndef NDEBUG
   /** The Id of the last instruction that update was called on -- used to
    * ensure that update is called in program order. */

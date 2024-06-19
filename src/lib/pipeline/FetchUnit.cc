@@ -54,9 +54,9 @@ void FetchUnit::tick() {
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
         // Calling predict() in order to log the branch in the branch
-        // predictor.  However, we are reusing the prediction from the loop
-        // buffer so we do not use the return value from predict() except for
-        // in an assert
+        // predictor (which tracks the in flight-brnaches in the ftq).  However,
+        // we are reusing the prediction from the loop buffer so we do not
+        // use the return value from predict() except for in an assert
         [[maybe_unused]] BranchPrediction pred = branchPredictor_.predict(
             macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
             macroOp[0]->getKnownOffset());
