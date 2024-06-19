@@ -71,9 +71,6 @@ class Core : public simeng::Core {
   /** The length of the available instruction memory. */
   uint64_t programByteLength_ = 0;
 
-  /** Is the core waiting on a data read? */
-  uint64_t pendingReads_ = 0;
-
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;
 

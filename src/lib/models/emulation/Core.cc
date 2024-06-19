@@ -27,6 +27,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
 
 void Core::tick() {
   ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (hasHalted_) return;
 
@@ -40,29 +41,7 @@ void Core::tick() {
     return;
   }
 
-  if (pendingReads_ > 0) {
-    // Handle pending reads to a uop
-    auto& uop = microOps_.front();
-
-    const auto& completedReads = dataMemory_.getCompletedReads();
-    for (const auto& response : completedReads) {
-      assert(pendingReads_ > 0);
-      uop->supplyData(response.target.address, response.data);
-      pendingReads_--;
-    }
-    dataMemory_.clearCompletedReads();
-
-    if (pendingReads_ == 0) {
-      // Load complete: resume execution
-      execute(uop);
-    }
-
-    // More data pending, end cycle early
-    return;
-  }
-
   // Fetch
-
   // Determine if new uops are needed to be fetched
   if (!microOps_.size()) {
     // Find fetched memory that matches the current PC
@@ -118,19 +97,23 @@ void Core::tick() {
       return;
     }
     if (addresses.size() > 0) {
-      // Memory reads are required; request them, set `pendingReads_`
-      // accordingly, and end the cycle early
+      // Memory reads required; request them.
       for (auto const& target : addresses) {
         dataMemory_.requestRead(target);
-        // Store addresses for use by next store data operation
+        // Save addresses for use by instructions that perform a LD and STR
+        // (i.e. single instruction atomics)
         previousAddresses_.push_back(target);
       }
-      pendingReads_ = addresses.size();
-      return;
-    } else {
-      // Early execution due to lacking addresses
-      execute(uop);
-      return;
+      // Emulation core can only be used with a Flat memory interface, so data
+      // is ready immediately.
+      const auto& completedReads = dataMemory_.getCompletedReads();
+      assert(completedReads.size() == addresses.size() &&
+             "Number of completed reads does not match the number of requested "
+             "reads.");
+      for (const auto& response : completedReads) {
+        uop->supplyData(response.target.address, response.data);
+      }
+      dataMemory_.clearCompletedReads();
     }
   } else if (uop->isStoreAddress()) {
     auto addresses = uop->generateAddresses();
@@ -139,23 +122,18 @@ void Core::tick() {
       handleException(uop);
       return;
     }
-    // Store addresses for use by next store data operation
+    // Store addresses for use by next store data operation in `execute()`
     for (auto const& target : addresses) {
       previousAddresses_.push_back(target);
     }
-    if (uop->isStoreData()) {
-      execute(uop);
-    } else {
-      // Fetch memory for next cycle
+    if (!uop->isStoreData()) {
+      // No further action needed, fetch memory for next cycle and return early
       instructionMemory_.requestRead({pc_, FETCH_SIZE});
       microOps_.pop();
+      return;
     }
-
-    return;
   }
-
   execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const { return hasHalted_; }
