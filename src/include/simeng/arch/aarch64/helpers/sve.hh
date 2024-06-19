@@ -115,14 +115,30 @@ RegisterValue sveAddvPredicated(srcValContainer& sourceValues,
 }
 
 /** Helper function for NEON instructions with the format `uaddlv Vd, Vn.T`.
- * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
- * Returns correctly formatted RegisterValue. */
+ * T represents the type of the destination register (e.g. for h0, T =
+ * uint32_t). U represents the type of the sourceValues[0] (e.g. for v0.8b, U =
+ * uint8_t) Returns correctly formatted RegisterValue. */
 template <typename T, typename U, int I>
 RegisterValue sveAddlv(srcValContainer& sourceValues) {
   const U* n = sourceValues[0].getAsVector<U>();
   T out = 0;
   for (int i = 0; i < I; i++) {
     out += n[i];
+  }
+  return {out, 256};
+}
+
+/** Helper function for NEON instructions with the format `umaxv Vd, Vn.T`.
+ * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, int I>
+RegisterValue sveUMaxV(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  T out = n[0];
+  for (int i = 1; i < I; i++) {
+    std::cout << "Comparing " << n[i] << " and " << out;
+    out = std::max(n[i], out);
+    std::cout << ". " << out << " won\n";
   }
   return {out, 256};
 }
