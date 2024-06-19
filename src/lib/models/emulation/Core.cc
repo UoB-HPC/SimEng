@@ -97,7 +97,7 @@ void Core::tick() {
       return;
     }
     if (addresses.size() > 0) {
-      // Memory reads required; request them.
+      // Memory reads required; request them
       for (auto const& target : addresses) {
         dataMemory_.requestRead(target);
         // Save addresses for use by instructions that perform a LD and STR
@@ -105,7 +105,7 @@ void Core::tick() {
         previousAddresses_.push_back(target);
       }
       // Emulation core can only be used with a Flat memory interface, so data
-      // is ready immediately.
+      // is ready immediately
       const auto& completedReads = dataMemory_.getCompletedReads();
       assert(completedReads.size() == addresses.size() &&
              "Number of completed reads does not match the number of requested "
