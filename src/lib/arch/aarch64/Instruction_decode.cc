@@ -487,12 +487,14 @@ void Instruction::decode() {
     // LDADD* are considered to be both a load and a store
     if (metadata_.id >= ARM64_INS_LDADD && metadata_.id <= ARM64_INS_LDADDLH) {
       setInstructionType(InsnType::isLoad);
+      setInstructionType(InsnType::isStoreData);
     }
 
     // CASAL* are considered to be both a load and a store
     if (metadata_.opcode == Opcode::AArch64_CASALW ||
         metadata_.opcode == Opcode::AArch64_CASALX) {
       setInstructionType(InsnType::isLoad);
+      setInstructionType(InsnType::isStoreData);
     }
 
     if (isInstruction(InsnType::isStoreData)) {
