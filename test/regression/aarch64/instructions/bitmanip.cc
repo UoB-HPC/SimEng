@@ -70,11 +70,17 @@ TEST_P(InstBitmanip, extr) {
     extr w4, w1, w2, 4
     extr w5, w1, w2, 24
     extr w6, w1, w2, 31
+
+    # Check alias
+    ror w7, w1, 31
+    ror w8, w1, 24
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x12345678);
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xF1234567);
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0xADBEEF12);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0xBD5B7DDE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0xBD5B7DDF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0xADBEEFDE);
 
   // 64-bit
   initialHeapData_.resize(16);

@@ -6397,7 +6397,7 @@ TEST_P(InstSve, smulh) {
              fillNeonCombined<int32_t>({-12}, {-1076902265}, VL / 8));
 }
 
-TEST_P(InstSve, umaxp) {
+TEST_P(InstSve, umaxv) {
   // umaxv vd, vn.t
   initialHeapData_.resize(32);
   uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
