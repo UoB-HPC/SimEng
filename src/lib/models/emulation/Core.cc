@@ -106,6 +106,9 @@ void Core::tick() {
       }
       // Emulation core can only be used with a Flat memory interface, so data
       // is ready immediately
+      assert((config::SimInfo::getConfig()["L1-Data-Memory"]["Interface-Type"]
+                  .as<std::string>() == "Flat") &&
+             "Emulation core is only compatable with a Flat Memory Interface.");
       const auto& completedReads = dataMemory_.getCompletedReads();
       assert(completedReads.size() == addresses.size() &&
              "Number of completed reads does not match the number of requested "
@@ -226,6 +229,11 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
+
+  // For an exception to reach this part of the code, it must be something akin
+  // to a system call, which itself should be counted as an instruction
+  // finishing execution.
+  instructionsExecuted_++;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
