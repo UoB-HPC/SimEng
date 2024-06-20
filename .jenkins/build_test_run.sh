@@ -62,7 +62,7 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6708" "retired instructions"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6721" "retired instructions"
     compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "6736" "simulated cycles"
     echo ""
 
