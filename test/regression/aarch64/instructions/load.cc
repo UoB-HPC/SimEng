@@ -1277,17 +1277,19 @@ TEST_P(InstLoad, ldrsw) {
     mov x0, 0
     mov x8, 214
     svc #0
-    mov x5, 1
+    mov x6, 1
     # Load 32-bit values from heap and sign-extend to 64-bits
     ldrsw x1, [x0, #4]
     ldrsw x2, [x0], #4
     ldrsw x3, [x0]
-    ldrsw x4, [x0, x5, lsl #2]
+    ldrsw x4, [x0, x6, lsl #2]
+    ldrsw x5, [x0, w6, uxtw #2]
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(1), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), -5);
 
   // ldursw
   RUN_AARCH64(R"(
