@@ -36,6 +36,16 @@ build () {
     cmake --build build --target install
 }
 
+# Build common function
+buildRelease () {
+    cd "$SIMENG_TOP" || exit
+    rm -rf build/* install/*
+
+    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/home/br-simeng/llvm14.0.5/install-gcc7/lib/cmake/llvm/ -DCMAKE_C_COMPILER=$1 -DCMAKE_CXX_COMPILER=$2
+    cmake --build build -j
+    cmake --build build --target install
+}
+
 # Run tests
 test () {
     cd "$SIMENG_BUILD" || exit
@@ -52,16 +62,16 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145731" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "simulated cycles"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6708" "retired instructions"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "7955" "simulated cycles"
     echo ""
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
     echo "Simulation with configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "1048588" "simulated cycles"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6724" "retired instructions"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "8677" "simulated cycles"
     echo ""
 }
 

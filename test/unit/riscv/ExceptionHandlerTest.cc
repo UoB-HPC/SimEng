@@ -362,7 +362,7 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
   EXPECT_EQ(handler.dataBuffer_.size(), 128);
-  for (int i = 0; i < handler.dataBuffer_.size(); i++) {
+  for (size_t i = 0; i < handler.dataBuffer_.size(); i++) {
     EXPECT_EQ(handler.dataBuffer_[i], 'q');
   }
 
@@ -376,7 +376,7 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   EXPECT_TRUE(outcome);
   EXPECT_EQ(retVal, 10);
   EXPECT_EQ(handler.dataBuffer_.size(), length);
-  for (int i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; i++) {
     EXPECT_EQ(handler.dataBuffer_[i], static_cast<unsigned char>('q'));
   }
 }

@@ -4,7 +4,7 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
+[[maybe_unused]] static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
 {
   Core:
     {
@@ -367,13 +367,13 @@ class AArch64RegressionTest : public RegressionTest {
   /** Generate an array representing a NEON register from a source vector and a
    * number of elements defined by a number of bytes used. */
   template <typename T>
-  std::array<T, (256 / sizeof(T))> fillNeon(std::vector<T> src,
-                                            int num_bytes) const {
+  std::array<T, (256 / sizeof(T))> fillNeon(const std::vector<T>& src,
+                                            uint32_t num_bytes) const {
     // Create array to be returned and fill with a default value of 0
     std::array<T, (256 / sizeof(T))> generatedArray;
     generatedArray.fill(0);
     // Fill array by cycling through source elements
-    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+    for (size_t i = 0; i < (num_bytes / sizeof(T)); i++) {
       generatedArray[i] = src[i % src.size()];
     }
     return generatedArray;
@@ -406,7 +406,7 @@ class AArch64RegressionTest : public RegressionTest {
     std::array<T, (256 / sizeof(T))> generatedArray;
     generatedArray.fill(0);
     // Fill array by adding an increasing offset value to the base value
-    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+    for (size_t i = 0; i < (num_bytes / sizeof(T)); i++) {
       generatedArray[i] = base + (i * offset);
     }
     return generatedArray;

@@ -626,7 +626,7 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
   cs_detail detail = default_detail;
   info.op_count = opTypes.size();
 
-  for (int op = 0; op < opTypes.size(); op++) {
+  for (size_t op = 0; op < opTypes.size(); op++) {
     info.operands[op] = default_op;
     switch (opTypes[op].type) {
       case arm64_op_type::ARM64_OP_REG: {

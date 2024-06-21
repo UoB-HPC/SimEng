@@ -187,7 +187,13 @@ TEST_P(Syscall, faccessat) {
   unlink(filepath);
 
   char abs_filepath[LINUX_PATH_MAX];
-  realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath);
+  if (!realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
   initialHeapData_.resize(strlen(abs_filepath) + 1);
   // Copy abs_filepath to heap
   memcpy(initialHeapData_.data(), abs_filepath, strlen(abs_filepath) + 1);
@@ -213,7 +219,12 @@ TEST_P(Syscall, faccessat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+  if (!realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
@@ -436,14 +447,14 @@ TEST_P(Syscall, file_read) {
   // Check result of readv operations
   const char refReadv[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
   char* dataReadv = processMemory_ + process_->getHeapStart();
-  for (int i = 0; i < strlen(refReadv); i++) {
+  for (size_t i = 0; i < strlen(refReadv); i++) {
     EXPECT_EQ(dataReadv[i], refReadv[i]) << "at index i=" << i << '\n';
   }
 
   // Check result of read operation
   const char refRead[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   char* dataRead = processMemory_ + process_->getInitialStackPointer() - 64;
-  for (int i = 0; i < strlen(refRead); i++) {
+  for (size_t i = 0; i < strlen(refRead); i++) {
     EXPECT_EQ(dataRead[i], refRead[i]) << "at index i=" << i << '\n';
   }
 }
@@ -583,11 +594,10 @@ TEST_P(Syscall, filenotfound) {
 // Test that readlinkat works for supported cases
 TEST_P(Syscall, readlinkat) {
   const char path[] = "/proc/self/exe";
-  // Get current directory and append the default program's comannd line
-  // argument 0 value
-  char cwd[LINUX_PATH_MAX];
-  getcwd(cwd, LINUX_PATH_MAX);
-  std::string reference = std::string(cwd) + std::string("/Default");
+
+  std::string reference =
+      SIMENG_SOURCE_DIR + std::string("/SimEngDefaultProgram");
+
   // Copy path to heap
   initialHeapData_.resize(strlen(path) + reference.size() + 1);
   memcpy(initialHeapData_.data(), path, strlen(path) + 1);
@@ -610,7 +620,7 @@ TEST_P(Syscall, readlinkat) {
 
   EXPECT_EQ(getGeneralRegister<int64_t>(0), reference.size());
   char* data = processMemory_ + process_->getHeapStart() + 15;
-  for (int i = 0; i < reference.size(); i++) {
+  for (size_t i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
 }
@@ -719,7 +729,12 @@ TEST_P(Syscall, newfstatat) {
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
-  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+  if (!realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath)) {
+    // Something went wrong
+    std::cerr << "[SimEng:syscall] realpath failed with errno = " << errno
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
 
   initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);
   // Copy dirPath to heap
@@ -1094,24 +1109,24 @@ TEST_P(Syscall, uname) {
   // Check utsname struct in memory
   char* data = processMemory_ + process_->getHeapStart();
   const char sysname[] = "Linux";
-  for (int i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
+  for (size_t i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
 
   // Add 65 to data pointer for reserved length of each string field in Linux
   data += 65;
   const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-  for (int i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
+  for (size_t i = 0; i < strlen(nodename); i++) EXPECT_EQ(data[i], nodename[i]);
 
   data += 65;
   const char release[] = "4.14.0";
-  for (int i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
+  for (size_t i = 0; i < strlen(release); i++) EXPECT_EQ(data[i], release[i]);
 
   data += 65;
   const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
-  for (int i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
+  for (size_t i = 0; i < strlen(version); i++) EXPECT_EQ(data[i], version[i]);
 
   data += 65;
   const char machine[] = "aarch64";
-  for (int i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
+  for (size_t i = 0; i < strlen(machine); i++) EXPECT_EQ(data[i], machine[i]);
 }
 
 TEST_P(Syscall, getrusage) {

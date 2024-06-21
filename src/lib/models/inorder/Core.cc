@@ -36,7 +36,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-};
+}
 
 void Core::tick() {
   ticks_++;

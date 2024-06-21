@@ -114,7 +114,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
   EXPECT_EQ(insn.getData().size(), 0);
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs.size());
-  for (int i = 0; i < destRegs.size(); i++) {
+  for (size_t i = 0; i < destRegs.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
   EXPECT_EQ(insn.getException(), InstructionException::None);
@@ -133,7 +133,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
   // Operands vector resized at decode
   EXPECT_EQ(insn.getSourceOperands().size(), 3);
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
-  for (int i = 0; i < srcRegs.size(); i++) {
+  for (size_t i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
     EXPECT_FALSE(insn.isOperandReady(i));
   }
@@ -177,7 +177,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
   EXPECT_EQ(insn.getData().size(), 0);
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs.size());
-  for (int i = 0; i < destRegs.size(); i++) {
+  for (size_t i = 0; i < destRegs.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
@@ -197,7 +197,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   // Operands vector resized at decode
   EXPECT_EQ(insn.getSourceOperands().size(), 0);
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
-  for (int i = 0; i < srcRegs.size(); i++) {
+  for (size_t i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
     EXPECT_FALSE(insn.isOperandReady(i));
   }
@@ -243,7 +243,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
   EXPECT_EQ(insn.getData().size(), 0);
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs.size());
-  for (int i = 0; i < destRegs.size(); i++) {
+  for (size_t i = 0; i < destRegs.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
@@ -263,7 +263,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   // Operands vector resized at decode
   EXPECT_EQ(insn.getSourceOperands().size(), 0);
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
-  for (int i = 0; i < srcRegs.size(); i++) {
+  for (size_t i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
     EXPECT_FALSE(insn.isOperandReady(i));
   }
@@ -297,11 +297,11 @@ TEST_F(AArch64InstructionTest, renameRegs) {
                                    {RegisterType::VECTOR, 0}};
   // Ensure registers decoded correctly
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
-  for (int i = 0; i < srcRegs.size(); i++) {
+  for (size_t i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
   }
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs.size());
-  for (int i = 0; i < destRegs.size(); i++) {
+  for (size_t i = 0; i < destRegs.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
 
@@ -314,11 +314,11 @@ TEST_F(AArch64InstructionTest, renameRegs) {
   insn.renameSource(1, srcRegs_new[1]);
   // Ensure renaming functionality works as expected
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs_new.size());
-  for (int i = 0; i < srcRegs_new.size(); i++) {
+  for (size_t i = 0; i < srcRegs_new.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs_new[i]);
   }
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs_new.size());
-  for (int i = 0; i < destRegs_new.size(); i++) {
+  for (size_t i = 0; i < destRegs_new.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs_new[i]);
   }
 }
@@ -386,11 +386,11 @@ TEST_F(AArch64InstructionTest, supplyData) {
 
   // Check source and destination registers extracted correctly
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
-  for (int i = 0; i < srcRegs.size(); i++) {
+  for (size_t i = 0; i < srcRegs.size(); i++) {
     EXPECT_EQ(insn.getSourceRegisters()[i], srcRegs[i]);
   }
   EXPECT_EQ(insn.getDestinationRegisters().size(), destRegs.size());
-  for (int i = 0; i < destRegs.size(); i++) {
+  for (size_t i = 0; i < destRegs.size(); i++) {
     EXPECT_EQ(insn.getDestinationRegisters()[i], destRegs[i]);
   }
 
@@ -405,7 +405,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
   insn.generateAddresses();
   auto generatedAddresses = insn.getGeneratedAddresses();
   EXPECT_EQ(generatedAddresses.size(), 2);
-  for (int i = 0; i < generatedAddresses.size(); i++) {
+  for (size_t i = 0; i < generatedAddresses.size(); i++) {
     EXPECT_EQ(generatedAddresses[i].address, 0x480 + (i * 0x8));
     EXPECT_EQ(generatedAddresses[i].size, 8);
   }
@@ -414,12 +414,12 @@ TEST_F(AArch64InstructionTest, supplyData) {
   EXPECT_FALSE(insn.hasAllData());
   std::vector<RegisterValue> data = {{123, 8}, {456, 8}};
   EXPECT_EQ(generatedAddresses.size(), data.size());
-  for (int i = 0; i < generatedAddresses.size(); i++) {
+  for (size_t i = 0; i < generatedAddresses.size(); i++) {
     insn.supplyData(generatedAddresses[i].address, data[i]);
   }
   // Ensure data was supplied correctly
   auto retrievedData = insn.getData();
-  for (int i = 0; i < retrievedData.size(); i++) {
+  for (size_t i = 0; i < retrievedData.size(); i++) {
     EXPECT_EQ(retrievedData[i], data[i]);
   }
   EXPECT_TRUE(insn.hasAllData());
@@ -449,7 +449,7 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   insn.generateAddresses();
   auto generatedAddresses = insn.getGeneratedAddresses();
   EXPECT_EQ(generatedAddresses.size(), 2);
-  for (int i = 0; i < generatedAddresses.size(); i++) {
+  for (size_t i = 0; i < generatedAddresses.size(); i++) {
     EXPECT_EQ(generatedAddresses[i].address, 0x480 + (i * 0x8));
     EXPECT_EQ(generatedAddresses[i].size, 8);
   }

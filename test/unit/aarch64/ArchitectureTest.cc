@@ -79,13 +79,13 @@ class AArch64ArchitectureTest : public testing::Test {
   })YAML");
 
   // fdivr z1.s, p0/m, z1.s, z0.s
-  std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
-  std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
+  const std::array<uint8_t, 4> validInstrBytes = {0x01, 0x80, 0x8c, 0x65};
+  const std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
   std::unique_ptr<Architecture> arch;
   kernel::Linux kernel;
   kernel::LinuxProcess process = kernel::LinuxProcess(
-      span((char*)validInstrBytes.data(), validInstrBytes.size()));
+      span(validInstrBytes.data(), validInstrBytes.size()));
 };
 
 TEST_F(AArch64ArchitectureTest, predecode) {
@@ -142,7 +142,7 @@ TEST_F(AArch64ArchitectureTest, handleException) {
             InstructionException::EncodingUnallocated);
 
   // Get Core
-  std::string executablePath = "";
+  std::string executablePath = SIMENG_SOURCE_DIR "/SimEngDefaultProgram";
   std::vector<std::string> executableArgs = {};
   std::unique_ptr<CoreInstance> coreInstance =
       std::make_unique<CoreInstance>(executablePath, executableArgs);

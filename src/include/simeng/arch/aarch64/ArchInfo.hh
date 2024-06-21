@@ -37,9 +37,9 @@ class ArchInfo : public simeng::arch::ArchInfo {
     uint16_t predCount = regConfig["Predicate-Count"].as<uint16_t>();
     uint16_t condCount = regConfig["Conditional-Count"].as<uint16_t>();
     uint16_t matCount = regConfig["Matrix-Count"].as<uint16_t>();
-    // Matrix-Count multiplied by (SVL/8) as internal representation of
-    // ZA is a block of row-vector-registers. Therefore we need to
-    // convert physical counts from whole-ZA to rows-in-ZA.
+    // Matrix-Count multiplied by (SVL/8) as internal representation of ZA is a
+    // block of row-vector-registers. Therefore, we need to convert physical
+    // counts from whole-ZA to rows-in-ZA.
     matCount *= zaSize_;
     physRegStruct_ = {{8, gpCount},
                       {256, fpCount},

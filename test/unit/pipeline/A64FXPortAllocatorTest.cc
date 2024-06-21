@@ -12,16 +12,16 @@ class A64FXPortAllocatorTest : public testing::Test {
  public:
   A64FXPortAllocatorTest() : portAllocator(portArrangement) {
     portAllocator.setRSSizeGetter(
-        [this](std::vector<uint64_t>& sizeVec) { rsSizes(sizeVec); });
+        [this](std::vector<uint32_t>& sizeVec) { rsSizes(sizeVec); });
   }
 
-  void rsSizes(std::vector<uint64_t>& sizeVec) const {
+  void rsSizes(std::vector<uint32_t>& sizeVec) const {
     sizeVec = rsFreeEntries;
   }
 
  protected:
   // Representation of the A64FX reservation station layout
-  std::vector<uint64_t> rsFreeEntries = {20, 20, 10, 10, 19};
+  std::vector<uint32_t> rsFreeEntries = {20, 20, 10, 10, 19};
   // Representation of the A64FX port layout
   const std::vector<std::vector<uint16_t>> portArrangement = {
       {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}};

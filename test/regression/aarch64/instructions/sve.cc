@@ -2021,7 +2021,7 @@ TEST_P(InstSve, eor) {
   CHECK_PREDICATE(2, uint64_t, res_p2);
   CHECK_PREDICATE(3, uint64_t, {0, 0, 0, 0});
   auto res_p4 = fillPred(VL / 8, {0}, 1);
-  for (int i = 0; i < (VL / 8); i++) {
+  for (uint64_t i = 0; i < (VL / 8); i++) {
     uint64_t shifted_active = 1ull << (i % 64);
     res_p4[i / 64] |=
         (p1[i / 64] & shifted_active) == shifted_active ? 0 : shifted_active;
@@ -2092,7 +2092,7 @@ TEST_P(InstSve, eor) {
   )");
   auto res_0 = fillNeon<uint8_t>({0}, VL / 8);
   int val = 8;
-  for (int i = 0; i < (VL / 8); i++) {
+  for (uint64_t i = 0; i < (VL / 8); i++) {
     res_0[i] = val ^ 15;
     val += 2;
   }
@@ -2101,7 +2101,7 @@ TEST_P(InstSve, eor) {
 
   auto res_3 = fillNeon<uint16_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 16); i++) {
+  for (uint64_t i = 0; i < (VL / 16); i++) {
     res_3[i] = val ^ 15;
     val += 2;
   }
@@ -2110,7 +2110,7 @@ TEST_P(InstSve, eor) {
 
   auto res_6 = fillNeon<uint32_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 32); i++) {
+  for (uint64_t i = 0; i < (VL / 32); i++) {
     res_6[i] = val ^ 15;
     val += 2;
   }
@@ -2119,7 +2119,7 @@ TEST_P(InstSve, eor) {
 
   auto res_9 = fillNeon<uint64_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     res_9[i] = val ^ 15;
     val += 2;
   }
@@ -2940,7 +2940,7 @@ TEST_P(InstSve, fadda) {
   )");
   float fresultA = 2.75f;
   float fresultB = 2.75f;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     fresultA += fsrc[i % 8];
     fresultB += fsrc[(i + VL / 64) % 8];
   }
@@ -2979,7 +2979,7 @@ TEST_P(InstSve, fadda) {
   )");
   double resultA = 2.75;
   double resultB = 2.75;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     resultA += dsrc[i % 8];
     resultB += dsrc[(i + VL / 128) % 8];
   }
@@ -3938,8 +3938,9 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<float> resultsA;
   std::vector<float> resultsB;
-  float itemA;
-  float itemB;
+  // Redundant initialisation to prevent warnings
+  float itemA = 0.f;
+  float itemB = 0.f;
   for (size_t i = 0; i < (VL / 32); i++) {
     if (i % 4 == 0) {
       itemA = 5.0f + (5.0f * static_cast<float>(i + 1));
@@ -3967,8 +3968,9 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<double> resultsC;
   std::vector<double> resultsD;
-  double itemC;
-  double itemD;
+  // Redundant initialisation to prevent warnings
+  double itemC = 0.f;
+  double itemD = 0.f;
   for (size_t i = 0; i < (VL / 64); i++) {
     if (i % 2 == 0) {
       itemC = 5.0 + (5.0 * static_cast<double>(i));
@@ -6579,16 +6581,16 @@ TEST_P(InstSve, st1b) {
     st1b {z1.b}, p1, [sp, #4, mul vl]
   )");
 
-  for (int i = 0; i < (VL / 8); i++) {
+  for (uint64_t i = 0; i < (VL / 8); i++) {
     EXPECT_EQ(
         getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 4095 + i),
         src[i % 16]);
   }
-  for (int i = 0; i < (VL / 16); i++) {
+  for (uint64_t i = 0; i < (VL / 16); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>(4 * (VL / 16) + i), src[i % 16]);
   }
   uint64_t base = process_->getInitialStackPointer() - 8190 + 4 * (VL / 8);
-  for (int i = 0; i < (VL / 16); i++) {
+  for (uint64_t i = 0; i < (VL / 16); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>(base + i), src[i % 16]);
   }
 }
@@ -6745,19 +6747,19 @@ TEST_P(InstSve, st1d) {
     st1d {z1.d}, p1, [x2, x3, lsl #3]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 8)),
               src[i % 4]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (i * 8)), src[i % 4]);
   }
   std::rotate(src.begin(), src.begin() + 2, src.end());
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 128) + 16 + (i * 8)), src[i % 4]);
   }
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 128) + (VL / 2) + (i * 8)),
               src[i % 4]);
   }
@@ -6785,7 +6787,7 @@ TEST_P(InstSve, st2d) {
     st2d {z2.d, z3.d}, p1, [x6, #4, mul vl]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (2 * i * 8)),
               3);
@@ -6795,7 +6797,7 @@ TEST_P(InstSve, st2d) {
   }
 
   int index = 4 * (VL / 64) * 8;
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8)), 5);
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8) + 8), 6);
   }
@@ -6890,12 +6892,12 @@ TEST_P(InstSve, st1w) {
     st1w {z2.s}, p0, [x4]
   )");
 
-  for (int i = 0; i < (VL / 32); i++) {
+  for (uint64_t i = 0; i < (VL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 4)),
               src[i % 4]);
   }
-  for (int i = 0; i < (VL / 32); i++) {
+  for (uint64_t i = 0; i < (VL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 8) + (i * 4)), src[i % 4]);
   }
 
@@ -6918,11 +6920,11 @@ TEST_P(InstSve, st1w) {
     st1w {z1.s}, p1, [x2, x3, lsl #2]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 64) + (VL / 2) + (i * 4)),
               src[i % 4]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 64) + 16 + (i * 4)), src[i % 4]);
   }
 
@@ -6966,7 +6968,7 @@ TEST_P(InstSve, st1w) {
   std::array<uint32_t, (256 / sizeof(uint32_t))> srcC =
       fillNeonCombined<uint32_t>(
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0ul}, VL / 16);
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 4)),
               srcC[i]);
@@ -6976,7 +6978,7 @@ TEST_P(InstSve, st1w) {
       fillNeonCombined<uint32_t>(
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01},
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, VL / 16);
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 + i) * 4), srcD[i]);
   }
 }
@@ -6997,7 +6999,7 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #0, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(
         getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 4095 + i),
         0xFF);
@@ -7015,7 +7017,7 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #1, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64)) + i),
               0xDE);
@@ -7033,7 +7035,7 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #2, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64) * 2) + i),
               0x12);
@@ -7051,7 +7053,7 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #3, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64) * 3) + i),
               0x98);
@@ -7080,12 +7082,12 @@ TEST_P(InstSve, str_vector) {
     str z0, [sp, #0, mul vl]
     str z1, [x1, #4, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 8)),
               src[i % 8]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 8) + (VL / 2) + (i * 8)),
               src[i % 8]);
   }
@@ -7183,7 +7185,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint8_t> result8;
   int i1 = 0;
   int i2 = 10;
-  for (int i = 0; i < VL / 16; i++) {
+  for (uint64_t i = 0; i < VL / 16; i++) {
     result8.push_back(i1);
     result8.push_back(i2);
     i1 += 2;
@@ -7201,7 +7203,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint16_t> result16;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 32; i++) {
+  for (uint64_t i = 0; i < VL / 32; i++) {
     result16.push_back(i1);
     result16.push_back(i2);
     i1 += 2;
@@ -7219,7 +7221,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint32_t> result32;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     result32.push_back(i1);
     result32.push_back(i2);
     i1 += 2;
@@ -7237,7 +7239,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint64_t> result64;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     result64.push_back(i1);
     result64.push_back(i2);
     i1 += 2;
@@ -7257,7 +7259,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint8_t> result8;
   int i1 = 1;
   int i2 = 11;
-  for (int i = 0; i < VL / 16; i++) {
+  for (uint64_t i = 0; i < VL / 16; i++) {
     result8.push_back(i1);
     result8.push_back(i2);
     i1 += 2;
@@ -7275,7 +7277,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint16_t> result16;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 32; i++) {
+  for (uint64_t i = 0; i < VL / 32; i++) {
     result16.push_back(i1);
     result16.push_back(i2);
     i1 += 2;
@@ -7293,7 +7295,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint32_t> result32;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     result32.push_back(i1);
     result32.push_back(i2);
     i1 += 2;
@@ -7311,7 +7313,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint64_t> result64;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     result64.push_back(i1);
     result64.push_back(i2);
     i1 += 2;

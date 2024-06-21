@@ -11,7 +11,7 @@ CoreInstance::CoreInstance(std::string executablePath,
   generateCoreModel(executablePath, executableArgs);
 }
 
-CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
+CoreInstance::CoreInstance(uint8_t* assembledSource, size_t sourceSize,
                            ryml::ConstNodeRef config)
     : config_(config),
       kernel_(kernel::Linux(
@@ -96,7 +96,7 @@ void CoreInstance::createProcess(std::string executablePath,
   } else if (assembledSource_) {
     // Create a process image from the source code assembled by LLVM.
     process_ = std::make_unique<kernel::LinuxProcess>(
-        span<char>(source_, sourceSize_), config_);
+        span<const uint8_t>(source_, sourceSize_), config_);
     // Raise error if created process is not valid
     if (!process_->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not create process based on "
@@ -105,17 +105,12 @@ void CoreInstance::createProcess(std::string executablePath,
       exit(1);
     }
   } else {
-    // Create a process image from the set of instructions held in hex_
-    process_ = std::make_unique<kernel::LinuxProcess>(
-        span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)), config_);
-
-    // Raise error if created process is not valid
-    if (!process_->isValid()) {
-      std::cerr << "[SimEng:CoreInstance] Could not create process based on "
-                   "supplied instruction span"
-                << std::endl;
-      exit(1);
-    }
+    // This case shouldn't be reached as the default program should always be
+    // provided
+    std::cerr << "[SimEng:CoreInstance] Unexpected parameters given to core "
+                 "instance. No default program and no assembled source"
+              << std::endl;
+    exit(1);
   }
 
   // Create the process memory space from the generated process image
@@ -317,12 +312,10 @@ std::shared_ptr<char> CoreInstance::getProcessImage() const {
   return processMemory_;
 }
 
-const uint64_t CoreInstance::getProcessImageSize() const {
+uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;
 }
 
-const uint64_t CoreInstance::getHeapStart() const {
-  return process_->getHeapStart();
-}
+uint64_t CoreInstance::getHeapStart() const { return process_->getHeapStart(); }
 
 }  // namespace simeng

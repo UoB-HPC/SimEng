@@ -157,6 +157,12 @@ RegisterValue scvtf_FixedPoint(
  * Returns single value of type D. */
 template <typename D, typename N>
 D fcvtzu_integer(srcValContainer& sourceValues) {
+  // Ensure types so that we know behaviour of inaccurate type conversions
+  static_assert((std::is_same<float, N>() || std::is_same<double, N>()) &&
+                "N is not a valid type which should be float or double");
+  static_assert((std::is_same<uint32_t, D>() || std::is_same<uint64_t, D>()) &&
+                "D is not a valid type which should be int32_t or int64_t");
+
   N input = sourceValues[0].get<N>();
   D result = static_cast<D>(0);
 
@@ -165,7 +171,18 @@ D fcvtzu_integer(srcValContainer& sourceValues) {
     if (std::isinf(input)) {
       // Account for Infinity
       result = std::numeric_limits<D>::max();
-    } else if (input > std::numeric_limits<D>::max()) {
+    } else if (static_cast<double>(input) >=
+               static_cast<double>(std::numeric_limits<D>::max())) {
+      // Cast to double to ensure no precision errors. Float can't store uint32
+      // or uint64 max values accurately as not enough bits available. This
+      // causes unwanted comparison behaviour
+      //
+      // max() will be either 4294967295 or 18446744073709551615
+      // Casting to float results in the following (incorrect) values 4294967296
+      // (+1) or 18446744073709551616 (+1)
+      //
+      // Casting to double results in no erroneous conversion.
+
       // Account for the source value being larger than the
       // destination register can support
       result = std::numeric_limits<D>::max();

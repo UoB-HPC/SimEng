@@ -38,10 +38,17 @@ void FetchUnit::tick() {
     auto outputSlots = output_.getTailSlots();
     for (size_t slot = 0; slot < output_.getWidth(); slot++) {
       auto& macroOp = outputSlots[slot];
-      auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
-                                      loopBuffer_.front().instructionSize,
-                                      loopBuffer_.front().address, macroOp);
-      assert(bytesRead != 0 && "predecode failure for loop buffer entry");
+      auto bytesRead = isa_.predecode(
+          reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
+          loopBuffer_.front().instructionSize, loopBuffer_.front().address,
+          macroOp);
+
+      if (bytesRead == 0) {
+        std::cout << "[SimEng:FetchUnit] Predecode returned 0 bytes while loop "
+                     "buffer supplying"
+                  << std::endl;
+        exit(1);
+      }
 
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
@@ -55,7 +62,7 @@ void FetchUnit::tick() {
     return;
   }
 
-  // Pointer to the instruction data to decode from
+  // Const pointer to the instruction data to decode from
   const uint8_t* buffer;
   uint16_t bufferOffset;
 
@@ -105,6 +112,10 @@ void FetchUnit::tick() {
       bufferedBytes_ += blockSize_ - bufferOffset;
       buffer = fetchBuffer_;
       // Decoding should start from the beginning of the fetchBuffer_.
+      bufferOffset = 0;
+    } else {
+      // There is already enough data in the fetch buffer, so use that
+      buffer = fetchBuffer_;
       bufferOffset = 0;
     }
   } else {

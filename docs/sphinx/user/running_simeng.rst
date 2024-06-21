@@ -7,7 +7,7 @@ SimEng uses a configuration file and a program binary to produce a cycle-accurat
 
         <simeng_install_directory>/bin/simeng <config file> <binary>
 
-If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in ``SimEng/src/include/simeng/CoreInstance.hh`` under the ``hex[]`` array which contains a set of raw instructions in a hexadecimal format.
+If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program is a binary compiled to AArch64 found at ``SimEng/SimEngDefaultProgram``. This prints a welcome message to the console.
 
 Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.
 

@@ -62,11 +62,13 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, ryml::ConstNodeRef config)
+LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
+                           ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
-  // Set program command string to a relative path of "Default"
-  commandLine_.push_back("Default\0");
+  // Set program command string to the full path of the default program even
+  // though these aren't the instructions being executed
+  commandLine_.push_back(SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
 
   isValid_ = true;
 
@@ -127,7 +129,7 @@ void LinuxProcess::createStack(char** processImage) {
   initialStackFrame.push_back(commandLine_.size());  // argc
   for (size_t i = 0; i < commandLine_.size(); i++) {
     char* argvi = commandLine_[i].data();
-    for (int j = 0; j < commandLine_[i].size(); j++) {
+    for (size_t j = 0; j < commandLine_[i].size(); j++) {
       stringBytes.push_back(argvi[j]);
     }
     stringBytes.push_back(0);
@@ -135,7 +137,7 @@ void LinuxProcess::createStack(char** processImage) {
   // Environment strings
   std::vector<std::string> envStrings = {"OMP_NUM_THREADS=1"};
   for (std::string& env : envStrings) {
-    for (int i = 0; i < env.size(); i++) {
+    for (size_t i = 0; i < env.size(); i++) {
       stringBytes.push_back(env.c_str()[i]);
     }
     // Null entry to separate strings
@@ -147,7 +149,7 @@ void LinuxProcess::createStack(char** processImage) {
   stackPointer_ -= alignToBoundary(stringBytes.size() + 1, 32);
   uint16_t ptrCount = 1;
   initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
-  for (int i = 0; i < stringBytes.size(); i++) {
+  for (size_t i = 0; i < stringBytes.size(); i++) {
     if (ptrCount == commandLine_.size()) {
       // null terminator to separate argv and env strings
       initialStackFrame.push_back(0);

@@ -13,7 +13,7 @@ class MockPortAllocator : public pipeline::PortAllocator {
   MOCK_METHOD1(issued, void(uint16_t port));
   MOCK_METHOD1(deallocate, void(uint16_t port));
   MOCK_METHOD1(setRSSizeGetter,
-               void(std::function<void(std::vector<uint64_t>&)> rsSizes));
+               void(std::function<void(std::vector<uint32_t>&)> rsSizes));
   MOCK_METHOD0(tick, void());
 };
 
