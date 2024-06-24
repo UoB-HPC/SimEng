@@ -13,7 +13,7 @@ assignees: ''
  [ ] I have provided both a config file and a binary to SimEng as runtime arguments.
 
 **Binary File Information**
-Please run the `file` on the binary used and paste the output below (i.e. `file myBinary.elf`).
+Please run `file` on the binary used and paste the output below (i.e. `file myBinary.elf`).
 ```bash
 ```
 
@@ -29,7 +29,7 @@ Please provide the following as a list:
  - The main memory capacity of the system you are running SimEng on
 
 **SimEng Version**
-Provide the SimEgn repository branch, commit hash, and version tag (if relevant) that the issue is present on.
+Provide the SimEng repository branch, commit hash, and version tag (if relevant) that the issue is present on.
 
 **SimEng CMAKE Options Used**
 Provide a bullet list of all CMAKE options used. E.g. `-DCMAKE_BUILD_TYPE=Release`.
@@ -38,7 +38,7 @@ Provide a bullet list of all CMAKE options used. E.g. `-DCMAKE_BUILD_TYPE=Releas
 Provide a bullet list of how the binary in question was compiled, including all compiler flags used.
 
 **SimEng Command Line Expression**
-Provide the comman line expression used to run SimEng e.g. `./simeng /path/to/configs/a64fx.yaml /path/to/myBinary.elf`
+Provide the command line expression used to run SimEng e.g. `./simeng /path/to/configs/a64fx.yaml /path/to/myBinary.elf`
 
 **SimEng Metadata Output**
 If your simulation begins to execute the binary, please provide the metadata that SimEng prints at the start of execution.
