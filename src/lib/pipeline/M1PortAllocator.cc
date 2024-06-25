@@ -9,7 +9,7 @@ namespace pipeline {
 
 M1PortAllocator::M1PortAllocator(
     const std::vector<std::vector<uint16_t>>& portArrangement,
-    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
+    std::vector<std::pair<uint16_t, uint64_t>> rsArrangement)
     : weights(portArrangement.size(), 0), rsArrangement_(rsArrangement) {}
 
 uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
