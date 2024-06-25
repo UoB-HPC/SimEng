@@ -49,9 +49,9 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 5
+A64FX_HL_L1 = 3 # 5 cycles (-2 from SimEng overhead)
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 56
+A64FX_HL_L2 = 44 # 46 cycles (-2 from SimEng overhead)
 # Coherence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
@@ -65,9 +65,12 @@ A64FX_L2TOMEM_PCMG_TPUT = "64B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
 A64FX_L2TOL1_PC_TPUT = "64B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
-A64FX_MEMTOL2_PCMG_TPUT = 128
+A64FX_MEMTOL2_PCMG_TPUT = "128B"
 # A64FX Memory access time.
-A64FX_MEM_ACCESS = "144.5ns"
+A64FX_MEM_ACCESS = "135.5ns"
+
+# Prefetcher to use
+PREFETCHER = "cassini.NextBlockPrefetcher"
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -122,6 +125,11 @@ coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coh
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
+prefetcher_l1 = l1cache.setSubComponent("prefetcher", PREFETCHER)
+prefetcher_l1.addParams({
+ "cache_line_size": A64FX_CLW,
+})
+
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
 
@@ -149,6 +157,11 @@ coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coh
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
+prefetcher_l2 = l2cache.setSubComponent("prefetcher", PREFETCHER)
+prefetcher_l2.addParams({
+      "cache_line_size": A64FX_CLW,
+})
+
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 
@@ -174,6 +187,10 @@ memory_backend.addParams({
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
+# sst.setStatisticLoadLevel(7)
+# sst.setStatisticOutput("sst.statOutputConsole")
+# sst.enableStatisticsForComponentName("a64fx.l1cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
+# sst.enableStatisticsForComponentName("a64fx.l2cache", ["GetS_recv", "GetX_recv", "Write_recv", "GetSX_recv", "PutM_recv", "PutX_recv","PutS_recv", "PutE_recv" ,"TotalEventsReceived","CacheHits", "CacheMisses", "eventSent_GetS", "eventSent_GetX", "eventSent_GetSX", "eventSent_Write", "eventSent_PutS", "eventSent_PutM", "eventSent_PutE", "eventSent_Put", "eventSent_Get"])
 
 # ---------------------------------------------- Links ------------------------------------------------
 
