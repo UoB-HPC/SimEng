@@ -497,6 +497,14 @@ void ModelConfig::setExpectations(bool isDefault) {
       ExpectationNode::createExpectation<uint32_t>(16, "Store"));
   expectations_["Queue-Sizes"]["Store"].setValueBounds<uint32_t>(1, UINT32_MAX);
 
+  // Port-Allocator
+  expectations_.addChild(ExpectationNode::createExpectation("Port-Allocator"));
+
+  expectations_["Port-Allocator"].addChild(
+      ExpectationNode::createExpectation<std::string>("Balanced", "Type"));
+  expectations_["Port-Allocator"]["Type"].setValueSet(
+      std::vector<std::string>{"Balanced", "A64FX", "M1"});
+
   // Branch-Predictor
   expectations_.addChild(
       ExpectationNode::createExpectation("Branch-Predictor"));

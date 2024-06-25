@@ -236,8 +236,35 @@ void CoreInstance::createCore() {
       portArrangement[i].push_back(grp);
     }
   }
-  portAllocator_ =
-      std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
+
+  // Initialise the desired port allocator
+  std::string portAllocatorType =
+      config_["Port-Allocator"]["Type"].as<std::string>();
+  if (portAllocatorType == "Balanced") {
+    portAllocator_ =
+        std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
+  }
+  if (portAllocatorType == "A64FX") {
+    portAllocator_ =
+        std::make_unique<pipeline::A64FXPortAllocator>(portArrangement);
+  }
+  if (portAllocatorType == "M1") {
+    // Extract the reservation station arrangement from the config file
+    auto config_rs = config_["Reservation-Stations"];
+    std::vector<std::pair<uint16_t, uint64_t>> rsArrangement;
+    for (size_t i = 0; i < config_rs.num_children(); i++) {
+      auto config_rs_ports = config_rs[i]["Port-Nums"];
+      for (size_t j = 0; j < config_rs_ports.num_children(); j++) {
+        uint16_t port = config_rs_ports[j].as<uint16_t>();
+        if (rsArrangement.size() < port + 1) {
+          rsArrangement.resize(port + 1);
+        }
+        rsArrangement[port] = {i, config_rs[i]["Size"].as<uint64_t>()};
+      }
+    }
+    portAllocator_ = std::make_unique<pipeline::M1PortAllocator>(
+        portArrangement, rsArrangement);
+  }
 
   // Construct the core object based on the defined simulation mode
   uint64_t entryPoint = process_->getEntryPoint();
