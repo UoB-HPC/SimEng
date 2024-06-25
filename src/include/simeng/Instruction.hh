@@ -116,6 +116,9 @@ class Instruction {
    * latency and throughput, and the set of ports which support it. */
   virtual void setExecutionInfo(const ExecutionInfo& info) = 0;
 
+  /** Print the instruction's assembly form to stdout. */
+  virtual void printInstruction() const = 0;
+
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
 

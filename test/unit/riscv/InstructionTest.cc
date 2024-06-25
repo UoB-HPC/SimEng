@@ -608,6 +608,17 @@ TEST_F(RiscVInstructionTest, setters) {
   EXPECT_TRUE(insn.isWaitingCommit());
 }
 
+/** Tests that the printInstruction() function works correctly. */
+TEST_F(RiscVInstructionTest, printInstruction) {
+  // Insn is `div	a3, a3, a0`
+  Instruction insn = Instruction(arch, *divMetadata.get());
+
+  testing::internal::CaptureStdout();
+  insn.printInstruction();
+  EXPECT_THAT(testing::internal::GetCapturedStdout(),
+              testing::HasSubstr("div a3, a3, a0"));
+}
+
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

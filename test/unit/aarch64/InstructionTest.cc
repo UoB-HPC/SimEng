@@ -627,6 +627,17 @@ TEST_F(AArch64InstructionTest, setters) {
   EXPECT_TRUE(insn.isWaitingCommit());
 }
 
+/** Tests that the printInstruction() function works correctly. */
+TEST_F(AArch64InstructionTest, printInstruction) {
+  // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
+  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+
+  testing::internal::CaptureStdout();
+  insn.printInstruction();
+  EXPECT_THAT(testing::internal::GetCapturedStdout(),
+              testing::HasSubstr("fdivr z1.s, p0/m, z1.s, z0.s"));
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

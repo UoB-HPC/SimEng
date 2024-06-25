@@ -35,6 +35,7 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isLoad, bool());
   MOCK_CONST_METHOD0(isBranch, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
+  MOCK_CONST_METHOD0(printInstruction, void());
 
   MOCK_CONST_METHOD0(getLSQLatency, uint16_t());
 

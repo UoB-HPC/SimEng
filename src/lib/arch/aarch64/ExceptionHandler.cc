@@ -937,7 +937,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   if (exception == InstructionException::EncodingUnallocated) {
     std::cout << "<unknown>";
   } else {
-    std::cout << metadata.mnemonic << " " << metadata.operandStr;
+    insn.printInstruction();
   }
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler]       opcode ID: " << metadata.opcode

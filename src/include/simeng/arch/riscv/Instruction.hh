@@ -185,6 +185,9 @@ class Instruction : public simeng::Instruction {
    * processing this instruction. */
   InstructionException getException() const;
 
+  /** Print the instruction's assembly form to stdout. */
+  void printInstruction() const override;
+
  private:
   /** Process the instruction's metadata to determine source/destination
    * registers. */
