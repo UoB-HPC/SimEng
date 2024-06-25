@@ -192,6 +192,11 @@ const Architecture& Instruction::getArchitecture() const {
 
 InstructionException Instruction::getException() const { return exception_; }
 
+void Instruction::printInstruction() const {
+  std::cout << std::string(std::string(metadata_.mnemonic) + " " +
+                           metadata_.operandStr);
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
