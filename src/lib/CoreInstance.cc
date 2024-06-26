@@ -243,12 +243,10 @@ void CoreInstance::createCore() {
   if (portAllocatorType == "Balanced") {
     portAllocator_ =
         std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
-  }
-  if (portAllocatorType == "A64FX") {
+  } else if (portAllocatorType == "A64FX") {
     portAllocator_ =
         std::make_unique<pipeline::A64FXPortAllocator>(portArrangement);
-  }
-  if (portAllocatorType == "M1") {
+  } else if (portAllocatorType == "M1") {
     // Extract the reservation station arrangement from the config file
     auto config_rs = config_["Reservation-Stations"];
     std::vector<std::pair<uint16_t, uint64_t>> rsArrangement;
@@ -264,6 +262,10 @@ void CoreInstance::createCore() {
     }
     portAllocator_ = std::make_unique<pipeline::M1PortAllocator>(
         portArrangement, rsArrangement);
+  } else {
+    std::cout << "[SimEng:CoreInstnce] Invalid Port Allocator type selected."
+              << std::endl;
+    exit(EXIT_FAILURE);
   }
 
   // Construct the core object based on the defined simulation mode
