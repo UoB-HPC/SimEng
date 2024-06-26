@@ -41,6 +41,7 @@ L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
   Access-Latency: 5
+  Cache-Line-Width: 256
   Exclusive: True
   Load-Bandwidth: 128
   Store-Bandwidth: 64
