@@ -140,6 +140,13 @@ Load
 Store
     The size of the store queue within the load/store queue unit.
 
+Port-Allocator
+--------------
+
+This section allows a user to select which Port Allocator to use. The available options are:
+
+Type
+    The specific allocator algorithm to use. The current options are ``Balanced``, ``A64FX``, and ``M1``. The former implements a round-robin style algorithm, allocating instructions to compatable ports evenly. The latter two implement the port allocation algorithms found in the respective hardware as per their names.
 
 Branch-Predictor
 ----------------
