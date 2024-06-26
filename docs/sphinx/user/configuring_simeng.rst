@@ -205,6 +205,9 @@ This section contains the options used to configure SimEng's interface between t
 Access-Latency
     The cycle latency of L1 cache access.
 
+Cache-Line-Width
+    The size of an L1 cache line in bytes.
+
 Exclusive
     If set to true, only one type of memory access (read or write) can be performed per cycle.
 
