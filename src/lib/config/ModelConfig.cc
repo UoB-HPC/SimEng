@@ -600,6 +600,11 @@ void ModelConfig::setExpectations(bool isDefault) {
       1, UINT16_MAX);
 
   expectations_["LSQ-L1-Interface"].addChild(
+      ExpectationNode::createExpectation<uint64_t>(64, "Cache-Line-Width"));
+  expectations_["LSQ-L1-Interface"]["Cache-Line-Width"]
+      .setValueBounds<uint64_t>(1, UINT16_MAX);
+
+  expectations_["LSQ-L1-Interface"].addChild(
       ExpectationNode::createExpectation<bool>(false, "Exclusive"));
   expectations_["LSQ-L1-Interface"]["Exclusive"].setValueSet(
       std::vector{false, true});
