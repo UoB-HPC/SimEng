@@ -1,3 +1,4 @@
+#include "ConfigInit.hh"
 #include "MockInstruction.hh"
 #include "gtest/gtest.h"
 #include "simeng/GenericPredictor.hh"
@@ -18,7 +19,8 @@ class GenericPredictorTest : public testing::Test {
 // Tests that a GenericPredictor will predict the correct direction on a
 // miss
 TEST_F(GenericPredictorTest, Miss) {
-  simeng::config::SimInfo::addToConfig(
+  ConfigInit configInit = ConfigInit(
+      config::ISA::AArch64,
       "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 11, "
       "Saturating-Count-Bits: 2, Global-History-Length: 10, RAS-entries: 5, "
       "Fallback-Static-Predictor: Always-Taken}}");
@@ -26,7 +28,8 @@ TEST_F(GenericPredictorTest, Miss) {
   auto prediction = predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.taken);
 
-  simeng::config::SimInfo::addToConfig(
+  configInit = ConfigInit(
+      config::ISA::AArch64,
       "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 11, "
       "Saturating-Count-Bits: 2, Global-History-Length: 10, RAS-entries: 5, "
       "Fallback-Static-Predictor: Always-Not-Taken}}");
