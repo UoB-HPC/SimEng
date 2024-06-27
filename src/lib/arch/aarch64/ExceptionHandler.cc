@@ -942,6 +942,12 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler]       opcode ID: " << metadata.opcode
             << std::endl;
+
+  std::string extraInformation = insn.getExceptionString();
+  if (!extraInformation.empty()) {
+    std::cout << "[SimEng:ExceptionHandler]     Extra information: "
+              << extraInformation << std::endl;
+  }
 }
 
 bool ExceptionHandler::fatal() {

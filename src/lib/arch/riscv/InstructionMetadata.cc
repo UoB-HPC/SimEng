@@ -949,7 +949,7 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 void InstructionMetadata::illegalAlias(std::string info) {
   metadataExceptionEncountered_ = true;
   metadataException_ = InstructionException::IllegalInstruction;
-  exceptionString = info;
+  exceptionString_ = info;
 }
 
 }  // namespace riscv

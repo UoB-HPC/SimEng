@@ -36,7 +36,7 @@ struct InstructionMetadata {
   }
 
   /* Return extra information about the exception */
-  std::string getExceptionString() const { return exceptionString; }
+  std::string getExceptionString() const { return exceptionString_; }
 
   /* Returns the length of the instruction in bytes. */
   uint8_t getInsnLength() const { return insnLengthBytes_; }
@@ -131,7 +131,7 @@ struct InstructionMetadata {
   bool metadataExceptionEncountered_ = false;
 
   /** Additional information to print to the user */
-  std::string exceptionString = "";
+  std::string exceptionString_ = "";
 
   /** The length of the instruction encoding in bytes. */
   uint8_t insnLengthBytes_;

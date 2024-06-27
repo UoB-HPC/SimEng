@@ -926,7 +926,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
 
   std::string extraInformation = insn.getExceptionString();
   if (!extraInformation.empty()) {
-    std::cout << "[SimEng:ExceptionHandler]      Extra information: "
+    std::cout << "[SimEng:ExceptionHandler]     Extra information: "
               << extraInformation << std::endl;
   }
 }
