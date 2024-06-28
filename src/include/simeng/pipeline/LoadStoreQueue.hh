@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "simeng/Instruction.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 

@@ -101,6 +101,11 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
+  // See if any accesses need splitting
+  insn->splitCacheLineCrossAccesses(
+      config::SimInfo::getConfig()["LSQ-L1-Interface"]["Cache-Line-Width"]
+          .as<uint64_t>());
+  // Get addresses
   const auto& ld_addresses = insn->getGeneratedAddresses();
   if (ld_addresses.size() == 0) {
     // Early execution if not addresses need to be accessed
@@ -205,25 +210,75 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
          "Attempted to commit a store that wasn't present at the front of the "
          "store queue");
 
-  const auto& addresses = uop->getGeneratedAddresses();
-  span<const simeng::RegisterValue> data = storeQueue_.front().second;
-
+  span<const memory::MemoryAccessTarget> addressesSpan =
+      uop->getGeneratedAddresses();
   // Early exit if there's no addresses to process
-  if (addresses.size() == 0) {
+  if (addressesSpan.size() == 0) {
     storeQueue_.pop_front();
     return false;
   }
 
+  span<const RegisterValue> dataSpan = storeQueue_.front().second;
+  assert(addressesSpan.size() == dataSpan.size() &&
+         "Number of Store addresses does not match the number of data items "
+         "available.");
+
+  // Set up entries in request store queue
   requestStoreQueue_[tickCounter_ + uop->getLSQLatency()].push_back({{}, uop});
+
+  // Get cache line width
+  uint64_t cacheLineWidth =
+      config::SimInfo::getConfig()["LSQ-L1-Interface"]["Cache-Line-Width"]
+          .as<uint64_t>();
+
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
-  for (size_t i = 0; i < addresses.size(); i++) {
-    memory_.requestWrite(addresses[i], data[i]);
-    // Still add addresses to requestQueue_ to ensure contention of resources is
-    // correctly simulated
-    requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]
-        .back()
-        .reqAddresses.push(addresses[i]);
+  for (size_t i = 0; i < addressesSpan.size(); i++) {
+    // Set up vectors for splitting logic
+    std::vector<memory::MemoryAccessTarget> memoryTargets = {addressesSpan[i]};
+    std::vector<RegisterValue> data = {dataSpan[i]};
+
+    // See if request crosses cache line boundary. If yes, split request.
+    // Repeat until no all requests are within a single cache line
+    uint64_t index = 0;
+    while (true) {
+      uint16_t bytesToCacheBoundary =
+          cacheLineWidth - (memoryTargets[index].address % cacheLineWidth);
+      if (bytesToCacheBoundary < memoryTargets[index].size) {
+        // Cache line boundary cross occurs - split request and data into two
+        // sperate targets
+        uint64_t cacheBoundaryAddr =
+            memoryTargets[index].address + bytesToCacheBoundary;
+
+        // Insert new memoryAccessTarget
+        uint16_t newTargetSize =
+            memoryTargets[index].size - bytesToCacheBoundary;
+        memoryTargets.push_back({cacheBoundaryAddr, newTargetSize});
+        // Existing memoryAccessTarget only needs size modifying
+        memoryTargets[index].size = bytesToCacheBoundary;
+
+        // Split RegisterValue into two data chunks
+        RegisterValue dataCpy = data[index];
+        const char* dataToSplit = data[index].getAsVector<char>();
+        data[index] = RegisterValue(dataToSplit, bytesToCacheBoundary);
+        data.push_back(RegisterValue(dataToSplit + bytesToCacheBoundary,
+                                     memoryTargets[index + 1].size));
+      }
+      // Increment index and see if we have checked every address
+      index++;
+      if (index == memoryTargets.size()) {
+        break;
+      }
+    }
+
+    for (size_t j = 0; j < memoryTargets.size(); j++) {
+      memory_.requestWrite(memoryTargets[j], data[j]);
+      // Still add addresses to requestQueue_ to ensure contention of resources
+      // is correctly simulated
+      requestStoreQueue_[tickCounter_ + uop->getLSQLatency()]
+          .back()
+          .reqAddresses.push(memoryTargets[j]);
+    }
   }
 
   // Check all loads that have requested memory
@@ -238,7 +293,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     if (load.second->getSequenceId() != uop->getSequenceId()) {
       const auto& loadedAddresses = load.second->getGeneratedAddresses();
       // Iterate over store addresses
-      for (const auto& storeReq : addresses) {
+      for (const auto& storeReq : addressesSpan) {
         // Iterate over load addresses
         for (const auto& loadReq : loadedAddresses) {
           // Check for overlapping requests, and flush if discovered
@@ -253,15 +308,16 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Resolve any conflicts caused by this store instruction
   const auto& itSt = conflictionMap_.find(uop->getSequenceId());
   if (itSt != conflictionMap_.end()) {
-    for (size_t i = 0; i < addresses.size(); i++) {
-      const auto& itAddr = itSt->second.find(addresses[i].address);
+    for (size_t i = 0; i < addressesSpan.size(); i++) {
+      const auto& itAddr = itSt->second.find(addressesSpan[i].address);
       if (itAddr != itSt->second.end()) {
         for (const auto& pair : itAddr->second) {
           const auto& load = pair.first;
-          load->supplyData(addresses[i].address,
-                           data[i].zeroExtend(
-                               std::min(pair.second, (uint16_t)data[i].size()),
-                               pair.second));
+          load->supplyData(
+              addressesSpan[i].address,
+              dataSpan[i].zeroExtend(
+                  std::min(pair.second, (uint16_t)dataSpan[i].size()),
+                  pair.second));
           if (load->hasAllData()) {
             // This load has completed
             load->execute();
@@ -519,7 +575,9 @@ void LoadStoreQueue::tick() {
     const auto& load = itr->second;
     load->supplyData(address, data);
     if (load->hasAllData()) {
-      // This load has completed
+      // This load has completed; see if any split requests need to be re-merged
+      // and execute
+      load->rejoinSplitLoadAccesses();
       load->execute();
 
       if (load->exceptionEncountered()) {

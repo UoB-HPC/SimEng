@@ -119,6 +119,90 @@ class Instruction {
   /** Print the instruction's assembly form to stdout. */
   virtual void printInstruction() const = 0;
 
+  /** For load instructions, check if any memory accesses will cross a
+   * cache line boundary. If it will, then split MemoryAccessTargets, and
+   * MemoryData entries for Stores. */
+  void splitCacheLineCrossAccesses(const uint64_t cacheLineWidth) {
+    if (isLoad() && memoryAddresses_.size() > 0) {
+      assert(
+          memoryAddresses_.size() == memoryData_.size() &&
+          "The number of addresses and data items do not match pre-splitting.");
+      assert(dataPending_ == memoryAddresses_.size() &&
+             "Load requests must be split before any data is requested from "
+             "memory");
+      // Loop over all requests and split if necessary
+      auto addrItr = memoryAddresses_.begin();
+      while (addrItr != memoryAddresses_.end()) {
+        uint16_t bytesToCacheBoundary =
+            cacheLineWidth - (addrItr->address % cacheLineWidth);
+        if (bytesToCacheBoundary < addrItr->size) {
+          // Cache line cross occurs, split request into two and register in
+          // split requests
+          uint64_t cacheBoundaryAddr = addrItr->address + bytesToCacheBoundary;
+          uint16_t newTargetSize = addrItr->size - bytesToCacheBoundary;
+
+          // Existing memoryAccessTarget only needs size modifying
+          addrItr->size = bytesToCacheBoundary;
+
+          // Insert new value
+          addrItr++;
+          addrItr = memoryAddresses_.insert(addrItr,
+                                            {cacheBoundaryAddr, newTargetSize});
+          dataPending_++;
+
+          // Update size of memoryData_
+          memoryData_.resize(memoryAddresses_.size());
+
+          // Log data split in splitMemoryRequests_
+          uint16_t vecIndex = std::distance(memoryAddresses_.begin(), addrItr);
+          splitMemoryRequests_.emplace_back(vecIndex - 1, vecIndex);
+        } else {
+          addrItr++;
+        }
+      }
+      assert(memoryAddresses_.size() == memoryData_.size() &&
+             "The number of addresses and data items do not match "
+             "post-splitting.");
+    }
+  }
+
+  /** For load instructions, check if any requests were split. If some were,
+   * then re-join them to allow for easier usage in the rest of the pipeline. */
+  void rejoinSplitLoadAccesses() {
+    if (isLoad() && splitMemoryRequests_.size() > 0) {
+      assert(memoryAddresses_.size() == memoryData_.size() &&
+             "Number of addresses and data items does not match.");
+      assert(hasAllData() &&
+             "Cannot attempt re-joining split requests as not all data has "
+             "been recieved from memory.");
+      // Iterate over splitMemoryRequests_ backwards to ensure requests are
+      // re-merged correctly
+      for (size_t index = splitMemoryRequests_.size() - 1;
+           index < splitMemoryRequests_.size(); index--) {
+        // Get indicies of each half of split request
+        const uint64_t lhs = splitMemoryRequests_[index].first;
+        const uint64_t rhs = splitMemoryRequests_[index].second;
+        //  Merge data together into a single RegisterValue
+        const size_t dataSize =
+            memoryData_[lhs].size() + memoryData_[rhs].size();
+        char* mergedData = (char*)std::malloc(dataSize);
+        std::memcpy(mergedData, memoryData_[lhs].getAsVector<char>(),
+                    memoryData_[lhs].size());
+        std::memcpy(mergedData + memoryData_[lhs].size(),
+                    memoryData_[rhs].getAsVector<char>(),
+                    memoryData_[rhs].size());
+
+        // Update LHS entries
+        memoryAddresses_[lhs].size = dataSize;
+        memoryData_[lhs] = RegisterValue(mergedData, dataSize);
+        // Remove RHS entries
+        memoryAddresses_.erase(memoryAddresses_.begin() + rhs);
+        memoryData_.erase(memoryData_.begin() + rhs);
+      }
+      splitMemoryRequests_.clear();
+    }
+  }
+
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
 
@@ -194,8 +278,8 @@ class Instruction {
   /** Mark the instruction as ready to commit. */
   void setCommitReady() { canCommit_ = true; }
 
-  /** Check whether the instruction has written its values back and is ready to
-   * commit. */
+  /** Check whether the instruction has written its values back and is ready
+   * to commit. */
   bool canCommit() const { return canCommit_; }
 
   /** Mark this instruction as flushed. */
@@ -214,8 +298,8 @@ class Instruction {
   int getMicroOpIndex() const { return microOpIndex_; }
 
  protected:
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
+  /** Set the accessed memory addresses, and create a corresponding memory
+   * data vector. */
   void setMemoryAddresses(
       const std::vector<memory::MemoryAccessTarget>& addresses) {
     memoryData_.resize(addresses.size());
@@ -223,16 +307,16 @@ class Instruction {
     dataPending_ = addresses.size();
   }
 
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
+  /** Set the accessed memory addresses, and create a corresponding memory
+   * data vector. */
   void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses) {
     dataPending_ = addresses.size();
     memoryData_.resize(addresses.size());
     memoryAddresses_ = std::move(addresses);
   }
 
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
+  /** Set the accessed memory addresses, and create a corresponding memory
+   * data vector. */
   void setMemoryAddresses(memory::MemoryAccessTarget address) {
     dataPending_ = 1;
     memoryData_.resize(1);
@@ -240,8 +324,9 @@ class Instruction {
   }
 
   // Instruction Info
-  /** This instruction's instruction ID used to group micro-operations together
-   * by macro-op; a higher ID represents a chronologically newer instruction. */
+  /** This instruction's instruction ID used to group micro-operations
+   * together by macro-op; a higher ID represents a chronologically newer
+   * instruction. */
   uint64_t instructionId_ = 0;
 
   /** This instruction's sequence ID; a higher ID represents a chronologically
@@ -275,12 +360,18 @@ class Instruction {
   // Memory
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
-  std::vector<memory::MemoryAccessTarget> memoryAddresses_;
+  std::vector<memory::MemoryAccessTarget> memoryAddresses_ = {};
 
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData_;
+  /** A vector of memory values, that were either loaded memory, or are
+   * prepared for sending to memory (according to instruction type). Each
+   * entry corresponds to a `memoryAddresses` entry. */
+  std::vector<RegisterValue> memoryData_ = {};
+
+  /** Keeps track of which split memoryAddresses_ and memoryData_ entries
+   * correspond to a whole entry.
+   * Each element of the Vector contains a pair of indices:
+   *      <first half of split request, second half of split request> */
+  std::vector<std::pair<uint16_t, uint16_t>> splitMemoryRequests_ = {};
 
   /** The number of data items that still need to be supplied. */
   uint8_t dataPending_ = 0;
@@ -321,8 +412,8 @@ class Instruction {
    * associated micro-operations to also be committable? */
   bool waitingCommit_ = false;
 
-  /** An arbitrary index value for the micro-operation. Its use is based on the
-   * implementation of specific micro-operations. */
+  /** An arbitrary index value for the micro-operation. Its use is based on
+   * the implementation of specific micro-operations. */
   int microOpIndex_ = 0;
 };
 
