@@ -189,6 +189,14 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
+#define EXPECT_GROUP(source, expectedGroup)                                    \
+  {                                                                            \
+    std::string sourceWithTerminator = source;                                 \
+    sourceWithTerminator += "\n.word 0";                                       \
+    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d,+c"); \
+  }                                                                            \
+  if (HasFatalFailure()) return
+
 /** The test fixture for all AArch64 regression tests. */
 class AArch64RegressionTest : public RegressionTest {
  protected:

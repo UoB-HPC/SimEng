@@ -3,6 +3,7 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
+using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::riscv;
 
 void RISCVRegressionTest::run(const char* source, const char* extensions) {
@@ -59,4 +60,21 @@ RISCVRegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
+}
+
+void RISCVRegressionTest::checkGroup(const char* source,
+                                     const int expectedGroup,
+                                     const char* extensions) {
+  // Initialise LLVM
+  LLVMInitializeRISCVTargetInfo();
+  LLVMInitializeRISCVTargetMC();
+  LLVMInitializeRISCVAsmParser();
+
+  RegressionTest::createArchitecture(source, "riscv64", extensions);
+
+  MacroOp out;
+  architecture_->predecode(code_, 4, 0, out);
+
+  auto group = out[0]->getGroup();
+  EXPECT_EQ(group, expectedGroup);
 }

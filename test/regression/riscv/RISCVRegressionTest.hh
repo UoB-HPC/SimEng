@@ -81,6 +81,14 @@ inline std::string paramToString(
   }                                                      \
   if (HasFatalFailure()) return
 
+#define EXPECT_GROUP(source, expectedGroup)                                 \
+  {                                                                         \
+    std::string sourceWithTerminator = source;                              \
+    sourceWithTerminator += "\n.word 0";                                    \
+    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d"); \
+  }                                                                         \
+  if (HasFatalFailure()) return
+
 /** The test fixture for all RISCV regression tests. */
 class RISCVRegressionTest : public RegressionTest {
  protected:
@@ -88,6 +96,9 @@ class RISCVRegressionTest : public RegressionTest {
 
   /** Run the assembly code in `source`. */
   void run(const char* source, const char* extensions);
+
+  void checkGroup(const char* source, const int expectedGroup,
+                  const char* extensions) override;
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;

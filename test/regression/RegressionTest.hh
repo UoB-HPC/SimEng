@@ -71,6 +71,9 @@ class RegressionTest
   /** Generate a default YAML-formatted configuration. */
   virtual void generateConfig() const = 0;
 
+  void createArchitecture(const char* source, const char* triple,
+                          const char* extensions);
+
   /** Run the assembly in `source`, building it for the target `triple` and ISA
    * extensions. */
   void run(const char* source, const char* triple, const char* extensions);
@@ -83,6 +86,9 @@ class RegressionTest
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
+
+  virtual void checkGroup(const char* source, const int expectedGroup,
+                          const char* extensions) = 0;
 
   /** Get the value of an architectural register. */
   template <typename T>
@@ -135,14 +141,14 @@ class RegressionTest
   /** True if the test program finished running. */
   bool programFinished_ = false;
 
- private:
-  /** Assemble test source to a flat binary for the given triple and ISA
-   * extensions. */
-  void assemble(const char* source, const char* triple, const char* extensions);
+  /** The size of the assembled flat binary in bytes. */
+  size_t codeSize_ = 0;
 
   /** The flat binary produced by assembling the test source. */
   uint8_t* code_ = nullptr;
 
-  /** The size of the assembled flat binary in bytes. */
-  size_t codeSize_ = 0;
+ private:
+  /** Assemble test source to a flat binary for the given triple and ISA
+   * extensions. */
+  void assemble(const char* source, const char* triple, const char* extensions);
 };

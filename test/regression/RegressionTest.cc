@@ -21,6 +21,75 @@ void RegressionTest::TearDown() {
   }
 }
 
+void RegressionTest::createArchitecture(const char* source, const char* triple,
+                                        const char* extensions) {
+  // Zero-out process memory from any prior runs
+  if (processMemory_ != nullptr)
+    std::memset(processMemory_, '\0', processMemorySize_);
+
+  // Assemble the source to a flat binary
+  assemble(source, triple, extensions);
+  if (HasFatalFailure()) return;
+
+  // Generate the predefined model config
+  generateConfig();
+
+  // Due to SimInfo being static, we need to ensure the config values/options
+  // stored are up-to-date with the latest generated config file
+  simeng::config::SimInfo::reBuild();
+
+  // Create a linux process from the assembled code block.
+  // Memory allocation for process images also takes place
+  // during linux process creation. The Elf binary is parsed
+  // and relevant sections are copied to the process image.
+  // The process image is finalised by the createStack method
+  // which creates and populates the initial process stack.
+  // The created process image can be accessed via a shared_ptr
+  // returned by the getProcessImage method.
+  process_ = std::make_unique<simeng::kernel::LinuxProcess>(
+      simeng::span(reinterpret_cast<const uint8_t*>(code_), codeSize_));
+
+  ASSERT_TRUE(process_->isValid());
+  uint64_t entryPoint = process_->getEntryPoint();
+  processMemorySize_ = process_->getProcessImageSize();
+  // This instance of procImgPtr pointer needs to be shared because
+  // getMemoryValue in RegressionTest.hh uses reference to the class
+  // member processMemory_.
+  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
+  processMemory_ = procImgPtr.get();
+
+  // Create memory interfaces for instruction and data access.
+  // For each memory interface, a dereferenced shared_ptr to the
+  // processImage is passed as argument.
+  simeng::memory::FlatMemoryInterface instructionMemory(processMemory_,
+                                                        processMemorySize_);
+
+  std::unique_ptr<simeng::memory::FlatMemoryInterface> flatDataMemory =
+      std::make_unique<simeng::memory::FlatMemoryInterface>(processMemory_,
+                                                            processMemorySize_);
+
+  std::unique_ptr<simeng::memory::FixedLatencyMemoryInterface>
+      fixedLatencyDataMemory =
+          std::make_unique<simeng::memory::FixedLatencyMemoryInterface>(
+              processMemory_, processMemorySize_, 4);
+  std::unique_ptr<simeng::memory::MemoryInterface> dataMemory;
+
+  // Create the OS kernel and the process
+  simeng::kernel::Linux kernel(
+      simeng::config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+          .as<std::string>());
+  kernel.createProcess(*process_);
+
+  // Populate the heap with initial data (specified by the test being run).
+  ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
+            process_->getInitialStackPointer());
+  std::copy(initialHeapData_.begin(), initialHeapData_.end(),
+            processMemory_ + process_->getHeapStart());
+
+  // Create the architecture
+  architecture_ = createArchitecture(kernel);
+}
+
 void RegressionTest::run(const char* source, const char* triple,
                          const char* extensions) {
   testing::internal::CaptureStdout();
@@ -90,7 +159,6 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the architecture
   architecture_ = createArchitecture(kernel);
-
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
