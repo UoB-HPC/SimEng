@@ -81,11 +81,11 @@ inline std::string paramToString(
   }                                                      \
   if (HasFatalFailure()) return
 
-#define EXPECT_GROUP(source, expectedGroup)                                    \
+#define EXPECT_GROUP(source, ...)                                              \
   {                                                                            \
     std::string sourceWithTerminator = source;                                 \
     sourceWithTerminator += "\n.word 0";                                       \
-    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d,+c"); \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, "+m,+a,+f,+d,+c"); \
   }                                                                            \
   if (HasFatalFailure()) return
 
@@ -97,7 +97,7 @@ class RISCVRegressionTest : public RegressionTest {
   /** Run the assembly code in `source`. */
   void run(const char* source, const char* extensions);
 
-  void checkGroup(const char* source, const int expectedGroup,
+  void checkGroup(const char* source, const std::vector<int> expectedGroups,
                   const char* extensions) override;
 
   /** Generate a default YAML-formatted configuration. */

@@ -87,7 +87,8 @@ class RegressionTest
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
-  virtual void checkGroup(const char* source, const int expectedGroup,
+  virtual void checkGroup(const char* source,
+                          const std::vector<int> expectedGroups,
                           const char* extensions) = 0;
 
   /** Get the value of an architectural register. */

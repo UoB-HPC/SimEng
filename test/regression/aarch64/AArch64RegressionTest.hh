@@ -189,12 +189,13 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
-#define EXPECT_GROUP(source, expectedGroup)                                    \
-  {                                                                            \
-    std::string sourceWithTerminator = source;                                 \
-    sourceWithTerminator += "\n.word 0";                                       \
-    checkGroup(sourceWithTerminator.c_str(), expectedGroup, ""); \
-  }                                                                            \
+#define EXPECT_GROUP(source, ...)                                           \
+  {                                                                         \
+    std::string sourceWithTerminator = source;                              \
+    sourceWithTerminator += "\n.word 0";                                    \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, \
+               "");                                                         \
+  }                                                                         \
   if (HasFatalFailure()) return
 
 /** The test fixture for all AArch64 regression tests. */
@@ -205,7 +206,7 @@ class AArch64RegressionTest : public RegressionTest {
   /** Run the assembly code in `source`. */
   void run(const char* source);
 
-  void checkGroup(const char* source, const int expectedGroup,
+  void checkGroup(const char* source, const std::vector<int> expectedGroups,
                   const char* extensions) override;
 
   /** Generate a default YAML-formatted configuration. */

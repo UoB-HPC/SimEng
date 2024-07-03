@@ -63,7 +63,7 @@ RISCVRegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
 }
 
 void RISCVRegressionTest::checkGroup(const char* source,
-                                     const int expectedGroup,
+                                     const std::vector<int> expectedGroups,
                                      const char* extensions) {
   // Initialise LLVM
   LLVMInitializeRISCVTargetInfo();
@@ -75,6 +75,12 @@ void RISCVRegressionTest::checkGroup(const char* source,
   MacroOp out;
   architecture_->predecode(code_, 4, 0, out);
 
-  auto group = out[0]->getGroup();
-  EXPECT_EQ(group, expectedGroup);
+  // Check that there is one expectation group per micro-op
+  EXPECT_EQ(out.size(), expectedGroups.size());
+
+  // Check each
+  for (size_t i = 0; i < out.size(); i++) {
+    auto group = out[i]->getGroup();
+    EXPECT_EQ(group, expectedGroups[i]);
+  }
 }

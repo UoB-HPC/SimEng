@@ -10,6 +10,7 @@
 namespace {
 
 using MicroOp = AArch64RegressionTest;
+using namespace simeng::arch::aarch64;
 
 TEST_P(MicroOp, ld1Two) {
   initialHeapData_.resize(32);
@@ -292,6 +293,10 @@ TEST_P(MicroOp, loadPairD) {
   CHECK_NEON(6, double, {-3.0});
   CHECK_NEON(7, double, {1.0});
   CHECK_NEON(8, double, {-1.0});
+
+  EXPECT_GROUP(R"(ldp d1, d2, [x0], #16)", InstructionGroups::LOAD_SCALAR,
+               InstructionGroups::LOAD_SCALAR,
+               InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(MicroOp, loadPairQ) {
