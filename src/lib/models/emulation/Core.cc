@@ -69,9 +69,6 @@ void Core::tick() {
       handleException(uop);
       // If fatal, return
       if (hasHalted_) return;
-      // Else, move onto next micro-op
-      macroOp_.erase(macroOp_.begin());
-      continue;
     }
 
     // Issue
@@ -91,9 +88,6 @@ void Core::tick() {
         handleException(uop);
         // If fatal, return
         if (hasHalted_) return;
-        // Else, move onto next micro-op
-        macroOp_.erase(macroOp_.begin());
-        continue;
       }
       if (addresses.size() > 0) {
         // Memory reads required; request them
@@ -122,9 +116,6 @@ void Core::tick() {
         handleException(uop);
         // If fatal, return
         if (hasHalted_) return;
-        // Else, move onto next micro-op
-        macroOp_.erase(macroOp_.begin());
-        continue;
       }
       // Store addresses for use by next store data operation in `execute()`
       for (auto const& target : addresses) {
