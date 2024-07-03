@@ -81,12 +81,12 @@ inline std::string paramToString(
   }                                                      \
   if (HasFatalFailure()) return
 
-#define EXPECT_GROUP(source, expectedGroup)                                 \
-  {                                                                         \
-    std::string sourceWithTerminator = source;                              \
-    sourceWithTerminator += "\n.word 0";                                    \
-    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d"); \
-  }                                                                         \
+#define EXPECT_GROUP(source, expectedGroup)                                    \
+  {                                                                            \
+    std::string sourceWithTerminator = source;                                 \
+    sourceWithTerminator += "\n.word 0";                                       \
+    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d,+c"); \
+  }                                                                            \
   if (HasFatalFailure()) return
 
 /** The test fixture for all RISCV regression tests. */

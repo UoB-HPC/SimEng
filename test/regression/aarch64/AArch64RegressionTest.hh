@@ -193,7 +193,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
   {                                                                            \
     std::string sourceWithTerminator = source;                                 \
     sourceWithTerminator += "\n.word 0";                                       \
-    checkGroup(sourceWithTerminator.c_str(), expectedGroup, "+m,+a,+f,+d,+c"); \
+    checkGroup(sourceWithTerminator.c_str(), expectedGroup, ""); \
   }                                                                            \
   if (HasFatalFailure()) return
 
@@ -204,6 +204,9 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Run the assembly code in `source`. */
   void run(const char* source);
+
+  void checkGroup(const char* source, const int expectedGroup,
+                  const char* extensions) override;
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;

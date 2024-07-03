@@ -3,6 +3,7 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
+using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::aarch64;
 
 void AArch64RegressionTest::run(const char* source) {
@@ -83,4 +84,27 @@ bool AArch64RegressionTest::getCarryFlag() const {
 
 bool AArch64RegressionTest::getOverflowFlag() const {
   return (getNZCV() >> 0) & 1;
+}
+
+void AArch64RegressionTest::checkGroup(
+    const char* source, const int expectedGroup,
+    const char* extensions) {  // Initialise LLVM
+  LLVMInitializeAArch64TargetInfo();
+  LLVMInitializeAArch64TargetMC();
+  LLVMInitializeAArch64AsmParser();
+
+  const char* subtargetFeatures;
+#if SIMENG_LLVM_VERSION < 14
+  subtargetFeatures = "+sve,+lse";
+#else
+  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
+#endif
+
+  RegressionTest::createArchitecture(source, "aarch64", subtargetFeatures);
+
+  MacroOp out;
+  architecture_->predecode(code_, 4, 0, out);
+
+  auto group = out[0]->getGroup();
+  EXPECT_EQ(group, expectedGroup);
 }
