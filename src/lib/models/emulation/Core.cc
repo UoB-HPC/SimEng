@@ -83,7 +83,7 @@ void Core::tick() {
       }
     }
 
-    // Execute
+    // Execute & Write-back
     if (uop->isLoad()) {
       auto addresses = uop->generateAddresses();
       previousAddresses_.clear();
@@ -139,6 +139,7 @@ void Core::tick() {
     execute(uop);
     macroOp_.erase(macroOp_.begin());
   }
+  // Commit
   instructionsExecuted_++;
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
