@@ -141,9 +141,6 @@ class RegressionTest
   /** True if the test program finished running. */
   bool programFinished_ = false;
 
-  /** The size of the assembled flat binary in bytes. */
-  size_t codeSize_ = 0;
-
   /** The flat binary produced by assembling the test source. */
   uint8_t* code_ = nullptr;
 
@@ -151,4 +148,7 @@ class RegressionTest
   /** Assemble test source to a flat binary for the given triple and ISA
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
+
+  /** The size of the assembled flat binary in bytes. */
+  size_t codeSize_ = 0;
 };

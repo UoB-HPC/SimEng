@@ -159,6 +159,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the architecture
   architecture_ = createArchitecture(kernel);
+
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
