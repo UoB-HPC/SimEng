@@ -17,6 +17,17 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       architecturalRegisterFileSet_(registerFileSet_),
       pc_(entryPoint),
       programByteLength_(programByteLength) {
+  // Ensure both interface types are flat
+  assert(
+      (config::SimInfo::getConfig()["L1-Data-Memory"]["Interface-Type"]
+           .as<std::string>() == "Flat") &&
+      "Emulation core is only compatable with a Flat Data Memory Interface.");
+  assert(
+      (config::SimInfo::getConfig()["L1-Instruction-Memory"]["Interface-Type"]
+           .as<std::string>() == "Flat") &&
+      "Emulation core is only compatable with a Flat Instruction Memory "
+      "Interface.");
+
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
@@ -26,9 +37,6 @@ Core::Core(memory::MemoryInterface& instructionMemory,
 }
 
 void Core::tick() {
-  ticks_++;
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
-
   if (hasHalted_) return;
 
   if (pc_ >= programByteLength_) {
@@ -36,107 +44,104 @@ void Core::tick() {
     return;
   }
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
-    return;
-  }
+  ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  // Fetch
-  // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
-    // Find fetched memory that matches the current PC
-    const auto& fetched = instructionMemory_.getCompletedReads();
-    size_t fetchIndex;
-    for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == pc_) {
-        break;
-      }
-    }
-    if (fetchIndex == fetched.size()) {
-      // Need to wait for fetched instructions
-      return;
-    }
+  // Fetch & Decode
+  assert(macroOp_.empty() &&
+         "Cannot begin emulation tick with un-executed micro-ops.");
+  // We only fetch one instruction at a time, so only ever one result in
+  // complete reads
+  const auto& instructionBytes = instructionMemory_.getCompletedReads()[0].data;
+  // Predecode fetched data
+  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
+                                  FETCH_SIZE, pc_, macroOp_);
+  // Clear the fetched data
+  instructionMemory_.clearCompletedReads();
 
-    const auto& instructionBytes = fetched[fetchIndex].data;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
-                                    FETCH_SIZE, pc_, macroOp_);
+  pc_ += bytesRead;
 
-    // Clear the fetched data
-    instructionMemory_.clearCompletedReads();
+  // Loop over all micro-ops and execute one by one
+  while (!macroOp_.empty()) {
+    auto& uop = macroOp_.front();
 
-    pc_ += bytesRead;
-
-    // Decode
-    for (size_t index = 0; index < macroOp_.size(); index++) {
-      microOps_.push(std::move(macroOp_[index]));
-    }
-  }
-
-  auto& uop = microOps_.front();
-
-  if (uop->exceptionEncountered()) {
-    handleException(uop);
-    return;
-  }
-
-  // Issue
-  auto registers = uop->getSourceRegisters();
-  for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
-    if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(i, registerFileSet_.get(reg));
-    }
-  }
-
-  // Execute
-  if (uop->isLoad()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
     if (uop->exceptionEncountered()) {
       handleException(uop);
-      return;
+      // If fatal, return
+      if (hasHalted_) return;
+      // Else, move onto next micro-op
+      macroOp_.erase(macroOp_.begin());
+      continue;
     }
-    if (addresses.size() > 0) {
-      // Memory reads required; request them
+
+    // Issue
+    auto registers = uop->getSourceRegisters();
+    for (size_t i = 0; i < registers.size(); i++) {
+      auto reg = registers[i];
+      if (!uop->isOperandReady(i)) {
+        uop->supplyOperand(i, registerFileSet_.get(reg));
+      }
+    }
+
+    // Execute
+    if (uop->isLoad()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        // If fatal, return
+        if (hasHalted_) return;
+        // Else, move onto next micro-op
+        macroOp_.erase(macroOp_.begin());
+        continue;
+      }
+      if (addresses.size() > 0) {
+        // Memory reads required; request them
+        for (auto const& target : addresses) {
+          dataMemory_.requestRead(target);
+          // Save addresses for use by instructions that perform a LD and STR
+          // (i.e. single instruction atomics)
+          previousAddresses_.push_back(target);
+        }
+        // Emulation core can only be used with a Flat memory interface, so data
+        // is ready immediately
+        const auto& completedReads = dataMemory_.getCompletedReads();
+        assert(
+            completedReads.size() == addresses.size() &&
+            "Number of completed reads does not match the number of requested "
+            "reads.");
+        for (const auto& response : completedReads) {
+          uop->supplyData(response.target.address, response.data);
+        }
+        dataMemory_.clearCompletedReads();
+      }
+    } else if (uop->isStoreAddress()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        // If fatal, return
+        if (hasHalted_) return;
+        // Else, move onto next micro-op
+        macroOp_.erase(macroOp_.begin());
+        continue;
+      }
+      // Store addresses for use by next store data operation in `execute()`
       for (auto const& target : addresses) {
-        dataMemory_.requestRead(target);
-        // Save addresses for use by instructions that perform a LD and STR
-        // (i.e. single instruction atomics)
         previousAddresses_.push_back(target);
       }
-      // Emulation core can only be used with a Flat memory interface, so data
-      // is ready immediately
-      assert((config::SimInfo::getConfig()["L1-Data-Memory"]["Interface-Type"]
-                  .as<std::string>() == "Flat") &&
-             "Emulation core is only compatable with a Flat Memory Interface.");
-      const auto& completedReads = dataMemory_.getCompletedReads();
-      assert(completedReads.size() == addresses.size() &&
-             "Number of completed reads does not match the number of requested "
-             "reads.");
-      for (const auto& response : completedReads) {
-        uop->supplyData(response.target.address, response.data);
+      if (!uop->isStoreData()) {
+        // No further action needed, move onto next micro-op
+        macroOp_.erase(macroOp_.begin());
+        continue;
       }
-      dataMemory_.clearCompletedReads();
     }
-  } else if (uop->isStoreAddress()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
-    if (uop->exceptionEncountered()) {
-      handleException(uop);
-      return;
-    }
-    // Store addresses for use by next store data operation in `execute()`
-    for (auto const& target : addresses) {
-      previousAddresses_.push_back(target);
-    }
-    if (!uop->isStoreData()) {
-      // No further action needed, fetch memory for next cycle and return early
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
-      microOps_.pop();
-      return;
-    }
+    execute(uop);
+    macroOp_.erase(macroOp_.begin());
   }
-  execute(uop);
+  instructionsExecuted_++;
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
 bool Core::hasHalted() const { return hasHalted_; }
@@ -188,12 +193,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
       registerFileSet_.set(reg, results[i]);
     }
   }
-
-  if (uop->isLastMicroOp()) instructionsExecuted_++;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
@@ -204,16 +203,13 @@ void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
-  if (dataMemory_.hasPendingRequests()) {
-    // Must wait for all memory requests to complete before processing the
-    // exception
-    return;
-  }
 
-  bool success = exceptionHandler_->tick();
-  if (!success) {
-    // Handler needs further ticks to complete
-    return;
+  while (true) {
+    bool success = exceptionHandler_->tick();
+    if (success) {
+      // No more ticks needed to complete exception
+      break;
+    }
   }
 
   const auto& result = exceptionHandler_->getResult();
@@ -229,15 +225,6 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
-
-  // For an exception to reach this part of the code, it must be something akin
-  // to a system call, which itself should be counted as an instruction
-  // finishing execution.
-  instructionsExecuted_++;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
 
 }  // namespace emulation

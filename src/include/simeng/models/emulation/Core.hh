@@ -59,9 +59,6 @@ class Core : public simeng::Core {
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
-  /** An internal buffer for storing one or more uops. */
-  std::queue<std::shared_ptr<Instruction>> microOps_;
-
   /** The previously generated addresses. */
   std::vector<simeng::memory::MemoryAccessTarget> previousAddresses_;
 
