@@ -1903,9 +1903,11 @@ void InstructionMetadata::revertAliasing() {
 
         operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
 
         operands[2].type = ARM64_OP_REG;
         operands[2].access = CS_AC_READ;
+        operands[2].shift = {ARM64_SFT_INVALID, 0};
 
         if (opcode == Opcode::AArch64_CSINCWr) {
           operands[1].reg = ARM64_REG_WZR;
