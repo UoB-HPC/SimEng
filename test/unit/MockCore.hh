@@ -17,7 +17,9 @@ class MockCore : public Core {
                      const ArchitecturalRegisterFileSet&());
   MOCK_CONST_METHOD0(getInstructionsRetiredCount, uint64_t());
   MOCK_CONST_METHOD0(getSystemTimer, uint64_t());
-  MOCK_CONST_METHOD0(getStats, std::map<std::string, std::string>());
+  MOCK_CONST_METHOD0(
+      getStats,
+      std::vector<std::vector<std::pair<std::string, std::string>>>());
 };
 
 }  // namespace simeng

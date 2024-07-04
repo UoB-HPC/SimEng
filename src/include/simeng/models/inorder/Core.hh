@@ -40,8 +40,13 @@ class Core : public simeng::Core {
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
 
-  /** Generate a map of statistics to report. */
-  std::map<std::string, std::string> getStats() const override;
+  /** Retrieve the statistics to report.
+   * Each sub-vector denotes a parent statistic (element 0) and child
+   * statistics.
+   * Each pair denotes a key-value pair of the statistic to its corresponding
+   * value. */
+  std::vector<std::vector<std::pair<std::string, std::string>>> getStats()
+      const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */

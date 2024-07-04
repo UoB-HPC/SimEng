@@ -142,7 +142,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return writebackUnit_.getInstructionsWrittenCount();
 }
 
-std::map<std::string, std::string> Core::getStats() const {
+std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
+    const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
@@ -158,13 +159,13 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+  return {{{"cycles", std::to_string(ticks_)}},
+          {{"retired", std::to_string(retired)}},
+          {{"ipc", ipcStr.str()}},
+          {{"flushes", std::to_string(flushes_)}},
+          {{"branch.executed", std::to_string(totalBranchesExecuted)}},
+          {{"branch.mispredict", std::to_string(totalBranchMispredicts)}},
+          {{"branch.missrate", branchMissRateStr.str()}}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

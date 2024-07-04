@@ -133,8 +133,14 @@ int main(int argc, char** argv) {
   // Print stats
   std::cout << std::endl;
   auto stats = core->getStats();
-  for (const auto& [key, value] : stats) {
-    std::cout << "[SimEng] " << key << ": " << value << std::endl;
+  for (const auto& stat : stats) {
+    for (size_t i = 0; i < stat.size(); i++) {
+      // All children are indented
+      const std::string indent = (i > 0) ? "    " : "";
+      const std::string statLine =
+          "[SimEng] " + indent + stat[i].first + ": " + stat[i].second;
+      std::cout << statLine << std::endl;
+    }
   }
   std::cout << std::endl;
   std::cout << "[SimEng] Finished " << iterations << " ticks in " << duration

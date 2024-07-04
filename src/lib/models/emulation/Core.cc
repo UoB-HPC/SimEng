@@ -169,10 +169,14 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return instructionsExecuted_;
 }
 
-std::map<std::string, std::string> Core::getStats() const {
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
+std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
+    const {
+  return {{{"cycles", std::to_string(ticks_)}},
+          {{"retired", std::to_string(instructionsExecuted_)},
+           {"branches", std::to_string(branchesExecuted_)},
+           {"loads", std::to_string(loadsExecuted_)},
+           {"stores", std::to_string(storesExecuted_)},
+           {"syscalls", std::to_string(syscallsExecuted_)}}};
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
@@ -188,9 +192,12 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
     }
+    storesExecuted_++;
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
     branchesExecuted_++;
+  } else if (uop->isLoad()) {
+    loadsExecuted_++;
   }
 
   // Writeback
@@ -244,6 +251,8 @@ void Core::processExceptionHandler() {
   } else {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
+    // Only non-fatal exceptions are system calls
+    syscallsExecuted_++;
   }
 
   // Clear the handler

@@ -91,11 +91,17 @@ void SimEngCoreWrapper::finish() {
   // Print stats
   std::cout << "\n";
   auto stats = core_->getStats();
-  for (const auto& [key, value] : stats) {
-    std::cout << "[SimEng] " << key << ": " << value << "\n";
+  for (const auto& stat : stats) {
+    for (size_t i = 0; i < stat.size(); i++) {
+      // All children are indented
+      const std::string indent = (i > 0) ? "    " : "";
+      const std::string statLine =
+          "[SimEng] " + indent + stat[i].first + ": " + stat[i].second;
+      std::cout << statLine << std::endl;
+    }
   }
-
-  std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
+  std::cout << std::endl;
+  std::cout << "[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
 }

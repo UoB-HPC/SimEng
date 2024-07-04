@@ -1,8 +1,8 @@
 #pragma once
 
 #include <iostream>
-#include <map>
 #include <string>
+#include <vector>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/arch/ProcessStateChange.hh"
@@ -44,8 +44,13 @@ class Core {
   /** Retrieve the number of instructions retired. */
   virtual uint64_t getInstructionsRetiredCount() const = 0;
 
-  /** Retrieve a map of statistics to report. */
-  virtual std::map<std::string, std::string> getStats() const = 0;
+  /** Retrieve the statistics to report.
+   * Each sub-vector denotes a parent statistic (element 0) and child
+   * statistics.
+   * Each pair denotes a key-value pair of the statistic to its corresponding
+   * value. */
+  virtual std::vector<std::vector<std::pair<std::string, std::string>>>
+  getStats() const = 0;
 
   /** Retrieve the simulated nanoseconds elapsed since the core started. */
   uint64_t getSystemTimer() const {

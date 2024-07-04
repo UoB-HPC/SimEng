@@ -203,7 +203,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return reorderBuffer_.getInstructionsCommittedCount();
 }
 
-std::map<std::string, std::string> Core::getStats() const {
+std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
+    const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
@@ -236,25 +237,25 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+  return {{{"cycles", std::to_string(ticks_)}},
+          {{"retired", std::to_string(retired)}},
+          {{"ipc", ipcStr.str()}},
+          {{"flushes", std::to_string(flushes_)}},
+          {{"fetch.branchStalls", std::to_string(branchStalls)}},
+          {{"decode.earlyFlushes", std::to_string(earlyFlushes)}},
+          {{"rename.allocationStalls", std::to_string(allocationStalls)}},
+          {{"rename.robStalls", std::to_string(robStalls)}},
+          {{"rename.lqStalls", std::to_string(lqStalls)}},
+          {{"rename.sqStalls", std::to_string(sqStalls)}},
+          {{"dispatch.rsStalls", std::to_string(rsStalls)}},
+          {{"issue.frontendStalls", std::to_string(frontendStalls)}},
+          {{"issue.backendStalls", std::to_string(backendStalls)}},
+          {{"issue.portBusyStalls", std::to_string(portBusyStalls)}},
+          {{"branch.executed", std::to_string(totalBranchesExecuted)}},
+          {{"branch.mispredict", std::to_string(totalBranchMispredicts)}},
+          {{"branch.missrate", branchMissRateStr.str()}},
+          {{"lsq.loadViolations",
+            std::to_string(reorderBuffer_.getViolatingLoadsCount())}}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
