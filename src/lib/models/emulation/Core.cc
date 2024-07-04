@@ -172,18 +172,11 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   // Writeback
-  auto results = uop->getResults();
-  auto destinations = uop->getDestinationRegisters();
-  if (uop->isStoreData()) {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
-  } else {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
+  const auto& results = uop->getResults();
+  const auto& destinations = uop->getDestinationRegisters();
+  for (size_t i = 0; i < results.size(); i++) {
+    auto reg = destinations[i];
+    registerFileSet_.set(reg, results[i]);
   }
 }
 
