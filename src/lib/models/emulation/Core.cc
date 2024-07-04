@@ -130,7 +130,6 @@ void Core::tick() {
     execute(uop);
     macroOp_.erase(macroOp_.begin());
   }
-  // Commit
   instructionsExecuted_++;
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
@@ -189,12 +188,8 @@ void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
 
-  while (true) {
-    bool success = exceptionHandler_->tick();
-    if (success) {
-      // No more ticks needed to complete exception
-      break;
-    }
+  // Tick until true is returned, signifying completion
+  while (exceptionHandler_->tick() == false) {
   }
 
   const auto& result = exceptionHandler_->getResult();
