@@ -206,6 +206,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
 std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
     const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
+  auto loads = reorderBuffer_.getLoadInstructionsCommittedCount();
+  auto stores = reorderBuffer_.getStoreInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
@@ -213,6 +215,8 @@ std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
   auto branchStalls = fetchUnit_.getBranchStalls();
 
   auto earlyFlushes = decodeUnit_.getEarlyFlushes();
+
+  auto loadViolations = reorderBuffer_.getViolatingLoadsCount();
 
   auto allocationStalls = renameUnit_.getAllocationStalls();
   auto robStalls = renameUnit_.getROBStalls();
@@ -237,115 +241,37 @@ std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{{"cycles", std::to_string(ticks_)}},
-          {{"retired", std::to_string(retired)}},
-          {{"ipc", ipcStr.str()}},
-          {{"flushes", std::to_string(flushes_)}},
-          {{"fetch.branchStalls", std::to_string(branchStalls)}},
-          {{"decode.earlyFlushes", std::to_string(earlyFlushes)}},
-          {{"rename.allocationStalls", std::to_string(allocationStalls)}},
-          {{"rename.robStalls", std::to_string(robStalls)}},
-          {{"rename.lqStalls", std::to_string(lqStalls)}},
-          {{"rename.sqStalls", std::to_string(sqStalls)}},
-          {{"dispatch.rsStalls", std::to_string(rsStalls)}},
-          {{"issue.frontendStalls", std::to_string(frontendStalls)}},
-          {{"issue.backendStalls", std::to_string(backendStalls)}},
-          {{"issue.portBusyStalls", std::to_string(portBusyStalls)}},
-          {{"branch.executed", std::to_string(totalBranchesExecuted)}},
-          {{"branch.mispredict", std::to_string(totalBranchMispredicts)}},
-          {{"branch.missrate", branchMissRateStr.str()}},
-          {{"lsq.loadViolations",
-            std::to_string(reorderBuffer_.getViolatingLoadsCount())}}};
-}
-
-void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
-  exceptionGenerated_ = true;
-  exceptionGeneratingInstruction_ = instruction;
-}
-
-void Core::handleException() {
-  fetchToDecodeBuffer_.fill({});
-  fetchToDecodeBuffer_.stall(false);
-
-  decodeToRenameBuffer_.fill(nullptr);
-  decodeToRenameBuffer_.stall(false);
-
-  renameToDispatchBuffer_.fill(nullptr);
-  renameToDispatchBuffer_.stall(false);
-
-  // Flush everything younger than the exception-generating instruction.
-  // This must happen prior to handling the exception to ensure the commit state
-  // is up-to-date with the register mapping table
-  reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
-  decodeUnit_.purgeFlushed();
-  dispatchIssueUnit_.purgeFlushed();
-  loadStoreQueue_.purgeFlushed();
-  for (auto& eu : executionUnits_) {
-    eu.purgeFlushed();
+  return {
+    {{"cycles", std::to_string(ticks_)}},
+        {{"retired", std::to_string(retired)},
+         {"loads", std::to_string(loads)},
+         {"stores", std::to_string(stores)},
+         {"syscalls", std::to_string(syscallsExecuted_)}},
+        {{"ipc", ipcStr.str()}},
+        {{"flushes", std::to_string(flushes_)},
+         {"decode unit early flushes", std::to_string(earlyFlushes)},
+         {"load violations", std::to_string(loadViolations)}},
+        {{"branch missrate", branchMissRateStr.str()},
+         {"branches", std::to_string(totalBranchesExecuted)},
+         {"mispredicts", std::to_string(totalBranchMispredicts)}},
+        {{"stalls", ""},
+         {"fetch.branchStalls", std::to_string(branchStalls)},
+         {"rename.allocationStalls", std::to_string(allocationStalls)},
+         {"rename.robStalls", std::to_string(robStalls)},
+         {"rename.lqStalls", std::to_string(lqStalls)},
+         {"rename.sqStalls", std::to_string(sqStalls)},
+         {"dispatch.rsStalls", std::to_string(rsStalls)},
+         {"issue.frontendStalls", std::to_string(frontendStalls)},
+         {"issue.backendStalls", std::to_string(backendStalls)},
+         {"issue.portBusyStalls", std::to_string(portBusyStalls)}};
   }
 
-  exceptionGenerated_ = false;
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-  processExceptionHandler();
-}
-
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
-  if (dataMemory_.hasPendingRequests()) {
-    // Must wait for all memory requests to complete before processing the
-    // exception
-    return;
+  void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
+    exceptionGenerated_ = true;
+    exceptionGeneratingInstruction_ = instruction;
   }
 
-  bool success = exceptionHandler_->tick();
-  if (!success) {
-    // Exception handler requires further ticks to complete
-    return;
-  }
-
-  const auto& result = exceptionHandler_->getResult();
-
-  if (result.fatal) {
-    hasHalted_ = true;
-    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
-  } else {
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(result.instructionAddress);
-    applyStateChange(result.stateChange);
-  }
-
-  exceptionHandler_ = nullptr;
-}
-
-void Core::flushIfNeeded() {
-  // Check for flush
-  bool euFlush = false;
-  uint64_t targetAddress = 0;
-  uint64_t lowestInsnId = 0;
-  for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
-      euFlush = true;
-      lowestInsnId = eu.getFlushInsnId();
-      targetAddress = eu.getFlushAddress();
-    }
-  }
-  if (euFlush || reorderBuffer_.shouldFlush()) {
-    // Flush was requested in an out-of-order stage.
-    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
-    // Rename/Dispatch)
-
-    if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
-      // If the reorder buffer found an older instruction to flush up to, do
-      // that instead
-      lowestInsnId = reorderBuffer_.getFlushInsnId();
-      targetAddress = reorderBuffer_.getFlushAddress();
-    }
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
+  void Core::handleException() {
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
@@ -355,8 +281,10 @@ void Core::flushIfNeeded() {
     renameToDispatchBuffer_.fill(nullptr);
     renameToDispatchBuffer_.stall(false);
 
-    // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer_.flush(lowestInsnId);
+    // Flush everything younger than the exception-generating instruction.
+    // This must happen prior to handling the exception to ensure the commit
+    // state is up-to-date with the register mapping table
+    reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
     decodeUnit_.purgeFlushed();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
@@ -364,20 +292,103 @@ void Core::flushIfNeeded() {
       eu.purgeFlushed();
     }
 
-    flushes_++;
-  } else if (decodeUnit_.shouldFlush()) {
-    // Flush was requested at decode stage
-    // Update PC and wipe Fetch/Decode buffer.
-    targetAddress = decodeUnit_.getFlushAddress();
-
-    fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.fill({});
-    fetchToDecodeBuffer_.stall(false);
-
-    flushes_++;
+    exceptionGenerated_ = false;
+    exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
+                                             *this, dataMemory_);
+    processExceptionHandler();
   }
-}
+
+  void Core::processExceptionHandler() {
+    assert(exceptionHandler_ != nullptr &&
+           "Attempted to process an exception handler that wasn't present");
+    if (dataMemory_.hasPendingRequests()) {
+      // Must wait for all memory requests to complete before processing the
+      // exception
+      return;
+    }
+
+    bool success = exceptionHandler_->tick();
+    if (!success) {
+      // Exception handler requires further ticks to complete
+      return;
+    }
+
+    const auto& result = exceptionHandler_->getResult();
+
+    if (result.fatal) {
+      hasHalted_ = true;
+      std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
+    } else {
+      fetchUnit_.flushLoopBuffer();
+      fetchUnit_.updatePC(result.instructionAddress);
+      applyStateChange(result.stateChange);
+      // Only non-fatal exceptions are system calls
+      syscallsExecuted_++;
+    }
+
+    exceptionHandler_ = nullptr;
+  }
+
+  void Core::flushIfNeeded() {
+    // Check for flush
+    bool euFlush = false;
+    uint64_t targetAddress = 0;
+    uint64_t lowestInsnId = 0;
+    for (const auto& eu : executionUnits_) {
+      if (eu.shouldFlush() &&
+          (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
+        euFlush = true;
+        lowestInsnId = eu.getFlushInsnId();
+        targetAddress = eu.getFlushAddress();
+      }
+    }
+    if (euFlush || reorderBuffer_.shouldFlush()) {
+      // Flush was requested in an out-of-order stage.
+      // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
+      // Rename/Dispatch)
+
+      if (reorderBuffer_.shouldFlush() &&
+          (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
+        // If the reorder buffer found an older instruction to flush up to, do
+        // that instead
+        lowestInsnId = reorderBuffer_.getFlushInsnId();
+        targetAddress = reorderBuffer_.getFlushAddress();
+      }
+
+      fetchUnit_.flushLoopBuffer();
+      fetchUnit_.updatePC(targetAddress);
+      fetchToDecodeBuffer_.fill({});
+      fetchToDecodeBuffer_.stall(false);
+
+      decodeToRenameBuffer_.fill(nullptr);
+      decodeToRenameBuffer_.stall(false);
+
+      renameToDispatchBuffer_.fill(nullptr);
+      renameToDispatchBuffer_.stall(false);
+
+      // Flush everything younger than the bad instruction from the ROB
+      reorderBuffer_.flush(lowestInsnId);
+      decodeUnit_.purgeFlushed();
+      dispatchIssueUnit_.purgeFlushed();
+      loadStoreQueue_.purgeFlushed();
+      for (auto& eu : executionUnits_) {
+        eu.purgeFlushed();
+      }
+
+      flushes_++;
+    } else if (decodeUnit_.shouldFlush()) {
+      // Flush was requested at decode stage
+      // Update PC and wipe Fetch/Decode buffer.
+      targetAddress = decodeUnit_.getFlushAddress();
+
+      fetchUnit_.flushLoopBuffer();
+      fetchUnit_.updatePC(targetAddress);
+      fetchToDecodeBuffer_.fill({});
+      fetchToDecodeBuffer_.stall(false);
+
+      flushes_++;
+    }
+  }
 
 }  // namespace outoforder
 }  // namespace models

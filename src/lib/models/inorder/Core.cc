@@ -170,7 +170,7 @@ std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
           {{"flushes", std::to_string(flushes_)}},
           {{"branch missrate", branchMissRateStr.str()},
            {"branches", std::to_string(totalBranchesExecuted)},
-           {"misspredicts", std::to_string(totalBranchMispredicts)}}};
+           {"mispredicts", std::to_string(totalBranchMispredicts)}}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

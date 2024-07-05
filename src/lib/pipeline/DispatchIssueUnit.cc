@@ -140,24 +140,22 @@ void DispatchIssueUnit::issue() {
   for (size_t i = 0; i < issuePorts_.size(); i++) {
     ReservationStation& rs = reservationStations_[portMapping_[i].first];
     auto& queue = rs.ports[portMapping_[i].second].ready;
-    if (issuePorts_[i].isStalled()) {
-      if (queue.size() > 0) {
-        portBusyStalls_++;
-      }
-      continue;
-    }
-
     if (queue.size() > 0) {
-      auto& uop = queue.front();
-      issuePorts_[i].getTailSlots()[0] = std::move(uop);
-      queue.pop_front();
+      if (issuePorts_[i].isStalled()) {
+        portBusyStalls_++;
+        continue;
+      } else {
+        auto& uop = queue.front();
+        issuePorts_[i].getTailSlots()[0] = std::move(uop);
+        queue.pop_front();
 
-      // Inform the port allocator that an instruction issued
-      portAllocator_.issued(i);
-      issued++;
+        // Inform the port allocator that an instruction issued
+        portAllocator_.issued(i);
+        issued++;
 
-      assert(rs.currentSize > 0);
-      rs.currentSize--;
+        assert(rs.currentSize > 0);
+        rs.currentSize--;
+      }
     }
   }
 

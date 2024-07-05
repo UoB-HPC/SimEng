@@ -85,7 +85,13 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       break;
     }
 
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
+    // Calculate statistics
+    if (uop->isLastMicroOp()) {
+      instructionsCommitted_++;
+      if (uop->isLoad()) loadInstructionsCommitted_++;
+      if (uop->isStoreAddress() || uop->isStoreData())
+        storeInstructionsCommitted_++;
+    }
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -200,6 +206,14 @@ uint64_t ReorderBuffer::getFlushInsnId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;
+}
+
+uint64_t ReorderBuffer::getLoadInstructionsCommittedCount() const {
+  return loadInstructionsCommitted_;
+}
+
+uint64_t ReorderBuffer::getStoreInstructionsCommittedCount() const {
+  return storeInstructionsCommitted_;
 }
 
 uint64_t ReorderBuffer::getViolatingLoadsCount() const {
