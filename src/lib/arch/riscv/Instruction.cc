@@ -16,7 +16,6 @@ Instruction::Instruction(const Architecture& architecture,
       metadata_(metadata),
       exception_(metadata.getMetadataException()) {
   exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
-  exceptionString_ = metadata.getExceptionString();
   decode();
 }
 
@@ -175,8 +174,6 @@ const Architecture& Instruction::getArchitecture() const {
 }
 
 InstructionException Instruction::getException() const { return exception_; }
-
-std::string Instruction::getExceptionString() const { return exceptionString_; }
 
 }  // namespace riscv
 }  // namespace arch

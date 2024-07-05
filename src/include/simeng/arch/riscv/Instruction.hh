@@ -185,9 +185,6 @@ class Instruction : public simeng::Instruction {
    * processing this instruction. */
   InstructionException getException() const;
 
-  /** Retrieve exception string */
-  std::string getExceptionString() const;
-
  private:
   /** Process the instruction's metadata to determine source/destination
    * registers. */
@@ -246,9 +243,6 @@ class Instruction : public simeng::Instruction {
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
-
-  /** Extra information about the exception */
-  std::string exceptionString_ = "";
 
   /** The number of source operands that have not yet had values supplied. Used
    * to determine execution readiness. */
