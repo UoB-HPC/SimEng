@@ -20,7 +20,6 @@ Instruction::Instruction(const Architecture& architecture,
   dataSize_ = microOpInfo.dataSize;
   isLastMicroOp_ = microOpInfo.isLastMicroOp;
   microOpIndex_ = microOpInfo.microOpIndex;
-  exceptionString_ = metadata.getExceptionString();
   decode();
 }
 
@@ -192,8 +191,6 @@ const Architecture& Instruction::getArchitecture() const {
 }
 
 InstructionException Instruction::getException() const { return exception_; }
-
-std::string Instruction::getExceptionString() const { return exceptionString_; }
 
 }  // namespace aarch64
 }  // namespace arch
