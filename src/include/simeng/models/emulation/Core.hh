@@ -89,9 +89,6 @@ class Core : public simeng::Core {
 
   /** The number of store instructions executed. */
   uint64_t storesExecuted_ = 0;
-
-  /** The number of system calls executed. */
-  uint64_t syscallsExecuted_ = 0;
 };
 
 }  // namespace emulation

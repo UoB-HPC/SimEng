@@ -94,7 +94,7 @@ void SimEngCoreWrapper::finish() {
   for (const auto& stat : stats) {
     for (size_t i = 0; i < stat.size(); i++) {
       // All children are indented
-      const std::string indent = (i > 0) ? "    " : "";
+      const std::string indent = (i > 0) ? "    - " : "";
       const std::string statLine =
           "[SimEng] " + indent + stat[i].first + ": " + stat[i].second;
       std::cout << statLine << std::endl;

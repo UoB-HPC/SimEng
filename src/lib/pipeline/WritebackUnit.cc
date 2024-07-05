@@ -30,10 +30,16 @@ void WritebackUnit::tick() {
     if (uop->isMicroOp()) {
       uop->setWaitingCommit();
       flagMicroOpCommits_(uop->getInstructionId());
-      if (uop->isLastMicroOp()) instructionsWritten_++;
     } else {
       uop->setCommitReady();
+    }
+
+    // Update stats
+    if (uop->isLastMicroOp()) {
       instructionsWritten_++;
+      if (uop->isLoad()) loadInstructionsWritten_++;
+      if (uop->isStoreAddress() || uop->isStoreData())
+        storeInstructionsWritten_++;
     }
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
@@ -42,6 +48,14 @@ void WritebackUnit::tick() {
 
 uint64_t WritebackUnit::getInstructionsWrittenCount() const {
   return instructionsWritten_;
+}
+
+uint64_t WritebackUnit::getLoadInstructionsWrittenCount() const {
+  return loadInstructionsWritten_;
+}
+
+uint64_t WritebackUnit::getStoreInstructionsWrittenCount() const {
+  return storeInstructionsWritten_;
 }
 
 }  // namespace pipeline

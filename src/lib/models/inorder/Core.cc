@@ -145,6 +145,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
 std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
     const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
+  auto loads = writebackUnit_.getLoadInstructionsWrittenCount();
+  auto stores = writebackUnit_.getStoreInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
@@ -160,12 +162,15 @@ std::vector<std::vector<std::pair<std::string, std::string>>> Core::getStats()
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
   return {{{"cycles", std::to_string(ticks_)}},
-          {{"retired", std::to_string(retired)}},
+          {{"retired", std::to_string(retired)},
+           {"loads", std::to_string(loads)},
+           {"stores", std::to_string(stores)},
+           {"syscalls", std::to_string(syscallsExecuted_)}},
           {{"ipc", ipcStr.str()}},
           {{"flushes", std::to_string(flushes_)}},
-          {{"branch.executed", std::to_string(totalBranchesExecuted)}},
-          {{"branch.mispredict", std::to_string(totalBranchMispredicts)}},
-          {{"branch.missrate", branchMissRateStr.str()}}};
+          {{"branch missrate", branchMissRateStr.str()},
+           {"branches", std::to_string(totalBranchesExecuted)},
+           {"misspredicts", std::to_string(totalBranchMispredicts)}}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -212,6 +217,8 @@ void Core::processExceptionHandler() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
+    // Only non-fatal exceptions are system calls
+    syscallsExecuted_++;
   }
 
   exceptionHandler_ = nullptr;

@@ -115,6 +115,9 @@ class Core {
   /** The number of times this core has been ticked. */
   uint64_t ticks_ = 0;
 
+  /** The number of system calls executed. */
+  uint64_t syscallsExecuted_ = 0;
+
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
 

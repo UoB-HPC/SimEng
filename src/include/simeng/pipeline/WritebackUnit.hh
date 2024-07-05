@@ -26,6 +26,12 @@ class WritebackUnit {
   /** Retrieve a count of the number of instructions retired. */
   uint64_t getInstructionsWrittenCount() const;
 
+  /** Retrieve a count of the number of load instructions retired. */
+  uint64_t getLoadInstructionsWrittenCount() const;
+
+  /** Retrieve a count of the number of store instructions retired. */
+  uint64_t getStoreInstructionsWrittenCount() const;
+
  private:
   /** Buffers of completed instructions to process. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;
@@ -39,6 +45,12 @@ class WritebackUnit {
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;
+
+  /** The number of load instructions processed and retired by this stage. */
+  uint64_t loadInstructionsWritten_ = 0;
+
+  /** The number of store instructions processed and retired by this stage. */
+  uint64_t storeInstructionsWritten_ = 0;
 };
 
 }  // namespace pipeline
