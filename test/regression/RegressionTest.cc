@@ -21,21 +21,6 @@ void RegressionTest::TearDown() {
   }
 }
 
-void RegressionTest::instantiateMemoryInterfaces() {
-  // Create memory interfaces for instruction and data access.
-  // For each memory interface, a dereferenced shared_ptr to the
-  // processImage is passed as argument.
-  instructionMemory_ = std::make_unique<simeng::memory::FlatMemoryInterface>(
-      processMemory_, processMemorySize_);
-
-  flatDataMemory_ = std::make_unique<simeng::memory::FlatMemoryInterface>(
-      processMemory_, processMemorySize_);
-
-  fixedLatencyDataMemory_ =
-      std::make_unique<simeng::memory::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
-}
-
 void RegressionTest::createProcess(const char* source, const char* triple,
                                    const char* extensions) {
   // Zero-out process memory from any prior runs
@@ -72,19 +57,9 @@ void RegressionTest::createProcess(const char* source, const char* triple,
   // member processMemory_.
   std::shared_ptr<char> procImgPtr = process_->getProcessImage();
   processMemory_ = procImgPtr.get();
-}
 
-void RegressionTest::createKernel(const char* source, const char* triple,
-                                  const char* extensions) {
-  createProcess(source, triple, extensions);
-
-  // Create the OS kernel and the process
-  kernel_ = std::make_unique<simeng::kernel::Linux>(
-      simeng::config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
-          .as<std::string>());
-  kernel_->createProcess(*process_);
-
-  // TODO ensure performing this before kernel_.createProcess is ok
+  // TODO ensure performing this before kernel_.createProcess is ok - Think it's
+  // fine
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getInitialStackPointer());
@@ -92,7 +67,20 @@ void RegressionTest::createKernel(const char* source, const char* triple,
             processMemory_ + process_->getHeapStart());
 }
 
-// TODO potential rename
+void RegressionTest::createKernel(const char* source, const char* triple,
+                                  const char* extensions) {
+  // Create the process to pass to the kernel
+  createProcess(source, triple, extensions);
+
+  ASSERT_TRUE(process_ != nullptr);
+
+  // Create the OS kernel and the process
+  kernel_ = std::make_unique<simeng::kernel::Linux>(
+      simeng::config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+          .as<std::string>());
+  kernel_->createProcess(*process_);
+}
+
 void RegressionTest::createArchitecture(const char* source, const char* triple,
                                         const char* extensions) {
   // Create kernel and process
@@ -102,14 +90,29 @@ void RegressionTest::createArchitecture(const char* source, const char* triple,
   architecture_ = instantiateArchitecture(*kernel_);
 }
 
-// TODO rename ~createSystem
-void RegressionTest::createCore(const char* source, const char* triple,
-                                const char* extensions) {
+void RegressionTest::instantiateMemoryInterfaces() {
+  // Create memory interfaces for instruction and data access.
+  // For each memory interface, a dereferenced shared_ptr to the
+  // processImage is passed as argument.
+
+  ASSERT_TRUE(processMemory_ != nullptr);
+
+  instructionMemory_ = std::make_unique<simeng::memory::FlatMemoryInterface>(
+      processMemory_, processMemorySize_);
+
+  flatDataMemory_ = std::make_unique<simeng::memory::FlatMemoryInterface>(
+      processMemory_, processMemorySize_);
+
+  fixedLatencyDataMemory_ =
+      std::make_unique<simeng::memory::FixedLatencyMemoryInterface>(
+          processMemory_, processMemorySize_, 4);
+}
+
+void RegressionTest::instantiateSimulationObjects(const char* source,
+                                                  const char* triple,
+                                                  const char* extensions) {
   // Create the architecture, kernel and process
   createArchitecture(source, triple, extensions);
-
-  // Create a port allocator for an out-of-order core
-  portAllocator_ = createPortAllocator();
 
   // Create a branch predictor for a pipelined core
   std::string predictorType =
@@ -121,6 +124,7 @@ void RegressionTest::createCore(const char* source, const char* triple,
     predictor_ = std::make_unique<simeng::PerceptronPredictor>();
   }
 
+  // Create all possible memory interfaces
   instantiateMemoryInterfaces();
 
   // Create the core model
@@ -138,6 +142,9 @@ void RegressionTest::createCore(const char* source, const char* triple,
       dataMemory_ = std::move(flatDataMemory_);
       break;
     case OUTOFORDER:
+      // Create a port allocator for an out-of-order core
+      portAllocator_ = createPortAllocator();
+
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           *instructionMemory_, *fixedLatencyDataMemory_, processMemorySize_,
           entryPoint_, *architecture_, *predictor_, *portAllocator_);
@@ -151,7 +158,7 @@ void RegressionTest::run(const char* source, const char* triple,
   testing::internal::CaptureStdout();
 
   // Create the core, memory interfaces, kernel and process
-  createCore(source, triple, extensions);
+  instantiateSimulationObjects(source, triple, extensions);
 
   // Run the core model until the program is complete
   while (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {

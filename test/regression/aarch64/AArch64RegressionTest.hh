@@ -189,6 +189,13 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
+/** A helper macro to predecode the first instruction in a snippet of Armv9.2-a
+ * assembly code and check the assigned group(s) for each micro-op matches the
+ * expected group(s). Returns from the calling function if a fatal error occurs.
+ * Four bytes containing zeros are appended to the source to ensure that the
+ * program will terminate with an unallocated instruction encoding exception
+ * instead of running into the heap.
+ */
 #define EXPECT_GROUP(source, ...)                                \
   {                                                              \
     std::string sourceWithTerminator = source;                   \
@@ -205,6 +212,8 @@ class AArch64RegressionTest : public RegressionTest {
   /** Run the assembly code in `source`. */
   void run(const char* source);
 
+  /** Run the first instruction in source through predecode and check the
+   * groups. */
   void checkGroup(const char* source, const std::vector<int> expectedGroups,
                   const char* extensions) override;
 

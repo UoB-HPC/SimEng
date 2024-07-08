@@ -71,6 +71,7 @@ class RegressionTest
   /** Generate a default YAML-formatted configuration. */
   virtual void generateConfig() const = 0;
 
+  /** Instantiate the architecture object using the kernel */
   void createArchitecture(const char* source, const char* triple,
                           const char* extensions);
 
@@ -90,6 +91,9 @@ class RegressionTest
   // TODO could make this none virtual (prevent AArch64 from needing to pass
   // empty extensions param), but this forces all ISA's to implement it which is
   // probably preferable
+
+  /** Predecode the first instruction in source and check the assigned group
+   * matches the expectation */
   virtual void checkGroup(const char* source,
                           const std::vector<int> expectedGroups,
                           const char* extensions) = 0;
@@ -127,45 +131,59 @@ class RegressionTest
   /** The output written to stdout during the test. */
   std::string stdout_;
 
-  /** The architecture instance. */
-  std::unique_ptr<simeng::arch::Architecture> architecture_;
+  /** The flat binary produced by assembling the test source. */
+  uint8_t* code_ = nullptr;
 
   /** The number of ticks that were run before the test program completed. */
   uint64_t numTicks_ = 0;
 
-  /** The flat binary produced by assembling the test source. */
-  uint8_t* code_ = nullptr;
-
   /** The maximum number of ticks to run before aborting the test. */
   uint64_t maxTicks_ = UINT64_MAX;
+
+  /** The architecture instance. */
+  std::unique_ptr<simeng::arch::Architecture> architecture_;
 
  private:
   /** Assemble test source to a flat binary for the given triple and ISA
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
 
+  /** Instantiate the process from the source bytes for the given architecture.
+   */
   void createProcess(const char* source, const char* triple,
                      const char* extensions);
 
+  /** Instantiate the kernel object using the process. */
   void createKernel(const char* source, const char* triple,
                     const char* extensions);
 
+  /** Instantiate the memory interfaces. */
   void instantiateMemoryInterfaces();
 
-  std::unique_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
+  /** Instantiating all of the objects used to setup and run the simulation. */
+  void instantiateSimulationObjects(const char* source, const char* triple,
+                                    const char* extensions);
+
+  /* Instantiation of the kernel. */
+  std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;
+
+  /* Instantiation of the port allocator. */
+  std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
+
+  /* Instantiation of the branch predictor. */
+  std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
+
+  /** All possible data memory interfaces. dataMemory_ set to one of these
+   * depending on core type */
   std::unique_ptr<simeng::memory::MemoryInterface> flatDataMemory_ = nullptr;
   std::unique_ptr<simeng::memory::MemoryInterface> fixedLatencyDataMemory_ =
       nullptr;
+
+  /** The data memory interface used during the test. */
   std::unique_ptr<simeng::memory::MemoryInterface> dataMemory_ = nullptr;
 
-  void createCore(const char* source, const char* triple,
-                  const char* extensions);
-
-  std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;
-
-  std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
-
-  std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
+  /** The instruction memory interface used during the test. */
+  std::unique_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
 
   /** The core that was used. */
   std::unique_ptr<simeng::Core> core_ = nullptr;
@@ -179,5 +197,6 @@ class RegressionTest
   /** The size of the assembled flat binary in bytes. */
   size_t codeSize_ = 0;
 
+  /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 };

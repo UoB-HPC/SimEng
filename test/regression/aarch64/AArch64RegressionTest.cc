@@ -107,12 +107,10 @@ void AArch64RegressionTest::checkGroup(const char* source,
   MacroOp macroOp;
   architecture_->predecode(code_, 4, 0, macroOp);
 
-  // TODO doesn't stop execution so for loop below could access out of bounds
-  // memory
   // Check that there is one expectation group per micro-op
   EXPECT_EQ(macroOp.size(), expectedGroups.size());
 
-  // Check each
+  // Check the assigned and expected group for each micro-op match
   for (size_t i = 0; i < macroOp.size(); i++) {
     auto group = macroOp[i]->getGroup();
     EXPECT_EQ(group, expectedGroups[i]);

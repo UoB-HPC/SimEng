@@ -53,7 +53,7 @@ inline std::string paramToString(
   return coreString;
 }
 
-/** A helper macro to run a snippet of RISCV assembly code, returning from
+/** A helper macro to run a snippet of RISC-V assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros
  * are appended to the source to ensure that the program will terminate with
  * an unallocated instruction encoding exception instead of running into the
@@ -66,7 +66,7 @@ inline std::string paramToString(
   }                                                   \
   if (HasFatalFailure()) return
 
-/** A helper macro to run a snippet of RISCV assembly code, returning from
+/** A helper macro to run a snippet of RISC-V assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros
  * are appended to the source to ensure that the program will terminate with
  * an illegal instruction exception instead of running into the heap. This
@@ -81,6 +81,13 @@ inline std::string paramToString(
   }                                                      \
   if (HasFatalFailure()) return
 
+/** A helper macro to predecode the first instruction in a snippet of RISC-V
+ * assembly code and check the assigned group(s) for each micro-op matches the
+ * expected group(s). Returns from the calling function if a fatal error occurs.
+ * Four bytes containing zeros are appended to the source to ensure that the
+ * program will terminate with an unallocated instruction encoding exception
+ * instead of running into the heap.
+ */
 #define EXPECT_GROUP(source, ...)                                              \
   {                                                                            \
     std::string sourceWithTerminator = source;                                 \
@@ -89,7 +96,7 @@ inline std::string paramToString(
   }                                                                            \
   if (HasFatalFailure()) return
 
-/** The test fixture for all RISCV regression tests. */
+/** The test fixture for all RISC-V regression tests. */
 class RISCVRegressionTest : public RegressionTest {
  protected:
   virtual ~RISCVRegressionTest() {}
@@ -97,6 +104,8 @@ class RISCVRegressionTest : public RegressionTest {
   /** Run the assembly code in `source`. */
   void run(const char* source, const char* extensions);
 
+  /** Run the first instruction in source through predecode and check the
+   * groups. */
   void checkGroup(const char* source, const std::vector<int> expectedGroups,
                   const char* extensions) override;
 
