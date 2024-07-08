@@ -67,7 +67,7 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
   // ToDo -- delete the below, it is for debuggin only!
-  bool print = (true);
+  bool print = (false);
 
   // 0th bit of SVCR register determines if streaming-mode is enabled.
   const bool SMenabled = architecture_.getSVCRval() & 1;

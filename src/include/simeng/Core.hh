@@ -79,6 +79,17 @@ class Core {
       default: {  // arch::ChangeType::REPLACEMENT
         // If type is ChangeType::REPLACEMENT, set new values
         for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+          outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+                      << ":" << change.modifiedRegisters[i].tag << "}"
+                      << " <- " << std::hex;
+          for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+               j--) {
+            if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] < 16)
+              outputFile_ << "0";
+            outputFile_ << unsigned(
+                change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+          }
+          outputFile_ << std::dec << std::endl;
           regFile.set(change.modifiedRegisters[i],
                       change.modifiedRegisterValues[i]);
         }
@@ -90,6 +101,15 @@ class Core {
     // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
     // required for memory changes
     for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+      outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].address
+                  << std::dec << " <- " << std::hex;
+      for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+        if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16)
+          outputFile_ << "0";
+        outputFile_ << unsigned(
+            change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+      }
+      outputFile_ << std::dec << std::endl;
       dataMemory_.requestWrite(change.memoryAddresses[i],
                                change.memoryAddressValues[i]);
     }
@@ -115,6 +135,8 @@ class Core {
 
   /** Clock frequency of core in GHz */
   float clockFrequency_ = 0.0f;
+
+  mutable std::ofstream outputFile_;
 };
 
 }  // namespace simeng

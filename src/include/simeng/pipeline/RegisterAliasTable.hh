@@ -21,6 +21,8 @@ class RegisterAliasTable {
    * architectural register. */
   Register getMapping(Register architectural) const;
 
+  Register reverseMapping(Register physical) const;
+
   /** Determine whether it's possible to allocate `quantity` physical registers
    * of type `type` this cycle. */
   bool canAllocate(uint8_t type, unsigned int quantity) const;

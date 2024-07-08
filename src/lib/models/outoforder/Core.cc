@@ -6,6 +6,8 @@
 #include <sstream>
 #include <string>
 
+#include "simeng/version.hh"
+
 namespace simeng {
 namespace models {
 namespace outoforder {
@@ -74,6 +76,10 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()),
       branchPredictor_(branchPredictor) {
+  std::ostringstream str;
+  str << SIMENG_SOURCE_DIR << "/simengRetire.out";
+  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -307,6 +313,11 @@ void Core::processExceptionHandler() {
   }
 
   const auto& result = exceptionHandler_->getResult();
+
+  outputFile_ << "\tSyscall "
+              << getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>()
+              << " results" << std::endl;
+  outputFile_ << "\tfatal: " << result.fatal << std::endl;
 
   if (result.fatal) {
     hasHalted_ = true;

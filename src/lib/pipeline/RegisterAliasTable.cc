@@ -53,6 +53,11 @@ Register RegisterAliasTable::getMapping(Register architectural) const {
   return {architectural.type, tag, true};
 }
 
+Register RegisterAliasTable::reverseMapping(Register physical) const {
+  auto tag = destinationTable_[physical.type][physical.tag];
+  return {physical.type, tag};
+}
+
 bool RegisterAliasTable::canAllocate(uint8_t type,
                                      unsigned int quantity) const {
   return (freeQueues_[type].size() >= quantity);

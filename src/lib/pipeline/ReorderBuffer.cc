@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "simeng/version.hh"
+
 namespace simeng {
 namespace pipeline {
 
@@ -20,7 +22,13 @@ ReorderBuffer::ReorderBuffer(
       sendLoopBoundary_(sendLoopBoundary),
       predictor_(predictor),
       loopBufSize_(loopBufSize),
-      loopDetectionThreshold_(loopDetectionThreshold) {}
+      loopDetectionThreshold_(loopDetectionThreshold) {
+  std::ostringstream str;
+  str << SIMENG_SOURCE_DIR << "/simengRetire.out";
+  outputFile_.open(str.str(), std::ofstream::out);
+  outputFile_.close();
+  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+}
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&
@@ -85,12 +93,66 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
+      outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      outputFile_ << std::endl;
+      lastInsnId_ = uop->getInstructionId();
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
     }
 
     const auto& destinations = uop->getDestinationRegisters();
+    const auto& results = uop->getResults();
+    if (lastInsnId_ != uop->getInstructionId()) {
+      outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      outputFile_ << std::endl;
+    }
+
+    if (uop->isLoad()) {
+      const auto& addrs = uop->getGeneratedAddresses();
+      for (int i = 0; i < addrs.size(); i++) {
+        outputFile_ << "\tAddr " << std::hex << addrs[i].address << std::dec
+                    << std::endl;
+      }
+    }
+    if (uop->isStoreAddress()) {
+      const auto& addrs = uop->getGeneratedAddresses();
+
+      for (int i = 0; i < addrs.size(); i++) {
+        outputFile_ << "\tAddr " << std::hex << addrs[i].address << std::dec
+                    << " <- " << std::hex;
+        if (uop->isStoreData()) {
+          const auto& data = uop->getData();
+          for (int j = data[i].size() - 1; j >= 0; j--) {
+            if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+            outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+          }
+          outputFile_ << std::dec << std::endl;
+        }
+      }
+    } else if (uop->isStoreData()) {
+      const auto& data = uop->getData();
+      for (int i = 0; i < data.size(); i++) {
+        for (int j = data[i].size() - 1; j >= 0; j--) {
+          if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+          outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+        }
+      }
+      outputFile_ << std::dec << std::endl;
+    }
+    for (int i = 0; i < destinations.size(); i++) {
+      outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
+                  << rat_.reverseMapping(destinations[i]).tag << "}"
+                  << " <- " << std::hex;
+      for (int j = results[i].size() - 1; j >= 0; j--) {
+        if (results[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+        outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+      }
+      outputFile_ << std::dec << std::endl;
+    }
+
+    lastInsnId_ = uop->getInstructionId();
+
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <forward_list>
+#include <fstream>
 #include <queue>
 #include <unordered_map>
 
@@ -105,6 +106,8 @@ class Architecture : public arch::Architecture {
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
+
+  mutable std::ofstream outputFile_;
 };
 
 }  // namespace aarch64

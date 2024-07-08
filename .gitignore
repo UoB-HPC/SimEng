@@ -23,3 +23,6 @@ CMakeFiles/
 
 **/capstone-config-version.cmake
 **/capstone-config.cmake
+
+**/simengRetire.out
+**/simengMetadata.out

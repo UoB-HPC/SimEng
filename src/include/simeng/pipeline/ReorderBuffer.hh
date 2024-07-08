@@ -1,7 +1,9 @@
 #pragma once
 
 #include <deque>
+#include <fstream>
 #include <functional>
+#include <sstream>
 
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
@@ -150,6 +152,10 @@ class ReorderBuffer {
 
   /** The number of branch mispredictions that were observed. */
   uint64_t branchMispredicts_ = 0;
+
+  mutable std::ofstream outputFile_;
+
+  uint64_t lastInsnId_ = -1;
 };
 
 }  // namespace pipeline
