@@ -189,13 +189,12 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
-#define EXPECT_GROUP(source, ...)                                           \
-  {                                                                         \
-    std::string sourceWithTerminator = source;                              \
-    sourceWithTerminator += "\n.word 0";                                    \
-    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, \
-               "");                                                         \
-  }                                                                         \
+#define EXPECT_GROUP(source, ...)                                \
+  {                                                              \
+    std::string sourceWithTerminator = source;                   \
+    sourceWithTerminator += "\n.word 0";                         \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, ""); \
+  }                                                              \
   if (HasFatalFailure()) return
 
 /** The test fixture for all AArch64 regression tests. */
@@ -213,7 +212,7 @@ class AArch64RegressionTest : public RegressionTest {
   void generateConfig() const override;
 
   /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
+  virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const override;
 
   /** Create a port allocator for an out-of-order core model. */

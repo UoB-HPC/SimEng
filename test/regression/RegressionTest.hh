@@ -79,7 +79,7 @@ class RegressionTest
   void run(const char* source, const char* triple, const char* extensions);
 
   /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
+  virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
@@ -87,6 +87,9 @@ class RegressionTest
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
+  // TODO could make this none virtual (prevent AArch64 from needing to pass
+  // empty extensions param), but this forces all ISA's to implement it which is
+  // probably preferable
   virtual void checkGroup(const char* source,
                           const std::vector<int> expectedGroups,
                           const char* extensions) = 0;
@@ -115,41 +118,66 @@ class RegressionTest
   /** The initial data to populate the heap with. */
   std::vector<uint8_t> initialHeapData_;
 
-  /** The maximum number of ticks to run before aborting the test. */
-  uint64_t maxTicks_ = UINT64_MAX;
-
-  /** The number of ticks that were run before the test program completed. */
-  uint64_t numTicks_ = 0;
-
-  /** The architecture instance. */
-  std::unique_ptr<simeng::arch::Architecture> architecture_;
+  /** The process that was executed. */
+  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** The process memory. */
   char* processMemory_ = nullptr;
 
-  /** The size of the process memory in bytes. */
-  size_t processMemorySize_ = 0;
-
-  /** The process that was executed. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
-
-  /** The core that was used. */
-  std::unique_ptr<simeng::Core> core_ = nullptr;
-
   /** The output written to stdout during the test. */
   std::string stdout_;
 
-  /** True if the test program finished running. */
-  bool programFinished_ = false;
+  /** The architecture instance. */
+  std::unique_ptr<simeng::arch::Architecture> architecture_;
+
+  /** The number of ticks that were run before the test program completed. */
+  uint64_t numTicks_ = 0;
 
   /** The flat binary produced by assembling the test source. */
   uint8_t* code_ = nullptr;
+
+  /** The maximum number of ticks to run before aborting the test. */
+  uint64_t maxTicks_ = UINT64_MAX;
 
  private:
   /** Assemble test source to a flat binary for the given triple and ISA
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
 
+  void createProcess(const char* source, const char* triple,
+                     const char* extensions);
+
+  void createKernel(const char* source, const char* triple,
+                    const char* extensions);
+
+  void instantiateMemoryInterfaces();
+
+  std::unique_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
+  std::unique_ptr<simeng::memory::MemoryInterface> flatDataMemory_ = nullptr;
+  std::unique_ptr<simeng::memory::MemoryInterface> fixedLatencyDataMemory_ =
+      nullptr;
+  std::unique_ptr<simeng::memory::MemoryInterface> dataMemory_ = nullptr;
+
+  void createCore(const char* source, const char* triple,
+                  const char* extensions);
+
+  std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;
+
+  std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
+
+  std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
+
+  /** The core that was used. */
+  std::unique_ptr<simeng::Core> core_ = nullptr;
+
+  /** The size of the process memory in bytes. */
+  size_t processMemorySize_ = 0;
+
+  /** True if the test program finished running. */
+  bool programFinished_ = false;
+
   /** The size of the assembled flat binary in bytes. */
   size_t codeSize_ = 0;
+
+  uint64_t entryPoint_ = 0;
 };

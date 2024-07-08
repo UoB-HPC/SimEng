@@ -104,7 +104,7 @@ class RISCVRegressionTest : public RegressionTest {
   void generateConfig() const override;
 
   /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
+  virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const override;
 
   /** Get the value of a general purpose register. */

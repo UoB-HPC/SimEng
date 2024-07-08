@@ -48,7 +48,8 @@ void AArch64RegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+AArch64RegressionTest::instantiateArchitecture(
+    simeng::kernel::Linux& kernel) const {
   return std::make_unique<Architecture>(kernel);
 }
 
@@ -86,9 +87,10 @@ bool AArch64RegressionTest::getOverflowFlag() const {
   return (getNZCV() >> 0) & 1;
 }
 
-void AArch64RegressionTest::checkGroup(
-    const char* source, const std::vector<int> expectedGroups,
-    const char* extensions) {  // Initialise LLVM
+void AArch64RegressionTest::checkGroup(const char* source,
+                                       const std::vector<int> expectedGroups,
+                                       const char* extensions) {
+  // Initialise LLVM
   LLVMInitializeAArch64TargetInfo();
   LLVMInitializeAArch64TargetMC();
   LLVMInitializeAArch64AsmParser();
@@ -102,26 +104,17 @@ void AArch64RegressionTest::checkGroup(
 
   RegressionTest::createArchitecture(source, "aarch64", subtargetFeatures);
 
-  // TODO give out better name as this shows in the print out. Apply to RISC-V
-  // also
-  MacroOp out;
-  architecture_->predecode(code_, 4, 0, out);
+  MacroOp macroOp;
+  architecture_->predecode(code_, 4, 0, macroOp);
 
   // TODO doesn't stop execution so for loop below could access out of bounds
-  // memory Check that there is one expectation group per micro-op
-  EXPECT_EQ(out.size(), expectedGroups.size());
-
-  //  std::cout << expectedGroups.size() << std::endl;
-  //  for (auto ent : expectedGroups) {
-  //    std::cout << ent << ",";
-  //  }
-  //  std::cout << "" << std::endl;
+  // memory
+  // Check that there is one expectation group per micro-op
+  EXPECT_EQ(macroOp.size(), expectedGroups.size());
 
   // Check each
-  for (size_t i = 0; i < out.size(); i++) {
-    auto group = out[i]->getGroup();
-    //    std::cout << "actual group " << group << std::endl;
-
+  for (size_t i = 0; i < macroOp.size(); i++) {
+    auto group = macroOp[i]->getGroup();
     EXPECT_EQ(group, expectedGroups[i]);
   }
 }

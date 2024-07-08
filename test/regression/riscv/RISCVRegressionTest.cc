@@ -42,7 +42,8 @@ void RISCVRegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+RISCVRegressionTest::instantiateArchitecture(
+    simeng::kernel::Linux& kernel) const {
   return std::make_unique<Architecture>(kernel);
 }
 
@@ -72,15 +73,15 @@ void RISCVRegressionTest::checkGroup(const char* source,
 
   RegressionTest::createArchitecture(source, "riscv64", extensions);
 
-  MacroOp out;
-  architecture_->predecode(code_, 4, 0, out);
+  MacroOp macroOp;
+  architecture_->predecode(code_, 4, 0, macroOp);
 
   // Check that there is one expectation group per micro-op
-  EXPECT_EQ(out.size(), expectedGroups.size());
+  EXPECT_EQ(macroOp.size(), expectedGroups.size());
 
   // Check each
-  for (size_t i = 0; i < out.size(); i++) {
-    auto group = out[i]->getGroup();
+  for (size_t i = 0; i < macroOp.size(); i++) {
+    auto group = macroOp[i]->getGroup();
     EXPECT_EQ(group, expectedGroups[i]);
   }
 }
