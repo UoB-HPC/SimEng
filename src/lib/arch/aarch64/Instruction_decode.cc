@@ -277,8 +277,16 @@ void Instruction::decode() {
           sourceRegisterCount_++;
           sourceOperandsPending_++;
         }
-        if (op.shift.value > 0)
+        // TODO checking of the shift type is a temporary fix to help reduce the
+        // chance of incorrectly reverted aliases from being mis-classified as
+        // isShift when op.shift contains garbage data. This should be reviewed
+        // on the next capstone update which should remove the need to revert
+        // aliasing
+        if (op.shift.type > arm64_shifter::ARM64_SFT_INVALID &&
+            op.shift.type <= arm64_shifter::ARM64_SFT_ROR &&
+            op.shift.value > 0) {
           setInstructionType(InsnType::isShift);  // Identify shift operands
+        }
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
