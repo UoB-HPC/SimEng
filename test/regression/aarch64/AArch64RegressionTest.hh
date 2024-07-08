@@ -196,12 +196,12 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
  * program will terminate with an unallocated instruction encoding exception
  * instead of running into the heap.
  */
-#define EXPECT_GROUP(source, ...)                                \
-  {                                                              \
-    std::string sourceWithTerminator = source;                   \
-    sourceWithTerminator += "\n.word 0";                         \
-    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, ""); \
-  }                                                              \
+#define EXPECT_GROUP(source, ...)                            \
+  {                                                          \
+    std::string sourceWithTerminator = source;               \
+    sourceWithTerminator += "\n.word 0";                     \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}); \
+  }                                                          \
   if (HasFatalFailure()) return
 
 /** The test fixture for all AArch64 regression tests. */
@@ -214,8 +214,7 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Run the first instruction in source through predecode and check the
    * groups. */
-  void checkGroup(const char* source, const std::vector<int> expectedGroups,
-                  const char* extensions) override;
+  void checkGroup(const char* source, const std::vector<int> expectedGroups);
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
@@ -228,6 +227,22 @@ class AArch64RegressionTest : public RegressionTest {
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const override;
+
+  /** Initialise LLVM */
+  void initialiseLLVM() {
+    LLVMInitializeAArch64TargetInfo();
+    LLVMInitializeAArch64TargetMC();
+    LLVMInitializeAArch64AsmParser();
+  }
+
+  /** Get the subtarget feature string based on LLVM version being used */
+  std::string getSubtargetFeaturesString() {
+#if SIMENG_LLVM_VERSION < 14
+    return "+sve,+lse";
+#else
+    return "+sve,+lse,+sve2,+sme,+sme-f64";
+#endif
+  }
 
   /** Check the elements of a Neon register.
    *

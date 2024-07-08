@@ -94,9 +94,9 @@ class RegressionTest
 
   /** Predecode the first instruction in source and check the assigned group
    * matches the expectation */
-  virtual void checkGroup(const char* source,
-                          const std::vector<int> expectedGroups,
-                          const char* extensions) = 0;
+  void checkGroup(const char* source, const char* triple,
+                  const char* extensions,
+                  const std::vector<int> expectedGroups);
 
   /** Get the value of an architectural register. */
   template <typename T>

@@ -7,19 +7,19 @@ using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::aarch64;
 
 void AArch64RegressionTest::run(const char* source) {
-  // Initialise LLVM
-  LLVMInitializeAArch64TargetInfo();
-  LLVMInitializeAArch64TargetMC();
-  LLVMInitializeAArch64AsmParser();
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString();
 
-  const char* subtargetFeatures;
-#if SIMENG_LLVM_VERSION < 14
-  subtargetFeatures = "+sve,+lse";
-#else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
-#endif
+  RegressionTest::run(source, "aarch64", subtargetFeatures.c_str());
+}
 
-  RegressionTest::run(source, "aarch64", subtargetFeatures);
+void AArch64RegressionTest::checkGroup(const char* source,
+                                       const std::vector<int> expectedGroups) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString();
+
+  RegressionTest::checkGroup(source, "aarch64", subtargetFeatures.c_str(),
+                             expectedGroups);
 }
 
 void AArch64RegressionTest::generateConfig() const {
@@ -85,34 +85,4 @@ bool AArch64RegressionTest::getCarryFlag() const {
 
 bool AArch64RegressionTest::getOverflowFlag() const {
   return (getNZCV() >> 0) & 1;
-}
-
-void AArch64RegressionTest::checkGroup(const char* source,
-                                       const std::vector<int> expectedGroups,
-                                       const char* extensions) {
-  // Initialise LLVM
-  LLVMInitializeAArch64TargetInfo();
-  LLVMInitializeAArch64TargetMC();
-  LLVMInitializeAArch64AsmParser();
-
-  const char* subtargetFeatures;
-#if SIMENG_LLVM_VERSION < 14
-  subtargetFeatures = "+sve,+lse";
-#else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
-#endif
-
-  RegressionTest::createArchitecture(source, "aarch64", subtargetFeatures);
-
-  MacroOp macroOp;
-  architecture_->predecode(code_, 4, 0, macroOp);
-
-  // Check that there is one expectation group per micro-op
-  EXPECT_EQ(macroOp.size(), expectedGroups.size());
-
-  // Check the assigned and expected group for each micro-op match
-  for (size_t i = 0; i < macroOp.size(); i++) {
-    auto group = macroOp[i]->getGroup();
-    EXPECT_EQ(group, expectedGroups[i]);
-  }
 }

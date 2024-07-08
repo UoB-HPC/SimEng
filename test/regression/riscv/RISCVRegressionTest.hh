@@ -58,12 +58,12 @@ inline std::string paramToString(
  * are appended to the source to ensure that the program will terminate with
  * an unallocated instruction encoding exception instead of running into the
  * heap. */
-#define RUN_RISCV(source)                             \
-  {                                                   \
-    std::string sourceWithTerminator = source;        \
-    sourceWithTerminator += "\n.word 0";              \
-    run(sourceWithTerminator.c_str(), "+m,+a,+f,+d"); \
-  }                                                   \
+#define RUN_RISCV(source)                      \
+  {                                            \
+    std::string sourceWithTerminator = source; \
+    sourceWithTerminator += "\n.word 0";       \
+    run(sourceWithTerminator.c_str(), false);  \
+  }                                            \
   if (HasFatalFailure()) return
 
 /** A helper macro to run a snippet of RISC-V assembly code, returning from
@@ -73,12 +73,12 @@ inline std::string paramToString(
  * specifically targets the compressed extension allowing for the RUN_RISCV
  * macro to ignore it, otherwise LLVM eagerly emits compressed instructions for
  * non-compressed assembly. */
-#define RUN_RISCV_COMP(source)                           \
-  {                                                      \
-    std::string sourceWithTerminator = source;           \
-    sourceWithTerminator += "\n.word 0";                 \
-    run(sourceWithTerminator.c_str(), "+m,+a,+f,+d,+c"); \
-  }                                                      \
+#define RUN_RISCV_COMP(source)                 \
+  {                                            \
+    std::string sourceWithTerminator = source; \
+    sourceWithTerminator += "\n.word 0";       \
+    run(sourceWithTerminator.c_str(), true);   \
+  }                                            \
   if (HasFatalFailure()) return
 
 /** A helper macro to predecode the first instruction in a snippet of RISC-V
@@ -88,12 +88,28 @@ inline std::string paramToString(
  * program will terminate with an unallocated instruction encoding exception
  * instead of running into the heap.
  */
-#define EXPECT_GROUP(source, ...)                                              \
-  {                                                                            \
-    std::string sourceWithTerminator = source;                                 \
-    sourceWithTerminator += "\n.word 0";                                       \
-    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, "+m,+a,+f,+d,+c"); \
-  }                                                                            \
+#define EXPECT_GROUP(source, ...)                                   \
+  {                                                                 \
+    std::string sourceWithTerminator = source;                      \
+    sourceWithTerminator += "\n.word 0";                            \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, false); \
+  }                                                                 \
+  if (HasFatalFailure()) return
+
+/** A helper macro to predecode the first instruction in a snippet of RISC-V
+ * assembly code and check the assigned group(s) for each micro-op matches the
+ * expected group(s). Returns from the calling function if a fatal error occurs.
+ * Four bytes containing zeros are appended to the source to ensure that the
+ * program will terminate with an unallocated instruction encoding exception
+ * instead of running into the heap. This specifically targets the compressed
+ * extension allowing for the EXPECT_GROUP macro to ignore it, otherwise LLVM
+ * eagerly emits compressed instructions for non-compressed assembly. */
+#define EXPECT_GROUP_COMP(source, ...)                             \
+  {                                                                \
+    std::string sourceWithTerminator = source;                     \
+    sourceWithTerminator += "\n.word 0";                           \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}, true); \
+  }                                                                \
   if (HasFatalFailure()) return
 
 /** The test fixture for all RISC-V regression tests. */
@@ -102,12 +118,12 @@ class RISCVRegressionTest : public RegressionTest {
   virtual ~RISCVRegressionTest() {}
 
   /** Run the assembly code in `source`. */
-  void run(const char* source, const char* extensions);
+  void run(const char* source, bool compressed);
 
   /** Run the first instruction in source through predecode and check the
    * groups. */
   void checkGroup(const char* source, const std::vector<int> expectedGroups,
-                  const char* extensions) override;
+                  bool compressed);
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
@@ -115,6 +131,23 @@ class RISCVRegressionTest : public RegressionTest {
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const override;
+
+  /** Initialise LLVM */
+  void initialiseLLVM() {
+    LLVMInitializeRISCVTargetInfo();
+    LLVMInitializeRISCVTargetMC();
+    LLVMInitializeRISCVAsmParser();
+  }
+
+  /** Get subtarget feature string. Use compressed instructions only if
+   * requested */
+  std::string getSubtargetFeaturesString(bool compressed) {
+    std::string subtargetFeatures = "+m,+a,+f,+d";
+    if (compressed) {
+      subtargetFeatures.append(",+c");
+    }
+    return subtargetFeatures;
+  }
 
   /** Get the value of a general purpose register. */
   template <typename T>

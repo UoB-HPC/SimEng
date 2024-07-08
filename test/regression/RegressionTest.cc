@@ -175,6 +175,24 @@ void RegressionTest::run(const char* source, const char* triple,
   programFinished_ = true;
 }
 
+void RegressionTest::checkGroup(const char* source, const char* triple,
+                                const char* extensions,
+                                const std::vector<int> expectedGroups) {
+  createArchitecture(source, triple, extensions);
+
+  std::vector<std::shared_ptr<simeng::Instruction>> macroOp;
+  architecture_->predecode(code_, 4, 0, macroOp);
+
+  // Check that there is one expectation group per micro-op
+  EXPECT_EQ(macroOp.size(), expectedGroups.size());
+
+  // Check the assigned and expected group for each micro-op match
+  for (size_t i = 0; i < macroOp.size(); i++) {
+    auto group = macroOp[i]->getGroup();
+    EXPECT_EQ(group, expectedGroups[i]);
+  }
+}
+
 void RegressionTest::assemble(const char* source, const char* triple,
                               const char* extensions) {
   // Get LLVM target

@@ -6,13 +6,21 @@
 using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::riscv;
 
-void RISCVRegressionTest::run(const char* source, const char* extensions) {
-  // Initialise LLVM
-  LLVMInitializeRISCVTargetInfo();
-  LLVMInitializeRISCVTargetMC();
-  LLVMInitializeRISCVAsmParser();
+void RISCVRegressionTest::run(const char* source, bool compressed) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString(compressed);
 
-  RegressionTest::run(source, "riscv64", extensions);
+  RegressionTest::run(source, "riscv64", subtargetFeatures.c_str());
+}
+
+void RISCVRegressionTest::checkGroup(const char* source,
+                                     const std::vector<int> expectedGroups,
+                                     bool compressed) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString(compressed);
+
+  RegressionTest::checkGroup(source, "riscv64", subtargetFeatures.c_str(),
+                             expectedGroups);
 }
 
 void RISCVRegressionTest::generateConfig() const {
@@ -61,27 +69,4 @@ RISCVRegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
-}
-
-void RISCVRegressionTest::checkGroup(const char* source,
-                                     const std::vector<int> expectedGroups,
-                                     const char* extensions) {
-  // Initialise LLVM
-  LLVMInitializeRISCVTargetInfo();
-  LLVMInitializeRISCVTargetMC();
-  LLVMInitializeRISCVAsmParser();
-
-  RegressionTest::createArchitecture(source, "riscv64", extensions);
-
-  MacroOp macroOp;
-  architecture_->predecode(code_, 4, 0, macroOp);
-
-  // Check that there is one expectation group per micro-op
-  EXPECT_EQ(macroOp.size(), expectedGroups.size());
-
-  // Check the assigned and expected group for each micro-op match
-  for (size_t i = 0; i < macroOp.size(); i++) {
-    auto group = macroOp[i]->getGroup();
-    EXPECT_EQ(group, expectedGroups[i]);
-  }
 }
