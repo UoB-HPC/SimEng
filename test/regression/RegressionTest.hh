@@ -88,10 +88,6 @@ class RegressionTest
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
-  // TODO could make this none virtual (prevent AArch64 from needing to pass
-  // empty extensions param), but this forces all ISA's to implement it which is
-  // probably preferable
-
   /** Predecode the first instruction in source and check the assigned group
    * matches the expectation */
   void checkGroup(const char* source, const char* triple,
