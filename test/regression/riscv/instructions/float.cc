@@ -3,6 +3,7 @@
 namespace {
 
 using InstFloat = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 static constexpr uint64_t boxedPositiveNan = 0xffffffff7fc00000;
 
@@ -31,6 +32,8 @@ TEST_P(InstFloat, FLD) {
   EXPECT_EQ(getFPRegister<double>(1), 123.456);
   EXPECT_EQ(getFPRegister<double>(2), -0.00032);
   EXPECT_EQ(getFPRegister<double>(3), 123456);
+
+  EXPECT_GROUP(R"(fld ft3, 24(a0))", LOAD_FLOAT);
 }
 
 TEST_P(InstFloat, FLW) {
@@ -70,6 +73,8 @@ TEST_P(InstFloat, FLW) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffff42f6e979);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffb9a7c5ac);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0xffffffff47f12000);
+
+  EXPECT_GROUP(R"( flw ft3, 12(a0))", LOAD_FLOAT);
 }
 
 TEST_P(InstFloat, FSD) {
@@ -107,6 +112,8 @@ TEST_P(InstFloat, FSD) {
   EXPECT_EQ(getMemoryValue<double>(72), -0.00032);
   EXPECT_EQ(getMemoryValue<double>(80), 123.456);
   EXPECT_EQ(getMemoryValue<double>(88), 1.0);
+
+  EXPECT_GROUP(R"(fsd ft0, 24(a0))", STORE_FLOAT);
 }
 
 TEST_P(InstFloat, FSW) {
@@ -146,6 +153,8 @@ TEST_P(InstFloat, FSW) {
   EXPECT_EQ(getMemoryValue<float>(68), (float)-0.00032);
   EXPECT_EQ(getMemoryValue<float>(72), (float)123.456);
   EXPECT_EQ(getMemoryValue<float>(76), (float)1.0);
+
+  EXPECT_GROUP(R"(fsw ft0, 12(a0))", STORE_FLOAT);
 }
 
 TEST_P(InstFloat, FDIV_D) {
@@ -174,6 +183,8 @@ TEST_P(InstFloat, FDIV_D) {
   EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
   EXPECT_EQ(getFPRegister<double>(16), (double)999.212341 / (double)4.52432537);
   EXPECT_EQ(getFPRegister<double>(0), (double)999.212341 / (double)-3.78900003);
+
+  EXPECT_GROUP(R"(fdiv.d ft0, fa5, fa4)", FLOAT_DIV_OR_SQRT);
 }
 
 TEST_P(InstFloat, FDIV_S) {
@@ -226,6 +237,8 @@ TEST_P(InstFloat, FDIV_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fdiv.s ft0, fa5, fa4)", FLOAT_DIV_OR_SQRT);
 }
 
 TEST_P(InstFloat, FMUL_D) {
@@ -254,6 +267,8 @@ TEST_P(InstFloat, FMUL_D) {
   EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
   EXPECT_EQ(getFPRegister<double>(16), (double)999.212341 * (double)4.52432537);
   EXPECT_EQ(getFPRegister<double>(0), (double)999.212341 * (double)-3.78900003);
+
+  EXPECT_GROUP(R"(fmul.d ft0, fa5, fa4)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FMUL_S) {
@@ -307,6 +322,8 @@ TEST_P(InstFloat, FMUL_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fmul.s ft0, fa5, fa4)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FCVT_D_L) {
@@ -325,6 +342,8 @@ TEST_P(InstFloat, FCVT_D_L) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0x405EC00000000000);
   EXPECT_EQ(getFPRegister<double>(1), (double)-1);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xBFF0000000000000);
+
+  EXPECT_GROUP(R"(fcvt.d.l ft1, t1)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_D_W) {
@@ -348,6 +367,8 @@ TEST_P(InstFloat, FCVT_D_W) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xBFF0000000000000);
   EXPECT_EQ(getFPRegister<double>(2), (double)268435455);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x41AFFFFFFE000000);
+
+  EXPECT_GROUP(R"(fcvt.d.w ft1, t1)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_S_L) {
@@ -371,6 +392,8 @@ TEST_P(InstFloat, FCVT_S_L) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFFbf800000);
   EXPECT_EQ(getFPRegister<float>(2), (float)-4026531841);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFFCF700000);
+
+  EXPECT_GROUP(R"(fcvt.s.l ft1, t1)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_S_W) {
@@ -394,6 +417,8 @@ TEST_P(InstFloat, FCVT_S_W) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFFbf800000);
   EXPECT_EQ(getFPRegister<float>(2), (float)268435455);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF4d800000);
+
+  EXPECT_GROUP(R"(fcvt.s.w ft1, t1)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_W_D) {
@@ -434,6 +459,8 @@ TEST_P(InstFloat, FCVT_W_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
+
+  EXPECT_GROUP(R"(fcvt.w.d t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_W_S) {
@@ -496,6 +523,8 @@ TEST_P(InstFloat, FCVT_W_S) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6),
             pow(2, 31) - 1);  // Expected result from spec
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x000000007fffffff);
+
+  EXPECT_GROUP(R"(fcvt.w.s t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_L_D) {
@@ -532,6 +561,8 @@ TEST_P(InstFloat, FCVT_L_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x7FFFFFFFFFFFFFFF);
+
+  EXPECT_GROUP(R"(fcvt.l.d t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_L_S) {
@@ -593,6 +624,8 @@ TEST_P(InstFloat, FCVT_L_S) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6),
             (uint64_t)pow(2, 63) - 1);  // Expected result from spec
+
+  EXPECT_GROUP(R"(fcvt.l.s t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_LU_D) {
@@ -632,6 +665,8 @@ TEST_P(InstFloat, FCVT_LU_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+
+  EXPECT_GROUP(R"(fcvt.lu.d t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_WU_D) {
@@ -671,6 +706,8 @@ TEST_P(InstFloat, FCVT_WU_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+
+  EXPECT_GROUP(R"(fcvt.wu.d t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_LU_S) {
@@ -735,6 +772,8 @@ TEST_P(InstFloat, FCVT_LU_S) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000000001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6),
             0xFFFFFFFFFFFFFFFF);  // Expected result from spec
+
+  EXPECT_GROUP(R"(fcvt.lu.s t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_WU_S) {
@@ -800,6 +839,8 @@ TEST_P(InstFloat, FCVT_WU_S) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6),
             pow(2, 32) - 1);  // Expected result from spec
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFF);
+
+  EXPECT_GROUP(R"(fcvt.wu.s t0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_D_WU) {
@@ -823,6 +864,8 @@ TEST_P(InstFloat, FCVT_D_WU) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0x41EFFFFFFFE00000);
   EXPECT_EQ(getFPRegister<double>(2), (double)268435455);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x41AFFFFFFE000000);
+
+  EXPECT_GROUP(R"(fcvt.d.wu ft0, t0)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_S_WU) {
@@ -846,6 +889,8 @@ TEST_P(InstFloat, FCVT_S_WU) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF4F800000);
   EXPECT_EQ(getFPRegister<float>(2), (float)268435456);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF4D800000);
+
+  EXPECT_GROUP(R"(fcvt.s.wu ft0, t0)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_D_LU) {
@@ -869,6 +914,8 @@ TEST_P(InstFloat, FCVT_D_LU) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0x43F0000000000000);
   EXPECT_EQ(getFPRegister<double>(2), (double)1.8446744069683019776e+19);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x43EFFFFFFFE20000);
+
+  EXPECT_GROUP(R"(fcvt.d.lu ft0, t0)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_S_LU) {
@@ -892,6 +939,8 @@ TEST_P(InstFloat, FCVT_S_LU) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF5F800000);
   EXPECT_EQ(getFPRegister<float>(2), (float)1.84467440737e+19);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF5F800000);
+
+  EXPECT_GROUP(R"(fcvt.s.lu ft0, t0)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FMADD_D) {
@@ -920,6 +969,8 @@ TEST_P(InstFloat, FMADD_D) {
   EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
   EXPECT_EQ(getFPRegister<double>(16), (4.52432537 * 999.212341) + -3.78900003);
   EXPECT_EQ(getFPRegister<double>(17), (999.212341 * -3.78900003) + 4.52432537);
+
+  EXPECT_GROUP(R"(fmadd.d fa6, fa3, fa5, fa4)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FMADD_S) {
@@ -979,6 +1030,8 @@ TEST_P(InstFloat, FMADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fmadd.s fa7, fa4, fa3, fa5)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FNMSUB_D) {
@@ -1006,6 +1059,8 @@ TEST_P(InstFloat, FNMSUB_D) {
   EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
   EXPECT_EQ(getFPRegister<double>(16),
             -(999.212341 * -3.78900003) + 4.52432537);
+
+  EXPECT_GROUP(R"(fnmsub.d fa6, fa5, fa4, fa3)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FNMSUB_S) {
@@ -1062,6 +1117,8 @@ TEST_P(InstFloat, FNMSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fnmsub.s fa6, fa5, fa4, fa3)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FMSUB_S) {
@@ -1121,6 +1178,8 @@ TEST_P(InstFloat, FMSUB_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fmsub.s fa7, fa4, fa3, fa5)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FMSUB_D) {
@@ -1153,6 +1212,8 @@ TEST_P(InstFloat, FMSUB_D) {
             (double)-3790.5399153953703716979362070560455322265625);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xC0AD9D146FCA6B72);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xC08FC2D70F769B06);
+
+  EXPECT_GROUP(R"(fmsub.d fa7, fa4, fa3, fa5)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FNMADD_S) {
@@ -1212,6 +1273,8 @@ TEST_P(InstFloat, FNMADD_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(17), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(18), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fnmadd.s fa7, fa4, fa3, fa5)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FNMADD_D) {
@@ -1244,6 +1307,8 @@ TEST_P(InstFloat, FNMADD_D) {
             (double)3781.4912646553702870733104646205902099609375);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0x40AD8AFB870A78FE);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xC08EB08EB0368E94);
+
+  EXPECT_GROUP(R"(fnmadd.d fa6, fa5, fa4, fa3)", FLOAT_MUL);
 }
 
 TEST_P(InstFloat, FCVT_D_S) {
@@ -1308,6 +1373,8 @@ TEST_P(InstFloat, FCVT_D_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0x3FF0000000000000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0x7FF8000000000000);
+
+  EXPECT_GROUP(R"(fcvt.d.s ft0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FCVT_S_D) {
@@ -1346,6 +1413,8 @@ TEST_P(InstFloat, FCVT_S_D) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFFc0727efa);
   EXPECT_EQ(getFPRegister<float>(2), (float)999.212341);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF4479cd97);
+
+  EXPECT_GROUP(R"(fcvt.s.d ft0, fa3)", FLOAT_SIMPLE_CVT);
 }
 
 TEST_P(InstFloat, FSGNJ_D) {
@@ -1397,6 +1466,9 @@ TEST_P(InstFloat, FSGNJ_D) {
   EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<double>(2), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<double>(3), (double)4.52432537);
+
+  EXPECT_GROUP(R"(fsgnj.d fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fmv.d ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FSGNJ_S) {
@@ -1476,6 +1548,9 @@ TEST_P(InstFloat, FSGNJ_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffffbf800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffff3f800000);
+
+  EXPECT_GROUP(R"(fsgnj.s fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fmv.s ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FSGNJX_D) {
@@ -1527,6 +1602,9 @@ TEST_P(InstFloat, FSGNJX_D) {
   EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<double>(2), (double)3.78900003);
   EXPECT_EQ(getFPRegister<double>(3), (double)4.52432537);
+
+  EXPECT_GROUP(R"(fsgnjx.d fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fabs.d ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FSGNJX_S) {
@@ -1604,6 +1682,9 @@ TEST_P(InstFloat, FSGNJX_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0xffffffffffc00000);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
+
+  EXPECT_GROUP(R"(fsgnjx.s fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fabs.s ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FSGNJN_D) {
@@ -1656,6 +1737,9 @@ TEST_P(InstFloat, FSGNJN_D) {
   EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
   EXPECT_EQ(getFPRegister<double>(2), (double)3.78900003);
   EXPECT_EQ(getFPRegister<double>(3), (double)-4.52432537);
+
+  EXPECT_GROUP(R"(fsgnjn.d fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fneg.d ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FSGNJN_S) {
@@ -1734,6 +1818,9 @@ TEST_P(InstFloat, FSGNJN_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(0), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(1), boxedPositiveNan);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0xffffffffbf800000);
+
+  EXPECT_GROUP(R"(fsgnjn.s fa6, fa4, fa5)", FLOAT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(fneg.s ft2, fa4)", FLOAT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstFloat, FADD_S) {
@@ -1789,6 +1876,8 @@ TEST_P(InstFloat, FADD_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff40000000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fadd.s ft0, fa4, fa3)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FADD_D) {
@@ -1815,6 +1904,8 @@ TEST_P(InstFloat, FADD_D) {
 
   EXPECT_EQ(getFPRegister<double>(4), 124.456);
   EXPECT_EQ(getFPRegister<double>(5), 123.456 - 0.00032);
+
+  EXPECT_GROUP(R"(fadd.d ft4, ft0, ft1)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FSUB_D) {
@@ -1844,6 +1935,8 @@ TEST_P(InstFloat, FSUB_D) {
 
   EXPECT_EQ(getFPRegister<double>(0), (double)-8.3133254);
   EXPECT_EQ(getFPRegister<double>(1), (double)8.3133254);
+
+  EXPECT_GROUP(R"(fsub.d ft0, fa4, fa3)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FSUB_S) {
@@ -1899,6 +1992,8 @@ TEST_P(InstFloat, FSUB_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff00000000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fsub.s ft0, fa4, fa3)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FSQRT_D) {
@@ -1933,6 +2028,8 @@ TEST_P(InstFloat, FSQRT_D) {
   EXPECT_EQ(getFPRegister<uint64_t>(1), 0x7FF8000000000000);  // NaN
   EXPECT_EQ(getFPRegister<double>(2), (double)0.067289611417595679432324118352);
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x3FB139E458662CD6);
+
+  EXPECT_GROUP(R"(fsqrt.d ft0, fa5)", FLOAT_DIV_OR_SQRT);
 }
 
 TEST_P(InstFloat, FSQRT_S) {
@@ -1991,6 +2088,8 @@ TEST_P(InstFloat, FSQRT_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fsqrt.s ft0, fa5)", FLOAT_DIV_OR_SQRT);
 }
 
 TEST_P(InstFloat, FMV_X_D) {
@@ -2022,6 +2121,8 @@ TEST_P(InstFloat, FMV_X_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x401218E8BFF273D0);
   EXPECT_EQ(getGeneralRegister<double>(6), (double)-3.78900003);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xC00E4FDF3F6B24E7);
+
+  EXPECT_GROUP(R"(fmv.x.d t0, fa3)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FMV_X_W) {
@@ -2055,6 +2156,8 @@ TEST_P(InstFloat, FMV_X_W) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x000000004090c746);
   EXPECT_EQ(getGeneralRegister<float>(6), (float)-3.78900003);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xffffffffc0727efa);
+
+  EXPECT_GROUP(R"(fmv.x.w t0, fa3)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FMV_D_X) {
@@ -2089,6 +2192,8 @@ TEST_P(InstFloat, FMV_D_X) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x401218E8BFF273D0);
   EXPECT_EQ(getGeneralRegister<double>(6), (double)-3.78900003);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xC00E4FDF3F6B24E7);
+
+  EXPECT_GROUP(R"(fmv.d.x fa4, t0)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FMV_W_X) {
@@ -2123,6 +2228,8 @@ TEST_P(InstFloat, FMV_W_X) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x000000004090c746);
   EXPECT_EQ(getGeneralRegister<float>(6), (float)-3.78900003);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xffffffffc0727efa);
+
+  EXPECT_GROUP(R"(fmv.w.x fa4, t0)", FLOAT_SIMPLE_ARTH);
 }
 
 TEST_P(InstFloat, FEQ_D) {
@@ -2156,6 +2263,8 @@ TEST_P(InstFloat, FEQ_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+
+  EXPECT_GROUP(R"(feq.d t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FEQ_S) {
@@ -2213,6 +2322,8 @@ TEST_P(InstFloat, FEQ_S) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
+
+  EXPECT_GROUP(R"(feq.s t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FLT_D) {
@@ -2248,6 +2359,8 @@ TEST_P(InstFloat, FLT_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
+
+  EXPECT_GROUP(R"(flt.d t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FLT_S) {
@@ -2307,6 +2420,8 @@ TEST_P(InstFloat, FLT_S) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
+
+  EXPECT_GROUP(R"(flt.s t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FLE_D) {
@@ -2342,6 +2457,8 @@ TEST_P(InstFloat, FLE_D) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
+
+  EXPECT_GROUP(R"(fle.d t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FLE_S) {
@@ -2401,6 +2518,8 @@ TEST_P(InstFloat, FLE_S) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0);
+
+  EXPECT_GROUP(R"(fle.s t0, fa3, fa3)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FMIN_D) {
@@ -2444,6 +2563,8 @@ TEST_P(InstFloat, FMIN_D) {
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0x8000000000000000);
   EXPECT_EQ(getFPRegister<double>(4), (double)-0);
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0x8000000000000000);
+
+  EXPECT_GROUP(R"(fmin.d fa0, fa3, fa4)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FMIN_S) {
@@ -2510,6 +2631,8 @@ TEST_P(InstFloat, FMIN_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fmin.s fa0, fa3, fa4)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FMAX_D) {
@@ -2551,6 +2674,8 @@ TEST_P(InstFloat, FMAX_D) {
   EXPECT_EQ(getFPRegister<double>(3), (double)0);
   EXPECT_EQ(getFPRegister<uint64_t>(3), 0x0000000000000000);
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0x0000000000000000);
+
+  EXPECT_GROUP(R"(fmax.d fa0, fa3, fa4)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, FMAX_S) {
@@ -2618,6 +2743,8 @@ TEST_P(InstFloat, FMAX_S) {
 
   EXPECT_EQ(getFPRegister<uint64_t>(15), 0xffffffff3f800000);
   EXPECT_EQ(getFPRegister<uint64_t>(16), boxedPositiveNan);
+
+  EXPECT_GROUP(R"(fmax.s fa0, fa3, fa4)", FLOAT_SIMPLE_CMP);
 }
 
 TEST_P(InstFloat, RoundToNearest) {
