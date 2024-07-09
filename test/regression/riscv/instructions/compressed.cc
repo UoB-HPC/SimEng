@@ -3,6 +3,7 @@
 namespace {
 
 using InstCompressed = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstCompressed, lwsp) {
   //  Load word from mem[stack pointer + imm]
@@ -24,6 +25,8 @@ TEST_P(InstCompressed, lwsp) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x0000000012345678);
+
+  EXPECT_GROUP_COMP(R"(c.lwsp t4, 4(x2))", LOAD_INT);
 }
 
 TEST_P(InstCompressed, ldsp) {
@@ -47,6 +50,8 @@ TEST_P(InstCompressed, ldsp) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP_COMP(R"(c.ldsp t4, 8(x2))", LOAD_INT);
 }
 
 TEST_P(InstCompressed, fldsp) {
@@ -75,6 +80,8 @@ TEST_P(InstCompressed, fldsp) {
   EXPECT_EQ(getFPRegister<double>(1), 123.456);
   EXPECT_EQ(getFPRegister<double>(2), -0.00032);
   EXPECT_EQ(getFPRegister<double>(3), 123456);
+
+  EXPECT_GROUP_COMP(R"(c.fldsp ft3, 24(x2))", LOAD_FLOAT);
 }
 
 TEST_P(InstCompressed, swsp) {
@@ -92,6 +99,8 @@ TEST_P(InstCompressed, swsp) {
             0x000000AA);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()),
             0x15400AA000000AA);
+
+  EXPECT_GROUP_COMP(R"(c.swsp t6, 4(sp))", STORE_INT);
 }
 
 TEST_P(InstCompressed, sdsp) {
@@ -109,6 +118,8 @@ TEST_P(InstCompressed, sdsp) {
             0x00000000000000AA);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() + 8),
             0x00000000015400AA);
+
+  EXPECT_GROUP_COMP(R"(c.sdsp t6, 8(sp))", STORE_INT);
 }
 
 TEST_P(InstCompressed, fsdsp) {
@@ -128,6 +139,8 @@ TEST_P(InstCompressed, fsdsp) {
             0x00000000000000AA);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() + 8),
             0x00000000015400AA);
+
+  EXPECT_GROUP_COMP(R"(c.fsdsp f8, 8(sp))", STORE_FLOAT);
 }
 
 TEST_P(InstCompressed, lw) {
@@ -149,6 +162,8 @@ TEST_P(InstCompressed, lw) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0x0000000012345678);
+
+  EXPECT_GROUP_COMP(R"(c.lw x13, 4(x8))", LOAD_INT);
 }
 
 TEST_P(InstCompressed, ld) {
@@ -171,6 +186,8 @@ TEST_P(InstCompressed, ld) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(13), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP_COMP(R"(c.ld x13, 8(x8))", LOAD_INT);
 }
 
 TEST_P(InstCompressed, fld) {
@@ -197,6 +214,8 @@ TEST_P(InstCompressed, fld) {
   EXPECT_EQ(getFPRegister<double>(9), 123.456);
   EXPECT_EQ(getFPRegister<double>(10), -0.00032);
   EXPECT_EQ(getFPRegister<double>(11), 123456);
+
+  EXPECT_GROUP_COMP(R"(c.fld f11, 24(a0))", LOAD_FLOAT);
 }
 
 TEST_P(InstCompressed, sw) {
@@ -224,6 +243,8 @@ TEST_P(InstCompressed, sw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 32);
   EXPECT_EQ(getMemoryValue<uint64_t>(32), 0x015400AA000000AA);
   EXPECT_EQ(getMemoryValue<uint64_t>(36), 0x87654321015400AA);
+
+  EXPECT_GROUP_COMP(R"(c.sw x8, 4(a0))", STORE_INT);
 }
 
 TEST_P(InstCompressed, sd) {
@@ -251,6 +272,8 @@ TEST_P(InstCompressed, sd) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 32);
   EXPECT_EQ(getMemoryValue<uint64_t>(32), 0x00000000000000AA);
   EXPECT_EQ(getMemoryValue<uint64_t>(40), 0x00000000015400AA);
+
+  EXPECT_GROUP_COMP(R"(c.sd x8, 8(a0))", STORE_INT);
 }
 
 TEST_P(InstCompressed, fsd) {
@@ -289,6 +312,8 @@ TEST_P(InstCompressed, fsd) {
   EXPECT_EQ(getMemoryValue<double>(40), -0.00032);
   EXPECT_EQ(getMemoryValue<double>(48), 123.456);
   EXPECT_EQ(getMemoryValue<double>(56), 1.0);
+
+  EXPECT_GROUP_COMP(R"(c.fsd fa3, 0(a0))", STORE_FLOAT);
 }
 
 TEST_P(InstCompressed, j) {
@@ -313,6 +338,8 @@ TEST_P(InstCompressed, j) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 8);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 14);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+
+  EXPECT_GROUP_COMP(R"(c.j jump)", BRANCH);
 }
 
 TEST_P(InstCompressed, jr) {
@@ -326,6 +353,8 @@ TEST_P(InstCompressed, jr) {
     end:
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 5);
+
+  EXPECT_GROUP_COMP(R"(c.jr x9)", BRANCH);
 }
 
 TEST_P(InstCompressed, jalr) {
@@ -351,6 +380,8 @@ TEST_P(InstCompressed, jalr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 12);
+
+  EXPECT_GROUP_COMP(R"(c.jalr x8)", BRANCH);
 }
 
 TEST_P(InstCompressed, beqz) {
@@ -373,6 +404,8 @@ TEST_P(InstCompressed, beqz) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 10);
   EXPECT_EQ(getGeneralRegister<uint64_t>(11), 10);
+
+  EXPECT_GROUP_COMP(R"(c.beqz x9, b2)", BRANCH);
 }
 
 TEST_P(InstCompressed, bnez) {
@@ -393,6 +426,8 @@ TEST_P(InstCompressed, bnez) {
     addi x11, x11, 5
     b4:
   )");
+
+  EXPECT_GROUP_COMP(R"(c.bnez x9, b2)", BRANCH);
 }
 
 TEST_P(InstCompressed, li) {
@@ -408,6 +443,8 @@ TEST_P(InstCompressed, li) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(14), -32);
   EXPECT_EQ(getGeneralRegister<int64_t>(13), 31);
+
+  EXPECT_GROUP_COMP(R"(c.li a3, 31)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, lui) {
@@ -419,6 +456,8 @@ TEST_P(InstCompressed, lui) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4ull << 12);
+
+  EXPECT_GROUP_COMP(R"(c.lui t4, 0xFFFFC)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, addi) {
@@ -432,6 +471,8 @@ TEST_P(InstCompressed, addi) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 6u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 33u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+
+  EXPECT_GROUP_COMP(R"(c.addi zero, 16)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, addiw) {
@@ -445,6 +486,8 @@ TEST_P(InstCompressed, addiw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 24427626496);
   EXPECT_EQ(getGeneralRegister<int32_t>(30), -1342177285);
   EXPECT_EQ(getGeneralRegister<int64_t>(31), -5);
+
+  EXPECT_GROUP_COMP(R"(addiw t6, t2, -5)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, addi16sp) {
@@ -458,6 +501,8 @@ TEST_P(InstCompressed, addi16sp) {
             process_->getInitialStackPointer());
   EXPECT_EQ(getGeneralRegister<uint64_t>(9),
             process_->getInitialStackPointer() + 16);
+
+  EXPECT_GROUP_COMP(R"(mv x9, x2)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, addi4spn) {
@@ -470,6 +515,8 @@ TEST_P(InstCompressed, addi4spn) {
             process_->getInitialStackPointer() + 4);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9),
             process_->getInitialStackPointer() + 12);
+
+  EXPECT_GROUP_COMP(R"(c.addi4spn x9, x2, 12)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, slli) {
@@ -479,6 +526,8 @@ TEST_P(InstCompressed, slli) {
       c.slli t4, 5
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 192);
+
+  EXPECT_GROUP_COMP(R"(c.slli t4, 5)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstCompressed, srli) {
@@ -488,6 +537,8 @@ TEST_P(InstCompressed, srli) {
       c.srli x8, 61
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 7);
+
+  EXPECT_GROUP_COMP(R"(c.srli x8, 61)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstCompressed, srai) {
@@ -501,6 +552,8 @@ TEST_P(InstCompressed, srai) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), -2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 2);
+
+  EXPECT_GROUP_COMP(R"(c.srai x9, 1)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstCompressed, andi) {
@@ -514,6 +567,8 @@ TEST_P(InstCompressed, andi) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 1);
+
+  EXPECT_GROUP_COMP(R"(c.andi x9, -7)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstCompressed, mv) {
@@ -525,6 +580,8 @@ TEST_P(InstCompressed, mv) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 6u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 6u);
+
+  EXPECT_GROUP_COMP(R"(c.mv x8, x9)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, add) {
@@ -536,6 +593,8 @@ TEST_P(InstCompressed, add) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 9u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 6u);
+
+  EXPECT_GROUP_COMP(R"(c.add x8, x9)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, and) {
@@ -546,6 +605,8 @@ TEST_P(InstCompressed, and) {
     c.and x8, x9
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0001);
+
+  EXPECT_GROUP_COMP(R"(c.and x8, x9)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstCompressed, or) {
@@ -556,6 +617,8 @@ TEST_P(InstCompressed, or) {
     c.or x8, x9
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0111);
+
+  EXPECT_GROUP_COMP(R"(c.or x8, x9)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstCompressed, xor) {
@@ -566,6 +629,8 @@ TEST_P(InstCompressed, xor) {
     c.xor x8, x9
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0b0110);
+
+  EXPECT_GROUP_COMP(R"(c.xor x8, x9)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstCompressed, sub) {
@@ -579,6 +644,8 @@ TEST_P(InstCompressed, sub) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), -3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 3);
+
+  EXPECT_GROUP_COMP(R"(c.sub x9, x10)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, addw) {
@@ -594,6 +661,8 @@ TEST_P(InstCompressed, addw) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 9u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), -4);
+
+  EXPECT_GROUP_COMP(R"(c.addw x9, x11)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, subw) {
@@ -616,6 +685,8 @@ TEST_P(InstCompressed, subw) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(11), -2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0x0000000000000001);
+
+  EXPECT_GROUP_COMP(R"(c.subw x12, x11)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, nop) {
@@ -705,6 +776,8 @@ TEST_P(InstCompressed, nop) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(numTicks_, 6);  // 5 insns + 1 for unimplemented final insn
+
+  EXPECT_GROUP_COMP(R"(c.nop)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstCompressed, ebreak) {
@@ -719,6 +792,8 @@ TEST_P(InstCompressed, ebreak) {
       "exception\n[SimEng:ExceptionHandler]  Generated by instruction: "
       "\n[SimEng:ExceptionHandler]    0x0000000000000000: 02 90     c.ebreak";
   EXPECT_EQ(stdout_.substr(0, sizeof(err1) - 1), err1);
+
+  EXPECT_GROUP_COMP(R"(c.ebreak)", INT_SIMPLE_ARTH);
 }
 
 INSTANTIATE_TEST_SUITE_P(
