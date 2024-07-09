@@ -8,9 +8,9 @@ assignees: ''
 ---
 
 **Check List**
- [ ] I have selected the appropriate title prefix from the available options within `[NYI|ALIAS|SYSREG]`, and added a suitable title after this.
- [ ] The binary I am trying to run has been compiled statically for either RV64 or AArch64.
- [ ] The compiled binary is a Linux Elf file.
+ - [ ] I have selected the appropriate title prefix from the available options within `[NYI|ALIAS|SYSREG]`, and added a suitable title after this.
+ - [ ] The binary I am trying to run has been compiled statically for either RV64 or AArch64.
+ - [ ] The compiled binary is a Linux Elf file.
 
 **Binary Compilation Instructions**
 Provide a bullet list of how the binary in question was compiled, including all compiler flags used.
@@ -22,7 +22,7 @@ Provide a bullet list of all CMAKE options used. E.g. `-DCMAKE_BUILD_TYPE=Releas
 Provide the command line expression used to run SimEng e.g. `./simeng /path/to/configs/a64fx.yaml /path/to/myBinary.elf`
 
 **Console Printout**
-Please provide a copy of SimEng's console printout prior to its end-of-execution statistics Please do not include any binary specific output.
+Please provide a copy of SimEng's console printout prior to its end-of-execution statistics. Please do not include any binary specific output.
 E.g.
 ```bash
 ./simeng configs/a64fx.yaml myStaticBinary.elf 
