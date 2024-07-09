@@ -49,6 +49,12 @@ void generatePredicatedContiguousAddressBlocks(
 span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
   assert((isLoad() || isStoreAddress()) &&
          "generateAddresses called on non-load-or-store instruction");
+  // 0th bit of SVCR register determines if streaming-mode is enabled.
+  const bool SMenabled = architecture_.getSVCRval() & 1;
+  // When streaming mode is enabled, the architectural vector length goes from
+  // SVE's VL to SME's SVL.
+  const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
+                                     : architecture_.getVectorLength();
   if (isMicroOp_) {
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {
@@ -69,19 +75,27 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
+      case MicroOpcode::STR_ADDR_PRED: {
+        const uint64_t base = sourceValues_[0].get<uint64_t>();
+        const uint64_t offset = sourceValues_[1].get<uint64_t>();
+        const uint64_t* p = sourceValues_[2].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks(base + (offset * 8),
+                                                  partition_num, dataSize_,
+                                                  dataSize_, p, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       default:
         exceptionEncountered_ = true;
         exception_ = InstructionException::ExecutionNotYetImplemented;
         break;
     }
   } else {
-    // 0th bit of SVCR register determines if streaming-mode is enabled.
-    const bool SMenabled = architecture_.getSVCRval() & 1;
-    // When streaming mode is enabled, the architectural vector length goes from
-    // SVE's VL to SME's SVL.
-    const uint16_t VL_bits = SMenabled
-                                 ? architecture_.getStreamingVectorLength()
-                                 : architecture_.getVectorLength();
     switch (metadata_.opcode) {
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 4}});

@@ -466,20 +466,24 @@ void Instruction::decode() {
       if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
-        if (microOpcode_ != MicroOpcode::STR_DATA) {
+        if (microOpcode_ != MicroOpcode::STR_DATA &&
+            microOpcode_ != MicroOpcode::STR_DATA_PRED) {
           setInstructionType(InsnType::isStoreAddress);
         }
-        if (microOpcode_ != MicroOpcode::STR_ADDR) {
+        if (microOpcode_ != MicroOpcode::STR_ADDR &&
+            microOpcode_ != MicroOpcode::STR_ADDR_PRED) {
           setInstructionType(InsnType::isStoreData);
         }
       } else {
         setInstructionType(InsnType::isLoad);
       }
     } else {
-      if (microOpcode_ != MicroOpcode::STR_DATA) {
+      if (microOpcode_ != MicroOpcode::STR_DATA &&
+          microOpcode_ != MicroOpcode::STR_DATA_PRED) {
         setInstructionType(InsnType::isStoreAddress);
       }
-      if (microOpcode_ != MicroOpcode::STR_ADDR) {
+      if (microOpcode_ != MicroOpcode::STR_ADDR &&
+          microOpcode_ != MicroOpcode::STR_ADDR_PRED) {
         setInstructionType(InsnType::isStoreData);
       }
     }

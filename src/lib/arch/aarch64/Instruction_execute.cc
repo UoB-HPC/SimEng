@@ -103,6 +103,12 @@ void Instruction::execute() {
         memoryData_[0] = sourceValues_[0];
         break;
       }
+      case MicroOpcode::STR_DATA_PRED: {
+        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        break;
+      }
       default:
         return executionNYI();
     }
