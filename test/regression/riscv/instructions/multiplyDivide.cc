@@ -3,6 +3,7 @@
 namespace {
 
 using InstMulDiv = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstMulDiv, mul) {
   initialHeapData_.resize(16);
@@ -34,6 +35,8 @@ TEST_P(InstMulDiv, mul) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(18), 0x80000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(19),
             0x8000000000000000);  // 2^31 * 2^32 = 2^63 (NO overflow)
+
+  EXPECT_GROUP(R"(mul s3, s2, t2)", INT_MUL);
 }
 
 // TODO NYI, tests should fail
@@ -54,6 +57,8 @@ TEST_P(InstMulDiv, mul) {
 //  EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
 //  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
 //  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 1);
+//
+// EXPECT_GROUP(R"()", INT_MUL);
 //}
 
 TEST_P(InstMulDiv, mulhu) {
@@ -71,6 +76,8 @@ TEST_P(InstMulDiv, mulhu) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFE);
+
+  EXPECT_GROUP(R"(mulhu t4, t6, t6)", INT_MUL);
 }
 
 // TODO NYI, tests should fail
@@ -89,6 +96,8 @@ TEST_P(InstMulDiv, mulhu) {
 //  )");
 //  EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
 //  EXPECT_EQ(getGeneralRegister<uint64_t>(29), -1);
+//
+//  EXPECT_GROUP(R"()", INT_MUL);
 //}
 
 TEST_P(InstMulDiv, mulw) {
@@ -106,12 +115,13 @@ TEST_P(InstMulDiv, mulw) {
     li t4, 6
     slli t3, t5, 30
     mulw t2, t4, t3
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 1 << 30);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFF80000000);
+
+  EXPECT_GROUP(R"(mulw t2, t4, t3)", INT_MUL);
 }
 
 TEST_P(InstMulDiv, div) {
@@ -136,7 +146,6 @@ TEST_P(InstMulDiv, div) {
     div t2, s2, s3
     ld t1, 8(a0)
     div s4, t1, t6
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1);  //-1/-1 = 1
@@ -147,6 +156,8 @@ TEST_P(InstMulDiv, div) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x8000000000000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20),
             0x8000000000000000);  // division overflow
+
+  EXPECT_GROUP(R"(div s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, divw) {
@@ -181,6 +192,8 @@ TEST_P(InstMulDiv, divw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFF80000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20),
             0xFFFFFFFF80000000);  // division overflow
+
+  EXPECT_GROUP(R"(divw s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, divu) {
@@ -216,6 +229,8 @@ TEST_P(InstMulDiv, divu) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 8);   // 16/2 = 8
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x8000000000000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);  // big / max pos = 0
+
+  EXPECT_GROUP(R"(divu s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, divuw) {
@@ -251,6 +266,8 @@ TEST_P(InstMulDiv, divuw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 8);   // 16/2 = 8
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFF80000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);  // // big pos / max pos = 0
+
+  EXPECT_GROUP(R"(divuw s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, rem) {
@@ -287,6 +304,8 @@ TEST_P(InstMulDiv, rem) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), -2);  // -16/-7 = -2
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x8000000000000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);  // max pos/-1 = 0
+
+  EXPECT_GROUP(R"(rem s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, remw) {
@@ -327,6 +346,8 @@ TEST_P(InstMulDiv, remw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), -2);  // -16/-7 = 2
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFF80000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20), 0);  // big pos/max pos = 0
+
+  EXPECT_GROUP(R"(remw s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, remu) {
@@ -364,6 +385,8 @@ TEST_P(InstMulDiv, remu) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x8000000000000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20),
             0x8000000000000000);  // big pos/max pos = big pos
+
+  EXPECT_GROUP(R"(remu s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 TEST_P(InstMulDiv, remuw) {
@@ -405,6 +428,8 @@ TEST_P(InstMulDiv, remuw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFF80000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(20),
             0xFFFFFFFF80000000);  // big pos/max pos = 0
+
+  EXPECT_GROUP(R"(remuw s4, t1, t6)", INT_DIV_OR_SQRT);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstMulDiv,
