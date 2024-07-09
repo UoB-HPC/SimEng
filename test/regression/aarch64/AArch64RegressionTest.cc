@@ -3,7 +3,6 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
-using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::aarch64;
 
 void AArch64RegressionTest::run(const char* source) {

@@ -3,7 +3,6 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
-using MacroOp = std::vector<std::shared_ptr<simeng::Instruction>>;
 using namespace simeng::arch::riscv;
 
 void RISCVRegressionTest::run(const char* source, bool compressed) {
