@@ -3,6 +3,7 @@
 namespace {
 
 using InstArithmetic = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstArithmetic, sll) {
   RUN_RISCV(R"(
@@ -13,6 +14,9 @@ TEST_P(InstArithmetic, sll) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 48);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 192);
+
+  EXPECT_GROUP(R"(sll t5, t4, t3)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(slli t6, t4, 5)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, sllw) {
@@ -42,6 +46,9 @@ TEST_P(InstArithmetic, sllw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7),
             6);  // If shamt >= 32 don't change operand as per qemu
+
+  EXPECT_GROUP(R"(sllw t5, t4, t3)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(slliw t1, t4, 31)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, srl) {
@@ -53,6 +60,9 @@ TEST_P(InstArithmetic, srl) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 15);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 7);
+
+  EXPECT_GROUP(R"(srl t5, t4, t3)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(srli t6, t4, 61)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, srlw) {
@@ -70,6 +80,9 @@ TEST_P(InstArithmetic, srlw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31),
             0b01111111111111111111111111111100);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), -7);
+
+  EXPECT_GROUP(R"(srlw t1, t4, t3)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(srliw t6, t4, 1)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, sra) {
@@ -86,6 +99,9 @@ TEST_P(InstArithmetic, sra) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 2);
+
+  EXPECT_GROUP(R"(sra t5, t4, t3)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(srai t6, t4, 1)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, sraw) {
@@ -113,6 +129,9 @@ TEST_P(InstArithmetic, sraw) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), -1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 1);
+
+  EXPECT_GROUP(R"(sraw t5, t5, t2)", INT_SIMPLE_SHIFT);
+  EXPECT_GROUP(R"(sraiw t6, t6, 30)", INT_SIMPLE_SHIFT);
 }
 
 TEST_P(InstArithmetic, add) {
@@ -126,6 +145,9 @@ TEST_P(InstArithmetic, add) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 6u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 9u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+
+  EXPECT_GROUP(R"(add t5, t3, t4)", INT_SIMPLE_ARTH);
+  EXPECT_GROUP(R"(addi t4, t4, 6)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, addw) {
@@ -140,6 +162,8 @@ TEST_P(InstArithmetic, addw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 6u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 9u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -4);
+
+  EXPECT_GROUP(R"(addw t5, t3, t4)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, addiw) {
@@ -154,6 +178,8 @@ TEST_P(InstArithmetic, addiw) {
   EXPECT_EQ(getGeneralRegister<int64_t>(29), -5);
   EXPECT_EQ(getGeneralRegister<int32_t>(30), -1342177285);
   EXPECT_EQ(getGeneralRegister<int64_t>(31), -5);
+
+  EXPECT_GROUP(R"(addiw t5, t3, -5)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, sub) {
@@ -165,6 +191,8 @@ TEST_P(InstArithmetic, sub) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), -3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 3);
+
+  EXPECT_GROUP(R"(sub t6, t4, t3)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, subw) {
@@ -185,6 +213,8 @@ TEST_P(InstArithmetic, subw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), -2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000000000001);
+
+  EXPECT_GROUP(R"(subw t1, t3, t4)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, lui) {
@@ -194,6 +224,8 @@ TEST_P(InstArithmetic, lui) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4ull << 12);
+
+  EXPECT_GROUP(R"(lui t3, 4)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, auipc) {
@@ -203,6 +235,8 @@ TEST_P(InstArithmetic, auipc) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), (-4ull << 12) + 4);
+
+  EXPECT_GROUP(R"(auipc t4, 1048572)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, xor) {
@@ -224,6 +258,10 @@ TEST_P(InstArithmetic, xor) {
       not t1, t3
     )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), -4);
+
+  EXPECT_GROUP(R"(xor t5, t3, t4)", INT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(xori t6, t5, 5)", INT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(not t1, t3)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstArithmetic, or) {
@@ -237,6 +275,9 @@ TEST_P(InstArithmetic, or) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0b0111);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0b1111);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), -5);
+
+  EXPECT_GROUP(R"(or t5, t3, t4)", INT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(ori t6, t5, 9)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstArithmetic, and) {
@@ -250,6 +291,9 @@ TEST_P(InstArithmetic, and) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0b0001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0b0001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
+
+  EXPECT_GROUP(R"(and t5, t3, t4)", INT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(andi t6, t5, 9)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstArithmetic, slt) {
@@ -265,6 +309,9 @@ TEST_P(InstArithmetic, slt) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
+
+  EXPECT_GROUP(R"(slt t6, t4, t3)", INT_SIMPLE_CMP);
+  EXPECT_GROUP(R"(sltu t1, t3, t4)", INT_SIMPLE_CMP);
 }
 
 TEST_P(InstArithmetic, slti) {
@@ -280,6 +327,9 @@ TEST_P(InstArithmetic, slti) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
+
+  EXPECT_GROUP(R"(slti t6, t4, -3)", INT_SIMPLE_CMP);
+  EXPECT_GROUP(R"(sltiu t1, t3, 5)", INT_SIMPLE_CMP);
 }
 
 TEST_P(InstArithmetic, addiPseudoinstructions) {
@@ -295,6 +345,10 @@ TEST_P(InstArithmetic, addiPseudoinstructions) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(28), -5);
   EXPECT_EQ(getGeneralRegister<int64_t>(29), -5);
+
+  EXPECT_GROUP(R"(nop)", INT_SIMPLE_ARTH);
+  EXPECT_GROUP(R"(mv t2, t1)", INT_SIMPLE_ARTH);
+  EXPECT_GROUP(R"(sext.w t4, t3)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, subwPseudoinstructions) {
@@ -311,6 +365,9 @@ TEST_P(InstArithmetic, subwPseudoinstructions) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 48586817536);
   EXPECT_EQ(getGeneralRegister<int64_t>(7), 1342177280);
   EXPECT_EQ(getGeneralRegister<int64_t>(31), -1342177280);
+
+  EXPECT_GROUP(R"(neg t4, t3)", INT_SIMPLE_ARTH);
+  EXPECT_GROUP(R"(negw t6, t5)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, setPseudoinstructions) {
@@ -342,6 +399,11 @@ TEST_P(InstArithmetic, setPseudoinstructions) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0);
+
+  EXPECT_GROUP(R"(seqz t3, t1)", INT_SIMPLE_CMP);
+  EXPECT_GROUP(R"(snez t4, t0)", INT_SIMPLE_CMP);
+  EXPECT_GROUP(R"(sltz t4, t6)", INT_SIMPLE_CMP);
+  EXPECT_GROUP(R"(sgtz t5, t0)", INT_SIMPLE_CMP);
 }
 
 TEST_P(InstArithmetic, liPseudoinstruction) {
@@ -356,6 +418,8 @@ TEST_P(InstArithmetic, liPseudoinstruction) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(14), 192);
   EXPECT_EQ(getGeneralRegister<int64_t>(13), -180);
+
+  EXPECT_GROUP(R"(li a5, 0)", INT_SIMPLE_ARTH);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstArithmetic,
