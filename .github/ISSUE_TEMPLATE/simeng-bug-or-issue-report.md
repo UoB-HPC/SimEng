@@ -8,9 +8,9 @@ assignees: ''
 ---
 
 **Check List**
- [ ] The binary I am trying to run has been compiled statically for either RV64 or AArch64.
- [ ] The compiled binary is a Linux Elf file.
- [ ] I have provided both a config file and a binary to SimEng as runtime arguments.
+ - [ ] The binary I am trying to run has been compiled statically for either RV64 or AArch64.
+ - [ ] The compiled binary is a Linux Elf file.
+ - [ ] I have provided both a config file and a binary to SimEng as runtime arguments.
 
 **Binary File Information**
 Please run `file` on the binary used and paste the output below (i.e. `file myBinary.elf`).

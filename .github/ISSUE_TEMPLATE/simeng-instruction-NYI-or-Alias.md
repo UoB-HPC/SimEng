@@ -19,10 +19,10 @@ Provide a bullet list of how the binary in question was compiled, including all 
 Provide a bullet list of all CMAKE options used. E.g. `-DCMAKE_BUILD_TYPE=Release`.
 
 **SimEng Command Line Expression**
-Provide the comman line expression used to run SimEng e.g. `./simeng /path/to/configs/a64fx.yaml /path/to/myBinary.elf`
+Provide the command line expression used to run SimEng e.g. `./simeng /path/to/configs/a64fx.yaml /path/to/myBinary.elf`
 
 **Console Printout**
-Please provide a console printout of all SimEng output prior to the execution statistics. Please do not include any binary specific output.
+Please provide a copy of SimEng's console printout prior to its end-of-execution statistics Please do not include any binary specific output.
 E.g.
 ```bash
 ./simeng configs/a64fx.yaml myStaticBinary.elf 
