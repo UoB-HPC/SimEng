@@ -35,6 +35,9 @@ struct InstructionMetadata {
     return metadataExceptionEncountered_;
   }
 
+  /* Return extra information about the exception */
+  std::string getExceptionString() const { return exceptionString_; }
+
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
@@ -107,6 +110,9 @@ struct InstructionMetadata {
 
   /** Whether an exception has been encountered. */
   bool metadataExceptionEncountered_ = false;
+
+  /** Additional information to print to the user */
+  std::string exceptionString_ = "";
 };
 
 }  // namespace aarch64
