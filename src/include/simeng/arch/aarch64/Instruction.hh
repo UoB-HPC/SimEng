@@ -70,6 +70,8 @@ const uint8_t OFFSET_REG = 1;
 const uint8_t LDR_ADDR = 2;
 const uint8_t STR_ADDR = 3;
 const uint8_t STR_DATA = 4;
+const uint8_t STR_ADDR_PRED = 5;
+const uint8_t STR_DATA_PRED = 6;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode

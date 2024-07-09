@@ -68,6 +68,22 @@ class MicroDecoder {
                            csh capstoneHandle, bool lastMicroOp = false,
                            int microOpIndex = 0, uint8_t dataSize = 0);
 
+  /** Create a store data uop from a source register and a predicate. */
+  Instruction createSDUop_predicated(const Architecture& architecture,
+                                     arm64_reg src, arm64_reg pred,
+                                     csh capstoneHandle,
+                                     bool lastMicroOp = false,
+                                     int microOpIndex = 0);
+
+  /** Create a store address uop from a capstone memory operand and a predicate.
+   */
+  Instruction createStrUop_predicated(const Architecture& architecture,
+                                      arm64_op_mem mem, arm64_reg pred,
+                                      csh capstoneHandle,
+                                      bool lastMicroOp = false,
+                                      int microOpIndex = 0,
+                                      uint8_t dataSize = 0);
+
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;
 
