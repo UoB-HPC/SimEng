@@ -94,6 +94,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
 
     if (uop->exceptionEncountered()) {
       outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      outputFile_ << " -- ID=" << uop->getInstructionId();
       outputFile_ << std::endl;
       lastInsnId_ = uop->getInstructionId();
       raiseException_(uop);
@@ -105,6 +106,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     const auto& results = uop->getResults();
     if (lastInsnId_ != uop->getInstructionId()) {
       outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      outputFile_ << " -- ID=" << uop->getInstructionId();
       outputFile_ << std::endl;
     }
 
@@ -123,6 +125,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
                     << " <- " << std::hex;
         if (uop->isStoreData()) {
           const auto& data = uop->getData();
+          outputFile_ << "(size=" << data[i].size() << ") ";
           for (int j = data[i].size() - 1; j >= 0; j--) {
             if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
             outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
@@ -133,10 +136,12 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     } else if (uop->isStoreData()) {
       const auto& data = uop->getData();
       for (int i = 0; i < data.size(); i++) {
+        outputFile_ << "(size=" << data[i].size() << ") ";
         for (int j = data[i].size() - 1; j >= 0; j--) {
           if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
           outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
         }
+        outputFile_ << std::endl;
       }
       outputFile_ << std::dec << std::endl;
     }
@@ -144,6 +149,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
                   << rat_.reverseMapping(destinations[i]).tag << "}"
                   << " <- " << std::hex;
+      outputFile_ << "(size=" << results[i].size() << ") ";
       for (int j = results[i].size() - 1; j >= 0; j--) {
         if (results[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
         outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);

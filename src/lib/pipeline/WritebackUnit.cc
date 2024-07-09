@@ -24,12 +24,7 @@ void WritebackUnit::tick() {
     auto& results = uop->getResults();
     auto& destinations = uop->getDestinationRegisters();
 
-    bool print = (uop->getInstructionAddress() >= 0x550618 &&
-                  uop->getInstructionAddress() <= 0x550658) ||
-                 (uop->getInstructionAddress() >= 0x550c50 &&
-                  uop->getInstructionAddress() <= 0x550c5c) ||
-                 (uop->getInstructionAddress() >= 0x550c68 &&
-                  uop->getInstructionAddress() <= 0x550ccc);
+    bool print = (false);
     if (print) {
       std::cout << std::endl;
     }

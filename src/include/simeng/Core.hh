@@ -82,6 +82,8 @@ class Core {
           outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
                       << ":" << change.modifiedRegisters[i].tag << "}"
                       << " <- " << std::hex;
+          outputFile_ << "(size=" << change.modifiedRegisterValues[i].size()
+                      << ") ";
           for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
                j--) {
             if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] < 16)
@@ -103,6 +105,7 @@ class Core {
     for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
       outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].address
                   << std::dec << " <- " << std::hex;
+      outputFile_ << "(size=" << change.memoryAddressValues[i].size() << ") ";
       for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
         if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16)
           outputFile_ << "0";
