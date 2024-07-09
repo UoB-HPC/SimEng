@@ -3,6 +3,7 @@
 namespace {
 
 using InstBranch = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstBranch, BEQ) {
   RUN_RISCV(R"(
@@ -23,6 +24,9 @@ TEST_P(InstBranch, BEQ) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 7);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 5);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
+
+  EXPECT_GROUP(R"(beq zero, t4, 8)", BRANCH);
+  EXPECT_GROUP(R"(beqz s0, -8)", BRANCH);
 }
 
 TEST_P(InstBranch, BNE) {
@@ -41,6 +45,9 @@ TEST_P(InstBranch, BNE) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 7);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 19);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 17);
+
+  EXPECT_GROUP(R"(bne t0, t1, 8)", BRANCH);
+  EXPECT_GROUP(R"(bnez t0, 4)", BRANCH);
 }
 
 TEST_P(InstBranch, BLT) {
@@ -63,6 +70,9 @@ TEST_P(InstBranch, BLT) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 17);
 
+  EXPECT_GROUP(R"(blt t0, t1, 8)", BRANCH);
+  EXPECT_GROUP(R"(bltz t4, 8)", BRANCH);
+
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -79,6 +89,8 @@ TEST_P(InstBranch, BLT) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 13);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
 
+  EXPECT_GROUP(R"(bgtz t1, 8)", BRANCH);
+
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -94,6 +106,8 @@ TEST_P(InstBranch, BLT) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 18);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 13);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
+
+  EXPECT_GROUP(R"(bgt t1, t0, 8 )", BRANCH);
 }
 
 TEST_P(InstBranch, BLTU) {
@@ -112,6 +126,9 @@ TEST_P(InstBranch, BLTU) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 7);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 16);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 15);
+
+  EXPECT_GROUP(R"(bltu t1, t0, 8)", BRANCH);
+  EXPECT_GROUP(R"(bgtu t1, t0, 8)", BRANCH);
 }
 
 TEST_P(InstBranch, BGE) {
@@ -130,6 +147,8 @@ TEST_P(InstBranch, BGE) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
 
+  EXPECT_GROUP(R"(bge t1, t0, 8)", BRANCH);
+
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -145,6 +164,8 @@ TEST_P(InstBranch, BGE) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
+
+  EXPECT_GROUP(R"(blez t1, 8)", BRANCH);
 
   RUN_RISCV(R"(
       addi t0, t0, -5
@@ -162,6 +183,8 @@ TEST_P(InstBranch, BGE) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
 
+  EXPECT_GROUP(R"(bgez t3, 8)", BRANCH);
+
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -177,6 +200,8 @@ TEST_P(InstBranch, BGE) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 18);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
+
+  EXPECT_GROUP(R"(ble t3, t3, 8)", BRANCH);
 }
 
 TEST_P(InstBranch, BGEU) {
@@ -198,6 +223,8 @@ TEST_P(InstBranch, BGEU) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 14);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 11);
 
+  EXPECT_GROUP(R"(bgeu t0, t1, 8)", BRANCH);
+
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -213,6 +240,8 @@ TEST_P(InstBranch, BGEU) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
+
+  EXPECT_GROUP(R"(bleu t3, t3, 8)", BRANCH);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstBranch,
