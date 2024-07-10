@@ -39,8 +39,12 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
     if (!fdarr_[i].isValid()) {
       int fd = ::openat(dirfd, filename, flags, mode);
       if (fd == -1) {
-        std::cerr << "[SimEng:FileDescArray] Error opening file at pathname: "
-                  << filename << " with errno " << errno << std::endl;
+        // std::cerr << "[SimEng:FileDescArray] Error opening file at pathname:
+        // "
+        //           << filename << " with errno " << errno << std::endl;
+        // ENOENT == -2 in Linux
+        if (errno == ENOENT) return -2;
+
         return -1;
       }
       if (!fdarr_[i].replaceProps(i, fd, flags, std::string(filename))) {
@@ -49,7 +53,7 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
                   << std::endl;
         return -1;
       }
-      std::cerr << "[SimEng:FileDescArray] Opening file at pathname: "
+      std::cout << "[SimEng:FileDescArray] Opening file at pathname: "
                 << filename << std::endl;
       numFds_++;
       return i;

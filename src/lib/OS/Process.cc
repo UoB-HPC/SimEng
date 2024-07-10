@@ -48,7 +48,15 @@ uint64_t Process::getMmapStart() const { return memRegion_->getMmapBase(); }
 
 uint64_t Process::getPageSize() const { return PAGE_SIZE; }
 
-std::string Process::getPath() const { return commandLine_[0]; }
+std::string Process::getPath() const {
+  if (isDynamic_) {
+    ryml::ConstNodeRef config = config::SimInfo::getConfig();
+    std::string intrpPath;
+    config["Interpreter"]["Path"] >> intrpPath;
+    return intrpPath;
+  }
+  return commandLine_[0];
+}
 
 bool Process::isValid() const { return isValid_; }
 
@@ -74,8 +82,9 @@ void Process::loadInstructions(span<char>& instructions, size_t simMemSize) {
   config["Process-Image"]["Mmap-Size"] >> mmapSize;
   mmapSize = upAlign(mmapSize, PAGE_SIZE);
 
-  uint64_t instrStart = PAGE_SIZE;
-  uint64_t instrSize = upAlign(instructions.size(), PAGE_SIZE);
+  uint64_t instrStart = 0;
+  elfEntryPoint_ = instrStart;
+  uint64_t instrSize = upAlign(instrStart + instructions.size(), PAGE_SIZE);
   uint64_t brk = instrSize;
 
   // Check if the process image can fit inside the simulation memory.
@@ -118,6 +127,13 @@ void Process::loadInstructions(span<char>& instructions, size_t simMemSize) {
       HostFileMMap());
   uint64_t instrPhyAddr = OS_->requestPageFrames(instrSize);
   pageTable_->createMapping(retAddr, instrPhyAddr, instrSize);
+
+  // Map the heap to mmapBase
+  retAddr = memRegion_->mmapRegion(brk, mmapBase, 0,
+                                   syscalls::mmap::flags::SIMENG_MAP_FIXED,
+                                   HostFileMMap());
+  uint64_t heapPhyAddr = OS_->requestPageFrames(heapSize + mmapSize);
+  pageTable_->createMapping(retAddr, heapPhyAddr, heapSize + mmapSize);
 
   // Map the stack
   retAddr = memRegion_->mmapRegion(stackEnd, stackSize, 0,
@@ -286,7 +302,14 @@ template <>
 uint64_t Process::setupMemRegion<arch::aarch64::Architecture>(uint64_t brk) {
   uint64_t stack_top = 1;
   stack_top = stack_top << 48;
-  uint64_t stack_size = 8 * 1024 * 1024;
+
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
+  uint64_t stack_size;
+  config["Process-Image"]["Stack-Size"] >> stack_size;
+  stack_size = upAlign(stack_size, PAGE_SIZE);
+  uint64_t minSize = 8ull * 1024ull * 1024ull;
+  stack_size = std::max(minSize, stack_size);
+
   uint64_t stack_end = stack_top - stack_size;
   uint64_t stack_guard_gap = (256 << 12);
 
@@ -387,6 +410,43 @@ void Process::archSetup<arch::aarch64::Architecture>() {
                   [config::SimInfo::getSysRegVecIndex(
                       arm64_sysreg::ARM64_SYSREG_DCZID_EL0)] = {
       static_cast<uint64_t>(0b10100), 8};
+  context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                  [config::SimInfo::getSysRegVecIndex(
+                      arm64_sysreg::ARM64_SYSREG_CNTFRQ_EL0)] = {
+      static_cast<uint64_t>(100000000), 8};
+
+  // Construct 32-bit identification information for the PE
+  // https://developer.arm.com/documentation/ddi0595/2020-12/AArch64-Registers/MIDR-EL1--Main-ID-Register
+  // Format as described in above link:
+  // Implementer [31:24]
+  // Variant [23:20]
+  // Architecture [19:16]
+  // Partnum [15:4]
+  // Revision [3:0]
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
+  uint64_t idInfo = 0;
+  std::string ImplementerStr;
+  config["CPU-Info"]["CPU-Implementer"] >> ImplementerStr;
+  uint64_t Implementer = std::stoi(ImplementerStr.substr(2, 1)) * 16 +
+                         std::stoi(ImplementerStr.substr(3, 1));
+  std::string VariantStr;
+  config["CPU-Info"]["CPU-Variant"] >> VariantStr;
+  uint64_t Variant = std::stoi(VariantStr.substr(2, 1));
+  uint64_t Architecture = 0xf;
+  std::string PartnumStr;
+  config["CPU-Info"]["CPU-Part"] >> PartnumStr;
+  uint64_t Partnum = std::stoi(PartnumStr.substr(2, 1)) * 256 +
+                     std::stoi(PartnumStr.substr(3, 1)) * 16 +
+                     std::stoi(PartnumStr.substr(4, 1));
+  std::string RevisionStr;
+  config["CPU-Info"]["CPU-Revision"] >> RevisionStr;
+  uint64_t Revision = std::stoi(RevisionStr);
+  idInfo |= (Implementer << 24) | (Variant << 20) | (Architecture << 16) |
+            (Partnum << 4) | Revision;
+  context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                  [config::SimInfo::getSysRegVecIndex(
+                      arm64_sysreg::ARM64_SYSREG_MIDR_EL1)] = {
+      static_cast<uint64_t>(idInfo), 8};
 }
 
 template <>
@@ -446,7 +506,6 @@ uint64_t Process::createStack(uint64_t stackStart) {
     }
     // Remove semicolon at the end of the string
     ld_lib_path.pop_back();
-    std::cerr << ld_lib_path << std::endl;
     ld_env_vars.push_back(ld_lib_path);
 
     // Add any extra specified environment variables
