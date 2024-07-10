@@ -1,6 +1,6 @@
 #pragma once
 
-#include "include/simeng/OperandBypassMap.hh"
+#include "simeng/OperandBypassMap.hh"
 
 namespace simeng {
 namespace arch {
@@ -9,7 +9,8 @@ namespace aarch64 {
 /** A simple class to hold the permitted operand bypass model and easily find
    the bypass latency between two instructions. */
 class NoneToNoneBypassMap : public OperandBypassMap {
-  AllToAllBypassMap() {}
+ public:
+  NoneToNoneBypassMap() {}
 
   /** Given the instruction groups of the producer instruction and consumer
    * instruction, plus the producer instruction's destination registers, the
@@ -21,7 +22,9 @@ class NoneToNoneBypassMap : public OperandBypassMap {
     // None to None map means no forwarding is allowed in any case
     return -1;
   }
-}
+
+ private:
+};
 
 }  // namespace aarch64
 }  // namespace arch
