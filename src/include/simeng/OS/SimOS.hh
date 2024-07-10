@@ -200,9 +200,9 @@ class SimOS {
 
   /** This public method adds a process to the waitingProcs_ queue. */
   void addProcessToWaitQueue(std::shared_ptr<Process> procPtr) {
-    // std::cerr << "Adding " << procPtr->getTID()
+    // std::cerr << "[SimEng:SimOS] Adding " << procPtr->getTID()
     //           << " to waitingProcs_ via addProcessToWaitQueue" << std::endl;
-    waitingProcs_.push(procPtr);
+    waitingProcs_.push_front(procPtr);
   };
 
   /** Method which is used to recieve a CoreInfo object from a simulation core
@@ -259,7 +259,7 @@ class SimOS {
   std::unordered_map<uint64_t, std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */
-  std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
+  std::deque<std::shared_ptr<Process>> waitingProcs_ = {};
 
   /** Queue of processes that have successfully sent an interrupt signal to a
    * core and are waiting to be scheduled on it. */

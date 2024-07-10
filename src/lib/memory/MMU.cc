@@ -303,7 +303,7 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request,
   // consult the page table.
   uint64_t paddr = (delayedTranslation != -1)
                        ? delayedTranslation
-                       : translate_(request->vaddr_, tid_);
+                       : translate_(request->vaddr_ & 0x00ffffffffffffff, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {

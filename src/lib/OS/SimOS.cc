@@ -88,10 +88,11 @@ void SimOS::tick() {
 
     switch (desc.info.status) {
       case simeng::CoreStatus::executing: {
+        // std::cerr << desc.info.coreId << ": executing" << std::endl;
         desc.info.ticks++;
         while (!waitingProcs_.empty() &&
                (waitingProcs_.front()->status_ == procStatus::completed)) {
-          waitingProcs_.pop();
+          waitingProcs_.pop_front();
         }
 
         // if (desc.info.ticks < execTicks) {
@@ -108,6 +109,7 @@ void SimOS::tick() {
       }
 
       case simeng::CoreStatus::idle: {
+        // std::cerr << desc.info.coreId << ": idle" << std::endl;
         while (!scheduledProcs_.empty() &&
                (scheduledProcs_.front()->status_ == procStatus::completed)) {
           scheduledProcs_.pop();
@@ -121,11 +123,13 @@ void SimOS::tick() {
       }
 
       case simeng::CoreStatus::halted: {
+        // std::cerr << desc.info.coreId << ": halted" << std::endl;
         halted_ = true;
         return;
       }
 
       case simeng::CoreStatus::switching: {
+        // std::cerr << desc.info.coreId << ": switching" << std::endl;
         break;
       }
     }
@@ -287,7 +291,7 @@ void SimOS::recieveInterruptResponse(bool success, uint16_t coreId) {
 
     waitingProcs_.front()->status_ = procStatus::scheduled;
     scheduledProcs_.push(waitingProcs_.front());
-    waitingProcs_.pop();
+    waitingProcs_.pop_front();
   }
 }
 
@@ -383,7 +387,7 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   processes_.emplace(newChildTid, newProc);
   // std::cout << "[SimEng:SimOS] Adding " << newProc->getTID()
   //           << " to waitingProcs_ via resumeClone" << std::endl;
-  waitingProcs_.push(newProc);
+  waitingProcs_.push_front(newProc);
 
   // Add stack to `proc/tgid/maps`
   VMA vma = newProc->getMemRegion()->getVMAFromAddr(stackPtr);
@@ -438,7 +442,7 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
         currProc->status_ = procStatus::waiting;
         // std::cout << "[SimEng:SimOS] Adding " << currProc->getTID()
         //           << " to waitingProcs_ via recieveCoreInfo" << std::endl;
-        waitingProcs_.push(currProc);
+        waitingProcs_.push_front(currProc);
       }
     }
   }
@@ -467,12 +471,13 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     // std::cout << "[SimEng:SimOS] schedule "
     //           << waitingProcs_.front()->context_.TID << " to " <<
     //           cinfo.coreId
-    //           << " from waitingProcs_" << std::endl;
+    //           << " from waitingProcs_. " << waitingProcs_.size() - 1
+    //           << " processes remain" << std::endl;
     coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
     // Update newly scheduled process' status
     waitingProcs_.front()->status_ = procStatus::executing;
     // Remove process from waiting queue
-    waitingProcs_.pop();
+    waitingProcs_.pop_front();
     // }
   }
 }
@@ -547,7 +552,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
 
   process->status_ = procStatus::waiting;
   processes_.insert({tid, process});
-  waitingProcs_.push(process);
+  // std::cout << "[SimEng:SimOS] Adding " << process->getTID()
+  //           << " to waitingProcs_ via createProcess" << std::endl;
+  waitingProcs_.push_front(process);
 
   return tid;
 }
@@ -647,6 +654,8 @@ uint64_t SimOS::requestPageFrames(size_t size) {
 }
 
 uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
+  // Top-byte ignore (TBI): https://en.wikichip.org/wiki/arm/tbi
+  vaddr = vaddr & 0x00ffffffffffffffull;
   const auto& processItr = processes_.find(tid);
   // If no process exists for the supplied TID, consider it to be a data abort
   // fault
@@ -677,6 +686,8 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
 
 uint64_t SimOS::handleVAddrTranslationWithoutPageAllocation(uint64_t vaddr,
                                                             uint64_t tid) {
+  // Top-byte ignore (TBI): https://en.wikichip.org/wiki/arm/tbi
+  vaddr = vaddr & 0x00ffffffffffffffull;
   const auto& processItr = processes_.find(tid);
   // If no process exists for the supplied TID, consider it to be a data abort
   // fault
