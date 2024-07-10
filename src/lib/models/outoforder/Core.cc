@@ -115,6 +115,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
 
 void Core::tick() {
   ticks_++;
+  subTicks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   switch (status_) {
@@ -194,26 +195,37 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  // reorderBuffer_.commit(commitWidth_);
-  if (reorderBuffer_.commit(commitWidth_, ticks_) == 0)
-    noactivity_++;
-  else
-    noactivity_ = 0;
+  reorderBuffer_.commit(commitWidth_);
+  // if (reorderBuffer_.commit(commitWidth_, ticks_) == 0)
+  //   noactivity_++;
+  // else
+  //   noactivity_ = 0;
 
-  if (noactivity_ != 0 && (noactivity_ == 1000000)) {
-    // status_ = CoreStatus::halted;
-    // Update status of corresponding CoreDesc in SimOS as there is no
-    // causal action originating from SimOS which caused this change in
-    // Core.
-    // updateCoreDescInOS_(getCurrentContext(), getCoreId(), CoreStatus::halted,
-    //                     0);
-    // currentTID_ = -1;
+  // if (noactivity_ != 0 && (noactivity_ == 1000000)) {
+  //   // status_ = CoreStatus::halted;
+  //   // Update status of corresponding CoreDesc in SimOS as there is no
+  //   // causal action originating from SimOS which caused this change in
+  //   // Core.
+  //   // updateCoreDescInOS_(getCurrentContext(), getCoreId(),
+  //   CoreStatus::halted,
+  //   //                     0);
+  //   // currentTID_ = -1;
+  //   std::cout << "[SimEng:Core" << coreId_ << ":TID" << currentTID_
+  //             << "] no activity for " << noactivity_
+  //             << " cycles total, last committed address was 0x" << std::hex
+  //             << reorderBuffer_.getLastAddr() << std::dec << " and 0x"
+  //             << std::hex << reorderBuffer_.getHeadOfBuffer() << std::dec
+  //             << " at the HEAD of the ROB" << std::endl;
+  // }
+
+  if (subTicks_ > 10000000) {
+    uint64_t committed = reorderBuffer_.getInstructionsCommittedCount();
     std::cout << "[SimEng:Core" << coreId_ << ":TID" << currentTID_
-              << "] no activity for " << noactivity_
-              << " cycles total, last committed address was 0x" << std::hex
-              << reorderBuffer_.getLastAddr() << std::dec << " and 0x"
-              << std::hex << reorderBuffer_.getHeadOfBuffer() << std::dec
-              << " at the HEAD of the ROB" << std::endl;
+              << "] Instructions retired so far: "
+              << FormatWithCommas<uint64_t>(committed) << " (+"
+              << (committed - subInsns_) << " instructions " << std::endl;
+    subTicks_ = 0;
+    subInsns_ = committed;
   }
 
   if (exceptionGenerated_) {
@@ -377,6 +389,10 @@ void Core::processException() {
       // Update core status
       status_ = CoreStatus::idle;
       contextSwitches_++;
+      // std::cerr << coreId_ << "/" << currentTID_ << ": IDLE after "
+      //           << getArchitecturalRegisterFileSet().get({0,
+      //           8}).get<uint64_t>()
+      //           << " syscall" << std::endl;
       updateCoreDescInOS_(getCurrentContext(true), getCoreId(),
                           CoreStatus::idle, 0);
     }
@@ -510,30 +526,32 @@ std::map<std::string, std::string> Core::getStats() const {
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
   std::map<std::string, std::string> stats = {
-      {"cycles", std::to_string(ticks_)},
-      {"retired", std::to_string(retired)},
+      {"cycles", FormatWithCommas<uint64_t>(ticks_)},
+      {"retired", FormatWithCommas<uint64_t>(retired)},
       {"ipc", ipcStr.str()},
-      {"flushes", std::to_string(flushes_)},
-      {"fetch.fetchStalls", std::to_string(fetchStalls)},
-      {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-      {"rename.allocationStalls", std::to_string(allocationStalls)},
-      {"rename.robStalls", std::to_string(robStalls)},
-      {"rename.lqStalls", std::to_string(lqStalls)},
-      {"rename.sqStalls", std::to_string(sqStalls)},
-      {"dispatch.rsStalls", std::to_string(rsStalls)},
-      {"issue.frontendStalls", std::to_string(frontendStalls)},
-      {"issue.backendStalls", std::to_string(backendStalls)},
-      {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-      {"branch.executed", std::to_string(totalBranchesExecuted)},
-      {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+      {"flushes", FormatWithCommas<uint64_t>(flushes_)},
+      {"fetch.fetchStalls", FormatWithCommas<uint64_t>(fetchStalls)},
+      {"decode.earlyFlushes", FormatWithCommas<uint64_t>(earlyFlushes)},
+      {"rename.allocationStalls", FormatWithCommas<uint64_t>(allocationStalls)},
+      {"rename.robStalls", FormatWithCommas<uint64_t>(robStalls)},
+      {"rename.lqStalls", FormatWithCommas<uint64_t>(lqStalls)},
+      {"rename.sqStalls", FormatWithCommas<uint64_t>(sqStalls)},
+      {"dispatch.rsStalls", FormatWithCommas<uint64_t>(rsStalls)},
+      {"issue.frontendStalls", FormatWithCommas<uint64_t>(frontendStalls)},
+      {"issue.backendStalls", FormatWithCommas<uint64_t>(backendStalls)},
+      {"issue.portBusyStalls", FormatWithCommas<uint64_t>(portBusyStalls)},
+      {"branch.executed", FormatWithCommas<uint64_t>(totalBranchesExecuted)},
+      {"branch.mispredict", FormatWithCommas<uint64_t>(totalBranchMispredicts)},
       {"branch.missrate", branchMissRateStr.str()},
       {"lsq.loadViolations",
-       std::to_string(reorderBuffer_.getViolatingLoadsCount())},
-      {"idle.ticks", std::to_string(idle_ticks_)},
-      {"exception.ticks", std::to_string(exception_ticks_)},
-      {"context.switches", std::to_string(contextSwitches_)},
-      {"rob.numLoadsRetired", std::to_string(reorderBuffer_.getNumLoads())},
-      {"rob.numStoresRetired", std::to_string(reorderBuffer_.getNumStores())}};
+       FormatWithCommas<uint64_t>(reorderBuffer_.getViolatingLoadsCount())},
+      {"idle.ticks", FormatWithCommas<uint64_t>(idle_ticks_)},
+      {"exception.ticks", FormatWithCommas<uint64_t>(exception_ticks_)},
+      {"context.switches", FormatWithCommas<uint64_t>(contextSwitches_)},
+      {"rob.numLoadsRetired",
+       FormatWithCommas<uint64_t>(reorderBuffer_.getNumLoads())},
+      {"rob.numStoresRetired",
+       FormatWithCommas<uint64_t>(reorderBuffer_.getNumStores())}};
 
   const std::vector<uint64_t> possibleIssues =
       dispatchIssueUnit_.getPossibleIssues();
@@ -543,8 +561,9 @@ std::map<std::string, std::string> Core::getStats() const {
     std::ostringstream key;
     key << "issue.Port" << i << ".balance";
     std::ostringstream val;
-    val << std::to_string(actualIssues[i]) << "/"
-        << std::to_string(possibleIssues[i]) << "(" << std::setprecision(3)
+    val << FormatWithCommas<uint64_t>(actualIssues[i]) << "/"
+        << FormatWithCommas<uint64_t>(possibleIssues[i]) << "("
+        << std::setprecision(3)
         << (float(actualIssues[i]) / float(possibleIssues[i])) * 100 << "%)";
     stats[key.str()] = val.str();
   }

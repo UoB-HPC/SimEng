@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <fstream>
 
@@ -247,6 +248,9 @@ class Core : public simeng::Core {
   bool printing_ = false;
 
   uint64_t noactivity_ = 0;
+
+  uint64_t subTicks_ = 0;
+  uint64_t subInsns_ = 0;
 
   std::ofstream outputFile_;
 };

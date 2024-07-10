@@ -34,8 +34,8 @@ simeng::OS::SimOS simOsFactory(
 }
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
-             simeng::memory::MMU& mmu, simeng::memory::Mem& mem) {
+uint64_t simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
+                  simeng::memory::MMU& mmu, simeng::memory::Mem& mem) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
-  int iterations = 0;
+  uint64_t iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
   iterations = simulate(OS, *core, *mmu, *memory);
 
@@ -217,9 +217,11 @@ int main(int argc, char** argv) {
     std::cout << "[SimEng] " << key << ": " << value << std::endl;
   }
   std::cout << std::endl;
-  std::cout << "[SimEng] Finished " << iterations << " ticks in " << duration
-            << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
-            << mips << " MIPS)" << std::endl;
+  std::cout << "[SimEng] Finished "
+            << core->FormatWithCommas<uint64_t>(iterations) << " ticks in "
+            << core->FormatWithCommas<uint64_t>(duration) << "ms ("
+            << std::round(khz) << " kHz, " << std::setprecision(2) << mips
+            << " MIPS)" << std::endl;
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning

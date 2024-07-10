@@ -74,6 +74,14 @@ class Core {
 
   /** Retrieve the CPU context for the currently scheduled process. */
   virtual simeng::OS::cpuContext getCurrentContext(bool clearTID = false) = 0;
+
+  template <class T>
+  std::string FormatWithCommas(T value) const {
+    std::stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << std::fixed << value;
+    return ss.str();
+  }
 };
 
 }  // namespace simeng
