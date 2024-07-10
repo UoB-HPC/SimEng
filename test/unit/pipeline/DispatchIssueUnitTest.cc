@@ -1,5 +1,6 @@
 #include "../ConfigInit.hh"
 #include "../MockInstruction.hh"
+#include "../MockOperandBypassMap.hh"
 #include "../MockPortAllocator.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -19,7 +20,7 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
         input(1, nullptr),
         output(config::SimInfo::getConfig()["Execution-Units"].num_children(),
                {1, nullptr}),
-        diUnit(input, output, regFile, portAlloc, physRegQuants),
+        diUnit(input, output, regFile, portAlloc, bypassMap, physRegQuants),
         uop(new MockInstruction),
         uopPtr(uop),
         uop2(new MockInstruction),
@@ -69,6 +70,8 @@ class PipelineDispatchIssueUnitTest : public testing::Test {
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> output;
 
   MockPortAllocator portAlloc;
+
+  MockOperandBypassMap bypassMap;
 
   simeng::pipeline::DispatchIssueUnit diUnit;
 

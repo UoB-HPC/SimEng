@@ -95,6 +95,10 @@ void RegressionTest::run(const char* source, const char* triple,
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
+  // Create bypass map for out-of-order core
+  std::unique_ptr<simeng::OperandBypassMap> bypassMap =
+      createOperandBypassMap();
+
   // Create a branch predictor for a pipelined core
   std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
   std::string predictorType =
@@ -123,7 +127,7 @@ void RegressionTest::run(const char* source, const char* triple,
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, *predictor_, *portAllocator);
+          entryPoint, *architecture_, *predictor_, *portAllocator, *bypassMap);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

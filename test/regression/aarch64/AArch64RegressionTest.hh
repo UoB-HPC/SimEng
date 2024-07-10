@@ -3,6 +3,7 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/AllToAllBypassMap.hh"
 
 [[maybe_unused]] static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
 {
@@ -206,6 +207,11 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const override;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const override;
 

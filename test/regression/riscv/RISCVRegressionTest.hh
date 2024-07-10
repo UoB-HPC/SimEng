@@ -3,6 +3,7 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+#include "simeng/arch/riscv/OperandBypassMaps/AllToAllBypassMap.hh"
 
 [[maybe_unused]] static const char* RISCV_ADDITIONAL_CONFIG = R"YAML(
 {
@@ -110,6 +111,11 @@ class RISCVRegressionTest : public RegressionTest {
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const override;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const override;
 };

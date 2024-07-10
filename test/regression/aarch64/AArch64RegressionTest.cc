@@ -67,6 +67,11 @@ AArch64RegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
       portArrangement);
 }
 
+std::unique_ptr<simeng::OperandBypassMap>
+AArch64RegressionTest::createOperandBypassMap(ryml::ConstNodeRef config) const {
+  return std::make_unique<simeng::arch::aarch64::AllToAllBypassMap>();
+}
+
 uint8_t AArch64RegressionTest::getNZCV() const {
   return getRegister<uint8_t>({RegisterType::NZCV, 0});
 }

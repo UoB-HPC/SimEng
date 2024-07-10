@@ -35,6 +35,7 @@
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
@@ -81,6 +82,11 @@ class RegressionTest
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const = 0;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
