@@ -20,6 +20,11 @@ Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
       updateCoreDescInOS_(updateCoreDescInOS) {
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(config::SimInfo::getISA());
+  // std::ostringstream str;
+  // str << SIMENG_SOURCE_DIR << "/simengResults.out";
+  // outputFile_.open(str.str(), std::ofstream::out);
+  // outputFile_.close();
+  // outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
 }
 
 void Core::tick() {
@@ -77,15 +82,16 @@ void Core::tick() {
         auto reg = destinations[i];
 
         // if (currentTID_ == 1) {
-        //   std::cerr << "\tREG " << unsigned(reg.type) << ":" << reg.tag
-        //             << " = 0x";
-        //   for (size_t j = results[i].size(); j > 0; j--) {
-        //     if (results[i].getAsVector<uint8_t>()[j - 1] < 16) std::cerr <<
-        //     "0"; std::cerr << std::hex
-        //               << unsigned(results[i].getAsVector<uint8_t>()[j - 1])
-        //               << std::dec;
-        //   }
-        //   std::cerr << std::endl;
+        // outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
+        //             << destinations[i].tag << "}"
+        //             << " <- " << std::hex;
+        // for (int j = results[i].size() - 1; j >= 0; j--) {
+        //   if (unsigned(results[i].getAsVector<uint8_t>()[j]) < 16)
+        //     outputFile_ << "0";
+
+        //   outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+        // }
+        // outputFile_ << std::dec << std::endl;
         // }
         registerFileSet_.set(reg, results[i]);
       }
@@ -213,12 +219,12 @@ void Core::tick() {
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
   // if (currentTID_ == 1) {
-  //   std::cerr << currentTID_ << "|" << std::hex <<
-  //   uop->getInstructionAddress()
+  // outputFile_ << currentTID_ << "|" << std::hex <<
+  // uop->getInstructionAddress()
   //             << std::dec;
-  //   // std::cerr << ":0x" << std::hex << uop->getSequenceId() << std::dec;
-  //   // std::cerr << ":0x" << std::hex << uop->getInstructionId() << std::dec;
-  //   std::cerr << std::endl;
+  // outputFile_ << ":0x" << std::hex << uop->getSequenceId() << std::dec;
+  // outputFile_ << ":0x" << std::hex << uop->getInstructionId() << std::dec;
+  // outputFile_ << std::endl;
   // }
 
   if (uop->exceptionEncountered()) {
@@ -230,15 +236,16 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     auto data = uop->getData();
     if (data.size() != 0) {
       // if (currentTID_ == 1) {
-      //   for (int i = 0; i < previousAddresses_.size(); i++) {
-      //     std::cerr << currentTID_ << "|\tAddr " << std::hex
+      // for (int i = 0; i < previousAddresses_.size(); i++) {
+      //   outputFile_ << currentTID_ << "|\tAddr " << std::hex
       //               << previousAddresses_[i].vaddr << std::dec << " <- "
       //               << std::hex;
-      //     for (int j = data[i].size() - 1; j >= 0; j--) {
-      //       std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]);
-      //     }
-      //     std::cerr << std::dec << std::endl;
+      //   for (int j = data[i].size() - 1; j >= 0; j--) {
+      //     if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
+      //     outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
       //   }
+      //   outputFile_ << std::dec << std::endl;
+      // }
       // }
       uop->setMemoryAddresses(previousAddresses_);
       mmu_->requestWrite(uop, data);
@@ -263,18 +270,26 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
+  // if (uop->isLoad()) {
+  //   for (int i = 0; i < uop->getGeneratedAddresses().size(); i++)
+  //     outputFile_ << currentTID_ << "|\tAddr " << std::hex
+  //                 << uop->getGeneratedAddresses()[i].vaddr << std::dec << "("
+  //                 << uop->getGeneratedAddresses()[i].size << "B)" <<
+  //                 std::endl;
+  // }
   for (size_t i = 0; i < results.size(); i++) {
     auto reg = destinations[i];
     // if (currentTID_ == 1) {
-    //   std::cerr << currentTID_ << "|\t{" << unsigned(reg.type) << ":" <<
-    //   reg.tag
-    //             << "}"
+    // outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
+    //             << destinations[i].tag << "}"
     //             << " <- " << std::hex;
-    //   for (int j = results[i].size() - 1; j >= 0; j--) {
-    //     std::cerr << unsigned(results[i].getAsVector<uint8_t>()[j]);
-    //   }
-    //   std::cerr << std::dec << std::endl;
+    // for (int j = results[i].size() - 1; j >= 0; j--) {
+    //   if (unsigned(results[i].getAsVector<uint8_t>()[j]) < 16)
+    //     outputFile_ << "0";
+
+    //   outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
     // }
+    // outputFile_ << std::dec << std::endl;
     registerFileSet_.set(reg, results[i]);
   }
 
@@ -361,16 +376,21 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         // if (currentTID_ == 1) {
-        //   std::cerr << currentTID_ << "|\t{"
-        //             << unsigned(change.modifiedRegisters[i].type) << ":"
-        //             << change.modifiedRegisters[i].tag << "}"
+        // outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+        //             << ":" << change.modifiedRegisters[i].tag << "}"
         //             << " <- " << std::hex;
-        //   for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
-        //        j--) {
-        //     std::cerr << unsigned(
-        //         change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
-        //   }
-        //   std::cerr << std::dec << std::endl;
+        // for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+        // j--) {
+        //   if (unsigned(
+        //           change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j])
+        //           <
+        //       16)
+        //     outputFile_ << "0";
+
+        //   outputFile_ << unsigned(
+        //       change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+        // }
+        // outputFile_ << std::dec << std::endl;
         // }
         registerFileSet_.set(change.modifiedRegisters[i],
                              change.modifiedRegisterValues[i]);
@@ -384,16 +404,21 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     // if (currentTID_ == 1) {
-    //   for (int i = 0; i < change.memoryAddresses.size(); i++) {
-    //     std::cerr << currentTID_ << "|\tAddr " << std::hex
+    // for (int i = 0; i < change.memoryAddresses.size(); i++) {
+    //   outputFile_ << currentTID_ << "|\tAddr " << std::hex
     //               << change.memoryAddresses[i].vaddr << std::dec << " <- "
     //               << std::hex;
-    //     for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
-    //       std::cerr << unsigned(
-    //           change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
-    //     }
-    //     std::cerr << std::dec << std::endl;
+    //   for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+    //     if (unsigned(change.memoryAddressValues[i].getAsVector<uint8_t>()[j])
+    //     <
+    //         16)
+    //       outputFile_ << "0";
+
+    //     outputFile_ << unsigned(
+    //         change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
     //   }
+    //   outputFile_ << std::dec << std::endl;
+    // }
     // }
     mmu_->requestWrite(change.memoryAddresses[i],
                        change.memoryAddressValues[i]);
@@ -428,11 +453,11 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)},
-          {"idle.ticks", std::to_string(idle_ticks_)},
-          {"context.switches", std::to_string(contextSwitches_)}};
+  return {{"cycles", FormatWithCommas<uint64_t>(ticks_)},
+          {"retired", FormatWithCommas<uint64_t>(instructionsExecuted_)},
+          {"branch.executed", FormatWithCommas<uint64_t>(branchesExecuted_)},
+          {"idle.ticks", FormatWithCommas<uint64_t>(idle_ticks_)},
+          {"context.switches", FormatWithCommas<uint64_t>(contextSwitches_)}};
 }
 
 void Core::schedule(simeng::OS::cpuContext newContext) {

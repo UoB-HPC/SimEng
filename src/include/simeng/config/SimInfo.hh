@@ -163,6 +163,7 @@ class SimInfo {
                            arm64_sysreg::ARM64_SYSREG_FPSR,
                            arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
                            arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
+                           arm64_sysreg::ARM64_SYSREG_CNTFRQ_EL0,
                            arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
                            arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
                            arm64_sysreg::ARM64_SYSREG_SVCR};

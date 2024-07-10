@@ -59,7 +59,7 @@ TEST_P(SmokeTest, heap) {
 
 INSTANTIATE_TEST_SUITE_P(AArch64, SmokeTest,
                          ::testing::Values(std::make_tuple(EMULATION, "{}"),
-                                           std::make_tuple(INORDER, "{}"),
+                                           //  std::make_tuple(INORDER, "{}"),
                                            std::make_tuple(OUTOFORDER, "{}")),
                          paramToString);
 

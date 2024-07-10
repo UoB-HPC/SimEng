@@ -84,6 +84,12 @@ void Instruction::setMemoryAddresses(
   memoryAddresses_ = std::move(addresses);
 }
 
+void Instruction::setMemoryAddresses(memory::MemoryAccessTarget address) {
+  dataPending_ = 1;
+  memoryData_.resize(1);
+  memoryAddresses_.push_back(address);
+}
+
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
     if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {

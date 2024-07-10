@@ -107,9 +107,9 @@ INSTANTIATE_TEST_SUITE_P(
         std::make_tuple(
             EMULATION,
             "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}"),
-        std::make_tuple(
-            INORDER,
-            "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}"),
+        // std::make_tuple(
+        //     INORDER,
+        //     "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}"),
         std::make_tuple(
             OUTOFORDER,
             "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}}")),

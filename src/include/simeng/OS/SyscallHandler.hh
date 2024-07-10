@@ -500,6 +500,8 @@ class SyscallHandler {
   std::function<void(const SyscallResult)> sendSyscallResultToCore_;
 
   uint64_t cyclesElapsed_ = 0;
+
+  uint64_t coreCount_ = 1;
 };
 
 }  // namespace OS

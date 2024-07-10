@@ -9,7 +9,12 @@
    "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
    "128, Matrix-Count: 2}, Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: "   \
    "{Size: 500000}}, Ports: {'0': {Portname: 0, Instruction-Group-Support: "   \
-   "[INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME]}}}")
+   "[INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME]}}, CPU-Info: "         \
+   "{Generate-Special-Dir: True, Core-Count: 1, Socket-Count: 1, SMT: 1, "     \
+   "BogoMIPS: 200.00, Features: fp asimd evtstrm sha1 sha2 crc32 atomics "     \
+   "fphp asimdhp cpuid asimdrdm fcma dcpop sve, CPU-Implementer: 0x46, "       \
+   "CPU-Architecture: 8, CPU-Variant: 0x1, CPU-Part: 0x001, CPU-Revision: 0, " \
+   "Package-Count: 1}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */

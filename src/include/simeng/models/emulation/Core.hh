@@ -185,6 +185,8 @@ class Core : public simeng::Core {
   uint64_t inFlightStoreCondReqs_ = 0;
 
   bool printing_ = false;
+
+  std::ofstream outputFile_;
 };
 
 }  // namespace emulation

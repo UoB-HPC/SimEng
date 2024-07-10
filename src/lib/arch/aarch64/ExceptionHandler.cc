@@ -83,7 +83,9 @@ bool ExceptionHandler::handleException() {
       case 122:    // sched_setaffinity
       case 123:    // sched_getaffinity
       case 124:    // sched_yield
+      case 129:    // kill
       case 131:    // tgkill
+      case 132:    // sigaltstack
       case 134:    // rt_sigaction
       case 135:    // rt_sigprocmask
       case 165:    // getrusage
@@ -243,23 +245,24 @@ bool ExceptionHandler::concludeSyscall() {
         }
         break;
       }
-      case 123: {  // sched_getaffinity
-        int64_t bitmask =
-            syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
-        // Currently, only a single CPU bitmask is supported
-        if (bitmask != 1) {
-          printException();
-          std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
-                    << "] Unexpected CPU affinity mask "
-                       "returned in exception handler"
-                    << std::endl;
-        }
-        break;
-      }
+      // case 123: {  // sched_getaffinity
+      //   int64_t bitmask =
+      //       syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
+      //   // Currently, only a single CPU bitmask is supported
+      //   if (bitmask != 1) {
+      //     printException();
+      //     std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
+      //               << "] Unexpected CPU affinity mask "
+      //                  "returned in exception handler"
+      //               << std::endl;
+      //   }
+      //   break;
+      // }
       case 220: {
         std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
                   << "] Unsupported Flags for syscall: "
                   << syscallResult_.syscallId << std::endl;
+        break;
       }
     }
     return fatal();
@@ -365,8 +368,14 @@ void ExceptionHandler::printException() const {
   std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
             << "]       opcode ID: " << metadata.opcode << std::endl;
   std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+            << "]       insn ID: " << metadata.id << std::endl;
+  std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
             << "]       sequence ID: " << instruction_->getSequenceId()
             << std::endl;
+  instruction_->getArchitecture().printMetadata(
+      metadata.encoding, instruction_->getInstructionAddress(),
+      core_.getCurrentTID());
+  std::cout << std::endl;
 }
 
 bool ExceptionHandler::fatal() {

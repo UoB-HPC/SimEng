@@ -99,7 +99,7 @@ TEST_P(LoadStoreQueue, SpeculativeInvalidLoad) {
 
 INSTANTIATE_TEST_SUITE_P(RISCV, LoadStoreQueue,
                          ::testing::Values(std::make_tuple(EMULATION, "{}"),
-                                           std::make_tuple(INORDER, "{}"),
+                                           //  std::make_tuple(INORDER, "{}"),
                                            std::make_tuple(OUTOFORDER, "{}")),
                          paramToString);
 

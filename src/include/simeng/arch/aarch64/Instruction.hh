@@ -15,35 +15,36 @@ namespace aarch64 {
 
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,
  * shifting by `amount`. */
-template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount) {
-  switch (shiftType) {
-    case ARM64_SFT_LSL:
-      return value << amount;
-    case ARM64_SFT_LSR:
-      return value >> amount;
-    case ARM64_SFT_ASR:
-      return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
-      // Assuming sizeof(T) is a power of 2.
-      const auto mask = sizeof(T) * 8 - 1;
-      assert((amount <= mask) && "Rotate amount exceeds type width");
-      amount &= mask;
-      return (value >> amount) | (value << ((-amount) & mask));
-    }
-    case ARM64_SFT_MSL: {
-      // pad in with ones instead of zeros
-      const auto mask = (1 << amount) - 1;
-      return (value << amount) | mask;
-    }
-    case ARM64_SFT_INVALID:
-      return value;
-    default:
-      assert(false && "Unknown shift type");
-      return 0;
-  }
-}
+// template <typename T>
+// std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
+// shiftValue(
+//     T value, uint8_t shiftType, uint8_t amount) {
+//   switch (shiftType) {
+//     case ARM64_SFT_LSL:
+//       return value << amount;
+//     case ARM64_SFT_LSR:
+//       return value >> amount;
+//     case ARM64_SFT_ASR:
+//       return static_cast<std::make_signed_t<T>>(value) >> amount;
+//     case ARM64_SFT_ROR: {
+//       // Assuming sizeof(T) is a power of 2.
+//       const auto mask = sizeof(T) * 8 - 1;
+//       assert((amount <= mask) && "Rotate amount exceeds type width");
+//       amount &= mask;
+//       return (value >> amount) | (value << ((-amount) & mask));
+//     }
+//     case ARM64_SFT_MSL: {
+//       // pad in with ones instead of zeros
+//       const auto mask = (1 << amount) - 1;
+//       return (value << amount) | mask;
+//     }
+//     case ARM64_SFT_INVALID:
+//       return value;
+//     default:
+//       assert(false && "Unknown shift type");
+//       return 0;
+//   }
+// }
 
 /** Get the size of the data to be accessed from/to memory. */
 inline uint8_t getDataSize(cs_arm64_op op) {
@@ -473,6 +474,8 @@ class Instruction : public simeng::Instruction {
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
+
+  void setMemoryAddresses(memory::MemoryAccessTarget address);
 };
 
 }  // namespace aarch64

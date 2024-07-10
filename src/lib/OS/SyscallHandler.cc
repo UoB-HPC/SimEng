@@ -29,9 +29,12 @@ SyscallHandler::SyscallHandler(
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
-      {"/proc/cpuinfo", "proc/stat", "proc/self/maps", "maps",
-       "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
+      {"/proc/cpuinfo", "proc/stat", "/proc/meminfo", "proc/self/maps",
+       "/proc/self/status", "maps", "/sys/devices/system/cpu/online", "core_id",
        "physical_package_id", "/dev/shm", "/dev/shm/__KMP_REGISTERED_LIB_1_0"});
+
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
+  config["CPU-Info"]["Core-Count"] >> coreCount_;
 
   resumeHandling_ = [this]() { return handleSyscall(); };
 }
@@ -551,6 +554,7 @@ void SyscallHandler::handleSyscall() {
       uint64_t mask = currentInfo_.registerArguments[2].get<uint64_t>();
 
       int64_t retval = schedSetAffinity(pid, cpusetsize, mask);
+      if (retval == -1) return;
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
       break;
     }
@@ -561,15 +565,30 @@ void SyscallHandler::handleSyscall() {
       int64_t bitmask = schedGetAffinity(pid, cpusetsize, mask);
       // If returned bitmask is 0, assume an error
       if (bitmask > 0) {
-        // Currently, only a single CPU bitmask is supported
-        if (bitmask != 1) {
-          return concludeSyscall({}, true);
+        // The size of the internal representation of the affinity mask in
+        // bytes. Although we only require a single byte to represent our bit
+        // mask, the size is up-aligned to a 8 byte boundary to be consistent
+        // with hardware behaviour
+        size_t interalCpuSetBitMaskSize = 8;
+        stateChange = {ChangeType::REPLACEMENT,
+                       {currentInfo_.ret},
+                       {static_cast<uint64_t>(interalCpuSetBitMaskSize)}};
+
+        // std::cerr << "schedGetAffinity with bitmask: " << bitmask
+        //           << ", cpusetsize: " << cpusetsize
+        //           << ", interalCpuSetBitMaskSize: " <<
+        //           interalCpuSetBitMaskSize
+        //           << std::endl;
+        // Write affinity mask to memory in byte chunks.
+        for (uint16_t i = 0; i < interalCpuSetBitMaskSize; i += 1) {
+          // Get next byte
+          uint64_t maskSubset = (bitmask >> (i * 8)) & 255;
+          if (i > 7) maskSubset = 0;
+          // std::cerr << "\t" << maskSubset << std::endl;
+          stateChange.memoryAddresses.push_back({mask + i, 1});
+          stateChange.memoryAddressValues.push_back(
+              static_cast<uint8_t>(maskSubset));
         }
-        uint64_t retval = static_cast<uint64_t>(bitmask);
-        stateChange = {
-            ChangeType::REPLACEMENT, {currentInfo_.ret}, {sizeof(retval)}};
-        stateChange.memoryAddresses.push_back({mask, 8});
-        stateChange.memoryAddressValues.push_back(bitmask);
       } else {
         stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1ll}};
       }
@@ -581,6 +600,25 @@ void SyscallHandler::handleSyscall() {
       // de-scheduled
       return concludeSyscall(
           {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}}, false, true);
+    }
+    case 129: {  // kill
+      int pid = currentInfo_.registerArguments[0].get<int>();
+      int signal = currentInfo_.registerArguments[1].get<int>();
+
+      if (signal != 0x11) {
+        std::cerr << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                  << "] Arguments supplied to kill syscall "
+                     "not supported.\n"
+                  << "\tUnsupported Arguments:\n"
+                  << "\t signal - " << signal << std::endl;
+        return concludeSyscall({}, true);
+      }
+      // only support sigchild
+      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
+                << "] Received kill syscall on process " << pid
+                << " with SIGCHLD signal. Nothing done at the moment... "
+                << std::endl;
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
     }
     case 131: {  // tgkill
       int tgid = currentInfo_.registerArguments[0].get<int>();
@@ -619,6 +657,28 @@ void SyscallHandler::handleSyscall() {
       }
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       return concludeSyscall(stateChange, false, idleOnComplete);
+    }
+    case 132: {  // sigaltstack
+      // TODO: Implement syscall logic. Ignored for now as it's assumed the
+      // current use of this syscall is to setup error handlers. Simualted
+      // code is expected to work so no need for these handlers.
+      uint64_t ss = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t oldSS = currentInfo_.registerArguments[1].get<uint64_t>();
+
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      stateChange.memoryAddresses.push_back({oldSS, 8});
+      stateChange.memoryAddressValues.push_back({0, 8});
+      stateChange.memoryAddresses.push_back({oldSS + 8, 4});
+      stateChange.memoryAddressValues.push_back({2, 4});
+      stateChange.memoryAddresses.push_back({oldSS + 12, 4});
+      stateChange.memoryAddressValues.push_back({0.4});
+      stateChange.memoryAddresses.push_back({ss, 8});
+      stateChange.memoryAddressValues.push_back({0, 8});
+      stateChange.memoryAddresses.push_back({ss + 8, 4});
+      stateChange.memoryAddressValues.push_back({2, 4});
+      stateChange.memoryAddresses.push_back({ss + 12, 4});
+      stateChange.memoryAddressValues.push_back({0.4});
+      break;
     }
     case 134: {  // rt_sigaction
       // TODO: Implement syscall logic. Ignored for now as it's assumed the
@@ -789,6 +849,12 @@ void SyscallHandler::handleSyscall() {
       off_t offset = currentInfo_.registerArguments[5].get<off_t>();
 
       uint64_t result = mmap(addr, length, prot, flags, fd, offset);
+      // if ((result <= 0xffffdfebf11c) &&
+      //     (0xffffdfebf11c <= (result + length + 4096)))
+      // std::cerr << "mmap: " << std::hex << result << std::dec << ":" <<
+      // std::hex
+      //           << result + length << std::dec << " with fd " << fd
+      //           << std::endl;
       if (result <= 0) {
         stateChange = {ChangeType::REPLACEMENT,
                        {currentInfo_.ret},
@@ -1154,16 +1220,6 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
       return "";
     }
   }
-
-  for (auto prefix : {"/lib/", "/lib64/", "/opt/", "/vol0005/"}) {
-    if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
-      std::cout << "[SimEng:SyscallHandler:" << currentInfo_.threadId
-                << "] Using Special File: " << filename.c_str() << std::endl;
-      return "/Users/jj16791/workspace/riken/files/"
-             "study2_fugaku_llvm15_scalable.libs" +
-             filename;
-    }
-  }
   return filename;
 }
 
@@ -1214,7 +1270,11 @@ int64_t SyscallHandler::faccessat(int64_t dfd, const std::string& filename,
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
-  if (new_pathname == "") return -1;
+  // Return ENOENT if special file is not supported
+  if (new_pathname == "") {
+    // std::cerr << "ENOENT on faccessat file " << filename << std::endl;
+    return -2;
+  }
 
   // Get correct dirfd
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
@@ -1247,11 +1307,30 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
-  if (new_pathname == "") return -1;
+  // Return ENOENT if special file is not supported
+  if (new_pathname == "") {
+    // std::cerr << "ENOENT on newfstatat file " << filename << std::endl;
+    return -2;
+  }
 
   // Get correct dirfd
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
+
+#ifdef __MACH__
+  // Convert Linux flags to suitable MACOS equivalent
+  int64_t newFlags = 0;
+  if (flag & 0x100) newFlags |= AT_SYMLINK_NOFOLLOW;
+
+  if (flag & 0x800)
+    std::cerr
+        << "[SimEng:Linux] WARNING: Tried to call fstatat with the unsupported "
+           "AT_NO_AUTOMOUNT flag on a MACOS system"
+        << std::endl;
+
+  if ((flag & 0x1000) && filename == "") newFlags |= AT_FDONLY;
+  flag = newFlags;
+#endif
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -1506,7 +1585,11 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
-  if (new_pathname == "") return -1;
+  // Return ENOENT if special file is not supported
+  if (new_pathname == "") {
+    // std::cerr << "ENOENT on openat file " << filename << std::endl;
+    return -2;
+  }
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
@@ -1653,28 +1736,57 @@ int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
 
 int64_t SyscallHandler::schedGetAffinity(pid_t pid, size_t cpusetsize,
                                          uint64_t mask) {
+  // std::cerr << "schedGetAffinity: pid=" << pid << ", cpusetsize=" <<
+  // cpusetsize
+  //           << ", mask=" << mask << std::endl;
   if (mask != 0 &&
       (pid == 0 || pid == OS_->getProcess(currentInfo_.threadId)->getTGID())) {
-    // Always return a bit mask of 1 to represent 1 available CPU
-    return 1;
+    // Return mask based on core count
+    int64_t mask = 0;
+    for (int i = 0; i < coreCount_; i++) {
+      mask |= (1 << i);
+    }
+    return mask;
   }
   return -1;
 }
 
 int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
                                          uint64_t mask) {
+  // std::cerr << "schedSetAffinity: pid=" << pid << ", cpusetsize=" <<
+  // cpusetsize
+  //           << ", mask=" << mask << std::endl;
   // Currently, the bit mask can only be 1 so capture any error which would
   // occur but otherwise omit functionality
-  if (mask == 0) return -EFAULT;
+  if (mask == 0) return -14;  // EFAULT
   uint64_t translatedAddr =
       OS_->handleVAddrTranslation(mask, currentInfo_.threadId);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(translatedAddr);
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
       faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
-    return -EFAULT;
+    return -14;  // EFAULT
   }
-  if (pid != 0) return -ESRCH;
-  if (cpusetsize == 0) return -EINVAL;
+
+  // if (memRead_.target.vaddr != mask) {
+  //   std::unique_ptr<simeng::memory::MemPacket> request =
+  //       simeng::memory::MemPacket::createReadRequest(
+  //           mask, cpusetsize, currentInfo_.threadId, 0, 0);
+  //   request->paddr_ = translatedAddr;
+  //   reqMemAccess_ = true;
+  //   memPort_->send(std::move(request));
+  //   currentInfo_.started = false;
+  //   if (reqMemAccess_) return -1;
+  // }
+
+  // const uint8_t* data = memRead_.data.getAsVector<uint8_t>();
+
+  // for (int i = 0; i < memRead_.data.size(); i++) {
+  //   std::cerr << unsigned(data[i]);
+  // }
+  // std::cerr << std::endl;
+
+  if (pid != 0) return -3;          // ESRCH
+  if (cpusetsize == 0) return -22;  // EINVAL
   return 0;
 }
 
@@ -1710,7 +1822,11 @@ int64_t SyscallHandler::statfsLocal(const std::string& filename,
   // special file)
   new_pathname = SyscallHandler::getSpecialFile(filename);
 
-  if (new_pathname == "") return -1;
+  // Return ENOENT if special file is not supported
+  if (new_pathname == "") {
+    // std::cerr << "ENOENT on statfsLocal file " << filename << std::endl;
+    return -2;
+  }
 
   // Pass call through to host
   struct ::statfs statBuf;

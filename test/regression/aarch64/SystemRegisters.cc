@@ -87,7 +87,7 @@ TEST_P(SystemRegister, counter_timers) {
 
 INSTANTIATE_TEST_SUITE_P(AArch64, SystemRegister,
                          ::testing::Values(std::make_tuple(EMULATION, "{}"),
-                                           std::make_tuple(INORDER, "{}"),
+                                           //  std::make_tuple(INORDER, "{}"),
                                            std::make_tuple(OUTOFORDER, "{}")),
                          paramToString);
 

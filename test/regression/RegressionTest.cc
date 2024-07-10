@@ -98,7 +98,7 @@ void RegressionTest::run(const char* source, const char* triple,
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_shared<simeng::models::emulation::Core>(
-          *architecture_, mmu, OS_->getSyscallReceiver());
+          *architecture_, mmu, OS_->getSyscallReceiver(), haltCoreDescInOS);
       break;
     case INORDER:
       core_ = std::make_shared<simeng::models::inorder::Core>(
@@ -141,8 +141,7 @@ void RegressionTest::run(const char* source, const char* triple,
   OS_->registerCoreProxy(*proxy_);
 
   // Run the OS and core model until the program is complete
-  while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
-         mmu->hasPendingRequests()) {
+  while (!(OS_->hasHalted()) || mmu->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
     OS_->tick();
     core_->tick();

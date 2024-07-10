@@ -75,6 +75,8 @@ class Architecture : public arch::Architecture {
   void updateAfterContextSwitch(
       const simeng::OS::cpuContext& context) const override;
 
+  void printMetadata(const void* ptr, uint64_t insn_address, int pid) const;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
@@ -127,6 +129,8 @@ class Architecture : public arch::Architecture {
   /** The next available instruction ID. Used to identify in-order groups of
    * micro-operations. */
   mutable uint64_t insnIdCtr_ = 0;
+
+  mutable std::ofstream outputFile_;
 };
 
 }  // namespace aarch64

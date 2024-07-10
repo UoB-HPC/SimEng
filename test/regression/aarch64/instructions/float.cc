@@ -467,7 +467,7 @@ TEST_P(InstFloat, fcvt) {
   CHECK_NEON(1, float, {-10.5f, 0.f, 0.f, 0.f});
 
   // Signed, round to zero
-  // 64-bit to 32-bit
+  // double-precision to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -486,7 +486,7 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 
-  // 64-bit to 64-bit
+  // double-precision to 64-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -505,14 +505,32 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int64_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<int64_t>(3)), 321);
 
+  // double-precision to double-precision
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzs d4, d0
+    fcvtzs d5, d1
+    fcvtzs d6, d2
+    fcvtzs d7, d3
+  )");
+  CHECK_NEON(4, int64_t, {1, 0});
+  CHECK_NEON(5, int64_t, {-42, 0});
+  CHECK_NEON(6, int64_t, {0, 0});
+  CHECK_NEON(7, int64_t, {321, 0});
+
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
   fheap[2] = -0.125;
   fheap[3] = 321.5;
 
-  // Signed, round to zero
-  // 32-bit to 32-bit
+  // single-precision to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -530,6 +548,25 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(1)), -42);
   EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
+
+  // single-precision to single-precision
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0]
+    ldp s2, s3, [x0, #8]
+    fcvtzs s4, s0
+    fcvtzs s5, s1
+    fcvtzs s6, s2
+    fcvtzs s7, s3
+  )");
+  CHECK_NEON(4, int32_t, {1, 0});
+  CHECK_NEON(5, int32_t, {-42, 0});
+  CHECK_NEON(6, int32_t, {0, 0});
+  CHECK_NEON(7, int32_t, {321, 0});
 }
 
 TEST_P(InstFloat, fcvtzu) {
@@ -555,7 +592,7 @@ TEST_P(InstFloat, fcvtzu) {
     fcvtzu w3, d3
   )");
   EXPECT_EQ((getGeneralRegister<uint32_t>(0)), 1);
-  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), 0);
   EXPECT_EQ((getGeneralRegister<uint32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 321);
 
@@ -574,7 +611,7 @@ TEST_P(InstFloat, fcvtzu) {
     fcvtzu x3, d3
   )");
   EXPECT_EQ((getGeneralRegister<uint64_t>(0)), 1);
-  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
 
@@ -621,7 +658,7 @@ TEST_P(InstFloat, fcvtzu) {
     fcvtzu w3, s3
   )");
   EXPECT_EQ((getGeneralRegister<uint32_t>(0)), 1);
-  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), 0);
   EXPECT_EQ((getGeneralRegister<uint32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 321);
 
@@ -640,7 +677,7 @@ TEST_P(InstFloat, fcvtzu) {
     fcvtzu x3, s3
   )");
   EXPECT_EQ((getGeneralRegister<uint64_t>(0)), 1);
-  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
 }
