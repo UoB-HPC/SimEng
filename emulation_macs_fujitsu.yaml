@@ -3,12 +3,12 @@
 
 Core:
   ISA: AArch64
-  Simulation-Mode: outoforder
+  Simulation-Mode: emulation
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
-  Micro-Operations: True
+  Micro-Operations: False
   Vector-Length: 512
 Fetch:
   Fetch-Block-Size: 32
@@ -40,10 +40,10 @@ Branch-Predictor:
 Memory-Hierarchy:
   Cache-Line-Width: 256
   L1-Data: # Currently not in use
-    Access-Latency: 1
+    Access-Latency: 5
     Size: 65536 # 64 KiB
   DRAM:
-    Access-Latency: 1
+    Access-Latency: 5
     Size: 3221225472 # 3 GiB
 LSQ-Memory-Interface:
   Exclusive: True
@@ -272,10 +272,10 @@ CPU-Info:
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 Interpreter:
-  Path: "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib/ld-linux-aarch64.so.1"
+  Path: "/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/lib/ld-linux-aarch64.so.1"
   Debug: False
   LD_LIBRARY_PATH:
-    - "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib64:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/opt/FJSVxtclanga/tcsds-1.2.37/lib64:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/compiler/llvm-v15.0.3/compute_node/lib:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/dep/likwid/lib"
+    - "/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/lib:/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/lib64:/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/opt/FJSVxos/mmm/lib64:/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/opt/FJSVxtclanga/tcsds-1.2.37/lib64:/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/compiler/llvm-v15.0.3/compute_node/lib:/home/br-jjones/riken/files/study2_fugaku_fujitrad37_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/dep/likwid/lib"
   Extra-Env-Vars:
 Environment-Variables:
   - "OMP_NUM_THREADS=1"

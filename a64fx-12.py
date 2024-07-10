@@ -83,8 +83,8 @@ memprops = getMemoryProps(4, "GiB")
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
     "num_cores": 12,
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
-    "executable_path": "/home/br-jjones/workspac/dynLibs/llvm/main",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
+    "executable_path": "/Users/jj16791/workspace/dynLibs/llvm/main",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
@@ -161,7 +161,7 @@ os_l1Icache.setRank(0, 0)
 #Core0
 cpu0 = sst.Component("core0", "sstsimeng.simengcore")
 cpu0.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -232,7 +232,7 @@ c0_l1Icache.setRank(1, 0)
 #Core1
 cpu1 = sst.Component("core1", "sstsimeng.simengcore")
 cpu1.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -250,7 +250,7 @@ c1_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu1.setRank(2, 0)
+cpu1.setRank(1, 0)
 
 c1_l1Dcache = sst.Component("c1.l1Dcache", "memHierarchy.Cache")
 c1_l1Dcache.addParams({
@@ -274,7 +274,7 @@ coherence_controller_c1_l1D = c1_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c1_l1D = c1_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c1_l1D = c1_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c1_l1D.addParams({"cache_line_size": A64FX_CLW})
-c1_l1Dcache.setRank(2, 0)
+c1_l1Dcache.setRank(1, 0)
 
 c1_l1Icache = sst.Component("c1.l1Icache", "memHierarchy.Cache")
 c1_l1Icache.addParams({
@@ -298,12 +298,12 @@ coherence_controller_c1_l1I = c1_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c1_l1I = c1_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c1_l1I = c1_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c1_l1I.addParams({"cache_line_size": A64FX_CLW})
-c1_l1Icache.setRank(2, 0)
+c1_l1Icache.setRank(1, 0)
 
 #Core2
 cpu2 = sst.Component("core2", "sstsimeng.simengcore")
 cpu2.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -321,7 +321,7 @@ c2_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu2.setRank(3, 0)
+cpu2.setRank(1, 0)
 
 c2_l1Dcache = sst.Component("c2.l1Dcache", "memHierarchy.Cache")
 c2_l1Dcache.addParams({
@@ -345,7 +345,7 @@ coherence_controller_c2_l1D = c2_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c2_l1D = c2_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c2_l1D = c2_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c2_l1D.addParams({"cache_line_size": A64FX_CLW})
-c2_l1Dcache.setRank(3, 0)
+c2_l1Dcache.setRank(1, 0)
 
 c2_l1Icache = sst.Component("c2.l1Icache", "memHierarchy.Cache")
 c2_l1Icache.addParams({
@@ -369,12 +369,12 @@ coherence_controller_c2_l1I = c2_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c2_l1I = c2_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c2_l1I = c2_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c2_l1I.addParams({"cache_line_size": A64FX_CLW})
-c2_l1Icache.setRank(3, 0)
+c2_l1Icache.setRank(1, 0)
 
 #Core3
 cpu3 = sst.Component("core3", "sstsimeng.simengcore")
 cpu3.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -392,7 +392,7 @@ c3_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu3.setRank(4, 0)
+cpu3.setRank(1, 0)
 
 c3_l1Dcache = sst.Component("c3.l1Dcache", "memHierarchy.Cache")
 c3_l1Dcache.addParams({
@@ -416,7 +416,7 @@ coherence_controller_c3_l1D = c3_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c3_l1D = c3_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c3_l1D = c3_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c3_l1D.addParams({"cache_line_size": A64FX_CLW})
-c3_l1Dcache.setRank(4, 0)
+c3_l1Dcache.setRank(1, 0)
 
 c3_l1Icache = sst.Component("c3.l1Icache", "memHierarchy.Cache")
 c3_l1Icache.addParams({
@@ -440,12 +440,12 @@ coherence_controller_c3_l1I = c3_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c3_l1I = c3_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c3_l1I = c3_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c3_l1I.addParams({"cache_line_size": A64FX_CLW})
-c3_l1Icache.setRank(4, 0)
+c3_l1Icache.setRank(1, 0)
 
 #Core4
 cpu4 = sst.Component("core4", "sstsimeng.simengcore")
 cpu4.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -463,7 +463,7 @@ c4_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu4.setRank(5, 0)
+cpu4.setRank(2, 0)
 
 c4_l1Dcache = sst.Component("c4.l1Dcache", "memHierarchy.Cache")
 c4_l1Dcache.addParams({
@@ -487,7 +487,7 @@ coherence_controller_c4_l1D = c4_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c4_l1D = c4_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c4_l1D = c4_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c4_l1D.addParams({"cache_line_size": A64FX_CLW})
-c4_l1Dcache.setRank(5, 0)
+c4_l1Dcache.setRank(2, 0)
 
 c4_l1Icache = sst.Component("c4.l1Icache", "memHierarchy.Cache")
 c4_l1Icache.addParams({
@@ -511,12 +511,12 @@ coherence_controller_c4_l1I = c4_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c4_l1I = c4_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c4_l1I = c4_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c4_l1I.addParams({"cache_line_size": A64FX_CLW})
-c4_l1Icache.setRank(5, 0)
+c4_l1Icache.setRank(2, 0)
 
 #Core5
 cpu5 = sst.Component("core5", "sstsimeng.simengcore")
 cpu5.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -534,7 +534,7 @@ c5_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu5.setRank(6, 0)
+cpu5.setRank(2, 0)
 
 c5_l1Dcache = sst.Component("c5.l1Dcache", "memHierarchy.Cache")
 c5_l1Dcache.addParams({
@@ -558,7 +558,7 @@ coherence_controller_c5_l1D = c5_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c5_l1D = c5_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c5_l1D = c5_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c5_l1D.addParams({"cache_line_size": A64FX_CLW})
-c5_l1Dcache.setRank(6, 0)
+c5_l1Dcache.setRank(2, 0)
 
 c5_l1Icache = sst.Component("c5.l1Icache", "memHierarchy.Cache")
 c5_l1Icache.addParams({
@@ -582,12 +582,12 @@ coherence_controller_c5_l1I = c5_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c5_l1I = c5_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c5_l1I = c5_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c5_l1I.addParams({"cache_line_size": A64FX_CLW})
-c5_l1Icache.setRank(6, 0)
+c5_l1Icache.setRank(2, 0)
 
 #Core6
 cpu6 = sst.Component("core6", "sstsimeng.simengcore")
 cpu6.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -605,7 +605,7 @@ c6_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu6.setRank(7, 0)
+cpu6.setRank(2, 0)
 
 c6_l1Dcache = sst.Component("c6.l1Dcache", "memHierarchy.Cache")
 c6_l1Dcache.addParams({
@@ -629,7 +629,7 @@ coherence_controller_c6_l1D = c6_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c6_l1D = c6_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c6_l1D = c6_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c6_l1D.addParams({"cache_line_size": A64FX_CLW})
-c6_l1Dcache.setRank(7, 0)
+c6_l1Dcache.setRank(2, 0)
 
 c6_l1Icache = sst.Component("c6.l1Icache", "memHierarchy.Cache")
 c6_l1Icache.addParams({
@@ -653,12 +653,12 @@ coherence_controller_c6_l1I = c6_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c6_l1I = c6_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c6_l1I = c6_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c6_l1I.addParams({"cache_line_size": A64FX_CLW})
-c6_l1Icache.setRank(7, 0)
+c6_l1Icache.setRank(2, 0)
 
 #Core7
 cpu7 = sst.Component("core7", "sstsimeng.simengcore")
 cpu7.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -676,7 +676,7 @@ c7_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu7.setRank(8, 0)
+cpu7.setRank(2, 0)
 
 c7_l1Dcache = sst.Component("c7.l1Dcache", "memHierarchy.Cache")
 c7_l1Dcache.addParams({
@@ -700,7 +700,7 @@ coherence_controller_c7_l1D = c7_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c7_l1D = c7_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c7_l1D = c7_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c7_l1D.addParams({"cache_line_size": A64FX_CLW})
-c7_l1Dcache.setRank(8, 0)
+c7_l1Dcache.setRank(2, 0)
 
 c7_l1Icache = sst.Component("c7.l1Icache", "memHierarchy.Cache")
 c7_l1Icache.addParams({
@@ -724,12 +724,12 @@ coherence_controller_c7_l1I = c7_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c7_l1I = c7_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c7_l1I = c7_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c7_l1I.addParams({"cache_line_size": A64FX_CLW})
-c7_l1Icache.setRank(8, 0)
+c7_l1Icache.setRank(2, 0)
 
 #Core8
 cpu8 = sst.Component("core8", "sstsimeng.simengcore")
 cpu8.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -747,7 +747,7 @@ c8_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu8.setRank(9, 0)
+cpu8.setRank(3, 0)
 
 c8_l1Dcache = sst.Component("c8.l1Dcache", "memHierarchy.Cache")
 c8_l1Dcache.addParams({
@@ -771,7 +771,7 @@ coherence_controller_c8_l1D = c8_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c8_l1D = c8_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c8_l1D = c8_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c8_l1D.addParams({"cache_line_size": A64FX_CLW})
-c8_l1Dcache.setRank(9, 0)
+c8_l1Dcache.setRank(3, 0)
 
 c8_l1Icache = sst.Component("c8.l1Icache", "memHierarchy.Cache")
 c8_l1Icache.addParams({
@@ -795,12 +795,12 @@ coherence_controller_c8_l1I = c8_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c8_l1I = c8_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c8_l1I = c8_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c8_l1I.addParams({"cache_line_size": A64FX_CLW})
-c8_l1Icache.setRank(9, 0)
+c8_l1Icache.setRank(3, 0)
 
 #Core9
 cpu9 = sst.Component("core9", "sstsimeng.simengcore")
 cpu9.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -818,7 +818,7 @@ c9_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu9.setRank(10, 0)
+cpu9.setRank(3, 0)
 
 c9_l1Dcache = sst.Component("c9.l1Dcache", "memHierarchy.Cache")
 c9_l1Dcache.addParams({
@@ -842,7 +842,7 @@ coherence_controller_c9_l1D = c9_l1Dcache.setSubComponent("coherence", "memHiera
 replacement_policy_c9_l1D = c9_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c9_l1D = c9_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c9_l1D.addParams({"cache_line_size": A64FX_CLW})
-c9_l1Dcache.setRank(10, 0)
+c9_l1Dcache.setRank(3, 0)
 
 c9_l1Icache = sst.Component("c9.l1Icache", "memHierarchy.Cache")
 c9_l1Icache.addParams({
@@ -866,12 +866,12 @@ coherence_controller_c9_l1I = c9_l1Icache.setSubComponent("coherence", "memHiera
 replacement_policy_c9_l1I = c9_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c9_l1I = c9_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c9_l1I.addParams({"cache_line_size": A64FX_CLW})
-c9_l1Icache.setRank(10, 0)
+c9_l1Icache.setRank(3, 0)
 
 #Core10
 cpu10 = sst.Component("core10", "sstsimeng.simengcore")
 cpu10.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -889,7 +889,7 @@ c10_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu10.setRank(11, 0)
+cpu10.setRank(3, 0)
 
 c10_l1Dcache = sst.Component("c10.l1Dcache", "memHierarchy.Cache")
 c10_l1Dcache.addParams({
@@ -913,7 +913,7 @@ coherence_controller_c10_l1D = c10_l1Dcache.setSubComponent("coherence", "memHie
 replacement_policy_c10_l1D = c10_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c10_l1D = c10_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c10_l1D.addParams({"cache_line_size": A64FX_CLW})
-c10_l1Dcache.setRank(11, 0)
+c10_l1Dcache.setRank(3, 0)
 
 c10_l1Icache = sst.Component("c10.l1Icache", "memHierarchy.Cache")
 c10_l1Icache.addParams({
@@ -937,12 +937,12 @@ coherence_controller_c10_l1I = c10_l1Icache.setSubComponent("coherence", "memHie
 replacement_policy_c10_l1I = c10_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c10_l1I = c10_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c10_l1I.addParams({"cache_line_size": A64FX_CLW})
-c10_l1Icache.setRank(11, 0)
+c10_l1Icache.setRank(3, 0)
 
 #Core11
 cpu11 = sst.Component("core11", "sstsimeng.simengcore")
 cpu11.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-12.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-12.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -960,7 +960,7 @@ c11_instrInterface.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": 2
 })
-cpu11.setRank(12, 0)
+cpu11.setRank(3, 0)
 
 c11_l1Dcache = sst.Component("c11.l1Dcache", "memHierarchy.Cache")
 c11_l1Dcache.addParams({
@@ -984,7 +984,7 @@ coherence_controller_c11_l1D = c11_l1Dcache.setSubComponent("coherence", "memHie
 replacement_policy_c11_l1D = c11_l1Dcache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c11_l1D = c11_l1Dcache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c11_l1D.addParams({"cache_line_size": A64FX_CLW})
-c11_l1Dcache.setRank(12, 0)
+c11_l1Dcache.setRank(3, 0)
 
 c11_l1Icache = sst.Component("c11.l1Icache", "memHierarchy.Cache")
 c11_l1Icache.addParams({
@@ -1008,7 +1008,7 @@ coherence_controller_c11_l1I = c11_l1Icache.setSubComponent("coherence", "memHie
 replacement_policy_c11_l1I = c11_l1Icache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 prefetcher_c11_l1I = c11_l1Icache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_c11_l1I.addParams({"cache_line_size": A64FX_CLW})
-c11_l1Icache.setRank(12, 0)
+c11_l1Icache.setRank(3, 0)
 
 # --------------------------------------------- SSTSimEng Cores --------------------------------------
 
