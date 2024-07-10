@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 #include "simeng/Instruction.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
@@ -58,6 +59,7 @@ class DispatchIssueUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
+      OperandBypassMap& bypassMap,
       const std::vector<uint16_t>& physicalRegisterStructure,
       ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
@@ -130,6 +132,9 @@ class DispatchIssueUnit {
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
+
+  /** A reference to the operand bypass map. */
+  OperandBypassMap& operandBypassMap_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;

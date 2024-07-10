@@ -14,7 +14,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
            memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
            uint64_t entryPoint, const arch::Architecture& isa,
            BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
+           pipeline::PortAllocator& portAllocator, OperandBypassMap& bypassMap,
+           ryml::ConstNodeRef config)
     : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
@@ -40,7 +41,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_),
+                         portAllocator, bypassMap, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),

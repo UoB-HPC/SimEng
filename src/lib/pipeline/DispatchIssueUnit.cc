@@ -10,6 +10,7 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
+    OperandBypassMap& bypassMap,
     const std::vector<uint16_t>& physicalRegisterStructure,
     ryml::ConstNodeRef config)
     : input_(fromRename),
@@ -17,7 +18,8 @@ DispatchIssueUnit::DispatchIssueUnit(
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
-      portAllocator_(portAllocator) {
+      portAllocator_(portAllocator),
+      operandBypassMap_(bypassMap) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
@@ -53,6 +55,8 @@ DispatchIssueUnit::DispatchIssueUnit(
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 
   dispatches_ = std::make_unique<uint16_t[]>(reservationStations_.size());
+  // TODO: remove line below when implemented properly
+  operandBypassMap_.getBypassLatency(0, 0, {});
 }
 
 void DispatchIssueUnit::tick() {

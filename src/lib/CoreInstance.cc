@@ -209,11 +209,14 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
-  // Create the architecture, with knowledge of the OS
+  // Create the architecture and operand bypass map, with knowledge of the OS
+  // std::string bypassMapType = config_[][].as<std::string>();
   if (config::SimInfo::getISA() == config::ISA::RV64) {
     arch_ = std::make_unique<arch::riscv::Architecture>(kernel_);
+    operandBypassMap_ = std::make_unique<arch::riscv::AllToAllBypassMap>();
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     arch_ = std::make_unique<arch::aarch64::Architecture>(kernel_);
+    operandBypassMap_ = std::make_unique<arch::riscv::AllToAllBypassMap>();
   }
 
   std::string predictorType =
@@ -283,7 +286,7 @@ void CoreInstance::createCore() {
              config::SimulationMode::Outoforder) {
     core_ = std::make_shared<models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, config_);
+        *arch_, *predictor_, *portAllocator_, *operandBypassMap_, config_);
   }
 
   createSpecialFileDirectory();
