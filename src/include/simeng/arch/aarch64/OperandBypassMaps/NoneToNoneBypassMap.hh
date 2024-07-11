@@ -13,13 +13,13 @@ class NoneToNoneBypassMap : public OperandBypassMap {
   NoneToNoneBypassMap() {}
 
   /** Given the instruction groups of the producer instruction and consumer
-   * instruction, plus the producer instruction's destination registers, the
+   * instruction, plus the forwarded operand's register type, the
    * bypass latency in cycles is returned.
    * If no bypass is permitted, then -1 is returned. */
-  int64_t getBypassLatency(
-      const uint16_t producerGroup, const uint16_t consumerGroup,
-      const span<Register>& producerDestRegs) const override {
-    // None to None map means no forwarding is allowed in any case
+  int64_t getBypassLatency(const uint16_t producerGroup,
+                           const uint16_t consumerGroup,
+                           const uint8_t regType) const override {
+    // None to None map means no forwarding is allowed in any r
     return -1;
   }
 

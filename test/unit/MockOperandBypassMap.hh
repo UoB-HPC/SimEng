@@ -8,10 +8,9 @@ namespace simeng {
 /** Mock implementation of the `OperandBypassMap` abstract class. */
 class MockOperandBypassMap : public OperandBypassMap {
  public:
-  MOCK_CONST_METHOD3(getBypassLatency,
-                     int64_t(const uint16_t producerGroup,
-                             const uint16_t consumerGroup,
-                             const span<Register>& producerDestRegs));
+  MOCK_CONST_METHOD3(getBypassLatency, int64_t(const uint16_t producerGroup,
+                                               const uint16_t consumerGroup,
+                                               const uint8_t regType));
 };
 
 }  // namespace simeng
