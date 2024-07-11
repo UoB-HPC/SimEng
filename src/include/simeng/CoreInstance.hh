@@ -11,6 +11,7 @@
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/A64fxBypassMap.hh"
 #include "simeng/arch/aarch64/OperandBypassMaps/AllToAllBypassMap.hh"
 #include "simeng/arch/aarch64/OperandBypassMaps/NoneToNoneBypassMap.hh"
 #include "simeng/arch/riscv/Architecture.hh"
