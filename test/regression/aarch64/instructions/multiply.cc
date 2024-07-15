@@ -3,6 +3,7 @@
 namespace {
 
 using InstMul = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstMul, maddw) {
   RUN_AARCH64(R"(
@@ -41,6 +42,16 @@ TEST_P(InstMul, mulw) {
     mul w2, w0, w1
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 42u);
+
+  RUN_AARCH64(R"(
+    movz x0, #7
+    movz x1, #6
+    mul x2, x0, x1
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 42u);
+
+  EXPECT_GROUP(R"(mul w2, w0, w1)", INT_MUL);
+  EXPECT_GROUP(R"(mul x2, x0, x1)", INT_MUL);
 }
 
 TEST_P(InstMul, smaddl) {
@@ -78,6 +89,8 @@ TEST_P(InstMul, smull) {
     smull x3, w0, w1
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0000002A00000000);
+
+  EXPECT_GROUP(R"(smull x3, w0, w1)", INT_MUL);
 }
 
 TEST_P(InstMul, umaddl) {
@@ -93,6 +106,8 @@ TEST_P(InstMul, umaddl) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0005002A00000000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000002A00000000);
+
+  EXPECT_GROUP(R"(umull x4, w0, w1)", INT_MUL);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstMul,
