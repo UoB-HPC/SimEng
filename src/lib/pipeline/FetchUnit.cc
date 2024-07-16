@@ -54,9 +54,12 @@ void FetchUnit::tick() {
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
         // Calling predict() in order to log the branch in the branch
-        // predictor (which tracks the in flight-brnaches in the ftq).  However,
-        // we are reusing the prediction from the loop buffer so we do not
-        // use the return value from predict() except for in an assert
+        // predictor. The branch needs to be logged in the branch predictor
+        // so that the branch predictor has the information needed to update
+        // itself when the branch instruction is retired. However, we are
+        // reusing the prediction from the loop buffer, thus we do not
+        // use the return value from predict() except for in an assert.
+        // Therefore, it is given the [[maybe_unused]] attribute.
         [[maybe_unused]] BranchPrediction pred = branchPredictor_.predict(
             macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
             macroOp[0]->getKnownOffset());
