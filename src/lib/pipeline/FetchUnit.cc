@@ -59,10 +59,9 @@ void FetchUnit::tick() {
         // itself when the branch instruction is retired. However, we are
         // reusing the prediction from the loop buffer, thus we do not
         // use the return value from predict().
-        // Therefore, it is given the [[maybe_unused]] attribute.
-        [[maybe_unused]] BranchPrediction pred = branchPredictor_.predict(
-            macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
-            macroOp[0]->getKnownOffset());
+        branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
+                                 macroOp[0]->getBranchType(),
+                                 macroOp[0]->getKnownOffset());
         branchesFetched_++;
       }
 
