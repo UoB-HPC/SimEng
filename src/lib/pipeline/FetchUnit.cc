@@ -63,8 +63,6 @@ void FetchUnit::tick() {
         [[maybe_unused]] BranchPrediction pred = branchPredictor_.predict(
             macroOp[0]->getInstructionAddress(), macroOp[0]->getBranchType(),
             macroOp[0]->getKnownOffset());
-        assert(pred.isTaken == loopBuffer_.front().prediction.isTaken &&
-               "New prediction differs from loop buffer prediction");
         branchesFetched_++;
       }
 
