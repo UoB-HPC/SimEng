@@ -71,15 +71,7 @@ class RegressionTest
   /** Generate a default YAML-formatted configuration. */
   virtual void generateConfig() const = 0;
 
-  /** Instantiate the architecture object using the kernel */
-  void createArchitecture(const char* source, const char* triple,
-                          const char* extensions);
-
-  /** Run the assembly in `source`, building it for the target `triple` and ISA
-   * extensions. */
-  void run(const char* source, const char* triple, const char* extensions);
-
-  /** Create an ISA instance from a kernel. */
+  /** Instantiate an ISA specific architecture from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const = 0;
 
@@ -88,8 +80,17 @@ class RegressionTest
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
+  /** Create the kernel then instantiate an ISA specific architecture. Populates
+   * the architecture_ member variable. */
+  void createArchitecture(const char* source, const char* triple,
+                          const char* extensions);
+
+  /** Run the assembly in `source`, building it for the target `triple` and ISA
+   * extensions. */
+  void run(const char* source, const char* triple, const char* extensions);
+
   /** Predecode the first instruction in source and check the assigned group
-   * matches the expectation */
+   * matches the expectation. */
   void checkGroup(const char* source, const char* triple,
                   const char* extensions,
                   const std::vector<int> expectedGroups);
@@ -144,12 +145,13 @@ class RegressionTest
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
 
-  /** Instantiate the process from the source bytes for the given architecture.
-   */
+  /** Create the process from the source bytes for the given architecture.
+   * Populates the process_ and processMemory_ member variables. */
   void createProcess(const char* source, const char* triple,
                      const char* extensions);
 
-  /** Instantiate the kernel object using the process. */
+  /** Creates the process then creates the kernel from this. Populates the
+   * kernel_ member variable. */
   void createKernel(const char* source, const char* triple,
                     const char* extensions);
 
@@ -170,7 +172,7 @@ class RegressionTest
   std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
 
   /** All possible data memory interfaces. dataMemory_ set to one of these
-   * depending on core type */
+   * depending on core type. */
   std::unique_ptr<simeng::memory::MemoryInterface> flatDataMemory_ = nullptr;
   std::unique_ptr<simeng::memory::MemoryInterface> fixedLatencyDataMemory_ =
       nullptr;

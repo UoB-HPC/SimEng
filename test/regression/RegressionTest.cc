@@ -93,7 +93,7 @@ void RegressionTest::createArchitecture(const char* source, const char* triple,
 void RegressionTest::instantiateMemoryInterfaces() {
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
-  // processImage is passed as argument.
+  // processImage is passed as an argument.
 
   ASSERT_TRUE(processMemory_ != nullptr);
 

@@ -128,7 +128,7 @@ class RISCVRegressionTest : public RegressionTest {
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
 
-  /** Create an ISA instance from a kernel. */
+  /** Instantiate an ISA specific architecture from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const override;
 
