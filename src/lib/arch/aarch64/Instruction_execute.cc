@@ -833,6 +833,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_Bcc: {  // b.cond label
+        for (int8_t src = 0; src < inputs_.size(); src++) {
+          inputs_[src] &= ((1 << 8) - 1);
+        }
         if (conditionHolds(metadata_.cc, sourceValues_[0].get<uint8_t>())) {
           branchTaken_ = true;
           branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
