@@ -94,8 +94,13 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
 
     if (uop->exceptionEncountered()) {
       outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
-      outputFile_ << " -- ID=" << uop->getInstructionId();
+//      outputFile_ << " -- ID=" << uop->getInstructionId();
       outputFile_ << std::endl;
+      outputFile_ << "INPUTS:" << std::endl << std::hex;
+      for (uint8_t src = 0; src < uop->inputs_.size(); src++) {
+        outputFile_ << "\t\t" << uop->inputs_[src] << std::endl;
+      }
+      outputFile_ << std::dec;
       lastInsnId_ = uop->getInstructionId();
       raiseException_(uop);
       buffer_.pop_front();
@@ -106,8 +111,13 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     const auto& results = uop->getResults();
     if (lastInsnId_ != uop->getInstructionId()) {
       outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
-      outputFile_ << " -- ID=" << uop->getInstructionId();
+//      outputFile_ << " -- ID=" << uop->getInstructionId();
       outputFile_ << std::endl;
+      outputFile_ << "INPUTS:" << std::endl << std::hex;
+      for (uint8_t src = 0; src < uop->inputs_.size(); src++) {
+        outputFile_ << "\t\t" << uop->inputs_[src] << std::endl;
+      }
+      outputFile_ << std::dec;
     }
 
     if (uop->isLoad()) {

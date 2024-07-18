@@ -210,6 +210,8 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const { return microOpIndex_; }
 
+  std::vector<uint64_t> inputs_ = {};
+
  protected:
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
