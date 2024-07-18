@@ -407,6 +407,7 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(nanoseconds);
         break;
       }
+
       case 122: {  // sched_setaffinity
         pid_t pid = registerFileSet.get(R0).get<pid_t>();
         size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
