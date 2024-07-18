@@ -88,6 +88,9 @@ class ReorderBuffer {
   /** Retrieve the number of branch mispredictions. */
   uint64_t getBranchMispredictedCount() const;
 
+  /** Retrieve the number of retired brancehs. */
+  uint64_t getRetiredBranchesCount() const;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -150,6 +153,9 @@ class ReorderBuffer {
 
   /** The number of branch mispredictions that were observed. */
   uint64_t branchMispredicts_ = 0;
+
+  /** The number of retired branch instructions */
+  uint64_t retiredBranches_ = 0;
 };
 
 }  // namespace pipeline

@@ -159,7 +159,8 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(),
                         uop->getBranchAddress(), uop->getBranchType(),
                         uop->getInstructionId());
-      // Update the branch misprediction counter
+      // Update the branches retired and mispredicted counters
+      retiredBranches_++;
       if (uop->wasBranchMispredicted()) branchMispredicts_++;
     }
 
@@ -190,6 +191,7 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
     // If the instruction is a branch, supply address to branch flushing logic
     if (uop->isBranch()) {
       predictor_.flush(uop->getInstructionAddress());
+
     }
     buffer_.pop_back();
   }
@@ -216,9 +218,13 @@ uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
 uint64_t ReorderBuffer::getViolatingLoadsCount() const {
   return loadViolations_;
 }
+
 uint64_t ReorderBuffer::getBranchMispredictedCount() const {
   return branchMispredicts_;
 }
 
+uint64_t ReorderBuffer::getRetiredBranchesCount() const {
+  return retiredBranches_;
+}
 }  // namespace pipeline
 }  // namespace simeng
