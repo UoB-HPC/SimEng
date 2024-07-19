@@ -189,7 +189,7 @@
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
 </pre></div>
 </div>
-<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in <code class="docutils literal notranslate"><span class="pre">SimEng/src/include/simeng/CoreInstance.hh</span></code> under the <code class="docutils literal notranslate"><span class="pre">hex[]</span></code> array which contains a set of raw instructions in a hexadecimal format.</p>
+<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program is a binary compiled to AArch64 found at <code class="docutils literal notranslate"><span class="pre">SimEng/SimEngDefaultProgram</span></code>. This prints a welcome message to the console.</p>
 <p>Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.</p>
 <div class="section" id="simulation-output">
 <h2>Simulation Output<a class="headerlink" href="#simulation-output" title="Permalink to this heading">¶</a></h2>
