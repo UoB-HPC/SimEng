@@ -507,11 +507,11 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         if (tvPtr) {
           stateChange.memoryAddresses.push_back({tvPtr, 16});
-          stateChange.memoryAddressValues.push_back(tv);
+          stateChange.memoryAddressValues.push_back({tv, 16});
         }
         if (tzPtr) {
           stateChange.memoryAddresses.push_back({tzPtr, 16});
-          stateChange.memoryAddressValues.push_back(tz);
+          stateChange.memoryAddressValues.push_back({tz, 16});
         }
         break;
       }

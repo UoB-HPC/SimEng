@@ -105,7 +105,8 @@ class Core {
     for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
       outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].address
                   << std::dec << " <- " << std::hex;
-      outputFile_ << "(size=" << change.memoryAddressValues[i].size() << ") ";
+      outputFile_ << std::dec << "(size=" <<
+          change.memoryAddressValues[i].size() << ") " << std::hex;
       for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
         if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16)
           outputFile_ << "0";

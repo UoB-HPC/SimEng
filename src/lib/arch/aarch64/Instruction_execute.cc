@@ -67,8 +67,19 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
+  bool print = false;
   // ToDo -- delete the below, it is for debuggin only!
-  bool print = (false);
+  for (int src = 0; src < sourceValues_.size(); src++) {
+    if (sourceValues_[src].size() >= 8) {
+      inputs_.push_back(sourceValues_[src].get<uint64_t>());
+    } else if (sourceValues_[src].size() >= 4) {
+      inputs_.push_back(sourceValues_[src].get<uint32_t>());
+    } else if (sourceValues_[src].size() >= 2) {
+      inputs_.push_back(sourceValues_[src].get<uint16_t>());
+    } else if (sourceValues_[src].size() >= 1) {
+      inputs_.push_back(sourceValues_[src].get<uint8_t>());
+    }
+  }
 
   // 0th bit of SVCR register determines if streaming-mode is enabled.
   const bool SMenabled = architecture_.getSVCRval() & 1;

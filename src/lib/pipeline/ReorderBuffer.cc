@@ -135,7 +135,8 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
                     << " <- " << std::hex;
         if (uop->isStoreData()) {
           const auto& data = uop->getData();
-          outputFile_ << "(size=" << data[i].size() << ") ";
+          outputFile_ << "(size=" << std::dec << data[i].size() <<
+                                              std::hex << ") ";
           for (int j = data[i].size() - 1; j >= 0; j--) {
             if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
             outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
@@ -146,7 +147,8 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     } else if (uop->isStoreData()) {
       const auto& data = uop->getData();
       for (int i = 0; i < data.size(); i++) {
-        outputFile_ << "(size=" << data[i].size() << ") ";
+        outputFile_ << "(size=" << std::dec << data[i].size() <<
+                                            std::hex << ") ";
         for (int j = data[i].size() - 1; j >= 0; j--) {
           if (data[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
           outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
@@ -159,7 +161,8 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
                   << rat_.reverseMapping(destinations[i]).tag << "}"
                   << " <- " << std::hex;
-      outputFile_ << "(size=" << results[i].size() << ") ";
+      outputFile_ << "(size=" << std::dec << results[i].size() << std::hex <<
+                                                                      ") ";
       for (int j = results[i].size() - 1; j >= 0; j--) {
         if (results[i].getAsVector<uint8_t>()[j] < 16) outputFile_ << "0";
         outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
