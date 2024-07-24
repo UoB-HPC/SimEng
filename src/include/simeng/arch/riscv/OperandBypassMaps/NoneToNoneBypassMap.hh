@@ -18,7 +18,7 @@ class NoneToNoneBypassMap : public OperandBypassMap {
    * If no bypass is permitted, then -1 is returned. */
   int64_t getBypassLatency(const uint16_t producerGroup,
                            const uint16_t consumerGroup,
-                           const uint8_t regType) const override {
+                           const uint8_t regType) override {
     // None to None map means no forwarding is allowed in any case
     return -1;
   }

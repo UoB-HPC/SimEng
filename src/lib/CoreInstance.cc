@@ -216,7 +216,7 @@ void CoreInstance::createCore() {
     operandBypassMap_ = std::make_unique<arch::riscv::AllToAllBypassMap>();
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     arch_ = std::make_unique<arch::aarch64::Architecture>(kernel_);
-    operandBypassMap_ = std::make_unique<arch::riscv::AllToAllBypassMap>();
+    operandBypassMap_ = std::make_unique<arch::aarch64::A64fxBypassMap>();
   }
 
   std::string predictorType =

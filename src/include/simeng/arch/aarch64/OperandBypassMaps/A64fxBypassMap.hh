@@ -1,6 +1,9 @@
 #pragma once
 
+#include <assert.h>
+
 #include <queue>
+#include <stack>
 
 #include "simeng/OperandBypassMap.hh"
 #include "simeng/arch/aarch64/InstructionGroups.hh"
@@ -160,26 +163,80 @@ class A64fxBypassMap : public OperandBypassMap {
    * If no bypass is permitted, then -1 is returned. */
   int64_t getBypassLatency(const uint16_t producerGroup,
                            const uint16_t consumerGroup,
-                           const uint8_t regType) const override {
+                           const uint8_t regType) override {
+    // If producer or consumer group is NONE, then no bypass can occur.
+    if (producerGroup == InstructionGroups::NONE ||
+        consumerGroup == InstructionGroups::NONE)
+      return -1;
+
     // Get all valid groups for Producer and Consumer - i.e. their current group
-    // and all parent / grandparent groups
-    std::vector<uint16_t> producerGroups = findGroupParents(producerGroup);
-    std::vector<uint16_t> consumerGroups = findGroupParents(consumerGroup);
+    // and all parent groups
+    std::stack<uint16_t> producerGroups;
+    std::stack<uint16_t> consumerGroups;
+    // Look in cache for producer group stack
+    if (groupHierarchyCache_.find(producerGroup) !=
+        groupHierarchyCache_.end()) {
+      producerGroups = groupHierarchyCache_.at(producerGroup);
+    } else {
+      // No cache entry present, find groups manually
+      [[maybe_unused]] bool pathPresent = findGroupParents(
+          InstructionGroups::ALL, &producerGroups, producerGroup);
+      assert(pathPresent && "Invalid producer group.");
+      // Add found groups to cache
+      groupHierarchyCache_[producerGroup] = producerGroups;
+    }
+    // Look in cache for consumer group stack
+    if (groupHierarchyCache_.find(consumerGroup) !=
+        groupHierarchyCache_.end()) {
+      consumerGroups = groupHierarchyCache_.at(consumerGroup);
+    } else {
+      // No cache entry present, find groups manually
+      [[maybe_unused]] bool pathPresent = findGroupParents(
+          InstructionGroups::ALL, &consumerGroups, consumerGroup);
+      assert(pathPresent && "Invalid consumer group.");
+      // Add found groups to cache
+      groupHierarchyCache_[consumerGroup] = consumerGroups;
+    }
 
     // Starting with lowest level group, see if the producer is in the bypass
     // map
     bool found = false;
-    while (producerGroups.size() > 0) {
-      if (bypassMap_.find(producerGroups.front()) != bypassMap_.end()) {
+    while (!producerGroups.empty()) {
+      if (bypassMap_.find(producerGroups.top()) != bypassMap_.end()) {
         found = true;
         break;
-      } else {
-        producerGroups.erase(producerGroups.begin());
+      }
+      // Check SCALAR group against FP counterpart (excluding LD or STR)
+      else if ((producerGroups.top() >= InstructionGroups::SCALAR &&
+                producerGroups.top() <=
+                    InstructionGroups::SCALAR_DIV_OR_SQRT)) {
+        // Group is SCALAR - see if is in the bypassMap
+        if (bypassMap_.find(producerGroups.top() - (InstructionGroups::SCALAR -
+                                                    InstructionGroups::FP)) !=
+            bypassMap_.end()) {
+          found = true;
+          break;
+        }
+      }
+      // Check VECTOR group against FP counterpart (excluding LD or STR)
+      else if (producerGroups.top() >= InstructionGroups::VECTOR &&
+               producerGroups.top() <= InstructionGroups::VECTOR_DIV_OR_SQRT) {
+        // Group is SCALAR - see if is in the bypassMap
+        if (bypassMap_.find(producerGroups.top() - (InstructionGroups::VECTOR -
+                                                    InstructionGroups::FP)) !=
+            bypassMap_.end()) {
+          found = true;
+          break;
+        }
+      }
+
+      else {
+        producerGroups.pop();
       }
     }
 
     if (found) {
-      auto& mapEntry = bypassMap_.at(producerGroups.front());
+      auto& mapEntry = bypassMap_.at(producerGroups.top());
       assert(mapEntry.size() > 0 && "Bypass map entry is empty.");
 
       // Identify which vector of bypassConsumers we are concerned with by
@@ -204,14 +261,40 @@ class A64fxBypassMap : public OperandBypassMap {
 
       // Starting with lowest level consumer group (`consumerGroup` argument),
       // see if a bypass latency is available
-      for (size_t i = 0; i < consumerGroups.size(); i++) {
+      while (!consumerGroups.empty()) {
         for (bypassConsumer& consumer : bypassConsumerVec) {
           if (std::find(consumer.groups.begin(), consumer.groups.end(),
-                        consumerGroups[i]) != consumer.groups.end()) {
+                        consumerGroups.top()) != consumer.groups.end()) {
             // Group match found, return bypass latency
             return consumer.latency;
           }
+          // Check SCALAR group against FP counterpart (excluding LD or STR)
+          else if ((consumerGroups.top() >= InstructionGroups::SCALAR &&
+                    consumerGroups.top() <=
+                        InstructionGroups::SCALAR_DIV_OR_SQRT)) {
+            if (std::find(consumer.groups.begin(), consumer.groups.end(),
+                          consumerGroups.top() - (InstructionGroups::SCALAR -
+                                                  InstructionGroups::FP)) !=
+                consumer.groups.end()) {
+              // Group match found, return bypass latency
+              return consumer.latency;
+            }
+          }
+          // Check VECTOR group against FP counterpart (excluding LD or STR)
+          else if (consumerGroups.top() >= InstructionGroups::VECTOR &&
+                   consumerGroups.top() <=
+                       InstructionGroups::VECTOR_DIV_OR_SQRT) {
+            if (std::find(consumer.groups.begin(), consumer.groups.end(),
+                          consumerGroups.top() - (InstructionGroups::VECTOR -
+                                                  InstructionGroups::FP)) !=
+                consumer.groups.end()) {
+              // Group match found, return bypass latency
+              return consumer.latency;
+            }
+          }
         }
+        // No group match, pop current top and move onto next consumer group
+        consumerGroups.pop();
       }
     }
 
@@ -220,17 +303,29 @@ class A64fxBypassMap : public OperandBypassMap {
   }
 
  private:
-  /** Find all instruction group parents, grandparents, etc for a given group.
-   * Returns a vector of groups in order of lowest level to highest level. */
-  std::vector<uint16_t> findGroupParents(const uint16_t initialGroup) const {
-    // Look in cache for group vector
-    if (groupHierarchyCache_.find(initialGroup) != groupHierarchyCache_.end()) {
-      return groupHierarchyCache_.at(initialGroup);
+  /** Recursivly find all instruction group parents for a given group using
+   * depth first search.
+   * Returns true if a path was formed, false otherwise. */
+  bool findGroupParents(const uint16_t rootGroup,
+                        std::stack<uint16_t>* pathToGroup,
+                        const uint16_t targetGroup) const {
+    pathToGroup->push(rootGroup);
+    if (rootGroup == targetGroup) {
+      return true;
     }
 
-    std::vector<uint16_t> groups = {initialGroup};
+    if (groupInheritance_.find(rootGroup) != groupInheritance_.end()) {
+      // If children exist, iterate over them all recursively
+      auto& rootGroupChildren = groupInheritance_.at(rootGroup);
+      for (auto& child : rootGroupChildren) {
+        // Child is target group
+        if (findGroupParents(child, pathToGroup, targetGroup)) return true;
+      }
+    }
 
-    return groups;
+    // Target group not found, pop group from path stack
+    pathToGroup->pop();
+    return false;
   }
 
   /** A constant representation of the NZCV AArch64 register type. */
@@ -242,7 +337,7 @@ class A64fxBypassMap : public OperandBypassMap {
   /** Map which caches previously completed group inheritance searches.
    * Key = lowest level group in search
    * Value = in order vector of group hierarchy */
-  std::unordered_map<uint16_t, std::vector<uint16_t>> groupHierarchyCache_;
+  std::unordered_map<uint16_t, std::stack<uint16_t>> groupHierarchyCache_;
 };
 
 }  // namespace aarch64

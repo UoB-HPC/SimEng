@@ -28,7 +28,7 @@ class OperandBypassMap {
    * If no bypass is permitted, then -1 is returned. */
   virtual int64_t getBypassLatency(const uint16_t producerGroup,
                                    const uint16_t consumerGroup,
-                                   const uint8_t regType) const = 0;
+                                   const uint8_t regType) = 0;
 
  protected:
   /** Map between a producer instruction and the set of consumer instructions it
