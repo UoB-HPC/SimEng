@@ -176,8 +176,12 @@ void FetchUnit::tick() {
       }
     } else if (loopBufferState_ == LoopBufferState::WAITING &&
                pc_ == loopBoundaryAddress_) {
-      // Once set loopBoundaryAddress_ is fetched, start to fill loop buffer
-      loopBufferState_ = LoopBufferState::FILLING;
+      if (macroOp[0]->isBranch() && !macroOp[0]->getBranchPrediction().taken) {
+        loopBufferState_ = LoopBufferState::IDLE;
+      } else {
+        // Once set loopBoundaryAddress_ is fetched, start to fill loop buffer
+        loopBufferState_ = LoopBufferState::FILLING;
+      }
     }
 
     assert(bytesRead <= bufferedBytes_ &&
