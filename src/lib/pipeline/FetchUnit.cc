@@ -183,7 +183,7 @@ void FetchUnit::tick() {
         // therefore Loop Buffer stays idle
         loopBufferState_ = LoopBufferState::IDLE;
       } else {
-        // Otherwise, start to fill loop buffer
+        // Otherwise, start to fill Loop Buffer
         loopBufferState_ = LoopBufferState::FILLING;
       }
     }
