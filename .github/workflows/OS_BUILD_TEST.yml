@@ -85,6 +85,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: simeng
+
+      - name: echo secret
+        run: |
+          echo ${{ secrets.SIMENGUOB_PAT }}
       
         #Note: remove
       - name: testing checkout benchmarks repo
