@@ -1,0 +1,46 @@
+name: setup cmake
+description: installs and caches cmake
+
+inputs:
+  OS:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Updating apt repositories for ubuntu to install cmake via package manager without issues
+    #######################################
+
+    - if: ${{ inputs.OS == 'ubuntu:20.04' }}
+      name: install cmake via apt
+      shell: bash
+      run: |
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' && \
+        apt update && apt install cmake -y
+        apt upgrade -y
+
+    - if: ${{ inputs.OS == 'ubuntu:18.04' || inputs.OS == 'debian:10'}}
+      name: install cmake via apt
+      shell: bash
+      run: |
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
+        apt update && apt install cmake -y
+        apt upgrade -y
+
+    #######################################
+    # Install via package manager for 
+    #######################################
+    - if: ${{ inputs.OS == 'debian:11' }}
+      name: install cmake via apt
+      shell: bash
+      run: |
+        apt install -y cmake
+
+    - if: ${{ contains(inputs.OS, 'redhat') || contains(inputs.OS, 'rocky') }}
+      name: install cmake via dnf
+      shell: bash
+      run: |
+        dnf install -y cmake

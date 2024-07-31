@@ -1,0 +1,100 @@
+name: OS_BUILD_TEST_MACOS
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  LLVM-VERSION: 14
+  BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  Build_and_Run:
+    runs-on: macos-13
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] #, 'armclang-22.0.2']
+
+
+    name: "macos-13 + ${{ matrix.compiler }}"
+
+    steps:
+      #######################################
+      # Clones repo to workspace.
+      #######################################
+      - name: checkout v4
+        uses: actions/checkout@v4
+
+      #######################################
+      # Depending on OS and compiler, this step chooses the correct setup action to run.
+      #######################################
+      - name: setup compiler and OS env + build simeng
+        uses: ./.github/actions/select_env
+        with: 
+          LLVM-VERSION: ${{ env.LLVM-VERSION }}
+          OS: macos
+          COMPILER: ${{ matrix.COMPILER }}
+
+      #######################################
+      # Prints out info in isolated step for easy access.
+      #######################################
+      - name: INFO
+        shell: bash
+        run: |
+          echo "_______________________________________"
+          cmake --version
+          echo "_______________________________________"
+          "${{ env.GCC_DIR }}" --version
+          which gcc
+          echo "_______________________________________"
+          "${{ env.CPP_DIR }}" --version
+          which g++
+          echo "_______________________________________"
+          
+      #######################################
+      # Run Integration Tests.
+      #######################################
+      - name: Integration Tests
+        shell: bash
+        run: |
+          ./build/test/integration/integrationtests
+
+      #######################################
+      # Run Unit Tests.
+      #######################################
+      - name: Unit Tests
+        shell: bash
+        run: |
+          ./build/test/unit/unittests
+
+      #######################################
+      # Run Regression AARCH64 Tests.
+      #######################################
+      - name: regression test (aarch64)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/aarch64/regression-aarch64
+
+      #######################################
+      # Run Regression RISCV Tests.
+      #######################################
+      - name: regression test (riscv)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/riscv/regression-riscv
+
+      #######################################
+      # Run Benchmark Tests.
+      #######################################
+      # - if: always()
+      #   name: run benchmarks
+      #   uses: ./.github/actions/simeng_benchmarks
+      #   with:
+      #     BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
+      #     OS: ${{ matrix.OS }}
+      ##########################################

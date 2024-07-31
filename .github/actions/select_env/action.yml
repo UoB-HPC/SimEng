@@ -1,0 +1,71 @@
+name: setup armclang
+description: installs dependencies and correct armclang version to build and test simeng
+
+##############################################################################
+# Calls the correct setup action based on parameters passed into this action;.
+##############################################################################
+
+inputs:
+  OS:
+    required: true
+  LLVM-VERSION:
+    required: true
+  COMPILER: 
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    ##########################################
+    # GCC jobs
+    ##########################################
+
+    # ubuntu
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'ubuntu') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_ubuntu
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+    
+    # rocky linux
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'rocky') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_rocky
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+
+    # red hat
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'redhat') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_redhat
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+
+    # debian
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'debian') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_debian
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+    
+    # macos
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'macos') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_macos
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+        
+    ##########################################
+    # ARMCLANG jobs
+    ##########################################
+    - if: ${{ contains( inputs.COMPILER, 'armclang') && contains(inputs.OS, 'ubuntu') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_armclang_ubuntu
+      with:
+        OS: ${{ inputs.OS }}
+    

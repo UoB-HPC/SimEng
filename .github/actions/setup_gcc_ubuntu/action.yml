@@ -1,0 +1,56 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    required: true
+  gcc-version:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+    - name: install dependencies
+      uses: ./.github/actions/setup_deps
+      with:
+        OS: ${{ inputs.OS }}
+
+    - name: install cmake or restore from cache
+      uses: ./.github/actions/setup_cmake
+      with:
+        OS: ${{ inputs.OS }}
+
+    #######################################
+    # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason (installs some packages, not sure which ones prevent it, but it doesn't take long to run).
+    #######################################
+    - if: ${{ inputs.gcc-version == 'gcc-10' }}
+      name: install llvm
+      shell: bash
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        ./llvm.sh 14
+
+    - name: install gcc
+      shell: bash
+      run: |
+        apt-get -y install ${{ inputs.gcc-version }}
+        apt-get -y install g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+        apt update && apt upgrade -y
+  
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+
+        cmake --build build -j $(nproc)
+
+        cmake --build build --target install
+
+        echo "GCC_DIR=/usr/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+        echo "CPP_DIR=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+
+        

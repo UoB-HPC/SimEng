@@ -1,0 +1,46 @@
+name: simeng-benchmarks
+description: runs simeng benchmarks
+
+inputs:
+  BENCHMARK_BRANCH:
+    required: true
+  OS:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+
+    ##################################
+    # clones repo with different versions of the checkout action, as container has different node versions and some compilers run on older OSs that have differening node versions
+    # NOTE: will probably have to update due to node depreciation and node 20 being enforced and requiring glibc 2.28
+
+    - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
+      name: checkout v3
+      uses: actions/checkout@v3
+      with:
+        repository: UoB-HPC/simeng-benchmarks
+        token: # fill with path as secret
+        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+
+    - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
+      name: checkout v4
+      uses: actions/checkout@v4
+      with:
+        repository: UoB-HPC/simeng-benchmarks
+        token: # fill with path as secret
+        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+
+    - name: remove
+      shell: bash
+      run: |
+        tree .. -L 2
+        echo "whhoop"
+
+    - name: run benchmark
+      shell: bash
+      run: |
+        cd ../simeng-benchmarks/Tools/simulation/validation
+        SIMENG_BENCHMARKS_SRC_DIR=../simeng-benchmark python3 validate_simulation.py all_a64fx.json /home/llaeoi/Desktop/SimEng_fork/configs/a64fx.yaml
+    
+

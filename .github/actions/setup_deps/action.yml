@@ -1,0 +1,143 @@
+name: sets up dependencies for simeng 
+
+inputs:
+
+  OS:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Ubuntu Dependencies
+    #######################################
+    - if: ${{ contains(inputs.OS, 'ubuntu') }}
+      name: install dependencies
+      shell: bash
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+
+        # Update package lists
+        apt-get update
+
+        # Install essential packages
+        apt-get install -y \
+          software-properties-common \
+          sudo \
+          wget \
+          zlib1g-dev \
+          python3 \
+          build-essential \
+          libssl-dev \
+          ninja-build \
+          tree \
+          git
+
+        # Add additional repositories
+        add-apt-repository universe
+        add-apt-repository ppa:ubuntu-toolchain-r/test
+
+        # Update package lists again after adding repositories
+        apt-get update
+
+        # Upgrade all installed packages
+        apt-get upgrade -y
+
+    #######################################
+    # Debian Dependencies
+    #######################################
+    - if: ${{ contains(inputs.OS, 'debian') }}
+      name: install dependencies
+      shell: bash
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+
+        # Update package lists
+        apt-get update
+
+        # Install essential packages
+        apt-get install -y \
+          python3-launchpadlib \
+          software-properties-common \
+          build-essential \
+          sudo \
+          wget \
+          zlib1g-dev \
+          python3 \
+          build-essential \
+          libssl-dev \
+          ninja-build \
+          tree \
+          git
+
+        apt-get update
+        apt-get upgrade -y
+
+    #######################################
+    # Redhat Dependencies
+    #######################################
+    - if: ${{ contains(inputs.OS, 'redhat') }}
+      name: install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf -y install \
+        gcc gcc-c++ make \
+        wget \
+        python3 \
+        git \
+        diffutils \
+        openssl-devel \
+        bzip2 \
+        automake \
+        autoconf \
+        cmake \
+        file \
+        zlib-devel 
+
+        if [[ ${{  inputs.OS  }} == 'redhat/ubi8:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm 
+        elif [[ ${{  inputs.OS  }} == 'redhat/ubi9:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
+        fi
+
+        dnf update -y
+        dnf upgrade -y 
+        dnf clean all
+
+    #######################################
+    # Rocky Dependencies
+    #######################################
+    - if: ${{ contains(inputs.OS, 'rocky') }}
+      name: install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf install -y epel-release \
+          gcc gcc-c++ make \
+          git \
+          wget \
+          openssl-devel \
+          automake \
+          autoconf \
+          bzip2 \
+          file \
+          sudo \
+          tree \
+          zlib-devel
+        dnf group install -y "Development Tools"
+        dnf update -y
+        dnf upgrade -y
+        dnf clean all
+
+    #######################################
+    # macos Dependencies
+    #######################################
+    - if: ${{ contains(inputs.OS, 'macos') }}
+      name: install dependencies
+      shell: bash
+      run: |
+        brew update
+        brew upgrade
+        brew install make
+
