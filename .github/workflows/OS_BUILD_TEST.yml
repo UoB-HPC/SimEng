@@ -77,10 +77,14 @@ jobs:
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v3
         uses: actions/checkout@v3
+        with:
+          path: simeng
 
       - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v4
         uses: actions/checkout@v4
+        with:
+          path: simeng
       
         #Note: remove
       - name: testing checkout benchmarks repo
@@ -89,7 +93,7 @@ jobs:
           repository: UoB-HPC/simeng-benchmarks
           token: ${{ secrets.SIMENGUOB_PAT }}
           ref: makefile-build-system
-          path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+          path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
       
       - name: location
         run: |
