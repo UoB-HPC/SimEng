@@ -20,7 +20,8 @@ runs:
       uses: actions/checkout@v3
       with:
         repository: UoB-HPC/simeng-benchmarks
-        token: # fill with path as secret
+        token: ${{ secrets.SIMENGUOB_PAT }}
+        ref: makefile-build-system
         path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
@@ -28,7 +29,8 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: UoB-HPC/simeng-benchmarks
-        token: # fill with path as secret
+        token: ${{ secrets.SIMENGUOB_PAT }}
+        ref: makefile-build-system
         path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - name: remove
@@ -40,7 +42,7 @@ runs:
     - name: run benchmark
       shell: bash
       run: |
-        cd ../simeng-benchmarks/Tools/simulation/validation
-        SIMENG_BENCHMARKS_SRC_DIR=../simeng-benchmark python3 validate_simulation.py all_a64fx.json /home/llaeoi/Desktop/SimEng_fork/configs/a64fx.yaml
+        cd $GITHUB_WORKSPACE/simeng-benchmarks/Tools/simulation/validation
+        SIMENG_BENCHMARKS_SRC_DIR=$GITHUB_WORKSPACE/simeng-benchmarks python3 validate_simulation.py all_a64fx.json $GITHUB_WORKSPACE/configs/a64fx.yaml
     
 
