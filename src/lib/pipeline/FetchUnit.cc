@@ -176,11 +176,12 @@ void FetchUnit::tick() {
       }
     } else if (loopBufferState_ == LoopBufferState::WAITING &&
                pc_ == loopBoundaryAddress_) {
-      // Now that the loopBoundaryAddress_ has been set, start filling Loop
-      // Buffer if the branch predictor tells us to reenter the detected loop
+      // loopBoundaryAddress_ has been fetched whilst loop buffer is waiting,
+      // start filling Loop Buffer if the branch predictor tells us to
+      // reenter the detected loop
       if (macroOp[0]->isBranch() && !macroOp[0]->getBranchPrediction().taken) {
-        // If branch is not taken then detected loop is no longer relevant,
-        // therefore Loop Buffer stays idle
+        // If branch is not taken then we aren't re-entering the detected
+        // loop, therefore Loop Buffer stays idle
         loopBufferState_ = LoopBufferState::IDLE;
       } else {
         // Otherwise, start to fill Loop Buffer
