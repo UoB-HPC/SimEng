@@ -89,6 +89,7 @@ jobs:
       - name: echo secret
         run: |
           echo ${{ secrets.SIMENGUOB_PAT }}
+          apt-get install -y git
       
         #Note: remove
       - name: testing checkout benchmarks repo
