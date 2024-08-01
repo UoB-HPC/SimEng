@@ -89,7 +89,7 @@ jobs:
       - name: echo secret
         run: |
           echo ${{ secrets.SIMENGUOB_PAT }}
-          apt update && apt upgrade -y
+          apt update && apt upgrade
           apt-get install -y git
       
         #Note: remove
@@ -98,6 +98,7 @@ jobs:
         with:
           repository: UoB-HPC/simeng-benchmarks
           ref: makefile-build-system
+          token: ${{ secrets.SIMENGUOB_PAT }}
           path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
       
       - name: location
