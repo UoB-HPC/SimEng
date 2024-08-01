@@ -95,7 +95,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: UoB-HPC/simeng-benchmarks
-          token: ${{ secrets.SIMENGUOB_PAT }}
           ref: makefile-build-system
           path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
       
