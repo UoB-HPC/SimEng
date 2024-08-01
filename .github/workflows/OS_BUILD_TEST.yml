@@ -4,6 +4,7 @@ env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   LLVM-VERSION: 14
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
+  PAT: ${{ secrets.SIMENGUOB_PAT }}
 
 on:
   workflow_dispatch:
@@ -88,7 +89,7 @@ jobs:
 
       - name: echo secret
         run: |
-          echo ${{ secrets.SIMENGUOB_PAT }}
+          echo ${{ env.PAT }}
           apt update && apt upgrade
           apt-get install -y git
       
@@ -98,7 +99,7 @@ jobs:
         with:
           repository: UoB-HPC/simeng-benchmarks
           ref: makefile-build-system
-          token: ${{ secrets.SIMENGUOB_PAT }}
+          token: ${{ env.PAT }}
           path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
       
       - name: location
