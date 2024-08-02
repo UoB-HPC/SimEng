@@ -34,6 +34,7 @@ runs:
           git
 
         # add pyparsing for benchmarking
+        apt-get install -y pip
         pip install pyparsing
 
         # Add additional repositories
