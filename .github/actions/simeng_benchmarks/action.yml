@@ -6,6 +6,8 @@ inputs:
     required: true
   OS:
     required: true
+  PAT:
+    required: true
 
 runs:
   using: 'composite'
@@ -20,7 +22,7 @@ runs:
       uses: actions/checkout@v3
       with:
         repository: UoB-HPC/simeng-benchmarks
-        token: ${{ secrets.SIMENGUOB_PAT }}
+        token: ${{ inputs.PAT }}
         ref: makefile-build-system
         path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
@@ -30,7 +32,7 @@ runs:
       with:
         repository: UoB-HPC/simeng-benchmarks
         ref: makefile-build-system
-        token: ${{ secrets.SIMENGUOB_PAT }}
+        token: ${{ inputs.PAT }}
         path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - name: remove
