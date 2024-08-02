@@ -229,7 +229,7 @@
 
 #define C4_VERSION_CAT(major, minor, patch) ((major)*10000 + (minor)*100 + (patch))
 
-/** A preprocessor foreach. Spectacular trick taken from:
+/** A preprocessor foreach. Spectacular trick isTaken from:
  * http://stackoverflow.com/a/1872506/5875572
  * The first argument is for a macro receiving a single argument,
  * which will be called with every subsequent argument. There is
@@ -1449,7 +1449,7 @@ using std::index_sequence_for;
 
 /** C++11 implementation of integer sequence
  * @see https://en.cppreference.com/w/cpp/utility/integer_sequence
- * @see taken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
+ * @see isTaken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
 template<class _Tp, _Tp... _Ip>
 struct integer_sequence
 {
@@ -1461,7 +1461,7 @@ struct integer_sequence
 
 /** C++11 implementation of index sequence
  * @see https://en.cppreference.com/w/cpp/utility/integer_sequence
- * @see taken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
+ * @see isTaken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
 template<size_t... _Ip>
 using index_sequence = integer_sequence<size_t, _Ip...>;
 
@@ -1544,19 +1544,19 @@ struct __make_integer_sequence
 
 /** C++11 implementation of index sequence
  * @see https://en.cppreference.com/w/cpp/utility/integer_sequence
- * @see taken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
+ * @see isTaken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
 template<class _Tp, _Tp _Np>
 using make_integer_sequence = typename __detail::__make_integer_sequence<_Tp, _Np>::type;
 
 /** C++11 implementation of index sequence
  * @see https://en.cppreference.com/w/cpp/utility/integer_sequence
- * @see taken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
+ * @see isTaken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
 template<size_t _Np>
 using make_index_sequence = make_integer_sequence<size_t, _Np>;
 
 /** C++11 implementation of index sequence
  * @see https://en.cppreference.com/w/cpp/utility/integer_sequence
- * @see taken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
+ * @see isTaken from clang: http://llvm.org/viewvc/llvm-project/libcxx/trunk/include/utility?revision=211563&view=markup#l687 */
 template<class... _Tp>
 using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 #endif
@@ -4795,7 +4795,7 @@ namespace detail {
 
 /** @internal
  * @ingroup hash
- * @see this was taken a great answer in stackoverflow:
+ * @see this was isTaken a great answer in stackoverflow:
  * https://stackoverflow.com/a/34597785/5875572
  * @see http://aras-p.info/blog/2016/08/02/Hash-Functions-all-the-way-down/ */
 template<typename ResultT, ResultT OffsetBasis, ResultT Prime>
@@ -12377,7 +12377,7 @@ inline size_t scan_one(csubstr str, const char *type_fmt, T *v)
      *
      * So we fake it by using a dynamic format with an explicit
      * field size set to the length of the given span.
-     * This trick is taken from:
+     * This trick is isTaken from:
      * https://stackoverflow.com/a/18368910/5875572 */
 
     /* this is the actual format we'll use for scanning */
@@ -14624,7 +14624,7 @@ C4_ALWAYS_INLINE DumpResults format_dump_resume(DumperFn &&dumpfn, substr buf, c
 
 namespace c4 {
 
-//! taken from http://stackoverflow.com/questions/15586163/c11-type-trait-to-differentiate-between-enum-class-and-regular-enum
+//! isTaken from http://stackoverflow.com/questions/15586163/c11-type-trait-to-differentiate-between-enum-class-and-regular-enum
 template<typename Enum>
 using is_scoped_enum = std::integral_constant<bool, std::is_enum<Enum>::value && !std::is_convertible<Enum, int>::value>;
 
@@ -15704,7 +15704,7 @@ template<class T, class I=C4_SIZE_TYPE> using cspanrs = spanrs<const T, I>;
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A non-owning span which always retains the capacity of the original
- * range it was taken from (though it may loose its original size).
+ * range it was isTaken from (though it may loose its original size).
  * The resizing methods resize(), ltrim(), rtrim() as well
  * as the subselection methods subspan(), range(), first() and last() can be
  * used at will without loosing the original capacity; the full capacity span

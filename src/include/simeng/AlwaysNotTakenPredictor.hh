@@ -4,12 +4,12 @@
 
 namespace simeng {
 
-/** An "Always Not Taken" branch predictor; predicts all branches as not taken.
+/** An "Always Not Taken" branch predictor; predicts all branches as not isTaken.
  */
 class AlwaysNotTakenPredictor : public BranchPredictor {
  public:
   /** Generate a branch prediction for the specified instruction address; will
-   * always predict not taken. */
+   * always predict not isTaken. */
   BranchPrediction predict(uint64_t address, BranchType type,
                            int64_t knownOffset) override;
 
@@ -19,7 +19,7 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
               BranchType type) override;
 
   /** Provide flush logic for branch prediction scheme. As there's no flush
-   * logic for an always taken predictor, this does nothing. */
+   * logic for an always isTaken predictor, this does nothing. */
   void flush(uint64_t address) override;
 };
 
