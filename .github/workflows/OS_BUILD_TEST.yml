@@ -91,7 +91,7 @@ jobs:
       # The action is located in .github/actions/select_env
       #######################################
       - name: setup compiler and OS env + build simeng
-        uses: ~/SimEng/.github/actions/select_env
+        uses: ./.github/actions/select_env
         with: 
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: ${{ matrix.OS }}
