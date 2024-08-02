@@ -108,6 +108,8 @@ jobs:
           cd .. && pwd
           echo $GITHUB_WORKSPACE
           ls $GITHUB_WORKSPACE
+        
+      # Note: uncomment
       # #######################################
       # # Depending on OS and compiler, this step chooses the correct setup action to run.
       # # The action is located in .github/actions/select_env
