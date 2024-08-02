@@ -79,19 +79,19 @@ jobs:
         name: checkout v3
         uses: actions/checkout@v3
         with:
-          path: main
+          path: SimEng
 
       - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v4
         uses: actions/checkout@v4
         with:
-          path: main
+          path: SimEng
       #######################################
       # Depending on OS and compiler, this step chooses the correct setup action to run.
       # The action is located in .github/actions/select_env
       #######################################
       - name: setup compiler and OS env + build simeng
-        uses: ./.github/actions/select_env
+        uses: ~/SimEng/.github/actions/select_env
         with: 
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: ${{ matrix.OS }}
