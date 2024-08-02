@@ -33,6 +33,9 @@ runs:
           tree \
           git
 
+        # add pyparsing for benchmarking
+        pip install pyparsing
+
         # Add additional repositories
         add-apt-repository universe
         add-apt-repository ppa:ubuntu-toolchain-r/test
