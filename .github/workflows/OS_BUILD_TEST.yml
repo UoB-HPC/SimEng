@@ -86,28 +86,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: simeng
-
-      - name: echo secret
-        run: |
-          echo ${{ secrets.SIMENGUOB_PAT }}
-          apt update && apt upgrade
-          apt-get install -y git
-      
-        #Note: remove
-      - name: testing checkout benchmarks repo
-        uses: actions/checkout@v4
-        with:
-          repository: UoB-HPC/simeng-benchmarks
-          ref: makefile-build-system
-          token: ${{ secrets.SIMENGUOB_PAT }}
-          path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
-      
-      - name: location
-        run: |
-          pwd
-          cd .. && pwd
-          echo $GITHUB_WORKSPACE
-          ls $GITHUB_WORKSPACE
         
       #######################################
       # Depending on OS and compiler, this step chooses the correct setup action to run.
