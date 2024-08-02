@@ -156,7 +156,7 @@ class Instruction {
            "Branch misprediction check requires instruction to have executed");
     // Flag as mispredicted if taken state was wrongly predicted, or taken
     // and predicted target is wrong
-    return (branchTaken_ != prediction_.isTaken ||
+    return ((branchTaken_ != prediction_.isTaken) ||
             (branchTaken_ && (prediction_.target != branchAddress_)));
   }
 
