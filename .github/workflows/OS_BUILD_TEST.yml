@@ -109,76 +109,75 @@ jobs:
           echo $GITHUB_WORKSPACE
           ls $GITHUB_WORKSPACE
         
-      # Note: uncomment
-      # #######################################
-      # # Depending on OS and compiler, this step chooses the correct setup action to run.
-      # # The action is located in .github/actions/select_env
-      # #######################################
-      # - name: setup compiler and OS env + build simeng
-      #   uses: ./.github/actions/select_env
-      #   with: 
-      #     LLVM-VERSION: ${{ env.LLVM-VERSION }}
-      #     OS: ${{ matrix.OS }}
-      #     COMPILER: ${{ matrix.COMPILER }}
+      #######################################
+      # Depending on OS and compiler, this step chooses the correct setup action to run.
+      # The action is located in .github/actions/select_env
+      #######################################
+      - name: setup compiler and OS env + build simeng
+        uses: ./.github/actions/select_env
+        with: 
+          LLVM-VERSION: ${{ env.LLVM-VERSION }}
+          OS: ${{ matrix.OS }}
+          COMPILER: ${{ matrix.COMPILER }}
 
-      # #######################################
-      # # Prints out info in isolated step for easy access.
-      # #######################################
-      # - name: INFO
-      #   shell: bash
-      #   run: |
-      #     cat /etc/os-release 
-      #     echo "_______________________________________"
-      #     cmake --version
-      #     echo "_______________________________________"
-      #     "${{ env.GCC_DIR }}" --version
-      #     which gcc
-      #     echo "_______________________________________"
-      #     "${{ env.CPP_DIR }}" --version
-      #     which g++
-      #     echo "_______________________________________"
+      #######################################
+      # Prints out info in isolated step for easy access.
+      #######################################
+      - name: INFO
+        shell: bash
+        run: |
+          cat /etc/os-release 
+          echo "_______________________________________"
+          cmake --version
+          echo "_______________________________________"
+          "${{ env.GCC_DIR }}" --version
+          which gcc
+          echo "_______________________________________"
+          "${{ env.CPP_DIR }}" --version
+          which g++
+          echo "_______________________________________"
           
-      # #######################################
-      # # Run Integration Tests.
-      # #######################################
-      # - name: Integration Tests
-      #   shell: bash
-      #   run: |
-      #     ./build/test/integration/integrationtests
+      #######################################
+      # Run Integration Tests.
+      #######################################
+      - name: Integration Tests
+        shell: bash
+        run: |
+          ./build/test/integration/integrationtests
 
-      # #######################################
-      # # Run Unit Tests.
-      # #######################################
-      # - name: Unit Tests
-      #   shell: bash
-      #   run: |
-      #     ./build/test/unit/unittests
+      #######################################
+      # Run Unit Tests.
+      #######################################
+      - name: Unit Tests
+        shell: bash
+        run: |
+          ./build/test/unit/unittests
 
-      # #######################################
-      # # Run Regression AARCH64 Tests.
-      # #######################################
-      # - name: regression test (aarch64)
-      #   if: always()
-      #   shell: bash
-      #   run: |
-      #     ./build/test/regression/aarch64/regression-aarch64
+      #######################################
+      # Run Regression AARCH64 Tests.
+      #######################################
+      - name: regression test (aarch64)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/aarch64/regression-aarch64
 
-      # #######################################
-      # # Run Regression RISCV Tests.
-      # #######################################
-      # - name: regression test (riscv)
-      #   if: always()
-      #   shell: bash
-      #   run: |
-      #     ./build/test/regression/riscv/regression-riscv
+      #######################################
+      # Run Regression RISCV Tests.
+      #######################################
+      - name: regression test (riscv)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/riscv/regression-riscv
 
-      # #######################################
-      # # Run Benchmark Tests.
-      # #######################################
-      # - if: always()
-      #   name: run benchmarks
-      #   uses: ./.github/actions/simeng_benchmarks
-      #   with:
-      #     BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
-      #     OS: ${{ matrix.OS }}
-      # ##########################################
+      #######################################
+      # Run Benchmark Tests.
+      #######################################
+      - if: always()
+        name: run benchmarks
+        uses: ./.github/actions/simeng_benchmarks
+        with:
+          BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
+          OS: ${{ matrix.OS }}
+      ##########################################
