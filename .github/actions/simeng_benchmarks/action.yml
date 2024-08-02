@@ -24,7 +24,7 @@ runs:
         repository: UoB-HPC/simeng-benchmarks
         token: ${{ inputs.PAT }}
         ref: makefile-build-system
-        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+        path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
       name: checking out benchmark repository
@@ -33,7 +33,7 @@ runs:
         repository: UoB-HPC/simeng-benchmarks
         ref: makefile-build-system
         token: ${{ inputs.PAT }}
-        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+        path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - name: remove
       shell: bash
@@ -41,10 +41,10 @@ runs:
         tree .. -L 2
         echo "whhoop"
 
-    # - name: run benchmark
-    #   shell: bash
-    #   run: |
-    #     cd $GITHUB_WORKSPACE/simeng-benchmarks/Tools/simulation/validation
-    #     SIMENG_BENCHMARKS_SRC_DIR=$GITHUB_WORKSPACE/simeng-benchmarks python3 validate_simulation.py all_a64fx.json $GITHUB_WORKSPACE/configs/a64fx.yaml
+    - name: run benchmark
+      shell: bash
+      run: |
+        cd ./simeng-benchmarks/Tools/simulation/validation
+        SIMENG_BENCHMARKS_SRC_DIR=$GITHUB_WORKSPACE/simeng-benchmarks python3 validate_simulation.py all_a64fx.json $GITHUB_WORKSPACE/configs/a64fx.yaml
     
 
