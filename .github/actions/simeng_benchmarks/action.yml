@@ -24,7 +24,7 @@ runs:
         repository: UoB-HPC/simeng-benchmarks
         token: ${{ inputs.PAT }}
         ref: makefile-build-system
-        path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
       name: checking out benchmark repository
@@ -33,7 +33,7 @@ runs:
         repository: UoB-HPC/simeng-benchmarks
         ref: makefile-build-system
         token: ${{ inputs.PAT }}
-        path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
+        path: ../simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
     - name: remove
       shell: bash

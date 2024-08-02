@@ -78,14 +78,11 @@ jobs:
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v3
         uses: actions/checkout@v3
-        with:
-          path: SimEng
 
       - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v4
         uses: actions/checkout@v4
-        with:
-          path: SimEng
+
       #######################################
       # Depending on OS and compiler, this step chooses the correct setup action to run.
       # The action is located in .github/actions/select_env
