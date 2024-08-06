@@ -35,12 +35,6 @@ runs:
         token: ${{ inputs.PAT }}
         path: simeng-benchmarks # Store in $GITHUB_WORKSPACE/simeng-benchmarks
 
-    - name: remove
-      shell: bash
-      run: |
-        tree .. -L 2
-        echo "whhoop"
-
     - name: run benchmark
       shell: bash
       run: |

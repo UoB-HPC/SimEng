@@ -74,6 +74,10 @@ runs:
           tree \
           git
 
+        # add pyparsing for benchmarking
+        apt-get install -y pip
+        pip install pyparsing
+
         apt-get update
         apt-get upgrade -y
 
@@ -105,6 +109,10 @@ runs:
           dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
         fi
 
+        # add pyparsing for benchmarking
+        dnf install -y pip
+        pip install pyparsing
+
         dnf update -y
         dnf upgrade -y 
         dnf clean all
@@ -129,6 +137,11 @@ runs:
           sudo \
           tree \
           zlib-devel
+
+        # add pyparsing for benchmarking
+        dnf install -y pip
+        pip install pyparsing
+
         dnf group install -y "Development Tools"
         dnf update -y
         dnf upgrade -y
@@ -143,5 +156,9 @@ runs:
       run: |
         brew update
         brew upgrade
+
+        brew install pip
+        pip install pyparsing
+
         brew install make
 

@@ -26,7 +26,6 @@ runs:
     #######################################
     # Restore gcc from cache.
     #######################################
-    # - if: ${{ contains(fromJson('["gcc-7", "gcc-8"]'), inputs.gcc-version) }}
     - name: restore gcc
       uses: actions/cache/restore@v4
       id: gcc-restore-v4
@@ -47,7 +46,6 @@ runs:
     #######################################
     # Install gcc from source.
     #######################################
-
     - if: ${{ steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
       name: install gcc
       shell: bash
@@ -85,7 +83,7 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=$GCC_DIR -DCMAKE_CXX_COMPILER=$CPP_DIR
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=$GCC_DIR -DCMAKE_CXX_COMPILER=$CPP_DIR
 
         cmake --build build -j $(nproc)
 

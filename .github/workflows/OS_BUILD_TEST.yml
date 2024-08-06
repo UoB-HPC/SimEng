@@ -17,49 +17,46 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Note: remove
-        OS: ['ubuntu:20.04'] # Docker images
-        COMPILER: ['gcc-10'] # compiler names
         
-        # OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
-        # COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] # compiler names
+        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
+        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] # compiler names
         
         #######################################
         # Removes unecessary jobs as jobs are generated in the order seen in the matrix.
         # "Exclude" is to keep job ordering nice i.e. keeping ubuntu jobs next to each other in the list.
         #######################################
-        # exclude:      
-        #   - OS: 'ubuntu:20.04'
-        #     COMPILER: 'gcc-7'
+        exclude:      
+          - OS: 'ubuntu:20.04'
+            COMPILER: 'gcc-7'
 
-        #   - OS: 'ubuntu:18.04'
-        #     COMPILER: 'gcc-8'
-        #   - OS: 'ubuntu:18.04'
-        #     COMPILER: 'gcc-9'
-        #   - OS: 'ubuntu:18.04'
-        #     COMPILER: 'gcc-10'
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-8'
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-9'
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-10'
 
-        #   # need redhat 8 for gcc 7 and 8 | redhat 9 for gcc 9 and 10
-        #   - OS: 'redhat/ubi8:latest'
-        #     COMPILER: gcc-9
-        #   - OS: 'redhat/ubi8:latest'
-        #     COMPILER: gcc-10
+          # need redhat 8 for gcc 7 and 8 | redhat 9 for gcc 9 and 10
+          - OS: 'redhat/ubi8:latest'
+            COMPILER: gcc-9
+          - OS: 'redhat/ubi8:latest'
+            COMPILER: gcc-10
 
-        #   - OS: 'redhat/ubi9:latest'
-        #     COMPILER: gcc-7
-        #   - OS: 'redhat/ubi9:latest'
-        #     COMPILER: gcc-8
+          - OS: 'redhat/ubi9:latest'
+            COMPILER: gcc-7
+          - OS: 'redhat/ubi9:latest'
+            COMPILER: gcc-8
 
-        #   # need debian-10 (buster) for gcc 7 |  
-        #   - OS: 'debian:10'
-        #     COMPILER: 'gcc-8'
-        #   - OS: 'debian:10'
-        #     COMPILER: 'gcc-9'
-        #   - OS: 'debian:10'
-        #     COMPILER: 'gcc-10'
+          # need debian-10 (buster) for gcc 7 |  
+          - OS: 'debian:10'
+            COMPILER: 'gcc-8'
+          - OS: 'debian:10'
+            COMPILER: 'gcc-9'
+          - OS: 'debian:10'
+            COMPILER: 'gcc-10'
 
-        #   - OS: 'debian:11'
-        #     COMPILER: 'gcc-7'
+          - OS: 'debian:11'
+            COMPILER: 'gcc-7'
     
     #######################################
     # Choose container and set name of workflow

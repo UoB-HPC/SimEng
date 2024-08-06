@@ -13,7 +13,6 @@ runs:
     #######################################
     # Install dependencies required (cmake, etc).
     #######################################
-
     - name: install dependencies
       uses: ./.github/actions/setup_deps
       with:
