@@ -34,7 +34,7 @@ runs:
           git
 
         # add pyparsing for benchmarking
-        apt-get install -y pip
+        apt-get install -y python3-pip
         pip install pyparsing
 
         # Add additional repositories
@@ -75,7 +75,7 @@ runs:
           git
 
         # add pyparsing for benchmarking
-        apt-get install -y pip
+        apt-get install -y python3-pip
         pip install pyparsing
 
         apt-get update
@@ -110,7 +110,7 @@ runs:
         fi
 
         # add pyparsing for benchmarking
-        dnf install -y pip
+        dnf install -y python3-pip
         pip install pyparsing
 
         dnf update -y
@@ -139,7 +139,7 @@ runs:
           zlib-devel
 
         # add pyparsing for benchmarking
-        dnf install -y pip
+        dnf install -y python3-pip
         pip install pyparsing
 
         dnf group install -y "Development Tools"
@@ -157,7 +157,7 @@ runs:
         brew update
         brew upgrade
 
-        brew install pip
+        brew install python3-pip
         pip install pyparsing
 
         brew install make
