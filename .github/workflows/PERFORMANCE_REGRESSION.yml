@@ -76,6 +76,7 @@ jobs:
       
       # run benchmark and output difference if there is any
       - name: run cloverleaf_gcc10.3.0_armv8.4+sve & compare runtimes
+        shell: bash
         run: |
           if [[ ${{ steps.cloverleaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
@@ -119,6 +120,7 @@ jobs:
       
       # run benchmark and output difference if there is any
       - name: run minibude_gcc10.3.0_armv8.4+sve & compare runtimes
+        shell: bash
         run: |
           if [[ ${{ steps.miniBUDE_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
@@ -162,6 +164,7 @@ jobs:
       
       # run benchmark and output difference if there is any
       - name: run stream_gcc10.3.0_armv8.4+sve & compare runtimes
+        shell: bash
         run: |
           if [[ ${{ steps.stream_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
@@ -205,6 +208,7 @@ jobs:
       
       # run benchmark and output difference if there is any
       - name: run tealeaf_gcc10.3.0_armv8.4+sve & compare runtimes
+        shell: bash
         run: |
           if [[ ${{ steps.tealeaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
