@@ -79,6 +79,7 @@ jobs:
         shell: bash
         run: |
           if [[ ${{ steps.cloverleaf_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
+            echo hello
             previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
