@@ -235,7 +235,7 @@ jobs:
           else
             echo $previous_time
           fi
-      
+
       # always overwrite previous time
       - name: store benchmark output into cache
         uses: actions/cache/save@v4
