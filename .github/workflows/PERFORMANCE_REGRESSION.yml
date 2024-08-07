@@ -78,7 +78,7 @@ jobs:
       - name: run cloverleaf_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             echo hello
             previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
@@ -93,7 +93,7 @@ jobs:
           echo "CLOVERLEAF (cloverleaf_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -124,7 +124,7 @@ jobs:
       - name: run minibude_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -138,7 +138,7 @@ jobs:
           echo "MINIBUDE (minibude_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -169,7 +169,7 @@ jobs:
       - name: run stream_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.stream_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -183,7 +183,7 @@ jobs:
           echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.stream_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -214,7 +214,7 @@ jobs:
       - name: run tealeaf_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -228,7 +228,7 @@ jobs:
           echo "TeaLeaf (tealeaf_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
