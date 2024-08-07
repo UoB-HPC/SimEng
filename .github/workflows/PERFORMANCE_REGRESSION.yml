@@ -69,16 +69,16 @@ jobs:
       # check for previous time in cache
       - name: check for previous cloverleaf time in cache
         uses: actions/cache/restore@v4
-        id: cloverleaf_benchmark_time
+        id: cloverleaf_benchmark_out
         with:
           path: ./cloverleaf_benchmark_out.txt
-          key: cloverleaf_benchmark_time
+          key: cloverleaf_benchmark_out
       
       # run benchmark and output difference if there is any
       - name: run cloverleaf_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.cloverleaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -92,7 +92,7 @@ jobs:
           echo "CLOVERLEAF (cloverleaf_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.cloverleaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -105,7 +105,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./cloverleaf_benchmark_out.txt
-          key: cloverleaf_benchmark_time
+          key: cloverleaf_benchmark_out
 
       #######################################
       # miniBUDE
@@ -113,16 +113,16 @@ jobs:
       # check for previous time in cache
       - name: check for previous minibude time in cache
         uses: actions/cache/restore@v4
-        id: miniBUDE_benchmark_time
+        id: miniBUDE_benchmark_out
         with:
           path: ./miniBUDE_benchmark_out.txt
-          key: miniBUDE_benchmark_time
+          key: miniBUDE_benchmark_out
       
       # run benchmark and output difference if there is any
       - name: run minibude_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.miniBUDE_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_benchmark_out.outputs.cache-hit == 'true' }}  ]]; then
             previous_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -136,7 +136,7 @@ jobs:
           echo "MINIBUDE (minibude_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.miniBUDE_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_benchmark_out.outputs.cache-hit == 'true' }}  ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -149,7 +149,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./miniBUDE_benchmark_out.txt
-          key: miniBUDE_benchmark_time
+          key: miniBUDE_benchmark_out
 
       #######################################
       # STREAM
@@ -157,16 +157,16 @@ jobs:
       # check for previous time in cache
       - name: check for previous stream time in cache
         uses: actions/cache/restore@v4
-        id: stream_benchmark_time
+        id: stream_benchmark_out
         with:
           path: ./stream_benchmark_out.txt
-          key: stream_benchmark_time
+          key: stream_benchmark_out
       
       # run benchmark and output difference if there is any
       - name: run stream_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.stream_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             previous_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -180,7 +180,7 @@ jobs:
           echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.stream_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -193,7 +193,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./stream_benchmark_out.txt
-          key: stream_benchmark_time
+          key: stream_benchmark_out
 
       #######################################
       # TeaLeaf
@@ -201,16 +201,16 @@ jobs:
       # check for previous time in cache
       - name: check for previous stream time in cache
         uses: actions/cache/restore@v4
-        id: tealeaf_benchmark_time
+        id: tealeaf_benchmark_out
         with:
           path: ./tealeaf_benchmark_out.txt
-          key: tealeaf_benchmark_time
+          key: tealeaf_benchmark_out
       
       # run benchmark and output difference if there is any
       - name: run tealeaf_gcc10.3.0_armv8.4+sve & compare runtimes
         shell: bash
         run: |
-          if [[ ${{ steps.tealeaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             previous_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -224,7 +224,7 @@ jobs:
           echo "TeaLeaf (tealeaf_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: ${current_time}ms"
 
-          if [[ ${{ steps.tealeaf_benchmark_time.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_benchmark_out.outputs.cache-hit == 'true' }} ]]; then
             difference=$((current_time-previous_time))
             echo "Previous Time: ${previous_time}ms"
             echo "Absolute Difference: ${difference#-}ms"
@@ -237,4 +237,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./tealeaf_benchmark_out.txt
-          key: tealeaf_benchmark_time
+          key: tealeaf_benchmark_out
