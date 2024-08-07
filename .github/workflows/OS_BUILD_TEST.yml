@@ -127,7 +127,7 @@ jobs:
       #######################################
       # Run Regression AARCH64 Tests.
       #######################################
-      - name: regression test (aarch64)
+      - name: Regression Test (aarch64)
         if: always()
         shell: bash
         run: |
@@ -136,7 +136,7 @@ jobs:
       #######################################
       # Run Regression RISCV Tests.
       #######################################
-      - name: regression test (riscv)
+      - name: Regression Test (riscv)
         if: always()
         shell: bash
         run: |
@@ -146,7 +146,7 @@ jobs:
       # Run Benchmark Tests.
       #######################################
       - if: always()
-        name: run benchmarks
+        name: Run Benchmarks
         uses: ./.github/actions/simeng_benchmarks
         with:
           BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
