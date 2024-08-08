@@ -22,15 +22,38 @@ jobs:
       - name: checkout v4
         uses: actions/checkout@v4
       
+      # #######################################
+      # # install compiler and build SimEng
+      # #######################################
+      # - name: setup compiler and OS env + build simeng
+      #   uses: ./.github/actions/select_env
+      #   with: 
+      #     LLVM-VERSION: ${{ env.LLVM-VERSION }}
+      #     OS: ubuntu:20.04
+      #     COMPILER: gcc-10
       #######################################
       # install compiler and build SimEng
       #######################################
-      - name: setup compiler and OS env + build simeng
-        uses: ./.github/actions/select_env
-        with: 
-          LLVM-VERSION: ${{ env.LLVM-VERSION }}
-          OS: ubuntu:20.04
-          COMPILER: gcc-10
+      - name: install gcc
+        shell: bash
+        run: |
+          apt-get -y install gcc-10
+          apt-get -y install g++-10
+          apt update && apt upgrade -y
+        #######################################
+      # Build SimEng without llvm or ninja
+      #######################################
+      - name: Build SimEng
+        shell: bash
+        run: |
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+
+          cmake --build build -j $(nproc)
+
+          cmake --build build --target install
+
+          echo "GCC_DIR=/usr/bin/gcc-10" >> $GITHUB_ENV
+          echo "CPP_DIR=/usr/bin/g++-10" >> $GITHUB_ENV
 
       #######################################
       # Prints out info in isolated step for easy access.

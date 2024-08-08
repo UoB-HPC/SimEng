@@ -45,7 +45,7 @@ runs:
         apt-get update
 
         # Upgrade all installed packages
-        sudo apt-get upgrade -y
+        apt-get upgrade -y
 
     #######################################
     # Debian Dependencies

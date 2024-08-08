@@ -39,7 +39,7 @@ runs:
       run: |
         apt-get -y install ${{ inputs.gcc-version }}
         apt-get -y install g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
-        apt update && sudo apt upgrade -y
+        apt update && apt upgrade -y
         
     #######################################
     # Build SimEng without llvm or ninja
