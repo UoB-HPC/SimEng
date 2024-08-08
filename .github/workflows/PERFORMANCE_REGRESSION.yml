@@ -227,7 +227,8 @@ jobs:
           && sudo apt update \
           && sudo apt install gh -y
 
-          apt update && apt install -y gh && apt upgrade -y  
+          apt update && apt install -y gh && apt upgrade -y 
+          gh extension install actions/gh-actions-cache
 
           caches=(
             cloverleaf_benchmark_out
