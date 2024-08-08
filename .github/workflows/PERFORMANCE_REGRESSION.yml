@@ -34,12 +34,12 @@ jobs:
       #######################################
       # install compiler and build SimEng
       #######################################
-      - name: install gcc
+      - name: install deps
         shell: bash
         run: |
-          apt-get -y install gcc-10
-          apt-get -y install g++-10
-          apt update && apt upgrade -y
+          sudo apt-get -y install gcc-10 g++-10 pip
+          pip install pyparsing
+          sudo apt update && sudo apt upgrade -y
         #######################################
       # Build SimEng without llvm or ninja
       #######################################
