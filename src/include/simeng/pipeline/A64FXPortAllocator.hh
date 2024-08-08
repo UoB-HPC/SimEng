@@ -23,11 +23,12 @@ class A64FXPortAllocator : public PortAllocator {
  public:
   A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
-  uint16_t allocate(const std::vector<uint16_t>& ports) override;
+  uint16_t allocate(const std::vector<uint16_t>& ports,
+                    const uint16_t stallCycles = 0) override;
 
-  void issued(uint16_t port) override;
+  void issued(uint16_t port, const uint16_t stallCycles = 0) override;
 
-  void deallocate(uint16_t port) override;
+  void deallocate(uint16_t port, const uint16_t stallCycles = 0) override;
 
   /** A mapping from issye ports to instruction attribute */
   uint8_t attributeMapping(const std::vector<uint16_t>& ports);

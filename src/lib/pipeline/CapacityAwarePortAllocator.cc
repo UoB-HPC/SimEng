@@ -6,8 +6,8 @@ namespace simeng {
 namespace pipeline {
 
 CapacityAwarePortAllocator::CapacityAwarePortAllocator(
-    const std::vector<std::vector<uint16_t>>& portArrangement,
-    ryml::ConstNodeRef config) {
+    const std::vector<std::vector<uint16_t>>& portArrangement) {
+  ryml::ConstNodeRef config = config::SimInfo::getConfig();
   supportVector_.resize(config["Ports"].num_children());
   weights_.resize(config["Ports"].num_children());
   rsPortMappings_.resize(config["Reservation-Stations"].num_children());
@@ -15,19 +15,28 @@ CapacityAwarePortAllocator::CapacityAwarePortAllocator(
   for (uint16_t i = 0; i < config["Reservation-Stations"].num_children(); i++) {
     portUsage_.push_back(
         {.slotsUsed_ = 0,
-         .maxSlots_ = config["Reservation-Stations"][i]["Size"].as<uint16_t>(),
+         .maxSlots_ = config::SimInfo::getValue<uint16_t>(
+             config["Reservation-Stations"][i]["Size"]),
          .totalStallCycles_ = 0,
-         .maxRate_ = config["Reservation-Stations"][i]["Dispatch-Rate"]
-                         .as<uint16_t>()});
+         .maxRate_ = config::SimInfo::getValue<uint16_t>(
+             config["Reservation-Stations"][i]["Dispatch-Rate"])});
     for (uint16_t j = 0;
          j < config["Reservation-Stations"][i]["Port-Nums"].num_children();
          j++) {
-      uint16_t portNum =
-          config["Reservation-Stations"][i]["Port-Nums"][j].as<uint16_t>();
+      uint16_t portNum = config::SimInfo::getValue<uint16_t>(
+          config["Reservation-Stations"][i]["Port-Nums"][j]);
       supportVector_[portNum] = i;
       rsPortMappings_[i][portNum] = j;
     }
   }
+}
+
+CapacityAwarePortAllocator::~CapacityAwarePortAllocator() {
+  std::cerr << "\tWith weights: [";
+  for (const auto& wgh : weights_) {
+    std::cerr << wgh << ", ";
+  }
+  std::cerr << "\b\b]" << std::endl;
 }
 
 uint16_t CapacityAwarePortAllocator::allocate(
@@ -87,11 +96,11 @@ uint16_t CapacityAwarePortAllocator::allocate(
   }
 
   if (print_) {
-    std::cerr << "\tWith weights: ";
+    std::cerr << "\tWith weights: [";
     for (const auto& wgh : weights_) {
       std::cerr << wgh << ", ";
     }
-    std::cerr << "]" << std::endl;
+    std::cerr << "\b\b]" << std::endl;
   }
 
   // Choose port in chosen RS

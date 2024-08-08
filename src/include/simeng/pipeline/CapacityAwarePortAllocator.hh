@@ -19,8 +19,9 @@ class CapacityAwarePortAllocator : public PortAllocator {
 
  public:
   CapacityAwarePortAllocator(
-      const std::vector<std::vector<uint16_t>>& portArrangement,
-      ryml::ConstNodeRef config = config::SimInfo::getConfig());
+      const std::vector<std::vector<uint16_t>>& portArrangement);
+
+  ~CapacityAwarePortAllocator();
 
   uint16_t allocate(const std::vector<uint16_t>& ports,
                     const uint16_t stallCycles = 0) override;

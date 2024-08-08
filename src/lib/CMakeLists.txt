@@ -33,6 +33,7 @@ set(SIMENG_SOURCES
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
     pipeline/BlockingIssueUnit.cc
+    pipeline/CapacityAwarePortAllocator.cc
     pipeline/DecodeUnit.cc
     pipeline/DispatchIssueUnit.cc
     pipeline/ExecuteUnit.cc
@@ -46,6 +47,7 @@ set(SIMENG_SOURCES
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
+    PerceptronPredictor.cc
     ArchitecturalRegisterFileSet.cc
     # backward.cpp
     CoreInstance.cc

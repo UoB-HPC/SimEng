@@ -1,8 +1,9 @@
 #pragma once
-
 #include <algorithm>
 #include <memory>
 #include <vector>
+
+#include "simeng/BranchPredictor.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -10,7 +11,6 @@ namespace pipeline {
 // TODO: Extend to allow specifying the number of cycles it will take for
 // information to move from tail to head (currently fixed at 1 by
 // implementation)
-
 /** A tickable pipelined buffer. Values are shifted from the tail slot to the
  * head slot each time `tick()` is called. */
 template <class T>
@@ -18,11 +18,10 @@ class PipelineBuffer {
  public:
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
-  PipelineBuffer(int width, const T& initialValue)
+  PipelineBuffer(uint16_t width, const T& initialValue)
       : width(width),
         buffer(width * length, initialValue),
         emptyVal_(initialValue) {}
-
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
    * stalled. */
   void tick() {
@@ -31,6 +30,15 @@ class PipelineBuffer {
     headIsStart = !headIsStart;
   }
 
+  /** Return the slots waiting to be processed by the next pipeline unit */
+  const T* getPendingSlots() const {
+    // If stalled head and tail slots won't have been swapped
+    if (isStalled_) {
+      return getTailSlots();
+    } else {
+      return getHeadSlots();
+    }
+  }
   /** Get a tail slots pointer. */
   T* getTailSlots() {
     T* ptr = buffer.data();
@@ -52,7 +60,6 @@ class PipelineBuffer {
     const T* ptr = buffer.data();
     return &ptr[!headIsStart * width];
   }
-
   /** Check if the buffer is stalled. */
   bool isStalled() const { return isStalled_; }
 
@@ -63,7 +70,7 @@ class PipelineBuffer {
   void fill(const T& value) { std::fill(buffer.begin(), buffer.end(), value); }
 
   /** Get the width of the buffer slots. */
-  unsigned short getWidth() const { return width; }
+  uint16_t getWidth() const { return width; }
 
   /** Query if buffer is empty by checking against a set value which
    * represents an empty entry. */
@@ -76,9 +83,39 @@ class PipelineBuffer {
     return true;
   }
 
+  /** Flush branches in the buffer from the branch predictor, where the
+   * buffer contains micro-ops */
+  void flushBranchMicroOps(BranchPredictor& branchPredictor) {
+    for (size_t slot = 0; slot < width; slot++) {
+      auto& uop = getTailSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        branchPredictor.flush(uop->getInstructionAddress());
+      }
+      uop = getHeadSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        branchPredictor.flush(uop->getInstructionAddress());
+      }
+    }
+  }
+
+  /** Flush branches in the buffer from the branch predictor, where the
+   * buffer contains macro-ops */
+  void flushBranchMacroOps(BranchPredictor& branchPredictor) {
+    for (size_t slot = 0; slot < width; slot++) {
+      auto& macroOp = getTailSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        branchPredictor.flush(macroOp[0]->getInstructionAddress());
+      }
+      macroOp = getHeadSlots()[slot];
+      if (!macroOp.empty() && macroOp[0]->isBranch()) {
+        branchPredictor.flush(macroOp[0]->getInstructionAddress());
+      }
+    }
+  }
+
  private:
   /** The width of each row of slots. */
-  unsigned short width;
+  uint16_t width;
 
   /** The buffer. */
   std::vector<T> buffer;
@@ -96,6 +133,5 @@ class PipelineBuffer {
    */
   T emptyVal_;
 };
-
 }  // namespace pipeline
 }  // namespace simeng

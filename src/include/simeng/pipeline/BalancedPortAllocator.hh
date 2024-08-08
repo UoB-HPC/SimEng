@@ -23,13 +23,14 @@ class BalancedPortAllocator : public PortAllocator {
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.
    */
-  uint16_t allocate(const std::vector<uint16_t>& ports) override;
+  uint16_t allocate(const std::vector<uint16_t>& ports,
+                    const uint16_t stallCycles = 0) override;
 
   /** Decrease the weight for the specified port. */
-  void issued(uint16_t port) override;
+  void issued(uint16_t port, const uint16_t stallCycles = 0) override;
 
   /** Decrease the weight for the specified port. */
-  void deallocate(uint16_t port) override;
+  void deallocate(uint16_t port, const uint16_t stallCycles = 0) override;
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
