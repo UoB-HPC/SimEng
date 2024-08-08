@@ -28,3 +28,7 @@ CMakeFiles/
 **/capstone-config.cmake
 
 **/simeng-fileio-test.txt
+
+*.simeng
+*.out
+*.csv
