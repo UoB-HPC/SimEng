@@ -2021,7 +2021,8 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MOV:
-      // TODO no specific tests
+      // Mov micro-op not aliased
+      if (opcode == MicroOpcode::MOV) return;
       if (opcode == Opcode::AArch64_AND_PPzPP) {
         // mov pd.b, pg/z, pn.b; alias for: and pd.b, pg/z, pn.b, pn.b
         operandCount = 4;

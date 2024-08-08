@@ -67,20 +67,44 @@ enum class InstructionException {
 namespace MicroOpcode {
 const uint8_t OFFSET_IMM = 0;
 const uint8_t OFFSET_REG = 1;
-const uint8_t LDR_ADDR = 2;
-const uint8_t STR_ADDR = 3;
-const uint8_t STR_DATA = 4;
-const uint8_t STR_ADDR_PRED = 5;
-const uint8_t STR_DATA_PRED = 6;
+const uint8_t MOV = 2;
+const uint8_t FADDP = 3;
+const uint8_t FCVT_INT = 4;
+const uint8_t FMLA = 5;
+const uint8_t FMUL = 6;
+const uint8_t LDR_ADDR = 7;
+const uint8_t LDRS_ADDR = 8;
+const uint8_t IDX_LDR_ADDR = 9;
+const uint8_t SCVT_INT = 10;
+const uint8_t STR_ADDR = 11;
+const uint8_t STR_ADDR_EX = 12;
+const uint8_t STR_DATA = 13;
+const uint8_t STR_ADDR_PRED = 14;
+const uint8_t STR_DATA_PRED = 15;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode
+
+/** A struct to define conversion types. */
+namespace ConvertTypes {
+const uint8_t WtoS = 0;
+const uint8_t WtoD = 1;
+const uint8_t XtoS = 2;
+const uint8_t XtoD = 3;
+const uint8_t StoW = 4;
+const uint8_t DtoW = 5;
+const uint8_t StoX = 6;
+const uint8_t DtoX = 7;
+// INVALID is the default value
+const uint8_t INVALID = 255;
+}  // namespace ConvertTypes
 
 /** A struct to group micro-operation information together. */
 struct MicroOpInfo {
   bool isMicroOp = false;
   uint8_t microOpcode = MicroOpcode::INVALID;
   uint8_t dataSize = 0;
+  uint8_t cvtType = ConvertTypes::INVALID;
   bool isLastMicroOp = true;
   int microOpIndex = 0;
 };
@@ -449,8 +473,11 @@ class Instruction : public simeng::Instruction {
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
 
-  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  /** Is the size of the data in the held registers, where appropriate. */
   uint8_t dataSize_ = 0;
+
+  /** Is the type of conversion the micro-op performs, where appropriate. */
+  uint8_t cvtType_ = ConvertTypes::INVALID;
 
   /** Used to denote what type of instruction this is. Utilises the constants in
    * the `InsnType` namespace allowing each bit to represent a unique
