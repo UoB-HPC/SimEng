@@ -237,10 +237,13 @@ jobs:
             minibude_benchmark_out
           )
 
+          pwd
+          git status
+
           set +e
           echo "Deleting caches..."
           for cache in "${caches[@]}"; do
-              gh actions-cache delete $cache
+              gh actions-cache delete $cache --confirm
           done
           echo "Done"
         env:
