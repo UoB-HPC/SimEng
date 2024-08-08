@@ -1,0 +1,711 @@
+# The following resources where utilised to create the config file and naming schemes:
+# https://github.com/fujitsu/A64FX
+
+Core:
+  ISA: AArch64
+  Simulation-Mode: outoforder
+  # Clock Frequency is in GHz.
+  Clock-Frequency: 1.8
+  # Timer-Frequency is in MHz.
+  Timer-Frequency: 100
+  Micro-Operations: True
+  Vector-Length: 512
+Fetch:
+  Fetch-Block-Size: 32
+  Loop-Buffer-Size: 48
+  Loop-Detection-Threshold: 4
+Process-Image:
+  Mmap-Size: 1073741824
+  Heap-Size: 1073741824
+  Stack-Size: 536870912
+Register-Set:
+  GeneralPurpose-Count: 96
+  FloatingPoint/SVE-Count: 128
+  Predicate-Count: 48
+  Conditional-Count: 120
+Pipeline-Widths:
+  Commit: 4
+  FrontEnd: 4
+  LSQ-Completion: 2
+Queue-Sizes:
+  ROB: 128
+  Load: 40
+  Store: 24
+Branch-Predictor:
+  Saturating-Count-Bits: 2
+  BTB-Tag-Bits: 11
+  Global-History-Length: 19
+  RAS-entries: 8
+  Fallback-Static-Predictor: "Always-Taken"
+Memory-Hierarchy:
+  Cache-Line-Width: 128
+  L1-Data: # Currently not in use
+    Access-Latency: 5
+    Size: 65536 # 64 KiB
+  DRAM:
+    Access-Latency: 5
+    Size: 3221225472 # 3 GiB
+LSQ-Memory-Interface:
+  Exclusive: True
+  Load-Bandwidth: 512
+  Store-Bandwidth: 256
+  Permitted-Requests-Per-Cycle: 2
+  Permitted-Loads-Per-Cycle: 2
+  Permitted-Stores-Per-Cycle: 1
+Ports:
+  0:
+    Portname: FLA
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - STORE_DATA_SCALAR
+    - STORE_DATA_VECTOR
+    - STORE_DATA_SVE
+    Instruction-Opcode-Support:
+    - 1675
+    - 1683
+    - 1684
+    - 1685
+    - 1686
+    - 1687
+    - 1688
+    - 1696
+    - 1698
+    - 1702
+    - 1973
+    - 1974
+    - 1975
+    - 1976
+    - 1979
+    - 2201
+    - 2202
+    - 2203
+    - 2117
+    - 2119
+    - 2120
+    - 2152
+    - 2154
+    - 2155
+    - 2157
+    - 2411
+    - 2412
+    - 2415
+    - 2416
+    - 2418
+    - 2419
+    - 2425
+    - 2426
+    - 2427
+    - 2428
+    - 2429
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 2892
+    - 2894
+    - 2896
+    - 2898
+    - 3656
+    - 3657
+    - 3658
+    - 3659
+    - 3660
+    - 3661
+    - 3662
+    - 3663
+    - 3664
+    - 3665
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 4063
+    - 4064
+    - 4065
+    - 4066
+    - 4067
+    - 4068
+    - 4069
+    - 4070
+    - 4071
+    - 4072
+    - 4073
+    - 4074
+    - 4113
+    - 4114
+    - 4115
+    - 4116
+    - 5608
+    - 5609
+    - 5610
+    - 5611
+    - 5612
+    - 5613
+    - 5614
+    - 5615
+    - 5616
+    - 5617
+    - 5618
+    - 5619
+  1:
+    Portname: PR
+    Instruction-Group-Support:
+    - PREDICATE
+  2:
+    Portname: EXA
+    Instruction-Group-Support:
+    - INT_SIMPLE
+    - INT_MUL
+    - STORE_DATA_INT
+    Instruction-Opcode-Support:
+    - 1161
+    - 1162
+    - 1248
+    - 1249
+    - 1250
+    - 1251
+    - 1642
+    - 1643
+    - 2412
+    - 2416
+    - 2419
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 3892
+    - 4057
+    - 4058
+    - 5354
+    - 5355
+    - 5356
+    - 5357
+    - 5358
+    - 5359
+    - 5360
+    - 5457
+    - 5458
+    - 5471
+    - 5472
+    - 5602
+    - 5603
+  3:
+    Portname: FLB
+    Instruction-Group-Support:
+    - FP_SIMPLE
+    - FP_MUL
+    - SVE_SIMPLE
+    - SVE_MUL
+    Instruction-Opcode-Support:
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 4113
+    - 4114
+    - 4115
+    - 4116
+  4:
+    Portname: EXB
+    Instruction-Group-Support:
+    - INT_SIMPLE
+    - INT_DIV_OR_SQRT
+    Instruction-Opcode-Support:
+    - 1161
+    - 1162
+    - 1248
+    - 1249
+    - 1250
+    - 1251
+    - 1642
+    - 1643
+    - 1973
+    - 1974
+    - 1975
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 4057
+    - 4058
+    - 5354
+    - 5355
+    - 5356
+    - 5357
+    - 5358
+    - 5359
+    - 5360
+    - 5457
+    - 5458
+    - 5471
+    - 5472
+    - 5602
+    - 5603
+  5:
+    Portname: EAGA
+    Instruction-Group-Support:
+    - LOAD
+    - STORE_ADDRESS
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CMP
+  6:
+    Portname: EAGB
+    Instruction-Group-Support:
+    - LOAD
+    - STORE_ADDRESS
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CMP
+    Instruction-Opcode-Support:
+    - 1037
+    - 1038
+  7:
+    Portname: BR
+    Instruction-Group-Support:
+    - BRANCH
+Reservation-Stations:
+  0:
+    Size: 20
+    Dispatch-Rate: 2
+    Ports:
+    - FLA
+    - PR
+    - EXA
+  1:
+    Size: 20
+    Dispatch-Rate: 2
+    Ports:
+    - FLB
+    - EXB
+  2:
+    Size: 20
+    Dispatch-Rate: 4
+    Ports:
+    - EAGA
+    - EAGB
+  # 3:
+  #   Size: 10
+  #   Dispatch-Rate: 2
+  #   Ports:
+  #   - EAGB
+  3:
+    Size: 19
+    Dispatch-Rate: 2
+    Ports:
+    - BR
+Execution-Units:
+  0:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  1:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  2:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  3:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  4:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  5:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  6:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  7:
+    Pipelined: True
+    Blocking-Groups:
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+Latencies:
+  0:
+    Instruction-Groups:
+    - INT
+    Execution-Latency: 2
+    Execution-Throughput: 2
+  1:
+    Instruction-Groups:
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CVT
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  2:
+    Instruction-Groups:
+    - INT_MUL
+    Execution-Latency: 5
+    Execution-Throughput: 1
+  3:
+    Instruction-Groups:
+    - INT_DIV_OR_SQRT
+    Execution-Latency: 41
+    Execution-Throughput: 41
+  4:
+    Instruction-Groups:
+    - SCALAR_SIMPLE
+    - VECTOR_SIMPLE_LOGICAL
+    - SVE_SIMPLE_LOGICAL
+    - VECTOR_SIMPLE_CMP
+    - SVE_SIMPLE_CMP
+    Execution-Latency: 9
+    Execution-Throughput: 1
+  5:
+    Instruction-Groups:
+    - FP_DIV_OR_SQRT
+    Execution-Latency: 29
+    Execution-Throughput: 29
+  6:
+    Instruction-Groups:
+    - VECTOR_SIMPLE
+    - SVE_SIMPLE
+    - SCALAR_SIMPLE_CVT
+    - FP_MUL
+    - SVE_MUL
+    Execution-Latency: 9
+    Execution-Throughput: 1
+  7:
+    Instruction-Groups:
+    - SVE_DIV_OR_SQRT
+    Execution-Latency: 98
+    Execution-Throughput: 98
+  8:
+    Instruction-Groups:
+    - PREDICATE
+    Execution-Latency: 3
+    Execution-Throughput: 1
+  9:
+    Instruction-Groups:
+    - LOAD_SCALAR
+    - LOAD_VECTOR
+    - STORE_ADDRESS_SCALAR
+    - STORE_ADDRESS_VECTOR
+    Execution-Latency: 3
+    Execution-Throughput: 1
+  10:
+    Instruction-Groups:
+    - LOAD_SVE
+    - STORE_ADDRESS_SVE
+    Execution-Latency: 6
+    Execution-Throughput: 1
+  11:
+    Instruction-Opcodes:
+    - 1976
+    - 1979
+    - 2117
+    - 2119
+    - 2120
+    - 2152
+    - 2154
+    - 2155
+    - 2157
+    Execution-Latency: 15
+    Execution-Throughput: 1
+  12:
+    Instruction-Opcodes:
+    - 4063
+    - 4064
+    - 4065
+    - 4066
+    - 4067
+    - 4068
+    - 4069
+    - 4070
+    - 4071
+    - 4072
+    - 4073
+    - 4074
+    - 5608
+    - 5609
+    - 5610
+    - 5611
+    - 5612
+    - 5613
+    - 5614
+    - 5615
+    - 5616
+    - 5617
+    - 5618
+    - 5619
+    Execution-Latency: 9
+    Execution-Throughput: 1
+  13:
+    Instruction-Opcodes:
+    - 1675
+    - 1676
+    - 1677
+    - 1678
+    - 1679
+    - 1767
+    - 1768
+    - 1769
+    - 1770
+    - 1771
+    - 1772
+    - 1773
+    - 1774
+    - 1775
+    - 1776
+    - 1777
+    - 1955
+    - 1956
+    - 1957
+    - 1958
+    - 1959
+    - 1960
+    - 1961
+    - 1962
+    - 1963
+    - 1964
+    - 1965
+    - 1966
+    - 1973
+    - 1974
+    - 1975
+    - 2217
+    - 2218
+    - 2219
+    - 2220
+    - 2232
+    - 2239
+    - 2240
+    - 2241
+    - 2242
+    - 2243
+    - 2244
+    - 2245
+    - 2246
+    - 2247
+    - 2248
+    - 2249
+    - 2261
+    - 2268
+    - 2269
+    - 2270
+    - 2271
+    - 2272
+    - 2273
+    - 2274
+    - 2275
+    - 2276
+    - 2277
+    - 2278
+    - 2279
+    - 2280
+    - 2281
+    - 2282
+    - 2294
+    - 2301
+    - 2302
+    - 2303
+    - 2304
+    - 2305
+    - 2306
+    - 2307
+    - 2308
+    - 2309
+    - 2310
+    - 2311
+    - 2323
+    - 2330
+    - 2331
+    - 2332
+    - 2333
+    - 2334
+    - 2335
+    - 2336
+    - 2337
+    - 2338
+    - 2339
+    - 2340
+    - 2411
+    - 2412
+    - 2415
+    - 2416
+    - 2418
+    - 2419
+    - 2425
+    - 2426
+    - 2427
+    - 2428
+    - 2429
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 3656
+    - 3657
+    - 3658
+    - 3659
+    - 3660
+    - 3661
+    - 3662
+    - 3663
+    - 3664
+    - 3665
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 4113
+    - 4114
+    - 4115
+    - 4116
+    Execution-Latency: 4
+    Execution-Throughput: 1
+  14:
+    Instruction-Opcodes:
+    - 1684
+    - 1685
+    - 1686
+    - 1687
+    - 1688
+    - 1689
+    - 1690
+    - 1691
+    - 1692
+    - 1694
+    - 1696
+    - 1698
+    - 1700
+    - 1702
+    - 1704
+    - 1706
+    - 2201
+    - 2202
+    - 2203
+    - 2892
+    - 2894
+    - 2896
+    - 2898
+    Execution-Latency: 6
+    Execution-Throughput: 1
+  14:
+    Instruction-Opcodes:
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    Execution-Latency: 2
+    Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: True
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 200.00
+  Features: fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm fcma dcpop sve
+  CPU-Implementer: "0x46"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x001"
+  CPU-Revision: 0
+  # Package-Count is used to generate
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1
+Interpreter:
+  Path: "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib/ld-linux-aarch64.so.1"
+  Debug: False
+  LD_LIBRARY_PATH:
+    - "/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/lib64:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/opt/FJSVxtclanga/tcsds-1.2.37/lib64:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/compiler/llvm-v15.0.3/compute_node/lib:/Users/jj16791/workspace/riken/files/study2_fugaku_llvm15_scalable.libs/vol0005/mdt3/data/ra000020/u10016/VectorStudy/study2_fugaku_fujitrad37_scalable/dep/likwid/lib"
+  Extra-Env-Vars:
+Environment-Variables:
+  - "OMP_NUM_THREADS=1"

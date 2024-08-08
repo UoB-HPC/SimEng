@@ -1,4 +1,5 @@
 import sst
+import sys
 
 DEBUG_L1 = 0
 DEBUG_L2 = 0
@@ -52,25 +53,25 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 5
+A64FX_HL_L1 = 4
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 56
+A64FX_HL_L2 = 45
 # Cohenrence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
 A64FX_CACHE_TYPE = "inclusive"
 # Throughput of L1 to L2 per core in A64FX. (bytes per cycle)
-A64FX_L1TOL2_PC_TPUT = "32B"
+A64FX_L1TOL2_PC_TPUT = "4096B"
 # Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
-A64FX_L1TOCPU_PC_TPUT = "128B"
+A64FX_L1TOCPU_PC_TPUT = "4096B"
 # Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
-A64FX_L2TOMEM_PCMG_TPUT = "64B"
+A64FX_L2TOMEM_PCMG_TPUT = "4096B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
-A64FX_L2TOL1_PC_TPUT = "64B"
+A64FX_L2TOL1_PC_TPUT = "4096B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
-A64FX_MEMTOL2_PCMG_TPUT = 128
+A64FX_MEMTOL2_PCMG_TPUT = "4096B"
 # A64FX Memory access time.
-A64FX_MEM_ACCESS = "144.5ns"
+A64FX_MEM_ACCESS = "135.5ns"
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -88,8 +89,8 @@ memprops = getMemoryProps(3, "GiB")
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
     "num_cores": 1,
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-1-xci.yaml",
-    "executable_path": "/home/br-jjones/hellocOMP",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx_llvm_2048.yaml",
+    "executable_path": sys.argv[1],
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
@@ -166,7 +167,7 @@ os_l1Icache.setRank(0, 0)
 #Core0
 cpu0 = sst.Component("core0", "sstsimeng.simengcore")
 cpu0.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-1-xci.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx_llvm_2048.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -401,45 +402,45 @@ router.setRank(0, 0)
 # ---------------------------------------------- Links ------------------------------------------------
 
 link_os_l1Dcache = sst.Link("link_os_l1Dcache_link")
-link_os_l1Dcache.connect( (os_dataInterface, "port", "100ns"), (os_l1Dcache, "high_network_0", "100ns") )
+link_os_l1Dcache.connect( (os_dataInterface, "port", "1ps"), (os_l1Dcache, "high_network_0", "1ps") )
 link_os_l1Icache = sst.Link("link_os_l1Icache_link")
-link_os_l1Icache.connect( (os_instrInterface, "port", "100ns"), (os_l1Icache, "high_network_0", "100ns") )
+link_os_l1Icache.connect( (os_instrInterface, "port", "1ps"), (os_l1Icache, "high_network_0", "1ps") )
 link_os_router = sst.Link("link_os_router")
-link_os_router.connect((os_netInterface, "rtr_port", "100ns"), (router, "port0", "100ns"))
+link_os_router.connect((os_netInterface, "rtr_port", "1ps"), (router, "port0", "1ps"))
 
 link_os_l1D_l2bus = sst.Link("link_os_l1D_l2bus_link")
-link_os_l1D_l2bus.connect( (os_l1Dcache, "low_network_0", "100ns"), (bus_0_l1_l2, "high_network_0", "100ns") )
+link_os_l1D_l2bus.connect( (os_l1Dcache, "low_network_0", "1ps"), (bus_0_l1_l2, "high_network_0", "1ps") )
 link_os_l1I_l2bus = sst.Link("link_os_l1I_l2bus_link")
-link_os_l1I_l2bus.connect( (os_l1Icache, "low_network_0", "100ns"), (bus_0_l1_l2, "high_network_1", "100ns") )
+link_os_l1I_l2bus.connect( (os_l1Icache, "low_network_0", "1ps"), (bus_0_l1_l2, "high_network_1", "1ps") )
 
 
 link_c0_l1Dcache = sst.Link("link_c0_l1Dcache_link")
-link_c0_l1Dcache.connect( (c0_dataInterface, "port", "100ns"), (c0_l1Dcache, "high_network_0", "100ns") )
+link_c0_l1Dcache.connect( (c0_dataInterface, "port", "1ps"), (c0_l1Dcache, "high_network_0", "1ps") )
 link_c0_l1Icache = sst.Link("link_c0_l1Icache_link")
-link_c0_l1Icache.connect( (c0_instrInterface, "port", "100ns"), (c0_l1Icache, "high_network_0", "100ns") )
+link_c0_l1Icache.connect( (c0_instrInterface, "port", "1ps"), (c0_l1Icache, "high_network_0", "1ps") )
 link_c0_router = sst.Link("link_c0_router")
-link_c0_router.connect((c0_netInterface, "rtr_port", "100ns"), (router, "port1", "100ns"))
+link_c0_router.connect((c0_netInterface, "rtr_port", "1ps"), (router, "port1", "1ps"))
 
 link_c0_l1D_l2bus = sst.Link("link_c0_l1D_l2bus_link")
-link_c0_l1D_l2bus.connect( (c0_l1Dcache, "low_network_0", "100ns"), (bus_0_l1_l2, "high_network_2", "100ns") )
+link_c0_l1D_l2bus.connect( (c0_l1Dcache, "low_network_0", "1ps"), (bus_0_l1_l2, "high_network_2", "1ps") )
 link_c0_l1I_l2bus = sst.Link("link_c0_l1I_l2bus_link")
-link_c0_l1I_l2bus.connect( (c0_l1Icache, "low_network_0", "100ns"), (bus_0_l1_l2, "high_network_3", "100ns") )
+link_c0_l1I_l2bus.connect( (c0_l1Icache, "low_network_0", "1ps"), (bus_0_l1_l2, "high_network_3", "1ps") )
 
 
 link_bus_0_l2 = sst.Link("link_bus_0_l2_link")
-link_bus_0_l2.connect( (bus_0_l1_l2, "low_network_0", "100ns"), (l2cache_0, "high_network_0", "100ns") )
+link_bus_0_l2.connect( (bus_0_l1_l2, "low_network_0", "1ps"), (l2cache_0, "high_network_0", "1ps") )
 
 
 link_l2_0_mem_bus = sst.Link("link_l2_0_mem_bus_link")
-link_l2_0_mem_bus.connect( (l2cache_0, "low_network_0", "100ns"), (bus_l2_mem, "high_network_0", "100ns") )
+link_l2_0_mem_bus.connect( (l2cache_0, "low_network_0", "1ps"), (bus_l2_mem, "high_network_0", "1ps") )
 
 
 link_bus_l3 = sst.Link("link_bus_l3_link")
-link_bus_l3.connect( (bus_l2_mem, "low_network_0", "100ns"), (l3cache, "high_network_0", "100ns") )
+link_bus_l3.connect( (bus_l2_mem, "low_network_0", "1ps"), (l3cache, "high_network_0", "1ps") )
 
 
 link_l3_mem = sst.Link("link_l3_mem_link")
-link_l3_mem.connect( (l3cache, "low_network_0", "100ns"), (memory_controller, "direct_link", "100ns") )
+link_l3_mem.connect( (l3cache, "low_network_0", "1ps"), (memory_controller, "direct_link", "1ps") )
 
 # ---------------------------------------------- Links ------------------------------------------------
 

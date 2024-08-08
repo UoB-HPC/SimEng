@@ -88,8 +88,8 @@ memprops = getMemoryProps(3, "GiB")
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
     "num_cores": 1,
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-1-xci.yaml",
-    "executable_path": "/home/br-jjones/hellocOMP",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx_llvm.yaml",
+    "executable_path": "/Users/jj16791/workspace/riken/files/study2_fugaku_fujitrad37_scalable/fs2020/01.MD.LOOP.makino170209_Ccode.tune03_7loop_oclunroll.170316/main",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
@@ -166,7 +166,7 @@ os_l1Icache.setRank(0, 0)
 #Core0
 cpu0 = sst.Component("core0", "sstsimeng.simengcore")
 cpu0.addParams({
-    "simeng_config_path": "/home/br-jjones/simulation/SimEng/a64fx-1-xci.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx_llvm.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
