@@ -44,9 +44,9 @@ class simengNetEv : public SST::Event {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     Event::serialize_order(ser);
-    ser& srcDevice_;
-    ser& srcId_;
-    ser& type_;
+    ser & srcDevice_;
+    ser & srcId_;
+    ser & type_;
   }
 
  protected:
@@ -153,12 +153,12 @@ class contextEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& TID_;
-    ser& PC_;
-    ser& SP_;
-    ser& progByteLen_;
-    ser& regFileValuesSizes_;
-    ser& regFileValues_;
+    ser & TID_;
+    ser & PC_;
+    ser & SP_;
+    ser & progByteLen_;
+    ser & regFileValuesSizes_;
+    ser & regFileValues_;
   }
 
  private:
@@ -237,14 +237,14 @@ class syscallInfoEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& syscallId_;
-    ser& coreId_;
-    ser& threadId_;
-    ser& registerArguments_;
-    ser& regSizes_;
-    ser& regRetType_;
-    ser& regRetTag_;
-    ser& started_;
+    ser & syscallId_;
+    ser & coreId_;
+    ser & threadId_;
+    ser & registerArguments_;
+    ser & regSizes_;
+    ser & regRetType_;
+    ser & regRetTag_;
+    ser & started_;
   }
 
  private:
@@ -355,18 +355,18 @@ class syscallEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& fatal_;
-    ser& idleAfterSyscall_;
-    ser& syscallId_;
-    ser& coreId_;
-    ser& changeType_;
-    ser& regTypes_;
-    ser& regTags_;
-    ser& regSizes_;
-    ser& regValues_;
-    ser& memTargetAddrs_;
-    ser& memTargetSizes_;
-    ser& memTargetValues_;
+    ser & fatal_;
+    ser & idleAfterSyscall_;
+    ser & syscallId_;
+    ser & coreId_;
+    ser & changeType_;
+    ser & regTypes_;
+    ser & regTags_;
+    ser & regSizes_;
+    ser & regValues_;
+    ser & memTargetAddrs_;
+    ser & memTargetSizes_;
+    ser & memTargetValues_;
   }
 
  private:
@@ -431,9 +431,9 @@ class transEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& vaddr_;
-    ser& pid_;
-    ser& paddr_;
+    ser & vaddr_;
+    ser & pid_;
+    ser & paddr_;
   }
 
  private:
@@ -510,17 +510,17 @@ class coreInfoEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& requestFromOS_;
-    ser& forClone_;
-    ser& coreId_;
-    ser& status_;
-    ser& ticks_;
-    ser& TID_;
-    ser& PC_;
-    ser& SP_;
-    ser& progByteLen_;
-    ser& regFileValuesSizes_;
-    ser& regFileValues_;
+    ser & requestFromOS_;
+    ser & forClone_;
+    ser & coreId_;
+    ser & status_;
+    ser & ticks_;
+    ser & TID_;
+    ser & PC_;
+    ser & SP_;
+    ser & progByteLen_;
+    ser & regFileValuesSizes_;
+    ser & regFileValues_;
   }
 
  private:
@@ -575,7 +575,7 @@ class coreInfoReqEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& forClone_;
+    ser & forClone_;
   }
 
  private:
@@ -605,7 +605,7 @@ class interruptEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& success_;
+    ser & success_;
   }
 
  private:
@@ -677,14 +677,14 @@ class registerEv : public simengNetEv {
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
     simengNetEv::serialize_order(ser);
-    ser& coreId_;
-    ser& status_;
-    ser& TID_;
-    ser& PC_;
-    ser& SP_;
-    ser& progByteLen_;
-    ser& regFileValuesSizes_;
-    ser& regFileValues_;
+    ser & coreId_;
+    ser & status_;
+    ser & TID_;
+    ser & PC_;
+    ser & SP_;
+    ser & progByteLen_;
+    ser & regFileValuesSizes_;
+    ser & regFileValues_;
   }
 
  private:
@@ -760,9 +760,10 @@ class nocAPI : public SST::SubComponent {
 class SimEngNOC : public nocAPI {
  public:
   /** Register SimEng NOC SubComponent deriving from the nocAPI class. */
-  SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
-      SimEngNOC, "sstsimeng", "SimEngNOC", SST_ELI_ELEMENT_VERSION(1, 0, 0),
-      "SimEng NOC for inter-core communication", SST::SSTSimEng::nocAPI)
+  SST_ELI_REGISTER_SUBCOMPONENT(SimEngNOC, "sstsimeng", "SimEngNOC",
+                                SST_ELI_ELEMENT_VERSION(1, 0, 0),
+                                "SimEng NOC for inter-core communication",
+                                SST::SSTSimEng::nocAPI)
 
   /** Register the parameters of the SimEngNOC SubComponent. */
   SST_ELI_DOCUMENT_PARAMS(

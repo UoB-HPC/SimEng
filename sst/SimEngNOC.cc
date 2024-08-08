@@ -40,13 +40,13 @@ void SimEngNOC::init(unsigned int phase) {
       //                 interface_->getEndpointID());
       req->givePayload(ev);
       // Send network request over interface
-      interface_->sendInitData(req);
+      interface_->sendUntimedData(req);
     }
   }
 
   // Check for init data from the network interface
   while (SST::Interfaces::SimpleNetwork::Request* req =
-             interface_->recvInitData()) {
+             interface_->recvUntimedData()) {
     // simengNetEv* ev = static_cast<simengNetEv*>(req->takePayload());
     // output_.verbose(CALL_INFO, 1, 0, "%s received init msg from %s\n",
     //                 getName().c_str(), ev->getSource().c_str());

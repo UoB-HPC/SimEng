@@ -110,7 +110,8 @@ void SimEngCoreWrapper::finish() {
 
   // Print stats
   auto stats = core_->getStats();
-  for (const auto& [key, value] : stats) {
+  for (auto& [key, value] : stats) {
+    value.erase(std::remove(value.begin(), value.end(), ','), value.end());
     if (statsU64.find(key) != statsU64.end()) {
       statsU64[key]->addData(std::stoull(value, nullptr, 10));
     } else if (statsF32.find(key) != statsF32.end()) {

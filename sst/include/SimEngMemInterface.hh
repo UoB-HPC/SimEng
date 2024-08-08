@@ -155,6 +155,8 @@ class SimEngMemInterface : public simeng::memory::Mem {
    */
   void handleReadRequest(std::unique_ptr<simeng::memory::MemPacket>& req);
 
+  void handlePrefetchRequest(std::unique_ptr<simeng::memory::MemPacket>& req);
+
   /**
    * Construct an AggregatedWriteRequest and use it to generate
    * SST::StandardMem::Write request(s). These request(s) are then sent to SST.
@@ -165,25 +167,22 @@ class SimEngMemInterface : public simeng::memory::Mem {
    * struct as the value for aggrReq. */
   template <typename T, typename std::enable_if<std::is_base_of<
                             SimEngMemoryRequest, T>::value>::type* = nullptr>
-  std::vector<StandardMem::Request*> makeSSTRequests(T* aggrReq,
-                                                     uint64_t pAddrStart,
-                                                     uint64_t pAddrEnd,
-                                                     uint64_t vAddrStart,
-                                                     uint64_t size);
+  void makeSSTRequests(T* aggrReq, uint64_t pAddrStart, uint64_t pAddrEnd,
+                       uint64_t vAddrStart, uint64_t size);
 
   /** The overloaded instance of splitAggregatedRequest is used to split an
    * AggregatedWriteRequest into multiple SST write requests.
    */
-  std::vector<StandardMem::Request*> splitAggregatedRequest(
-      AggregateWriteRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
-      uint64_t size);
+  void splitAggregatedRequest(AggregateWriteRequest* aggrReq,
+                              uint64_t pAddrStart, uint64_t vAddrStart,
+                              uint64_t size);
 
   /** The overloaded instance of splitAggregatedRequest is used to split an
    * AggregatedReadRequest into multiple SST read requests.
    */
-  std::vector<StandardMem::Request*> splitAggregatedRequest(
-      AggregateReadRequest* aggrReq, uint64_t pAddrStart, uint64_t vAddrStart,
-      uint64_t size);
+  void splitAggregatedRequest(AggregateReadRequest* aggrReq,
+                              uint64_t pAddrStart, uint64_t vAddrStart,
+                              uint64_t size);
 
   /** This method is used to aggregate responses from multiple read request into
    * one response. */
@@ -264,6 +263,12 @@ class SimEngMemInterface : public simeng::memory::Mem {
 
   std::map<uint64_t, uint64_t> idTracking_;
   std::map<uint64_t, uint64_t> latMap_;
+
+  std::queue<std::pair<StandardMem::Request*, bool>> requestQueue_;
+
+  uint64_t reqsInFlight_ = 0;
+
+  mutable std::ofstream outputFile_;
 };
 
 };  // namespace SSTSimEng
