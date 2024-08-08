@@ -34,18 +34,19 @@ jobs:
       #######################################
       # install compiler and build SimEng
       #######################################
-      - name: install deps
-        shell: bash
-        run: |
-          sudo apt-get -y install gcc-10 g++-10 pip
-          pip install pyparsing
-          sudo apt update && sudo apt upgrade -y
+      # - name: install deps
+      #   shell: bash
+      #   run: |
+      #     sudo apt-get -y install gcc-10 g++-10 pip
+      #     pip install pyparsing
+      #     sudo apt update && sudo apt upgrade -y
         #######################################
       # Build SimEng without llvm or ninja
       #######################################
       - name: Build SimEng
         shell: bash
         run: |
+          pip install pyparsing
           sudo cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10
 
           sudo cmake --build build -j $(nproc)
@@ -237,7 +238,7 @@ jobs:
             echo "TEALEAF_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
           fi
 
-      - name: delete previous caches if possible
+      - name: Delete previous benchmark time caches
         shell: bash
         run: |
           sudo mkdir -p -m 755 /etc/apt/keyrings \
@@ -256,11 +257,6 @@ jobs:
             stream_benchmark_out
             minibude_benchmark_out
           )
-          echo "###################"
-          pwd
-          ls
-          git status
-          echo "###################"
 
           set +e
           echo "Deleting caches..."
