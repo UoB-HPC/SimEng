@@ -14,9 +14,6 @@ on:
 jobs:
   Build_and_Run:
     runs-on: ubuntu-latest
-    
-    container:
-      image: ubuntu:20.04
 
     steps:
       #######################################
