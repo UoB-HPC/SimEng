@@ -46,7 +46,7 @@ jobs:
       - name: Build SimEng
         shell: bash
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10
 
           cmake --build build -j $(nproc)
 
