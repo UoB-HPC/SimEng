@@ -46,11 +46,11 @@ jobs:
       - name: Build SimEng
         shell: bash
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10
+          sudo cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10
 
-          cmake --build build -j $(nproc)
+          sudo cmake --build build -j $(nproc)
 
-          cmake --build build --target install
+          sudo cmake --build build --target install
 
           echo "GCC_DIR=/usr/bin/gcc-10" >> $GITHUB_ENV
           echo "CPP_DIR=/usr/bin/g++-10" >> $GITHUB_ENV
