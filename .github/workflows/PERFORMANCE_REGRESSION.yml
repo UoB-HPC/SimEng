@@ -220,7 +220,7 @@ jobs:
       - name: delete previous caches if possible
         shell: bash
         run: |
-          apt install -y gh  
+          apt update && apt install -y gh && apt upgrade -y  
 
           caches=(
             cloverleaf_benchmark_out
