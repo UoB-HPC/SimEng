@@ -236,9 +236,11 @@ jobs:
             stream_benchmark_out
             minibude_benchmark_out
           )
-
+          echo "###################"
           pwd
+          ls
           git status
+          echo "###################"
 
           set +e
           echo "Deleting caches..."
