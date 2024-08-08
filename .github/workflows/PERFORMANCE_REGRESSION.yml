@@ -240,7 +240,7 @@ jobs:
           set +e
           echo "Deleting caches..."
           for cache in "${caches[@]}"; do
-              gh actions-cache delete $cacheKey
+              gh actions-cache delete $cache
           done
           echo "Done"
         env:
