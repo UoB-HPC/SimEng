@@ -111,7 +111,7 @@ jobs:
         id: miniBUDE_restore
         with:
           path: ./miniBUDE_benchmark_out.txt
-          key: miniBUDE_benchmark_out
+          key: minibude_benchmark_out
       
       - name: run minibude_gcc10.3.0_armv8.4+sve & compare runtimes
         id: minibude_run
@@ -141,7 +141,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ./miniBUDE_benchmark_out.txt
-          key: miniBUDE_benchmark_out
+          key: minibude_benchmark_out
 
       #######################################
       # STREAM
@@ -216,6 +216,27 @@ jobs:
           else
             echo "TEALEAF_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
           fi
+
+      - name: delete previous caches if possible
+        shell: bash
+        run: |
+          apt install -y gh  
+
+          caches=(
+            cloverleaf_benchmark_out
+            tealeaf_benchmark_out   
+            stream_benchmark_out
+            minibude_benchmark_out
+          )
+
+          set +e
+          echo "Deleting caches..."
+          for cache in "${caches[@]}"; do
+              gh actions-cache delete $cacheKey --confirm
+          done
+          echo "Done"
+        env:
+          GH_TOKEN: ${{ env.PAT }}
 
       - name: store benchmark output into cache
         uses: actions/cache/save@v4

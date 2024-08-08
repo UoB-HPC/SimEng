@@ -15,7 +15,7 @@ runs:
 
     ##################################
     # clones repo with different versions of the checkout action, as container has different node versions and some compilers run on older OSs that have differening node versions
-    # NOTE: will probably have to update due to node depreciation and node 20 being enforced and requiring glibc 2.28
+    
 
     - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
       name: checkout v3
