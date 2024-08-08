@@ -1052,11 +1052,11 @@ TEST_P(InstLoad, ldpsw) {
     add x0, x0, #8
     ldpsw x5, x6, [x0, #-8]
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(1), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<int64_t>(2), 0x0000000012345678);
-  EXPECT_EQ(getGeneralRegister<int64_t>(3), 0x0000000098765432);
-  EXPECT_EQ(getGeneralRegister<int64_t>(4), 0x00000000ABCDEF12);
-  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), 0xFFFFFFFF98765432);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 0xFFFFFFFFABCDEF12);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<int64_t>(6), 0x0000000012345678);
 }
 

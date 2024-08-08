@@ -113,6 +113,12 @@ class RegisterValue {
    * RegisterValue are zeroed. */
   RegisterValue zeroExtend(uint16_t fromBytes, uint16_t toBytes) const;
 
+  /** Create a new RegisterValue of size `toBytes`, copying the first
+   * `fromBytes` bytes of this one. The remaining bytes of the new
+   * RegisterValue are set to 1. */
+  RegisterValue signExtend(uint16_t maxBytes, uint16_t fromBytes,
+                           uint16_t toBytes) const;
+
  private:
   /** Check whether the value is held locally or behind a pointer. */
   constexpr bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }

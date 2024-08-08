@@ -12,14 +12,18 @@ namespace aarch64 {
 /** A struct to hold information to construct a default cs_arm64_op from. */
 struct OpType {
   arm64_op_type type;
-  bool isDestination = false;
+  uint8_t access = CS_AC_READ;
+};
+struct opShift {
+  arm64_shifter type = ARM64_SFT_INVALID;
+  unsigned int value = 0;
 };
 
 /** A aarch64 custom decoder for splitting appropriate macro-ops into micro-ops.
  */
 class MicroDecoder {
  public:
-  /** Construct a micro decoder for splitting relevant instructions. */
+  /** Construct a micro decoder for splitting relevant instructons. */
   MicroDecoder(ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~MicroDecoder();
@@ -50,12 +54,55 @@ class MicroDecoder {
                                  csh capstoneHandle, bool lastMicroOp = false,
                                  int microOpIndex = 0);
 
+  /** Create a mov uop from a base and destination register. */
+  Instruction createMovUop(const Architecture& architecture, arm64_reg base,
+                           arm64_reg destination, csh capstoneHandle,
+                           bool lastMicroOp = false, int microOpIndex = 0);
+
+  /** Create a faddp uop. */
+  Instruction createFaddpUop(const Architecture& architecture,
+                             InstructionMetadata metadata, arm64_vas vas,
+                             csh capstoneHandle, bool lastMicroOp = false,
+                             int microOpIndex = 0);
+
+  /** Create a fcvt* uop. */
+  Instruction createFcvtUop(const Architecture& architecture,
+                            InstructionMetadata metadata, uint8_t cvtType,
+                            csh capstoneHandle, bool lastMicroOp = false,
+                            int microOpIndex = 0);
+
+  /** Create a fmla uop. */
+  Instruction createFmlaUop(const Architecture& architecture,
+                            InstructionMetadata metadata, arm64_vas vas,
+                            csh capstoneHandle, bool lastMicroOp = false,
+                            int microOpIndex = 0);
+
+  /** Create a fmul uop. */
+  Instruction createFmulUop(const Architecture& architecture,
+                            InstructionMetadata metadata, arm64_vas vas,
+                            csh capstoneHandle, bool lastMicroOp = false,
+                            int microOpIndex = 0);
+
   /** Create a load uop from a destination register and a capstone memory
    * operand. */
   Instruction createLdrUop(const Architecture& architecture, arm64_reg dest,
                            arm64_op_mem mem, csh capstoneHandle,
                            bool lastMicroOp = false, int microOpIndex = 0,
-                           uint8_t dataSize = 0);
+                           uint8_t dataSize = 0, bool isSigned = false);
+
+  /** Create a indexed load uop from a destination register and a capstone
+   * memory operand. */
+  Instruction createIndexedLdrUop(const Architecture& architecture,
+                                  arm64_reg dest, int vectorIndex,
+                                  arm64_op_mem mem, csh capstoneHandle,
+                                  bool lastMicroOp = false,
+                                  int microOpIndex = 0, uint8_t dataSize = 0);
+
+  /** Create a scvt* uop. */
+  Instruction createScvtUop(const Architecture& architecture,
+                            InstructionMetadata metadata, uint8_t cvtType,
+                            csh capstoneHandle, bool lastMicroOp = false,
+                            int microOpIndex = 0);
 
   /** Create a store data uop from a source register. */
   Instruction createSDUop(const Architecture& architecture, arm64_reg src,
@@ -65,15 +112,17 @@ class MicroDecoder {
   /** Create a store address uop from a capstone memory
    * operand. */
   Instruction createStrUop(const Architecture& architecture, arm64_op_mem mem,
-                           csh capstoneHandle, bool lastMicroOp = false,
-                           int microOpIndex = 0, uint8_t dataSize = 0);
+                           opShift sft, arm64_extender ext, csh capstoneHandle,
+                           bool lastMicroOp = false, int microOpIndex = 0,
+                           uint8_t dataSize = 0);
 
   /** Create a store data uop from a source register and a predicate. */
   Instruction createSDUop_predicated(const Architecture& architecture,
                                      arm64_reg src, arm64_reg pred,
                                      csh capstoneHandle,
                                      bool lastMicroOp = false,
-                                     int microOpIndex = 0);
+                                     int microOpIndex = 0,
+                                     uint8_t dataSize = 0);
 
   /** Create a store address uop from a capstone memory operand and a predicate.
    */

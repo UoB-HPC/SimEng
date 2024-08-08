@@ -57,11 +57,19 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
                                      : architecture_.getVectorLength();
   if (isMicroOp_) {
     switch (microOpcode_) {
+      case MicroOpcode::LDRS_ADDR:
       case MicroOpcode::LDR_ADDR: {
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp,
             1, dataSize_, addresses);
+        setMemoryAddresses(addresses);
+        break;
+      }
+      case MicroOpcode::IDX_LDR_ADDR: {
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        generateContiguousAddresses(sourceValues_[1].get<uint64_t>(), 1,
+                                    dataSize_, addresses);
 
         setMemoryAddresses(addresses);
         break;
@@ -71,7 +79,15 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[0].mem.disp,
             1, dataSize_, addresses);
-
+        setMemoryAddresses(addresses);
+        break;
+      }
+      case MicroOpcode::STR_ADDR_EX: {
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        uint64_t offset = extendOffset(sourceValues_[1].get<uint64_t>(),
+                                       metadata_.operands[0]);
+        generateContiguousAddresses(sourceValues_[0].get<uint64_t>() + offset,
+                                    1, dataSize_, addresses);
         setMemoryAddresses(addresses);
         break;
       }
@@ -79,12 +95,12 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t base = sourceValues_[0].get<uint64_t>();
         const uint64_t offset = sourceValues_[1].get<uint64_t>();
         const uint64_t* p = sourceValues_[2].getAsVector<uint64_t>();
-        const uint16_t partition_num = VL_bits / 64;
+        const uint16_t partition_num = VL_bits / (dataSize_ * 8);
 
         std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num);
 
-        generatePredicatedContiguousAddressBlocks(base + (offset * 8),
+        generatePredicatedContiguousAddressBlocks(base + (offset * dataSize_),
                                                   partition_num, dataSize_,
                                                   dataSize_, p, addresses);
         setMemoryAddresses(std::move(addresses));

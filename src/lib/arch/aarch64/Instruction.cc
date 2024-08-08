@@ -18,6 +18,7 @@ Instruction::Instruction(const Architecture& architecture,
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;
+  cvtType_ = microOpInfo.cvtType;
   isLastMicroOp_ = microOpInfo.isLastMicroOp;
   microOpIndex_ = microOpInfo.microOpIndex;
   decode();
