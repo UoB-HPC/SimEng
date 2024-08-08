@@ -8563,6 +8563,84 @@ TEST_P(InstSve, sdiv) {
   CHECK_NEON(2, int64_t, fillNeonCombined<int64_t>(results64, src64B, VL / 8));
 }
 
+TEST_P(InstSve, sdivr) {
+  // single
+  initialHeapData_.resize(VL / 4);
+  int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  std::vector<int32_t> src32A = {-34, 0, 1, 80, -125, 0, 701, 107};
+  std::vector<int32_t> src32B = {1, -42, 0, 1, 40, -684, 0, 7};
+  fillHeapCombined<int32_t>(heap32, src32A, src32B, VL / 16);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #4
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p1/z, [x0, x3, lsl #2]
+    ld1w {z2.s}, p1/z, [x0, x3, lsl #2]
+    
+    sdivr z1.s, p1/m, z1.s, z0.s
+    sdivr z2.s, p0/m, z2.s, z0.s
+  )");
+
+  std::vector<int32_t> results32 = {-34, 0, 0, 80, -3, 0, 0, 15};
+  CHECK_NEON(1, int32_t, fillNeon<int32_t>(results32, VL / 8));
+  std::rotate(src32B.begin(), src32B.begin() + ((VL / 64) % 8), src32B.end());
+  CHECK_NEON(2, int32_t, fillNeonCombined<int32_t>(results32, src32B, VL / 8));
+
+  // double
+  initialHeapData_.resize(VL / 4);
+  int64_t* heap64 = reinterpret_cast<int64_t*>(initialHeapData_.data());
+  std::vector<int64_t> src64A = {-34, 0, 1, 80, -125, 0, 701, 107};
+  std::vector<int64_t> src64B = {1, -42, 0, 1, 40, -684, 0, 7};
+  fillHeapCombined<int64_t>(heap64, src64A, src64B, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
+    ld1d {z2.d}, p1/z, [x0, x3, lsl #3]
+    
+    sdivr z1.d, p1/m, z1.d, z0.d
+    sdivr z2.d, p0/m, z2.d, z0.d
+  )");
+
+  std::vector<int64_t> results64 = {-34, 0, 0, 80, -3, 0, 0, 15};
+  CHECK_NEON(1, int64_t, fillNeon<int64_t>(results64, VL / 8));
+  std::rotate(src64B.begin(), src64B.begin() + ((VL / 128) % 8), src64B.end());
+  CHECK_NEON(2, int64_t, fillNeonCombined<int64_t>(results64, src64B, VL / 8));
+}
+
 TEST_P(InstSve, sel) {
   // 64-bit
   initialHeapData_.resize(VL / 4);
@@ -9572,6 +9650,20 @@ TEST_P(InstSve, sub) {
   CHECK_NEON(13, uint32_t, fillNeon<uint32_t>({0x12}, VL / 8));
   CHECK_NEON(14, uint64_t, fillNeon<uint64_t>({0xFFFFFFFFFFFFFFF1}, VL / 8));
   CHECK_NEON(15, uint64_t, fillNeon<uint64_t>({0xF}, VL / 8));
+}
+
+TEST_P(InstSve, subr) {
+  // SUBR (imm)
+  // 64-bit
+  RUN_AARCH64(R"(
+    dup z4.d, #6
+    dup z5.d, #1024
+
+    subr z4.d, z4.d, #1
+    subr z5.d, z5.d, #2, LSL #8
+  )");
+  CHECK_NEON(4, uint64_t, fillNeon<uint64_t>({5}, VL / 8));
+  CHECK_NEON(5, uint64_t, fillNeon<uint64_t>({512}, VL / 8));
 }
 
 TEST_P(InstSve, sunpk) {

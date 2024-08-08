@@ -9,7 +9,7 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
-Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall, ryml::ConstNodeRef config)
@@ -50,7 +50,10 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           completionSlots_, registerFileSet_,
           [this](auto reg) { issueUnit_.setRegisterReady(reg); },
           [this](auto seqId) { return canWriteback(seqId); },
-          [this](auto insn) { retireInstruction(insn); }),
+          [this](auto insn) { retireInstruction(insn); },
+          [this](auto regs, auto values) {
+            issueUnit_.forwardOperands(regs, values);
+          }),
       portAllocator_(portAllocator),
       handleSyscall_(handleSyscall) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
@@ -67,7 +70,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         },
         [this](auto insn) { loadStoreQueue_.startLoad(insn); },
         [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },
-        [this](auto insn) { raiseException(insn); }, branchPredictor,
+        [this](auto insn) { raiseException(insn); },
         config::SimInfo::getValue<bool>(
             config["Execution-Units"][i]["Pipelined"]),
         blockingGroups, false);
@@ -274,16 +277,16 @@ std::map<std::string, std::string> Core::getStats() const {
   auto portBusyStalls = issueUnit_.getPortBusyStalls();
 
   // Sum up the branch stats reported across the execution units.
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+  // uint64_t totalBranchesExecuted = 0;
+  // uint64_t totalBranchMispredicts = 0;
+  // for (auto& eu : executionUnits_) {
+  //   totalBranchesExecuted += eu.getBranchExecutedCount();
+  //   totalBranchMispredicts += eu.getBranchMispredictedCount();
+  // }
+  // auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+  //                       static_cast<float>(totalBranchesExecuted);
+  // std::ostringstream branchMissRateStr;
+  // branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
@@ -291,15 +294,15 @@ std::map<std::string, std::string> Core::getStats() const {
           {"flushes", std::to_string(flushes_)},
           {"fetch.branchStalls", std::to_string(branchStalls)},
           {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          // {"branch.executed", std::to_string(totalBranchesExecuted)},
+          // {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"lsq.loadViolations", std::to_string(loadViolations_)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
+          // {"branch.executed", std::to_string(totalBranchesExecuted)},
+          // {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          // {"branch.missrate", branchMissRateStr.str()},
           {"idle.ticks", std::to_string(idle_ticks_)},
           {"context.switches", std::to_string(contextSwitches_)}};
 }

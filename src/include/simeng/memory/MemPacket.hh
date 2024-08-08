@@ -30,6 +30,7 @@ static constexpr uint16_t UntimedMemAccessMask = 0b0000001000000000;
 static constexpr uint16_t FromSystemMask = 0b0000000100000000;
 static constexpr uint16_t IsAtomicMask = 0b0000000010000000;
 static constexpr uint16_t FailedMask = 0b0000000001000000;
+static constexpr uint16_t IsPrefetchMask = 0b0000000000100000;
 
 /** A MemPacket class is used to access memory to perform read and write
  * operations. */
@@ -93,6 +94,10 @@ class MemPacket {
    * operation. */
   inline bool isAtomic() const { return metadata_ & IsAtomicMask; }
 
+  /** Function which indicates whether a MemPacket belongs to a prefetch
+   * operation. */
+  inline bool isPrefetch() const { return metadata_ & IsPrefetchMask; }
+
   /** Function which indicates whether a MemPacket has failed in its memory
    * access. */
   inline bool hasFailed() const { return metadata_ & FailedMask; }
@@ -117,6 +122,9 @@ class MemPacket {
 
   /** Function used to mark a MemPacket as belonging to an atmoic operation. */
   inline void markAsAtomic() { metadata_ = metadata_ | IsAtomicMask; }
+
+  /** Function used to mark a MemPacket as belonging to an atmoic operation. */
+  inline void markAsPrefetch() { metadata_ = metadata_ | IsPrefetchMask; }
 
   /** Function used to mark a MemPacket as having failed in it memory access. */
   inline void markAsFailed() { metadata_ = metadata_ | FailedMask; }

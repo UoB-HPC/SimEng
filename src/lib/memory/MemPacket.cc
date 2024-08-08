@@ -8,7 +8,7 @@ namespace memory {
 
 MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
                      uint64_t seqId, uint16_t pktOrderId, uint64_t tid)
-    : vaddr_(vaddr),
+    : vaddr_(vaddr & 0x00ffffffffffffffull),
       size_(size),
       insnSeqId_(seqId),
       packetOrderId_(pktOrderId),
@@ -18,7 +18,7 @@ MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
 MemPacket::MemPacket(uint64_t vaddr, uint32_t size, MemPacketType type,
                      uint64_t seqId, uint16_t pktOrderId, uint64_t tid,
                      std::vector<char> payload)
-    : vaddr_(vaddr),
+    : vaddr_(vaddr & 0x00ffffffffffffffull),
       size_(size),
       insnSeqId_(seqId),
       packetOrderId_(pktOrderId),

@@ -24,8 +24,7 @@ class Architecture {
    * consumed to produce it; a value of 0 indicates too few bytes were present
    * for a valid decoding. */
   virtual uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
-                            uint64_t instructionAddress,
-                            MacroOp& output) const = 0;
+                            uint64_t instructionAddress, MacroOp& output) = 0;
 
   /** Returns a zero-indexed register tag for a system register encoding. */
   virtual int32_t getSystemRegisterTag(uint16_t reg) const = 0;

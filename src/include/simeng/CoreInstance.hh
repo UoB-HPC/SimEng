@@ -9,6 +9,7 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/SimOS.hh"
 #include "simeng/OS/SyscallHandler.hh"
+#include "simeng/PerceptronPredictor.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
@@ -19,6 +20,7 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
+#include "simeng/pipeline/CapacityAwarePortAllocator.hh"
 
 namespace simeng {
 

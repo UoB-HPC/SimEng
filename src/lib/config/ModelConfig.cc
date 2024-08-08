@@ -452,7 +452,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint64_t>(8, "Global-History-Length"));
   expectations_["Branch-Predictor"]["Global-History-Length"]
-      .setValueBounds<uint64_t>(1, UINT16_MAX);
+      .setValueBounds<uint64_t>(1, 32);
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint64_t>(8, "RAS-entries"));

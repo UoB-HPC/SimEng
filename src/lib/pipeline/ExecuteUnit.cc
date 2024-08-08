@@ -13,15 +13,14 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor, bool pipelined,
-    const std::vector<uint16_t>& blockingGroups, bool enableLLSC)
+    bool pipelined, const std::vector<uint16_t>& blockingGroups,
+    bool enableLLSC)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
       handleLoad_(handleLoad),
       handleStore_(handleStore),
       raiseException_(raiseException),
-      predictor_(predictor),
       pipelined_(pipelined),
       blockingGroups_(blockingGroups),
       enableLLSC_(enableLLSC) {}
@@ -77,8 +76,12 @@ void ExecuteUnit::tick() {
           pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
           pipeline_.back().insn = std::move(uop);
         }
+      } else if (pipeline_.size()) {
+        cycles_++;
       }
       input_.getHeadSlots()[0] = nullptr;
+    } else if (pipeline_.size()) {
+      cycles_++;
     }
   }
 
@@ -153,6 +156,15 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
         uop->updateCondStoreResult(true);
       }
     }
+  } else if (uop->isPrefetch()) {
+    uop->generateAddresses();
+    if (uop->exceptionEncountered()) {
+      // Exception; don't pass handle load function
+      raiseException_(uop);
+      return;
+    }
+    handleLoad_(uop);
+    uop->execute();
   } else {
     uop->execute();
   }
@@ -166,19 +178,10 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
 
-    // Update branch predictor with branch results
-    predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc_,
-                      uop->getBranchType());
-
-    // Update the branch instruction counter
-    branchesExecuted_++;
-
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfterInsnId_ = uop->getInstructionId();
-      // Update the branch misprediction counter
-      branchMispredicts_++;
     }
   }
 
@@ -243,13 +246,6 @@ void ExecuteUnit::purgeFlushed() {
 void ExecuteUnit::flush() {
   pipeline_.clear();
   operationsStalled_.clear();
-}
-
-uint64_t ExecuteUnit::getBranchExecutedCount() const {
-  return branchesExecuted_;
-}
-uint64_t ExecuteUnit::getBranchMispredictedCount() const {
-  return branchMispredicts_;
 }
 
 bool ExecuteUnit::isEmpty() {

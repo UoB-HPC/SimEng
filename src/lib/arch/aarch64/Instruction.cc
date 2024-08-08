@@ -18,6 +18,7 @@ Instruction::Instruction(const Architecture& architecture,
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;
+  cvtType_ = microOpInfo.cvtType;
   isLastMicroOp_ = microOpInfo.isLastMicroOp;
   microOpIndex_ = microOpInfo.microOpIndex;
   decode();
@@ -90,9 +91,12 @@ void Instruction::setMemoryAddresses(memory::MemoryAccessTarget address) {
   memoryAddresses_.push_back(address);
 }
 
-void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
+void Instruction::supplyData(uint64_t address, const RegisterValue& data,
+                             bool forwarded) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
-    if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
+    if ((memoryAddresses_[i].vaddr & 0x00ffffffffffffffull) == address &&
+        !memoryData_[i]) {
+      memoryAddresses_[i].wasForwarded = forwarded;
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
@@ -117,7 +121,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   if (!isBranch()) {
     // Instruction isn't a branch; if predicted as taken, it will require a
     // flush
-    return {prediction_.taken, instructionAddress_ + 4};
+    return {prediction_.isTaken, instructionAddress_ + 4};
   }
 
   // Not enough information to determine this was a misprediction
@@ -149,6 +153,12 @@ bool Instruction::isLoadReserved() const {
 bool Instruction::isStoreCond() const {
   return insnTypeMetadata & isStoreCondMask;
 }
+
+bool Instruction::isPrefetch() const {
+  return insnTypeMetadata & isPrefetchMask;
+}
+
+uint64_t Instruction::getOpcode() const { return metadata.opcode; }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
@@ -269,6 +279,10 @@ uint64_t Instruction::extendOffset(uint64_t value,
     }
   }
   return extendValue(value, op.ext, op.shift.value);
+}
+
+void Instruction::replaceSourceReg(uint8_t idx, Register newReg) {
+  sourceRegisters[idx] = newReg;
 }
 
 }  // namespace aarch64

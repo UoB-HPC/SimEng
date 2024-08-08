@@ -23,7 +23,7 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing an ISA, branch predictor, mmu, and port
    * allocator to use, along with a handler to raise a syscall. */
-  Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
+  Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
        ryml::ConstNodeRef config = config::SimInfo::getConfig());
@@ -133,7 +133,7 @@ class Core : public simeng::Core {
   std::shared_ptr<memory::MMU> mmu_;
 
   /** A reference to the core's architecture. */
-  const arch::Architecture& isa_;
+  arch::Architecture& isa_;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;

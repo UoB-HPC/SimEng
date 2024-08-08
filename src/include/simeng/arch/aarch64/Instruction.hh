@@ -179,18 +179,44 @@ const uint8_t MATRIX = 5;
 namespace MicroOpcode {
 const uint8_t OFFSET_IMM = 0;
 const uint8_t OFFSET_REG = 1;
-const uint8_t LDR_ADDR = 2;
-const uint8_t STR_ADDR = 3;
-const uint8_t STR_DATA = 4;
+const uint8_t MOV = 2;
+const uint8_t FADDP = 3;
+const uint8_t FCVT_INT = 4;
+const uint8_t FMLA = 5;
+const uint8_t FMUL = 6;
+const uint8_t LDR_ADDR = 7;
+const uint8_t LDRS_ADDR = 8;
+const uint8_t IDX_LDR_ADDR = 9;
+const uint8_t SCVT_INT = 10;
+const uint8_t STR_ADDR = 11;
+const uint8_t STR_ADDR_EX = 12;
+const uint8_t STR_DATA = 13;
+const uint8_t STR_ADDR_PRED = 14;
+const uint8_t STR_DATA_PRED = 15;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode
+
+/** The opcodes of simeng aarch64 micro-operations. */
+namespace ConvertTypes {
+const uint8_t WtoS = 0;
+const uint8_t WtoD = 1;
+const uint8_t XtoS = 2;
+const uint8_t XtoD = 3;
+const uint8_t StoW = 4;
+const uint8_t DtoW = 5;
+const uint8_t StoX = 6;
+const uint8_t DtoX = 7;
+// INVALID is the default value
+const uint8_t INVALID = 255;
+}  // namespace ConvertTypes
 
 /** A struct to group micro-operation information together. */
 struct MicroOpInfo {
   bool isMicroOp = false;
   uint8_t microOpcode = MicroOpcode::INVALID;
   uint8_t dataSize = 0;
+  uint8_t cvtType = ConvertTypes::INVALID;
   bool isLastMicroOp = true;
   int microOpIndex = 0;
 };
@@ -249,6 +275,7 @@ static constexpr uint32_t isAcquireMask = 0b00000000000000001000000000000000;
 static constexpr uint32_t isReleaseMask = 0b00000000000000000100000000000000;
 static constexpr uint32_t isLoadRsrvdMask = 0b00000000000000000010000000000000;
 static constexpr uint32_t isStoreCondMask = 0b00000000000000000001000000000000;
+static constexpr uint32_t isPrefetchMask = 0b00000000000000000000100000000000;
 
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
@@ -309,7 +336,8 @@ class Instruction : public simeng::Instruction {
       const std::vector<memory::MemoryAccessTarget>& addresses) override;
 
   /** Provide data from a requested memory address. */
-  void supplyData(uint64_t address, const RegisterValue& data) override;
+  void supplyData(uint64_t address, const RegisterValue& data,
+                  bool forwarded = false) override;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
@@ -345,6 +373,11 @@ class Instruction : public simeng::Instruction {
   /** Is this a Store-Conditional operation? */
   bool isStoreCond() const override;
 
+  /** Is this a prefetch operation? */
+  bool isPrefetch() const override;
+
+  uint64_t getOpcode() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -363,6 +396,8 @@ class Instruction : public simeng::Instruction {
 
   /** Update the result register for a conditional store instruction. */
   void updateCondStoreResult(const bool success) override;
+
+  void replaceSourceReg(uint8_t idx, Register newReg);
 
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
@@ -406,8 +441,11 @@ class Instruction : public simeng::Instruction {
 
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
+
   /** Size of data to be stored. */
   uint8_t dataSize_ = 0;
+
+  uint8_t cvtType_ = ConvertTypes::INVALID;
 
   /** Metadat defining what type of Instruction this is.
    * Each bit is used to convey the following information (From MSB to LSB):

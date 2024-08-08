@@ -31,7 +31,7 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
+  Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
        std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
@@ -131,7 +131,7 @@ class Core : public simeng::Core {
   uint16_t coreId_ = 0;
 
   /** A reference to the core's architecture. */
-  const arch::Architecture& isa_;
+  arch::Architecture& isa_;
 
   /** The layout of the physical register file sets. */
   const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
@@ -253,6 +253,12 @@ class Core : public simeng::Core {
   uint64_t subInsns_ = 0;
 
   std::ofstream outputFile_;
+  std::ofstream outputFile2_;
+
+  std::vector<uint64_t> numCommitted_;
+
+  /** Reference to the current branch predictor */
+  BranchPredictor& branchPredictor_;
 };
 
 }  // namespace outoforder

@@ -37,9 +37,14 @@ simeng::OS::SimOS simOsFactory(
 uint64_t simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
                   simeng::memory::MMU& mmu, simeng::memory::Mem& mem) {
   uint64_t iterations = 0;
+  uint64_t sub_iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
   while (!simOS.hasHalted() || mmu.hasPendingRequests()) {
+    if (sub_iterations > 10000000000) {
+      std::cerr << "[SimEng] Iterations elapsed: " << iterations << std::endl;
+      sub_iterations = 0;
+    }
     // Tick SimOS
     simOS.tick();
 
@@ -53,6 +58,7 @@ uint64_t simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
     mem.tick();
 
     iterations++;
+    sub_iterations++;
   }
 
   return iterations;

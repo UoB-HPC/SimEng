@@ -13,8 +13,10 @@ namespace simeng {
 namespace models {
 namespace outoforder {
 
+bool print = false;
+
 // TODO: System register count has to match number of supported system registers
-Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall,
@@ -80,10 +82,14 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
           completionSlots_, registerFileSet_,
           [this](auto reg) { dispatchIssueUnit_.setRegisterReady(reg); },
           [](auto seqId) { return true; },
-          [this](auto insn) { microOpWriteback(insn); }),
+          [this](auto insn) { microOpWriteback(insn); },
+          [this](auto regs, auto values) {
+            dispatchIssueUnit_.forwardOperands(regs, values);
+          }),
       portAllocator_(portAllocator),
       commitWidth_(
           config::SimInfo::getValue<int>(config["Pipeline-Widths"]["Commit"])),
+      branchPredictor_(branchPredictor),
       handleSyscall_(handleSyscall),
       updateCoreDescInOS_(updateCoreDescInOS) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
@@ -100,7 +106,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor,
+        [](auto uop) { uop->setCommitReady(); },
         config::SimInfo::getValue<bool>(
             config["Execution-Units"][i]["Pipelined"]),
         blockingGroups);
@@ -111,6 +117,8 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
   });
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(config::SimInfo::getISA());
+
+  numCommitted_.resize(commitWidth_ + 1);
 }
 
 void Core::tick() {
@@ -134,6 +142,7 @@ void Core::tick() {
         dispatchIssueUnit_.purgeFlushed();
         dispatchIssueUnit_.flush();
         writebackUnit_.flush();
+        loadStoreQueue_.drainSTB();
         status_ = CoreStatus::idle;
         // Update status of corresponding CoreDesc in SimOS as there is no
         // causal action originating from SimOS which caused this change in
@@ -195,7 +204,13 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth_);
+  unsigned int numRet = reorderBuffer_.commit(commitWidth_);
+  if (numRet == 16) {
+    getStats();
+    // dispatchIssueUnit_.resetStats();
+  }
+  if (numRet == 17) getStats();
+  if (numRet <= commitWidth_) numCommitted_[numRet]++;
   // if (reorderBuffer_.commit(commitWidth_, ticks_) == 0)
   //   noactivity_++;
   // else
@@ -223,7 +238,7 @@ void Core::tick() {
     std::cout << "[SimEng:Core" << coreId_ << ":TID" << currentTID_
               << "] Instructions retired so far: "
               << FormatWithCommas<uint64_t>(committed) << " (+"
-              << (committed - subInsns_) << " instructions " << std::endl;
+              << (committed - subInsns_) << " instructions)" << std::endl;
     subTicks_ = 0;
     subInsns_ = committed;
   }
@@ -267,9 +282,11 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
+    decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -293,6 +310,7 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
@@ -316,9 +334,13 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  // Check for branch instructions in buffer, and flush them from the BP.
+  // Then empty the buffers
+  fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
+  decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
@@ -333,6 +355,7 @@ void Core::handleException() {
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
+  loadStoreQueue_.drainSTB();
   for (auto& eu : executionUnits_) {
     eu.purgeFlushed();
   }
@@ -359,14 +382,21 @@ void Core::processException() {
 
   const auto& result = exceptionHandler_->getResult();
   // if (getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>() != 98) {
-  //   outputFile_ << "\tSyscall "
-  //               << getArchitecturalRegisterFileSet().get({0,
-  //               8}).get<uint64_t>()
-  //               << " results" << std::endl;
-  //   outputFile_ << "\tfatal: " << result.fatal << std::endl;
-  //   outputFile_ << "\tidleAftersycall: " << result.idleAfterSyscall
-  //               << std::endl;
-  // }
+  if (print) {
+    outputFile_ << "\tSyscall "
+                << getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>()
+                << " results" << std::endl;
+    outputFile_ << "\tfatal: " << result.fatal << std::endl;
+    outputFile_ << "\tidleAftersycall: " << result.idleAfterSyscall
+                << std::endl;
+    outputFile2_
+        << "\tSyscall "
+        << getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>()
+        << " results" << std::endl;
+    outputFile2_ << "\tfatal: " << result.fatal << std::endl;
+    outputFile2_ << "\tidleAftersycall: " << result.idleAfterSyscall
+                 << std::endl;
+  }
 
   if (result.fatal) {
     status_ = CoreStatus::halted;
@@ -427,18 +457,28 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
     default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        // outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
-        //             << ":" << change.modifiedRegisters[i].tag << "}"
-        //             << " <- " << std::hex;
-        // for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
-        // j--) {
-        //   if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] <
-        //   16)
-        //     outputFile_ << "0";
-        //   outputFile_ << unsigned(
-        //       change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
-        // }
-        // outputFile_ << std::dec << std::endl;
+        if (print) {
+          outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+                      << ":" << change.modifiedRegisters[i].tag << "}"
+                      << " <- " << std::hex;
+          outputFile2_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+                       << ":" << change.modifiedRegisters[i].tag << "}"
+                       << " <- " << std::hex;
+          for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+               j--) {
+            if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] <
+                16) {
+              outputFile_ << "0";
+              outputFile2_ << "0";
+            }
+            outputFile_ << unsigned(
+                change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+            outputFile2_ << unsigned(
+                change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+          }
+          outputFile_ << std::dec << std::endl;
+          outputFile2_ << std::dec << std::endl;
+        }
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
                                    change.modifiedRegisterValues[i]);
       }
@@ -450,15 +490,24 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    // outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].vaddr
-    //             << std::dec << " <- " << std::hex;
-    // for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
-    //   if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16)
-    //     outputFile_ << "0";
-    //   outputFile_ << unsigned(
-    //       change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
-    // }
-    // outputFile_ << std::dec << std::endl;
+    if (print) {
+      outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].vaddr
+                  << std::dec << " <- " << std::hex;
+      outputFile2_ << "\tAddr " << std::hex << change.memoryAddresses[i].vaddr
+                   << std::dec << " <- " << std::hex;
+      for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+        if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16) {
+          outputFile_ << "0";
+          outputFile2_ << "0";
+        }
+        outputFile_ << unsigned(
+            change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+        outputFile2_ << unsigned(
+            change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+      }
+      outputFile_ << std::dec << std::endl;
+      outputFile2_ << std::dec << std::endl;
+    }
     mmu_->requestWrite(change.memoryAddresses[i],
                        change.memoryAddressValues[i]);
   }
@@ -512,16 +561,12 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
+  uint64_t totalBranchesFetched = fetchUnit_.getBranchFetchedCount();
+  uint64_t totalBranchesRetired = reorderBuffer_.getRetiredBranchesCount();
+  uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
+                        static_cast<float>(totalBranchesRetired);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
@@ -540,7 +585,8 @@ std::map<std::string, std::string> Core::getStats() const {
       {"issue.frontendStalls", FormatWithCommas<uint64_t>(frontendStalls)},
       {"issue.backendStalls", FormatWithCommas<uint64_t>(backendStalls)},
       {"issue.portBusyStalls", FormatWithCommas<uint64_t>(portBusyStalls)},
-      {"branch.executed", FormatWithCommas<uint64_t>(totalBranchesExecuted)},
+      {"branch.fetch", FormatWithCommas<uint64_t>(totalBranchesFetched)},
+      {"branch.retired", FormatWithCommas<uint64_t>(totalBranchesRetired)},
       {"branch.mispredict", FormatWithCommas<uint64_t>(totalBranchMispredicts)},
       {"branch.missrate", branchMissRateStr.str()},
       {"lsq.loadViolations",
@@ -551,7 +597,17 @@ std::map<std::string, std::string> Core::getStats() const {
       {"rob.numLoadsRetired",
        FormatWithCommas<uint64_t>(reorderBuffer_.getNumLoads())},
       {"rob.numStoresRetired",
-       FormatWithCommas<uint64_t>(reorderBuffer_.getNumStores())}};
+       FormatWithCommas<uint64_t>(reorderBuffer_.getNumStores())},
+      {"lsq.STBSupplies",
+       FormatWithCommas<uint64_t>(loadStoreQueue_.getSTBSupplies())},
+      {"lsq.STBDrains",
+       FormatWithCommas<uint64_t>(loadStoreQueue_.getSTBDrains())},
+      {"lsq.conflicts",
+       FormatWithCommas<uint64_t>(loadStoreQueue_.getConflicts())},
+      {"lsq.loadRequests",
+       FormatWithCommas<uint64_t>(loadStoreQueue_.getNumLoadReqs())},
+      {"lsq.storeRequests",
+       FormatWithCommas<uint64_t>(loadStoreQueue_.getNumStoreReqs())}};
 
   const std::vector<uint64_t> possibleIssues =
       dispatchIssueUnit_.getPossibleIssues();
@@ -568,9 +624,90 @@ std::map<std::string, std::string> Core::getStats() const {
     stats[key.str()] = val.str();
   }
 
-  // std::map<uint64_t, uint64_t> lsqLatencies =
-  // loadStoreQueue_.getLatencies(); std::map<uint64_t, uint64_t>::iterator
-  // it;
+  const std::vector<uint64_t> rsStallsPort =
+      dispatchIssueUnit_.getRSStallsPort();
+  for (int i = 0; i < rsStallsPort.size(); i++) {
+    std::ostringstream key;
+    key << "dispatch.RS" << i << ".rsStall";
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(rsStallsPort[i]);
+    stats[key.str()] = val.str();
+  }
+
+  const std::vector<uint64_t> frontendStallsPort =
+      dispatchIssueUnit_.getFrontendStallsPort();
+  for (int i = 0; i < frontendStallsPort.size(); i++) {
+    std::ostringstream key;
+    key << "issue.Port" << i << ".frontendStall";
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(frontendStallsPort[i]);
+    stats[key.str()] = val.str();
+  }
+
+  const std::vector<uint64_t> backendStallsPort =
+      dispatchIssueUnit_.getBackendStallsPort();
+  for (int i = 0; i < backendStallsPort.size(); i++) {
+    std::ostringstream key;
+    key << "issue.Port" << i << ".backendStall";
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(backendStallsPort[i]);
+    stats[key.str()] = val.str();
+  }
+
+  const std::map<uint64_t, uint64_t> waitingOn = reorderBuffer_.getWaitingOn();
+  for (const auto& wait : waitingOn) {
+    std::ostringstream key;
+    key << "rob.waitingOn." << wait.first;
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(wait.second);
+    stats[key.str()] = val.str();
+  }
+
+  for (int i = 0; i < numCommitted_.size(); i++) {
+    std::ostringstream key;
+    key << "rob.commit." << i;
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(numCommitted_[i]);
+    stats[key.str()] = val.str();
+  }
+
+  for (int i = 0; i < executionUnits_.size(); i++) {
+    std::ostringstream key;
+    key << "eu." << i << ".cycles";
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(executionUnits_[i].getCycles());
+    stats[key.str()] = val.str();
+  }
+
+  std::map<uint64_t, uint64_t> latMap = loadStoreQueue_.getLatMap();
+
+  // Get top 10
+  std::vector<uint64_t> top10 = {};
+  for (auto const& x : latMap) {
+    if (top10.size()) {
+      if (top10.size() < 10 || x.second > top10.back()) {
+        auto it = top10.begin();
+        for (; it < top10.end(); it++) {
+          if (x.second > latMap.at(*it)) {
+            top10.insert(it, x.first);
+            break;
+          }
+        }
+      }
+      if (top10.size() > 10) top10.pop_back();
+    } else
+      top10.push_back(x.first);
+  }
+  for (auto& x : top10) {
+    std::ostringstream key;
+    key << "lsq.latency." << x;
+    std::ostringstream val;
+    val << FormatWithCommas<uint64_t>(latMap.at(x));
+    stats[key.str()] = val.str();
+  }
+
+  // std::map<uint64_t, uint64_t> lsqLatencies = loadStoreQueue_.getLatencies();
+  // std::map<uint64_t, uint64_t>::iterator it;
   // for (it = lsqLatencies.begin(); it != lsqLatencies.end(); it++) {
   //   if (it->second > 10) {
   //     std::ostringstream key;
@@ -581,6 +718,9 @@ std::map<std::string, std::string> Core::getStats() const {
   //   }
   // }
 
+  for (const auto& [key, value] : stats) {
+    std::cout << "[SimEng] " << key << ": " << value << std::endl;
+  }
   return stats;
 }
 
@@ -591,10 +731,15 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 
   currentTID_ = newContext.TID;
 
-  // outputFile_.close();
-  // std::ostringstream str;
-  // str << "/Users/jj16791/workspace/simeng" << currentTID_ << "Retire.out";
-  // outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+  outputFile_.close();
+  std::ostringstream str;
+  str << "/Users/jj16791/workspace/simengRetire.out";
+  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+
+  outputFile2_.close();
+  std::ostringstream str2;
+  str2 << "/Users/jj16791/workspace/simengRetireWithIDs.out";
+  outputFile2_.open(str2.str(), std::ofstream::out | std::ofstream::app);
 
   reorderBuffer_.setTid(currentTID_);
   fetchUnit_.setProgramLength(newContext.progByteLen);

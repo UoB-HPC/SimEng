@@ -64,6 +64,8 @@ void MMU::tick() {
 }
 
 void MMU::processRequests(const bool isStore) {
+  // std::cerr << "======= " << loadsStores_[0].size() << ":"
+  //           << loadsStores_[1].size() << " =======" << std::endl;
   uint64_t bandwidthLimit = isStore ? storeBandwidth_ : loadBandwidth_;
   uint64_t bandwidthUsed = 0;
   while (loadsStores_[isStore].size() > 0) {
@@ -75,22 +77,22 @@ void MMU::processRequests(const bool isStore) {
       if ((bandwidthUsed + (*pkt)->size_) <= bandwidthLimit) {
         // If the request is a store, and is the last packet associated with
         // this instruction, set the store to be ready to commit
-        if (isStore) {
-          if (pkt + 1 == insn->end()) {
-            const auto& str = requestedStores_.find((*pkt)->insnSeqId_);
-            assert(str != requestedStores_.end() &&
-                   "[SimEng:MMU] Tried to process a store packet that has no "
-                   "assocaited store instruction in the MMU's requestedStores_ "
-                   "map.");
-            // Set as ready to commit if the store is non-conditional. Store
-            // conditional operations have to pass through the writeback unit
-            // again before commitment (thus delay setting as ready to commit)
-            if (!str->second.insn->isStoreCond()) {
-              str->second.insn->setCommitReady();
-              requestedStores_.erase(str);
-            }
-          }
-        }
+        // if (isStore) {
+        //   if (pkt + 1 == insn->end()) {
+        //     const auto& str = requestedStores_.find((*pkt)->insnSeqId_);
+        //     assert(str != requestedStores_.end() &&
+        //            "[SimEng:MMU] Tried to process a store packet that has no
+        //            " "assocaited store instruction in the MMU's
+        //            requestedStores_ " "map.");
+        //     // Set as ready to commit if the store is non-conditional. Store
+        //     // conditional operations have to pass through the writeback unit
+        //     // again before commitment (thus delay setting as ready to
+        //     commit) if (!str->second.insn->isStoreCond()) {
+        //       str->second.insn->setCommitReady();
+        //       requestedStores_.erase(str);
+        //     }
+        //   }
+        // }
         bandwidthUsed += (*pkt)->size_;
         issueRequest(std::move(*pkt));
         pkt = insn->erase(pkt);
@@ -123,8 +125,12 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   uint64_t seqId = uop->getSequenceId();
   // Generate and fire off requests
   const auto& targets = uop->getGeneratedAddresses();
+  uint16_t orderId = 0;
   for (int i = 0; i < targets.size(); i++) {
-    createReadMemPackets(targets[i], loadsStores_[LD].back(), seqId, i);
+    if (!uop->hasData(i)) {
+      createReadMemPackets(targets[i], loadsStores_[LD].back(), seqId, orderId);
+      orderId++;
+    }
   }
   if (uop->isLoadReserved()) {
     // Set MemPackets to be atomic if uop is an atomic operation
@@ -134,8 +140,32 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   }
   // Register load in map
   uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[LD].back().size());
+  // if (totalReqs > 1) {
+  //   std::cerr << totalReqs << ":" << std::hex
+  //             << loadsStores_[LD].back()[0]->vaddr_ << std::dec << "-"
+  //             << loadsStores_[LD].back()[0]->size_ << "/" << std::hex
+  //             << loadsStores_[LD].back()[1]->vaddr_ << std::dec << "-"
+  //             << loadsStores_[LD].back()[1]->size_ << std::endl;
+  // }
   pendingDataRequests_ += totalReqs;
   requestedLoads_[seqId] = {uop, totalReqs};
+  return true;
+}
+
+bool MMU::requestPrefetch(const std::shared_ptr<Instruction>& uop) {
+  // std::cerr << "Prefetch at " << std::hex << uop->getInstructionAddress()
+  //           << std::dec << " (" << uop->getSequenceId() << ")" << std::endl;
+  const auto& targets = uop->getGeneratedAddresses();
+  for (int i = 0; i < targets.size(); i++) {
+    // std::cerr << "\t - " << std::hex << targets[i].vaddr << std::dec
+    //           << std::endl;
+    std::unique_ptr<memory::MemPacket> prefetchRequest =
+        MemPacket::createReadRequest(targets[i].vaddr, targets[i].size,
+                                     uop->getSequenceId(), i, tid_);
+    prefetchRequest->markAsPrefetch();
+    pendingDataRequests_++;
+    issueRequest(std::move(prefetchRequest));
+  }
   return true;
 }
 
@@ -168,34 +198,50 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
     // Create requests
     createWriteMemPackets(target, loadsStores_[STR].back(), dt, seqId, i);
   }
+
+  uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[STR].back().size());
+  pendingDataRequests_ += totalReqs;
+  requestedStores_[uop->getSequenceId()] = {uop, totalReqs};
+
   if (uop->isStoreCond()) {
     // Set MemPackets to be atomic if uop is an atomic operation
     for (int i = 0; i < loadsStores_[STR].back().size(); i++) {
       loadsStores_[STR].back()[i]->markAsAtomic();
     }
   }
-  uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[STR].back().size());
-  pendingDataRequests_ += totalReqs;
-  requestedStores_[uop->getSequenceId()] = {uop, totalReqs};
+  // std::cerr << uop->getSequenceId() << ":WRITE:" << pendingDataRequests_ <<
+  // "("
+  //           << totalReqs << ")" << std::endl;
   return true;
 }
 
-void MMU::requestWrite(const MemoryAccessTarget& target,
-                       const RegisterValue& data) {
+bool MMU::requestWrite(const MemoryAccessTarget& target,
+                       const RegisterValue& data, bool bypassRestrictions) {
+  if (!bypassRestrictions) {
+    // Check if space for request
+    // If exclusive then no stores permitted if load still being processed
+    if (exclusiveRequests_ && (loadsStores_[LD].size() != 0)) return false;
+    // Check total limit isn't met if not exclusive
+    if (!exclusiveRequests_ &&
+        (loadsStores_[LD].size() + loadsStores_[STR].size() >= requestLimit_))
+      return false;
+
+    // Check space left for a store
+    if (loadsStores_[STR].size() >= storeRequestLimit_) return false;
+  }
+
   // Format data
   const char* wdata = data.getAsVector<char>();
   std::vector<char> dt(wdata, wdata + target.size);
-
+  // Initialise space in stores
+  loadsStores_[STR].push_back({});
   // Create requests
-  std::vector<std::unique_ptr<MemPacket>> pktVec = {};
-  createWriteMemPackets(target, pktVec, dt, 0, 0);
-
-  // Fire off requests
-  uint16_t pktVecSize = static_cast<uint16_t>(pktVec.size());
-  for (uint16_t i = 0; i < pktVecSize; i++) {
-    issueRequest(std::move(pktVec[i]));
-  }
-  pendingDataRequests_ += pktVecSize;
+  createWriteMemPackets(target, loadsStores_[STR].back(), dt, target.id, 0);
+  uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[STR].back().size());
+  pendingDataRequests_ += totalReqs;
+  // std::cerr << target.id << ":WRITE:" << pendingDataRequests_ << "("
+  //           << totalReqs << ")" << std::endl;
+  return true;
 }
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target) {
@@ -254,24 +300,30 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       return;
     }
 
-    pendingDataRequests_--;
+    // std::cerr << packet->insnSeqId_ << ":" << pendingDataRequests_ <<
+    // std::endl;
     uint64_t seqId = packet->insnSeqId_;
+    if (packet->isPrefetch()) {
+      pendingDataRequests_--;
+      return;
+    }
     if (packet->isRead()) {
+      pendingDataRequests_--;
+      // if (requestedLoads_.find(seqId) == requestedLoads_.end())
+      //   std::cerr << seqId << std::endl;
       assert(requestedLoads_.find(seqId) != requestedLoads_.end() &&
              "[SimEng:MMU] Read response packet recieved for instruction that "
              "does not exist.");
       // if (packet->tid_ == 3)
-      //   std::cerr << "\tType: ReadResp, PhysAddr: 0x" << std::hex
-      //             << packet->paddr_ << std::dec << ", VirtAddr: 0x" <<
-      //             std::hex
-      //             << packet->vaddr_ << std::dec << ", Size: " <<
-      //             packet->size_
-      //             << ", InstPtr: 0x" << std::hex << packet->insnSeqId_
-      //             << std::dec << ", ThreadID: " << packet->tid_
-      //             << ", totalPacketsRemaining: "
-      //             <<
-      //             requestedLoads_.find(seqId)->second.totalPacketsRemaining
-      //             << std::endl;
+      // std::cerr << "\tType: ReadResp, PhysAddr: 0x" << std::hex
+      //           << packet->paddr_ << std::dec << ", VirtAddr: 0x" << std::hex
+      //           << packet->vaddr_ << std::dec << ", Size: " << packet->size_
+      //           << ", InstPtr: " << packet->insnSeqId_
+      //           << ", ThreadID: " << packet->tid_ << ",
+      //           totalPacketsRemaining: "
+      //           << requestedLoads_.find(seqId)->second.totalPacketsRemaining
+      //           << ", order id: " << packet->packetOrderId_
+      //           << ", split id: " << packet->packetSplitId_ << std::endl;
       readResponses_[seqId][packet->packetOrderId_][packet->packetSplitId_] =
           std::move(packet);
       requestedLoads_.find(seqId)->second.totalPacketsRemaining--;
@@ -281,6 +333,8 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       }
     } else if (packet->isWrite()) {
       const auto& str = requestedStores_.find(seqId);
+
+      pendingDataRequests_--;
       if (str == requestedStores_.end()) return;
       str->second.totalPacketsRemaining--;
 
@@ -289,8 +343,10 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
       if (packet->hasFailed()) str->second.failed = true;
 
       if (str->second.totalPacketsRemaining == 0) {
-        str->second.insn->updateCondStoreResult(!str->second.failed);
+        if (str->second.insn->isStoreCond())
+          str->second.insn->updateCondStoreResult(!str->second.failed);
       }
+      requestedStores_.erase(str);
     }
   };
   port_->registerReceiver(fn);
@@ -299,20 +355,25 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
 
 void MMU::issueRequest(std::unique_ptr<MemPacket> request,
                        uint64_t delayedTranslation) {
-  // Since we don't have a TLB yet, treat every memory request as a TLB miss and
-  // consult the page table.
+  // std::cerr << request->insnSeqId_ << ":ISSUE" << std::endl;
+  // if (request->insnSeqId_ == 72035)
+  // std::cerr << "\t0x" << std::hex << request->vaddr_ << std::dec <<
+  // std::endl; Since we don't have a TLB yet, treat every memory request as a
+  // TLB miss and consult the page table.
   uint64_t paddr = (delayedTranslation != -1)
                        ? delayedTranslation
-                       : translate_(request->vaddr_ & 0x00ffffffffffffff, tid_);
+                       : translate_(request->vaddr_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+    // std::cerr << "\tDATA_ABORT" << std::endl;
     request->markAsFaulty();
     port_->recieve(std::move(request));
     return;
   }
 
   if (faultCode == simeng::OS::masks::faults::pagetable::PENDING) {
+    // std::cerr << "\tPENDING" << std::endl;
     // Record the wanted translation if it is currently bein resolved
     // asynchronously
     uint64_t alignedVaddr =
@@ -323,11 +384,13 @@ void MMU::issueRequest(std::unique_ptr<MemPacket> request,
   }
 
   if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    // std::cerr << "\tIGNORED" << std::endl;
     request->markAsIgnored();
   } else {
     request->paddr_ = paddr;
   }
 
+  // std::cerr << "\tSENT" << std::endl;
   if (request->isInstrRead())
     numInsnReads_++;
   else if (request->isRead()) {

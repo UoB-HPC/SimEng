@@ -128,7 +128,8 @@ class Instruction : public simeng::Instruction {
       const std::vector<memory::MemoryAccessTarget>& addresses) override;
 
   /** Provide data from a requested memory address. */
-  void supplyData(uint64_t address, const RegisterValue& data) override;
+  void supplyData(uint64_t address, const RegisterValue& data,
+                  bool forwarded = false) override;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
@@ -163,6 +164,11 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a Store-Conditional operation? */
   bool isStoreCond() const override;
+
+  /** Is this a prefetch operation? */
+  bool isPrefetch() const override;
+
+  uint64_t getOpcode() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;

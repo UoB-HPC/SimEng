@@ -50,10 +50,17 @@ void generatePredicatedContiguousAddressBlocks(
 
 const std::vector<memory::MemoryAccessTarget>&
 Instruction::generateAddresses() {
-  assert((isLoad() || isStoreAddress()) &&
+  assert((isLoad() || isStoreAddress() || isPrefetch()) &&
          "generateAddresses called on non-load-or-store instruction");
+  // 0th bit of SVCR register determines if streaming-mode is enabled.
+  const bool SMenabled = architecture_.getSVCRval() & 1;
+  // When streaming mode is enabled, the architectural vector length goes from
+  // SVE's VL to SME's SVL.
+  const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
+                                     : architecture_.getVectorLength();
   if (isMicroOp_) {
     switch (microOpcode_) {
+      case MicroOpcode::LDRS_ADDR:
       case MicroOpcode::LDR_ADDR: {
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
@@ -63,13 +70,69 @@ Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
+      case MicroOpcode::IDX_LDR_ADDR: {
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        generateContiguousAddresses(operands[1].get<uint64_t>(), 1, dataSize_,
+                                    addresses);
+
+        setMemoryAddresses(addresses);
+        break;
+      }
       case MicroOpcode::STR_ADDR: {
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
             operands[0].get<uint64_t>() + metadata.operands[0].mem.disp, 1,
             dataSize_, addresses);
-
+        // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+        //           << instructionId_ << ":BASE = " << std::hex
+        //           << operands[0].get<uint64_t>() << std::dec << " ("
+        //           << unsigned(dataSize_) << ")" << std::endl;
+        // for (const auto& adr : addresses) {
+        //   std::cerr << "\t- " << std::hex << adr.vaddr << std::dec <<
+        //   std::endl;
+        // }
         setMemoryAddresses(addresses);
+        break;
+      }
+      case MicroOpcode::STR_ADDR_EX: {
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        uint64_t offset =
+            extendOffset(operands[1].get<uint64_t>(), metadata.operands[0]);
+        generateContiguousAddresses(operands[0].get<uint64_t>() + offset, 1,
+                                    dataSize_, addresses);
+        // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+        //           << instructionId_ << ":BASE = " << std::hex
+        //           << operands[0].get<uint64_t>() << " (" <<
+        //           unsigned(dataSize_)
+        //           << ")" << std::endl;
+        // for (const auto& adr : addresses) {
+        //   std::cerr << "\t- " << std::hex << adr.vaddr << std::dec <<
+        //   std::endl;
+        // }
+        setMemoryAddresses(addresses);
+        break;
+      }
+      case MicroOpcode::STR_ADDR_PRED: {
+        const uint64_t base = operands[0].get<uint64_t>();
+        const uint64_t offset = operands[1].get<uint64_t>();
+        const uint64_t* p = operands[2].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / (dataSize_ * 8);
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks(base + (offset * dataSize_),
+                                                  partition_num, dataSize_,
+                                                  dataSize_, p, addresses);
+        // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+        //           << instructionId_ << " (" << std::hex << p[0] << std::dec
+        //           << " with " << dataSize_ * 8 << " bits)" << std::endl;
+        // for (const auto& adr : addresses) {
+        //   std::cerr << "\t- " << std::hex << adr.vaddr << std::dec <<
+        //   std::endl;
+        // }
+        // if (addresses.size() > 1) std::cerr << "PRED SPLIT" << std::endl;
+        setMemoryAddresses(std::move(addresses));
         break;
       }
       default:
@@ -78,13 +141,6 @@ Instruction::generateAddresses() {
         break;
     }
   } else {
-    // 0th bit of SVCR register determines if streaming-mode is enabled.
-    const bool SMenabled = architecture_.getSVCRval() & 1;
-    // When streaming mode is enabled, the architectural vector length goes from
-    // SVE's VL to SME's SVL.
-    const uint16_t VL_bits = SMenabled
-                                 ? architecture_.getStreamingVectorLength()
-                                 : architecture_.getVectorLength();
     switch (metadata.opcode) {
       case Opcode::AArch64_CASAB:  // casab ws, wt, [xn|sp]
         [[fallthrough]];
@@ -420,11 +476,20 @@ Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w {zt.s}, pg/z, [xn, xm, lsl #2]
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
         const uint64_t addr = base + (offset * 4);
+        const uint16_t partition_num = VL_bits / 32;
 
-        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks(addr, partition_num, 4, 4, p,
+                                                  addresses);
+
+        // setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
+        setMemoryAddresses(std::move(addresses));
         break;
       }
       case Opcode::AArch64_LD1W_D: {  // ld1w {zt.d}, pg/z, [xn, xm, lsl #2]
@@ -1033,6 +1098,17 @@ Instruction::generateAddresses() {
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, {, #imm}]
         // TODO: Implement prefetching
+        if (metadata.operands[0].prefetch != ARM64_PRFM_PLDL1KEEP &&
+            metadata.operands[0].prefetch != ARM64_PRFM_PLDL3KEEP &&
+            metadata.operands[0].prefetch != ARM64_PRFM_PSTL3KEEP) {
+          std::cerr << "PRFMui prefetch op of " << metadata.operands[0].prefetch
+                    << " not supported" << std::endl;
+          exceptionEncountered_ = true;
+          exception_ = InstructionException::ExecutionNotYetImplemented;
+        }
+        uint64_t base =
+            operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+        setMemoryAddresses({{base, 8}});
         break;
       }
       case Opcode::AArch64_PRFW_D_SCALED: {  // prfw op, pg, [xn, zm.d, lsl #2]

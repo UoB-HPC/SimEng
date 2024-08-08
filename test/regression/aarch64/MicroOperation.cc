@@ -11,6 +11,171 @@ namespace {
 
 using MicroOp = AArch64RegressionTest;
 
+TEST_P(MicroOp, faddp_scalar) {
+  // V.2S
+  RUN_AARCH64(R"(
+     fmov v0.2s, #0.125
+     faddp s1, v0.2s 
+  )");
+  CHECK_NEON(1, float, {0.25, 0});
+}
+
+TEST_P(MicroOp, fcvtzu_integer) {
+  initialHeapData_.resize(16);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -42.76;
+  fheap[2] = -0.125;
+  fheap[3] = 321.5;
+
+  // single-precision to 32-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0]
+    ldp s2, s3, [x0, #8]
+    fcvtzs w0, s0
+    fcvtzs w1, s1
+    fcvtzs w2, s2
+    fcvtzs w3, s3
+  )");
+  EXPECT_EQ((getGeneralRegister<int32_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<int32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
+}
+
+TEST_P(MicroOp, fmla_indexed) {
+  // 32-bit
+  initialHeapData_.resize(32);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 33.0f;
+  fheap[1] = -3.3f;
+  fheap[2] = 12.3f;
+  fheap[3] = -4.56f;
+  fheap[4] = 1.0f;
+  fheap[5] = 2.0f;
+  fheap[6] = 1.0f;
+  fheap[7] = 2.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    
+    fmov v2.2s, #1
+    fmov v3.2s, #1
+    fmov v4.2s, #1
+
+    fmla v2.2s, v0.2s, v1.s[0]
+    fmla v3.2s, v0.2s, v1.s[1]
+
+    fmla s4, s0, v1.s[0]
+  )");
+
+  CHECK_NEON(2, float, {34.0f, -2.3f});
+  CHECK_NEON(3, float, {67.0f, -5.6f});
+  CHECK_NEON(4, float, {34.0f});
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 33.0;
+  dheap[1] = -3.3;
+  dheap[2] = 1.0;
+  dheap[3] = 2.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    
+    fmov v2.2d, #1
+    fmov v3.2d, #1
+    fmov v4.2d, #1
+
+    fmla v2.2d, v0.2d, v1.d[0]
+    fmla v3.2d, v0.2d, v1.d[1]
+
+    fmla d4, d0, v1.d[0]
+  )");
+
+  CHECK_NEON(2, double, {34.0, -2.3});
+  CHECK_NEON(3, double, {67.0, -5.6});
+  CHECK_NEON(4, double, {34.0});
+}
+
+TEST_P(MicroOp, fmul_indexed) {
+  // 32-bit
+  initialHeapData_.resize(32);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 33.0f;
+  fheap[1] = -3.3f;
+  fheap[2] = 12.3f;
+  fheap[3] = -4.56f;
+  fheap[4] = 1.0f;
+  fheap[5] = 2.0f;
+  fheap[6] = 1.0f;
+  fheap[7] = 2.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    fmla v2.2s, v0.2s, v1.s[0]
+    fmla v3.2s, v0.2s, v1.s[1]
+
+    fmul s4, s0, v1.s[0]
+  )");
+
+  CHECK_NEON(2, float, {33.0f, -3.3f});
+  CHECK_NEON(3, float, {66.0f, -6.6f});
+  CHECK_NEON(4, float, {33.0f});
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 33.0;
+  dheap[1] = -3.3;
+  dheap[2] = 1.0;
+  dheap[3] = 2.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    fmul v2.2d, v0.2d, v1.d[0]
+    fmul v3.2d, v0.2d, v1.d[1]
+
+    fmul d4, d0, v1.d[0]
+  )");
+
+  CHECK_NEON(2, double, {33.0, -3.3});
+  CHECK_NEON(3, double, {66.0, -6.6});
+  CHECK_NEON(4, double, {33.0});
+}
+
 TEST_P(MicroOp, loadPairD) {
   initialHeapData_.resize(48);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
@@ -135,6 +300,27 @@ TEST_P(MicroOp, loadPairW) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0xFEDCBAFE);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0xABBACAFE);
   EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x12345678);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    // ldpsw x1, x2, [x0], #8
+    add x0, x0, #8
+    ldpsw x3, x4, [x0, #0]
+    ldpsw x5, x6, [x0, #8]
+    // ldpsw x7, x8, [x0, #-8]!
+  )");
+  // EXPECT_EQ(getGeneralRegister<int64_t>(1), 0xFFFFFFFFABBACAFE);
+  // EXPECT_EQ(getGeneralRegister<int64_t>(2), 0xFFFFFFFF12345678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xFFFFFFFFABCDEFAB);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xFFFFFFFFCAFEABBA);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xFFFFFFFF98765432);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFEDCBAFE);
+  // EXPECT_EQ(getGeneralRegister<int64_t>(7), 0xFFFFFFFFABBACAFE);
+  // EXPECT_EQ(getGeneralRegister<int64_t>(8), 0xFFFFFFFF12345678);
 }
 
 TEST_P(MicroOp, loadPairX) {
@@ -221,11 +407,31 @@ TEST_P(MicroOp, loadB) {
     ldr b2, [x0, #0]
     ldr b3, [x0, #1]
     ldr b4, [x0, #-1]!
+
+    ldrb w1, [x0], #1
+    ldrb w2, [x0, #0]
+    ldrb w3, [x0, #1]
+    ldrb w4, [x0, #-1]!
+
+    ldrsb w5, [x0], #1
+    ldrsb w6, [x0, #0]
+    ldrsb w7, [x0, #1]
+    ldrsb w8, [x0, #-1]!
   )");
   CHECK_NEON(1, uint8_t, {0xAB});
   CHECK_NEON(2, uint8_t, {0xBA});
   CHECK_NEON(3, uint8_t, {0xCA});
   CHECK_NEON(4, uint8_t, {0xAB});
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xAB);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xBA);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xCA);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xAB);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xFFFFFFAB);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFBA);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFCA);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0xFFFFFFAB);
 }
 
 TEST_P(MicroOp, loadD) {
@@ -269,11 +475,31 @@ TEST_P(MicroOp, loadH) {
     ldr h2, [x0, #0]
     ldr h3, [x0, #2]
     ldr h4, [x0, #-2]!
+
+    ldrh w1, [x0], #2
+    ldrh w2, [x0, #0]
+    ldrh w3, [x0, #2]
+    ldrh w4, [x0, #-2]!
+
+    ldrsh w5, [x0], #2
+    ldrsh w6, [x0, #0]
+    ldrsh w7, [x0, #2]
+    ldrsh w8, [x0, #-2]!
   )");
   CHECK_NEON(1, uint16_t, {0xABBA});
   CHECK_NEON(2, uint16_t, {0xCAFE});
   CHECK_NEON(3, uint16_t, {0x1234});
   CHECK_NEON(4, uint16_t, {0xABBA});
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xABBA);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xCAFE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x1234);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xABBA);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xFFFFABBA);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFCAFE);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x1234);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0xFFFFABBA);
 }
 
 TEST_P(MicroOp, loadQ) {
@@ -321,11 +547,21 @@ TEST_P(MicroOp, loadS) {
     ldr s2, [x0, #0]
     ldr s3, [x0, #4]
     ldr s4, [x0, #-4]!
+
+    ldrsw x1, [x0], #4
+    ldrsw x2, [x0, #0]
+    ldrsw x3, [x0, #4]
+    ldrsw x4, [x0, #-4]!
   )");
   CHECK_NEON(1, float, {1.0f});
   CHECK_NEON(2, float, {-1.0f});
   CHECK_NEON(3, float, {123.45f});
   CHECK_NEON(4, float, {1.0f});
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x3F800000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0xFFFFFFFFBF800000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x42F6E666);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x3F800000);
 }
 
 TEST_P(MicroOp, loadW) {
@@ -374,6 +610,54 @@ TEST_P(MicroOp, loadX) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x1234567898765432);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xABCDEFABCDEFABCD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xABBACAFEABBACAFE);
+}
+
+TEST_P(MicroOp, scvtf_integer) {
+  // 32-bit integer
+  initialHeapData_.resize(16);
+  int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  heap32[0] = 1;
+  heap32[1] = -1;
+  heap32[2] = INT32_MAX;
+  heap32[3] = INT32_MIN;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values (via general)
+    ldp w1, w2, [x0]
+    scvtf s0, w1
+    scvtf s1, w2
+    ldp w3, w4, [x0, #8]
+    scvtf s2, w3
+    scvtf s3, w4
+  )");
+  CHECK_NEON(0, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {-1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(2, float, {static_cast<float>(INT32_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {static_cast<float>(INT32_MIN), 0.f, 0.f, 0.f});
+
+  // 64-bit integer
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values (via general)
+    ldp w1, w2, [x0]
+    scvtf d0, w1
+    scvtf d1, w2
+    ldp w3, w4, [x0, #8]
+    scvtf d2, w3
+    scvtf d3, w4
+  )");
+  CHECK_NEON(0, double, {1.f, 0.f});
+  CHECK_NEON(1, double, {-1.f, 0.f});
+  CHECK_NEON(2, double, {static_cast<double>(INT32_MAX), 0.f});
+  CHECK_NEON(3, double, {static_cast<double>(INT32_MIN), 0.f});
 }
 
 TEST_P(MicroOp, storePairD) {
@@ -583,11 +867,79 @@ TEST_P(MicroOp, storeB) {
     str b1, [sp, #0]
     str b2, [sp, #1]
     str b3, [sp, #-1]!
+
+    add sp, sp, #511
+    mov w1, #1
+    mov w2, #2
+    mov w3, #3
+    mov w4, #4
+
+    strb w1, [sp], #2
+    strb w2, [sp, #0]
+    strb w3, [sp, #1]
+    strb w4, [sp, #-1]!
   )");
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1024), 0xAB);
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1023), 0xFE);
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1022), 0xBA);
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1021), 0xCA);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 512), 1);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 511), 4);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 510), 2);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 509), 3);
+}
+
+TEST_P(MicroOp, storeExtendedB) {
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xAB;
+  heap64[1] = 0xBA;
+  heap64[2] = 0xCA;
+  heap64[3] = 0xFE;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d0, [x0, #0]
+    ldr d1, [x0, #8]
+    ldr d2, [x0, #16]
+    ldr d3, [x0, #24]
+
+    sub sp, sp, #1024
+
+    mov x0, #1
+    mov x1, #2
+    mov x3, #3
+    mov x4, #4
+
+    str b0, [sp, w0, uxtw #0]
+    str b1, [sp, x1]
+    str b2, [sp, w3, uxtw #0]
+    str b3, [sp, x4, sxtx #0]
+
+    add sp, sp, #512
+    mov w5, #1
+    mov w6, #2
+    mov w7, #3
+    mov w8, #4
+
+    strb w5, [sp, w0, uxtw #0]
+    strb w6, [sp, x1]
+    strb w7, [sp, w3, uxtw #0]
+    strb w8, [sp, x4, sxtx #0]
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1023), 0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1022), 0xBA);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1021), 0xCA);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1020), 0xFE);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 511), 1);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 510), 2);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 509), 3);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 508), 4);
 }
 
 TEST_P(MicroOp, storeD) {
@@ -608,6 +960,29 @@ TEST_P(MicroOp, storeD) {
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1016), 3.0);
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1008), -1.5);
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1000), 1.5);
+}
+
+TEST_P(MicroOp, storeExtendedD) {
+  RUN_AARCH64(R"(
+    fmov d0, #-3.0
+    fmov d1, #-1.5
+    fmov d2, #1.5
+    fmov d3, #3.0
+
+    sub sp, sp, #1024
+
+    mov x0, #8
+    mov x1, #16
+
+    str d0, [sp, w0, uxtw #0]
+    str d1, [sp, x1]
+    str d2, [sp, w0, uxtw #3]
+    str d3, [sp, x1, lsl #3]
+  )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1016), -3.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1008), -1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 960), 1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 896), 3.0);
 }
 
 TEST_P(MicroOp, storeH) {
@@ -634,6 +1009,17 @@ TEST_P(MicroOp, storeH) {
     str h1, [sp, #0]
     str h2, [sp, #2]
     str h3, [sp, #-2]!
+
+    add sp, sp, #510
+    mov w1, #1
+    mov w2, #2
+    mov w3, #3
+    mov w4, #4
+
+    strh w1, [sp], #4
+    strh w2, [sp, #0]
+    strh w3, [sp, #2]
+    strh w4, [sp, #-2]!
   )");
   EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1024),
             0xABBA);
@@ -643,6 +1029,67 @@ TEST_P(MicroOp, storeH) {
             0xCAFE);
   EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1018),
             0x1234);
+
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 512), 1);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 510), 4);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 508), 2);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 506), 3);
+}
+
+TEST_P(MicroOp, storeExtendedH) {
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xABBA;
+  heap64[1] = 0xCAFE;
+  heap64[2] = 0x1234;
+  heap64[3] = 0x5678;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d0, [x0, #0]
+    ldr d1, [x0, #8]
+    ldr d2, [x0, #16]
+    ldr d3, [x0, #24]
+
+    sub sp, sp, #1024
+
+    mov x0, #2
+    mov x1, #4
+    mov x2, #6
+    mov x3, #8
+
+    str h0, [sp, w0, uxtw #0]
+    str h1, [sp, x1]
+    str h2, [sp, w2, uxtw #1]
+    str h3, [sp, x3, sxtx #1]
+
+    add sp, sp, #512
+    mov w5, #1
+    mov w6, #2
+    mov w7, #3
+    mov w8, #4
+
+    strh w5, [sp, w0, uxtw #0]
+    strh w6, [sp, x1]
+    strh w7, [sp, w2, uxtw #1]
+    strh w8, [sp, x3, sxtx #1]
+  )");
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1022),
+            0xABBA);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1020),
+            0xCAFE);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1012),
+            0x1234);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1008),
+            0x5678);
+
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 510), 1);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 508), 2);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 500), 3);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 496), 4);
 }
 
 TEST_P(MicroOp, storeQ) {
@@ -692,6 +1139,58 @@ TEST_P(MicroOp, storeQ) {
             0xFEDCBAFEDCBAFEDC);
 }
 
+TEST_P(MicroOp, storeExtendedQ) {
+  initialHeapData_.resize(64);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xABBACAFEABBACAFE;
+  heap64[1] = 0x1234567898765432;
+  heap64[2] = 0xABCDEFABCDEFABCD;
+  heap64[3] = 0xCAFEABBACAFEABBA;
+  heap64[4] = 0x9876543212345678;
+  heap64[5] = 0xFEDCBAFEDCBAFEDC;
+  heap64[6] = 0xABBACAFEABBACAFE;
+  heap64[7] = 0x1234567898765432;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0, #0]
+    ldr q1, [x0, #16]
+    ldr q2, [x0, #32]
+    ldr q3, [x0, #48]
+
+    sub sp, sp, #1024
+
+    mov x0, #16
+    mov x1, #32
+    mov x2, #16
+    mov x3, #32
+
+    str q0, [sp, w0, uxtw #0]
+    str q1, [sp, x1]
+    str q2, [sp, w2, uxtw #4]
+    str q3, [sp, x3, sxtx #4]
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008),
+            0xABBACAFEABBACAFE);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000),
+            0x1234567898765432);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992),
+            0xABCDEFABCDEFABCD);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984),
+            0xCAFEABBACAFEABBA);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 768),
+            0x9876543212345678);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 760),
+            0xFEDCBAFEDCBAFEDC);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 512),
+            0xABBACAFEABBACAFE);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 504),
+            0x1234567898765432);
+}
+
 TEST_P(MicroOp, storeS) {
   RUN_AARCH64(R"(
     fmov s0, #-3.0
@@ -710,6 +1209,29 @@ TEST_P(MicroOp, storeS) {
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1020), 3.0f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1016), -1.5f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1012), 1.5f);
+}
+
+TEST_P(MicroOp, storeExtendedS) {
+  RUN_AARCH64(R"(
+    fmov s0, #-3.0
+    fmov s1, #-1.5
+    fmov s2, #1.5
+    fmov s3, #3.0
+
+    sub sp, sp, #1024
+
+    mov x0, #4
+    mov x1, #8
+
+    str s0, [sp, w0, uxtw #0]
+    str s1, [sp, x1]
+    str s2, [sp, w0, uxtw #2]
+    str s3, [sp, x1, lsl #2]
+  )");
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1020), -3.0f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1016), -1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1008), 1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 992), 3.0f);
 }
 
 TEST_P(MicroOp, storeW) {
@@ -732,6 +1254,29 @@ TEST_P(MicroOp, storeW) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1012), 36);
 }
 
+TEST_P(MicroOp, storeExtendedW) {
+  RUN_AARCH64(R"(
+    mov w0, #12
+    mov w1, #24
+    mov w2, #36
+    mov w3, #48
+
+    sub sp, sp, #1024
+
+    mov x4, #4
+    mov x5, #8
+
+    str w0, [sp, w4, uxtw #0]
+    str w1, [sp, x5]
+    str w2, [sp, w4, uxtw #2]
+    str w3, [sp, x5, lsl #2]
+  )");
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1020), 12);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1016), 24);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1008), 36);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 992), 48);
+}
+
 TEST_P(MicroOp, storeX) {
   RUN_AARCH64(R"(
     mov x0, #12
@@ -750,6 +1295,29 @@ TEST_P(MicroOp, storeX) {
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 48);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 24);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 36);
+}
+
+TEST_P(MicroOp, storeExtendedX) {
+  RUN_AARCH64(R"(
+    mov x0, #12
+    mov x1, #24
+    mov x2, #36
+    mov x3, #48
+
+    sub sp, sp, #1024
+
+    mov x4, #8
+    mov x5, #16
+
+    str x0, [sp, w4, uxtw #0]
+    str x1, [sp, x5]
+    str x2, [sp, w4, uxtw #3]
+    str x3, [sp, x5, lsl #3]
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 960), 36);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 896), 48);
 }
 
 TEST_P(MicroOp, storeThenLoad) {
@@ -826,11 +1394,43 @@ TEST_P(MicroOp, storeThenLoadPair) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 96);
 }
 
+TEST_P(MicroOp, st1w) {
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fdup z0.s, #-3.0
+    fdup z1.s, #-1.5
+    fdup z2.s, #1.5
+    fdup z3.s, #3.0
+
+    sub sp, sp, #1024
+
+    mov x1, #1
+
+    ptrue p0.s
+
+    st1w z0.s, p0, [x0]
+    st1w z1.s, p0, [sp, x1, lsl #2]
+  )");
+  for (int i = 0; i < VL / 32; i++) {
+    EXPECT_EQ(getMemoryValue<float>(process_->getHeapStart() + (i * 4)), -3.0f);
+  }
+  for (int i = 0; i < VL / 32; i++) {
+    EXPECT_EQ(
+        getMemoryValue<float>(process_->getStackPointer() - 1020 + (i * 4)),
+        -1.5f);
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AArch64, MicroOp,
-    ::testing::Values(std::make_tuple(EMULATION, "{Micro-Operations: True}"),
-                      // std::make_tuple(INORDER, "{Micro-Operations: True}"),
-                      std::make_tuple(OUTOFORDER, "{Micro-Operations: True}")),
+    ::testing::Values(std::make_tuple(
+        EMULATION, "{Core: {Micro-Operations: True, Vector-Length: 512}}")),
+    // std::make_tuple(INORDER, "{Micro-Operations: True}"),
+    // std::make_tuple(OUTOFORDER, "{Core: {Micro-Operations: True}}")),
     paramToString);
 
 }  // namespace

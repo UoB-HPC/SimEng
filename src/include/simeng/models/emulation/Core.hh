@@ -23,7 +23,7 @@ class Core : public simeng::Core {
   /** Construct an emulation-style core, providing memory interfaces for
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
-  Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
+  Core(arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
        arch::sendSyscallToHandler handleSyscall,
        std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>);
 
@@ -121,7 +121,7 @@ class Core : public simeng::Core {
   uint64_t programByteLength_ = 0;
 
   /** The currently used ISA. */
-  const arch::Architecture& isa_;
+  arch::Architecture& isa_;
 
   /** The current program counter. */
   uint64_t pc_ = 0;
@@ -187,6 +187,10 @@ class Core : public simeng::Core {
   bool printing_ = false;
 
   std::ofstream outputFile_;
+
+  uint64_t subInsns_ = 0;
+
+  uint64_t lastInsnId_ = -1;
 };
 
 }  // namespace emulation

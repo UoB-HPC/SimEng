@@ -20,7 +20,8 @@ class WritebackUnit {
       RegisterFileSet& registerFileSet,
       std::function<void(Register reg)> setRegisterReady,
       std::function<bool(uint64_t seqId)> canWriteback,
-      std::function<void(const std::shared_ptr<Instruction>&)> postWriteback);
+      std::function<void(const std::shared_ptr<Instruction>&)> postWriteback,
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -52,6 +53,8 @@ class WritebackUnit {
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;
+
+  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
 };
 
 }  // namespace pipeline

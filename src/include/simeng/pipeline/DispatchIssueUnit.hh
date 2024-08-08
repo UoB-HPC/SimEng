@@ -87,14 +87,17 @@ class DispatchIssueUnit {
   /** Retrieve the number of cycles this unit stalled due to insufficient RS
    * space. */
   uint64_t getRSStalls() const;
+  std::vector<uint64_t> getRSStallsPort() const;
 
   /** Retrieve the number of cycles no instructions were issued due to an empty
    * RS. */
   uint64_t getFrontendStalls() const;
+  std::vector<uint64_t> getFrontendStallsPort() const;
 
   /** Retrieve the number of cycles no instructions were issued due to
    * dependencies or a lack of available ports. */
   uint64_t getBackendStalls() const;
+  std::vector<uint64_t> getBackendStallsPort() const;
 
   /** Retrieve the number of times an instruction was unable to issue due to a
    * busy port. */
@@ -106,6 +109,8 @@ class DispatchIssueUnit {
   const std::vector<uint64_t> getPossibleIssues() const;
 
   const std::vector<uint64_t> getActualIssues() const;
+
+  void resetStats();
 
  private:
   /** A buffer of instructions to dispatch and read operands for. */
@@ -144,13 +149,16 @@ class DispatchIssueUnit {
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
+  std::vector<uint64_t> rsStallsPort_;
 
   /** The number of cycles no instructions were issued due to an empty RS. */
   uint64_t frontendStalls_ = 0;
+  std::vector<uint64_t> frontendStallsPort_;
 
   /** The number of cycles no instructions were issued due to dependencies or a
    * lack of available ports. */
   uint64_t backendStalls_ = 0;
+  std::vector<uint64_t> backendStallsPort_;
 
   /** The number of times an instruction was unable to issue due to a busy port.
    */

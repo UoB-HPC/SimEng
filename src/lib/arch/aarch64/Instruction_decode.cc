@@ -432,27 +432,36 @@ void Instruction::decode() {
     // Set size of data to be stored if it hasn't already been set
     if (!isMicroOp_) dataSize_ = getDataSize(metadata.operands[0]);
 
+    if (metadata.opcode == Opcode::AArch64_PRFMui) {
+      insnTypeMetadata |= isPrefetchMask;
+    }
     // Check first operand access to determine if it's a load or store
-    if (metadata.operands[0].access & CS_AC_WRITE) {
+    else if (metadata.operands[0].access & CS_AC_WRITE) {
       if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STXRB ||
           metadata.id == ARM64_INS_STXRH || metadata.id == ARM64_INS_STLXR ||
           metadata.id == ARM64_INS_STLXRB || metadata.id == ARM64_INS_STLXRH) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
-        if (microOpcode_ != MicroOpcode::STR_DATA) {
+        if (microOpcode_ != MicroOpcode::STR_DATA &&
+            microOpcode_ != MicroOpcode::STR_DATA_PRED) {
           insnTypeMetadata |= isStoreAddrMask;
         }
-        if (microOpcode_ != MicroOpcode::STR_ADDR) {
+        if (microOpcode_ != MicroOpcode::STR_ADDR &&
+            microOpcode_ != MicroOpcode::STR_ADDR_EX &&
+            microOpcode_ != MicroOpcode::STR_ADDR_PRED) {
           insnTypeMetadata |= isStoreDataMask;
         }
       } else {
         insnTypeMetadata |= isLoadMask;
       }
     } else {
-      if (microOpcode_ != MicroOpcode::STR_DATA) {
+      if (microOpcode_ != MicroOpcode::STR_DATA &&
+          microOpcode_ != MicroOpcode::STR_DATA_PRED) {
         insnTypeMetadata |= isStoreAddrMask;
       }
-      if (microOpcode_ != MicroOpcode::STR_ADDR) {
+      if (microOpcode_ != MicroOpcode::STR_ADDR &&
+          microOpcode_ != MicroOpcode::STR_ADDR_EX &&
+          microOpcode_ != MicroOpcode::STR_ADDR_PRED) {
         insnTypeMetadata |= isStoreDataMask;
       }
     }
@@ -598,7 +607,8 @@ void Instruction::decode() {
         insnTypeMetadata |= isSMEDataMask;
       }
     }
-  } else if (microOpcode_ == MicroOpcode::STR_DATA) {
+  } else if (microOpcode_ == MicroOpcode::STR_DATA ||
+             microOpcode_ == MicroOpcode::STR_DATA_PRED) {
     // Edge case for identifying store data micro-operation
     insnTypeMetadata |= isStoreDataMask;
   }

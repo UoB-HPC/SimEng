@@ -351,6 +351,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ADD_ZI_S:
       [[fallthrough]];
+    case Opcode::AArch64_SUBR_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_SUB_ZI_S: {
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -970,6 +972,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_SDIV_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_SDIV_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SDIVR_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SDIVR_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_UMULH_ZPmZ_B:
       [[fallthrough]];
@@ -2346,6 +2352,55 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_PRFMui: {
+      operandCount = 2;
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
+      operands[0].type = ARM64_OP_PREFETCH;
+      operands[0].access = CS_AC_READ;
+      operands[0].prefetch = ARM64_PRFM_INVALID;
+
+      size_t end = operandStr.find(",", 0);
+      std::string prfmOp = operandStr.substr(0, end);
+      if (prfmOp == "pldl1keep")
+        operands[0].prefetch = ARM64_PRFM_PLDL1KEEP;
+      else if (prfmOp == "pldl1strm")
+        operands[0].prefetch = ARM64_PRFM_PLDL1STRM;
+      else if (prfmOp == "pldl2keep")
+        operands[0].prefetch = ARM64_PRFM_PLDL2KEEP;
+      else if (prfmOp == "pldl2strm")
+        operands[0].prefetch = ARM64_PRFM_PLDL2STRM;
+      else if (prfmOp == "pldl3keep")
+        operands[0].prefetch = ARM64_PRFM_PLDL3KEEP;
+      else if (prfmOp == "pldl3strm")
+        operands[0].prefetch = ARM64_PRFM_PLDL3STRM;
+      else if (prfmOp == "plil1keep")
+        operands[0].prefetch = ARM64_PRFM_PLIL1KEEP;
+      else if (prfmOp == "plil1strm")
+        operands[0].prefetch = ARM64_PRFM_PLIL1STRM;
+      else if (prfmOp == "plil2keep")
+        operands[0].prefetch = ARM64_PRFM_PLIL2KEEP;
+      else if (prfmOp == "plil2strm")
+        operands[0].prefetch = ARM64_PRFM_PLIL2STRM;
+      else if (prfmOp == "plil3keep")
+        operands[0].prefetch = ARM64_PRFM_PLIL3KEEP;
+      else if (prfmOp == "plil3strm")
+        operands[0].prefetch = ARM64_PRFM_PLIL3STRM;
+      else if (prfmOp == "pstl1keep")
+        operands[0].prefetch = ARM64_PRFM_PSTL1KEEP;
+      else if (prfmOp == "pstl1strm")
+        operands[0].prefetch = ARM64_PRFM_PSTL1STRM;
+      else if (prfmOp == "pstl2keep")
+        operands[0].prefetch = ARM64_PRFM_PSTL2KEEP;
+      else if (prfmOp == "pstl2strm")
+        operands[0].prefetch = ARM64_PRFM_PSTL2STRM;
+      else if (prfmOp == "pstl3keep")
+        operands[0].prefetch = ARM64_PRFM_PSTL3KEEP;
+      else if (prfmOp == "pstl3strm")
+        operands[0].prefetch = ARM64_PRFM_PSTL3STRM;
+
+      break;
+    }
   }
 
   revertAliasing();
@@ -2635,6 +2690,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MOV:
+      if (opcode == MicroOpcode::MOV) return;
       if (opcode == Opcode::AArch64_AND_PPzPP) {
         // mov pd.b, pg/z, pn.b; alias for: and pd.b, pg/z, pn.b, pn.b
         operandCount = 4;

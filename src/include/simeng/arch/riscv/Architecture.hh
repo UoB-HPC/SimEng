@@ -24,8 +24,7 @@ class Architecture : public arch::Architecture {
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
   uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
-                    uint64_t instructionAddress,
-                    MacroOp& output) const override;
+                    uint64_t instructionAddress, MacroOp& output) override;
 
   /** Returns a zero-indexed register tag for a system register encoding. */
   int32_t getSystemRegisterTag(uint16_t reg) const override;

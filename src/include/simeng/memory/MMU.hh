@@ -44,6 +44,8 @@ class MMU {
    * Return false otherwise. */
   bool requestRead(const std::shared_ptr<Instruction>& uop);
 
+  bool requestPrefetch(const std::shared_ptr<Instruction>& uop);
+
   /** Queue a write request. Returns true if there is space for the request.
    * Return false otherwise. */
   bool requestWrite(const std::shared_ptr<Instruction>& uop,
@@ -51,8 +53,8 @@ class MMU {
 
   /** Process a write request of `data` to the target location that is not
    * associated to an instruction, or bound band bandwidth limits. */
-  void requestWrite(const MemoryAccessTarget& target,
-                    const RegisterValue& data);
+  bool requestWrite(const MemoryAccessTarget& target, const RegisterValue& data,
+                    bool bypassRestrictions = true);
 
   /** Queue a read request from the supplied target location. This has zero
    * latency as instruction cache is not currently modelled. */
@@ -80,9 +82,9 @@ class MMU {
    * communication. */
   std::shared_ptr<Port<std::unique_ptr<MemPacket>>> initPort();
 
-  uint64_t getNumDataReads() const { return numDataReads_; };
-  uint64_t getNumDataWrites() const { return numDataWrites_; };
-  uint64_t getNumInsnReads() const { return numInsnReads_; };
+  uint64_t getNumDataReads() const { return numDataReads_; }
+  uint64_t getNumDataWrites() const { return numDataWrites_; }
+  uint64_t getNumInsnReads() const { return numInsnReads_; }
 
  private:
   /** Process load or store requests. */

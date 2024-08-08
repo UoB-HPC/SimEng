@@ -81,7 +81,8 @@ void Instruction::setMemoryAddresses(
   dataPending_ = addresses.size();
 }
 
-void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
+void Instruction::supplyData(uint64_t address, const RegisterValue& data,
+                             bool forwarded) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
     if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
       if (!data) {
@@ -108,7 +109,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   if (!isBranch()) {
     // Instruction isn't a branch; if predicted as taken, it will require a
     // flush
-    return {prediction_.taken, instructionAddress_ + 4};
+    return {prediction_.isTaken, instructionAddress_ + 4};
   }
 
   // Not enough information to determine this was a misprediction
@@ -138,6 +139,10 @@ bool Instruction::isLoadReserved() const {
 bool Instruction::isStoreCond() const {
   return insnTypeMetadata & isStoreCondMask;
 }
+
+bool Instruction::isPrefetch() const { return 0; }
+
+uint64_t Instruction::getOpcode() const { return metadata.opcode; }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;

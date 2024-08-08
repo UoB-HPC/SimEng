@@ -10,12 +10,14 @@ WritebackUnit::WritebackUnit(
     RegisterFileSet& registerFileSet,
     std::function<void(Register reg)> setRegisterReady,
     std::function<bool(uint64_t seqId)> canWriteback,
-    std::function<void(const std::shared_ptr<Instruction>&)> postWriteback)
+    std::function<void(const std::shared_ptr<Instruction>&)> postWriteback,
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
       setRegisterReady_(setRegisterReady),
       canWriteback_(canWriteback),
-      postWriteback_(postWriteback) {}
+      postWriteback_(postWriteback),
+      forwardOperands_(forwardOperands) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
@@ -41,6 +43,8 @@ void WritebackUnit::tick() {
       // Set the register as ready to be read from the register fileset
       setRegisterReady_(destinations[i]);
     }
+
+    // forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
 
     // Carry out core/model specific functionality after the uops writeback has
     // been complete

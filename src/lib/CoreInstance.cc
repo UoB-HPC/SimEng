@@ -24,7 +24,7 @@ void CoreInstance::createCore() {
   }
 
   // Construct branch predictor object
-  predictor_ = std::make_unique<simeng::GenericPredictor>();
+  predictor_ = std::make_unique<simeng::PerceptronPredictor>();
 
   // Extract the port arrangement from the config file
   auto config_ports = config_["Ports"];
@@ -38,8 +38,9 @@ void CoreInstance::createCore() {
           config::SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
-  portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
-      portArrangement);
+  portAllocator_ =
+      std::make_unique<simeng::pipeline::CapacityAwarePortAllocator>(
+          portArrangement);
 
   // Construct the core object based on the defined simulation mode
   if (config::SimInfo::getSimMode() == config::simMode::emulation) {

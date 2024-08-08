@@ -39,6 +39,7 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isRelease, bool());
   MOCK_CONST_METHOD0(isLoadReserved, bool());
   MOCK_CONST_METHOD0(isStoreCond, bool());
+  MOCK_CONST_METHOD0(isPrefetch, bool());
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
 

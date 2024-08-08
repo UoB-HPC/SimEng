@@ -209,6 +209,11 @@ uint64_t MemRegion::addVmaExactlyAtAddr(VMA vma, uint64_t startAddr) {
 
   vma.vmStart_ = startAddr;
   vma.vmEnd_ = startAddr + size;
+    
+    if(VMAlist_.size() == 0) {
+        VMAlist_.push_back(vma);
+        return startAddr;
+    }
 
   auto itr = VMAlist_.begin();
   if (VMAlist_.size() && startAddr < itr->vmStart_ &&

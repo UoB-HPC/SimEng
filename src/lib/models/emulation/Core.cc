@@ -8,7 +8,9 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
+bool print = false;
+
+Core::Core(arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall,
            std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
                updateCoreDescInOS)
@@ -20,16 +22,26 @@ Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
       updateCoreDescInOS_(updateCoreDescInOS) {
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(config::SimInfo::getISA());
-  // std::ostringstream str;
-  // str << SIMENG_SOURCE_DIR << "/simengResults.out";
-  // outputFile_.open(str.str(), std::ofstream::out);
-  // outputFile_.close();
-  // outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+  if (print) {
+    std::ostringstream str;
+    str << SIMENG_SOURCE_DIR << "/simengEmRetire.out";
+    outputFile_.open(str.str(), std::ofstream::out);
+    outputFile_.close();
+    outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+  }
 }
 
 void Core::tick() {
   ticks_++;
+  std::cerr << "==== " << ticks_ << " === " << pc_ << " ====" << std::endl;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+
+  if (subInsns_ > 10000000000) {
+    std::cout << "[SimEng:Core" << coreId_ << ":TID" << currentTID_
+              << "] Instructions retired so far: "
+              << FormatWithCommas<uint64_t>(instructionsExecuted_) << std::endl;
+    subInsns_ = 0;
+  }
 
   switch (status_) {
     case CoreStatus::idle:
@@ -96,6 +108,7 @@ void Core::tick() {
         registerFileSet_.set(reg, results[i]);
       }
       instructionsExecuted_++;
+      subInsns_++;
       microOps_.pop();
     }
     return;
@@ -141,6 +154,16 @@ void Core::tick() {
     const auto& instructionBytes = fetched[fetchIndex].data;
     auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
                                     FETCH_SIZE, pc_, macroOp_);
+
+    if (bytesRead == 100) {  // Clear the fetched data
+      mmu_->clearCompletedIntrReads();
+
+      pc_ += 4;
+
+      mmu_->requestInstrRead({pc_, FETCH_SIZE});
+      waitingOnRead_ = true;
+      return;
+    }
 
     // Clear the fetched data
     mmu_->clearCompletedIntrReads();
@@ -270,6 +293,63 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
+
+  if (print) {
+    if (lastInsnId_ != uop->getInstructionId()) {
+      outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+      outputFile_ << std::endl;
+    }
+
+    if (uop->isLoad()) {
+      const auto& addrs = uop->getGeneratedAddresses();
+      for (int i = 0; i < addrs.size(); i++) {
+        outputFile_ << "\tAddr " << std::hex << addrs[i].vaddr << std::dec
+                    << std::endl;
+      }
+    }
+    if (uop->isStoreAddress()) {
+      const auto& addrs = uop->getGeneratedAddresses();
+
+      for (int i = 0; i < addrs.size(); i++) {
+        outputFile_ << "\tAddr " << std::hex << addrs[i].vaddr << std::dec
+                    << " <- " << std::hex;
+        if (uop->isStoreData()) {
+          const auto& data = uop->getData();
+          for (int j = data[i].size() - 1; j >= 0; j--) {
+            if (data[i].getAsVector<uint8_t>()[j] < 16) {
+              outputFile_ << "0";
+            }
+            outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+          }
+          outputFile_ << std::dec << std::endl;
+        }
+      }
+    } else if (uop->isStoreData()) {
+      const auto& data = uop->getData();
+      for (int i = 0; i < data.size(); i++) {
+        for (int j = data[i].size() - 1; j >= 0; j--) {
+          if (data[i].getAsVector<uint8_t>()[j] < 16) {
+            outputFile_ << "0";
+          }
+          outputFile_ << unsigned(data[i].getAsVector<uint8_t>()[j]);
+        }
+      }
+      outputFile_ << std::dec << std::endl;
+    }
+    for (int i = 0; i < destinations.size(); i++) {
+      outputFile_ << "\t{" << unsigned(destinations[i].type) << ":"
+                  << destinations[i].tag << "}"
+                  << " <- " << std::hex;
+      for (int j = results[i].size() - 1; j >= 0; j--) {
+        if (results[i].getAsVector<uint8_t>()[j] < 16) {
+          outputFile_ << "0";
+        }
+        outputFile_ << unsigned(results[i].getAsVector<uint8_t>()[j]);
+      }
+      outputFile_ << std::dec << std::endl;
+    }
+    lastInsnId_ = uop->getInstructionId();
+  }
   // if (uop->isLoad()) {
   //   for (int i = 0; i < uop->getGeneratedAddresses().size(); i++)
   //     outputFile_ << currentTID_ << "|\tAddr " << std::hex
@@ -293,7 +373,10 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     registerFileSet_.set(reg, results[i]);
   }
 
-  if (uop->isLastMicroOp()) instructionsExecuted_++;
+  if (uop->isLastMicroOp()) {
+    instructionsExecuted_++;
+    subInsns_++;
+  }
 
   microOps_.pop();
 }
@@ -321,6 +404,15 @@ void Core::processException() {
   }
 
   const auto& result = exceptionHandler_->getResult();
+
+  if (print) {
+    outputFile_ << "\tSyscall "
+                << getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>()
+                << " results" << std::endl;
+    outputFile_ << "\tfatal: " << result.fatal << std::endl;
+    outputFile_ << "\tidleAftersycall: " << result.idleAfterSyscall
+                << std::endl;
+  }
 
   if (result.fatal) {
     pc_ = programByteLength_;
@@ -375,23 +467,21 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
     default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        // if (currentTID_ == 1) {
-        // outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
-        //             << ":" << change.modifiedRegisters[i].tag << "}"
-        //             << " <- " << std::hex;
-        // for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
-        // j--) {
-        //   if (unsigned(
-        //           change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j])
-        //           <
-        //       16)
-        //     outputFile_ << "0";
-
-        //   outputFile_ << unsigned(
-        //       change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
-        // }
-        // outputFile_ << std::dec << std::endl;
-        // }
+        if (print) {
+          outputFile_ << "\t{" << unsigned(change.modifiedRegisters[i].type)
+                      << ":" << change.modifiedRegisters[i].tag << "}"
+                      << " <- " << std::hex;
+          for (int j = change.modifiedRegisterValues[i].size() - 1; j >= 0;
+               j--) {
+            if (change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j] <
+                16) {
+              outputFile_ << "0";
+            }
+            outputFile_ << unsigned(
+                change.modifiedRegisterValues[i].getAsVector<uint8_t>()[j]);
+          }
+          outputFile_ << std::dec << std::endl;
+        }
         registerFileSet_.set(change.modifiedRegisters[i],
                              change.modifiedRegisterValues[i]);
       }
@@ -403,23 +493,18 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    // if (currentTID_ == 1) {
-    // for (int i = 0; i < change.memoryAddresses.size(); i++) {
-    //   outputFile_ << currentTID_ << "|\tAddr " << std::hex
-    //               << change.memoryAddresses[i].vaddr << std::dec << " <- "
-    //               << std::hex;
-    //   for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
-    //     if (unsigned(change.memoryAddressValues[i].getAsVector<uint8_t>()[j])
-    //     <
-    //         16)
-    //       outputFile_ << "0";
-
-    //     outputFile_ << unsigned(
-    //         change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
-    //   }
-    //   outputFile_ << std::dec << std::endl;
-    // }
-    // }
+    if (print) {
+      outputFile_ << "\tAddr " << std::hex << change.memoryAddresses[i].vaddr
+                  << std::dec << " <- " << std::hex;
+      for (int j = change.memoryAddressValues[i].size() - 1; j >= 0; j--) {
+        if (change.memoryAddressValues[i].getAsVector<uint8_t>()[j] < 16) {
+          outputFile_ << "0";
+        }
+        outputFile_ << unsigned(
+            change.memoryAddressValues[i].getAsVector<uint8_t>()[j]);
+      }
+      outputFile_ << std::dec << std::endl;
+    }
     mmu_->requestWrite(change.memoryAddresses[i],
                        change.memoryAddressValues[i]);
   }

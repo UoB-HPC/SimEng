@@ -5,8 +5,7 @@ namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
                      std::shared_ptr<memory::MMU> mmu, uint8_t blockSize,
-                     const arch::Architecture& isa,
-                     BranchPredictor& branchPredictor)
+                     arch::Architecture& isa, BranchPredictor& branchPredictor)
     : output_(output),
       mmu_(mmu),
       isa_(isa),
@@ -79,6 +78,12 @@ void FetchUnit::tick() {
         break;
       }
 
+      if (bytesRead == 100) {
+        mopQueue_.pop_back();
+        pc_ += 4;
+        continue;
+      }
+
       // Create branch prediction after identifying instruction type
       // (e.g. RET, BL, etc).
       BranchPrediction prediction = {false,
@@ -86,16 +91,17 @@ void FetchUnit::tick() {
       if (macroOp[0]->isBranch()) {
         prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                               macroOp[0]->getKnownOffset());
+        branchesFetched_++;
       }
       macroOp[0]->setBranchPrediction(prediction);
 
       // Update PC based on previous branch prediction
-      if (!prediction.taken) {
-        // Predicted as not taken; increment PC to next instruction
-        pc_ += bytesRead;
-      } else {
+      if (prediction.isTaken) {
         // Predicted as taken; set PC to predicted target address
         pc_ = prediction.target;
+      } else {
+        // Predicted as not taken; increment PC to next instruction
+        pc_ += bytesRead;
       }
     } else {
       // Request new block from instruction memory if there isn't an existing
@@ -114,7 +120,8 @@ void FetchUnit::tick() {
   // Send mops to decode unit up to the width of the buffer
   uint16_t idx = 0;
   while (mopQueue_.size() && idx < output_.getWidth()) {
-    output_.getTailSlots()[idx] = mopQueue_.front();
+    for (int i = 0; i < mopQueue_.front().size(); i++)
+      output_.getTailSlots()[idx].push_back(std::move(mopQueue_.front()[i]));
     idx++;
     mopQueue_.pop_front();
   }
@@ -137,6 +144,11 @@ void FetchUnit::updatePC(uint64_t address) {
   //             << std::hex << address << std::dec << std::endl;
   pc_ = address;
   requestedBlocks_.clear();
+
+  for (const auto& insn : mopQueue_) {
+    if (insn[0]->isBranch())
+      branchPredictor_.flush(insn[0]->getInstructionAddress());
+  }
   mopQueue_.clear();
   if (programByteLength_ == 0) {
     std::cerr
@@ -150,6 +162,8 @@ void FetchUnit::updatePC(uint64_t address) {
 void FetchUnit::setProgramLength(uint64_t size) { programByteLength_ = size; }
 
 uint64_t FetchUnit::getFetchStalls() const { return fetchStalls_; }
+
+uint64_t FetchUnit::getBranchFetchedCount() const { return branchesFetched_; }
 
 void FetchUnit::flushLoopBuffer() {
   loopBuffer_.clear();

@@ -49,7 +49,7 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, std::shared_ptr<memory::MMU> mmu,
-            uint8_t blockSize, const arch::Architecture& isa,
+            uint8_t blockSize, arch::Architecture& isa,
             BranchPredictor& branchPredictor);
 
   ~FetchUnit();
@@ -99,6 +99,9 @@ class FetchUnit {
       return mopQueue_.front()[0]->getInstructionAddress();
   }
 
+  /** Retrieve the number of branch instructions that have been fetched. */
+  uint64_t getBranchFetchedCount() const;
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
@@ -113,7 +116,7 @@ class FetchUnit {
   uint64_t programByteLength_ = 0;
 
   /** Reference to the currently used ISA. */
-  const arch::Architecture& isa_;
+  arch::Architecture& isa_;
 
   uint16_t mopQueueSize_ = 32;
 
@@ -158,6 +161,9 @@ class FetchUnit {
    * scheduled. This ensures the correct architectural state can be captured
    * during a context switch. */
   bool paused_ = false;
+
+  /** The number of branch instructions that were fetched. */
+  uint64_t branchesFetched_ = 0;
 
   bool printing_ = false;
 };

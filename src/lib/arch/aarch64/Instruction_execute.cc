@@ -94,6 +94,74 @@ void Instruction::execute() {
         }
         break;
       }
+      case MicroOpcode::LDRS_ADDR: {
+        uint16_t regSize =
+            (insnTypeMetadata & isScalarDataMask ||
+             insnTypeMetadata & isVectorDataMask ||
+             insnTypeMetadata & isSVEDataMask)
+                ? 256
+                : ((metadata.operands[0].reg >= ARM64_REG_X0) ? 8 : 4);
+        // std::cerr << unsigned(dataSize_) << ":" << regSize << std::endl;
+        for (size_t dest = 0; dest < getDestinationRegisters().size(); dest++) {
+          // std::cerr << std::hex << memoryData_[dest].get<uint64_t>() <<
+          // std::dec
+          //           << std::endl;
+          // std::cerr << std::hex
+          //           << memoryData_[dest]
+          //                  .signExtend(8, dataSize_, regSize)
+          //                  .get<uint64_t>()
+          //           << std::dec << std::endl;
+          results[dest] = memoryData_[dest].signExtend(8, dataSize_, regSize);
+        }
+        break;
+      }
+      case MicroOpcode::IDX_LDR_ADDR: {
+        const int index = metadata.operands[0].vector_index;
+        const uint32_t* vt = operands[0].getAsVector<uint32_t>();
+        uint32_t out[4];
+        for (int i = 0; i < 4; i++) {
+          out[i] = (i == index) ? memoryData_[0].get<uint32_t>() : vt[i];
+        }
+        results[0] = {out, 256};
+        break;
+      }
+      case MicroOpcode::MOV: {
+        results[0] = operands[0];
+        break;
+      }
+      case MicroOpcode::FADDP: {
+        if (metadata.operands[0].vas == ARM64_VAS_2S)
+          results[0] = vecSumElems_2ops<float, 2>(operands);
+        break;
+      }
+      case MicroOpcode::FCVT_INT: {
+        if (cvtType_ == ConvertTypes::StoW)
+          results[0] = {
+              static_cast<int32_t>(std::trunc(operands[0].get<float>())), 8};
+        break;
+      }
+      case MicroOpcode::FMLA: {
+        if (metadata.operands[0].vas == ARM64_VAS_1S)
+          results[0] = vecFmlaIndexed_3vecs<float, 1>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_2S)
+          results[0] = vecFmlaIndexed_3vecs<float, 2>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_1D)
+          results[0] = vecFmlaIndexed_3vecs<double, 1>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_2D)
+          results[0] = vecFmlaIndexed_3vecs<double, 2>(operands, metadata);
+        break;
+      }
+      case MicroOpcode::FMUL: {
+        if (metadata.operands[0].vas == ARM64_VAS_1S)
+          results[0] = vecFmulIndexed_vecs<float, 1>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_2S)
+          results[0] = vecFmulIndexed_vecs<float, 2>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_1D)
+          results[0] = vecFmulIndexed_vecs<double, 1>(operands, metadata);
+        else if (metadata.operands[0].vas == ARM64_VAS_2D)
+          results[0] = vecFmulIndexed_vecs<double, 2>(operands, metadata);
+        break;
+      }
       case MicroOpcode::OFFSET_IMM: {
         results[0] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
@@ -102,9 +170,63 @@ void Instruction::execute() {
         results[0] = operands[0].get<uint64_t>() + operands[1].get<uint64_t>();
         break;
       }
+      case MicroOpcode::SCVT_INT: {
+        if (cvtType_ == ConvertTypes::WtoS)
+          results[0] = {static_cast<float>(operands[0].get<int32_t>()), 256};
+        else if (cvtType_ == ConvertTypes::WtoD)
+          results[0] = {static_cast<double>(operands[0].get<int32_t>()), 256};
+        break;
+      }
       case MicroOpcode::STR_DATA: {
         setMemoryAddresses({{0, 0}});
         memoryData_[0] = operands[0];
+        // std::cerr << std::hex << operands[0].get<uint64_t>() << std::dec << "
+        // ("
+        //           << unsigned(dataSize_) << ")" << std::endl;
+        break;
+      }
+      case MicroOpcode::STR_DATA_PRED: {
+        if (dataSize_ == 1) {
+          const uint8_t* d = operands[0].getAsVector<uint8_t>();
+          const uint64_t* p = operands[1].getAsVector<uint64_t>();
+          // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+          //           << instructionId_ << " (" << std::hex << p[0] << std::dec
+          //           << " with 8 bits)" << std::endl;
+          // for (int i = 0; i < VL_bits / 8; i++) {
+          //   std::cerr << "\t- " << std::hex << d[i] << std::dec << std::endl;
+          // }
+          memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        } else if (dataSize_ == 2) {
+          const uint16_t* d = operands[0].getAsVector<uint16_t>();
+          const uint64_t* p = operands[1].getAsVector<uint64_t>();
+          // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+          //           << instructionId_ << " (" << std::hex << p[0] << std::dec
+          //           << " with 16 bits)" << std::endl;
+          // for (int i = 0; i < VL_bits / 16; i++) {
+          //   std::cerr << "\t- " << std::hex << d[i] << std::dec << std::endl;
+          // }
+          memoryData_ = sve_merge_store_data<uint16_t>(d, p, VL_bits);
+        } else if (dataSize_ == 4) {
+          const uint32_t* d = operands[0].getAsVector<uint32_t>();
+          const uint64_t* p = operands[1].getAsVector<uint64_t>();
+          // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+          //           << instructionId_ << " (" << std::hex << p[0] << std::dec
+          //           << " with 32 bits)" << std::endl;
+          // for (int i = 0; i < VL_bits / 32; i++) {
+          //   std::cerr << "\t- " << std::hex << d[i] << std::dec << std::endl;
+          // }
+          memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
+        } else {
+          const uint64_t* d = operands[0].getAsVector<uint64_t>();
+          const uint64_t* p = operands[1].getAsVector<uint64_t>();
+          // std::cerr << std::hex << instructionAddress_ << std::dec << ":"
+          //           << instructionId_ << " (" << std::hex << p[0] << std::dec
+          //           << " with 64 bits)" << std::endl;
+          // for (int i = 0; i < VL_bits / 64; i++) {
+          //   std::cerr << "\t- " << std::hex << d[i] << std::dec << std::endl;
+          // }
+          memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        }
         break;
       }
       default:
@@ -1537,7 +1659,7 @@ void Instruction::execute() {
         results[0] = vecAddp_3ops<double, 2>(operands);
         break;
       }
-      case Opcode::AArch64_FADDPv2i32p: {  // faddp dd, vn.2s
+      case Opcode::AArch64_FADDPv2i32p: {  // faddp sd, vn.2s
         results[0] = vecSumElems_2ops<float, 2>(operands);
         break;
       }
@@ -3536,14 +3658,21 @@ void Instruction::execute() {
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        // const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
+        uint8_t dataIdx = 0;
+        uint8_t elemIdx = 0;
+        bool first = false;
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            out[i] = data[i];
+            out[i] = memoryData_[dataIdx].getAsVector<uint32_t>()[elemIdx];
+            elemIdx++;
+            first = true;
           } else {
+            if (first) dataIdx++;
+            elemIdx = 0;
             out[i] = 0;
           }
         }
@@ -3963,8 +4092,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LDPSWi: {  // ldpsw xt1, xt2, [xn {, #imm}]
         // LOAD
-        results[0] = memoryData_[0].zeroExtend(4, 8);
-        results[1] = memoryData_[1].zeroExtend(4, 8);
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
+        results[1] = memoryData_[1].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
@@ -4089,122 +4218,106 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LDRSBWpost: {  // ldrsb wt, [xn], #imm
-        // LOAD
-        results[0] =
-            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
-                .zeroExtend(4, 8);
+                                          // LOAD
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LDRSBWpre: {  // ldrsb wt, [xn, #imm]!
-        // LOAD
-        results[0] =
-            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
-                .zeroExtend(4, 8);
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         results[1] =
             operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
         break;
       }
       case Opcode::AArch64_LDRSBWroW: {  // ldrsb wt, [xn, wm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] =
-            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
-                .zeroExtend(4, 8);
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         break;
       }
       case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] =
-            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
-                .zeroExtend(4, 8);
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         break;
       }
       case Opcode::AArch64_LDRSBWui: {  // ldrsb wt, [xn, #imm]
-        // LOAD
-        results[0] =
-            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()))
-                .zeroExtend(4, 8);
+                                        // LOAD
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         break;
       }
       case Opcode::AArch64_LDRSBXui: {  // ldrsb xt, [xn, #imm]
         // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int8_t>());
+        results[0] = memoryData_[0].signExtend(8, 1, 8);
         break;
       }
       case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] = RegisterValue(
-                         static_cast<int32_t>(memoryData_[0].get<int16_t>()), 4)
-                         .zeroExtend(4, 8);
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 4);
         break;
       }
       case Opcode::AArch64_LDRSHWroX: {  // ldrsh wt, [xn, xm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] = RegisterValue(
-                         static_cast<int32_t>(memoryData_[0].get<int16_t>()), 4)
-                         .zeroExtend(4, 8);
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 4);
         break;
       }
       case Opcode::AArch64_LDRSHWui: {  // ldrsh wt, [xn, #imm]
-        // LOAD
-        results[0] = RegisterValue(
-                         static_cast<int32_t>(memoryData_[0].get<int16_t>()), 4)
-                         .zeroExtend(4, 8);
+                                        // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 4);
         break;
       }
       case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 8);
         break;
       }
       case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend
                                          // {#amount}}]
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 8);
         break;
       }
       case Opcode::AArch64_LDRSHXui: {  // ldrsh xt, [xn, #imm]
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int16_t>());
+                                        // LOAD
+        results[0] = memoryData_[0].signExtend(8, 2, 8);
         break;
       }
       case Opcode::AArch64_LDRSWl: {  // ldrsw xt, #imm
-        // LOAD
-        results[0] = memoryData_[0].zeroExtend(4, 8);
+                                      // LOAD
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDRSWpost: {  // ldrsw xt, [xn], #simm
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+                                         // LOAD
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LDRSWpre: {  // ldrsw xt, [xn, #simm]!
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+                                        // LOAD
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         results[1] =
             operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
         break;
       }
       case Opcode::AArch64_LDRSWroW: {  // ldrsw xt, [xn, wm{, extend
                                         // {#amount}}]
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
                                         // {#amount}}]
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+                                        // LOAD
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
-        // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+                                       // LOAD
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm, {extend {#amount}}]
@@ -4321,12 +4434,12 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LDURSBWi: {  // ldursb wt, [xn, #imm]
         // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int8_t>());
+        results[0] = memoryData_[0].signExtend(8, 1, 4);
         break;
       }
       case Opcode::AArch64_LDURSWi: {  // ldursw xt, [xn, #imm]
         // LOAD
-        results[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+        results[0] = memoryData_[0].signExtend(8, 4, 8);
         break;
       }
       case Opcode::AArch64_LDURSi: {  // ldur sd, [<xn|sp>{, #imm}]
@@ -5074,6 +5187,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SDIV_ZPmZ_S: {  // sdiv zd.s, pg/m, zn.s, zm.s
         results[0] = sveDivPredicated<int32_t>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SDIVR_ZPmZ_D: {  // sdivr zdn.d, pg/m, zdn.d, zm.d
+        results[0] = sveDivPredicated<int64_t, true>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SDIVR_ZPmZ_S: {  // sdivr zdn.s, pg/m, zdn.s, zm.s
+        results[0] = sveDivPredicated<int32_t, true>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_SEL_ZPZZ_D: {  // sel zd.d, pg, zn.d, zm.d
@@ -6004,6 +6125,10 @@ void Instruction::execute() {
         memoryData_[0] = operands[0];
         // TODO: Implement atomic memory access
         // results[0] = static_cast<uint64_t>(0);
+        break;
+      }
+      case Opcode::AArch64_SUBR_ZI_D: {  // subr zdn.d, zdn.d, #imm{, shift}
+        results[0] = sveSub_imm<uint64_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm

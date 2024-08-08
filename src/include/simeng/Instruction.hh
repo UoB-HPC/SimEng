@@ -74,7 +74,8 @@ class Instruction {
       const std::vector<memory::MemoryAccessTarget>& addresses) = 0;
 
   /** Provide data from a requested memory address. */
-  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
+  virtual void supplyData(uint64_t address, const RegisterValue& data,
+                          bool forwarded = false) = 0;
 
   /** Update the result register for a conditional store instruction. */
   virtual void updateCondStoreResult(const bool success) = 0;
@@ -111,6 +112,11 @@ class Instruction {
   /** Does this instruction enforce release semantics? */
   virtual bool isRelease() const = 0;
 
+  /** Is this a prefetch operation? */
+  virtual bool isPrefetch() const = 0;
+
+  virtual uint64_t getOpcode() const = 0;
+
   // ------ Defined Functions ------
 
   /** Check for misprediction. */
@@ -120,8 +126,8 @@ class Instruction {
            "instruction to have executed");
     // Flag as mispredicted if taken state was wrongly predicted, or taken and
     // predicted target is wrong
-    return (branchTaken_ != prediction_.taken ||
-            (prediction_.target != branchAddress_));
+    return (branchTaken_ != prediction_.isTaken ||
+            (branchTaken_ && (prediction_.target != branchAddress_)));
   }
 
   /** Check whether an exception has been encountered while processing this
@@ -141,6 +147,12 @@ class Instruction {
 
   /** Check whether all required data has been supplied. */
   bool hasAllData() const { return (dataPending_ == 0); }
+
+  /** Check whether all required data has been supplied. */
+  bool hasData(uint16_t i) const {
+    if (i >= memoryData_.size()) return false;
+    return memoryData_[i].size() != 0;
+  }
 
   /** Check how many required data items haven't been supplied. */
   uint16_t getNumDataPending() const { return dataPending_; }
@@ -232,6 +244,9 @@ class Instruction {
    * conditional store. */
   bool isCondResultReady() const { return condResultReady_; }
 
+  void setSequential() { isSequential_ = true; }
+  bool isSequential() const { return isSequential_; }
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -321,6 +336,8 @@ class Instruction {
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
   int microOpIndex_;
+
+  bool isSequential_ = false;
 };
 
 }  // namespace simeng
