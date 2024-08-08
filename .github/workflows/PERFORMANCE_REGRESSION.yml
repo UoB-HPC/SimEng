@@ -97,7 +97,7 @@ jobs:
         id: cloverleaf_run
         shell: bash
         run: |
-          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -110,7 +110,7 @@ jobs:
           echo "CLOVERLEAF_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
           echo "CLOVERLEAF_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
 
-          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "CLOVERLEAF_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
           else
@@ -137,7 +137,7 @@ jobs:
         id: minibude_run
         shell: bash
         run: |
-          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -150,7 +150,7 @@ jobs:
           echo "MINIBUDE_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
           echo "MINIBUDE_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
 
-          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "MINIBUDE_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
           else
@@ -177,7 +177,7 @@ jobs:
         id: stream_run
         shell: bash
         run: |
-          if [[ ${{ steps.stream_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -190,7 +190,7 @@ jobs:
           echo "STREAM_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
           echo "STREAM_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
 
-          if [[ ${{ steps.stream_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "STREAM_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
           else
@@ -217,7 +217,7 @@ jobs:
         id: tealeaf_run
         shell: bash
         run: |
-          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             previous_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
           else
             previous_time="No Previous Time"
@@ -230,7 +230,7 @@ jobs:
           echo "TEALEAF_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
           echo "TEALEAF_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
 
-          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit }} == 'true' ]]; then
+          if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
             difference=$((current_time-previous_time))
             echo "TEALEAF_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
           else
