@@ -103,7 +103,7 @@ jobs:
             previous_time="No Previous Time"
           fi
 
-          simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve > cloverleaf_benchmark_out.txt
+          sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve > cloverleaf_benchmark_out.txt
           
           current_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
 
@@ -143,7 +143,7 @@ jobs:
             previous_time="No Previous Time"
           fi
 
-          simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve > miniBUDE_benchmark_out.txt
+          sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve > miniBUDE_benchmark_out.txt
           
           current_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
 
@@ -183,7 +183,7 @@ jobs:
             previous_time="No Previous Time"
           fi
 
-          simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve > stream_benchmark_out.txt
+          sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve > stream_benchmark_out.txt
           
           current_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
 
@@ -223,7 +223,7 @@ jobs:
             previous_time="No Previous Time"
           fi
 
-          simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve > tealeaf_benchmark_out.txt
+          sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve > tealeaf_benchmark_out.txt
           
           current_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
 
@@ -247,7 +247,7 @@ jobs:
           && sudo apt update \
           && sudo apt install gh -y
 
-          apt update && apt install -y gh && apt upgrade -y 
+          sudo apt update && sudo apt install -y gh && sudo apt upgrade -y 
           gh extension install actions/gh-actions-cache
 
           caches=(
