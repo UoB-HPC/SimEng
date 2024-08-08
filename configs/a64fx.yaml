@@ -57,6 +57,113 @@ Ports:
     - STORE_DATA_SCALAR
     - STORE_DATA_VECTOR
     - STORE_DATA_SVE
+    Instruction-Opcode-Support:
+    - 1675
+    - 1683
+    - 1684
+    - 1685
+    - 1686
+    - 1687
+    - 1688
+    - 1696
+    - 1698
+    - 1702
+    - 1973
+    - 1974
+    - 1975
+    - 1976
+    - 1979
+    - 2201
+    - 2202
+    - 2203
+    - 2117
+    - 2119
+    - 2120
+    - 2152
+    - 2154
+    - 2155
+    - 2157
+    - 2411
+    - 2412
+    - 2415
+    - 2416
+    - 2418
+    - 2419
+    - 2425
+    - 2426
+    - 2427
+    - 2428
+    - 2429
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 2892
+    - 2894
+    - 2896
+    - 2898
+    - 3656
+    - 3657
+    - 3658
+    - 3659
+    - 3660
+    - 3661
+    - 3662
+    - 3663
+    - 3664
+    - 3665
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 4063
+    - 4064
+    - 4065
+    - 4066
+    - 4067
+    - 4068
+    - 4069
+    - 4070
+    - 4071
+    - 4072
+    - 4073
+    - 4074
+    - 4113
+    - 4114
+    - 4115
+    - 4116
+    - 5608
+    - 5609
+    - 5610
+    - 5611
+    - 5612
+    - 5613
+    - 5614
+    - 5615
+    - 5616
+    - 5617
+    - 5618
+    - 5619
   1:
     Portname: PR
     Instruction-Group-Support:
@@ -67,6 +174,46 @@ Ports:
     - INT_SIMPLE
     - INT_MUL
     - STORE_DATA_INT
+    Instruction-Opcode-Support:
+    - 1161
+    - 1162
+    - 1248
+    - 1249
+    - 1250
+    - 1251
+    - 1642
+    - 1643
+    - 2412
+    - 2416
+    - 2419
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 3892
+    - 4057
+    - 4058
+    - 5354
+    - 5355
+    - 5356
+    - 5357
+    - 5358
+    - 5359
+    - 5360
+    - 5457
+    - 5458
+    - 5471
+    - 5472
+    - 5602
+    - 5603
   3:
     Portname: FLB
     Instruction-Group-Support:
@@ -74,11 +221,67 @@ Ports:
     - FP_MUL
     - SVE_SIMPLE
     - SVE_MUL
+    Instruction-Opcode-Support:
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 4113
+    - 4114
+    - 4115
+    - 4116
   4:
     Portname: EXB
     Instruction-Group-Support:
     - INT_SIMPLE
     - INT_DIV_OR_SQRT
+    Instruction-Opcode-Support:
+    - 1161
+    - 1162
+    - 1248
+    - 1249
+    - 1250
+    - 1251
+    - 1642
+    - 1643
+    - 1973
+    - 1974
+    - 1975
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 4057
+    - 4058
+    - 5354
+    - 5355
+    - 5356
+    - 5357
+    - 5358
+    - 5359
+    - 5360
+    - 5457
+    - 5458
+    - 5471
+    - 5472
+    - 5602
+    - 5603
   5:
     Portname: EAGA
     Instruction-Group-Support:
@@ -95,6 +298,9 @@ Ports:
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
+    Instruction-Opcode-Support:
+    - 1037
+    - 1038
   7:
     Portname: BR
     Instruction-Group-Support:
@@ -114,18 +320,19 @@ Reservation-Stations:
     - FLB
     - EXB
   2:
-    Size: 10
-    Dispatch-Rate: 1
+    Size: 20
+    Dispatch-Rate: 4
     Ports:
     - EAGA
-  3:
-    Size: 10
-    Dispatch-Rate: 1
-    Ports:
     - EAGB
-  4:
+  # 3:
+  #   Size: 10
+  #   Dispatch-Rate: 2
+  #   Ports:
+  #   - EAGB
+  3:
     Size: 19
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - BR
 Execution-Units:
@@ -207,7 +414,7 @@ Latencies:
     - SVE_SIMPLE_LOGICAL
     - VECTOR_SIMPLE_CMP
     - SVE_SIMPLE_CMP
-    Execution-Latency: 4
+    Execution-Latency: 9
     Execution-Throughput: 1
   5:
     Instruction-Groups:
@@ -247,140 +454,226 @@ Latencies:
     - STORE_ADDRESS_SVE
     Execution-Latency: 6
     Execution-Throughput: 1
-# Indexed FMLA instructions split into 2 dependent µops. Latency increased to 15 and throughput to 2 to mimic such behaviour
-# NOTE: Any changes to the capstone opcode list could invalidate the mapping between ARM instructions and the values below
   11:
     Instruction-Opcodes:
-    - 1922
-    - 1924
-    - 1926
-    - 2359
-    - 2360
-    - 2361
-    - 2364
-    - 2365
-    - 2368
-    - 2369
-    - 2371
-    - 2390
-    - 2391
-    - 2392
-    - 2395
-    - 2396
-    - 2399
-    - 2400
-    - 2402
-    - 2445
-    - 2446
-    - 2447
-    - 2450
-    - 2451
-    - 2454
-    - 2455
-    - 2457
-    - 2470
-    - 2471
-    - 2472
-    - 2475
-    - 2476
-    - 2479
-    - 2480
-    - 2482
-    - 3627
-    - 3629
-    - 3631
-    - 3633
-    - 3644
-    - 3646
-    - 3648
-    - 3650
-    - 3709
-    - 3711
-    - 3713
-    - 3715
-    - 4306
-    - 4308
-    - 4310
-    - 4312
-    - 4326
-    - 4328
-    - 4330
-    - 4332
-    - 4372
-    - 4374
-    - 4376
-    - 4378
-    - 4468
-    - 4469
-    - 4470
-    - 4472
-    - 4474
-    - 4476
-    - 4493
-    - 4494
-    - 4495
-    - 4497
-    - 4499
-    - 4501
-    - 4511
-    - 4513
-    - 4515
-    - 4517
-    - 4519
-    - 4521
-    - 4534
-    - 4535
-    - 4536
-    - 4538
-    - 4540
-    - 4542
-    - 4594
-    - 4595
-    - 4599
-    - 4601
-    - 4603
-    - 4605
-    - 4613
-    - 4614
-    - 4618
-    - 4620
-    - 4622
-    - 4624
-    - 4633
-    - 4635
-    - 4637
-    - 4639
-    - 4641
-    - 4643
-    - 5760
-    - 5762
-    - 5764
-    - 5766
-    - 5780
-    - 5782
-    - 5784
-    - 5786
-    - 5824
-    - 5826
-    - 5828
-    - 5830
+    - 1976
+    - 1979
+    - 2117
+    - 2119
+    - 2120
+    - 2152
+    - 2154
+    - 2155
+    - 2157
     Execution-Latency: 15
-    Execution-Throughput: 2
-# Whilelo instructions have a latency of 1+3, meaning they are split in the execute stage and are executed sequentially in the same pipeline.
-# Hence, we mimic this split by increasing the throughput to 2 from 1.
-# NOTE: Any changes to the capstone opcode list could invalidate the mapping between ARM instructions and the values below
+    Execution-Throughput: 1
   12:
     Instruction-Opcodes:
-    - 6258
-    - 6259
-    - 6260
-    - 6261
-    - 6262
-    - 6263
-    - 6264
-    - 6265
+    - 4063
+    - 4064
+    - 4065
+    - 4066
+    - 4067
+    - 4068
+    - 4069
+    - 4070
+    - 4071
+    - 4072
+    - 4073
+    - 4074
+    - 5608
+    - 5609
+    - 5610
+    - 5611
+    - 5612
+    - 5613
+    - 5614
+    - 5615
+    - 5616
+    - 5617
+    - 5618
+    - 5619
+    Execution-Latency: 9
+    Execution-Throughput: 1
+  13:
+    Instruction-Opcodes:
+    - 1675
+    - 1676
+    - 1677
+    - 1678
+    - 1679
+    - 1767
+    - 1768
+    - 1769
+    - 1770
+    - 1771
+    - 1772
+    - 1773
+    - 1774
+    - 1775
+    - 1776
+    - 1777
+    - 1955
+    - 1956
+    - 1957
+    - 1958
+    - 1959
+    - 1960
+    - 1961
+    - 1962
+    - 1963
+    - 1964
+    - 1965
+    - 1966
+    - 1973
+    - 1974
+    - 1975
+    - 2217
+    - 2218
+    - 2219
+    - 2220
+    - 2232
+    - 2239
+    - 2240
+    - 2241
+    - 2242
+    - 2243
+    - 2244
+    - 2245
+    - 2246
+    - 2247
+    - 2248
+    - 2249
+    - 2261
+    - 2268
+    - 2269
+    - 2270
+    - 2271
+    - 2272
+    - 2273
+    - 2274
+    - 2275
+    - 2276
+    - 2277
+    - 2278
+    - 2279
+    - 2280
+    - 2281
+    - 2282
+    - 2294
+    - 2301
+    - 2302
+    - 2303
+    - 2304
+    - 2305
+    - 2306
+    - 2307
+    - 2308
+    - 2309
+    - 2310
+    - 2311
+    - 2323
+    - 2330
+    - 2331
+    - 2332
+    - 2333
+    - 2334
+    - 2335
+    - 2336
+    - 2337
+    - 2338
+    - 2339
+    - 2340
+    - 2411
+    - 2412
+    - 2415
+    - 2416
+    - 2418
+    - 2419
+    - 2425
+    - 2426
+    - 2427
+    - 2428
+    - 2429
+    - 2483
+    - 2484
+    - 2485
+    - 2486
+    - 2487
+    - 2488
+    - 2489
+    - 2490
+    - 2491
+    - 2492
+    - 2493
+    - 3656
+    - 3657
+    - 3658
+    - 3659
+    - 3660
+    - 3661
+    - 3662
+    - 3663
+    - 3664
+    - 3665
+    - 3670
+    - 3671
+    - 3672
+    - 3673
+    - 3674
+    - 3675
+    - 3676
+    - 3677
+    - 3678
+    - 3760
+    - 3765
+    - 3766
+    - 3767
+    - 3768
+    - 3769
+    - 3770
+    - 3771
+    - 4113
+    - 4114
+    - 4115
+    - 4116
     Execution-Latency: 4
-    Execution-Throughput: 2
+    Execution-Throughput: 1
+  14:
+    Instruction-Opcodes:
+    - 1684
+    - 1685
+    - 1686
+    - 1687
+    - 1688
+    - 1689
+    - 1690
+    - 1691
+    - 1692
+    - 1694
+    - 1696
+    - 1698
+    - 1700
+    - 1702
+    - 1704
+    - 1706
+    - 2201
+    - 2202
+    - 2203
+    - 2892
+    - 2894
+    - 2896
+    - 2898
+    Execution-Latency: 6
+    Execution-Throughput: 1
+  14:
+    Instruction-Opcodes:
+    - 3566
+    - 3567
+    - 3590
+    - 3591
+    Execution-Latency: 2
+    Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:
