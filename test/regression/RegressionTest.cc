@@ -58,8 +58,6 @@ void RegressionTest::createProcess(const char* source, const char* triple,
   std::shared_ptr<char> procImgPtr = process_->getProcessImage();
   processMemory_ = procImgPtr.get();
 
-  // TODO ensure performing this before kernel_.createProcess is ok - Think it's
-  // fine
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getInitialStackPointer());

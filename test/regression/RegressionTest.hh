@@ -119,7 +119,7 @@ class RegressionTest
   /** The initial data to populate the heap with. */
   std::vector<uint8_t> initialHeapData_;
 
-  /** The process that was executed. */
+  /** The process to be executed. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** The process memory. */
@@ -137,8 +137,8 @@ class RegressionTest
   /** The maximum number of ticks to run before aborting the test. */
   uint64_t maxTicks_ = UINT64_MAX;
 
-  /** The architecture instance. */
-  std::unique_ptr<simeng::arch::Architecture> architecture_;
+  /** Pointer to be instantiated for the architecture. */
+  std::unique_ptr<simeng::arch::Architecture> architecture_ = nullptr;
 
  private:
   /** Assemble test source to a flat binary for the given triple and ISA
@@ -168,13 +168,13 @@ class RegressionTest
   void instantiateSimulationObjects(const char* source, const char* triple,
                                     const char* extensions);
 
-  /* Instantiation of the kernel. */
+  /* Pointer to be instantiated for the kernel. */
   std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;
 
-  /* Instantiation of the port allocator. */
+  /* Pointer to be instantiated for the port allocator. */
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
 
-  /* Instantiation of the branch predictor. */
+  /* Pointer to be instantiated for the branch predictor. */
   std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
 
   /** All possible data memory interfaces. dataMemory_ set to one of these
@@ -183,13 +183,13 @@ class RegressionTest
   std::unique_ptr<simeng::memory::MemoryInterface> fixedLatencyDataMemory_ =
       nullptr;
 
-  /** The data memory interface used during the test. */
+  /** Pointer to be instantiated for the data memory interface. */
   std::unique_ptr<simeng::memory::MemoryInterface> dataMemory_ = nullptr;
 
-  /** The instruction memory interface used during the test. */
+  /** Pointer to be instantiated for the instruction memory interface. */
   std::unique_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
 
-  /** The core that was used. */
+  /** Pointer to be instantiated for the core. */
   std::unique_ptr<simeng::Core> core_ = nullptr;
 
   /** The size of the process memory in bytes. */
