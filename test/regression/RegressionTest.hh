@@ -158,6 +158,12 @@ class RegressionTest
   /** Instantiate the memory interfaces. */
   void instantiateMemoryInterfaces();
 
+  /** Instantiate the branch predictor according to the config. */
+  void createPredictor();
+
+  /** Instantiate the core according to the config. */
+  void createCore();
+
   /** Instantiating all of the objects used to setup and run the simulation. */
   void instantiateSimulationObjects(const char* source, const char* triple,
                                     const char* extensions);
