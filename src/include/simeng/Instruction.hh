@@ -254,6 +254,12 @@ class Instruction {
   /** Check whether all required data has been supplied. */
   bool hasAllData() const { return (dataPending_ == 0); }
 
+  /** Check whether the instruction has been dispatched. */
+  bool hasDispatched() const { return dispatched_; }
+
+  /** Mark this instruction as having been dispatched. */
+  void setDispatched() { dispatched_ = true; }
+
   /** Check whether the instruction has executed and has results ready to
    * write back. */
   bool hasExecuted() const { return executed_; }
@@ -337,6 +343,9 @@ class Instruction {
   uint64_t instructionAddress_ = 0;
 
   // Execution
+  /** Has this instruction been dispatched? (Allocated a port + RS) */
+  bool dispatched_ = false;
+
   /** Whether or not this instruction has been executed. */
   bool executed_ = false;
 
