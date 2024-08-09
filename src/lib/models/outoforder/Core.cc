@@ -44,13 +44,19 @@ Core::Core(memory::MemoryInterface& instructionMemory,
                          portAllocator, bypassMap, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
-          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); },
+          [this](const Register& reg) {
+            dispatchIssueUnit_.updateScoreboard(reg);
+          }),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
           loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
           [this](auto branchAddress) {
             fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          [this](const Register& reg) {
+            dispatchIssueUnit_.updateScoreboard(reg);
           },
           branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
           config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
@@ -59,8 +65,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
            config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>()},
-          [this](auto regs, auto values) {
-            dispatchIssueUnit_.forwardOperands(regs, values);
+          [this](auto regs, auto values, auto producerGroup) {
+            dispatchIssueUnit_.forwardOperands(regs, values, producerGroup);
           },
           [](auto uop) { uop->setCommitReady(); },
           config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
@@ -83,8 +89,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
-        [this](auto regs, auto values) {
-          dispatchIssueUnit_.forwardOperands(regs, values);
+        [this](auto regs, auto values, auto producerGroup) {
+          dispatchIssueUnit_.forwardOperands(regs, values, producerGroup);
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },

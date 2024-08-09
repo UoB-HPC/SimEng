@@ -8,10 +8,12 @@ namespace pipeline {
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFileSet& registerFileSet,
-    std::function<void(uint64_t insnId)> flagMicroOpCommits)
+    std::function<void(uint64_t insnId)> flagMicroOpCommits,
+    std::function<void(const Register& reg)> updateScoreboard)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
-      flagMicroOpCommits_(flagMicroOpCommits) {}
+      flagMicroOpCommits_(flagMicroOpCommits),
+      updateScoreboard_(updateScoreboard) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
@@ -26,6 +28,7 @@ void WritebackUnit::tick() {
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file
       registerFileSet_.set(destinations[i], results[i]);
+      updateScoreboard_(destinations[i]);
     }
     if (uop->isMicroOp()) {
       uop->setWaitingCommit();

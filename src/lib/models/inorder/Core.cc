@@ -27,12 +27,16 @@ Core::Core(memory::MemoryInterface& instructionMemory,
                   branchPredictor),
       executeUnit_(
           decodeToExecuteBuffer_, completionSlots_[0],
-          [this](auto regs, auto values) { forwardOperands(regs, values); },
+          [this](auto regs, auto values, auto producerGroup) {
+            forwardOperands(regs, values);
+          },
           [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
+      writebackUnit_(
+          completionSlots_, registerFileSet_, [](auto insnId) {},
+          [](const Register& reg) {}) {
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
@@ -268,7 +272,8 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::forwardOperands(const span<Register>& registers,
-                           const span<RegisterValue>& values) {
+                           const span<RegisterValue>& values,
+                           const uint16_t producerGroup) {
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 

@@ -18,7 +18,8 @@ class WritebackUnit {
   WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
                     completionSlots,
                 RegisterFileSet& registerFileSet,
-                std::function<void(uint64_t insnId)> flagMicroOpCommits);
+                std::function<void(uint64_t insnId)> flagMicroOpCommits,
+                std::function<void(const Register& reg)> updateScoreboard);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -36,6 +37,10 @@ class WritebackUnit {
   /** A function handle called to determine if uops associated to an instruction
    * ID can now be committed. */
   std::function<void(uint64_t insnId)> flagMicroOpCommits_;
+
+  /** Lets the Dispatch-Issue unit know the register file has been updated and
+   * to update scoreboard accordingly. */
+  std::function<void(const Register& reg)> updateScoreboard_;
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;

@@ -35,7 +35,9 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>,
+                         const uint16_t producerGroup)>
+          forwardOperands,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
@@ -50,7 +52,9 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       memory::MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>,
+                         const uint16_t producerGroup)>
+          forwardOperands,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
@@ -120,7 +124,9 @@ class LoadStoreQueue {
   std::unordered_map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
   /** A function handler to call to forward the results of a completed load. */
-  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
+  std::function<void(span<Register>, span<RegisterValue>,
+                     const uint16_t producerGroup)>
+      forwardOperands_;
 
   /** A function handle called upon exception generation. */
   std::function<void(const std::shared_ptr<Instruction>&)> raiseException_;

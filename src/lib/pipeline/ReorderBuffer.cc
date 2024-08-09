@@ -11,6 +11,7 @@ ReorderBuffer::ReorderBuffer(
     uint32_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     std::function<void(uint64_t branchAddress)> sendLoopBoundary,
+    std::function<void(const Register& reg)> updateScoreboard,
     BranchPredictor& predictor, uint16_t loopBufSize,
     uint16_t loopDetectionThreshold)
     : rat_(rat),
@@ -18,6 +19,7 @@ ReorderBuffer::ReorderBuffer(
       maxSize_(maxSize),
       raiseException_(raiseException),
       sendLoopBoundary_(sendLoopBoundary),
+      updateScoreboard_(updateScoreboard),
       predictor_(predictor),
       loopBufSize_(loopBufSize),
       loopDetectionThreshold_(loopDetectionThreshold) {}
@@ -167,6 +169,11 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
       break;
     }
 
+    // Check whether the instruction has dispatched, but has not yet written
+    // back
+    bool hasScoreboardEntries =
+        uop->hasDispatched() && !(uop->isWaitingCommit() || uop->canCommit());
+
     // To rewind destination registers in correct history order, rewinding of
     // register renaming is done backwards
     auto destinations = uop->getDestinationRegisters();
@@ -174,6 +181,8 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
       const auto& reg = destinations[i];
       // Only rewind the register if it was renamed
       if (reg.renamed) rat_.rewind(reg);
+      // If needed, clear scoreboard entry for destination register
+      if (hasScoreboardEntries) updateScoreboard_(reg);
     }
     uop->setFlushed();
     // If the instruction is a branch, supply address to branch flushing logic

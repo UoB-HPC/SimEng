@@ -20,7 +20,9 @@ bool requestsOverlap(memory::MemoryAccessTarget a,
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(span<Register>, span<RegisterValue>,
+                       const uint16_t producerGroup)>
+        forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
@@ -42,7 +44,9 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     memory::MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(span<Register>, span<RegisterValue>,
+                       const uint16_t producerGroup)>
+        forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
@@ -606,7 +610,8 @@ void LoadStoreQueue::tick() {
     }
 
     // Forward the results
-    forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
+    forwardOperands_(insn->getDestinationRegisters(), insn->getResults(),
+                     insn->getGroup());
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 
