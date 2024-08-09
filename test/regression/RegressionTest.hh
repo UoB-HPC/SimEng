@@ -83,7 +83,7 @@ class RegressionTest
   /** Create the kernel then instantiate an ISA specific architecture. Populates
    * the architecture_ member variable. */
   void createArchitecture(const char* source, const char* triple,
-                         const char* extensions);
+                          const char* extensions);
 
   /** Run the assembly in `source`, building it for the target `triple` and ISA
    * extensions. */
