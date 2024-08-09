@@ -82,8 +82,8 @@ class RegressionTest
 
   /** Create the kernel then instantiate an ISA specific architecture. Populates
    * the architecture_ member variable. */
-  void createProcessKernelAndArchitecture(const char* source, const char* triple,
-                          const char* extensions);
+  void createArchitecture(const char* source, const char* triple,
+                         const char* extensions);
 
   /** Run the assembly in `source`, building it for the target `triple` and ISA
    * extensions. */
@@ -145,18 +145,9 @@ class RegressionTest
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
 
-  /** Instantiate the memory interfaces. */
-  void instantiateMemoryInterfaces();
-
-  /** Instantiate the branch predictor according to the config. */
-  void createPredictor();
-
   /** Instantiate the core according to the config. */
-  void createCore();
-
-  /** Instantiating all of the objects used to setup and run the simulation. */
-  void instantiateSimulationObjects(const char* source, const char* triple,
-                                    const char* extensions);
+  void createCore(const char* source, const char* triple,
+                  const char* extensions);
 
   /* Pointer to be instantiated for the kernel. */
   std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;

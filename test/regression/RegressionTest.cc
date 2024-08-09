@@ -21,8 +21,8 @@ void RegressionTest::TearDown() {
   }
 }
 
-void RegressionTest::createProcessKernelAndArchitecture(
-    const char* source, const char* triple, const char* extensions) {
+void RegressionTest::createArchitecture(const char* source, const char* triple,
+                                        const char* extensions) {
   // Zero-out process memory from any prior runs
   if (processMemory_ != nullptr)
     std::memset(processMemory_, '\0', processMemorySize_);
@@ -77,7 +77,21 @@ void RegressionTest::createProcessKernelAndArchitecture(
   architecture_ = instantiateArchitecture(*kernel_);
 }
 
-void RegressionTest::instantiateMemoryInterfaces() {
+void RegressionTest::createCore(const char* source, const char* triple,
+                                const char* extensions) {
+  // Create the architecture, kernel and process
+  createArchitecture(source, triple, extensions);
+
+  // Create a branch predictor for a pipelined core
+  std::string predictorType =
+      simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"]
+          .as<std::string>();
+  if (predictorType == "Generic") {
+    predictor_ = std::make_unique<simeng::GenericPredictor>();
+  } else if (predictorType == "Perceptron") {
+    predictor_ = std::make_unique<simeng::PerceptronPredictor>();
+  }
+
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
   // processImage is passed as an argument.
@@ -93,21 +107,7 @@ void RegressionTest::instantiateMemoryInterfaces() {
   fixedLatencyDataMemory_ =
       std::make_unique<simeng::memory::FixedLatencyMemoryInterface>(
           processMemory_, processMemorySize_, 4);
-}
 
-void RegressionTest::createPredictor() {
-  // Create a branch predictor for a pipelined core
-  std::string predictorType =
-      simeng::config::SimInfo::getConfig()["Branch-Predictor"]["Type"]
-          .as<std::string>();
-  if (predictorType == "Generic") {
-    predictor_ = std::make_unique<simeng::GenericPredictor>();
-  } else if (predictorType == "Perceptron") {
-    predictor_ = std::make_unique<simeng::PerceptronPredictor>();
-  }
-}
-
-void RegressionTest::createCore() {
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -134,29 +134,12 @@ void RegressionTest::createCore() {
   }
 }
 
-void RegressionTest::instantiateSimulationObjects(const char* source,
-                                                  const char* triple,
-                                                  const char* extensions) {
-  // Create the architecture, kernel and process
-  createProcessKernelAndArchitecture(source, triple, extensions);
-
-  // Create branch predictor from config options
-  createPredictor();
-
-  // Create all possible memory interfaces
-  instantiateMemoryInterfaces();
-
-  // Create core object from all other simulation objects depending on config
-  // options
-  createCore();
-}
-
 void RegressionTest::run(const char* source, const char* triple,
                          const char* extensions) {
   testing::internal::CaptureStdout();
 
   // Create the core, memory interfaces, kernel and process
-  instantiateSimulationObjects(source, triple, extensions);
+  createCore(source, triple, extensions);
 
   // Run the core model until the program is complete
   while (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
@@ -176,7 +159,7 @@ void RegressionTest::run(const char* source, const char* triple,
 void RegressionTest::checkGroup(const char* source, const char* triple,
                                 const char* extensions,
                                 const std::vector<int> expectedGroups) {
-  createProcessKernelAndArchitecture(source, triple, extensions);
+  createArchitecture(source, triple, extensions);
 
   std::vector<std::shared_ptr<simeng::Instruction>> macroOp;
   architecture_->predecode(code_, 4, 0, macroOp);
