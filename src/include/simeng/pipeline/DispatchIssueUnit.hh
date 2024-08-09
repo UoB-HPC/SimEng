@@ -37,7 +37,7 @@ struct ReservationStation {
   std::vector<ReservationStationPort> ports;
 };
 
-/** An entry in the reservation station. */
+/** An entry in the dependancy structures. */
 struct dependencyEntry {
   /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
@@ -74,7 +74,8 @@ class DispatchIssueUnit {
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
   void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values);
+                       const span<RegisterValue>& values,
+                       const uint16_t producerGroup);
 
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
@@ -97,6 +98,9 @@ class DispatchIssueUnit {
 
   /** Retrieve the current sizes and capacities of the reservation stations*/
   void getRSSizes(std::vector<uint32_t>&) const;
+
+  /** Flags the associated slot in the scoreboard as ready. */
+  void updateScoreboard(const Register& reg);
 
  private:
   /** A buffer of instructions to dispatch and read operands for. */
@@ -122,9 +126,19 @@ class DispatchIssueUnit {
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
-  /** A map to collect flushed instructions for each reservation station. */
-  std::unordered_map<uint16_t, std::unordered_set<std::shared_ptr<Instruction>>>
-      flushed_;
+  /** Contains all of the instructions that have a dependency with another
+   * instruction, but is not permitted to have the result forwarded to them
+   * directly. */
+  std::vector<dependencyEntry> dependantInstructions_;
+
+  /** Contains instructions that have had results forwarded to them, but need to
+   * wait for x-cycles to mimic the in hardware latency of said result
+   * forwarding.
+   * Key = Tick count to release instruction on.
+   * Value = Vector of pairs<Instruction entry, value forwarded to it>. */
+  std::unordered_map<uint64_t,
+                     std::vector<std::pair<dependencyEntry, RegisterValue>>>
+      waitingInstructions_;
 
   /** Records the number of instructions dispatched for each reservation station
    * within a cycle. */
@@ -149,6 +163,9 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  /** The number of ticks elapsed so far. */
+  uint64_t ticks_ = 0;
 };
 
 }  // namespace pipeline
