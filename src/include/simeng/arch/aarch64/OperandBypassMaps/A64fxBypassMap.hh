@@ -201,38 +201,37 @@ class A64fxBypassMap : public OperandBypassMap {
     // Starting with lowest level group, see if the producer is in the bypass
     // map
     bool found = false;
-    while (!producerGroups.empty()) {
+    while (!producerGroups.empty() && (found == false)) {
       if (bypassMap_.find(producerGroups.top()) != bypassMap_.end()) {
         found = true;
-        break;
       }
       // Check SCALAR group against FP counterpart (excluding LD or STR)
       else if ((producerGroups.top() >= InstructionGroups::SCALAR &&
                 producerGroups.top() <=
                     InstructionGroups::SCALAR_DIV_OR_SQRT)) {
-        // Group is SCALAR - see if is in the bypassMap
-        if (bypassMap_.find(producerGroups.top() - (InstructionGroups::SCALAR -
-                                                    InstructionGroups::FP)) !=
-            bypassMap_.end()) {
+        // Group is SCALAR - see if FP counterpart is in the bypassMap
+        uint16_t fpGroup = producerGroups.top() -
+                           (InstructionGroups::SCALAR - InstructionGroups::FP);
+        if (bypassMap_.find(fpGroup) != bypassMap_.end()) {
           found = true;
-          break;
+          producerGroups.pop();
+          producerGroups.push(fpGroup);
         }
       }
       // Check VECTOR group against FP counterpart (excluding LD or STR)
       else if (producerGroups.top() >= InstructionGroups::VECTOR &&
                producerGroups.top() <= InstructionGroups::VECTOR_DIV_OR_SQRT) {
-        // Group is SCALAR - see if is in the bypassMap
-        if (bypassMap_.find(producerGroups.top() - (InstructionGroups::VECTOR -
-                                                    InstructionGroups::FP)) !=
-            bypassMap_.end()) {
+        // Group is VECTOR - see if FP counterpart is in the bypassMap
+        uint16_t fpGroup = producerGroups.top() -
+                           (InstructionGroups::VECTOR - InstructionGroups::FP);
+        if (bypassMap_.find(fpGroup) != bypassMap_.end()) {
+          producerGroups.pop();
+          producerGroups.push(fpGroup);
           found = true;
-          break;
         }
       }
 
-      else {
-        producerGroups.pop();
-      }
+      if (found == false) producerGroups.pop();
     }
 
     if (found) {
