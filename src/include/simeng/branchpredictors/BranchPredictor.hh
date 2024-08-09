@@ -3,43 +3,11 @@
 #include <cstdint>
 #include <tuple>
 
+#include "simeng/Instruction.hh"
+#include "simeng/branchpredictors/BranchPrediction.hh"
+#include "simeng/pipeline/PipelineBuffer.hh"
+
 namespace simeng {
-
-/** The types of branches recognised. */
-enum class BranchType {
-  Conditional = 0,
-  LoopClosing,
-  Return,
-  SubroutineCall,
-  Unconditional,
-  Unknown
-};
-
-/** A branch result prediction for an instruction. */
-struct BranchPrediction {
-  /** Whether the branch will be taken. */
-  bool isTaken;
-
-  /** The branch instruction's target address. If `isTaken == false`, the value
-   * will be ignored. */
-  uint64_t target;
-
-  /** Check for equality of two branch predictions . */
-  bool operator==(const BranchPrediction& other) {
-    if ((isTaken == other.isTaken) && (target == other.target))
-      return true;
-    else
-      return false;
-  }
-
-  /** Check for inequality of two branch predictions . */
-  bool operator!=(const BranchPrediction& other) {
-    if ((isTaken != other.isTaken) || (target != other.target))
-      return true;
-    else
-      return false;
-  }
-};
 
 /** An abstract branch predictor interface. */
 class BranchPredictor {
@@ -50,7 +18,7 @@ class BranchPredictor {
    * branch type, and a known branch offset; defaults to 0 meaning offset is not
    * known. Returns a branch direction and branch target address. */
   virtual BranchPrediction predict(uint64_t address, BranchType type,
-                                   int64_t knownOffset) = 0;
+                                   int64_t knownOffset = 0) = 0;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
@@ -65,6 +33,46 @@ class BranchPredictor {
    * once, the exact order that the individual instructions within this block
    * are flushed does not matter so long as they are all flushed). */
   virtual void flush(uint64_t address) = 0;
+
+  /**
+   * Overloaded function for flushing branch instructions from a pipeline.
+   * Accepts pipelines of either microops or macroops.  Iterates over the
+   * entries of the pipeline and, if they are a branch instruction, flushes
+   * them.
+   */
+  void flushBuffer(
+      pipeline::PipelineBuffer<std::shared_ptr<Instruction>> buffer) {
+    for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
+      auto& uop = buffer.getTailSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        flush(uop->getInstructionAddress());
+      }
+
+      uop = buffer.getHeadSlots()[slot];
+      if (uop != nullptr && uop->isBranch()) {
+        flush(uop->getInstructionAddress());
+      }
+    }
+  }
+  void flushBuffer(
+      pipeline::PipelineBuffer<std::vector<std::shared_ptr<Instruction>>>
+          buffer) {
+    for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
+      auto& macroOp = buffer.getTailSlots()[slot];
+      for (size_t uop = 0; uop < macroOp.size(); uop++) {
+        if (macroOp[uop]->isBranch()) {
+          flush(macroOp[uop]->getInstructionAddress());
+        }
+      }
+
+      macroOp = buffer.getHeadSlots()[slot];
+      for (size_t uop = 0; uop < macroOp.size(); uop++) {
+        if (macroOp[uop]->isBranch()) {
+          flush(macroOp[uop]->getInstructionAddress());
+        }
+      }
+    }
+  }
 
   /** lastUpdatedInstructionId_ is used only in debug mode. Clang throws a
    * warning (which becomes an error with our cmake flags) for unused

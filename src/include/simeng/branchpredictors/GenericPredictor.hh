@@ -31,7 +31,7 @@ class GenericPredictor : public BranchPredictor {
    * branch type, and a known branch offset; defaults to 0 meaning offset is not
    * known. Returns a branch direction and branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0) override;
+                           int64_t knownOffset) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on

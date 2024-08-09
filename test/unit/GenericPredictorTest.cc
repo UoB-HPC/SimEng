@@ -263,9 +263,9 @@ TEST_F(GenericPredictorTest, flush) {
 // Test that update correctly corrects the speculatively updated global history
 TEST_F(GenericPredictorTest, speculativeGlobalHistory) {
   simeng::config::SimInfo::addToConfig(
-      "{Branch-Predictor: {BTB-Tag-Bits: 6, Saturating-Count-Bits: 2, "
-      "Global-History-Length: 6, RAS-entries: 10, Fallback-Static-Predictor: "
-      "Always-Taken}}");
+      "{Branch-Predictor: {Type: Generic, BTB-Tag-Bits: 6, "
+      "Saturating-Count-Bits: 2, Global-History-Length: 6, RAS-entries: 10, "
+      "Fallback-Static-Predictor: Always-Taken}}");
   auto predictor = simeng::GenericPredictor();
   BranchPrediction pred;
 

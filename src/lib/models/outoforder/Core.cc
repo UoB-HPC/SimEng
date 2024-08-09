@@ -228,8 +228,8 @@ std::map<std::string, std::string> Core::getStats() const {
   uint64_t totalBranchesRetired = reorderBuffer_.getRetiredBranchesCount();
   uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesRetired);
+  auto branchMissRate = 100.0f * static_cast<double>(totalBranchMispredicts) /
+                        static_cast<double>(totalBranchesRetired);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
@@ -263,11 +263,11 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   // Check for branch instructions in buffer, and flush them from the BP.
   // Then empty the buffers
-  fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
+  branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
-  decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
+  branchPredictor_.flushBuffer(decodeToRenameBuffer_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
@@ -351,11 +351,11 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
+    branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
-    decodeToRenameBuffer_.flushBranchMicroOps(branchPredictor_);
+    branchPredictor_.flushBuffer(decodeToRenameBuffer_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -383,7 +383,7 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    fetchToDecodeBuffer_.flushBranchMacroOps(branchPredictor_);
+    branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
