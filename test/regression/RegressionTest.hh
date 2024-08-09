@@ -82,7 +82,7 @@ class RegressionTest
 
   /** Create the kernel then instantiate an ISA specific architecture. Populates
    * the architecture_ member variable. */
-  void createArchitecture(const char* source, const char* triple,
+  void createProcessKernelAndArchitecture(const char* source, const char* triple,
                           const char* extensions);
 
   /** Run the assembly in `source`, building it for the target `triple` and ISA
@@ -144,16 +144,6 @@ class RegressionTest
   /** Assemble test source to a flat binary for the given triple and ISA
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
-
-  /** Create the process from the source bytes for the given architecture.
-   * Populates the process_ and processMemory_ member variables. */
-  void createProcess(const char* source, const char* triple,
-                     const char* extensions);
-
-  /** Creates the process then creates the kernel from this. Populates the
-   * kernel_ member variable. */
-  void createKernel(const char* source, const char* triple,
-                    const char* extensions);
 
   /** Instantiate the memory interfaces. */
   void instantiateMemoryInterfaces();

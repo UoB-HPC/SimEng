@@ -21,8 +21,8 @@ void RegressionTest::TearDown() {
   }
 }
 
-void RegressionTest::createProcess(const char* source, const char* triple,
-                                   const char* extensions) {
+void RegressionTest::createProcessKernelAndArchitecture(
+    const char* source, const char* triple, const char* extensions) {
   // Zero-out process memory from any prior runs
   if (processMemory_ != nullptr)
     std::memset(processMemory_, '\0', processMemorySize_);
@@ -52,6 +52,7 @@ void RegressionTest::createProcess(const char* source, const char* triple,
   ASSERT_TRUE(process_->isValid());
   entryPoint_ = process_->getEntryPoint();
   processMemorySize_ = process_->getProcessImageSize();
+
   // This instance of procImgPtr pointer needs to be shared because
   // getMemoryValue in RegressionTest.hh uses reference to the class
   // member processMemory_.
@@ -63,12 +64,6 @@ void RegressionTest::createProcess(const char* source, const char* triple,
             process_->getInitialStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
             processMemory_ + process_->getHeapStart());
-}
-
-void RegressionTest::createKernel(const char* source, const char* triple,
-                                  const char* extensions) {
-  // Create the process to pass to the kernel
-  createProcess(source, triple, extensions);
 
   ASSERT_TRUE(process_ != nullptr);
 
@@ -77,12 +72,6 @@ void RegressionTest::createKernel(const char* source, const char* triple,
       simeng::config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
           .as<std::string>());
   kernel_->createProcess(*process_);
-}
-
-void RegressionTest::createArchitecture(const char* source, const char* triple,
-                                        const char* extensions) {
-  // Create kernel and process
-  createKernel(source, triple, extensions);
 
   // Create the architecture
   architecture_ = instantiateArchitecture(*kernel_);
@@ -149,7 +138,7 @@ void RegressionTest::instantiateSimulationObjects(const char* source,
                                                   const char* triple,
                                                   const char* extensions) {
   // Create the architecture, kernel and process
-  createArchitecture(source, triple, extensions);
+  createProcessKernelAndArchitecture(source, triple, extensions);
 
   // Create branch predictor from config options
   createPredictor();
@@ -187,7 +176,7 @@ void RegressionTest::run(const char* source, const char* triple,
 void RegressionTest::checkGroup(const char* source, const char* triple,
                                 const char* extensions,
                                 const std::vector<int> expectedGroups) {
-  createArchitecture(source, triple, extensions);
+  createProcessKernelAndArchitecture(source, triple, extensions);
 
   std::vector<std::shared_ptr<simeng::Instruction>> macroOp;
   architecture_->predecode(code_, 4, 0, macroOp);
