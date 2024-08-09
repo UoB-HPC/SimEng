@@ -309,14 +309,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID,
                metadata.operands[2].mem.disp + (orderA * dataSize)},
               capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[orderB].reg,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID,
                metadata.operands[2].mem.disp + (orderB * dataSize)},
               capstoneHandle, true, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -391,13 +391,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[0].reg,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
               capstoneHandle, false, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[2].mem.base,
@@ -443,13 +443,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[0].reg,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
               capstoneHandle, true, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -495,7 +495,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[0].reg,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
@@ -567,7 +567,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[0].reg,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
               capstoneHandle, true, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -622,13 +622,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               metadata.operands[0].vector_index,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           // mov uop
           cacheVector.push_back(
               createMovUop(architecture, metadata.operands[0].reg,
                            metadata.operands[0].reg, capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({6, 1, {0}});
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -647,23 +647,23 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID,
                metadata.operands[2].mem.disp},
               {}, ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store0 data uop
           cacheVector.push_back(createSDUop(architecture,
                                             metadata.operands[0].reg,
                                             capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
           // store1 address uop
           cacheVector.push_back(createStrUop(
               architecture,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID,
                metadata.operands[2].mem.disp + dataSize},
               {}, ARM64_EXT_INVALID, capstoneHandle, false, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store1 data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[1].reg, capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -711,23 +711,23 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store0 data uop
           cacheVector.push_back(createSDUop(architecture,
                                             metadata.operands[0].reg,
                                             capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
           // store1 address uop
           cacheVector.push_back(createStrUop(
               architecture,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store1 data uop
           cacheVector.push_back(createSDUop(architecture,
                                             metadata.operands[1].reg,
                                             capstoneHandle, false, 2));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[2].mem.base,
@@ -786,22 +786,22 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store0 data uop
           cacheVector.push_back(createSDUop(architecture,
                                             metadata.operands[0].reg,
                                             capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
           // store1 address uop
           cacheVector.push_back(createStrUop(
               architecture,
               {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 2, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store1 data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[1].reg, capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -859,12 +859,12 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store data uop
           cacheVector.push_back(createSDUop(architecture,
                                             metadata.operands[0].reg,
                                             capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[1].mem.base,
@@ -922,11 +922,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0}, {},
               ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -985,11 +985,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               {metadata.operands[1].shift.type,
                metadata.operands[1].shift.value},
               metadata.operands[1].ext, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1040,11 +1040,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID,
                metadata.operands[1].mem.disp},
               {}, ARM64_EXT_INVALID, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1087,13 +1087,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               {metadata.operands[2].mem.base, metadata.operands[2].mem.index,
                metadata.operands[2].mem.disp},
               metadata.operands[1].reg, capstoneHandle, false, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({3, 1, {5, 6}});
 
           // store data uop
           cacheVector.push_back(createSDUop_predicated(
               architecture, metadata.operands[0].reg, metadata.operands[1].reg,
               capstoneHandle, true, 1, dataSize));
-          // cacheVector.back().setExecutionInfo({1, 1, {0}});
+          cacheVector.back().setExecutionInfo({1, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1116,12 +1116,12 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(
               createMovUop(architecture, metadata.operands[2].reg,
                            metadata.operands[2].reg, capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({6, 1, {0}});
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
 
           // fmla uop
           cacheVector.push_back(createFmlaUop(architecture, metadata, vas,
                                               capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
+          cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1144,12 +1144,12 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(
               createMovUop(architecture, metadata.operands[2].reg,
                            metadata.operands[2].reg, capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({6, 1, {0}});
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
 
           // fmul uop
           cacheVector.push_back(createFmulUop(architecture, metadata, vas,
                                               capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
+          cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1161,11 +1161,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(
               createMovUop(architecture, metadata.operands[1].reg,
                            metadata.operands[1].reg, capstoneHandle, false, 1));
-          // cacheVector.back().setExecutionInfo({6, 1, {0}});
+          cacheVector.back().setExecutionInfo({6, 1, {0}});
           // faddp uop
           cacheVector.push_back(createFaddpUop(
               architecture, metadata, ARM64_VAS_2S, capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
+          cacheVector.back().setExecutionInfo({9, 1, {0, 3}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1179,13 +1179,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               createMovUop(architecture, metadata.operands[1].reg,
                            metadata.operands[1].reg, capstoneHandle, false, 1));
           // Latency is 9+1 to mimic bypass latency of 1
-          // cacheVector.back().setExecutionInfo({10, 1, {0}});
+          cacheVector.back().setExecutionInfo({10, 1, {0}});
 
           // fcvt* uop
           cacheVector.push_back(createFcvtUop(architecture, metadata,
                                               aarch64::ConvertTypes::StoW,
                                               capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({15, 1, {5, 6}});
+          cacheVector.back().setExecutionInfo({15, 1, {5, 6}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -1206,12 +1206,12 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               createMovUop(architecture, metadata.operands[1].reg,
                            metadata.operands[1].reg, capstoneHandle, false, 1));
           // Latency is 1+3 to mimic bypass latency of 3
-          // cacheVector.back().setExecutionInfo({4, 1, {2}});
+          cacheVector.back().setExecutionInfo({4, 1, {2}});
 
           // scvt* uop
           cacheVector.push_back(createScvtUop(architecture, metadata, cvt,
                                               capstoneHandle, true, 2));
-          // cacheVector.back().setExecutionInfo({9, 1, {0}});
+          cacheVector.back().setExecutionInfo({9, 1, {0}});
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;

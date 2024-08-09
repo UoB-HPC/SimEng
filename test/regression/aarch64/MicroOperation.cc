@@ -671,10 +671,10 @@ TEST_P(MicroOp, loadB) {
     ldrsb w7, [x0, #1]
     ldrsb w8, [x0, #-1]!
   )");
-  CHECK_NEON(1, int8_t, {0xAB});
-  CHECK_NEON(2, int8_t, {0xBA});
-  CHECK_NEON(3, int8_t, {0xCA});
-  CHECK_NEON(4, int8_t, {0xAB});
+  CHECK_NEON(1, uint8_t, {0xAB});
+  CHECK_NEON(2, uint8_t, {0xBA});
+  CHECK_NEON(3, uint8_t, {0xCA});
+  CHECK_NEON(4, uint8_t, {0xAB});
 
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xAB);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xBA);
