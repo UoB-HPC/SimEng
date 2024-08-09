@@ -19,10 +19,11 @@ class RenameUnitTest : public testing::Test {
         rat(archRegFileStruct, physRegCounts),
         lsq(
             lsqQueueSize, lsqQueueSize, memory, completionSlots,
-            [](auto registers, auto values) {}, [](auto insn) {}),
+            [](auto registers, auto values, auto producerGroup) {},
+            [](auto insn) {}),
         rob(
             robSize, rat, lsq, [](auto insn) {}, [](auto branchAddr) {},
-            predictor, 16, 4),
+            [](const Register& reg) {}, predictor, 16, 4),
         renameUnit(input, output, rob, rat, lsq, physRegCounts.size()),
         uop(new MockInstruction),
         uop2(new MockInstruction),

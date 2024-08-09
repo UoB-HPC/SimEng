@@ -430,7 +430,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   std::array<RegisterValue, 1> vals = {RegisterValue(6)};
   EXPECT_CALL(*uop2, supplyOperand(0, vals[0]));
   EXPECT_CALL(*uop2, canExecute()).WillOnce(Return(true));
-  diUnit.forwardOperands(span<Register>(srcRegs_2), vals);
+  diUnit.forwardOperands(span<Register>(srcRegs_2), vals, uop->getGroup());
 
   // Try issue again for instruction 2
   EXPECT_CALL(portAlloc, issued(EAGA));
@@ -544,7 +544,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   // Call forwardOperand() and issue() to release `uop2` (if it were still
   // present)
   std::array<RegisterValue, 1> vals = {RegisterValue(6)};
-  diUnit.forwardOperands(span<Register>(srcRegs_2), vals);
+  diUnit.forwardOperands(span<Register>(srcRegs_2), vals, uop->getGroup());
   // Check reservation station sizes
   rsSizes.clear();
   diUnit.getRSSizes(rsSizes);

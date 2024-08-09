@@ -26,7 +26,8 @@ class ReorderBufferTest : public testing::Test {
         rat({{8, 32}}, {64}),
         lsq(
             maxLSQLoads, maxLSQStores, dataMemory, {nullptr, 0},
-            [](auto registers, auto values) {}, [](auto uop) {}),
+            [](auto registers, auto values, auto producerGroup) {},
+            [](auto uop) {}),
         uop(new MockInstruction),
         uop2(new MockInstruction),
         uop3(new MockInstruction),
@@ -37,7 +38,7 @@ class ReorderBufferTest : public testing::Test {
             maxROBSize, rat, lsq,
             [this](auto insn) { exceptionHandler.raiseException(insn); },
             [this](auto branchAddress) { loopBoundaryAddr = branchAddress; },
-            predictor, 4, 2) {}
+            [](const Register& reg) {}, predictor, 4, 2) {}
 
  protected:
   const uint8_t maxLSQLoads = 32;
