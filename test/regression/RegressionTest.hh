@@ -71,15 +71,7 @@ class RegressionTest
   /** Generate a default YAML-formatted configuration. */
   virtual void generateConfig() const = 0;
 
-  /** Instantiate the architecture object using the kernel */
-  void createArchitecture(const char* source, const char* triple,
-                          const char* extensions);
-
-  /** Run the assembly in `source`, building it for the target `triple` and ISA
-   * extensions. */
-  void run(const char* source, const char* triple, const char* extensions);
-
-  /** Create an ISA instance from a kernel. */
+  /** Instantiate an ISA specific architecture from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const = 0;
 
@@ -88,8 +80,17 @@ class RegressionTest
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
+  /** Create the kernel then instantiate an ISA specific architecture. Populates
+   * the architecture_ member variable. */
+  void createArchitecture(const char* source, const char* triple,
+                         const char* extensions);
+
+  /** Run the assembly in `source`, building it for the target `triple` and ISA
+   * extensions. */
+  void run(const char* source, const char* triple, const char* extensions);
+
   /** Predecode the first instruction in source and check the assigned group
-   * matches the expectation */
+   * matches the expectation. */
   void checkGroup(const char* source, const char* triple,
                   const char* extensions,
                   const std::vector<int> expectedGroups);
@@ -118,7 +119,7 @@ class RegressionTest
   /** The initial data to populate the heap with. */
   std::vector<uint8_t> initialHeapData_;
 
-  /** The process that was executed. */
+  /** The process to be executed. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** The process memory. */
@@ -136,52 +137,40 @@ class RegressionTest
   /** The maximum number of ticks to run before aborting the test. */
   uint64_t maxTicks_ = UINT64_MAX;
 
-  /** The architecture instance. */
-  std::unique_ptr<simeng::arch::Architecture> architecture_;
+  /** Pointer to be instantiated for the architecture. */
+  std::unique_ptr<simeng::arch::Architecture> architecture_ = nullptr;
 
  private:
   /** Assemble test source to a flat binary for the given triple and ISA
    * extensions. */
   void assemble(const char* source, const char* triple, const char* extensions);
 
-  /** Instantiate the process from the source bytes for the given architecture.
-   */
-  void createProcess(const char* source, const char* triple,
-                     const char* extensions);
+  /** Instantiate the core according to the config. */
+  void createCore(const char* source, const char* triple,
+                  const char* extensions);
 
-  /** Instantiate the kernel object using the process. */
-  void createKernel(const char* source, const char* triple,
-                    const char* extensions);
-
-  /** Instantiate the memory interfaces. */
-  void instantiateMemoryInterfaces();
-
-  /** Instantiating all of the objects used to setup and run the simulation. */
-  void instantiateSimulationObjects(const char* source, const char* triple,
-                                    const char* extensions);
-
-  /* Instantiation of the kernel. */
+  /* Pointer to be instantiated for the kernel. */
   std::unique_ptr<simeng::kernel::Linux> kernel_ = nullptr;
 
-  /* Instantiation of the port allocator. */
+  /* Pointer to be instantiated for the port allocator. */
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
 
-  /* Instantiation of the branch predictor. */
+  /* Pointer to be instantiated for the branch predictor. */
   std::unique_ptr<simeng::BranchPredictor> predictor_ = nullptr;
 
   /** All possible data memory interfaces. dataMemory_ set to one of these
-   * depending on core type */
+   * depending on core type. */
   std::unique_ptr<simeng::memory::MemoryInterface> flatDataMemory_ = nullptr;
   std::unique_ptr<simeng::memory::MemoryInterface> fixedLatencyDataMemory_ =
       nullptr;
 
-  /** The data memory interface used during the test. */
+  /** Pointer to be instantiated for the data memory interface. */
   std::unique_ptr<simeng::memory::MemoryInterface> dataMemory_ = nullptr;
 
-  /** The instruction memory interface used during the test. */
+  /** Pointer to be instantiated for the instruction memory interface. */
   std::unique_ptr<simeng::memory::MemoryInterface> instructionMemory_ = nullptr;
 
-  /** The core that was used. */
+  /** Pointer to be instantiated for the core. */
   std::unique_ptr<simeng::Core> core_ = nullptr;
 
   /** The size of the process memory in bytes. */
