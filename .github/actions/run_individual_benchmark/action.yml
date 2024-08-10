@@ -34,17 +34,17 @@ runs:
       shell: bash
       run: |
         if [[ ${{ steps.benchmark_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-          previous_time=$(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}')
+          previous_time=" $(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}') ms"
         else
           previous_time="No Previous Time"
         fi
 
         sudo simeng ./configs/a64fx.yaml ${{ inputs.benchmark_path }} > ${{ inputs.output_file }}
         
-        current_time=$(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}')
+        current_time="$(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}') ms"
 
-        echo "${{ inputs.benchmark_suite_name }}_CURRENT_TIME=${current_time} ms" >> $GITHUB_ENV
-        echo "${{ inputs.benchmark_suite_name }}_PREVIOUS_TIME=${previous_time} ms" >> $GITHUB_ENV
+        echo "${{ inputs.benchmark_suite_name }}_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
+        echo "${{ inputs.benchmark_suite_name }}_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
 
         if [[ ${{ steps.benchmark_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
           difference=$((current_time-previous_time))

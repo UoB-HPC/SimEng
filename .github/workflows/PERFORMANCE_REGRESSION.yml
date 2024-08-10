@@ -321,7 +321,7 @@ jobs:
           echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
           echo "Current Time: $STREAM_CURRENT_TIME"
           echo "Previous Time: $STREAM_PREVIOUS_TIME"
-          echo "Absolute Difference: $STREAM_DIFFERENC"
+          echo "Absolute Difference: $STREAM_DIFFERENCE"
 
           echo "#############################################"
           echo "TEALEAF (tealeaf_gcc10.3.0_armv8.4+sve)"
