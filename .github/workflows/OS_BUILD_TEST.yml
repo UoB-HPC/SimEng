@@ -69,7 +69,7 @@ jobs:
 
     steps:
       #######################################
-      # Clones repo to workspace. (ubuntu 18 is missing correct glibc version for newer checkout action version)
+      # Clones repo to workspace. (ubuntu 18 is missing correct glibc version for newer checkout action version i.e. use older checkout version)
       #######################################
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v3
