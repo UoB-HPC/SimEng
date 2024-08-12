@@ -1798,6 +1798,7 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_AT:
       return aliasNYI();
     case ARM64_INS_BFI:
+      // TODO no tests of alias
       if (opcode == Opcode::AArch64_BFMWri) {
         // bfi wd, wn, #lsb, #width; alias for
         // bfm wd, wn, #(-lsb MOD 32), #(width - 1)
@@ -1814,6 +1815,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_BFXIL:
+      // TODO no tests for alias
       if (opcode == Opcode::AArch64_BFMWri ||
           opcode == Opcode::AArch64_BFMXri) {
         // bfxil rd, rn, #lsb, #width; alias for
@@ -1896,6 +1898,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_CSET:
+      // TODO no usage in regression tests
       if (opcode == Opcode::AArch64_CSINCWr ||
           opcode == Opcode::AArch64_CSINCXr) {
         // cset rd, cc; alias for: csinc rd, zr, zr, invert(cc)
@@ -1952,6 +1955,7 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_IC:
       return aliasNYI();
     case ARM64_INS_LSL:
+      // TODO no usage in regression tests
       if (opcode == Opcode::AArch64_UBFMWri ||
           opcode == Opcode::AArch64_UBFMXri) {
         // lsl rd, rn, #shift; alias for:
@@ -1998,6 +2002,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MNEG:
+      // TODO no test
       if (opcode == Opcode::AArch64_MSUBXrrr) {
         // mneg xd, xn, xm; alias for msub xd, xn, xm, xzr
         operandCount = 4;
@@ -2016,6 +2021,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MOV:
+      // TODO no specific tests
       if (opcode == Opcode::AArch64_AND_PPzPP) {
         // mov pd.b, pg/z, pn.b; alias for: and pd.b, pg/z, pn.b, pn.b
         operandCount = 4;
@@ -2272,6 +2278,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MUL:
+      // TODO add comment
       if (opcode == Opcode::AArch64_MADDXrrr ||
           opcode == Opcode::AArch64_MADDWrrr) {
         operandCount = 4;
@@ -2310,6 +2317,7 @@ void InstructionMetadata::revertAliasing() {
       }
       if (opcode == Opcode::AArch64_NOTv16i8 ||
           opcode == Opcode::AArch64_NOTv8i8) {
+        // TODO needs tests
         // mvn vd.t, vn.t; alias for : not vd.t, vn.t
         // Blank entry was for a legitimate alias, however operands were
         // identical so nothing to alter between the instructions.
@@ -2317,6 +2325,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_NEG:
+      // TODO needs tests
       if (opcode == Opcode::AArch64_SUBWrs ||
           opcode == Opcode::AArch64_SUBXrs) {
         // neg rd, rm{, shift #amount}; alias for:
@@ -2364,7 +2373,7 @@ void InstructionMetadata::revertAliasing() {
       return aliasNYI();
     case ARM64_INS_NOT:
       if (opcode == Opcode::AArch64_EOR_PPzPP) {
-        // not pd.b, pg/z, pn.b; alisas for: eor pd.b, pg/z, pn.b, pg.b
+        // not pd.b, pg/z, pn.b; alias for: eor pd.b, pg/z, pn.b, pg.b
         operandCount = 4;
         operands[0].access = CS_AC_WRITE;
         operands[1].access = CS_AC_READ;
@@ -2388,6 +2397,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_ROR:
+      // TODO needs test
       if (opcode == Opcode::AArch64_RORVWr ||
           opcode == Opcode::AArch64_RORVXr) {
         // ror wd, wn, wm; alias for : rorv wd, wn, wm
@@ -2398,6 +2408,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_SBFIZ:
+      // TODO needs test
       if (opcode == Opcode::AArch64_SBFMWri ||
           opcode == Opcode::AArch64_SBFMXri) {
         operands[3].imm -= 1;
@@ -2412,6 +2423,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_SBFX:
+      // TODO needs test
       if (opcode == Opcode::AArch64_SBFMWri ||
           opcode == Opcode::AArch64_SBFMXri) {
         // sbfx rd, rn, #lsb, #width; alias for
@@ -2482,6 +2494,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_SYS: {
+      // TODO no test
       // Extract IC/DC/AT/TLBI operation
       if (std::string(mnemonic) == "dc") {
         if (operandStr.substr(0, 3) == "zva") {
@@ -2502,6 +2515,7 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_TLBI:
       return aliasNYI();
     case ARM64_INS_TST:
+      // TODO needs test for register case
       if (opcode == Opcode::AArch64_ANDSWrs ||
           opcode == Opcode::AArch64_ANDSXrs ||
           opcode == Opcode::AArch64_ANDSWri ||
@@ -2525,6 +2539,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UBFIZ:
+      // TODO needs test and comment
       if (opcode == Opcode::AArch64_UBFMWri ||
           opcode == Opcode::AArch64_UBFMXri) {
         operands[3].imm -= 1;
@@ -2539,6 +2554,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UBFX:
+      // TODO needs test
       if (opcode == Opcode::AArch64_UBFMWri ||
           opcode == Opcode::AArch64_UBFMXri) {
         // ubfx rd, rn, #lsb, #width; alias for
@@ -2560,6 +2576,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UXTB:
+      // TODO needs test
       // uxtb wd, wn; alias for: ubfm wd, wn, #0, #7
       if (opcode == Opcode::AArch64_UBFMWri) {
         operandCount = 4;
