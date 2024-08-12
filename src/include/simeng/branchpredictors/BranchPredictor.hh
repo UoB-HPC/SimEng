@@ -35,12 +35,12 @@ class BranchPredictor {
   virtual void flush(uint64_t address) = 0;
 
   /**
-   * Overloaded function for flushing branch instructions from a pipeline.
-   * Accepts pipelines of either microops or macroops.  Iterates over the
-   * entries of the pipeline and, if they are a branch instruction, flushes
-   * them.
+   * Overloaded function for flushing branch instructions from a
+   * PipelineBuffer. Accepts PipelineBuffers of microops.
+   * Iterates over the entries of the PipelineBuffer and, if they are a
+   * branch instruction, flushes them.
    */
-  void flushBuffer(
+  void flushBranchesInBufferFromSelf(
       pipeline::PipelineBuffer<std::shared_ptr<Instruction>> buffer) {
     for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
       auto& uop = buffer.getTailSlots()[slot];
@@ -54,7 +54,14 @@ class BranchPredictor {
       }
     }
   }
-  void flushBuffer(
+
+  /**
+   * Overloaded function for flushing branch instructions from a
+   * PipelineBuffer. Accepts PipelineBuffers macroops.
+   * Iterates over the entries of the PipelineBuffer and, if they are a
+   * branch instruction, flushes them.
+   */
+  void flushBranchesInBufferFromSelf(
       pipeline::PipelineBuffer<std::vector<std::shared_ptr<Instruction>>>
           buffer) {
     for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
@@ -64,7 +71,6 @@ class BranchPredictor {
           flush(macroOp[uop]->getInstructionAddress());
         }
       }
-
       macroOp = buffer.getHeadSlots()[slot];
       for (size_t uop = 0; uop < macroOp.size(); uop++) {
         if (macroOp[uop]->isBranch()) {

@@ -263,11 +263,11 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   // Check for branch instructions in buffer, and flush them from the BP.
   // Then empty the buffers
-  branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
+  branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
-  branchPredictor_.flushBuffer(decodeToRenameBuffer_);
+  branchPredictor_.flushBranchesInBufferFromSelf(decodeToRenameBuffer_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
@@ -351,11 +351,11 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
+    branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
-    branchPredictor_.flushBuffer(decodeToRenameBuffer_);
+    branchPredictor_.flushBranchesInBufferFromSelf(decodeToRenameBuffer_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
@@ -383,7 +383,7 @@ void Core::flushIfNeeded() {
     // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
-    branchPredictor_.flushBuffer(fetchToDecodeBuffer_);
+    branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
