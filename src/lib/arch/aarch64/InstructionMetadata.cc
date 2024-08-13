@@ -1683,6 +1683,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_SMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPS_MPPZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FMOPS_MPPZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMOPS_MPPZZ_S:
@@ -1699,7 +1707,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ;
-      operands[5].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
