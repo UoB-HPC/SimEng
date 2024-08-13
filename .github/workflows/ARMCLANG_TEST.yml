@@ -21,7 +21,9 @@ jobs:
         OS: ['ubuntu:22.04'] # Docker images
 
     name: "${{ matrix.OS }} + ARMCLANG"
-
+    
+    container:
+          image: ${{ matrix.OS }}
     steps:
       #######################################
       # Clones repo to workspace.
