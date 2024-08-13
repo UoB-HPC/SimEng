@@ -1947,6 +1947,70 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_FMOPS_MPPZZ_D: {  // fmops zada.d, pn/m, pm/m, zn.d,
+                                             // zm.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const double* zn = sourceValues_[rowCount + 2].getAsVector<double>();
+        const double* zm = sourceValues_[rowCount + 3].getAsVector<double>();
+
+        // zn is row, zm is col
+        for (int row = 0; row < rowCount; row++) {
+          double outRow[32] = {0};
+          uint64_t shifted_active_row = 1ull << ((row % 8) * 8);
+          const double* zadaRow = sourceValues_[row].getAsVector<double>();
+          for (int col = 0; col < rowCount; col++) {
+            double zadaElem = zadaRow[col];
+            uint64_t shifted_active_col = 1ull << ((col % 8) * 8);
+            if ((pm[col / 8] & shifted_active_col) &&
+                (pn[row / 8] & shifted_active_row))
+              outRow[col] = zadaElem - (zn[row] * zm[col]);
+            else
+              outRow[col] = zadaElem;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_FMOPS_MPPZZ_S: {  // fmops zada.s, pn/m, pm/m, zn.s,
+                                             // zm.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const float* zn = sourceValues_[rowCount + 2].getAsVector<float>();
+        const float* zm = sourceValues_[rowCount + 3].getAsVector<float>();
+
+        // zn is row, zm is col
+        for (int row = 0; row < rowCount; row++) {
+          float outRow[64] = {0};
+          uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
+          const float* zadaRow = sourceValues_[row].getAsVector<float>();
+          for (int col = 0; col < rowCount; col++) {
+            float zadaElem = zadaRow[col];
+            uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
+            if ((pm[col / 16] & shifted_active_col) &&
+                (pn[row / 16] & shifted_active_row))
+              outRow[col] = zadaElem - (zn[row] * zm[col]);
+            else
+              outRow[col] = zadaElem;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
         results_[0] = sourceValues_[0].getAsVector<double>()[1];
         break;
