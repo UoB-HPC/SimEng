@@ -29,6 +29,11 @@ jobs:
       - name: checkout v4
         uses: actions/checkout@v4
 
+      - name: INFO
+        run: |
+          cat /etc/os-release 
+          uname -a
+
       #######################################
       # Depending on OS and compiler, this step chooses the correct setup action to run.
       #######################################
@@ -36,7 +41,7 @@ jobs:
         uses: ./.github/actions/select_env
         with: 
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
-          OS: macos
+          OS: ubuntu
           COMPILER: armclang
 
       # #######################################
