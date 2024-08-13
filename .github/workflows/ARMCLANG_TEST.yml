@@ -39,19 +39,19 @@ jobs:
           OS: macos
           COMPILER: armclang
 
-      #######################################
-      # Prints out info in isolated step for easy access.
-      #######################################
-      - name: INFO
-        shell: bash
-        run: |
-          echo "_______________________________________"
-          cmake --version
-          echo "_______________________________________"
-          "${{ env.GCC_DIR }}" --version
-          which gcc
-          echo "_______________________________________"
-          "${{ env.CPP_DIR }}" --version
-          which g++
-          echo "_______________________________________"
+      # #######################################
+      # # Prints out info in isolated step for easy access.
+      # #######################################
+      # - name: INFO
+      #   shell: bash
+      #   run: |
+      #     echo "_______________________________________"
+      #     cmake --version
+      #     echo "_______________________________________"
+      #     "${{ env.GCC_DIR }}" --version
+      #     which gcc
+      #     echo "_______________________________________"
+      #     "${{ env.CPP_DIR }}" --version
+      #     which g++
+      #     echo "_______________________________________"
           
