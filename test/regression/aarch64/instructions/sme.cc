@@ -709,6 +709,138 @@ TEST_P(InstSme, st1w) {
   }
 }
 
+TEST_P(InstSme, umopa) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+
+    dup z3.b, #7
+    dup z4.b, #4
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    umopa za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+                  fillNeon<uint32_t>({112}, (SVL / 16)));
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.h, #8
+    dup z2.h, #3
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    umopa za0.d, p0/m, p1/m, z1.h, z2.h
+
+    dup z3.h, #7
+    dup z4.h, #4
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    umopa za2.d, p0/m, p2/m, z3.h, z4.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+                  fillNeon<uint64_t>({112}, (SVL / 16)));
+  }
+}
+
+TEST_P(InstSme, umops) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.b, #8
+    dup z2.b, #3
+    dup z3.b, #2
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umops za0.s, p0/m, p1/m, z1.b, z3.b
+
+    dup z3.b, #7
+    dup z4.b, #4
+    dup z5.b, #3
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    umopa za2.s, p0/m, p2/m, z3.b, z4.b
+    umops za2.s, p0/m, p2/m, z3.b, z5.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({32}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+                  fillNeon<uint32_t>({28}, (SVL / 16)));
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.h, #8
+    dup z2.h, #3
+    dup z3.h, #2
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    umopa za0.d, p0/m, p1/m, z1.h, z2.h
+    umops za0.d, p0/m, p1/m, z1.h, z3.h
+
+    dup z3.h, #7
+    dup z4.h, #4
+    dup z5.h, #3
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    umopa za2.d, p0/m, p2/m, z3.h, z4.h
+    umops za2.d, p0/m, p2/m, z3.h, z5.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({32}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+                  fillNeon<uint64_t>({28}, (SVL / 16)));
+  }
+}
+
 TEST_P(InstSme, zero) {
   RUN_AARCH64(R"(
     smstart
