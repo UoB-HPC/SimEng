@@ -10,20 +10,29 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: install dependencies
+    - name: Install dependencies
       uses: ./.github/actions/setup_deps
 
-    - name: install cmake or restore from cache
+    - name: Install cmake or restore from cache
       uses: ./.github/actions/setup_cmake
       with:
         OS: ${{ inputs.OS }}
 
-    - name: install llvm
-      shell: bash
+    - name: Download armclang
       run: |
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        ./llvm.sh ${{ inputs.LLVM-VERSION }}
+        apt-get update
+        apt-get upgrade -y
+        apt-get install environment-modules
+
+        wget https://developer.arm.com/-/cdn-downloads/permalink/Arm-Compiler-for-Linux/Version_24.04/arm-compiler-for-linux_24.04_Ubuntu-22.04_aarch64.tar
+        tar -xf arm-compiler-for-linux_24.04_Ubuntu-22.04_aarch64.tar
+
+        ./arm-compiler-for-linux_24.04_Ubuntu-20.04/arm-compiler-for-linux_24.04_Ubuntu-20.04.sh --install-to ./arm_compiler_test
+        export MODULEPATH=$MODULEPATH:$(pwd)/arm_compiler_test/modulefiles
+
+        module avail
+        module load acfl/24.04
+        armclang -v
       
     #######################################
     # - name: armclang restore
