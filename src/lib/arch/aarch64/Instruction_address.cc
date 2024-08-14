@@ -1545,6 +1545,16 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({base + (offset * partition_num), partition_num});
         break;
       }
+      case Opcode::AArch64_STR_ZA: {  // str za[wv, #imm], [xn|sp{, #imm, mul
+                                      // vl}]
+        // SME
+        // ZA Row count === current VL in bytes
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint64_t xn = sourceValues_[zaRowCount + 1].get<uint64_t>();
+        const uint64_t imm = metadata_.operands[1].mem.disp;
+        setMemoryAddresses({{xn + (imm * zaRowCount), zaRowCount}});
+        break;
+      }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         const uint16_t partition_num = VL_bits / 8;
 
