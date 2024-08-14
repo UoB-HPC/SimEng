@@ -4658,7 +4658,7 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1_MXIPXX_H_D: {  // st1d {zath.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, STORE
-        // Not in right context mode. Raise exception
+        // If not in right context mode, raise exception
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t partition_num = VL_bits / 64;
@@ -4672,7 +4672,25 @@ void Instruction::execute() {
         const uint64_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint64_t>();
         memoryData_ = sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #2}]
+        // SME, STORE
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
 
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+
+        const uint32_t* tileSlice =
+            sourceValues_[sliceNum].getAsVector<uint32_t>();
+        memoryData_ = sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
@@ -4689,45 +4707,26 @@ void Instruction::execute() {
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
 
-        std::array<uint64_t, 32> mdata;
-        uint16_t md_size = 0;
+        std::vector<uint64_t> memData;
         uint16_t index = 0;
 
         for (uint16_t x = 0; x < partition_num; x++) {
           uint64_t shifted_active = 1ull << ((x % 8) * 8);
           if (pg[x / 8] & shifted_active) {
-            mdata[md_size] = sourceValues_[x].getAsVector<uint64_t>()[sliceNum];
-            md_size++;
-          } else if (md_size) {
+            memData.push_back(
+                sourceValues_[x].getAsVector<uint64_t>()[sliceNum]);
+          } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)mdata.data(), md_size * 8);
-            md_size = 0;
+                RegisterValue((char*)memData.data(), memData.size() * 8);
+            index++;
+            memData.clear();
           }
         }
 
-        if (md_size) {
-          memoryData_[index] = RegisterValue((char*)mdata.data(), md_size * 8);
+        if (memData.size() > 0) {
+          memoryData_[index] =
+              RegisterValue((char*)memData.data(), memData.size() * 8);
         }
-        break;
-      }
-      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
-                                              // [<xn|sp>{, xm, LSL #2}]
-        // SME, STORE
-        // Not in right context mode. Raise exception
-        if (!ZAenabled) return ZAdisabled();
-
-        const uint16_t partition_num = VL_bits / 32;
-        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
-            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
-
-        const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
-
-        const uint32_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint32_t>();
-        memoryData_ = sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
-
         break;
       }
       case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg,
@@ -4744,26 +4743,26 @@ void Instruction::execute() {
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme_index.disp) % partition_num;
 
-        std::array<uint32_t, 64> mdata;
-        uint16_t md_size = 0;
+        std::vector<uint32_t> memData;
         uint16_t index = 0;
 
         for (uint16_t x = 0; x < partition_num; x++) {
           uint64_t shifted_active = 1ull << ((x % 16) * 4);
           if (pg[x / 16] & shifted_active) {
-            mdata[md_size] = sourceValues_[x].getAsVector<uint32_t>()[sliceNum];
-            md_size++;
-          } else if (md_size) {
+            memData.push_back(
+                sourceValues_[x].getAsVector<uint32_t>()[sliceNum]);
+          } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)mdata.data(), md_size * 4);
-            md_size = 0;
+                RegisterValue((char*)memData.data(), memData.size() * 4);
+            index++;
+            memData.clear();
           }
         }
 
-        if (md_size) {
-          memoryData_[index] = RegisterValue((char*)mdata.data(), md_size * 4);
+        if (memData.size() > 0) {
+          memoryData_[index] =
+              RegisterValue((char*)memData.data(), memData.size() * 4);
         }
-
         break;
       }
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
