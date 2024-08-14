@@ -14,6 +14,11 @@ class MockBranchPredictor : public BranchPredictor {
                void(uint64_t address, bool taken, uint64_t targetAddress,
                     BranchType type, uint64_t instructionId));
   MOCK_METHOD1(flush, void(uint64_t address));
+
+ private:
+  MOCK_METHOD3(makePrediction,
+               BranchPrediction(uint64_t address, BranchType type,
+                                int64_t knownTarget));
 };
 
 }  // namespace simeng

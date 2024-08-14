@@ -30,12 +30,6 @@ class PerceptronPredictor : public BranchPredictor {
   PerceptronPredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
   ~PerceptronPredictor();
 
-  /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
-  BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset) override;
-
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
    * branches in program order.  To check this, instructionId is also passed
@@ -51,6 +45,12 @@ class PerceptronPredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
+  /** Generate a branch prediction for the supplied instruction address, a
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
+  BranchPrediction makePrediction(uint64_t address, BranchType type,
+                                  int64_t knownOffset) override;
+
   /** Returns the dot product of a perceptron and a history vector.  Used to
    * determine a direction prediction */
   int64_t getDotProduct(const std::vector<int8_t>& perceptron,

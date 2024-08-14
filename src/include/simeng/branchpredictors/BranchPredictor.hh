@@ -14,11 +14,16 @@ class BranchPredictor {
  public:
   virtual ~BranchPredictor(){};
 
-  /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
+  /**
+   * Wrapper function to provide default knownOffset to makePrediction, if
+   * needed.  This is needed to avoid having to provide default values for
+   * knownOffset in each child class, and the risks associated with
+   * this interplay between default arguments and inheritance.
+   */
   virtual BranchPrediction predict(uint64_t address, BranchType type,
-                                   int64_t knownOffset = 0) = 0;
+                                   int64_t knownOffset = 0) {
+    return makePrediction(address, type, knownOffset);
+  }
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
@@ -36,7 +41,7 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts PipelineBuffers of microops.
+   * PipelineBuffer. Accepts PipelineBuffers of microOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
@@ -57,7 +62,7 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts PipelineBuffers macroops.
+   * PipelineBuffer. Accepts PipelineBuffers macroOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
@@ -92,6 +97,12 @@ class BranchPredictor {
    * ensure that update is called in program order. */
   uint64_t lastUpdatedInstructionId_ = 0;
 #endif
+ private:
+  /** Generate a branch prediction for the supplied instruction address, a
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
+  virtual BranchPrediction makePrediction(uint64_t address, BranchType type,
+                                          int64_t knownOffset) = 0;
 };
 
 }  // namespace simeng
