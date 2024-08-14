@@ -1683,6 +1683,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_USMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPS_MPPZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_SUMOPA_MPPZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_SUMOPA_MPPZZ_S:

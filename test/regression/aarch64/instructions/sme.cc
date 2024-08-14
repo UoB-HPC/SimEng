@@ -804,7 +804,7 @@ TEST_P(InstSme, sumopa) {
   RUN_AARCH64(R"(
     smstart
 
-    # z1 is signed, z2 is unsigned so will become 255
+    # z1 is signed, z2 is unsigned so will become 65535
     dup z1.h, #3
     dup z2.h, #-1
     ptrue p0.h
@@ -814,7 +814,7 @@ TEST_P(InstSme, sumopa) {
 
     sumopa za0.d, p0/m, p1/m, z1.h, z2.h
 
-    # z3 is signed, z4 is unsigned so will become 254
+    # z3 is signed, z4 is unsigned so will become 65534
     dup z3.h, #7
     dup z4.h, #-2
     mov x0, #0
@@ -1086,6 +1086,254 @@ TEST_P(InstSme, umops) {
                   fillNeon<uint64_t>({32}, (SVL / 8)));
     CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
                   fillNeon<uint64_t>({28}, (SVL / 16)));
+  }
+}
+
+TEST_P(InstSme, usmopa) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.b, #8
+    dup z2.b, #-3
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    usmopa za0.s, p0/m, p1/m, z1.b, z2.b
+
+    dup z3.b, #7
+    dup z4.b, #-4
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    usmopa za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+                  fillNeon<int32_t>({-96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+                  fillNeon<int32_t>({-112}, (SVL / 16)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    # z1 is unsigned so will become 253, z2 is signed
+    dup z1.b, #-3
+    dup z2.b, #2
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    usmopa za0.s, p0/m, p1/m, z1.b, z2.b
+
+    # z3 is unsigned so will become 254, z4 is unsigned
+    dup z3.b, #-2
+    dup z4.b, #7
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    usmopa za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+                  fillNeon<int32_t>({2024}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+                  fillNeon<int32_t>({7112}, (SVL / 16)));
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.h, #8
+    dup z2.h, #-3
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    usmopa za0.d, p0/m, p1/m, z1.h, z2.h
+
+    dup z3.h, #7
+    dup z4.h, #-4
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    usmopa za2.d, p0/m, p2/m, z3.h, z4.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+                  fillNeon<int64_t>({-96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+                  fillNeon<int64_t>({-112}, (SVL / 16)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    # z1 is unsigned so will become 65533, z2 is unsigned
+    dup z1.h, #-3
+    dup z2.h, #2
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    usmopa za0.d, p0/m, p1/m, z1.h, z2.h
+
+    # z3 is unsigned so will become 65534, z4 is signed
+    dup z3.h, #-2
+    dup z4.h, #7
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    usmopa za2.d, p0/m, p2/m, z3.h, z4.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+                  fillNeon<int64_t>({524264}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+                  fillNeon<int64_t>({1834952}, (SVL / 16)));
+  }
+}
+
+TEST_P(InstSme, usmops) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.b, #8
+    dup z2.b, #-3
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    usmops za0.s, p0/m, p1/m, z1.b, z2.b
+
+    dup z3.b, #7
+    dup z4.b, #-4
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    usmops za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+                  fillNeon<int32_t>({96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+                  fillNeon<int32_t>({112}, (SVL / 16)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    # z1 is unsigned so will become 253, z2 is signed
+    dup z1.b, #-3
+    dup z2.b, #2
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    usmops za0.s, p0/m, p1/m, z1.b, z2.b
+
+    # z3 is unsigned so will become 254, z4 is signed
+    dup z3.b, #-2
+    dup z4.b, #7
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    usmops za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+                  fillNeon<int32_t>({-2024}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+                  fillNeon<int32_t>({-7112}, (SVL / 16)));
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.h, #8
+    dup z2.h, #-3
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    usmops za0.d, p0/m, p1/m, z1.h, z2.h
+
+    dup z3.h, #7
+    dup z4.h, #-4
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    usmops za2.d, p0/m, p2/m, z3.h, z4.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+                  fillNeon<int64_t>({96}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+                  fillNeon<int64_t>({112}, (SVL / 16)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    # z1 is unsigned so will become 65533, z2 is signed
+    dup z1.h, #-3
+    dup z2.h, #2
+    ptrue p0.h
+    ptrue p1.h
+
+    zero {za}
+
+    usmops za0.d, p0/m, p1/m, z1.h, z2.h
+
+    # z3 is unsigned so will become 65534, z4 is signed
+    dup z3.h, #-2
+    dup z4.h, #7
+    mov x0, #0
+    mov x1, #4
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.h, xzr, x0
+
+    usmops za2.d, p0/m, p2/m, z3.h, z4.h
+  )");
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+                  fillNeon<int64_t>({-524264}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+                  fillNeon<int64_t>({-1834952}, (SVL / 16)));
   }
 }
 
