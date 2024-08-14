@@ -174,11 +174,11 @@ bool Instruction::checkStreamingGroup() {
     instructionGroup_ = smEnabled ? InstructionGroups::STREAMING_PREDICATE
                                   : InstructionGroups::PREDICATE;
   } else if (isInstruction(InsnType::isSVEData)) {
-    assert(((instructionGroup_ >= InstructionGroups::SVE) &&
-            (instructionGroup_ <= InstructionGroups::STORE_SVE)) ||
-           ((instructionGroup_ >= InstructionGroups::STREAMING_SVE) &&
-            (instructionGroup_ <= InstructionGroups::STORE_STREAMING_SVE)) &&
-               "Invalid instruction group for SVE instruction.");
+    assert(((instructionGroup_ >= InstructionGroups::SVE &&
+             instructionGroup_ <= InstructionGroups::STORE_SVE) ||
+            (instructionGroup_ >= InstructionGroups::STREAMING_SVE &&
+             instructionGroup_ <= InstructionGroups::STORE_STREAMING_SVE)) &&
+           "Invalid instruction group for SVE instruction.");
     // Get instruction group offset.
     instructionGroup_ -= (instructionGroup_ >= InstructionGroups::STREAMING_SVE)
                              ? InstructionGroups::STREAMING_SVE
