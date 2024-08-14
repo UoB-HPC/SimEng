@@ -1683,6 +1683,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_STR_ZA:
+      // Access types are not defined
+      operands[0].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_USMOPA_MPPZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_USMOPA_MPPZZ_S:

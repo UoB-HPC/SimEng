@@ -5339,6 +5339,21 @@ void Instruction::execute() {
         memoryData_[0] = RegisterValue((char*)p, partition_num);
         break;
       }
+      case Opcode::AArch64_STR_ZA: {  // str za[wv, #imm], [xn|sp{, #imm, mul
+                                      // vl}]
+        // SME, STORE
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint32_t wv = sourceValues_[zaRowCount].get<uint32_t>();
+        const uint32_t imm = metadata_.operands[0].sme_index.disp;
+
+        const uint8_t* zaRow =
+            sourceValues_[(wv + imm) % zaRowCount].getAsVector<uint8_t>();
+        memoryData_[0] = RegisterValue((char*)zaRow, zaRowCount);
+        break;
+      }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;

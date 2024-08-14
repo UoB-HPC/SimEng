@@ -709,6 +709,72 @@ TEST_P(InstSme, st1w) {
   }
 }
 
+TEST_P(InstSme, str) {
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    dup z0.b, #2
+    dup z1.b, #5
+    ptrue p0.b
+    ptrue p1.b
+
+    # Fill first 32-bit ZA tile with 40 in every element
+    umopa za0.s, p0/m, p1/m, z0.b, z1.b
+
+    dup z0.b, #1
+    dup z1.b, #5
+
+    # Fill third 32-bit ZA tile with 20 in every element
+    umopa za2.s, p0/m, p1/m, z0.b, z1.b
+
+    mov x2, #600
+    mov w12, #0
+
+    # ZA sub tiles are interleaved, so 0th, 4th, 8th... rows will be for za0.s
+    # 2nd, 6th, 10th ... rows will be for za2.s
+    str za[w12, #0], [x2]
+    str za[w12, #1], [x2, #1, mul vl]
+    str za[w12, #2], [x2, #2, mul vl]
+    str za[w12, #3], [x2, #3, mul vl]
+    
+    # Store 8th row (3rd row of za0.s)
+    add w12, w12, #8
+    mov x3, #0
+    addvl x3, x3, #4
+    add x2, x2, x3
+    str za[w12, #0], [x2]
+
+    # Store 10th row (3rd row of za2.s)
+    add w12, w12, #2
+    mov x3, #0
+    addvl x3, x3, #1
+    add x2, x2, x3
+    str za[w12, #0], [x2]
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({40}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS1, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+                  fillNeon<uint32_t>({20}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+  }
+  const uint64_t SVL_bytes = SVL / 8;
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    const uint64_t off = i * sizeof(uint32_t);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + off), 40);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + SVL_bytes + off), 0);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + (2 * SVL_bytes) + off), 20);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + (3 * SVL_bytes) + off), 0);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + (4 * SVL_bytes) + off), 40);
+    EXPECT_EQ(getMemoryValue<uint32_t>(600 + (5 * SVL_bytes) + off), 20);
+  }
+}
+
 TEST_P(InstSme, sumopa) {
   // 32-bit
   RUN_AARCH64(R"(
