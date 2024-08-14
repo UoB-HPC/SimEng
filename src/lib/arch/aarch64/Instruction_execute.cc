@@ -5522,6 +5522,158 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> uint8_t { return x - y; });
         break;
       }
+      case Opcode::AArch64_SUMOPA_MPPZZ_D: {  // sumopa zada.d, pn/m, pm/m,
+                                              // zn.h, zm.h
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t tileDim = VL_bits / 64;
+        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+
+        // zn is a SVLd x 4 sub matrix
+        // zm is a 4 x SVLd sub matrix
+        // Resulting SVLd x SVLd matrix has results widened to 64-bit
+        for (int row = 0; row < tileDim; row++) {
+          int64_t outRow[32] = {0};
+          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          for (int col = 0; col < tileDim; col++) {
+            // Get corresponding output element
+            int64_t sum = zadaRow[col];
+            for (int k = 0; k < 4; k++) {
+              const uint16_t znIndex = 4 * row + k;
+              const uint16_t zmIndex = 4 * col + k;
+              const uint64_t shifted_active_zn = 1ull << ((znIndex % 32) * 2);
+              const uint64_t shifted_active_zm = 1ull << ((zmIndex % 32) * 2);
+              if ((pn[znIndex / 32] & shifted_active_zn) &&
+                  (pm[zmIndex / 32] & shifted_active_zm))
+                sum += (static_cast<int64_t>(zn[znIndex]) *
+                        static_cast<int64_t>(zm[zmIndex]));
+            }
+            outRow[col] = sum;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_SUMOPA_MPPZZ_S: {  // sumopa zada.s, pn/m, pm/m,
+                                              // zn.b, zm.b
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t tileDim = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+
+        // zn is a SVLs x 4 sub matrix
+        // zm is a 4 x SVLs sub matrix
+        // Resulting SVLs x SVLs matrix has results widened to 32-bit
+        for (int row = 0; row < tileDim; row++) {
+          int32_t outRow[64] = {0};
+          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          for (int col = 0; col < tileDim; col++) {
+            // Get corresponding output element
+            int32_t sum = zadaRow[col];
+            for (int k = 0; k < 4; k++) {
+              const uint16_t znIndex = 4 * row + k;
+              const uint16_t zmIndex = 4 * col + k;
+              const uint64_t shifted_active_zn = 1ull << (znIndex % 64);
+              const uint64_t shifted_active_zm = 1ull << (zmIndex % 64);
+              if ((pn[znIndex / 64] & shifted_active_zn) &&
+                  (pm[zmIndex / 64] & shifted_active_zm))
+                sum += (static_cast<int32_t>(zn[znIndex]) *
+                        static_cast<int32_t>(zm[zmIndex]));
+            }
+            outRow[col] = sum;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_SUMOPS_MPPZZ_D: {  // sumops zada.d, pn/m, pm/m,
+                                              // zn.h, zm.h
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t tileDim = VL_bits / 64;
+        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+
+        // zn is a SVLd x 4 sub matrix
+        // zm is a 4 x SVLd sub matrix
+        // Resulting SVLd x SVLd matrix has results widened to 64-bit
+        for (int row = 0; row < tileDim; row++) {
+          int64_t outRow[32] = {0};
+          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          for (int col = 0; col < tileDim; col++) {
+            // Get corresponding output element
+            int64_t sum = zadaRow[col];
+            for (int k = 0; k < 4; k++) {
+              const uint16_t znIndex = 4 * row + k;
+              const uint16_t zmIndex = 4 * col + k;
+              const uint64_t shifted_active_zn = 1ull << ((znIndex % 32) * 2);
+              const uint64_t shifted_active_zm = 1ull << ((zmIndex % 32) * 2);
+              if ((pn[znIndex / 32] & shifted_active_zn) &&
+                  (pm[zmIndex / 32] & shifted_active_zm))
+                sum -= (static_cast<int64_t>(zn[znIndex]) *
+                        static_cast<int64_t>(zm[zmIndex]));
+            }
+            outRow[col] = sum;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_SUMOPS_MPPZZ_S: {  // sumops zada.s, pn/m, pm/m,
+                                              // zn.b, zm.b
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t tileDim = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+
+        // zn is a SVLs x 4 sub matrix
+        // zm is a 4 x SVLs sub matrix
+        // Resulting SVLs x SVLs matrix has results widened to 32-bit
+        for (int row = 0; row < tileDim; row++) {
+          int32_t outRow[64] = {0};
+          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          for (int col = 0; col < tileDim; col++) {
+            // Get corresponding output element
+            int32_t sum = zadaRow[col];
+            for (int k = 0; k < 4; k++) {
+              const uint16_t znIndex = 4 * row + k;
+              const uint16_t zmIndex = 4 * col + k;
+              const uint64_t shifted_active_zn = 1ull << (znIndex % 64);
+              const uint64_t shifted_active_zm = 1ull << (zmIndex % 64);
+              if ((pn[znIndex / 64] & shifted_active_zn) &&
+                  (pm[zmIndex / 64] & shifted_active_zm))
+                sum -= (static_cast<int32_t>(zn[znIndex]) *
+                        static_cast<int32_t>(zm[zmIndex]));
+            }
+            outRow[col] = sum;
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_SVC: {  // svc #imm
         exceptionEncountered_ = true;
         exception_ = InstructionException::SupervisorCall;
