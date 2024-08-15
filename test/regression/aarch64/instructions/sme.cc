@@ -709,24 +709,36 @@ TEST_P(InstSme, st1d) {
 
     smstart
 
-    mov x2, #0
-    mov x4, #16
-    addvl x2, x2, #1
-    udiv x2, x2, x4
+    zero {za}
+
     mov x3, #2
-    whilelo p1.d, xzr, x2
-    mov x5, #800
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+    mov x5, #400
+    mov x6, #800
 
     mov w12, #0
     mov w13, #1
-    ld1d {za3h.d[w12, 0]}, p1/z, [x0, x3, lsl #3]
+    # Load entire row
+    ld1d {za3h.d[w12, 0]}, p0/z, [x0, x3, lsl #3]
+    # Store all 0s to memory
+    st1d {za0h.d[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
     st1d {za3h.d[w12, 0]}, p1, [x5]
-    ld1d {za1h.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
-    st1d {za1h.d[w13, 1]}, p1, [x5, x3, lsl #3]
+
+    # Load entire row
+    ld1d {za1h.d[w13, 1]}, p0/z, [x0, x3, lsl #3]
+    # Store all 0s to memory
+    st1d {za0h.d[w12, 0]}, p0, [x6, x3, lsl #3]
+    # Store odd indexed elements to memory
+    st1d {za1h.d[w13, 1]}, p1, [x6, x3, lsl #3]
   )");
-  for (uint64_t i = 0; i < (SVL / 128); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src[i % 2]);
+  for (uint64_t i = 0; i < (SVL / 64); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (i * 8)), src[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((i + 1) * 8)), 0);
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + ((i + 1) * 8)), 0);
   }
 
   // Vertical
@@ -770,24 +782,36 @@ TEST_P(InstSme, st1d) {
 
     smstart
 
-    mov x2, #0
-    mov x4, #16
-    addvl x2, x2, #1
-    udiv x2, x2, x4
+    zero {za}
+
     mov x3, #2
-    whilelo p1.d, xzr, x2
-    mov x5, #800
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+    mov x5, #400
+    mov x6, #800
 
     mov w12, #0
     mov w13, #1
-    ld1d {za3v.d[w12, 0]}, p1/z, [x0, x3, lsl #3]
+    # Load entire row
+    ld1d {za3v.d[w12, 0]}, p0/z, [x0, x3, lsl #3]
+    # Store all 0s to memory
+    st1d {za0v.d[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
     st1d {za3v.d[w12, 0]}, p1, [x5]
-    ld1d {za1v.d[w13, 1]}, p1/z, [x0, x3, lsl #3]
-    st1d {za1v.d[w13, 1]}, p1, [x5, x3, lsl #3]
+
+    # Load entire row
+    ld1d {za1v.d[w13, 1]}, p0/z, [x0, x3, lsl #3]
+    # Store all 0s to memory
+    st1d {za0v.d[w12, 0]}, p0, [x6, x3, lsl #3]
+    # Store odd indexed elements to memory
+    st1d {za1v.d[w13, 1]}, p1, [x6, x3, lsl #3]
   )");
-  for (uint64_t i = 0; i < (SVL / 128); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(800 + (i * 8)), src_vert[i % 2]);
+  for (uint64_t i = 0; i < (SVL / 64); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (i * 8)), src_vert[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((i + 1) * 8)), 0);
     EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + (i * 8)), src_vert[i % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 16 + ((i + 1) * 8)), 0);
   }
 }
 
@@ -833,23 +857,36 @@ TEST_P(InstSme, st1w) {
 
     smstart
 
-    mov x2, #0
-    mov x4, #8
-    addvl x2, x2, #1
-    udiv x2, x2, x4
+    zero {za}
+
     mov x3, #4
-    whilelo p1.s, xzr, x2
-    mov x5, #800
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+    mov x5, #400
+    mov x6, #800
 
     mov w12, #0
-    ld1w {za3h.s[w12, 0]}, p1/z, [x0, x3, lsl #2]
+    mov w13, #1
+    # Load entire row
+    ld1w {za3h.s[w12, 0]}, p0/z, [x0, x3, lsl #2]
+    # Store all 0s to memory
+    st1w {za0h.s[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
     st1w {za3h.s[w12, 0]}, p1, [x5]
-    ld1w {za1h.s[w12, 2]}, p1/z, [x0, x3, lsl #2]
-    st1w {za1h.s[w12, 2]}, p1, [x5, x3, lsl #2]
+
+    # Load entire row
+    ld1w {za1h.s[w13, 1]}, p0/z, [x0, x3, lsl #2]
+    # Store all 0s to memory
+    st1w {za0h.s[w12, 0]}, p0, [x6, x3, lsl #2]
+    # Store odd indexed elements to memory
+    st1w {za1h.s[w13, 1]}, p1, [x6, x3, lsl #2]
   )");
-  for (uint64_t i = 0; i < (SVL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src[i % 4]);
+  for (uint64_t i = 0; i < (SVL / 32); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(400 + (i * 4)), src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(400 + ((i + 1) * 4)), 0);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + ((i + 1) * 4)), 0);
   }
 
   // Vertical
@@ -894,23 +931,36 @@ TEST_P(InstSme, st1w) {
 
     smstart
 
-    mov x2, #0
-    mov x4, #8
-    addvl x2, x2, #1
-    udiv x2, x2, x4
+    zero {za}
+
     mov x3, #4
-    whilelo p1.s, xzr, x2
-    mov x5, #800
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+    mov x5, #400
+    mov x6, #800
 
     mov w12, #0
-    ld1w {za3v.s[w12, 0]}, p1/z, [x0, x3, lsl #2]
+    mov w13, #1
+    # Load entire row
+    ld1w {za3v.s[w12, 0]}, p0/z, [x0, x3, lsl #2]
+    # Store all 0s to memory
+    st1w {za0v.s[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
     st1w {za3v.s[w12, 0]}, p1, [x5]
-    ld1w {za1v.s[w12, 2]}, p1/z, [x0, x3, lsl #2]
-    st1w {za1v.s[w12, 2]}, p1, [x5, x3, lsl #2]
+
+    # Load entire row
+    ld1w {za1v.s[w13, 1]}, p0/z, [x0, x3, lsl #2]
+    # Store all 0s to memory
+    st1w {za0v.s[w12, 0]}, p0, [x6, x3, lsl #2]
+    # Store odd indexed elements to memory
+    st1w {za1v.s[w13, 1]}, p1, [x6, x3, lsl #2]
   )");
-  for (uint64_t i = 0; i < (SVL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src_vert[i % 4]);
+  for (uint64_t i = 0; i < (SVL / 32); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(400 + (i * 4)), src_vert[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(400 + ((i + 1) * 4)), 0);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src_vert[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + ((i + 1) * 4)), 0);
   }
 }
 
