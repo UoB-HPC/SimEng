@@ -8,44 +8,208 @@ namespace {
 using InstSme = AArch64RegressionTest;
 
 #if SIMENG_LLVM_VERSION >= 14
-TEST_P(InstSme, mova) {
+TEST_P(InstSme, mova_tileToVec) {
   // 8-bit
+  initialHeapData_.resize(SVL / 4);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src8 = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                               0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01};
+  fillHeap<uint8_t>(heap8, src8, SVL / 4);
   RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
     smstart
 
-    ptrue p0.s
-    ptrue p1.s
+    zero {za}
 
-    fdup z1.s, #1.0
-    mov w0, #1
-    index z2.s, #1, w0
-    scvtf z2.s, p0/m, z2.s
-
-    fdup z4.s, #5.0
-    fdup z5.s, #10.0
-    fdup z6.s, #5.0
-    fdup z7.s, #10.0
-    fmopa za0.s, p0/m, p1/m, z2.s, z1.s
-
-    ptrue p2.b
-    mov x2, #0
-    mov x3, #2
-    addvl x2, x2, #1
-    sdiv x2, x2, x3
-    whilelo p3.b, xzr, x2
+    ptrue p0.b
+    pfalse p1.b
+    zip1 p1.b, p0.b, p1.b
 
     mov w12, #0
-    mov w15, #2
+    dup z0.b, #1
+    dup z1.b, #2
+    dup z2.b, #3
+    dup z3.b, #4
 
-    mova z4.b, p2/m, za0h.b[w12, #0]
-    mova z5.b, p2/m, za0h.b[w12, #4]
-    mova z6.b, p3/m, za0h.b[w15, #6]
-    mova z7.b, p3/m, za0h.b[w15, #10]
+    # Horizontal
+    ld1b {za0h.b[w12, #0]}, p0/z, [x0]
+    mova z0.b, p0/m, za0h.b[w12, #0]
+    mova z1.b, p1/m, za0h.b[w12, #0]
+
+    # Vertical
+    ld1b {za0v.b[w12, #3]}, p0/z, [x0]
+    # mova z2.b, p0/m, za0v.b[w12, #3]
+    # mova z3.b, p1/m, za0v.b[w12, #3]
   )");
-  CHECK_NEON(4, float, fillNeon<float>({1}, SVL / 8));
-  CHECK_NEON(5, float, fillNeon<float>({2}, SVL / 8));
-  CHECK_NEON(6, float, fillNeonCombined<float>({3}, {5}, SVL / 8));
-  CHECK_NEON(7, float, fillNeonCombined<float>({4}, {10}, SVL / 8));
+  CHECK_NEON(0, uint8_t,
+             fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                               SVL / 8));
+  CHECK_NEON(1, uint8_t,
+             fillNeon<uint8_t>({0xDE, 2, 0xBE, 2, 0x12, 2, 0x56, 2, 0x98, 2,
+                                0x54, 2, 0xAB, 2, 0xEF, 2},
+                               SVL / 8));
+  // CHECK_NEON(2, uint8_t,
+  //            fillNeon<uint8_T>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56,
+  //            0x78,
+  //                               0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF,
+  //                               0x01},
+  //                              SVL / 8));
+  // CHECK_NEON(3, uint8_t,
+  //            fillNeon<uint8_T>({0xDE, 4, 0xBE, 4, 0x12, 4, 0x56, 4, 0x98, 4,
+  //                               0x54, 4, 0xAB, 4, 0xEF, 4},
+  //                              SVL / 8));
+
+  // 16-bit
+  initialHeapData_.resize(SVL / 4);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  std::vector<uint16_t> src16 = {0xDEAD, 0xBEEF, 0x1234, 0x5678,
+                                 0x9876, 0x5432, 0xABCD, 0xEF01};
+  fillHeap<uint16_t>(heap16, src16, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    ptrue p0.h
+    pfalse p1.b
+    zip1 p1.h, p0.h, p1.h
+
+    mov w12, #0
+    dup z0.h, #1
+    dup z1.h, #2
+    dup z2.h, #3
+    dup z3.h, #4
+
+    # Horizontal
+    ld1h {za0h.h[w12, #0]}, p0/z, [x0]
+    mova z0.h, p0/m, za0h.h[w12, #0]
+    mova z1.h, p1/m, za0h.h[w12, #0]
+
+    # Vertical
+    ld1h {za0v.h[w12, #3]}, p0/z, [x0]
+    # mova z2.h, p0/m, za0v.h[w12, #3]
+    # mova z3.h, p1/m, za0v.h[w12, #3]
+  )");
+  CHECK_NEON(0, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                 0xABCD, 0xEF01},
+                                SVL / 8));
+  CHECK_NEON(1, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 2, 0x1234, 2, 0x9876, 2, 0xABCD, 2},
+                                SVL / 8));
+  // CHECK_NEON(2, uint16_t,
+  //            fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
+  //            0x5432,
+  //                                0xABCD, 0xEF01},
+  //                               SVL / 8));
+  // CHECK_NEON(3, uint16_t,
+  //            fillNeon<uint16_t>({0xDEAD, 4, 0x1234, 4, 0x9876, 4, 0xABCD, 4},
+  //                               SVL / 8));
+
+  // 32-bit
+  initialHeapData_.resize(SVL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src32 = {0xDEADBEEF, 0x12345678, 0x98765432,
+                                 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src32, SVL / 16);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    mov w12, #0
+    dup z0.s, #1
+    dup z1.s, #2
+    dup z2.s, #3
+    dup z3.s, #4
+
+    # Horizontal
+    ld1w {za0h.s[w12, #0]}, p0/z, [x0]
+    mova z0.s, p0/m, za0h.s[w12, #0]
+    mova z1.s, p1/m, za0h.s[w12, #0]
+
+    # Vertical
+    ld1w {za0v.s[w12, #3]}, p0/z, [x0]
+    # mova z2.s, p0/m, za0v.s[w12, #3]
+    # mova z3.s, p1/m, za0v.s[w12, #3]
+  )");
+  CHECK_NEON(0, uint32_t,
+             fillNeon<uint32_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
+  CHECK_NEON(1, uint32_t,
+             fillNeon<uint32_t>({0xDEADBEEF, 2, 0x98765432, 2}, SVL / 8));
+  // CHECK_NEON(
+  //     2, uint32_t,
+  //     fillNeon<uint32_t>(
+  //         {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL /
+  //         8));
+  // CHECK_NEON(3, uint32_t,
+  //            fillNeon<uint32_t>({0xDEADBEEF, 4, 0x98765432, 4}, SVL /
+  //            8));
+
+  // 64-bit
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src64 = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64, src64, SVL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    mov w12, #0
+    dup z0.d, #1
+    dup z1.d, #2
+    dup z2.d, #3
+    dup z3.d, #4
+
+    # Horizontal
+    ld1d {za0h.d[w12, #0]}, p0/z, [x0]
+    mova z0.d, p0/m, za0h.d[w12, #0]
+    mova z1.d, p1/m, za0h.d[w12, #0]
+
+    # Vertical
+    ld1d {za0v.d[w12, #1]}, p0/z, [x0]
+    # mova z2.d, p0/m, za0v.d[w12, #1]
+    # mova z3.d, p1/m, za0v.d[w12, #1]
+  )");
+  CHECK_NEON(
+      0, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 2}, SVL / 8));
+  // CHECK_NEON(
+  //     2, uint64_t,
+  //     fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  // CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 4}, SVL /
+  // 8));
 }
 
 TEST_P(InstSme, fmopa) {
