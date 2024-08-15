@@ -12,9 +12,9 @@ void RISCVRegressionTest::run(const char* source, bool compressed) {
   RegressionTest::run(source, "riscv64", subtargetFeatures.c_str());
 }
 
-void RISCVRegressionTest::checkGroup(const char* source,
-                                     const std::vector<int> expectedGroups,
-                                     bool compressed) {
+void RISCVRegressionTest::checkGroup(
+    const char* source, const std::vector<uint16_t>& expectedGroups,
+    bool compressed) {
   initialiseLLVM();
   std::string subtargetFeatures = getSubtargetFeaturesString(compressed);
 

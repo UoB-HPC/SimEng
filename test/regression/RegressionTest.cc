@@ -158,7 +158,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
 void RegressionTest::checkGroup(const char* source, const char* triple,
                                 const char* extensions,
-                                const std::vector<int> expectedGroups) {
+                                const std::vector<uint16_t>& expectedGroups) {
   createArchitecture(source, triple, extensions);
 
   std::vector<std::shared_ptr<simeng::Instruction>> macroOp;

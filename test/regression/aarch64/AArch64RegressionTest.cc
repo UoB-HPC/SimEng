@@ -12,8 +12,8 @@ void AArch64RegressionTest::run(const char* source) {
   RegressionTest::run(source, "aarch64", subtargetFeatures.c_str());
 }
 
-void AArch64RegressionTest::checkGroup(const char* source,
-                                       const std::vector<int> expectedGroups) {
+void AArch64RegressionTest::checkGroup(
+    const char* source, const std::vector<uint16_t>& expectedGroups) {
   initialiseLLVM();
   std::string subtargetFeatures = getSubtargetFeaturesString();
 

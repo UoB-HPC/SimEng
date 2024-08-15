@@ -214,7 +214,8 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Run the first instruction in source through predecode and check the
    * groups. */
-  void checkGroup(const char* source, const std::vector<int> expectedGroups);
+  void checkGroup(const char* source,
+                  const std::vector<uint16_t>& expectedGroups);
 
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;

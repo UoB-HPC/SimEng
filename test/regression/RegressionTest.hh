@@ -93,7 +93,7 @@ class RegressionTest
    * matches the expectation. */
   void checkGroup(const char* source, const char* triple,
                   const char* extensions,
-                  const std::vector<int> expectedGroups);
+                  const std::vector<uint16_t>& expectedGroups);
 
   /** Get the value of an architectural register. */
   template <typename T>
