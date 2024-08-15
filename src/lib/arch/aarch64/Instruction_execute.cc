@@ -2621,10 +2621,43 @@ void Instruction::execute() {
             vecInsIndex_gpr<uint8_t, uint32_t, 16>(sourceValues_, metadata_);
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_H_B: {  // ld1b {zath.b[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 8;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint16_t sliceNum =
+            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+
+        uint8_t out[256] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (pg[i / 64] & shifted_active) {
+            out[i] = data[i];
+          } else {
+            out[i] = 0;
+          }
+        }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (uint16_t i = 0; i < partition_num; i++) {
+          results_[i] = sourceValues_[i];
+        }
+        results_[sliceNum] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, LOAD
-        // Not in right context mode. Raise exception
+        // If not in right context mode, raise exception
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t partition_num = VL_bits / 64;
@@ -2649,46 +2682,48 @@ void Instruction::execute() {
         // All Slice vectors are added to results[] so need to update the
         // correct one
         for (uint16_t i = 0; i < partition_num; i++) {
-          if (i == sliceNum)
-            results_[i] = {out, 256};
-          else
-            // Maintain un-updated rows.
-            results_[i] = sourceValues_[i];
+          results_[i] = sourceValues_[i];
         }
+        results_[sliceNum] = {out, 256};
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_D: {  // ld1d {zatv.d[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm, lsl #3}]
+      case Opcode::AArch64_LD1_MXIPXX_H_H: {  // ld1h {zath.h[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #1}]
         // SME, LOAD
-        // Not in right context mode. Raise exception
+        // If not in right context mode, raise exception
         if (!ZAenabled) return ZAdisabled();
 
-        const uint16_t partition_num = VL_bits / 64;
+        const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
         const uint64_t* pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
 
+        uint16_t out[128] = {0};
         for (int i = 0; i < partition_num; i++) {
-          uint64_t* row =
-              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
-          uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (pg[i / 8] & shifted_active) {
-            row[sliceNum] = data[i];
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (pg[i / 32] & shifted_active) {
+            out[i] = data[i];
           } else {
-            row[sliceNum] = 0;
+            out[i] = 0;
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
         }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (uint16_t i = 0; i < partition_num; i++) {
+          results_[i] = sourceValues_[i];
+        }
+        results_[sliceNum] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        // Not in right context mode. Raise exception
+        // If not in right context mode, raise exception
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t partition_num = VL_bits / 32;
@@ -2712,19 +2747,100 @@ void Instruction::execute() {
 
         // All Slice vectors are added to results[] so need to update the
         // correct one
-        for (uint32_t i = 0; i < partition_num; i++) {
-          if (i == sliceNum)
-            results_[i] = {out, 256};
-          else
-            // Maintain un-updated rows.
-            results_[i] = sourceValues_[i];
+        for (uint16_t i = 0; i < partition_num; i++) {
+          results_[i] = sourceValues_[i];
+        }
+        results_[sliceNum] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_B: {  // ld1b {zatv.b[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 8;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          uint8_t* row =
+              const_cast<uint8_t*>(sourceValues_[i].getAsVector<uint8_t>());
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (pg[i / 64] & shifted_active) {
+            row[sliceNum] = data[i];
+          } else {
+            row[sliceNum] = 0;
+          }
+          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_D: {  // ld1d {zatv.d[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #3}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 64;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t* row =
+              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) {
+            row[sliceNum] = data[i];
+          } else {
+            row[sliceNum] = 0;
+          }
+          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_H: {  // ld1h {zatv.h[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #1}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 16;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          uint16_t* row =
+              const_cast<uint16_t*>(sourceValues_[i].getAsVector<uint16_t>());
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (pg[i / 32] & shifted_active) {
+            row[sliceNum] = data[i];
+          } else {
+            row[sliceNum] = 0;
+          }
+          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
         }
         break;
       }
       case Opcode::AArch64_LD1_MXIPXX_V_S: {  // ld1w {zatv.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
-        // Not in right context mode. Raise exception
+        // If not in right context mode, raise exception
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t partition_num = VL_bits / 32;
