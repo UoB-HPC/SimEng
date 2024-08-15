@@ -1740,7 +1740,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMOPA_MPPZZ_D:
       [[fallthrough]];
-    case Opcode::AArch64_FMOPA_MPPZZ_S: {
+    case Opcode::AArch64_FMOPA_MPPZZ_S:
       // Need to add access specifiers
       // although operands[0] should be READ | WRITE, due to the implemented
       // decode logic for SME tile destinations, the register will be added as
@@ -1751,16 +1751,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ;
       break;
-    }
-    case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
-      operandCount = 4;
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_B:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_S:
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
-      operands[3].reg = operands[2].sme_index.base;
-      operands[3].access = CS_AC_READ;
       break;
-    }
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr

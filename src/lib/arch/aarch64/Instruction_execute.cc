@@ -1237,22 +1237,105 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 8;
         const uint8_t* zd = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
-        const uint64_t sliceNum =
+        const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
             rowCount;
-        const uint8_t* zanRow =
+        const uint8_t* zaRow =
             sourceValues_[2 + sliceNum].getAsVector<uint8_t>();
-        uint8_t out[256] = {0};
 
+        uint8_t out[256] = {0};
         for (int elem = 0; elem < rowCount; elem++) {
-          uint64_t shifted_active = 1ull << ((elem % 64));
+          uint64_t shifted_active = 1ull << (elem % 64);
           if (pg[elem / 64] & shifted_active)
-            out[elem] = zanRow[elem];
+            out[elem] = zaRow[elem];
           else
             out[elem] = zd[elem];
         }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_D: {  // MOVA zd.d, pg/m, zanh.d[ws,
+                                                 // #imm]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
 
+        const uint16_t rowCount = VL_bits / 64;
+        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const uint32_t sliceNum =
+            (sourceValues_[2 + rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+            rowCount;
+        const uint64_t* zaRow =
+            sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
+
+        uint64_t out[32] = {0};
+        for (int elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 8) * 8);
+          if (pg[elem / 8] & shifted_active)
+            out[elem] = zaRow[elem];
+          else
+            out[elem] = zd[elem];
+        }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_H: {  // MOVA zd.h, pg/m, zanh.h[ws,
+                                                 // #imm]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 16;
+        const uint16_t* zd = sourceValues_[0].getAsVector<uint16_t>();
+        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const uint32_t sliceNum =
+            (sourceValues_[2 + rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+            rowCount;
+        const uint16_t* zaRow =
+            sourceValues_[2 + sliceNum].getAsVector<uint16_t>();
+
+        uint16_t out[128] = {0};
+        for (int elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 32) * 2);
+          if (pg[elem / 32] & shifted_active)
+            out[elem] = zaRow[elem];
+          else
+            out[elem] = zd[elem];
+        }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_S: {  // MOVA zd.s, pg/m, zanh.s[ws,
+                                                 // #imm]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint32_t* zd = sourceValues_[0].getAsVector<uint32_t>();
+        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const uint32_t sliceNum =
+            (sourceValues_[2 + rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+            rowCount;
+        const uint32_t* zaRow =
+            sourceValues_[2 + sliceNum].getAsVector<uint32_t>();
+
+        uint32_t out[64] = {0};
+        for (int elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 16) * 4);
+          if (pg[elem / 16] & shifted_active)
+            out[elem] = zaRow[elem];
+          else
+            out[elem] = zd[elem];
+        }
         results_[0] = {out, 256};
         break;
       }
