@@ -34,16 +34,26 @@ TEST_P(InstSme, mova_tileToVec) {
     dup z1.b, #2
     dup z2.b, #3
     dup z3.b, #4
+    dup z4.b, #5
+    dup z5.b, #6
+    dup z6.b, #7
+    dup z7.b, #8
 
     # Horizontal
     ld1b {za0h.b[w12, #0]}, p0/z, [x0]
     mova z0.b, p0/m, za0h.b[w12, #0]
     mova z1.b, p1/m, za0h.b[w12, #0]
+    #Alias
+    mov z4.b, p0/m, za0h.b[w12, #0]
+    mov z5.b, p1/m, za0h.b[w12, #0]
 
     # Vertical
     ld1b {za0v.b[w12, #3]}, p0/z, [x0]
     mova z2.b, p0/m, za0v.b[w12, #3]
     mova z3.b, p1/m, za0v.b[w12, #3]
+    #Alias
+    mov z6.b, p0/m, za0v.b[w12, #3]
+    mov z7.b, p1/m, za0v.b[w12, #3]
   )");
   CHECK_NEON(0, uint8_t,
              fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
@@ -60,6 +70,22 @@ TEST_P(InstSme, mova_tileToVec) {
   CHECK_NEON(3, uint8_t,
              fillNeon<uint8_t>({0xDE, 4, 0xBE, 4, 0x12, 4, 0x56, 4, 0x98, 4,
                                 0x54, 4, 0xAB, 4, 0xEF, 4},
+                               SVL / 8));
+  CHECK_NEON(4, uint8_t,
+             fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                               SVL / 8));
+  CHECK_NEON(5, uint8_t,
+             fillNeon<uint8_t>({0xDE, 6, 0xBE, 6, 0x12, 6, 0x56, 6, 0x98, 6,
+                                0x54, 6, 0xAB, 6, 0xEF, 6},
+                               SVL / 8));
+  CHECK_NEON(6, uint8_t,
+             fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                               SVL / 8));
+  CHECK_NEON(7, uint8_t,
+             fillNeon<uint8_t>({0xDE, 8, 0xBE, 8, 0x12, 8, 0x56, 8, 0x98, 8,
+                                0x54, 8, 0xAB, 8, 0xEF, 8},
                                SVL / 8));
 
   // 16-bit
@@ -87,16 +113,26 @@ TEST_P(InstSme, mova_tileToVec) {
     dup z1.h, #2
     dup z2.h, #3
     dup z3.h, #4
+    dup z4.h, #5
+    dup z5.h, #6
+    dup z6.h, #7
+    dup z7.h, #8
 
     # Horizontal
     ld1h {za0h.h[w12, #0]}, p0/z, [x0]
     mova z0.h, p0/m, za0h.h[w12, #0]
     mova z1.h, p1/m, za0h.h[w12, #0]
+    #Alias
+    mov z4.h, p0/m, za0h.h[w12, #0]
+    mov z5.h, p1/m, za0h.h[w12, #0]
 
     # Vertical
     ld1h {za0v.h[w12, #3]}, p0/z, [x0]
     mova z2.h, p0/m, za0v.h[w12, #3]
     mova z3.h, p1/m, za0v.h[w12, #3]
+    #Alias
+    mov z6.h, p0/m, za0v.h[w12, #3]
+    mov z7.h, p1/m, za0v.h[w12, #3]
   )");
   CHECK_NEON(0, uint16_t,
              fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
@@ -111,6 +147,20 @@ TEST_P(InstSme, mova_tileToVec) {
                                 SVL / 8));
   CHECK_NEON(3, uint16_t,
              fillNeon<uint16_t>({0xDEAD, 4, 0x1234, 4, 0x9876, 4, 0xABCD, 4},
+                                SVL / 8));
+  CHECK_NEON(4, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                 0xABCD, 0xEF01},
+                                SVL / 8));
+  CHECK_NEON(5, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 6, 0x1234, 6, 0x9876, 6, 0xABCD, 6},
+                                SVL / 8));
+  CHECK_NEON(6, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                 0xABCD, 0xEF01},
+                                SVL / 8));
+  CHECK_NEON(7, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 8, 0x1234, 8, 0x9876, 8, 0xABCD, 8},
                                 SVL / 8));
 
   // 32-bit
@@ -138,16 +188,26 @@ TEST_P(InstSme, mova_tileToVec) {
     dup z1.s, #2
     dup z2.s, #3
     dup z3.s, #4
+    dup z4.s, #5
+    dup z5.s, #6
+    dup z6.s, #7
+    dup z7.s, #8
 
     # Horizontal
     ld1w {za0h.s[w12, #0]}, p0/z, [x0]
     mova z0.s, p0/m, za0h.s[w12, #0]
     mova z1.s, p1/m, za0h.s[w12, #0]
+    #Alias
+    mov z4.s, p0/m, za0h.s[w12, #0]
+    mov z5.s, p1/m, za0h.s[w12, #0]
 
     # Vertical
     ld1w {za0v.s[w12, #3]}, p0/z, [x0]
     mova z2.s, p0/m, za0v.s[w12, #3]
     mova z3.s, p1/m, za0v.s[w12, #3]
+    #Alias
+    mov z6.s, p0/m, za0v.s[w12, #3]
+    mov z7.s, p1/m, za0v.s[w12, #3]
   )");
   CHECK_NEON(0, uint32_t,
              fillNeon<uint32_t>(
@@ -159,6 +219,16 @@ TEST_P(InstSme, mova_tileToVec) {
                  {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
   CHECK_NEON(3, uint32_t,
              fillNeon<uint32_t>({0xDEADBEEF, 4, 0x98765432, 4}, SVL / 8));
+  CHECK_NEON(4, uint32_t,
+             fillNeon<uint32_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
+  CHECK_NEON(5, uint32_t,
+             fillNeon<uint32_t>({0xDEADBEEF, 6, 0x98765432, 6}, SVL / 8));
+  CHECK_NEON(6, uint32_t,
+             fillNeon<uint32_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
+  CHECK_NEON(7, uint32_t,
+             fillNeon<uint32_t>({0xDEADBEEF, 8, 0x98765432, 8}, SVL / 8));
 
   // 64-bit
   initialHeapData_.resize(SVL / 4);
@@ -184,16 +254,26 @@ TEST_P(InstSme, mova_tileToVec) {
     dup z1.d, #2
     dup z2.d, #3
     dup z3.d, #4
+    dup z4.d, #5
+    dup z5.d, #6
+    dup z6.d, #7
+    dup z7.d, #8
 
     # Horizontal
     ld1d {za0h.d[w12, #0]}, p0/z, [x0]
     mova z0.d, p0/m, za0h.d[w12, #0]
     mova z1.d, p1/m, za0h.d[w12, #0]
+    #Alias
+    mov z4.d, p0/m, za0h.d[w12, #0]
+    mov z5.d, p1/m, za0h.d[w12, #0]
 
     # Vertical
     ld1d {za0v.d[w12, #1]}, p0/z, [x0]
     mova z2.d, p0/m, za0v.d[w12, #1]
     mova z3.d, p1/m, za0v.d[w12, #1]
+    #Alias
+    mov z6.d, p0/m, za0v.d[w12, #1]
+    mov z7.d, p1/m, za0v.d[w12, #1]
   )");
   CHECK_NEON(
       0, uint64_t,
@@ -203,6 +283,14 @@ TEST_P(InstSme, mova_tileToVec) {
       2, uint64_t,
       fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
   CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 4}, SVL / 8));
+  CHECK_NEON(
+      4, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_NEON(5, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 6}, SVL / 8));
+  CHECK_NEON(
+      6, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_NEON(7, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 8}, SVL / 8));
 }
 
 TEST_P(InstSme, fmopa) {
