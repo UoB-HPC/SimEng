@@ -172,6 +172,109 @@ TEST_P(InstSme, fmops) {
   }
 }
 
+TEST_P(InstSme, ld1b) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                              0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01};
+  fillHeap<uint8_t>(heap8, src, SVL / 4);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.b
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1b {za0h.b[w12, 0]}, p0/z, [x0, x1]
+    ld1b {za0h.b[w12, 2]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #2
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.b, xzr, x1
+    mov w12, #15
+    ld1b {za0h.b[w12, 0]}, p1/z, [x0, x2]
+  )");
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAB0, 1, uint8_t,
+      fillNeon<uint8_t>({0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
+                         0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01, 0xDE},
+                        SVL / 8));
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAB0, 3, uint8_t,
+      fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
+                         0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                        SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 15, uint8_t,
+                fillNeonCombined<uint8_t>(
+                    {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
+                     0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                    {0}, SVL / 8));
+
+  // Vertical
+  initialHeapData_.resize(SVL / 4);
+  uint8_t* heap8_vert = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src_vert = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34,
+                                   0x56, 0x78, 0x98, 0x76, 0x54, 0x32,
+                                   0xAB, 0xCD, 0xEF, 0x01};
+  fillHeap<uint8_t>(heap8_vert, src_vert, SVL / 4);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.b
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1b {za0v.b[w12, 0]}, p0/z, [x0, x1]
+    ld1b {za0v.b[w12, 2]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #2
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.b, xzr, x1
+    mov w12, #15
+    ld1b {za0v.b[w12, 0]}, p1/z, [x0, x2]
+  )");
+  CHECK_MAT_COL(
+      ARM64_REG_ZAB0, 1, uint8_t,
+      fillNeon<uint8_t>({0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
+                         0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01, 0xDE},
+                        SVL / 8));
+  CHECK_MAT_COL(
+      ARM64_REG_ZAB0, 3, uint8_t,
+      fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
+                         0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                        SVL / 8));
+  CHECK_MAT_COL(ARM64_REG_ZAB0, 15, uint8_t,
+                fillNeonCombined<uint8_t>(
+                    {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
+                     0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                    {0}, SVL / 8));
+}
+
 TEST_P(InstSme, ld1d) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);
@@ -185,6 +288,8 @@ TEST_P(InstSme, ld1d) {
     svc #0
 
     smstart
+
+    zero {za}
 
     mov x1, #1
     ptrue p0.d
@@ -226,6 +331,8 @@ TEST_P(InstSme, ld1d) {
 
     smstart
 
+    zero {za}
+
     mov x1, #1
     ptrue p0.d
     mov w12, #0
@@ -254,6 +361,100 @@ TEST_P(InstSme, ld1d) {
                     {0xDEADBEEF12345678, 0x98765432ABCDEF01}, {0}, SVL / 8));
 }
 
+TEST_P(InstSme, ld1h) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  std::vector<uint16_t> src = {0xDEAD, 0xBEEF, 0x1234, 0x5678,
+                               0x9876, 0x5432, 0xABCD, 0xEF01};
+  fillHeap<uint16_t>(heap16, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.h
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1h {za0h.h[w12, 0]}, p0/z, [x0, x1, lsl #1]
+    ld1h {za0h.h[w12, 2]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #4
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.h, xzr, x1
+    ld1h {za1h.h[w12, 0]}, p1/z, [x0, x2, lsl #1]
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                    0xABCD, 0xEF01, 0xDEAD},
+                                   SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 3, uint16_t,
+                fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
+                                    0x5432, 0xABCD, 0xEF01},
+                                   SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAH1, 1, uint16_t,
+                fillNeonCombined<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678,
+                                            0x9876, 0x5432, 0xABCD, 0xEF01},
+                                           {0}, SVL / 8));
+
+  // Vertical
+  initialHeapData_.resize(SVL / 4);
+  uint16_t* heap16_vert = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  std::vector<uint16_t> src_vert = {0xDEAD, 0xBEEF, 0x1234, 0x5678,
+                                    0x9876, 0x5432, 0xABCD, 0xEF01};
+  fillHeap<uint16_t>(heap16_vert, src_vert, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.h
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1h {za0v.h[w12, 0]}, p0/z, [x0, x1, lsl #1]
+    ld1h {za0v.h[w12, 2]}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #4
+    # TODO change to addsvl when implemented
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    mov x2, #0
+    whilelo p1.h, xzr, x1
+    ld1h {za1v.h[w12, 0]}, p1/z, [x0, x2, lsl #1]
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                    0xABCD, 0xEF01, 0xDEAD},
+                                   SVL / 8));
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 3, uint16_t,
+                fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
+                                    0x5432, 0xABCD, 0xEF01},
+                                   SVL / 8));
+  CHECK_MAT_COL(ARM64_REG_ZAH1, 1, uint16_t,
+                fillNeonCombined<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678,
+                                            0x9876, 0x5432, 0xABCD, 0xEF01},
+                                           {0}, SVL / 8));
+}
+
 TEST_P(InstSme, ld1w) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);
@@ -267,6 +468,8 @@ TEST_P(InstSme, ld1w) {
     svc #0
 
     smstart
+
+    zero {za}
 
     mov x1, #1
     ptrue p0.s
@@ -308,6 +511,8 @@ TEST_P(InstSme, ld1w) {
     svc #0
 
     smstart
+
+    zero {za}
 
     mov x1, #1
     ptrue p0.s
