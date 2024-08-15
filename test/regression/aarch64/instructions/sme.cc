@@ -42,8 +42,8 @@ TEST_P(InstSme, mova_tileToVec) {
 
     # Vertical
     ld1b {za0v.b[w12, #3]}, p0/z, [x0]
-    # mova z2.b, p0/m, za0v.b[w12, #3]
-    # mova z3.b, p1/m, za0v.b[w12, #3]
+    mova z2.b, p0/m, za0v.b[w12, #3]
+    mova z3.b, p1/m, za0v.b[w12, #3]
   )");
   CHECK_NEON(0, uint8_t,
              fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
@@ -53,16 +53,14 @@ TEST_P(InstSme, mova_tileToVec) {
              fillNeon<uint8_t>({0xDE, 2, 0xBE, 2, 0x12, 2, 0x56, 2, 0x98, 2,
                                 0x54, 2, 0xAB, 2, 0xEF, 2},
                                SVL / 8));
-  // CHECK_NEON(2, uint8_t,
-  //            fillNeon<uint8_T>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56,
-  //            0x78,
-  //                               0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF,
-  //                               0x01},
-  //                              SVL / 8));
-  // CHECK_NEON(3, uint8_t,
-  //            fillNeon<uint8_T>({0xDE, 4, 0xBE, 4, 0x12, 4, 0x56, 4, 0x98, 4,
-  //                               0x54, 4, 0xAB, 4, 0xEF, 4},
-  //                              SVL / 8));
+  CHECK_NEON(2, uint8_t,
+             fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                                0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                               SVL / 8));
+  CHECK_NEON(3, uint8_t,
+             fillNeon<uint8_t>({0xDE, 4, 0xBE, 4, 0x12, 4, 0x56, 4, 0x98, 4,
+                                0x54, 4, 0xAB, 4, 0xEF, 4},
+                               SVL / 8));
 
   // 16-bit
   initialHeapData_.resize(SVL / 4);
@@ -97,8 +95,8 @@ TEST_P(InstSme, mova_tileToVec) {
 
     # Vertical
     ld1h {za0v.h[w12, #3]}, p0/z, [x0]
-    # mova z2.h, p0/m, za0v.h[w12, #3]
-    # mova z3.h, p1/m, za0v.h[w12, #3]
+    mova z2.h, p0/m, za0v.h[w12, #3]
+    mova z3.h, p1/m, za0v.h[w12, #3]
   )");
   CHECK_NEON(0, uint16_t,
              fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
@@ -107,14 +105,13 @@ TEST_P(InstSme, mova_tileToVec) {
   CHECK_NEON(1, uint16_t,
              fillNeon<uint16_t>({0xDEAD, 2, 0x1234, 2, 0x9876, 2, 0xABCD, 2},
                                 SVL / 8));
-  // CHECK_NEON(2, uint16_t,
-  //            fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
-  //            0x5432,
-  //                                0xABCD, 0xEF01},
-  //                               SVL / 8));
-  // CHECK_NEON(3, uint16_t,
-  //            fillNeon<uint16_t>({0xDEAD, 4, 0x1234, 4, 0x9876, 4, 0xABCD, 4},
-  //                               SVL / 8));
+  CHECK_NEON(2, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
+                                 0xABCD, 0xEF01},
+                                SVL / 8));
+  CHECK_NEON(3, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 4, 0x1234, 4, 0x9876, 4, 0xABCD, 4},
+                                SVL / 8));
 
   // 32-bit
   initialHeapData_.resize(SVL / 4);
@@ -149,22 +146,19 @@ TEST_P(InstSme, mova_tileToVec) {
 
     # Vertical
     ld1w {za0v.s[w12, #3]}, p0/z, [x0]
-    # mova z2.s, p0/m, za0v.s[w12, #3]
-    # mova z3.s, p1/m, za0v.s[w12, #3]
+    mova z2.s, p0/m, za0v.s[w12, #3]
+    mova z3.s, p1/m, za0v.s[w12, #3]
   )");
   CHECK_NEON(0, uint32_t,
              fillNeon<uint32_t>(
                  {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
   CHECK_NEON(1, uint32_t,
              fillNeon<uint32_t>({0xDEADBEEF, 2, 0x98765432, 2}, SVL / 8));
-  // CHECK_NEON(
-  //     2, uint32_t,
-  //     fillNeon<uint32_t>(
-  //         {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL /
-  //         8));
-  // CHECK_NEON(3, uint32_t,
-  //            fillNeon<uint32_t>({0xDEADBEEF, 4, 0x98765432, 4}, SVL /
-  //            8));
+  CHECK_NEON(2, uint32_t,
+             fillNeon<uint32_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
+  CHECK_NEON(3, uint32_t,
+             fillNeon<uint32_t>({0xDEADBEEF, 4, 0x98765432, 4}, SVL / 8));
 
   // 64-bit
   initialHeapData_.resize(SVL / 4);
@@ -198,18 +192,17 @@ TEST_P(InstSme, mova_tileToVec) {
 
     # Vertical
     ld1d {za0v.d[w12, #1]}, p0/z, [x0]
-    # mova z2.d, p0/m, za0v.d[w12, #1]
-    # mova z3.d, p1/m, za0v.d[w12, #1]
+    mova z2.d, p0/m, za0v.d[w12, #1]
+    mova z3.d, p1/m, za0v.d[w12, #1]
   )");
   CHECK_NEON(
       0, uint64_t,
       fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
   CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 2}, SVL / 8));
-  // CHECK_NEON(
-  //     2, uint64_t,
-  //     fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
-  // CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 4}, SVL /
-  // 8));
+  CHECK_NEON(
+      2, uint64_t,
+      fillNeon<uint64_t>({0xDEADBEEF12345678, 0x98765432ABCDEF01}, SVL / 8));
+  CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 4}, SVL / 8));
 }
 
 TEST_P(InstSme, fmopa) {
