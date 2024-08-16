@@ -293,6 +293,430 @@ TEST_P(InstSme, mova_tileToVec) {
   CHECK_NEON(7, uint64_t, fillNeon<uint64_t>({0xDEADBEEF12345678, 8}, SVL / 8));
 }
 
+TEST_P(InstSme, mova_b_vecToTile) {
+  // 8-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.b
+    pfalse p1.b
+    zip1 p1.b, p0.b, p1.b
+
+    mov w12, #0
+    dup z0.b, #1
+    dup z1.b, #2
+
+    # Horizontal
+    mova za0h.b[w12, #0], p0/m, z0.b
+    mova za0h.b[w12, #1], p1/m, z1.b
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t,
+                fillNeon<uint8_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 8; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t,
+                  fillNeon<uint8_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.b
+    pfalse p1.b
+    zip1 p1.b, p0.b, p1.b
+
+    mov w12, #0
+    dup z0.b, #1
+    dup z1.b, #2
+
+    # Horizontal Alias
+    mov za0h.b[w12, #0], p0/m, z0.b
+    mov za0h.b[w12, #1], p1/m, z1.b
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t,
+                fillNeon<uint8_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 8; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t,
+                  fillNeon<uint8_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.b
+    pfalse p1.b
+    zip1 p1.b, p0.b, p1.b
+
+    mov w12, #0
+    dup z0.b, #1
+    dup z1.b, #2
+
+    # Vertical
+    mova za0v.b[w12, #0], p0/m, z0.b
+    mova za0v.b[w12, #1], p1/m, z1.b
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAB0, 1, uint8_t,
+                fillNeon<uint8_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 8; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAB0, i, uint8_t,
+                  fillNeon<uint8_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.b
+    pfalse p1.b
+    zip1 p1.b, p0.b, p1.b
+
+    mov w12, #0
+    dup z0.b, #1
+    dup z1.b, #2
+
+    # Vertical Alias
+    mov za0v.b[w12, #0], p0/m, z0.b
+    mov za0v.b[w12, #1], p1/m, z1.b
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAB0, 1, uint8_t,
+                fillNeon<uint8_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 8; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAB0, i, uint8_t,
+                  fillNeon<uint8_t>({0}, (SVL / 8)));
+  }
+}
+
+TEST_P(InstSme, mova_h_vecToTile) {
+  // 16-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.h
+    pfalse p1.b
+    zip1 p1.h, p0.h, p1.h
+
+    mov w12, #0
+    dup z0.h, #1
+    dup z1.h, #2
+
+    # Horizontal
+    mova za0h.h[w12, #0], p0/m, z0.h
+    mova za0h.h[w12, #1], p1/m, z1.h
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 0, uint16_t,
+                fillNeon<uint16_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 16; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAH0, i, uint16_t,
+                  fillNeon<uint16_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.h
+    pfalse p1.b
+    zip1 p1.h, p0.h, p1.h
+
+    mov w12, #0
+    dup z0.h, #1
+    dup z1.h, #2
+
+    # Horizontal Alias
+    mov za0h.h[w12, #0], p0/m, z0.h
+    mov za0h.h[w12, #1], p1/m, z1.h
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 0, uint16_t,
+                fillNeon<uint16_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 16; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAH0, i, uint16_t,
+                  fillNeon<uint16_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.h
+    pfalse p1.b
+    zip1 p1.h, p0.h, p1.h
+
+    mov w12, #0
+    dup z0.h, #1
+    dup z1.h, #2
+
+    # Vertical
+    mova za0v.h[w12, #0], p0/m, z0.h
+    mova za0v.h[w12, #1], p1/m, z1.h
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 0, uint16_t,
+                fillNeon<uint16_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 16; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAH0, i, uint16_t,
+                  fillNeon<uint16_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.h
+    pfalse p1.b
+    zip1 p1.h, p0.h, p1.h
+
+    mov w12, #0
+    dup z0.h, #1
+    dup z1.h, #2
+
+    # Vertical Alias
+    mov za0v.h[w12, #0], p0/m, z0.h
+    mov za0v.h[w12, #1], p1/m, z1.h
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 0, uint16_t,
+                fillNeon<uint16_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+                fillNeon<uint16_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 16; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAH0, i, uint16_t,
+                  fillNeon<uint16_t>({0}, (SVL / 8)));
+  }
+}
+
+TEST_P(InstSme, mova_s_vecToTile) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    mov w12, #0
+    dup z0.s, #1
+    dup z1.s, #2
+
+    # Horizontal
+    mova za0h.s[w12, #0], p0/m, z0.s
+    mova za0h.s[w12, #1], p1/m, z1.s
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAS0, 0, uint32_t,
+                fillNeon<uint32_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAS0, 1, uint32_t,
+                fillNeon<uint32_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 32; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    mov w12, #0
+    dup z0.s, #1
+    dup z1.s, #2
+
+    # Horizontal Alias
+    mov za0h.s[w12, #0], p0/m, z0.s
+    mov za0h.s[w12, #1], p1/m, z1.s
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAS0, 0, uint32_t,
+                fillNeon<uint32_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAS0, 1, uint32_t,
+                fillNeon<uint32_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 32; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    mov w12, #0
+    dup z0.s, #1
+    dup z1.s, #2
+
+    # Vertical
+    mova za0v.s[w12, #0], p0/m, z0.s
+    mova za0v.s[w12, #1], p1/m, z1.s
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAS0, 0, uint32_t,
+                fillNeon<uint32_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAS0, 1, uint32_t,
+                fillNeon<uint32_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 32; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    mov w12, #0
+    dup z0.s, #1
+    dup z1.s, #2
+
+    # Vertical Alias
+    mov za0v.s[w12, #0], p0/m, z0.s
+    mov za0v.s[w12, #1], p1/m, z1.s
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAS0, 0, uint32_t,
+                fillNeon<uint32_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAS0, 1, uint32_t,
+                fillNeon<uint32_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 32; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({0}, (SVL / 8)));
+  }
+}
+
+TEST_P(InstSme, mova_d_vecToTile) {
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    mov w12, #0
+    dup z0.d, #1
+    dup z1.d, #2
+
+    # Horizontal
+    mova za0h.d[w12, #0], p0/m, z0.d
+    mova za0h.d[w12, #1], p1/m, z1.d
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAD0, 0, uint64_t,
+                fillNeon<uint64_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAD0, 1, uint64_t,
+                fillNeon<uint64_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 64; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    mov w12, #0
+    dup z0.d, #1
+    dup z1.d, #2
+
+    # Horizontal Alias
+    mov za0h.d[w12, #0], p0/m, z0.d
+    mov za0h.d[w12, #1], p1/m, z1.d
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAD0, 0, uint64_t,
+                fillNeon<uint64_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(ARM64_REG_ZAD0, 1, uint64_t,
+                fillNeon<uint64_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 64; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    mov w12, #0
+    dup z0.d, #1
+    dup z1.d, #2
+
+    # Vertical
+    mova za0v.d[w12, #0], p0/m, z0.d
+    mova za0v.d[w12, #1], p1/m, z1.d
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAD0, 0, uint64_t,
+                fillNeon<uint64_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAD0, 1, uint64_t,
+                fillNeon<uint64_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 64; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({0}, (SVL / 8)));
+  }
+
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    mov w12, #0
+    dup z0.d, #1
+    dup z1.d, #2
+
+    # Vertical Alias
+    mov za0v.d[w12, #0], p0/m, z0.d
+    mov za0v.d[w12, #1], p1/m, z1.d
+  )");
+  CHECK_MAT_COL(ARM64_REG_ZAD0, 0, uint64_t,
+                fillNeon<uint64_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(ARM64_REG_ZAD0, 1, uint64_t,
+                fillNeon<uint64_t>({2, 0}, (SVL / 8)));
+  for (int i = 2; i < SVL / 64; i++) {
+    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({0}, (SVL / 8)));
+  }
+}
+
 TEST_P(InstSme, fmopa) {
   // 32-bit
   RUN_AARCH64(R"(
