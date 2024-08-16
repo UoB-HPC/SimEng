@@ -1794,7 +1794,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
-
+    case Opcode::AArch64_LDR_ZA:
+      // Need to add access specifier
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      break;
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr

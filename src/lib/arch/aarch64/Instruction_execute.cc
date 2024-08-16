@@ -4271,6 +4271,30 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LDR_ZA: {  // ldr za[wv, #imm], [<xn|sp>{, #imm, mul
+                                      // vl}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 8;
+        const uint32_t wn = sourceValues_[rowCount].get<uint32_t>();
+        const uint32_t sliceNum =
+            wn + static_cast<uint32_t>(metadata_.operands[0].sme_index.disp);
+
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        uint8_t out[256] = {0};
+        for (uint16_t i = 0; i < rowCount; i++) {
+          out[i] = data[i];
+        }
+
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] = (row == sliceNum)
+                              ? RegisterValue(out, 256)
+                              : results_[row] = sourceValues_[row];
+        }
+        break;
+      }
       case Opcode::AArch64_LDTRSBXi: {  // ldtrsb xt, [xn, #imm]
         // LOAD
         // TODO: implement

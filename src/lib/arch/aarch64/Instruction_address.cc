@@ -485,6 +485,17 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 8}});
         break;
       }
+      case Opcode::AArch64_LDR_ZA: {  // ldr za[wv, #imm], [<xn|sp>{, #imm, mul
+                                      // vl}]
+        // SME
+        // ZA Row count === current VL in bytes
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint64_t xn = sourceValues_[zaRowCount + 1].get<uint64_t>();
+        const uint64_t imm =
+            static_cast<uint64_t>(metadata_.operands[1].mem.disp);
+        setMemoryAddresses({xn + (imm * zaRowCount), zaRowCount});
+        break;
+      }
       case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
         setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 1}});
         break;
