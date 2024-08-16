@@ -1770,6 +1770,31 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+
+    case Opcode::AArch64_INSERT_MXIPZ_H_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_D:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_S:
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr
@@ -2241,6 +2266,10 @@ void InstructionMetadata::revertAliasing() {
       }
       if (opcode >= Opcode::AArch64_EXTRACT_ZPMXI_H_B &&
           opcode <= Opcode::AArch64_EXTRACT_ZPMXI_V_S) {
+        return;
+      }
+      if (opcode >= Opcode::AArch64_INSERT_MXIPZ_H_B &&
+          opcode <= Opcode::AArch64_INSERT_MXIPZ_V_S) {
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||

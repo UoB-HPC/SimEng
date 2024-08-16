@@ -2783,6 +2783,241 @@ void Instruction::execute() {
                                                  VL_bits, false, false);
         break;
       }
+
+      case Opcode::AArch64_INSERT_MXIPZ_H_B: {  // mova za0h.b[ws, #imm], pg/m,
+                                                // zn.b
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 8;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint8_t* zaRow = sourceValues_[sliceNum].getAsVector<uint8_t>();
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint8_t* zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
+
+        uint8_t out[256] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << (elem % 64);
+          if (pg[elem / 64] & shifted_active)
+            out[elem] = zn[elem];
+          else
+            out[elem] = zaRow[elem];
+        }
+        // Need to update whole za tile
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] =
+              (row == sliceNum) ? RegisterValue(out, 256) : sourceValues_[row];
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_H_D: {  // mova za0h.d[ws, #imm], pg/m,
+                                                // zn.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint64_t* zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        uint64_t out[32] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 8) * 8);
+          if (pg[elem / 8] & shifted_active)
+            out[elem] = zn[elem];
+          else
+            out[elem] = zaRow[elem];
+        }
+        // Need to update whole za tile
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] =
+              (row == sliceNum) ? RegisterValue(out, 256) : sourceValues_[row];
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_H_H: {  // mova za0h.h[ws, #imm], pg/m,
+                                                // zn.h
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 16;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint16_t* zaRow = sourceValues_[sliceNum].getAsVector<uint16_t>();
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint16_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint16_t>();
+
+        uint16_t out[128] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 32) * 2);
+          if (pg[elem / 32] & shifted_active)
+            out[elem] = zn[elem];
+          else
+            out[elem] = zaRow[elem];
+        }
+        // Need to update whole za tile
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] =
+              (row == sliceNum) ? RegisterValue(out, 256) : sourceValues_[row];
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_H_S: {  // mova za0h.s[ws, #imm], pg/m,
+                                                // zn.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint32_t* zaRow = sourceValues_[sliceNum].getAsVector<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint32_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+
+        uint32_t out[64] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          uint64_t shifted_active = 1ull << ((elem % 16) * 4);
+          if (pg[elem / 16] & shifted_active)
+            out[elem] = zn[elem];
+          else
+            out[elem] = zaRow[elem];
+        }
+        // Need to update whole za tile
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] =
+              (row == sliceNum) ? RegisterValue(out, 256) : sourceValues_[row];
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_V_B: {  // mova za0v.b[ws, #imm], pg/m,
+                                                // zn.b
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 8;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint8_t* zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
+
+        for (uint16_t i = 0; i < rowCount; i++) {
+          uint8_t* row =
+              const_cast<uint8_t*>(sourceValues_[i].getAsVector<uint8_t>());
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (pg[i / 64] & shifted_active) row[sliceNum] = zn[i];
+          results_[i] = {(char*)row, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_V_D: {  // mova za0v.d[ws, #imm], pg/m,
+                                                // zn.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        for (uint16_t i = 0; i < rowCount; i++) {
+          uint64_t* row =
+              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (pg[i / 8] & shifted_active) row[sliceNum] = zn[i];
+          results_[i] = {(char*)row, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_V_H: {  // mova za0v.h[ws, #imm], pg/m,
+                                                // zn.h
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 16;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint16_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint16_t>();
+
+        for (uint16_t i = 0; i < rowCount; i++) {
+          uint16_t* row =
+              const_cast<uint16_t*>(sourceValues_[i].getAsVector<uint16_t>());
+          uint64_t shifted_active = 1ull << ((i % 32) * 2);
+          if (pg[i / 32] & shifted_active) row[sliceNum] = zn[i];
+          results_[i] = {(char*)row, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_V_S: {  // mova za0v.s[ws, #imm], pg/m,
+                                                // zn.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint32_t sliceNum =
+            (sourceValues_[rowCount].get<uint32_t>() +
+             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+            rowCount;
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint32_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+
+        for (uint16_t i = 0; i < rowCount; i++) {
+          uint32_t* row =
+              const_cast<uint32_t*>(sourceValues_[i].getAsVector<uint32_t>());
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) row[sliceNum] = zn[i];
+          results_[i] = {(char*)row, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_INSvi16gpr: {  // ins vd.h[index], wn
         results_[0] =
             vecInsIndex_gpr<uint16_t, uint32_t, 8>(sourceValues_, metadata_);
