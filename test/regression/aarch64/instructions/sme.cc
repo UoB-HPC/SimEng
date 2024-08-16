@@ -1212,6 +1212,46 @@ TEST_P(InstSme, ld1w) {
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
 }
 
+TEST_P(InstSme, ldr) {
+  // Horizontal
+  initialHeapData_.resize(SVL);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78,
+                              0x98, 0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01};
+  fillHeap<uint8_t>(heap8, src, SVL);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    ptrue p0.b
+    mov w12, #0
+    # Load and broadcast values from heap
+    ldr za[w12, 0], [x0]
+    ldr za[w12, 2], [x0, #2, mul vl]
+  )");
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAB0, 0, uint8_t,
+      fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
+                         0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                        SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t, fillNeon<uint8_t>({0}, SVL / 8));
+  CHECK_MAT_ROW(
+      ARM64_REG_ZAB0, 2, uint8_t,
+      fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
+                         0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
+                        SVL / 8));
+
+  for (int i = 3; i < SVL / 8; i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t, fillNeon<uint8_t>({0}, SVL / 8));
+  }
+}
+
 TEST_P(InstSme, smopa) {
   // 32-bit
   RUN_AARCH64(R"(
