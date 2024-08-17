@@ -154,8 +154,7 @@ runs:
       name: install dependencies
       shell: bash
       run: |
-        brew update
-        brew upgrade
+
 
         pip3 install pyparsing
 
