@@ -40,10 +40,10 @@ jobs:
           echo "_______________________________________"
           cmake --version
           echo "_______________________________________"
-          "${{ env.GCC_DIR }}" --version
-          which gcc
+          "${{ env.APPLE_CLANG_DIR }}" --version
+          which clang
           echo "_______________________________________"
-          "${{ env.CPP_DIR }}" --version
+          "${{ env.APPLE_CLANG_PLUS_PLUS_DIR }}" --version
           which g++
           echo "_______________________________________"
           
