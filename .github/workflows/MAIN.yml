@@ -18,7 +18,7 @@ jobs:
 
   # Job to run Reusable Workflow 2
   MACOS_GCC_BUILD_TEST:
-    uses: UoB-HPC/SimEng/.github/workflows/MACOS_GCC_BUILD_TEST.yml
+    uses: UoB-HPC/SimEng/.github/workflows/MACOS_GCC_BUILD_TEST.yml@github_actions
     secrets: inherit
 
   # # Job to run Reusable Workflow 3
