@@ -155,6 +155,5 @@ runs:
       shell: bash
       run: |
         pip3 install pyparsing
-
         brew install make
 

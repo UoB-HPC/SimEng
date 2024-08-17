@@ -1,13 +1,15 @@
 name: MACOS_CLANG_BUILD_TEST
 
+on:
+  workflow_call:
+
+    
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   LLVM-VERSION: 14
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
   PAT: ${{ secrets.SIMENGUOB_PAT }}
   
-on:
-  push:
 
 jobs:
   Build_and_Run:
@@ -42,10 +44,10 @@ jobs:
           cmake --version
           echo "_______________________________________"
           "${{ env.APPLE_CLANG_DIR }}" --version
-          which clang
+          which ${{ env.APPLE_CLANG_DIR }}
           echo "_______________________________________"
           "${{ env.APPLE_CLANG_PLUS_PLUS_DIR }}" --version
-          which g++
+          which ${{ env.APPLE_CLANG_PLUS_PLUS_DIR }}
           echo "_______________________________________"
           
       #######################################

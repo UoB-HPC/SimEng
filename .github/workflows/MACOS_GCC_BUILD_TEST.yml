@@ -1,25 +1,28 @@
 name: OS_BUILD_TEST_MACOS
 
+on:
+  workflow_call:
+    secrets: 
+      SIMENGUOB_PAT: 
+        required: true
+
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   LLVM-VERSION: 14
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
-
-on:
-  workflow_dispatch:
-  pull_request:
+  PAT: ${{ secrets.SIMENGUOB_PAT }}
 
 jobs:
   Build_and_Run:
-    runs-on: macos-14
+    runs-on: macos-13
     
     strategy:
       fail-fast: false
       matrix:
-        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] #, 'armclang-22.0.2']
+        COMPILER: ['gcc-10'] # NOTE: only gcc 10 works with provided macos runners on github actions
 
 
-    name: "macos-14 + ${{ matrix.compiler }}"
+    name: "macos-13 + ${{ matrix.compiler }}"
 
     steps:
       #######################################

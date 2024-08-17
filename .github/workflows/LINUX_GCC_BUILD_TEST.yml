@@ -1,4 +1,10 @@
-name: OS_BUILD_TEST
+name: LINUX_GCC_BUILD_TEST
+
+on:
+  workflow_call:
+    secrets: 
+      SIMENGUOB_PAT: 
+        required: true
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -6,9 +12,6 @@ env:
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
   PAT: ${{ secrets.SIMENGUOB_PAT }}
 
-on:
-  workflow_dispatch:
-  pull_request:
 
 jobs:
   Build_and_Run:
