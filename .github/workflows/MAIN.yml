@@ -18,12 +18,8 @@ jobs:
 
   # Job to run Reusable Workflow 2
   MACOS_GCC_BUILD_TEST:
-    runs-on: macos-13
-    steps:
-      - name: Macos + GCC-10 check
-        uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
-        with:
-          secrets: ${{ secrets.SIMENGUOB_PAT }}
+    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml@self
+    secrets: inherit
 
   # # Job to run Reusable Workflow 3
   # call-workflow3:
