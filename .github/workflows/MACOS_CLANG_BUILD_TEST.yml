@@ -25,7 +25,7 @@ jobs:
       # Depending on OS and compiler, this step chooses the correct setup action to run.
       #######################################
       - name: setup compiler and OS env + build simeng
-        uses: ./.github/actions/select_env
+        uses: ./.github/actions/select_setup
         with: 
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: macos
