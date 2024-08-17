@@ -6,9 +6,6 @@ on:
     # branches:
     #   - dev
   
-env:
-  branch_name: ${{ github.ref_name }}
-
 jobs:
   # Job to run Reusable Workflow 1
   # LINUX_GCC_BUILD_TEST:
@@ -21,7 +18,7 @@ jobs:
 
   # Job to run Reusable Workflow 2
   MACOS_GCC_BUILD_TEST:
-    uses: UoB-HPC/SimEng/.github/workflows/MACOS_GCC_BUILD_TEST.yml@${{ env.branch_name }}
+    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
     secrets: inherit
 
   # # Job to run Reusable Workflow 3
