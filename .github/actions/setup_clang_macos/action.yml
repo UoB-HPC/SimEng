@@ -25,9 +25,10 @@ runs:
     - name: install gcc
       shell: bash
       run: |
-        xcode-select --install
         clang --version
         which clang
+
+        clang++ --version
         which clang++
 
     #     echo "GCC_DIR=/usr/local/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
