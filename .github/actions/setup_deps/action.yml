@@ -157,7 +157,6 @@ runs:
         brew update
         brew upgrade
 
-        brew install python3-pip
         pip3 install pyparsing
 
         brew install make
