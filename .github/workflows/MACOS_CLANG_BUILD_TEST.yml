@@ -27,9 +27,9 @@ jobs:
       - name: setup compiler and OS env + build simeng
         uses: ./.github/actions/select_setup
         with: 
+          OS: 'macos'
+          COMPILER: 'apple_clang'
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
-          OS: macos
-          COMPILER: apple_clang
 
       #######################################
       # Prints out info in isolated step for easy access.

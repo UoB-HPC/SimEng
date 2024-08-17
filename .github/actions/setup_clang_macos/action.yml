@@ -4,8 +4,6 @@ description: build and test simeng using clang compiler on apple
 inputs:
   OS:
     required: true
-  gcc-version:
-    required: true
 
 runs:
   using: 'composite'
@@ -18,6 +16,7 @@ runs:
       uses: ./.github/actions/setup_deps
       with:
         OS: ${{ inputs.OS }}
+
 
     #######################################
     # Install clang
