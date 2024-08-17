@@ -74,7 +74,7 @@ runs:
     # APPLE CLANG
     ##########################################
 
-      - if: ${{ contains( inputs.COMPILER, 'clang') && contains( inputs.OS, 'macos') }}
+    - if: ${{ contains( inputs.COMPILER, 'clang') && contains( inputs.OS, 'macos') }}
       name:  Install ${{ inputs.COMPILER }} + Build SimEng
       uses: ./.github/actions/setup_clang_macos
       with:
