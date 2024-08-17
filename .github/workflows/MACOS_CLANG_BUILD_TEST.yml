@@ -1,4 +1,4 @@
-name: OS_BUILD_TEST_MACOS
+name: MACOS_CLANG_BUILD_TEST
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -6,20 +6,13 @@ env:
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
 
 on:
-  workflow_dispatch:
-  pull_request:
+  push:
 
 jobs:
   Build_and_Run:
-    runs-on: macos-14
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] #, 'armclang-22.0.2']
+    runs-on: macos-13
 
-
-    name: "macos-14 + ${{ matrix.compiler }}"
+    name: "macos-13 + apple_clang"
 
     steps:
       #######################################
@@ -36,7 +29,7 @@ jobs:
         with: 
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: macos
-          COMPILER: ${{ matrix.COMPILER }}
+          COMPILER: apple_clang
 
       #######################################
       # Prints out info in isolated step for easy access.
@@ -92,10 +85,9 @@ jobs:
       # Run Benchmark Tests.
       #######################################
       - if: always()
-        name: Run Benchmarks
+        name: run benchmarks
         uses: ./.github/actions/simeng_benchmarks
         with:
           BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
           OS: macos
-          PAT: ${{ env.PAT }}
       ##########################################

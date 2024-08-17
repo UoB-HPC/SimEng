@@ -1,0 +1,59 @@
+name: setup clang for apple
+description: build and test simeng using clang compiler on apple
+
+inputs:
+  OS:
+    required: true
+  gcc-version:
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+
+    - name: install dependencies
+      uses: ./.github/actions/setup_deps
+      with:
+        OS: ${{ inputs.OS }}
+
+    #######################################
+    # Install clang
+    #######################################
+
+    - name: install gcc
+      shell: bash
+      run: |
+        xcode-select --install
+        clang --version
+        which clang
+        which clang++
+
+    #     echo "GCC_DIR=/usr/local/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+    #     echo "CPP_DIR=/usr/local/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+
+    # #######################################
+    # # Save gcc to cache if earlier miss occured.
+    # #######################################
+    # - if: ${{ steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
+    #   name: save gcc
+    #   uses: actions/cache/save@v4
+    #   id: gcc-save-v4
+    #   with: 
+    #     path: /usr/local/${{ inputs.gcc-version }}.5.0
+    #     key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
+
+    # #######################################
+    # # Build SimEng without external llvm or ninja.
+    # #######################################
+    # - name: Build SimEng
+    #   shell: bash
+    #   run: |
+    #     cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.GCC_DIR }} \
+    #       -DCMAKE_CXX_COMPILER=${{ env.CPP_DIR }}
+
+    #     cmake --build build -j $(sysctl -n hw.ncpu)
+
+    #     cmake --build build --target install

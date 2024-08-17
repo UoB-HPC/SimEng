@@ -1,0 +1,34 @@
+name: clang format
+
+on:
+  pull_request:
+
+jobs:
+    clang_format:
+      runs-on: ubuntu-latest
+      name: clang format
+
+      steps:
+        - name: Install clang format
+          run: |
+            apt-get install -y clang-format
+
+        - name: Apply clang format
+          run: |
+            SRC_LIST="$(find "./src" | grep -E ".*(\.cc$|\.hh$)")"
+            TEST_LIST="$(find "./test" | grep -E ".*(\.cc$|\.hh$)")";
+            clang-format --verbose -i $SRC_LIST $TEST_LIST
+        
+        # push changes if clang-format did anything
+        - name: Check for changes
+          run: |
+            if [[ `git status --porcelain` ]]; then
+              echo "Code formatting issues found."
+              git config --global user.name 'github-actions-clang-format'
+              git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+              git add .
+              git commit -am "Apply clang-format"
+              git push
+            else
+              echo "No code formatting issues."
+            fi
