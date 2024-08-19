@@ -1660,6 +1660,22 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_ADDHA_MPPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDHA_MPPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDVA_MPPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDVA_MPPZ_S:
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_LD1_MXIPXX_H_B:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_D:
