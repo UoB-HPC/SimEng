@@ -108,6 +108,144 @@ void Instruction::execute() {
     }
   } else {
     switch (metadata_.opcode) {
+      case Opcode::AArch64_ADDHA_MPPZ_D: {  // addha zada.d, pn/m, pm/m, zn.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        for (uint16_t row = 0; row < rowCount; row++) {
+          const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
+          // Slice element is active IFF:
+          //  - Element in 1st source pred corresponding to horiz. slice is TRUE
+          //  - Corresponding element in 2nd source pred is TRUE
+          const uint64_t shifted_active_pn = 1ull << ((row % 8) * 8);
+          if (pn[row / 8] & shifted_active_pn) {
+            for (uint16_t elem = 0; elem < rowCount; elem++) {
+              const uint64_t shifted_active_pm = 1ull << ((elem % 8) * 8);
+              if (pm[elem / 8] & shifted_active_pm) {
+                out[elem] = zn[elem];
+              }
+            }
+          }
+          results_[row] = {out, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_ADDHA_MPPZ_S: {  // addha zada.s, pn/m, pm/m, zn.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint32_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+
+        for (uint16_t row = 0; row < rowCount; row++) {
+          const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
+          uint32_t out[64] = {0};
+          std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
+          // Slice element is active IFF:
+          //  - Element in 1st source pred corresponding to horiz. slice is TRUE
+          //  - Corresponding element in 2nd source pred is TRUE
+          const uint64_t shifted_active_pn = 1ull << ((row % 16) * 4);
+          if (pn[row / 16] & shifted_active_pn) {
+            for (uint16_t elem = 0; elem < rowCount; elem++) {
+              const uint64_t shifted_active_pm = 1ull << ((elem % 16) * 4);
+              if (pm[elem / 16] & shifted_active_pm) {
+                out[elem] = zn[elem];
+              }
+            }
+          }
+          results_[row] = {out, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_ADDVA_MPPZ_D: {  // addva zada.d, pn/m, pm/m, zn.d
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 64;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        for (uint16_t row = 0; row < rowCount; row++) {
+          const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
+          // Slice element is active IFF:
+          //  - Corresponding element in 1st source pred is TRUE
+          //  - Element in 2nd source pred corresponding to vert. slice is TRUE
+          const uint64_t shifted_active_pn = 1ull << ((row % 8) * 8);
+          if (pn[row / 8] & shifted_active_pn) {
+            // Corresponding slice element is active (i.e. all elements in row).
+            // Now check if each vertical slice (i.e. each row element) is
+            // active
+            for (uint16_t elem = 0; elem < rowCount; elem++) {
+              const uint64_t shifted_active_pm = 1ull << ((elem % 8) * 8);
+              if (pm[elem / 8] & shifted_active_pm) {
+                out[elem] = zn[elem];
+              }
+            }
+          }
+          results_[row] = {out, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_ADDVA_MPPZ_S: {  // addva zada.s, pn/m, pm/m, zn.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const uint32_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+
+        for (uint16_t row = 0; row < rowCount; row++) {
+          const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
+          uint32_t out[64] = {0};
+          std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
+          // Slice element is active IFF:
+          //  - Corresponding element in 1st source pred is TRUE
+          //  - Element in 2nd source pred corresponding to vert. slice is TRUE
+          const uint64_t shifted_active_pn = 1ull << ((row % 16) * 4);
+          if (pn[row / 16] & shifted_active_pn) {
+            // Corresponding slice element is active (i.e. all elements in row).
+            // Now check if each vertical slice (i.e. each row element) is
+            // active in 2nd pred
+            for (uint16_t elem = 0; elem < rowCount; elem++) {
+              const uint64_t shifted_active_pm = 1ull << ((elem % 16) * 4);
+              if (pm[elem / 16] & shifted_active_pm) {
+                out[elem] = zn[elem];
+              }
+            }
+          }
+          results_[row] = {out, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
         auto [result, nzcv] = addCarry_3ops<uint64_t>(sourceValues_);
         (void)nzcv;  // Prevent unused variable warnings in GCC7

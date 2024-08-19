@@ -8,6 +8,218 @@ namespace {
 using InstSme = AArch64RegressionTest;
 
 #if SIMENG_LLVM_VERSION >= 14
+TEST_P(InstSme, addha) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    dup z0.s, #3
+    dup z1.s, #7
+
+    # Add to all rows and elems
+    addha za0.s, p0/m, p0/m, z0.s
+
+    # Add to all rows, even numbered elements
+    addha za1.s, p0/m, p0/m, z0.s
+    addha za1.s, p0/m, p1/m, z1.s
+
+    # Add to even rows, all elements
+    addha za2.s, p0/m, p0/m, z0.s
+    addha za2.s, p1/m, p0/m, z1.s
+
+    # Checker-board add
+    addha za3.s, p0/m, p0/m, z0.s
+    addha za3.s, p1/m, p1/m, z1.s
+  )");
+  for (int i = 0; i < (SVL / 32); i++) {
+    // All rows, all elems
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({3}, (SVL / 8)));
+    // All rows, even elements
+    CHECK_MAT_ROW(ARM64_REG_ZAS1, i, uint32_t,
+                  fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+    if (i % 2 == 0) {
+      // Even rows, all elements
+      CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+                    fillNeon<uint32_t>({7}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+                    fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+    } else {
+      // Even rows, all elements
+      CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+                    fillNeon<uint32_t>({3}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+                    fillNeon<uint32_t>({3}, (SVL / 8)));
+    }
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    dup z0.d, #3
+    dup z1.d, #7
+
+    # Add to all rows and elems
+    addha za0.d, p0/m, p0/m, z0.d
+
+    # Add to all rows, even numbered elements
+    addha za1.d, p0/m, p0/m, z0.d
+    addha za1.d, p0/m, p1/m, z1.d
+
+    # Add to even rows, all elements
+    addha za2.d, p0/m, p0/m, z0.d
+    addha za2.d, p1/m, p0/m, z1.d
+
+    # Checker-board add
+    addha za3.d, p0/m, p0/m, z0.d
+    addha za3.d, p1/m, p1/m, z1.d
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    // All rows, all elems
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({3}, (SVL / 8)));
+    // All rows, even elements
+    CHECK_MAT_ROW(ARM64_REG_ZAD1, i, uint64_t,
+                  fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+    if (i % 2 == 0) {
+      // Even rows, all elements
+      CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+                    fillNeon<uint64_t>({7}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
+                    fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+    } else {
+      // Even rows, all elements
+      CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+                    fillNeon<uint64_t>({3}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
+                    fillNeon<uint64_t>({3}, (SVL / 8)));
+    }
+  }
+}
+
+TEST_P(InstSme, addva) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.s
+    pfalse p1.b
+    zip1 p1.s, p0.s, p1.s
+
+    dup z0.s, #3
+    dup z1.s, #7
+
+    # Add to all cols and elems
+    addva za0.s, p0/m, p0/m, z0.s
+
+    # All cols, even elements
+    addva za1.s, p0/m, p0/m, z0.s
+    addva za1.s, p1/m, p0/m, z1.s
+
+    # Add to even numbered cols, all elements
+    addva za2.s, p0/m, p0/m, z0.s
+    addva za2.s, p0/m, p1/m, z1.s
+
+    # Checker-board add
+    addva za3.s, p0/m, p0/m, z0.s
+    addva za3.s, p1/m, p1/m, z1.s
+  )");
+  for (int i = 0; i < (SVL / 32); i++) {
+    // All cols, all elems
+    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({3}, (SVL / 8)));
+    // All cols, even elements
+    CHECK_MAT_COL(ARM64_REG_ZAS1, i, uint32_t,
+                  fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+    if (i % 2 == 0) {
+      // Even cols, all elements
+      CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
+                    fillNeon<uint32_t>({7}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
+                    fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+    } else {
+      // Even cols, all elements
+      CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
+                    fillNeon<uint32_t>({3}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
+                    fillNeon<uint32_t>({3}, (SVL / 8)));
+    }
+  }
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {za}
+
+    ptrue p0.d
+    pfalse p1.b
+    zip1 p1.d, p0.d, p1.d
+
+    dup z0.d, #3
+    dup z1.d, #7
+
+    # Add to all cols and elems
+    addva za0.d, p0/m, p0/m, z0.d
+
+    # All cols, even elements
+    addva za1.d, p0/m, p0/m, z0.d
+    addva za1.d, p1/m, p0/m, z1.d
+
+    # Add to even numbered cols, all elements
+    addva za2.d, p0/m, p0/m, z0.d
+    addva za2.d, p0/m, p1/m, z1.d
+
+    # Checker-board add
+    addva za3.d, p0/m, p0/m, z0.d
+    addva za3.d, p1/m, p1/m, z1.d
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    // All rows, all elems
+    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({3}, (SVL / 8)));
+    // All cols, even elements
+    CHECK_MAT_COL(ARM64_REG_ZAD1, i, uint64_t,
+                  fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+    if (i % 2 == 0) {
+      // Even cols, all elements
+      CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
+                    fillNeon<uint64_t>({7}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
+                    fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+    } else {
+      // Even cols, all elements
+      CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
+                    fillNeon<uint64_t>({3}, (SVL / 8)));
+      // Checker-board
+      CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
+                    fillNeon<uint64_t>({3}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, mova_tileToVec) {
   // 8-bit
   initialHeapData_.resize(SVL / 4);
