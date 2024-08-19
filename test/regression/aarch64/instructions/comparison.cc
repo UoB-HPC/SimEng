@@ -5,6 +5,15 @@ namespace {
 using InstComparison = AArch64RegressionTest;
 using namespace simeng::arch::aarch64::InstructionGroups;
 
+// Similar to RISC-V atomic instructions, read-modify-write operations i.e. a
+// load, comparison and store, is given the group LOAD_INT only. The instruction
+// object is tagged with the appropriate identifiers (isLoad and isStore) but
+// the group only reflects the first stage of execution. This ensures the
+// instruction goes to the correct part of the pipeline i.e. the LSQ. But we
+// currently do not model the rest of the atomic behaviour precisely as the
+// comparison happens here also. The change of the instructions behaviour over
+// its lifetime is currently not reflected in the group it is given.
+
 // Test correct Value stored after comparison for CASAL (32 & 64 bit)
 TEST_P(InstComparison, casal) {
   // 32-bit
@@ -39,6 +48,8 @@ TEST_P(InstComparison, casal) {
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(3)), 100);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()), 89);
 
+  EXPECT_GROUP("casal w1, w2, [x0]", LOAD_INT);
+
   // 64-bit
   initialHeapData_.resize(16);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
@@ -70,6 +81,8 @@ TEST_P(InstComparison, casal) {
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(3)), 101);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()), 76);
+
+  EXPECT_GROUP("casal x1, x7, [sp]", LOAD_INT);
 }
 
 // Test that NZCV flags are set correctly by the 32-bit cmn instruction

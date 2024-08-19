@@ -5,6 +5,16 @@ namespace {
 using InstAtomic = RISCVRegressionTest;
 using namespace simeng::arch::riscv::InstructionGroups;
 
+// Whilst most RISC-V atomic instructions perform read-modify-write operations
+// i.e. a load, comparison and store, each is given the group LOAD_INT only. The
+// instruction object is tagged with the appropriate identifiers (isLoad,
+// isStore and isAtomic) but the group only reflects the first stage of
+// execution. This ensures the instruction goes to the correct part of the
+// pipeline i.e. the LSQ. But we currently do not model the rest of the atomic
+// behaviour precisely as the comparison happens here also. The change of the
+// instructions behaviour over its lifetime is currently not reflected in the
+// group it is given.
+
 TEST_P(InstAtomic, lr) {
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
