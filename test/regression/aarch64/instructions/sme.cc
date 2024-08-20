@@ -33,23 +33,25 @@ TEST_P(InstSme, addha) {
     addha za2.s, p0/m, p0/m, z0.s
     addha za2.s, p1/m, p0/m, z1.s
 
-    # Checker-board add
+    # Even numbered rows, even numbered elements
     addha za3.s, p0/m, p0/m, z0.s
     addha za3.s, p1/m, p1/m, z1.s
   )");
   std::vector<uint32_t> full32(64, 0);
-  std::vector<uint32_t> inter32(64, 0);
   std::vector<uint32_t> index32(64, 0);
+  std::vector<uint32_t> inter32(64, 0);
   for (int i = 0; i < 64; i++) {
     full32[i] = 65;
     index32[i] = i;
     inter32[i] = (i % 2 == 0) ? i : 65;
   }
 
-  for (int i = 0; i < (SVL / 32); i++) {
+  for (uint32_t i = 0; i < (SVL / 32); i++) {
     // All rows, all elems
     CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>(index32, (SVL / 8)));
+    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({i}, (SVL / 8)));
     // All rows, even elements
     CHECK_MAT_ROW(ARM64_REG_ZAS1, i, uint32_t,
                   fillNeon<uint32_t>(inter32, (SVL / 8)));
@@ -57,14 +59,14 @@ TEST_P(InstSme, addha) {
       // Even rows, all elements
       CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(index32, (SVL / 8)));
-      // Checker-board
+      // Even rows, even elements
       CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(inter32, (SVL / 8)));
     } else {
       // Even rows, all elements
       CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
-      // Checker-board
+      // Even rows, even elements
       CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
     }
@@ -94,23 +96,25 @@ TEST_P(InstSme, addha) {
     addha za2.d, p0/m, p0/m, z0.d
     addha za2.d, p1/m, p0/m, z1.d
 
-    # Checker-board add
+    # Even numbered rows, even numbered elements
     addha za3.d, p0/m, p0/m, z0.d
     addha za3.d, p1/m, p1/m, z1.d
   )");
   std::vector<uint64_t> full64(32, 0);
-  std::vector<uint64_t> inter64(32, 0);
   std::vector<uint64_t> index64(32, 0);
+  std::vector<uint64_t> inter64(32, 0);
   for (int i = 0; i < 32; i++) {
     full64[i] = 65;
     index64[i] = i;
     inter64[i] = (i % 2 == 0) ? i : 65;
   }
 
-  for (int i = 0; i < (SVL / 64); i++) {
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
     // All rows, all elems
     CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>(index64, (SVL / 8)));
+    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({i}, (SVL / 8)));
     // All rows, even elements
     CHECK_MAT_ROW(ARM64_REG_ZAD1, i, uint64_t,
                   fillNeon<uint64_t>(inter64, (SVL / 8)));
@@ -118,14 +122,14 @@ TEST_P(InstSme, addha) {
       // Even rows, all elements
       CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(index64, (SVL / 8)));
-      // Checker-board
+      // Even rows, even elements
       CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(inter64, (SVL / 8)));
     } else {
       // Even rows, all elements
       CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
-      // Checker-board
+      // Even rows, even elements
       CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
     }
@@ -143,11 +147,11 @@ TEST_P(InstSme, addva) {
     pfalse p1.b
     zip1 p1.s, p0.s, p1.s
 
-    dup z0.s, #3
-    dup z1.s, #7
+    dup z0.s, #65
+    index z1.s, #0, #1
 
     # Add to all cols and elems
-    addva za0.s, p0/m, p0/m, z0.s
+    addva za0.s, p0/m, p0/m, z1.s
 
     # All cols, even elements
     addva za1.s, p0/m, p0/m, z0.s
@@ -157,31 +161,42 @@ TEST_P(InstSme, addva) {
     addva za2.s, p0/m, p0/m, z0.s
     addva za2.s, p0/m, p1/m, z1.s
 
-    # Checker-board add
+    # Even numbered cols, even numbered elements
     addva za3.s, p0/m, p0/m, z0.s
     addva za3.s, p1/m, p1/m, z1.s
   )");
-  for (int i = 0; i < (SVL / 32); i++) {
+  std::vector<uint32_t> full32(64, 0);
+  std::vector<uint32_t> index32(64, 0);
+  std::vector<uint32_t> inter32(64, 0);
+  for (int i = 0; i < 64; i++) {
+    full32[i] = 65;
+    index32[i] = i;
+    inter32[i] = (i % 2 == 0) ? i : 65;
+  }
+
+  for (uint32_t i = 0; i < (SVL / 32); i++) {
     // All cols, all elems
     CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
-                  fillNeon<uint32_t>({3}, (SVL / 8)));
+                  fillNeon<uint32_t>(index32, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({i}, (SVL / 8)));
     // All cols, even elements
     CHECK_MAT_COL(ARM64_REG_ZAS1, i, uint32_t,
-                  fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+                  fillNeon<uint32_t>(inter32, (SVL / 8)));
     if (i % 2 == 0) {
       // Even cols, all elements
       CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
-                    fillNeon<uint32_t>({7}, (SVL / 8)));
-      // Checker-board
+                    fillNeon<uint32_t>(index32, (SVL / 8)));
+      // Even cols, even elements
       CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
-                    fillNeon<uint32_t>({7, 3}, (SVL / 8)));
+                    fillNeon<uint32_t>(inter32, (SVL / 8)));
     } else {
       // Even cols, all elements
       CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
-                    fillNeon<uint32_t>({3}, (SVL / 8)));
-      // Checker-board
+                    fillNeon<uint32_t>(full32, (SVL / 8)));
+      // Even cols, even elements
       CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
-                    fillNeon<uint32_t>({3}, (SVL / 8)));
+                    fillNeon<uint32_t>(full32, (SVL / 8)));
     }
   }
 
@@ -195,11 +210,11 @@ TEST_P(InstSme, addva) {
     pfalse p1.b
     zip1 p1.d, p0.d, p1.d
 
-    dup z0.d, #3
-    dup z1.d, #7
+    dup z0.d, #65
+    index z1.d, #0, #1
 
     # Add to all cols and elems
-    addva za0.d, p0/m, p0/m, z0.d
+    addva za0.d, p0/m, p0/m, z1.d
 
     # All cols, even elements
     addva za1.d, p0/m, p0/m, z0.d
@@ -209,31 +224,42 @@ TEST_P(InstSme, addva) {
     addva za2.d, p0/m, p0/m, z0.d
     addva za2.d, p0/m, p1/m, z1.d
 
-    # Checker-board add
+    # Even numbered cols, even numbered elements
     addva za3.d, p0/m, p0/m, z0.d
     addva za3.d, p1/m, p1/m, z1.d
   )");
-  for (int i = 0; i < (SVL / 64); i++) {
-    // All rows, all elems
+  std::vector<uint64_t> full64(32, 0);
+  std::vector<uint64_t> index64(32, 0);
+  std::vector<uint64_t> inter64(32, 0);
+  for (int i = 0; i < 32; i++) {
+    full64[i] = 65;
+    index64[i] = i;
+    inter64[i] = (i % 2 == 0) ? i : 65;
+  }
+
+  for (uint64_t i = 0; i < (SVL / 64); i++) {
+    // All cols, all elems
     CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
-                  fillNeon<uint64_t>({3}, (SVL / 8)));
+                  fillNeon<uint64_t>(index64, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+                  fillNeon<uint64_t>({i}, (SVL / 8)));
     // All cols, even elements
     CHECK_MAT_COL(ARM64_REG_ZAD1, i, uint64_t,
-                  fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+                  fillNeon<uint64_t>(inter64, (SVL / 8)));
     if (i % 2 == 0) {
       // Even cols, all elements
       CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
-                    fillNeon<uint64_t>({7}, (SVL / 8)));
-      // Checker-board
+                    fillNeon<uint64_t>(index64, (SVL / 8)));
+      // Even cols, even elements
       CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
-                    fillNeon<uint64_t>({7, 3}, (SVL / 8)));
+                    fillNeon<uint64_t>(inter64, (SVL / 8)));
     } else {
       // Even cols, all elements
       CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
-                    fillNeon<uint64_t>({3}, (SVL / 8)));
-      // Checker-board
+                    fillNeon<uint64_t>(full64, (SVL / 8)));
+      // Even cols, even elements
       CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
-                    fillNeon<uint64_t>({3}, (SVL / 8)));
+                    fillNeon<uint64_t>(full64, (SVL / 8)));
     }
   }
 }
