@@ -239,6 +239,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_INSERT_MXIPZ_H_H:
       [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_Q:
+      [[fallthrough]];
     case Opcode::AArch64_INSERT_MXIPZ_H_S:
       [[fallthrough]];
     case Opcode::AArch64_INSERT_MXIPZ_V_B:
@@ -246,6 +248,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_INSERT_MXIPZ_V_D:
       [[fallthrough]];
     case Opcode::AArch64_INSERT_MXIPZ_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_Q:
       [[fallthrough]];
     case Opcode::AArch64_INSERT_MXIPZ_V_S:
       // Need to add access specifiers
