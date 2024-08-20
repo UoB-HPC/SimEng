@@ -202,7 +202,7 @@ void Instruction::execute() {
             for (uint16_t elem = 0; elem < rowCount; elem++) {
               const uint64_t shifted_active_pm = 1ull << ((elem % 8) * 8);
               if (pm[elem / 8] & shifted_active_pm) {
-                out[elem] = zn[elem];
+                out[elem] = zn[row];
               }
             }
           }
@@ -238,7 +238,7 @@ void Instruction::execute() {
             for (uint16_t elem = 0; elem < rowCount; elem++) {
               const uint64_t shifted_active_pm = 1ull << ((elem % 16) * 4);
               if (pm[elem / 16] & shifted_active_pm) {
-                out[elem] = zn[elem];
+                out[elem] = zn[row];
               }
             }
           }
