@@ -641,7 +641,7 @@ void Instruction::decode() {
       (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
       (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
       (2405 <= metadata_.opcode &&
-       metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
+       metadata_.opcode <= 2408) ||  // all SME MOPS & MOPA variants
       (2405 <= metadata_.opcode && metadata_.opcode <= 2408) ||
       (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
       (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||

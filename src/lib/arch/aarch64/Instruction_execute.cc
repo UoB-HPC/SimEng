@@ -1365,7 +1365,7 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {  // MOVA zd.b, pg/m, zanh.b[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {  // mova zd.b, pg/m, zanh.b[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1393,7 +1393,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_H_D: {  // MOVA zd.d, pg/m, zanh.d[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_D: {  // mova zd.d, pg/m, zanh.d[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1421,7 +1421,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_H_H: {  // MOVA zd.h, pg/m, zanh.h[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_H: {  // mova zd.h, pg/m, zanh.h[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1449,7 +1449,41 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_H_S: {  // MOVA zd.s, pg/m, zanh.s[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_Q: {  // mova zd.q, pg/m, zanh.q[ws]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 128;
+        // Use uint64_t as no 128-bit
+        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const uint32_t sliceNum =
+            sourceValues_[2 + rowCount].get<uint32_t>() % rowCount;
+        // Use uint64_t as no 128-bit
+        const uint64_t* zaRow =
+            sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
+
+        // Use uint64_t as no 128-bit
+        uint64_t out[32] = {0};
+        for (int elem = 0; elem < rowCount; elem++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((elem % 4) * 16);
+          if (pg[elem / 4] & shifted_active) {
+            // Need to move two consecutive 64-bit elements
+            out[2 * elem] = zaRow[2 * elem];
+            out[2 * elem + 1] = zaRow[2 * elem + 1];
+          } else {
+            // Need to move two consecutive 64-bit elements
+            out[2 * elem] = zd[2 * elem];
+            out[2 * elem + 1] = zd[2 * elem + 1];
+          }
+        }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_H_S: {  // mova zd.s, pg/m, zanh.s[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1477,7 +1511,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_V_B: {  // MOVA zd.b, pg/m, zanv.b[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_V_B: {  // mova zd.b, pg/m, zanv.b[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1504,7 +1538,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_V_D: {  // MOVA zd.d, pg/m, zanv.d[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_V_D: {  // mova zd.d, pg/m, zanv.d[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1531,7 +1565,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_V_H: {  // MOVA zd.h, pg/m, zanv.h[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_V_H: {  // mova zd.h, pg/m, zanv.h[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -1558,7 +1592,40 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_EXTRACT_ZPMXI_V_S: {  // MOVA zd.s, pg/m, zanv.s[ws,
+      case Opcode::AArch64_EXTRACT_ZPMXI_V_Q: {  // mova zd.q, pg/m, zanv.q[ws]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 128;
+        // Use uint64_t as no 128-bit
+        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const uint32_t sliceNum =
+            sourceValues_[2 + rowCount].get<uint32_t>() % rowCount;
+
+        // Use uint64_t as no 128-bit
+        uint64_t out[32] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((elem % 4) * 16);
+          if (pg[elem / 4] & shifted_active) {
+            // Need to move two consecutive 64-bit elements
+            const uint64_t* zaRow =
+                sourceValues_[2 + elem].getAsVector<uint64_t>();
+            out[2 * elem] = zaRow[2 * sliceNum];
+            out[2 * elem + 1] = zaRow[2 * sliceNum + 1];
+          } else {
+            // Need to move two consecutive 64-bit elements
+            out[2 * elem] = zd[2 * elem];
+            out[2 * elem + 1] = zd[2 * elem + 1];
+          }
+        }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_EXTRACT_ZPMXI_V_S: {  // mova zd.s, pg/m, zanv.s[ws,
                                                  // #imm]
         // SME
         // Check core is in correct context mode (check SM first)
@@ -2922,7 +2989,7 @@ void Instruction::execute() {
         break;
       }
 
-      case Opcode::AArch64_INSERT_MXIPZ_H_B: {  // mova za0h.b[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_H_B: {  // mova zadh.b[ws, #imm], pg/m,
                                                 // zn.b
         // SME
         // Check core is in correct context mode (check SM first)
@@ -2954,7 +3021,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_H_D: {  // mova za0h.d[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_H_D: {  // mova zadh.d[ws, #imm], pg/m,
                                                 // zn.d
         // SME
         // Check core is in correct context mode (check SM first)
@@ -2987,7 +3054,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_H_H: {  // mova za0h.h[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_H_H: {  // mova zadh.h[ws, #imm], pg/m,
                                                 // zn.h
         // SME
         // Check core is in correct context mode (check SM first)
@@ -3020,7 +3087,47 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_H_S: {  // mova za0h.s[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_H_Q: {  // mova zadh.q[ws], pg/m, zn.q
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 128;
+        const uint32_t sliceNum =
+            sourceValues_[rowCount].get<uint32_t>() % rowCount;
+        // Use uint64_t in place of 128-bit
+        const uint64_t* zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
+
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        // Use uint64_t in place of 128-bit
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        // Use uint64_t in place of 128-bit
+        uint64_t out[32] = {0};
+        for (uint16_t elem = 0; elem < rowCount; elem++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((elem % 4) * 16);
+          if (pg[elem / 4] & shifted_active) {
+            // Need to move two consecutive 64-bit elements
+            out[(2 * elem)] = zn[(2 * elem)];
+            out[(2 * elem + 1)] = zn[(2 * elem + 1)];
+          } else {
+            // Need to move two consecutive 64-bit elements
+            out[(2 * elem)] = zaRow[(2 * elem)];
+            out[(2 * elem + 1)] = zaRow[(2 * elem + 1)];
+          }
+        }
+        // Need to update whole za tile
+        for (uint16_t row = 0; row < rowCount; row++) {
+          results_[row] =
+              (row == sliceNum) ? RegisterValue(out, 256) : sourceValues_[row];
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_H_S: {  // mova zadh.s[ws, #imm], pg/m,
                                                 // zn.s
         // SME
         // Check core is in correct context mode (check SM first)
@@ -3053,7 +3160,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_V_B: {  // mova za0v.b[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_V_B: {  // mova zadv.b[ws, #imm], pg/m,
                                                 // zn.b
         // SME
         // Check core is in correct context mode (check SM first)
@@ -3078,7 +3185,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_V_D: {  // mova za0v.d[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_V_D: {  // mova zadv.d[ws, #imm], pg/m,
                                                 // zn.d
         // SME
         // Check core is in correct context mode (check SM first)
@@ -3104,7 +3211,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_V_H: {  // mova za0v.h[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_V_H: {  // mova zadv.h[ws, #imm], pg/m,
                                                 // zn.h
         // SME
         // Check core is in correct context mode (check SM first)
@@ -3130,7 +3237,37 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_INSERT_MXIPZ_V_S: {  // mova za0v.s[ws, #imm], pg/m,
+      case Opcode::AArch64_INSERT_MXIPZ_V_Q: {  // mova zadv.q[ws], pg/m, zn.q
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 128;
+        const uint32_t sliceNum =
+            sourceValues_[rowCount].get<uint32_t>() % rowCount;
+        const uint64_t* pg =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        // Use uint64_t in place of 128-bit
+        const uint64_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+
+        for (uint16_t i = 0; i < rowCount; i++) {
+          // Use uint64_t in place of 128-bit
+          uint64_t* row =
+              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((i % 4) * 16);
+          if (pg[i / 4] & shifted_active) {
+            // Need to move two consecutive 64-bit elements
+            row[2 * sliceNum] = zn[2 * i];
+            row[2 * sliceNum + 1] = zn[2 * i + 1];
+          }
+          results_[i] = {(char*)row, 256};
+        }
+        break;
+      }
+      case Opcode::AArch64_INSERT_MXIPZ_V_S: {  // mova zadv.s[ws, #imm], pg/m,
                                                 // zn.s
         // SME
         // Check core is in correct context mode (check SM first)
