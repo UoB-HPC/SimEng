@@ -45,7 +45,7 @@ void RegressionTest::createArchitecture(const char* source, const char* triple,
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
   // The created process image can be accessed via a shared_ptr
-  // returned by the getProcessImage method.
+  // returned by the getProcessImage method
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
       simeng::span(reinterpret_cast<const uint8_t*>(code_), codeSize_));
 
@@ -55,11 +55,11 @@ void RegressionTest::createArchitecture(const char* source, const char* triple,
 
   // This instance of procImgPtr pointer needs to be shared because
   // getMemoryValue in RegressionTest.hh uses reference to the class
-  // member processMemory_.
+  // member processMemory_
   std::shared_ptr<char> procImgPtr = process_->getProcessImage();
   processMemory_ = procImgPtr.get();
 
-  // Populate the heap with initial data (specified by the test being run).
+  // Populate the heap with initial data (specified by the test being run)
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getInitialStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
@@ -94,7 +94,7 @@ void RegressionTest::createCore(const char* source, const char* triple,
 
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
-  // processImage is passed as an argument.
+  // processImage is passed as an argument
 
   ASSERT_TRUE(processMemory_ != nullptr);
 
