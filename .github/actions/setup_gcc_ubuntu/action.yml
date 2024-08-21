@@ -56,7 +56,7 @@ runs:
     - name: install cmake via apt
       shell: bash
       run: |
-        if [[ ${{ inputs.OS == 'ubuntu:18.04' }}]]; then
+        if [[ ${{ inputs.OS == 'ubuntu:18.04' }} ]]; then
           NAME=bionic
         else
           NAME=focal
