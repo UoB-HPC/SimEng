@@ -92,7 +92,7 @@ jobs:
       #######################################
       # Run Benchmark Tests.
       #######################################
-      - if: always()
+      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: run benchmarks
         uses: ./.github/actions/simeng_benchmarks
         with:

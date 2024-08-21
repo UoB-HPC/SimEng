@@ -10,19 +10,19 @@ jobs:
   LINUX_GCC_BUILD_TEST:
     uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
     with:
-      SIMENG-MODE: Release
+      SIMENG-MODE: Debug
     secrets: inherit
 
   MACOS_GCC_BUILD_TEST:
     uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
     with:
-      SIMENG-MODE: Release
+      SIMENG-MODE: Debug
     secrets: inherit
 
   MACOS_CLANG_BUILD_TEST:
     uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
     with:
-      SIMENG-MODE: Release
+      SIMENG-MODE: Debug
     secrets: inherit
 
   PERFORMANCE_REGRESSION:
