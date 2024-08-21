@@ -15,7 +15,7 @@ env:
 
 jobs:
   Build_and_Run:
-    runs-on: macos-13
+    runs-on: macos-14
     
     strategy:
       fail-fast: false
@@ -23,7 +23,7 @@ jobs:
         COMPILER: ['gcc-10'] # NOTE: only gcc 10 works with provided macos runners on github actions
 
 
-    name: ${{ inputs.SIMENG-MODE }} + "macos-13 + ${{ matrix.compiler }}"
+    name: ${{ inputs.SIMENG-MODE }} + "macos-14 + ${{ matrix.compiler }}"
 
     steps:
       #######################################

@@ -29,20 +29,20 @@ jobs:
     uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
     secrets: inherit
     
-  RERUN-FAILED:
-    runs-on: ubuntu-latest
-    needs:
-      - LINUX_GCC_BUILD_TEST
-      - MACOS_GCC_BUILD_TEST
-      - MACOS_CLANG_BUILD_TEST
-      - PERFORMANCE_REGRESSION
+  # RERUN-FAILED:
+  #   runs-on: ubuntu-latest
+  #   needs:
+  #     - LINUX_GCC_BUILD_TEST
+  #     - MACOS_GCC_BUILD_TEST
+  #     - MACOS_CLANG_BUILD_TEST
+  #     - PERFORMANCE_REGRESSION
       
-    if: failure()
-    steps:
-      - name: Rerun failed jobs in the current workflow
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh run rerun ${{ github.run_id }} --failed
+  #   if: failure()
+  #   steps:
+  #     - name: Rerun failed jobs in the current workflow
+  #       env:
+  #         GH_TOKEN: ${{ github.token }}
+  #       run: gh run rerun ${{ github.run_id }} --failed
 
   CLANG_FORMAT:
     needs: 
@@ -50,7 +50,7 @@ jobs:
       - MACOS_GCC_BUILD_TEST
       - MACOS_CLANG_BUILD_TEST
       - PERFORMANCE_REGRESSION
-      - RERUN-FAILED
+      # - RERUN-FAILED
 
     uses: ./.github/workflows/CLANG_FORMAT.yml
     secrets: inherit
