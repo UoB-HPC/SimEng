@@ -21,6 +21,8 @@ runs:
       run: |
         brew update
         brew upgrade
+        export PATH=/usr/local/opt/python/libexec/bin:$PATH
+        source ~/.bash_profile
         pip3 install pyparsing
         brew install make
 
