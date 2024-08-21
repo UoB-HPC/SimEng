@@ -2,6 +2,10 @@ name: MACOS_CLANG_BUILD_TEST
 
 on:
   workflow_call:
+    inputs:
+      SIMENG-MODE:
+        required: true
+        type: string
 
     
 env:
@@ -33,6 +37,7 @@ jobs:
           OS: 'macos'
           COMPILER: 'apple_clang'
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
+          MODE: ${{ inputs.SIMENG-MODE }}
 
       #######################################
       # Prints out info in isolated step for easy access.

@@ -12,6 +12,8 @@ inputs:
     required: true
   COMPILER: 
     required: true
+  MODE:
+    required: true
 
 runs:
   using: 'composite'
@@ -27,6 +29,7 @@ runs:
       with:
         OS: ${{ inputs.OS }}
         gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
     
     # rocky linux
     - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'rocky') }}
@@ -35,6 +38,7 @@ runs:
       with:
         OS: ${{ inputs.OS }}
         gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
 
     # red hat
     - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'redhat') }}
@@ -43,6 +47,7 @@ runs:
       with:
         OS: ${{ inputs.OS }}
         gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
 
     # debian
     - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'debian') }}
@@ -51,6 +56,7 @@ runs:
       with:
         OS: ${{ inputs.OS }}
         gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
     
     # macos
     - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'macos') }}
@@ -59,6 +65,7 @@ runs:
       with:
         OS: ${{ inputs.OS }}
         gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
         
     ##########################################
     # ARMCLANG jobs
@@ -79,3 +86,4 @@ runs:
       uses: ./.github/actions/setup_clang_macos
       with:
         OS: ${{ inputs.OS }}
+        MODE: ${{ inputs.mode }}

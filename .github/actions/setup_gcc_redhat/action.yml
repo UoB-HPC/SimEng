@@ -6,6 +6,8 @@ inputs:
     required: true
   gcc-version:
     required: true
+  MODE:
+    required: true
 
 runs:
   using: 'composite'
@@ -13,16 +15,45 @@ runs:
     #######################################
     # Install dependencies required (cmake, etc).
     #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf -y install \
+        gcc gcc-c++ make \
+        wget \
+        python3 \
+        git \
+        diffutils \
+        openssl-devel \
+        bzip2 \
+        automake \
+        autoconf \
+        cmake \
+        file \
+        zlib-devel 
 
-    - name: install dependencies
-      uses: ./.github/actions/setup_deps
-      with:
-        OS: ${{ inputs.OS }}
+        if [[ ${{  inputs.OS  }} == 'redhat/ubi8:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm 
+        elif [[ ${{  inputs.OS  }} == 'redhat/ubi9:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
+        fi
 
-    - name: install cmake
-      uses: ./.github/actions/setup_cmake
-      with: 
-        OS: ${{ inputs.OS }}
+        # add pyparsing for benchmarking
+        dnf install -y python3-pip
+        pip3 install pyparsing
+
+        dnf update -y
+        dnf upgrade -y 
+        dnf clean all
+
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake via DNF
+      shell: bash
+      run: |
+        dnf install -y cmake
 
     #######################################
     # Restore gcc 7 or 8 from cache.
@@ -85,7 +116,7 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.GCC_DIR }} -DCMAKE_CXX_COMPILER=${{ env.CPP_DIR }}
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.GCC_DIR }} -DCMAKE_CXX_COMPILER=${{ env.CPP_DIR }}
 
         cmake --build build -j $(nproc)
 

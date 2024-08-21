@@ -2,6 +2,10 @@ name: LINUX_GCC_BUILD_TEST
 
 on:
   workflow_call:
+    inputs:
+      SIMENG-MODE:
+        required: true
+        type: string
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -69,7 +73,8 @@ jobs:
 
     steps:
       #######################################
-      # Clones repo to workspace. (ubuntu 18 is missing correct glibc version for newer checkout action version i.e. use older checkout version)
+      # Clones repo to workspace. (ubuntu 18 is missing correct glibc version for newer checkout action version i.e. use older checkout version) 
+      # NOTE: may want to remove support for gcc-7 soon
       #######################################
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
         name: checkout v3
@@ -89,6 +94,7 @@ jobs:
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: ${{ matrix.OS }}
           COMPILER: ${{ matrix.COMPILER }}
+          MODE: ${{ inputs.SIMENG-MODE }}
 
       #######################################
       # Prints out info in isolated step for easy access.

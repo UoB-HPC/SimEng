@@ -6,22 +6,60 @@ inputs:
     required: true
   gcc-version:
     required: true
+  MODE:
+    required: true
 
 runs:
   using: 'composite'
   steps:
     #######################################
-    # Install dependencies required (cmake, etc).
+    # Install dependencies
     #######################################
     - name: install dependencies
-      uses: ./.github/actions/setup_deps
-      with:
-        OS: ${{ inputs.OS }}
+      shell: bash
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
 
-    - name: install cmake or restore from cache
-      uses: ./.github/actions/setup_cmake
-      with:
-        OS: ${{ inputs.OS }}
+        # Update package lists
+        apt-get update
+
+        # Install essential packages
+        apt-get install -y \
+          software-properties-common \
+          sudo \
+          wget \
+          zlib1g-dev \
+          python3 \
+          build-essential \
+          libssl-dev \
+          ninja-build \
+          tree \
+          git
+
+        # add pyparsing for benchmarking
+        apt-get install -y python3-pip
+        pip3 install pyparsing
+
+        # Add additional repositories
+        add-apt-repository universe
+        add-apt-repository ppa:ubuntu-toolchain-r/test
+
+        # Update package lists again after adding repositories
+        apt-get update
+
+        # Upgrade all installed packages
+        apt-get upgrade -y
+        
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake
+      shell: bash
+      run: |
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ focal main' && \
+        apt update && apt install cmake -y
+        apt upgrade -y
 
     #######################################
     # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason (installs some packages, not sure which ones prevent it, but it doesn't take long to run).
@@ -47,7 +85,7 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
 
         cmake --build build -j $(nproc)
 

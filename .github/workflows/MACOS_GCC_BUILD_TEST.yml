@@ -2,6 +2,10 @@ name: OS_BUILD_TEST_MACOS
 
 on:
   workflow_call:
+    inputs:
+      SIMENG-MODE:
+        required: true
+        type: string
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -37,6 +41,7 @@ jobs:
           LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: macos
           COMPILER: ${{ matrix.COMPILER }}
+          MODE: ${{ inputs.simeng-mode }}
 
       #######################################
       # Prints out info in isolated step for easy access.

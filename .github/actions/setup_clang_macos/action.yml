@@ -4,19 +4,20 @@ description: build and test simeng using clang compiler on apple
 inputs:
   OS:
     required: true
+  MODE:
+    required: true
 
 runs:
   using: 'composite'
   steps:
     #######################################
-    # Install dependencies required (cmake, etc).
+    # Install dependencies required 
     #######################################
-
-    - name: install dependencies
-      uses: ./.github/actions/setup_deps
-      with:
-        OS: ${{ inputs.OS }}
-
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip3 install pyparsing
+        brew install make
 
     #######################################
     # Clang is already installed with xcode
@@ -34,7 +35,7 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.APPLE_CLANG_DIR }} \
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.APPLE_CLANG_DIR }} \
           -DCMAKE_CXX_COMPILER=${{ env.APPLE_CLANG_PLUS_PLUS_DIR }}
 
         cmake --build build -j $(sysctl -n hw.ncpu)

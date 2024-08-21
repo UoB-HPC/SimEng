@@ -6,6 +6,8 @@ inputs:
     required: true
   gcc-version:
     required: true
+  MODE:
+    required: true
 
 runs:
   using: 'composite'
@@ -13,15 +15,46 @@ runs:
     #######################################
     # Install dependencies required (cmake, etc).
     #######################################
-    - name: install dependencies
-      uses: ./.github/actions/setup_deps
-      with:
-        OS: ${{ inputs.OS }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
 
-    - name: install cmake or restore from cache
-      uses: ./.github/actions/setup_cmake
-      with:
-        OS: ${{ inputs.OS }}
+        # Update package lists
+        apt-get update
+
+        # Install essential packages
+        apt-get install -y \
+          python3-launchpadlib \
+          software-properties-common \
+          build-essential \
+          sudo \
+          wget \
+          zlib1g-dev \
+          python3 \
+          build-essential \
+          libssl-dev \
+          ninja-build \
+          tree \
+          git
+
+        # add pyparsing for benchmarking
+        apt-get install -y python3-pip
+        pip3 install pyparsing
+
+        apt-get update
+        apt-get upgrade -y
+      
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake via apt
+      shell: bash
+      run: |
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main' && \
+        apt update && apt install cmake -y
+        apt upgrade -y
 
     #######################################
     # Restore gcc from cache.
@@ -83,7 +116,7 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=$GCC_DIR -DCMAKE_CXX_COMPILER=$CPP_DIR
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=$GCC_DIR -DCMAKE_CXX_COMPILER=$CPP_DIR
 
         cmake --build build -j $(nproc)
 

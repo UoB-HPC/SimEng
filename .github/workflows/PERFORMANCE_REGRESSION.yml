@@ -7,10 +7,6 @@ env:
 
 on:
   workflow_call:
-    inputs:
-      simeng-mode:
-        required: true
-        type: string
 
 jobs:
   Compare_Performances:
