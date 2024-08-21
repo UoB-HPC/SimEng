@@ -2,9 +2,6 @@ name: LINUX_GCC_BUILD_TEST
 
 on:
   workflow_call:
-    secrets: 
-      SIMENGUOB_PAT: 
-        required: true
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -15,6 +12,7 @@ env:
 
 jobs:
   Build_and_Run:
+    runs-on: ubuntu-latest
     
     strategy:
       fail-fast: false
@@ -63,7 +61,6 @@ jobs:
     #######################################
     # Choose container and set name of workflow
     #######################################
-    runs-on: ubuntu-latest
     
     container:
       image: ${{ matrix.OS }}

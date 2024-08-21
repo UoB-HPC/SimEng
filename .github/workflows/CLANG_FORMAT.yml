@@ -9,15 +9,23 @@ jobs:
       name: clang format
 
       steps:
+
         - name: Install clang format
           run: |
-            apt-get install -y clang-format
+            sudo apt-get update
+            sudo apt-get upgrade
+            sudo apt-get install -y clang-format
+
+            clang-format --version
+
+        - name: checkout
+          uses: actions/checkout@v4
 
         - name: Apply clang format
           run: |
             SRC_LIST="$(find "./src" | grep -E ".*(\.cc$|\.hh$)")"
             TEST_LIST="$(find "./test" | grep -E ".*(\.cc$|\.hh$)")";
-            clang-format --verbose -i $SRC_LIST $TEST_LIST
+            sudo clang-format --verbose -i $SRC_LIST $TEST_LIST -style=file
         
         # push changes if clang-format did anything
         - name: Check for changes
@@ -26,8 +34,7 @@ jobs:
               echo "Code formatting issues found."
               git config --global user.name 'github-actions-clang-format'
               git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-              git add .
-              git commit -am "Apply clang-format"
+              git commit -am "Applied clang-format"
               git push
             else
               echo "No code formatting issues."
