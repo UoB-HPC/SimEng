@@ -19,7 +19,7 @@ jobs:
   Build_and_Run:
     runs-on: macos-13
 
-    name: "macos-13 + apple_clang"
+    name: ${{ inputs.SIMENG-MODE }} + "macos-13 + apple_clang"
 
     steps:
       #######################################

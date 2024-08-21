@@ -19,33 +19,26 @@ runs:
       shell: bash
       run: |
         dnf -y update && \
-        dnf -y install \
-        gcc gcc-c++ make \
-        wget \
-        python3 \
-        git \
-        diffutils \
-        openssl-devel \
-        bzip2 \
-        automake \
-        autoconf \
-        cmake \
-        file \
-        zlib-devel 
-
-        if [[ ${{  inputs.OS  }} == 'redhat/ubi8:latest' ]]; then
-          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm 
-        elif [[ ${{  inputs.OS  }} == 'redhat/ubi9:latest' ]]; then
-          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
-        fi
+        dnf install -y epel-release \
+          gcc gcc-c++ make \
+          git \
+          wget \
+          openssl-devel \
+          automake \
+          autoconf \
+          bzip2 \
+          file \
+          sudo \
+          tree \
+          zlib-devel
 
         # add pyparsing for benchmarking
         dnf install -y python3-pip
         pip3 install pyparsing
 
+        dnf group install -y "Development Tools"
         dnf update -y
-        dnf upgrade -y 
-        dnf clean all
+        dnf upgrade -y
 
     #######################################
     # Install Cmake

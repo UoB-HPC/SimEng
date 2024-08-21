@@ -69,7 +69,7 @@ jobs:
     container:
       image: ${{ matrix.OS }}
 
-    name: ${{ matrix.OS }} + ${{ matrix.compiler }}
+    name: ${{ inputs.SIMENG-MODE }} + ${{ matrix.OS }} + ${{ matrix.compiler }}
 
     steps:
       #######################################

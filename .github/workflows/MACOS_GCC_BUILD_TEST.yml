@@ -23,7 +23,7 @@ jobs:
         COMPILER: ['gcc-10'] # NOTE: only gcc 10 works with provided macos runners on github actions
 
 
-    name: "macos-13 + ${{ matrix.compiler }}"
+    name: ${{ inputs.SIMENG-MODE }} + "macos-13 + ${{ matrix.compiler }}"
 
     steps:
       #######################################
