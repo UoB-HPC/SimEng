@@ -7,9 +7,13 @@ env:
 
 on:
   workflow_call:
+    inputs:
+      simeng-mode:
+        required: true
+        type: string
 
 jobs:
-  Build_and_Run:
+  Compare_Performances:
     runs-on: ubuntu-latest
 
     steps:
@@ -68,142 +72,6 @@ jobs:
           token: ${{ env.PAT }}
           path: simeng-benchmarks
 
-      # #######################################
-      # # Cloverleaf
-      # #######################################
-      # - name: check for previous cloverleaf time in cache
-      #   uses: actions/cache/restore@v4
-      #   id: cloverleaf_restore
-      #   with:
-      #     path: ./cloverleaf_benchmark_out.txt
-      #     key: cloverleaf_benchmark_out
-      
-      # - name: run cloverleaf_gcc10.3.0_armv8.4+sve & compare runtimes
-      #   id: cloverleaf_run
-      #   shell: bash
-      #   run: |
-      #     if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       previous_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-      #     else
-      #       previous_time="No Previous Time"
-      #     fi
-
-      #     sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve > cloverleaf_benchmark_out.txt
-          
-      #     current_time=$(grep 'ticks in' cloverleaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-
-      #     echo "CLOVERLEAF_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
-      #     echo "CLOVERLEAF_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
-
-      #     if [[ ${{ steps.cloverleaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       difference=$((current_time-previous_time))
-      #       echo "CLOVERLEAF_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
-      #     else
-      #       echo "CLOVERLEAF_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
-      #     fi
-
-      # #######################################
-      # # miniBUDE
-      # #######################################
-      # - name: check for previous minibude time in cache
-      #   uses: actions/cache/restore@v4
-      #   id: miniBUDE_restore
-      #   with:
-      #     path: ./miniBUDE_benchmark_out.txt
-      #     key: minibude_benchmark_out
-      
-      # - name: run minibude_gcc10.3.0_armv8.4+sve & compare runtimes
-      #   id: minibude_run
-      #   shell: bash
-      #   run: |
-      #     if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       previous_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-      #     else
-      #       previous_time="No Previous Time"
-      #     fi
-
-      #     sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve > miniBUDE_benchmark_out.txt
-          
-      #     current_time=$(grep 'ticks in' miniBUDE_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-
-      #     echo "MINIBUDE_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
-      #     echo "MINIBUDE_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
-
-      #     if [[ ${{ steps.miniBUDE_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       difference=$((current_time-previous_time))
-      #       echo "MINIBUDE_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
-      #     else
-      #       echo "MINIBUDE_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
-      #     fi
-
-      # #######################################
-      # # STREAM
-      # #######################################
-      # - name: check for previous stream time in cache
-      #   uses: actions/cache/restore@v4
-      #   id: stream_restore
-      #   with:
-      #     path: ./stream_benchmark_out.txt
-      #     key: stream_benchmark_out
-      
-      # - name: run stream_gcc10.3.0_armv8.4+sve & compare runtimes
-      #   id: stream_run
-      #   shell: bash
-      #   run: |
-      #     if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       previous_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-      #     else
-      #       previous_time="No Previous Time"
-      #     fi
-
-      #     sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve > stream_benchmark_out.txt
-          
-      #     current_time=$(grep 'ticks in' stream_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-
-      #     echo "STREAM_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
-      #     echo "STREAM_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
-
-      #     if [[ ${{ steps.stream_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       difference=$((current_time-previous_time))
-      #       echo "STREAM_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
-      #     else
-      #       echo "STREAM_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
-      #     fi
-
-      # #######################################
-      # # TeaLeaf
-      # #######################################
-      # - name: check for previous tealeaf time in cache
-      #   uses: actions/cache/restore@v4
-      #   id: tealeaf_restore
-      #   with:
-      #     path: ./tealeaf_benchmark_out.txt
-      #     key: tealeaf_benchmark_out
-      
-      # - name: run tealeaf_gcc10.3.0_armv8.4+sve & compare runtimes
-      #   id: tealeaf_run
-      #   shell: bash
-      #   run: |
-      #     if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       previous_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-      #     else
-      #       previous_time="No Previous Time"
-      #     fi
-
-      #     sudo simeng ./configs/a64fx.yaml ./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve > tealeaf_benchmark_out.txt
-          
-      #     current_time=$(grep 'ticks in' tealeaf_benchmark_out.txt | awk '{print substr($6, 1, length($6)-2)}')
-
-      #     echo "TEALEAF_CURRENT_TIME=${current_time}" >> $GITHUB_ENV
-      #     echo "TEALEAF_PREVIOUS_TIME=${previous_time}" >> $GITHUB_ENV
-
-      #     if [[ ${{ steps.tealeaf_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
-      #       difference=$((current_time-previous_time))
-      #       echo "TEALEAF_DIFFERENCE=${difference#-}" >> $GITHUB_ENV
-      #     else
-      #       echo "TEALEAF_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
-      #     fi
-      
       #######################################
       # Cloverleaf
       #######################################
