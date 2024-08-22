@@ -27,6 +27,12 @@ class GenericPredictor : public BranchPredictor {
   GenericPredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
   ~GenericPredictor();
 
+  /** Generate a branch prediction for the supplied instruction address, a
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
+  BranchPrediction predict(uint64_t address, BranchType type,
+                           int64_t knownOffset) override;
+
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
    * branches in program order.  To check this, instructionId is also passed
@@ -42,12 +48,6 @@ class GenericPredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
-  /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset.  Returns a branch direction and
-   * branch target address. */
-  BranchPrediction makePrediction(uint64_t address, BranchType type,
-                                  int64_t knownOffset) override;
-
   /** The bitlength of the BTB index; BTB will have 2^bits entries. */
   uint8_t btbBits_;
 

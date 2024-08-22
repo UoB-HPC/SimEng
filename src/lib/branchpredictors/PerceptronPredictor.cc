@@ -35,6 +35,70 @@ PerceptronPredictor::~PerceptronPredictor() {
   ftq_.clear();
 }
 
+BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
+                                              int64_t knownOffset) {
+  // Get the hashed index for the prediction table.  XOR the global history with
+  // the non-zero bits of the address, and then keep only the btbBits_ bits of
+  // the output to keep it in bounds of the prediction table.
+  // The address is shifted to remove the two least-significant bits as these
+  // are always 0 in an ISA with 4-byte aligned instructions.
+  uint64_t hashedIndex =
+      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+
+  // Retrieve the perceptron from the BTB
+  std::vector<int8_t> perceptron = btb_[hashedIndex].first;
+
+  // Get dot product of perceptron and history
+  int64_t Pout = getDotProduct(perceptron, globalHistory_);
+
+  // Determine direction prediction based on its sign
+  bool direction = (Pout >= 0);
+
+  // If there is a known offset then calculate target accordingly, otherwise
+  // retrieve the target prediction from the btb.
+  uint64_t target =
+      (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
+
+  BranchPrediction prediction = {direction, target};
+
+  // Amend prediction based on branch type
+  if (type == BranchType::Unconditional) {
+    prediction.isTaken = true;
+  } else if (type == BranchType::Return) {
+    prediction.isTaken = true;
+    // Return branches can use the RAS if an entry is available
+    if (ras_.size() > 0) {
+      prediction.target = ras_.back();
+      // Record top of RAS used for target prediction
+      rasHistory_[address] = ras_.back();
+      ras_.pop_back();
+    }
+  } else if (type == BranchType::SubroutineCall) {
+    prediction.isTaken = true;
+    // Subroutine call branches must push their associated return address to RAS
+    if (ras_.size() >= rasSize_) {
+      ras_.pop_front();
+    }
+    ras_.push_back(address + 4);
+    // Record that this address is a branch-and-link instruction
+    rasHistory_[address] = 0;
+  } else if (type == BranchType::Conditional) {
+    if (!prediction.isTaken) prediction.target = address + 4;
+  }
+
+  // Store the Pout and global history for correct update() --
+  // needs to be global history and not the hashed index as hashing loses
+  // information and the global history is required for updating perceptrons.
+  ftq_.emplace_back(Pout, globalHistory_);
+
+  // Speculatively update the global history based on the direction
+  // prediction being made
+  globalHistory_ =
+      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
+
+  return prediction;
+}
+
 void PerceptronPredictor::update(uint64_t address, bool isTaken,
                                  uint64_t targetAddress, BranchType type,
                                  uint64_t instructionId) {
@@ -120,71 +184,6 @@ void PerceptronPredictor::flush(uint64_t address) {
 
   // Roll back global history
   globalHistory_ >>= 1;
-}
-
-BranchPrediction PerceptronPredictor::makePrediction(uint64_t address,
-                                                     BranchType type,
-                                                     int64_t knownOffset) {
-  // Get the hashed index for the prediction table.  XOR the global history with
-  // the non-zero bits of the address, and then keep only the btbBits_ bits of
-  // the output to keep it in bounds of the prediction table.
-  // The address is shifted to remove the two least-significant bits as these
-  // are always 0 in an ISA with 4-byte aligned instructions.
-  uint64_t hashedIndex =
-      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
-
-  // Retrieve the perceptron from the BTB
-  std::vector<int8_t> perceptron = btb_[hashedIndex].first;
-
-  // Get dot product of perceptron and history
-  int64_t Pout = getDotProduct(perceptron, globalHistory_);
-
-  // Determine direction prediction based on its sign
-  bool direction = (Pout >= 0);
-
-  // If there is a known offset then calculate target accordingly, otherwise
-  // retrieve the target prediction from the btb.
-  uint64_t target =
-      (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
-
-  BranchPrediction prediction = {direction, target};
-
-  // Amend prediction based on branch type
-  if (type == BranchType::Unconditional) {
-    prediction.isTaken = true;
-  } else if (type == BranchType::Return) {
-    prediction.isTaken = true;
-    // Return branches can use the RAS if an entry is available
-    if (ras_.size() > 0) {
-      prediction.target = ras_.back();
-      // Record top of RAS used for target prediction
-      rasHistory_[address] = ras_.back();
-      ras_.pop_back();
-    }
-  } else if (type == BranchType::SubroutineCall) {
-    prediction.isTaken = true;
-    // Subroutine call branches must push their associated return address to RAS
-    if (ras_.size() >= rasSize_) {
-      ras_.pop_front();
-    }
-    ras_.push_back(address + 4);
-    // Record that this address is a branch-and-link instruction
-    rasHistory_[address] = 0;
-  } else if (type == BranchType::Conditional) {
-    if (!prediction.isTaken) prediction.target = address + 4;
-  }
-
-  // Store the Pout and global history for correct update() --
-  // needs to be global history and not the hashed index as hashing loses
-  // information and the global history is required for updating perceptrons.
-  ftq_.emplace_back(Pout, globalHistory_);
-
-  // Speculatively update the global history based on the direction
-  // prediction being made
-  globalHistory_ =
-      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
-
-  return prediction;
 }
 
 int64_t PerceptronPredictor::getDotProduct(

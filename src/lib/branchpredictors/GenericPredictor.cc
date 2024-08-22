@@ -37,6 +37,56 @@ GenericPredictor::~GenericPredictor() {
   ftq_.clear();
 }
 
+BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
+                                           int64_t knownOffset) {
+  // Get index via an XOR hash between the global history and the instruction
+  // address. This hash is then ANDed to keep it within bounds of the btb.
+  // The address is shifted to remove the two least-significant bits as these
+  // are always 0 in an ISA with 4-byte aligned instructions.
+  uint64_t hashedIndex =
+      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+
+  // Get prediction from BTB
+  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
+  uint64_t target =
+      (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
+  BranchPrediction prediction = {direction, target};
+
+  // Amend prediction based on branch type
+  if (type == BranchType::Unconditional) {
+    prediction.isTaken = true;
+  } else if (type == BranchType::Return) {
+    prediction.isTaken = true;
+    // Return branches can use the RAS if an entry is available
+    if (ras_.size() > 0) {
+      prediction.target = ras_.back();
+      // Record top of RAS used for target prediction
+      rasHistory_[address] = ras_.back();
+      ras_.pop_back();
+    }
+  } else if (type == BranchType::SubroutineCall) {
+    prediction.isTaken = true;
+    // Subroutine call branches must push their associated return address to RAS
+    if (ras_.size() >= rasSize_) {
+      ras_.pop_front();
+    }
+    ras_.push_back(address + 4);
+    // Record that this address is a branch-and-link instruction
+    rasHistory_[address] = 0;
+  } else if (type == BranchType::Conditional) {
+    if (!prediction.isTaken) prediction.target = address + 4;
+  }
+
+  // Store the hashed index for correct hashing in update()
+  ftq_.emplace_back(prediction.isTaken, hashedIndex);
+
+  // Speculatively update the global history
+  globalHistory_ =
+      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
+
+  return prediction;
+}
+
 void GenericPredictor::update(uint64_t address, bool isTaken,
                               uint64_t targetAddress, BranchType type,
                               uint64_t instructionId) {
@@ -102,56 +152,5 @@ void GenericPredictor::flush(uint64_t address) {
 
   // Roll back global history
   globalHistory_ >>= 1;
-}
-
-BranchPrediction GenericPredictor::makePrediction(uint64_t address,
-                                                  BranchType type,
-                                                  int64_t knownOffset) {
-  // Get index via an XOR hash between the global history and the instruction
-  // address. This hash is then ANDed to keep it within bounds of the btb.
-  // The address is shifted to remove the two least-significant bits as these
-  // are always 0 in an ISA with 4-byte aligned instructions.
-  uint64_t hashedIndex =
-      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
-
-  // Get prediction from BTB
-  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
-  uint64_t target =
-      (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
-  BranchPrediction prediction = {direction, target};
-
-  // Amend prediction based on branch type
-  if (type == BranchType::Unconditional) {
-    prediction.isTaken = true;
-  } else if (type == BranchType::Return) {
-    prediction.isTaken = true;
-    // Return branches can use the RAS if an entry is available
-    if (ras_.size() > 0) {
-      prediction.target = ras_.back();
-      // Record top of RAS used for target prediction
-      rasHistory_[address] = ras_.back();
-      ras_.pop_back();
-    }
-  } else if (type == BranchType::SubroutineCall) {
-    prediction.isTaken = true;
-    // Subroutine call branches must push their associated return address to RAS
-    if (ras_.size() >= rasSize_) {
-      ras_.pop_front();
-    }
-    ras_.push_back(address + 4);
-    // Record that this address is a branch-and-link instruction
-    rasHistory_[address] = 0;
-  } else if (type == BranchType::Conditional) {
-    if (!prediction.isTaken) prediction.target = address + 4;
-  }
-
-  // Store the hashed index for correct hashing in update()
-  ftq_.emplace_back(prediction.isTaken, hashedIndex);
-
-  // Speculatively update the global history
-  globalHistory_ =
-      ((globalHistory_ << 1) | prediction.isTaken) & globalHistoryMask_;
-
-  return prediction;
 }
 }  // namespace simeng

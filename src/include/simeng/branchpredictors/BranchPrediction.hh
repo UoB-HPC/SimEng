@@ -25,18 +25,12 @@ struct BranchPrediction {
 
   /** Check for equality of two branch predictions . */
   bool operator==(const BranchPrediction& other) {
-    if ((isTaken == other.isTaken) && (target == other.target))
-      return true;
-    else
-      return false;
+    return ((isTaken == other.isTaken) && (target == other.target));
   }
 
   /** Check for inequality of two branch predictions . */
   bool operator!=(const BranchPrediction& other) {
-    if ((isTaken != other.isTaken) || (target != other.target))
-      return true;
-    else
-      return false;
+    return ((isTaken != other.isTaken) || (target != other.target));
   }
 };
 

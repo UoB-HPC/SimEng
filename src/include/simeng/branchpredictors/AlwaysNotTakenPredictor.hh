@@ -8,6 +8,11 @@ namespace simeng {
  * taken. */
 class AlwaysNotTakenPredictor : public BranchPredictor {
  public:
+  /** Generate a branch prediction for the specified instruction address; will
+   * always predict not taken. */
+  BranchPrediction predict(uint64_t address, BranchType type,
+                           int64_t knownOffset) override;
+
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
    * branches in program order.  To check this, instructionId is also passed
@@ -20,10 +25,6 @@ class AlwaysNotTakenPredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
-  /** Generate a branch prediction for the specified instruction address; will
-   * always predict not taken. */
-  BranchPrediction makePrediction(uint64_t address, BranchType type,
-                                  int64_t knownOffset) override;
 };
 
 }  // namespace simeng
