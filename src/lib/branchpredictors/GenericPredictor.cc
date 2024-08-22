@@ -104,7 +104,7 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[hashedIndex].first;
   // Only alter value if it would transition to a valid state
-  if (!((satCntVal == ((uint8_t)1 << satCntBits_) - 1) && isTaken) &&
+  if (!((satCntVal == (1 << satCntBits_) - 1) && isTaken) &&
       !(satCntVal == 0 && !isTaken)) {
     satCntVal += isTaken ? 1 : -1;
   }
