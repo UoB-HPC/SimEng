@@ -44,10 +44,10 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   // The address is shifted to remove the two least-significant bits as these
   // are always 0 in an ISA with 4-byte aligned instructions.
   uint64_t hashedIndex =
-      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+      ((address >> 2) ^ globalHistory_) & ((1ull << btbBits_) - 1);
 
   // Get prediction from BTB
-  bool direction = btb_[hashedIndex].first >= (1 << (satCntBits_ - 1));
+  bool direction = btb_[hashedIndex].first >= (1ull << (satCntBits_ - 1));
   uint64_t target =
       (knownOffset != 0) ? address + knownOffset : btb_[hashedIndex].second;
   BranchPrediction prediction = {direction, target};
@@ -104,7 +104,7 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[hashedIndex].first;
   // Only alter value if it would transition to a valid state
-  if (!((satCntVal == (1 << satCntBits_) - 1) && isTaken) &&
+  if (!((satCntVal == ((uint8_t)1 << satCntBits_) - 1) && isTaken) &&
       !(satCntVal == 0 && !isTaken)) {
     satCntVal += isTaken ? 1 : -1;
   }
@@ -119,7 +119,7 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
   if (prevPrediction != isTaken) {
     // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
-    globalHistory_ ^= (1 << (ftq_.size()));
+    globalHistory_ ^= (1ull << (ftq_.size()));
   }
 }
 
