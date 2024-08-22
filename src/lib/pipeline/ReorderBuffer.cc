@@ -36,20 +36,18 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
-    uint64_t firstOp = UINT64_MAX;
+    int64_t firstOp = -1;
     bool validForCommit = false;
-    bool foundFirstInstance = false;
 
     // Find first instance of uop belonging to macro-op instruction
     for (; index < buffer_.size(); index++) {
       if (buffer_[index]->getInstructionId() == insnId) {
         firstOp = index;
-        foundFirstInstance = true;
         break;
       }
     }
 
-    if (foundFirstInstance) {
+    if (firstOp > -1) {
       // If found, see if all uops are committable
       for (; index < buffer_.size(); index++) {
         if (buffer_[index]->getInstructionId() != insnId) break;
@@ -62,7 +60,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       }
       if (!validForCommit) return;
 
-      assert(firstOp != UINT64_MAX && "firstOp hasn't been populated");
+      assert(firstOp > -1 && "firstOp hasn't been populated");
       // No early return thus all uops are committable
       for (; firstOp < buffer_.size(); firstOp++) {
         if (buffer_[firstOp]->getInstructionId() != insnId) break;
@@ -81,6 +79,19 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
+    if (uop->getInstructionAddress() == last_inst_addr) {
+      inst_repeat_counter++;
+    } else {
+      inst_repeat_counter = 0;
+    }
+    if (inst_repeat_counter > 10000000) {
+      std::cout << "Infinite loop detected in rob commit at instruction address "
+                << std::hex << uop->getInstructionAddress() << std::dec << " ("
+                << uop->getMicroOpIndex() << "). Killing.\n";
+      exit(1);
+    }
+    last_inst_addr = uop->getInstructionAddress();
+
     if (!uop->canCommit()) {
       break;
     }
@@ -97,7 +108,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     for (size_t i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
-
+    
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
@@ -208,3 +219,4 @@ uint64_t ReorderBuffer::getViolatingLoadsCount() const {
 
 }  // namespace pipeline
 }  // namespace simeng
+

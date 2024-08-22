@@ -1839,6 +1839,10 @@ void Instruction::execute() {
         results_[0] = vecFDiv<double, 2>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_FDIVv4f32: {  // fdiv vd.4s, vn.4s, vm.4s
+        results_[0] = vecFDiv<float, 4>(sourceValues_);
+        break;
+      }
       case Opcode::AArch64_FDUP_ZI_D: {  // fdup zd.d, #imm
         results_[0] =
             sveDup_immOrScalar<double>(sourceValues_, metadata_, VL_bits, true);

@@ -118,6 +118,12 @@ class ReorderBuffer {
    */
   uint64_t pc_;
 
+  /** The address of the last instruction at the head of the ROB to check if it's stuck */
+  uint64_t last_inst_addr = 0;
+
+  /** A counter for how many cycles the same instruction has been at the head of the ROB */
+  uint64_t inst_repeat_counter = 0;
+
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
   uint64_t flushAfter_;
