@@ -8,7 +8,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
           config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
   // Build BTB based on config options
-  uint32_t btbSize = (1 << btbBits_);
+  uint32_t btbSize = (1ul << btbBits_);
   btb_.resize(btbSize);
 
   // Initialise perceptron values with 0 for the global history weights, and 1
@@ -26,7 +26,7 @@ PerceptronPredictor::PerceptronPredictor(ryml::ConstNodeRef config)
   // bits are stored in the global history. This is two times the
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
-  globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
+  globalHistoryMask_ = (1ull << (globalHistoryLength_ * 2)) - 1;
 }
 
 PerceptronPredictor::~PerceptronPredictor() {
@@ -43,7 +43,7 @@ BranchPrediction PerceptronPredictor::predict(uint64_t address, BranchType type,
   // The address is shifted to remove the two least-significant bits as these
   // are always 0 in an ISA with 4-byte aligned instructions.
   uint64_t hashedIndex =
-      ((address >> 2) ^ globalHistory_) & ((1 << btbBits_) - 1);
+      ((address >> 2) ^ globalHistory_) & ((1ull << btbBits_) - 1);
 
   // Retrieve the perceptron from the BTB
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
@@ -116,7 +116,7 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
 
   // Work out hashed index
   uint64_t hashedIndex =
-      ((address >> 2) ^ prevGlobalHistory) & ((1 << btbBits_) - 1);
+      ((address >> 2) ^ prevGlobalHistory) & ((1ull << btbBits_) - 1);
 
   std::vector<int8_t> perceptron = btb_[hashedIndex].first;
 
@@ -130,10 +130,10 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
     int8_t t = (isTaken) ? 1 : -1;
 
     for (uint64_t i = 0; i < globalHistoryLength_; i++) {
-      int8_t xi =
-          ((prevGlobalHistory & (1 << ((globalHistoryLength_ - 1) - i))) == 0)
-              ? -1
-              : 1;
+      int8_t xi = ((prevGlobalHistory &
+                    (1ull << ((globalHistoryLength_ - 1) - i))) == 0)
+                      ? -1
+                      : 1;
       int8_t product_xi_t = xi * t;
       // Make sure no overflow (+-127)
       if (!(perceptron[i] == 127 && product_xi_t == 1) &&
@@ -152,7 +152,7 @@ void PerceptronPredictor::update(uint64_t address, bool isTaken,
   // Update global history if prediction was incorrect
   // Bit-flip the global history bit corresponding to this prediction
   // We know how many predictions there have since been by the size of the FTQ
-  if (directionPrediction != isTaken) globalHistory_ ^= (1 << (ftq_.size()));
+  if (directionPrediction != isTaken) globalHistory_ ^= (1ull << (ftq_.size()));
 }
 
 void PerceptronPredictor::flush(uint64_t address) {
@@ -192,7 +192,7 @@ int64_t PerceptronPredictor::getDotProduct(
   for (uint64_t i = 0; i < globalHistoryLength_; i++) {
     // Get branch direction for ith entry in the history
     bool historyTaken =
-        ((history & (1 << ((globalHistoryLength_ - 1) - i))) != 0);
+        ((history & (1ull << ((globalHistoryLength_ - 1) - i))) != 0);
     Pout += historyTaken ? perceptron[i] : (0 - perceptron[i]);
   }
   return Pout;
