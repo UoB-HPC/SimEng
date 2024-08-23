@@ -21,13 +21,14 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
                           : (weaklyTaken - 1);
   // Create branch prediction structures
   btb_ =
-      std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
+      std::vector<std::pair<uint8_t, uint64_t>>(1ull << btbBits_,
+                                                {satCntVal, 0});
 
   // Generate a bitmask that is used to ensure only the relevant number of
   // bits are stored in the global history. This is two times the
   // globalHistoryLength_ to allow rolling back of the speculatively updated
   // global history in the event of a misprediction.
-  globalHistoryMask_ = (1 << (globalHistoryLength_ * 2)) - 1;
+  globalHistoryMask_ = (1ull << (globalHistoryLength_ * 2)) - 1;
 }
 
 GenericPredictor::~GenericPredictor() {

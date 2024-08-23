@@ -36,7 +36,7 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts a reference to a PipelineBuffer of microOps.
+   * PipelineBuffer. Accepts a pointer to a PipelineBuffer of microOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
@@ -57,7 +57,7 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts a reference to a PipelineBuffer macroOps.
+   * PipelineBuffer. Accepts a pointer to a PipelineBuffer macroOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
