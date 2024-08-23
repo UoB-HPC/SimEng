@@ -59,9 +59,6 @@ class Core : public simeng::Core {
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
-  /** An internal buffer for storing one or more uops. */
-  std::queue<std::shared_ptr<Instruction>> microOps_;
-
   /** The previously generated addresses. */
   std::vector<simeng::memory::MemoryAccessTarget> previousAddresses_;
 
@@ -70,9 +67,6 @@ class Core : public simeng::Core {
 
   /** The length of the available instruction memory. */
   uint64_t programByteLength_ = 0;
-
-  /** Is the core waiting on a data read? */
-  uint64_t pendingReads_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;

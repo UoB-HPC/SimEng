@@ -39,9 +39,10 @@ Core::Core(memory::MemoryInterface& instructionMemory,
 }
 
 void Core::tick() {
-  ticks_++;
-
   if (hasHalted_) return;
+
+  ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -104,7 +105,6 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const {

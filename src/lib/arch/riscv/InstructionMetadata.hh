@@ -35,6 +35,9 @@ struct InstructionMetadata {
     return metadataExceptionEncountered_;
   }
 
+  /* Return extra information about the exception */
+  std::string getExceptionString() const { return exceptionString_; }
+
   /* Returns the length of the instruction in bytes. */
   uint8_t getInsnLength() const { return insnLengthBytes_; }
 
@@ -100,6 +103,10 @@ struct InstructionMetadata {
   /** Flag the instruction as aliasNYI due to a detected unsupported alias. */
   void aliasNYI();
 
+  /** Flag the instruction as illegal and provide some extra information via a
+   * string */
+  void illegalAlias(std::string info);
+
   /** RISC-V helper function
    * Use register zero as operands[1] and immediate value as operands[2] */
   void includeZeroRegisterPosOne();
@@ -122,6 +129,9 @@ struct InstructionMetadata {
 
   /** Whether an exception has been encountered. */
   bool metadataExceptionEncountered_ = false;
+
+  /** Additional information to print to the user */
+  std::string exceptionString_ = "";
 
   /** The length of the instruction encoding in bytes. */
   uint8_t insnLengthBytes_;
