@@ -36,19 +36,19 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts a pointer to a PipelineBuffer of microOps.
+   * PipelineBuffer. Accepts a reference to a PipelineBuffer of microOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
   void flushBranchesInBufferFromSelf(
-      pipeline::PipelineBuffer<std::shared_ptr<Instruction>>* buffer) {
-    for (size_t slot = 0; slot < buffer->getWidth(); slot++) {
-      auto& uop = buffer->getTailSlots()[slot];
+      pipeline::PipelineBuffer<std::shared_ptr<Instruction>>& buffer) {
+    for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
+      auto& uop = buffer.getTailSlots()[slot];
       if (uop != nullptr && uop->isBranch()) {
         flush(uop->getInstructionAddress());
       }
 
-      uop = buffer->getHeadSlots()[slot];
+      uop = buffer.getHeadSlots()[slot];
       if (uop != nullptr && uop->isBranch()) {
         flush(uop->getInstructionAddress());
       }
@@ -57,21 +57,21 @@ class BranchPredictor {
 
   /**
    * Overloaded function for flushing branch instructions from a
-   * PipelineBuffer. Accepts a pointer to a PipelineBuffer macroOps.
+   * PipelineBuffer. Accepts a reference to a PipelineBuffer macroOps.
    * Iterates over the entries of the PipelineBuffer and, if they are a
    * branch instruction, flushes them.
    */
   void flushBranchesInBufferFromSelf(
-      pipeline::PipelineBuffer<std::vector<std::shared_ptr<Instruction>>>*
+      pipeline::PipelineBuffer<std::vector<std::shared_ptr<Instruction>>>&
           buffer) {
-    for (size_t slot = 0; slot < buffer->getWidth(); slot++) {
-      auto& macroOp = buffer->getTailSlots()[slot];
+    for (size_t slot = 0; slot < buffer.getWidth(); slot++) {
+      auto& macroOp = buffer.getTailSlots()[slot];
       for (size_t uop = 0; uop < macroOp.size(); uop++) {
         if (macroOp[uop]->isBranch()) {
           flush(macroOp[uop]->getInstructionAddress());
         }
       }
-      macroOp = buffer->getHeadSlots()[slot];
+      macroOp = buffer.getHeadSlots()[slot];
       for (size_t uop = 0; uop < macroOp.size(); uop++) {
         if (macroOp[uop]->isBranch()) {
           flush(macroOp[uop]->getInstructionAddress());
