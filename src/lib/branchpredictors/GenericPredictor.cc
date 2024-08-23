@@ -20,9 +20,8 @@ GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)
                           ? weaklyTaken
                           : (weaklyTaken - 1);
   // Create branch prediction structures
-  btb_ =
-      std::vector<std::pair<uint8_t, uint64_t>>(1ull << btbBits_,
-                                                {satCntVal, 0});
+  btb_ = std::vector<std::pair<uint8_t, uint64_t>>(1ull << btbBits_,
+                                                   {satCntVal, 0});
 
   // Generate a bitmask that is used to ensure only the relevant number of
   // bits are stored in the global history. This is two times the
