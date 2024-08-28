@@ -1682,6 +1682,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_H:
       [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_Q:
+      [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_S:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_B:
@@ -1689,6 +1691,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1_MXIPXX_V_D:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_V_Q:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_S:
       // Lacking access specifiers
@@ -1701,6 +1705,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_H_H:
       [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_H_Q:
+      [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_H_S:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_B:
@@ -1708,6 +1714,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_ST1_MXIPXX_V_D:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_V_Q:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_S:
       // Access types are not defined

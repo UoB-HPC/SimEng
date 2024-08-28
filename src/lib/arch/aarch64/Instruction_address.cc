@@ -130,6 +130,19 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_V_Q:    // ld1q {zatv.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #4}]
+      case Opcode::AArch64_LD1_MXIPXX_H_Q: {  // ld1q {zath.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME
+        const uint16_t partition_num = VL_bits / 128;
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 4;
+        setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_V_S:    // ld1w {zatv.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
@@ -1055,6 +1068,27 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
 
         generatePredicatedContiguousAddressBlocks((n + m), partition_num, 2, 2,
                                                   pg, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_Q:  // st1q {zath.q[ws]}, pg, [<xn|sp>{,
+                                            // xm, lsl #4}]
+      case Opcode::AArch64_ST1_MXIPXX_V_Q: {  // st1q {zatv.q[ws]}, pg,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME
+        const uint16_t partition_num = VL_bits / 128;
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 4;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks((n + m), partition_num, 16,
+                                                  16, pg, addresses);
         setMemoryAddresses(std::move(addresses));
         break;
       }

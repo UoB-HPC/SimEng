@@ -3420,6 +3420,44 @@ void Instruction::execute() {
         results_[sliceNum] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_H_Q: {  // ld1q {zath.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #4}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 128;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum = ws % partition_num;
+        // Use uint64_t as no 128-bit type
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+
+        // Use uint64_t as no 128-bit type
+        uint64_t out[32] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((i % 4) * 16);
+          if (pg[i / 4] & shifted_active) {
+            // As using uint64_t need to modify 2 elements
+            out[2 * i] = data[2 * i];
+            out[2 * i + 1] = data[2 * i + 1];
+          } else {
+            out[2 * i] = 0;
+            out[2 * i + 1] = 0;
+          }
+        }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (uint16_t i = 0; i < partition_num; i++) {
+          results_[i] = sourceValues_[i];
+        }
+        results_[sliceNum] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME, LOAD
@@ -3532,6 +3570,40 @@ void Instruction::execute() {
             row[sliceNum] = data[i];
           } else {
             row[sliceNum] = 0;
+          }
+          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_Q: {  // ld1q {zatv.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME, LOAD
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 128;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum = ws % partition_num;
+        // Using uint64_t as no 128-bit data type
+        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          // Using uint64_t as no 128-bit data type
+          uint64_t* row =
+              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((i % 4) * 16);
+          if (pg[i / 4] & shifted_active) {
+            // As using uint64_t need to modify 2 elements
+            row[2 * sliceNum] = data[2 * i];
+            row[2 * sliceNum + 1] = data[2 * i + 1];
+          } else {
+            // As using uint64_t need to modify 2 elements
+            row[2 * sliceNum] = 0;
+            row[2 * sliceNum + 1] = 0;
           }
           results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
         }
@@ -5553,6 +5625,49 @@ void Instruction::execute() {
         memoryData_ = sve_merge_store_data<uint16_t>(tileSlice, pg, VL_bits);
         break;
       }
+      case Opcode::AArch64_ST1_MXIPXX_H_Q: {  // st1q {zath.q[ws]}, pg,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME, STORE
+        // If not in right context mode, raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 128;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum = ws % partition_num;
+
+        // Using uint64_t as no 128-bit type
+        const uint64_t* tileSlice =
+            sourceValues_[sliceNum].getAsVector<uint64_t>();
+
+        // Need to combine active adjacent elements into RegisterValues and
+        // place into each memoryData_ index.
+        int index = 0;
+        std::vector<uint64_t> memData;
+        for (uint16_t i = 0; i < partition_num; i++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((i % 4) * 16);
+          if (pg[i / 4] & shifted_active) {
+            // As using uint64_t need to push_back 2 elements
+            memData.push_back(tileSlice[2 * i]);
+            memData.push_back(tileSlice[2 * i + 1]);
+          } else if (memData.size() > 0) {
+            // Predicate false, save current data
+            memoryData_[index] = RegisterValue(
+                (char*)memData.data(), memData.size() * sizeof(uint64_t));
+            index++;
+            memData.clear();
+          }
+        }
+        // Check if final data needs putting into memoryData_
+        if (memData.size() > 0) {
+          memoryData_[index] = RegisterValue((char*)memData.data(),
+                                             memData.size() * sizeof(uint64_t));
+        }
+        break;
+      }
       case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #2}]
         // SME, STORE
@@ -5677,6 +5792,48 @@ void Instruction::execute() {
         if (memData.size() > 0) {
           memoryData_[index] =
               RegisterValue((char*)memData.data(), memData.size() * 2);
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_V_Q: {  // st1h {zatv.q[ws]}, pg,
+                                              // [<xn|sp>{, xm, LSL #4}]
+        // SME, STORE
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t partition_num = VL_bits / 128;
+        const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum = ws % partition_num;
+
+        // Need to combine active adjacent elements into RegisterValues and
+        // place into each memoryData_ index.
+        std::vector<uint64_t> memData;
+        uint16_t index = 0;
+        for (uint16_t x = 0; x < partition_num; x++) {
+          // For 128-bit there are 16-bit for each active element
+          uint64_t shifted_active = 1ull << ((x % 4) * 16);
+          if (pg[x / 4] & shifted_active) {
+            // As using uint64_t need to push_back 2 elements
+            memData.push_back(
+                sourceValues_[x].getAsVector<uint64_t>()[2 * sliceNum]);
+            memData.push_back(
+                sourceValues_[x].getAsVector<uint64_t>()[2 * sliceNum + 1]);
+          } else if (memData.size() > 0) {
+            // Predicate false, save current data
+            memoryData_[index] = RegisterValue(
+                (char*)memData.data(), memData.size() * sizeof(uint64_t));
+            index++;
+            memData.clear();
+          }
+        }
+
+        // Check if final data needs putting into memoryData_
+        if (memData.size() > 0) {
+          memoryData_[index] = RegisterValue((char*)memData.data(),
+                                             memData.size() * sizeof(uint64_t));
         }
         break;
       }
