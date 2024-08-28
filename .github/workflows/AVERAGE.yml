@@ -62,7 +62,7 @@ jobs:
       #######################################
       # Run benchmark averaging
       #######################################
-      - name: Run benchmark averaging scripot
+      - name: Run benchmark averaging script
         run: |
           sudo ./.github/bench_avg.sh ${{ matrix.benchmarks }}
       
