@@ -7,50 +7,64 @@ on:
     #   - dev
   
 jobs:
-  LINUX_GCC_BUILD_TEST:
+  ###################################
+  # Debug Mode
+  ###################################
+  DEBUG_LINUX_GCC_BUILD_TEST:
     uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  MACOS_GCC_BUILD_TEST:
+  DEBUG_MACOS_GCC_BUILD_TEST:
     uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  MACOS_CLANG_BUILD_TEST:
+  DEBUG_MACOS_CLANG_BUILD_TEST:
     uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
     secrets: inherit
 
+  ###################################
+  # Release Mode
+  ###################################
+  RELEASE_LINUX_GCC_BUILD_TEST:
+    uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Release
+    secrets: inherit
+  
+  RELEASE_MACOS_GCC_BUILD_TEST:
+    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Release
+    secrets: inherit
+
+  RELEASE_MACOS_CLANG_BUILD_TEST:
+    uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Release
+    secrets: inherit
+
+  ###################################
+  # Compare runtime with Previous run time
+  ###################################
   PERFORMANCE_REGRESSION:
     uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
     secrets: inherit
-    
-  # RERUN-FAILED:
-  #   runs-on: ubuntu-latest
-  #   needs:
-  #     - LINUX_GCC_BUILD_TEST
-  #     - MACOS_GCC_BUILD_TEST
-  #     - MACOS_CLANG_BUILD_TEST
-  #     - PERFORMANCE_REGRESSION
-      
-  #   if: failure()
-  #   steps:
-  #     - name: Rerun failed jobs in the current workflow
-  #       env:
-  #         GH_TOKEN: ${{ github.token }}
-  #       run: gh run rerun ${{ github.run_id }} --failed
 
   CLANG_FORMAT:
     needs: 
-      - LINUX_GCC_BUILD_TEST
-      - MACOS_GCC_BUILD_TEST
-      - MACOS_CLANG_BUILD_TEST
+      - DEBUG_LINUX_GCC_BUILD_TEST
+      - DEBUG_MACOS_GCC_BUILD_TEST
+      - DEBUG_MACOS_CLANG_BUILD_TEST
+      - RELEASE_LINUX_GCC_BUILD_TEST
+      - RELEASE_MACOS_GCC_BUILD_TEST
+      - RELEASE_MACOS_CLANG_BUILD_TEST
       - PERFORMANCE_REGRESSION
-      # - RERUN-FAILED
 
     uses: ./.github/workflows/CLANG_FORMAT.yml
     secrets: inherit

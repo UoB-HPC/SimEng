@@ -1,0 +1,63 @@
+name: Finds Averages Of Benchmarks
+
+on:
+  push:
+
+jobs:
+  AVERAGE:
+    strategy:
+      fail-fast: false
+      matrix:
+
+        benchmarks: ["./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve",
+                     "./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve",
+                     "./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve",
+                     "./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve"] 
+        
+    runs-on: ubuntu-latest
+
+    steps:
+      #######################################
+      # Clone SimEng fork
+      #######################################
+      - name: checkout v4
+        uses: actions/checkout@v4
+      
+      - name: install deps
+        shell: bash
+        run: |
+          sudo apt-get -y install gcc-10 g++-10 pip
+      #######################################
+      # Build SimEng without llvm or ninja
+      #######################################
+      - name: Build SimEng
+        shell: bash
+        run: |
+          pip install pyparsing
+          sudo cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/gcc-10 -DCMAKE_CXX_COMPILER=/usr/bin/g++-10
+
+          sudo cmake --build build -j $(nproc)
+
+          sudo cmake --build build --target install
+
+          echo "GCC_DIR=/usr/bin/gcc-10" >> $GITHUB_ENV
+          echo "CPP_DIR=/usr/bin/g++-10" >> $GITHUB_ENV
+
+      #######################################
+      # Checkout simeng-benchmark repository
+      #######################################
+      - name: checking out benchmark repository
+        uses: actions/checkout@v4
+        with:
+          repository: UoB-HPC/simeng-benchmarks
+          ref: makefile-build-system
+          token: ${{ env.PAT }}
+          path: simeng-benchmarks
+
+      #######################################
+      # Run benchmark averaging
+      #######################################
+      - name: Run benchmark averaging scripot
+        run: |
+          sudo ./.github/bench_avg.sh ${{ matrix.benchmarks }}
+      
