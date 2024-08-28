@@ -28,7 +28,7 @@ runs=100
 for (( i=1; i<=runs; i++ ))
 do
     # Run the benchmark and redirect output to a file
-    simeng ../configs/a64fx.yaml "$benchmark_path" > "$output_file"
+    simeng ./configs/a64fx.yaml "$benchmark_path" > "$output_file"
     
     # Extract the time in milliseconds from the output
     current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')
