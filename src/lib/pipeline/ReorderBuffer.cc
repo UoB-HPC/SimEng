@@ -85,9 +85,10 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       inst_repeat_counter = 0;
     }
     if (inst_repeat_counter > 10000000) {
-      std::cout << "Infinite loop detected in rob commit at instruction address "
-                << std::hex << uop->getInstructionAddress() << std::dec << " ("
-                << uop->getMicroOpIndex() << "). Killing.\n";
+      std::cout
+          << "Infinite loop detected in rob commit at instruction address "
+          << std::hex << uop->getInstructionAddress() << std::dec << " ("
+          << uop->getMicroOpIndex() << "). Killing.\n";
       exit(1);
     }
     last_inst_addr = uop->getInstructionAddress();
@@ -108,7 +109,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     for (size_t i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
-    
+
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
@@ -219,4 +220,3 @@ uint64_t ReorderBuffer::getViolatingLoadsCount() const {
 
 }  // namespace pipeline
 }  // namespace simeng
-
