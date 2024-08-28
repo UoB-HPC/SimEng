@@ -1573,6 +1573,92 @@ TEST_P(InstSme, ld1h) {
                                            {0}, SVL / 8));
 }
 
+TEST_P(InstSme, ld1q) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src = {0xDEADBEEF12345678, 0x98765432ABCDEF01,
+                               0x98765432ABCDEF01, 0xDEADBEEF12345678};
+  fillHeap<uint64_t>(heap64, src, SVL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.b
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1q {za0h.q[w12, 0]}, p0/z, [x0, x1, lsl #4]
+
+    # Test for inactive lanes - zip twice to get on-off for 128-bits
+    pfalse p1.b
+    zip1 p0.d, p0.d, p1.d
+    zip1 p0.d, p0.d, p0.d
+    ld1q {za15h.q[w12, 0]}, p0/z, [x0]
+  )");
+  CHECK_MAT_ROW(ARM64_REG_ZAQ0, 1 % (SVL / 128), uint64_t,
+                fillNeon<uint64_t>({0x98765432ABCDEF01, 0xDEADBEEF12345678,
+                                    0xDEADBEEF12345678, 0x98765432ABCDEF01},
+                                   SVL / 8));
+  CHECK_MAT_ROW(ARM64_REG_ZAQ15, 1 % (SVL / 128), uint64_t,
+                fillNeon<uint64_t>(
+                    {0xDEADBEEF12345678, 0x98765432ABCDEF01, 0, 0}, SVL / 8));
+
+  // Vertical
+  initialHeapData_.resize(SVL / 4);
+  heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  fillHeap<uint64_t>(heap64, src, SVL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x1, #1
+    ptrue p0.b
+    mov w12, #1
+    # Load and broadcast values from heap
+    ld1q {za0v.q[w12, 0]}, p0/z, [x0, x1, lsl #4]
+
+    # Test for inactive lanes - zip twice to get on-off for 128-bits
+    pfalse p1.b
+    zip1 p0.d, p0.d, p1.d
+    zip1 p0.d, p0.d, p0.d
+    ld1q {za15v.q[w12, 0]}, p0/z, [x0]
+  )");
+  // Can't check Q columns as CHECK_MAT_COL isn't set up for doing this with
+  // uint64_t.
+  // Instead, manually place values into 1st column of Q tile (as per
+  // asm above) and check each Q row.
+  auto row0 = fillNeon<uint64_t>({0}, (SVL / 8));
+  auto row1 = fillNeon<uint64_t>({0}, (SVL / 8));
+  auto zeroRow = fillNeon<uint64_t>({0}, (SVL / 8));
+  // MOD SVL / 64 as dealing with uint64_t even though its a 128-bit tile
+  row0[2 % (SVL / 64)] = 0x98765432ABCDEF01;
+  row0[3 % (SVL / 64)] = 0xDEADBEEF12345678;
+  row1[2 % (SVL / 64)] = 0xDEADBEEF12345678;
+  row1[3 % (SVL / 64)] = 0x98765432ABCDEF01;
+  for (uint16_t i = 0; i < SVL / 128; i++) {
+    if (i % 2 == 0) {
+      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, row0);
+      CHECK_MAT_ROW(ARM64_REG_ZAQ15, i, uint64_t, row1);
+    } else {
+      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, row1);
+      CHECK_MAT_ROW(ARM64_REG_ZAQ15, i, uint64_t, zeroRow);
+    }
+  }
+}
+
 TEST_P(InstSme, ld1w) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);
@@ -2283,6 +2369,192 @@ TEST_P(InstSme, st1h) {
     EXPECT_EQ(getMemoryValue<uint16_t>(400 + ((i + 1) * 2)), 0);
     EXPECT_EQ(getMemoryValue<uint16_t>(800 + 16 + (i * 2)), src[i % 8]);
     EXPECT_EQ(getMemoryValue<uint16_t>(800 + 16 + ((i + 1) * 2)), 0);
+  }
+}
+
+TEST_P(InstSme, st1q) {
+  // Horizontal
+  initialHeapData_.resize(SVL);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    sub sp, sp, #4095
+    mov x1, #0
+    mov x4, #0
+    addvl x4, x4, #1
+    ptrue p0.b
+
+    mov w12, #0
+    mov w13, #1
+    ld1q {za0h.q[w12, 0]}, p0/z, [x0, x1, lsl #4]
+    ld1q {za1h.q[w13, 0]}, p0/z, [x0, x1, lsl #4]
+    st1q {za0h.q[w12, 0]}, p0, [sp, x1, lsl #4]
+    st1q {za1h.q[w13, 0]}, p0, [x4]
+  )");
+  for (uint64_t i = 0; i < (SVL / 128); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + ((2 * i) * 8)),
+              src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + ((2 * i) * 8)),
+              src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x3, #2
+    ptrue p0.d
+    pfalse p1.b
+    # Do zip1 twice to get on-off for 128-bit
+    zip1 p1.d, p0.d, p1.d
+    zip1 p1.d, p1.d, p1.d
+    mov x5, #400
+    mov x6, #800
+
+    mov w12, #0
+    mov w13, #2
+    # Load entire row
+    ld1q {za3h.q[w12, 0]}, p0/z, [x0, x3, lsl #4]
+    # Store all 0s to memory
+    st1q {za0h.q[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
+    st1q {za3h.q[w12, 0]}, p1, [x5]
+
+    # Load entire row
+    ld1q {za1h.q[w13, 0]}, p0/z, [x0, x3, lsl #4]
+    # Store all 0s to memory
+    st1q {za0h.q[w12, 0]}, p0, [x6, x3, lsl #4]
+    # Store odd indexed elements to memory
+    st1q {za1h.q[w13, 0]}, p1, [x6, x3, lsl #4]
+  )");
+  for (uint64_t i = 0; i < (SVL / 128); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((2 * i) * 8)), src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (((2 * i) + 2) * 8)), 0);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (((2 * i + 1) + 2) * 8)), 0);
+
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + ((2 * i) * 8)),
+              src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + (((2 * i) + 2) * 8)), 0);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + (((2 * i + 1) + 2) * 8)), 0);
+  }
+
+  // Vertical
+  initialHeapData_.resize(SVL);
+  uint64_t* heap64_vert = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src_vert = {0xDEADBEEF12345678, 0x98765432ABCDEF01};
+  fillHeap<uint64_t>(heap64_vert, src_vert, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    sub sp, sp, #4095
+    mov x1, #0
+    mov x4, #0
+    addvl x4, x4, #1
+    ptrue p0.b
+
+    mov w12, #0
+    mov w13, #1
+    ld1q {za0v.q[w12, 0]}, p0/z, [x0, x1, lsl #4]
+    ld1q {za1v.q[w13, 0]}, p0/z, [x0, x1, lsl #4]
+    st1q {za0v.q[w12, 0]}, p0, [sp, x1, lsl #4]
+    st1q {za1v.q[w13, 0]}, p0, [x4]
+  )");
+  for (uint64_t i = 0; i < (SVL / 128); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + ((2 * i) * 8)),
+              src_vert[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + ((2 * i + 1) * 8)),
+              src_vert[(2 * i + 1) % 2]);
+
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + ((2 * i) * 8)),
+              src_vert[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>((SVL / 8) + ((2 * i + 1) * 8)),
+              src_vert[(2 * i + 1) % 2]);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    mov x3, #2
+    ptrue p0.d
+    pfalse p1.b
+    # Do zip1 twice to get on-off for 128-bit
+    zip1 p1.d, p0.d, p1.d
+    zip1 p1.d, p1.d, p1.d
+    mov x5, #400
+    mov x6, #800
+
+    mov w12, #0
+    mov w13, #2
+    # Load entire row
+    ld1q {za3v.q[w12, 0]}, p0/z, [x0, x3, lsl #4]
+    # Store all 0s to memory
+    st1q {za0v.q[w12, 0]}, p0, [x5]
+    # Store odd indexed elements to memory
+    st1q {za3v.q[w12, 0]}, p1, [x5]
+
+    # Load entire row
+    ld1q {za1v.q[w13, 0]}, p0/z, [x0, x3, lsl #4]
+    # Store all 0s to memory
+    st1q {za0v.q[w12, 0]}, p0, [x6, x3, lsl #4]
+    # Store odd indexed elements to memory
+    st1q {za1v.q[w13, 0]}, p1, [x6, x3, lsl #4]
+  )");
+  for (uint64_t i = 0; i < (SVL / 128); i += 2) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((2 * i) * 8)), src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (((2 * i) + 2) * 8)), 0);
+    EXPECT_EQ(getMemoryValue<uint64_t>(400 + (((2 * i + 1) + 2) * 8)), 0);
+
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + ((2 * i) * 8)),
+              src[(2 * i) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + ((2 * i + 1) * 8)),
+              src[(2 * i + 1) % 2]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + (((2 * i) + 2) * 8)), 0);
+    EXPECT_EQ(getMemoryValue<uint64_t>(800 + 32 + (((2 * i + 1) + 2) * 8)), 0);
   }
 }
 
