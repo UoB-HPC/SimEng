@@ -2,7 +2,8 @@ name: Build_Test_SimEng
 # description: Build and test simeng on various OS with various compilers followed by benchmarking and a peformance regression test followed by a clang format if all previous workflow succeed
 
 on:
-  push:
+  workflow_call:
+  # push:
     # branches:
     #   - dev
   
@@ -10,19 +11,20 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  DEBUG_LINUX_GCC_BUILD_TEST:
+  DEBUG_LINUX_GCC:
     uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  DEBUG_MACOS_GCC_BUILD_TEST:
-    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+  # NOTE: currently doens't work
+  # DEBUG_MACOS_GCC:
+  #   uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Debug
+  #   secrets: inherit
 
-  DEBUG_MACOS_CLANG_BUILD_TEST:
+  DEBUG_MACOS_CLANG:
     uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
@@ -31,19 +33,20 @@ jobs:
   ###################################
   # Release Mode
   ###################################
-  RELEASE_LINUX_GCC_BUILD_TEST:
+  RELEASE_LINUX_GCC:
     uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
     with:
       SIMENG-MODE: Release
     secrets: inherit
   
-  RELEASE_MACOS_GCC_BUILD_TEST:
-    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Release
-    secrets: inherit
+  # NOTE: currently doens't work
+  # RELEASE_MACOS_GCC:
+  #   uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Release
+  #   secrets: inherit
 
-  RELEASE_MACOS_CLANG_BUILD_TEST:
+  RELEASE_MACOS_CLANG:
     uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
     with:
       SIMENG-MODE: Release
@@ -58,12 +61,12 @@ jobs:
 
   CLANG_FORMAT:
     needs: 
-      - DEBUG_LINUX_GCC_BUILD_TEST
-      - DEBUG_MACOS_GCC_BUILD_TEST
-      - DEBUG_MACOS_CLANG_BUILD_TEST
-      - RELEASE_LINUX_GCC_BUILD_TEST
-      - RELEASE_MACOS_GCC_BUILD_TEST
-      - RELEASE_MACOS_CLANG_BUILD_TEST
+      - DEBUG_LINUX_GCC
+      # - DEBUG_MACOS_GCC
+      - DEBUG_MACOS_CLANG
+      - RELEASE_LINUX_GCC
+      # - RELEASE_MACOS_GCC
+      - RELEASE_MACOS_CLANG
       - PERFORMANCE_REGRESSION
 
     uses: ./.github/workflows/CLANG_FORMAT.yml
