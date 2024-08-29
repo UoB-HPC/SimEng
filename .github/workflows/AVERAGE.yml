@@ -14,10 +14,10 @@ jobs:
       fail-fast: false
       matrix:
 
-        benchmarks: [{path: "${{ github.workspace }}/simeng-benchmarks/binaries/CloverLeaf/openmp/", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/CloverLeaf"},
-                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/miniBUDE/openmp/", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/miniBUDE/bm"},
-                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/STREAM/", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
-                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/TeaLeaf/3d/", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
+        benchmarks: [{path: "${{ github.workspace }}/simeng-benchmarks/binaries/CloverLeaf/openmp", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/CloverLeaf"},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/miniBUDE/openmp", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/miniBUDE/bm"},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/STREAM", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/TeaLeaf/3d", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
         
     runs-on: ubuntu-latest
 
