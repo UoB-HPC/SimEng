@@ -5,6 +5,9 @@ on:
   push:
     # branches:
     #   - dev
+    
+  schedule:
+    - cron: '0 0 */6 * *'  # Runs every 6 days
   
 jobs:
   ###################################

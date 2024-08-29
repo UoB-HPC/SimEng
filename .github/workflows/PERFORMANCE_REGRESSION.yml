@@ -138,25 +138,25 @@ jobs:
         env: # environement variable scoped to this
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: store benchmark output into cache
-        uses: actions/cache/save@v4
+      - name: store cloverleaf output into cache
+        uses: actions/cache/save@v4z
         with:
           path: ./cloverleaf_benchmark_out.txt
           key: cloverleaf_benchmark_out.txt
           
-      - name: store benchmark output into cache
+      - name: store minibude output into cache
         uses: actions/cache/save@v4
         with:
           path: ./minibude_benchmark_out.txt
           key: minibude_benchmark_out.txt
 
-      - name: store benchmark output into cache
+      - name: store stream output into cache
         uses: actions/cache/save@v4
         with:
           path: ./stream_benchmark_out.txt
           key: stream_benchmark_out.txt
 
-      - name: store benchmark output into cache
+      - name: store tealeaf output into cache
         uses: actions/cache/save@v4
         with:
           path: ./tealeaf_benchmark_out.txt
@@ -202,9 +202,9 @@ jobs:
           CLOVERLEAF_DIFF=$(echo "scale=2; $CLOVERLEAF_CURRENT_TIME - $CLOVERLEAF_PREVIOUS_TIME" | bc)
           CLOVERLEAF_ABS_DIFF=$(echo "if($CLOVERLEAF_DIFF < 0) -1*$CLOVERLEAF_DIFF else $CLOVERLEAF_DIFF" | bc)
 
-          echo "+- CLOVERLEAF_THRESHOLD"
+          echo "Threashold: +- CLOVERLEAF_THRESHOLD"
 
-          if (( $(echo "$CLOVERLEAF_ABS_DIFF > $CLOVERLEAF_THRESHOLD" | bc -l) )); then
+          if [ 1 -eq "$(echo "$CLOVERLEAF_ABS_DIFF > $CLOVERLEAF_THRESHOLD" | bc -l)" ]; then
             echo "CLOVERLEAF time difference exceeds 5% threshold!"
             exit 1
           else
@@ -218,9 +218,9 @@ jobs:
           MINIBUDE_DIFF=$(echo "scale=2; $MINIBUDE_CURRENT_TIME - $MINIBUDE_PREVIOUS_TIME" | bc)
           MINIBUDE_ABS_DIFF=$(echo "if($MINIBUDE_DIFF < 0) -1*$MINIBUDE_DIFF else $MINIBUDE_DIFF" | bc)
 
-          echo "+- MINIBUDE_THRESHOLD"
+          echo "Threashold: +- MINIBUDE_THRESHOLD"
 
-          if (( $(echo "$MINIBUDE_ABS_DIFF > $MINIBUDE_THRESHOLD" | bc -l) )); then
+          if [ 1 -eq "$(echo "$MINIBUDE_ABS_DIFF > $MINIBUDE_THRESHOLD" | bc -l)" ]; then
             echo "MINIBUDE time difference exceeds 5% threshold!"
             exit 1
           else
@@ -234,9 +234,9 @@ jobs:
           STREAM_DIFF=$(echo "scale=2; $STREAM_CURRENT_TIME - $STREAM_PREVIOUS_TIME" | bc)
           STREAM_ABS_DIFF=$(echo "if($STREAM_DIFF < 0) -1*$STREAM_DIFF else $STREAM_DIFF" | bc)
 
-          echo "+- STREAM_THRESHOLD"
+          echo "Threashold: +- STREAM_THRESHOLD"
 
-          if (( $(echo "$STREAM_ABS_DIFF > $STREAM_THRESHOLD" | bc -l) )); then
+          if [ 1 -eq "$(echo "$STREAM_ABS_DIFF > $STREAM_THRESHOLD" | bc -l)" ]; then
             echo "STREAM time difference exceeds 5% threshold!"
             exit 1
           else
@@ -250,9 +250,9 @@ jobs:
           TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - $TEALEAF_PREVIOUS_TIME" | bc)
           TEALEAF_ABS_DIFF=$(echo "if($TEALEAF_DIFF < 0) -1*$TEALEAF_DIFF else $TEALEAF_DIFF" | bc)
 
-          echo "+- TEALEAF_THRESHOLD"
+          echo "Threashold: +- $TEALEAF_THRESHOLD"
 
-          if (( $(echo "$TEALEAF_ABS_DIFF > $TEALEAF_THRESHOLD" | bc -l) )); then
+          if [ 1 -eq "$(echo "$TEALEAF_ABS_DIFF > $TEALEAF_THRESHOLD" | bc -l)" ]; then
             echo "TEALEAF time difference exceeds 5% threshold!"
             exit 1
           else
