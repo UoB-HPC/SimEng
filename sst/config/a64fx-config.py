@@ -49,9 +49,9 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 5
+A64FX_HL_L1 = 3 # 5 cycles (-2 due to SimEng overhead)
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 56
+A64FX_HL_L2 = 44 # 46-56 cycles (-2 due to SimEng overhead)
 # Coherence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
@@ -65,9 +65,12 @@ A64FX_L2TOMEM_PCMG_TPUT = "64B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
 A64FX_L2TOL1_PC_TPUT = "64B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
-A64FX_MEMTOL2_PCMG_TPUT = 128
+A64FX_MEMTOL2_PCMG_TPUT = "128B"
 # A64FX Memory access time.
-A64FX_MEM_ACCESS = "144.5ns"
+A64FX_MEM_ACCESS = "135.5ns"
+
+# Prefetcher to use
+PREFETCHER = "cassini.NextBlockPrefetcher"
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -114,13 +117,22 @@ l1cache.addParams({
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT
+      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+      "mshr_latency_cycles": 1,
+      "tag_access_latency": 1,
+      "llsc_block_cycles": 1000,
 })
 # Set MESI L1 coherence controller to the "coherence" slot
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_l1 = l1cache.setSubComponent("prefetcher", PREFETCHER)
+prefetcher_l1.addParams({
+ "cache_line_size": A64FX_CLW,
+ "aggressiveness": 1,
+})
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
@@ -140,14 +152,24 @@ l2cache.addParams({
       "debug" : DEBUG_L2,
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
+      "max_requests_per_cycle": 4,
       "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
+      "mshr_latency_cycles": 1,
+      "tag_access_latency": 1,
+      "llsc_block_cycles": 1000,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
+
+prefetcher_l2 = l2cache.setSubComponent("prefetcher", PREFETCHER)
+prefetcher_l2.addParams({
+      "cache_line_size": A64FX_CLW,
+      "aggressiveness": 1,
+})
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
@@ -174,14 +196,18 @@ memory_backend.addParams({
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
+# sst.setStatisticLoadLevel(7)
+# sst.setStatisticOutput("sst.statOutputConsole")
+# sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+# sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
 
 # ---------------------------------------------- Links ------------------------------------------------
 
 link_cpu_l1cache = sst.Link("link_cpu_l1cache_link")
-link_cpu_l1cache.connect( (interface, "port", "0ps"), (l1cache, "high_network_0", "0ps") )
+link_cpu_l1cache.connect( (interface, "port", "1ps"), (l1cache, "high_network_0", "1ps") )
 link_l1cache_l2cache = sst.Link("link_l1cache_l2cache_link")
-link_l1cache_l2cache.connect( (l1cache, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps") )
+link_l1cache_l2cache.connect( (l1cache, "low_network_0", "1ps"), (l2cache, "high_network_0", "1ps") )
 link_mem_bus = sst.Link("link_mem_bus_link")
-link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
+link_mem_bus.connect( (l2cache, "low_network_0", "1ps"), (memory_controller, "direct_link", "1ps") )
 
 # ---------------------------------------------- Links ------------------------------------------------
