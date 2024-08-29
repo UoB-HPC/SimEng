@@ -91,6 +91,19 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 8}});
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_V_B:    // ld1b {zatv.b[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm}]
+      case Opcode::AArch64_LD1_MXIPXX_H_B: {  // ld1b {zath.b[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm}]
+        // SME
+        const uint16_t partition_num = VL_bits / 8;
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>();
+        setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_V_D:    // ld1d {zatv.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
@@ -101,6 +114,32 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         uint64_t m = 0;
         if (metadata_.operands[2].mem.index)
           m = sourceValues_[partition_num + 3].get<uint64_t>() << 3;
+        setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_H:    // ld1h {zatv.h[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #1}]
+      case Opcode::AArch64_LD1_MXIPXX_H_H: {  // ld1h {zath.h[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #1}]
+        // SME
+        const uint16_t partition_num = VL_bits / 16;
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 1;
+        setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_Q:    // ld1q {zatv.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #4}]
+      case Opcode::AArch64_LD1_MXIPXX_H_Q: {  // ld1q {zath.q[ws]}, pg/z,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME
+        const uint16_t partition_num = VL_bits / 128;
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 4;
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
@@ -457,6 +496,17 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LDAXRX: {  // ldaxr xd, [xn]
         setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 8}});
+        break;
+      }
+      case Opcode::AArch64_LDR_ZA: {  // ldr za[wv, #imm], [<xn|sp>{, #imm, mul
+                                      // vl}]
+        // SME
+        // ZA Row count === current VL in bytes
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint64_t xn = sourceValues_[zaRowCount + 1].get<uint64_t>();
+        const uint64_t imm =
+            static_cast<uint64_t>(metadata_.operands[1].mem.disp);
+        setMemoryAddresses({xn + (imm * zaRowCount), zaRowCount});
         break;
       }
       case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
@@ -958,6 +1008,27 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST1_MXIPXX_H_B:    // st1b {zath.b[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm}]
+      case Opcode::AArch64_ST1_MXIPXX_V_B: {  // st1b {zatv.b[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm}]
+        // SME
+        const uint16_t partition_num = VL_bits / 8;
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>();
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks((n + m), partition_num, 1, 1,
+                                                  pg, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_ST1_MXIPXX_H_D:    // st1d {zath.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
@@ -976,6 +1047,48 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
 
         generatePredicatedContiguousAddressBlocks((n + m), partition_num, 8, 8,
                                                   pg, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_H:    // st1h {zath.h[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #1}]
+      case Opcode::AArch64_ST1_MXIPXX_V_H: {  // st1h {zatv.h[ws, #imm]}, pg,
+                                              // [<xn|sp>{, xm, lsl #1}]
+        // SME
+        const uint16_t partition_num = VL_bits / 16;
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 1;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks((n + m), partition_num, 2, 2,
+                                                  pg, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_Q:  // st1q {zath.q[ws]}, pg, [<xn|sp>{,
+                                            // xm, lsl #4}]
+      case Opcode::AArch64_ST1_MXIPXX_V_Q: {  // st1q {zatv.q[ws]}, pg,
+                                              // [<xn|sp>{, xm, lsl #4}]
+        // SME
+        const uint16_t partition_num = VL_bits / 128;
+        const uint64_t* pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata_.operands[2].mem.index)
+          m = sourceValues_[partition_num + 3].get<uint64_t>() << 4;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        generatePredicatedContiguousAddressBlocks((n + m), partition_num, 16,
+                                                  16, pg, addresses);
         setMemoryAddresses(std::move(addresses));
         break;
       }
@@ -1543,6 +1656,16 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
             static_cast<int64_t>(metadata_.operands[1].mem.disp);
 
         setMemoryAddresses({base + (offset * partition_num), partition_num});
+        break;
+      }
+      case Opcode::AArch64_STR_ZA: {  // str za[wv, #imm], [xn|sp{, #imm, mul
+                                      // vl}]
+        // SME
+        // ZA Row count === current VL in bytes
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint64_t xn = sourceValues_[zaRowCount + 1].get<uint64_t>();
+        const uint64_t imm = metadata_.operands[1].mem.disp;
+        setMemoryAddresses({{xn + (imm * zaRowCount), zaRowCount}});
         break;
       }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]

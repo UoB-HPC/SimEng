@@ -178,8 +178,8 @@ TEST_F(RiscVInstructionTest, invalidInsn_1) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
-  EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH);
+  // Default Group for instruction that is not decoded
+  EXPECT_EQ(insn.getGroup(), InstructionGroups::NONE);
   EXPECT_EQ(insn.getInstructionAddress(), 0x44);
   EXPECT_EQ(insn.getInstructionId(), 13);
   EXPECT_EQ(insn.getKnownOffset(), 0);
@@ -242,8 +242,8 @@ TEST_F(RiscVInstructionTest, invalidInsn_2) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
-  EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH);
+  // Default Group for instruction that is not decoded
+  EXPECT_EQ(insn.getGroup(), InstructionGroups::NONE);
   EXPECT_EQ(insn.getInstructionAddress(), 0x43);
   EXPECT_EQ(insn.getInstructionId(), 15);
   EXPECT_EQ(insn.getKnownOffset(), 0);

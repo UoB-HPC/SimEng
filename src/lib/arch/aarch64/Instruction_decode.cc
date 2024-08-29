@@ -1,10 +1,5 @@
 #include "InstructionMetadata.hh"
 
-#define NOT(bits, length) (~bits & (1 << length - 1))
-#define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
-#define ONES(n) ((1 << (n)) - 1)
-#define ROR(x, shift, size) ((x >> shift) | (x << (size - shift)))
-
 namespace simeng {
 namespace arch {
 namespace aarch64 {
@@ -646,7 +641,8 @@ void Instruction::decode() {
       (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
       (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
       (2405 <= metadata_.opcode &&
-       metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
+       metadata_.opcode <= 2408) ||  // all SME MOPS & MOPA variants
+      (2405 <= metadata_.opcode && metadata_.opcode <= 2408) ||
       (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
       (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
       (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
@@ -695,6 +691,50 @@ void Instruction::decode() {
     sourceValues_.resize(sourceRegisterCount_);
     results_.resize(destinationRegisterCount_);
   }
+
+  // Calculate the instruction's group based on identifiers
+  bool smEnabled = architecture_.isStreamingModeEnabled();
+  // Set base group
+  uint16_t group = InstructionGroups::INT;
+  if (isInstruction(InsnType::isScalarData))
+    group = InstructionGroups::SCALAR;
+  else if (isInstruction(InsnType::isVectorData))
+    group = InstructionGroups::VECTOR;
+  else if (isInstruction(InsnType::isSVEData))
+    group =
+        smEnabled ? InstructionGroups::STREAMING_SVE : InstructionGroups::SVE;
+  else if (isInstruction(InsnType::isSMEData))
+    group = InstructionGroups::SME;
+  // Identify subgroup type
+  if (isInstruction(InsnType::isLoad))
+    group += 10;
+  else if (isInstruction(InsnType::isStoreAddress))
+    group += 11;
+  else if (isInstruction(InsnType::isStoreData))
+    group += 12;
+  else if (isInstruction(InsnType::isBranch))
+    group = InstructionGroups::BRANCH;
+  else if (isInstruction(InsnType::isPredicate))
+    group = smEnabled ? InstructionGroups::STREAMING_PREDICATE
+                      : InstructionGroups::PREDICATE;
+  else if (isInstruction(InsnType::isDivideOrSqrt))
+    group += 9;
+  else if (isInstruction(InsnType::isMultiply))
+    group += 8;
+  else if (isInstruction(InsnType::isConvert))
+    group += 7;
+  else if (isInstruction(InsnType::isCompare))
+    group += 6;
+  else if (isInstruction(InsnType::isLogical)) {
+    if (isInstruction(InsnType::isShift))
+      group += 4;
+    else
+      group += 5;
+  } else if (isInstruction(InsnType::isShift))
+    group += 2;
+  else
+    group += 3;  // Default is {Data type}_SIMPLE_ARTH
+  instructionGroup_ = group;
 }
 
 }  // namespace aarch64

@@ -1660,32 +1660,111 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_ADDHA_MPPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDHA_MPPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDVA_MPPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ADDVA_MPPZ_S:
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1_MXIPXX_H_B:
+      [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_V_B:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_D:
       [[fallthrough]];
-    case Opcode::AArch64_LD1_MXIPXX_V_S:
+    case Opcode::AArch64_LD1_MXIPXX_V_H:
       [[fallthrough]];
-    case Opcode::AArch64_LD1_MXIPXX_H_S: {
+    case Opcode::AArch64_LD1_MXIPXX_V_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_V_S:
       // Lacking access specifiers
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       break;
-    }
+    case Opcode::AArch64_ST1_MXIPXX_H_B:
+      [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_H_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_V_B:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_D:
       [[fallthrough]];
-    case Opcode::AArch64_ST1_MXIPXX_H_S:
+    case Opcode::AArch64_ST1_MXIPXX_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_V_Q:
       [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_S:
       // Access types are not defined
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_STR_ZA:
+      // Access types are not defined
+      operands[0].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_USMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_USMOPS_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SUMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SUMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SUMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SUMOPS_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_UMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_UMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_UMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_UMOPS_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPA_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPA_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SMOPS_MPPZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMOPS_MPPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMOPS_MPPZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FMOPA_MPPZZ_D:
       [[fallthrough]];
-    case Opcode::AArch64_FMOPA_MPPZZ_S: {
+    case Opcode::AArch64_FMOPA_MPPZZ_S:
       // Need to add access specifiers
       // although operands[0] should be READ | WRITE, due to the implemented
       // decode logic for SME tile destinations, the register will be added as
@@ -1695,18 +1774,65 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ;
-      operands[5].access = CS_AC_READ;
       break;
-    }
-    case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
-      operandCount = 4;
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_B:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_V_B:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_V_D:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_V_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_EXTRACT_ZPMXI_V_S:
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
-      operands[3].reg = operands[2].sme_index.base;
-      operands[3].access = CS_AC_READ;
       break;
-    }
+
+    case Opcode::AArch64_INSERT_MXIPZ_H_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_D:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_D:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_Q:
+      [[fallthrough]];
+    case Opcode::AArch64_INSERT_MXIPZ_V_S:
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LDR_ZA:
+      // Need to add access specifier
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and destination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      break;
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr
@@ -2178,6 +2304,10 @@ void InstructionMetadata::revertAliasing() {
       }
       if (opcode >= Opcode::AArch64_EXTRACT_ZPMXI_H_B &&
           opcode <= Opcode::AArch64_EXTRACT_ZPMXI_V_S) {
+        return;
+      }
+      if (opcode >= Opcode::AArch64_INSERT_MXIPZ_H_B &&
+          opcode <= Opcode::AArch64_INSERT_MXIPZ_V_S) {
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||
