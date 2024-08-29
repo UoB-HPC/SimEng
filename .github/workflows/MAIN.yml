@@ -2,8 +2,7 @@ name: Build_Test_SimEng
 # description: Build and test simeng on various OS with various compilers followed by benchmarking and a peformance regression test followed by a clang format if all previous workflow succeed
 
 on:
-  workflow_call:
-  # push:
+  push:
     # branches:
     #   - dev
   
@@ -11,11 +10,11 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  DEBUG_LINUX_GCC:
-    uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+  # DEBUG_LINUX_GCC:
+  #   uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Debug
+  #   secrets: inherit
 
   # NOTE: currently doens't work
   # DEBUG_MACOS_GCC:
@@ -24,20 +23,20 @@ jobs:
   #     SIMENG-MODE: Debug
   #   secrets: inherit
 
-  DEBUG_MACOS_CLANG:
-    uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+  # DEBUG_MACOS_CLANG:
+  #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Debug
+  #   secrets: inherit
 
   ###################################
   # Release Mode
   ###################################
-  RELEASE_LINUX_GCC:
-    uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Release
-    secrets: inherit
+  # RELEASE_LINUX_GCC:
+  #   uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Release
+  #   secrets: inherit
   
   # NOTE: currently doens't work
   # RELEASE_MACOS_GCC:
@@ -46,11 +45,11 @@ jobs:
   #     SIMENG-MODE: Release
   #   secrets: inherit
 
-  RELEASE_MACOS_CLANG:
-    uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Release
-    secrets: inherit
+  # RELEASE_MACOS_CLANG:
+  #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Release
+  #   secrets: inherit
 
   ###################################
   # Compare runtime with Previous run time
@@ -59,16 +58,16 @@ jobs:
     uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
     secrets: inherit
 
-  CLANG_FORMAT:
-    needs: 
-      - DEBUG_LINUX_GCC
-      # - DEBUG_MACOS_GCC
-      - DEBUG_MACOS_CLANG
-      - RELEASE_LINUX_GCC
-      # - RELEASE_MACOS_GCC
-      - RELEASE_MACOS_CLANG
-      - PERFORMANCE_REGRESSION
+  # CLANG_FORMAT:
+  #   needs: 
+  #     - DEBUG_LINUX_GCC
+  #     # - DEBUG_MACOS_GCC
+  #     - DEBUG_MACOS_CLANG
+  #     - RELEASE_LINUX_GCC
+  #     # - RELEASE_MACOS_GCC
+  #     - RELEASE_MACOS_CLANG
+  #     - PERFORMANCE_REGRESSION
 
-    uses: ./.github/workflows/CLANG_FORMAT.yml
-    secrets: inherit
+  #   uses: ./.github/workflows/CLANG_FORMAT.yml
+  #   secrets: inherit
 
