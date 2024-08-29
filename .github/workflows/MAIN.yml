@@ -2,7 +2,8 @@ name: Build_Test_SimEng
 # description: Build and test simeng on various OS with various compilers followed by benchmarking and a peformance regression test followed by a clang format if all previous workflow succeed
 
 on:
-  push:
+  workflow_call:
+  # push:
     # branches:
     #   - dev
     

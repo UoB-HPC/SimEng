@@ -20,15 +20,24 @@ if [ "$#" -ne 1 ]; then
 fi
 
 benchmark_path="$1"
+benchmark_name="$2"
+datafile_path="$3"
+
+if [ $datafile_path ]; then
+    datafile_path = "-n 64 -i 1 --deck $datafile_path"
+fi
+
 output_file="benchmark_output.txt"
 total_time=0
-runs=100
+runs=1
+
+echo "$GITHUB_WORKSPACE"
 
 # Loop to run the benchmark 10 times
 for (( i=1; i<=runs; i++ ))
-do
+do  
     # Run the benchmark and redirect output to a file
-    simeng ./configs/a64fx.yaml "$benchmark_path" > "$output_file"
+    simeng $GITHUB_WORKSPACE/configs/a64fx.yaml $benchmark_path/$benchmark_name $datafile_path  > "$output_file"
     
     # Extract the time in milliseconds from the output
     current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')

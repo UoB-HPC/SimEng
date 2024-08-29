@@ -1,7 +1,7 @@
 name: Finds Averages Of Benchmarks
 
 on:
-  workflow_call:
+  push:
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -14,10 +14,10 @@ jobs:
       fail-fast: false
       matrix:
 
-        benchmarks: ["./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve",
-                     "./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve",
-                     "./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve",
-                     "./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve"] 
+        benchmarks: [{path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf"},
+                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm"},
+                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
+                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
         
     runs-on: ubuntu-latest
 
@@ -64,5 +64,5 @@ jobs:
       #######################################
       - name: Run benchmark averaging script
         run: |
-          sudo ./.github/bench_avg.sh ${{ matrix.benchmarks }}
+          sudo ./.github/bench_avg.sh ${{ matrix.benchmarks.path }} ${{ matrix.benchmarks.name }} ${{ matrix.benchmarks.datafile }}
       
