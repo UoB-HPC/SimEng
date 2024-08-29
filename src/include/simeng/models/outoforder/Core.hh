@@ -134,6 +134,9 @@ class Core : public simeng::Core {
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
+
+  /** Reference to the current branch predictor */
+  BranchPredictor& branchPredictor_;
 };
 
 }  // namespace outoforder

@@ -744,6 +744,72 @@ TEST_P(PipelineFetchUnitTest, invalidMinBytesreadsDontComplete) {
   }
 }
 
+// Test that the Fetch unit is correctly tallying the number of branch
+// instructions fetched, and that the getBranchFetchedCount getter function
+// returns the correct value
+TEST_P(PipelineFetchUnitTest, branchesFetchedCountedIncorrectly) {
+  // Set instructions to be fetched from memory
+  memory::MemoryReadResult memReadResultA = {
+      {0x0, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
+  span<memory::MemoryReadResult> nextBlockA = {&memReadResultA, 1};
+  memory::MemoryReadResult memReadResultB = {
+      {0x10, blockSize}, RegisterValue(0xFFFF, blockSize), 1};
+  span<memory::MemoryReadResult> nextBlockB = {&memReadResultB, 1};
+  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockA));
+
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(insnMaxSizeBytes));
+
+  // Set the instructions to be returned from predecode
+  MacroOp mOp2 = {uopPtr2};
+  ON_CALL(isa, predecode(_, _, Gt(0x8), _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
+  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
+  MacroOp mOp = {uopPtr};
+  ON_CALL(isa, predecode(_, _, Lt(0xC), _))
+      .WillByDefault(DoAll(SetArgReferee<3>(mOp), Return(4)));
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(false));
+  EXPECT_CALL(predictor, predict(_, _, _))
+      .WillOnce(Return(BranchPrediction({true, 0x0})));
+
+  // Fetch instructions from data block -- one branch instruction
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Confirm that the correct number of fetched branches has been recorded by
+  // the Fetch Unit
+  EXPECT_EQ(fetchUnit.getBranchFetchedCount(), 1);
+
+  // Fetch the next block of instructions from memory and change the expected
+  // outcome of the branch predictor
+  fetchUnit.requestFromPC();
+  EXPECT_CALL(predictor, predict(_, _, _))
+      .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
+
+  // Fetch instructions from data block -- one branch instruction
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Confirm that the correct number of fetched branches has been recorded by
+  // the Fetch Unit
+  EXPECT_EQ(fetchUnit.getBranchFetchedCount(), 2);
+
+  const memory::MemoryAccessTarget target = {0x10, blockSize};
+  EXPECT_CALL(memory, getCompletedReads()).WillRepeatedly(Return(nextBlockB));
+  EXPECT_CALL(memory, requestRead(target, _)).Times(1);
+
+  // Fetch instructions from data block -- four branch instructions
+  fetchUnit.requestFromPC();
+  for (int i = 0; i < 4; i++) {
+    fetchUnit.tick();
+  }
+
+  // Confirm that the correct number of fetched branches has been recorded by
+  // the Fetch Unit
+  EXPECT_EQ(fetchUnit.getBranchFetchedCount(), 6);
+}
+
 INSTANTIATE_TEST_SUITE_P(PipelineFetchUnitTests, PipelineFetchUnitTest,
                          ::testing::Values(std::pair(2, 4), std::pair(4, 4)));
 

@@ -3,6 +3,7 @@
 namespace {
 
 using InstLogical = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstLogical, andw) {
   // 0 & 0 = 0
@@ -188,6 +189,10 @@ TEST_P(InstLogical, asrw) {
     asr w0, w0, w1
   )");
   EXPECT_EQ(getGeneralRegister<int32_t>(0), -8);
+
+  // TODO being noshift seems incorrect - but potentially aliasing to SBF
+  EXPECT_GROUP(R"(asr w0, w0, wzr)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(asr w0, w0, #1)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstLogical, asrx) {
@@ -221,6 +226,10 @@ TEST_P(InstLogical, asrx) {
     asr x0, x0, x1
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(0), -8);
+
+  // TODO noshift seems incorrect - but potentially aliasing to SBF
+  EXPECT_GROUP(R"(asr x0, x0, xzr)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(asr x0, x0, #2)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstLogical, bic) {
@@ -405,13 +414,18 @@ TEST_P(InstLogical, lsrv) {
     lsrv x3, x0, xzr
     lsrv x4, x0, x1
     lsrv x5, x0, x2
-    # Check lsr alias as xell
+    # Check lsr alias as well
     lsr x6, x1, x0
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 7ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 7ull >> 31);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 7ull >> 6);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 31ull >> 7);
+
+  EXPECT_GROUP(R"(lsr w6, w1, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(lsr x6, x1, x0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(lsr w6, w1, #1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(lsr x6, x1, #1)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstLogical, orn) {
@@ -475,6 +489,11 @@ TEST_P(InstLogical, orn) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), UINT64_C(-1) & ~UINT64_C(0b0101));
   EXPECT_EQ(getGeneralRegister<uint64_t>(7),
             UINT64_C(-1) & ~(UINT64_C(0b0101) << 60));
+
+  EXPECT_GROUP(R"(mvn w6, w0)", INT_SIMPLE_LOGICAL_NOSHIFT);
+  EXPECT_GROUP(R"(mvn w7, w0, lsl #28)", INT_SIMPLE_LOGICAL);
+  EXPECT_GROUP(R"(mvn x6, x1)", INT_SIMPLE_LOGICAL_NOSHIFT);
+  EXPECT_GROUP(R"(mvn x7, x1, lsl #60)", INT_SIMPLE_LOGICAL);
 }
 
 TEST_P(InstLogical, rorv) {

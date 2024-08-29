@@ -3,6 +3,7 @@
 namespace {
 
 using InstArithmetic = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstArithmetic, add) {
   RUN_AARCH64(R"(
@@ -353,6 +354,9 @@ TEST_P(InstArithmetic, negsw) {
   )");
   EXPECT_EQ(getNZCV(), 0b1001);
   EXPECT_EQ(getGeneralRegister<uint32_t>(0), static_cast<uint32_t>(1ul << 31));
+
+  EXPECT_GROUP(R"(negs w0, w1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(negs w0, w1, lsl 31)", INT_SIMPLE_ARTH);
 }
 
 // Test that NZCV flags are set correctly by 64-bit negs
@@ -402,6 +406,9 @@ TEST_P(InstArithmetic, negsx) {
   )");
   EXPECT_EQ(getNZCV(), 0b1001);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), static_cast<uint64_t>(1ul << 63));
+
+  EXPECT_GROUP(R"(negs x0, x1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(negs x0, x1, lsl 31)", INT_SIMPLE_ARTH);
 }
 
 TEST_P(InstArithmetic, sbc) {

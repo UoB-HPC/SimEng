@@ -3,6 +3,7 @@
 namespace {
 
 using SmokeTest = AArch64RegressionTest;
+using namespace simeng::arch::aarch64;
 
 // Test that a trivial instruction will execute
 TEST_P(SmokeTest, instruction) {
@@ -10,6 +11,8 @@ TEST_P(SmokeTest, instruction) {
     orr x0, xzr, #7
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 7u);
+  EXPECT_GROUP(R"(orr x0, xzr, #7)",
+               InstructionGroups::INT_SIMPLE_LOGICAL_NOSHIFT);
 }
 
 // Test a loop executing 1024 times, adding 3 to w1 each time

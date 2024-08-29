@@ -3,6 +3,17 @@
 namespace {
 
 using InstAtomic = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
+
+// Whilst most RISC-V atomic instructions perform read-modify-write operations
+// i.e. a load, comparison and store, each is given the group LOAD_INT only. The
+// instruction object is tagged with the appropriate identifiers (isLoad,
+// isStore and isAtomic) but the group only reflects the first stage of
+// execution. This ensures the instruction goes to the correct part of the
+// pipeline i.e. the LSQ. But we currently do not model the rest of the atomic
+// behaviour precisely as the comparison happens here also. The change of the
+// instructions behaviour over its lifetime is currently not reflected in the
+// group it is given.
 
 TEST_P(InstAtomic, lr) {
   initialHeapData_.resize(16);
@@ -20,10 +31,11 @@ TEST_P(InstAtomic, lr) {
     lr.w t6, (a0)
     addi a0, a0, 4
     lr.w t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x012345678);
+
+  EXPECT_GROUP(R"(lr.w t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -33,10 +45,11 @@ TEST_P(InstAtomic, lr) {
     lr.w.aq t6, (a0)
     addi a0, a0, 4
     lr.w.aq t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x012345678);
+
+  EXPECT_GROUP(R"(lr.w.aq t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -46,10 +59,11 @@ TEST_P(InstAtomic, lr) {
     lr.w.aqrl t6, (a0)
     addi a0, a0, 4
     lr.w.aqrl t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x012345678);
+
+  EXPECT_GROUP(R"(lr.w.aqrl t5, (a0))", LOAD_INT);
 
   // Software should not set only the RL bit, but this is not guaranteed
   RUN_RISCV(R"(
@@ -60,10 +74,11 @@ TEST_P(InstAtomic, lr) {
     lr.w.rl t6, (a0)
     addi a0, a0, 4
     lr.w.rl t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x012345678);
+
+  EXPECT_GROUP(R"(lr.w.rl t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -73,10 +88,11 @@ TEST_P(InstAtomic, lr) {
     lr.d t6, (a0)
     addi a0, a0, 4
     lr.d t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP(R"(lr.d t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -86,10 +102,11 @@ TEST_P(InstAtomic, lr) {
     lr.d.aq t6, (a0)
     addi a0, a0, 4
     lr.d.aq t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP(R"(lr.d.aq t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -99,10 +116,11 @@ TEST_P(InstAtomic, lr) {
     lr.d.aqrl t6, (a0)
     addi a0, a0, 4
     lr.d.aqrl t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP(R"(lr.d.aqrl t5, (a0))", LOAD_INT);
 
   RUN_RISCV(R"(
     # Get heap address
@@ -112,10 +130,11 @@ TEST_P(InstAtomic, lr) {
     lr.d.rl t6, (a0)
     addi a0, a0, 4
     lr.d.rl t5, (a0)
-
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFEEBDAED12345678);
+
+  EXPECT_GROUP(R"(lr.d.rl t5, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, sc_w) {
@@ -142,6 +161,8 @@ TEST_P(InstAtomic, sc_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 4), 0x12345678);
+
+  EXPECT_GROUP(R"(sc.w t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_w_aq) {
@@ -170,6 +191,8 @@ TEST_P(InstAtomic, sc_w_aq) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 4), 0x12345678);
+
+  EXPECT_GROUP(R"(sc.w.aq t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_w_rl) {
@@ -196,6 +219,8 @@ TEST_P(InstAtomic, sc_w_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 4), 0x12345678);
+
+  EXPECT_GROUP(R"(sc.w.rl t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_w_aq_rl) {
@@ -222,6 +247,8 @@ TEST_P(InstAtomic, sc_w_aq_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 4), 0x12345678);
+
+  EXPECT_GROUP(R"(sc.w.aqrl t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_d) {
@@ -252,6 +279,8 @@ TEST_P(InstAtomic, sc_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12365000000001EF);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x5000000001EFBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEB1236);
+
+  EXPECT_GROUP(R"(sc.d t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_d_aq) {
@@ -282,6 +311,8 @@ TEST_P(InstAtomic, sc_d_aq) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12365000000001EF);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x5000000001EFBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEB1236);
+
+  EXPECT_GROUP(R"(sc.d.aq t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_d_rl) {
@@ -312,6 +343,8 @@ TEST_P(InstAtomic, sc_d_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12365000000001EF);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x5000000001EFBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEB1236);
+
+  EXPECT_GROUP(R"(sc.d.rl t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, sc_d_aq_rl) {
@@ -342,6 +375,8 @@ TEST_P(InstAtomic, sc_d_aq_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12365000000001EF);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x5000000001EFBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEB1236);
+
+  EXPECT_GROUP(R"(sc.d.aqrl t5, t6, (a0))", STORE_INT);
 }
 
 TEST_P(InstAtomic, amoswap_w) {
@@ -380,6 +415,8 @@ TEST_P(InstAtomic, amoswap_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 987);
+
+  EXPECT_GROUP(R"(amoswap.w t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_w_aq) {
@@ -418,6 +455,8 @@ TEST_P(InstAtomic, amoswap_w_aq) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 987);
+
+  EXPECT_GROUP(R"(amoswap.w.aq t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_w_rl) {
@@ -456,6 +495,8 @@ TEST_P(InstAtomic, amoswap_w_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 987);
+
+  EXPECT_GROUP(R"(amoswap.w.rl t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_w_aq_rl) {
@@ -494,6 +535,8 @@ TEST_P(InstAtomic, amoswap_w_aq_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 987);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 987);
+
+  EXPECT_GROUP(R"(amoswap.w.aqrl t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_d) {
@@ -539,6 +582,8 @@ TEST_P(InstAtomic, amoswap_d) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x80000000);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20), 0xFFEEFFEE);
+
+  EXPECT_GROUP(R"(amoswap.d t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_d_aq) {
@@ -584,6 +629,8 @@ TEST_P(InstAtomic, amoswap_d_aq) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x80000000);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20), 0xFFEEFFEE);
+
+  EXPECT_GROUP(R"(amoswap.d.aq t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_d_rl) {
@@ -629,6 +676,8 @@ TEST_P(InstAtomic, amoswap_d_rl) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x80000000);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20), 0xFFEEFFEE);
+
+  EXPECT_GROUP(R"(amoswap.d.rl t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoswap_d_aq_rl) {
@@ -674,6 +723,8 @@ TEST_P(InstAtomic, amoswap_d_aq_rl) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x80000000);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20), 0xFFEEFFEE);
+
+  EXPECT_GROUP(R"(amoswap.d.aqrl t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoadd_w) {
@@ -717,6 +768,8 @@ TEST_P(InstAtomic, amoadd_w) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
             0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
+
+  EXPECT_GROUP(R"(amoadd.w t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoadd_w_aq) {
@@ -760,6 +813,8 @@ TEST_P(InstAtomic, amoadd_w_aq) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
             0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
+
+  EXPECT_GROUP(R"(amoadd.w.aq t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoadd_w_rl) {
@@ -803,6 +858,8 @@ TEST_P(InstAtomic, amoadd_w_rl) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
             0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
+
+  EXPECT_GROUP(R"(amoadd.w.rl t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoadd_w_aq_rl) {
@@ -846,6 +903,8 @@ TEST_P(InstAtomic, amoadd_w_aq_rl) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
             0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
+
+  EXPECT_GROUP(R"(amoadd.w.aqrl t5, t6, (a0))", LOAD_INT);
 }
 
 // TODO add aq rl tests for all instructions below, omitted as currently
@@ -891,6 +950,8 @@ TEST_P(InstAtomic, amoadd_d) {
             0x80000000000003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20),
             0x12365478);  // +ve + +ve = -ve as per GDB
+
+  EXPECT_GROUP(R"(amoadd.d t5, t6, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoand_w) {
@@ -919,6 +980,8 @@ TEST_P(InstAtomic, amoand_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567811111111);  // 0b0001
+
+  EXPECT_GROUP(R"(amoand.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoand_d) {
@@ -948,6 +1011,8 @@ TEST_P(InstAtomic, amoand_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x3333333333333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1111111111111111);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
+
+  EXPECT_GROUP(R"(amoand.d t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoor_w) {
@@ -976,6 +1041,8 @@ TEST_P(InstAtomic, amoor_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678F7777777);  // 0b0111
+
+  EXPECT_GROUP(R"(amoor.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoor_d) {
@@ -1005,6 +1072,8 @@ TEST_P(InstAtomic, amoor_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x3333333333333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x7777777777777777);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
+
+  EXPECT_GROUP(R"(amoor.d t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoxor_w) {
@@ -1033,6 +1102,8 @@ TEST_P(InstAtomic, amoxor_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678E6666666);  // 0b0110
+
+  EXPECT_GROUP(R"(amoxor.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amoxor_d) {
@@ -1062,6 +1133,8 @@ TEST_P(InstAtomic, amoxor_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x3333333333333333);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x6666666666666666);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
+
+  EXPECT_GROUP(R"(amoxor.d t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomin_w) {
@@ -1141,6 +1214,8 @@ TEST_P(InstAtomic, amomin_w) {
             0xF000000055555555);  // (large +ve word), -ve double
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567803333333);
+
+  EXPECT_GROUP(R"(amomin.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomin_d) {
@@ -1180,6 +1255,8 @@ TEST_P(InstAtomic, amomin_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x0034567899999999);
+
+  EXPECT_GROUP(R"(amomin.d t6, t5, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amominu_w) {
@@ -1260,6 +1337,8 @@ TEST_P(InstAtomic, amominu_w) {
             0xF000000055555555);  // (large +ve word), -ve double
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567803333333);
+
+  EXPECT_GROUP(R"(amominu.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amominu_d) {
@@ -1300,6 +1379,8 @@ TEST_P(InstAtomic, amominu_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x0034567899999999);
+
+  EXPECT_GROUP(R"(amominu.d t6, t5, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomax_w) {
@@ -1379,6 +1460,8 @@ TEST_P(InstAtomic, amomax_w) {
             0xF000000055555555);  // (large +ve word), -ve double
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
+
+  EXPECT_GROUP(R"(amomax.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomax_d) {
@@ -1418,6 +1501,8 @@ TEST_P(InstAtomic, amomax_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x12345678FEEBDAED);
+
+  EXPECT_GROUP(R"(amomax.d t6, t5, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomaxu_w) {
@@ -1498,6 +1583,8 @@ TEST_P(InstAtomic, amomaxu_w) {
             0xF000000055555555);  // (large +ve word), -ve double
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
+
+  EXPECT_GROUP(R"(amomaxu.w t1, t0, (a0))", LOAD_INT);
 }
 
 TEST_P(InstAtomic, amomaxu_d) {
@@ -1537,6 +1624,8 @@ TEST_P(InstAtomic, amomaxu_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x12345678FEEBDAED);
+
+  EXPECT_GROUP(R"(amomaxu.d t6, t5, (a0))", LOAD_INT);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstAtomic,

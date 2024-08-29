@@ -5,6 +5,7 @@
 namespace {
 
 using InstNeon = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstNeon, add) {
   // 8-bit vector
@@ -3532,6 +3533,8 @@ TEST_P(InstNeon, rev) {
   CHECK_NEON(
       6, uint8_t,
       {0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0x00, 0x00, 0x00});
+
+  EXPECT_GROUP(R"(rev64 v2.4h, v0.4h)", VECTOR_SIMPLE_ARTH_NOSHIFT);
 
   // REV32
   RUN_AARCH64(R"(
