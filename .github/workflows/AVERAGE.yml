@@ -14,19 +14,14 @@ jobs:
       fail-fast: false
       matrix:
 
-        benchmarks: [{path: "${{ github.workspace }}/simeng-benchmarks/binaries/CloverLeaf/openmp/", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf"},
-                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm"},
-                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
-                     {path: "$GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "$GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
+        benchmarks: [{path: "${{ github.workspace }}/simeng-benchmarks/binaries/CloverLeaf/openmp/", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/CloverLeaf"},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/miniBUDE/openmp/", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/miniBUDE/bm"},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/STREAM/", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
+                     {path: "${{ github.workspace }}/simeng-benchmarks/binaries/TeaLeaf/3d/", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "${{ github.workspace }}/simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
         
     runs-on: ubuntu-latest
 
     steps:
-      - name: echo workspace
-        shell: bash
-        run: |
-          echo ${{ github.workspace }}
-          echo $GITHUB_WORKSPACE
       #######################################
       # Clone SimEng fork
       #######################################
@@ -70,5 +65,5 @@ jobs:
       - name: Run benchmark averaging script
         shell: bash
         run: |
-          sudo ./.github/bench_avg.sh ${{ matrix.benchmarks.path }} ${{ matrix.benchmarks.name }} ${{ matrix.benchmarks.datafile }}
+          sudo ./.github/bench_avg.sh ${{ github.workspace }} ${{ matrix.benchmarks.path }} ${{ matrix.benchmarks.name }} ${{ matrix.benchmarks.datafile }} 
       
