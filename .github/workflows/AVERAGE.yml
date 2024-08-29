@@ -25,6 +25,7 @@ jobs:
       - name: info
         shell: bash
         run: |
+          echo ${{ github.workspace }}
           echo ${{ matrix.benchmarks.path }}
           echo ${{ matrix.benchmarks.name }}
           echo ${{ matrix.benchmarks.datafile }}
