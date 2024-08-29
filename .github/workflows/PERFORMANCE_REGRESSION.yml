@@ -139,7 +139,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: store cloverleaf output into cache
-        uses: actions/cache/save@v4z
+        uses: actions/cache/save@v4
         with:
           path: ./cloverleaf_benchmark_out.txt
           key: cloverleaf_benchmark_out.txt

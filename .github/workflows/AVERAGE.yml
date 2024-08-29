@@ -1,7 +1,7 @@
 name: Finds Averages Of Benchmarks
 
 on:
-  push:
+  workflow_call:
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
