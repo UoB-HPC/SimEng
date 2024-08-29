@@ -117,7 +117,7 @@ void CapacityAwarePortAllocator::deallocate(uint16_t port,
 };
 
 void CapacityAwarePortAllocator::setRSSizeGetter(
-    std::function<void(std::vector<uint64_t>&)> rsSizes) {
+    std::function<void(std::vector<uint32_t>&)> rsSizes) {
   rsSizes_ = rsSizes;
 }
 

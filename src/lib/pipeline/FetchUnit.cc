@@ -79,7 +79,8 @@ void FetchUnit::tick() {
       mopQueue_.push_back({});
       auto& macroOp = mopQueue_.back();
 
-      auto bytesRead = isa_.predecode(&(cachedEntry.first), 4, pc_, macroOp);
+      auto bytesRead =
+          isa_.predecode((uint8_t*)&(cachedEntry.first), 4, pc_, macroOp);
 
       // If predecode fails, bail and wait for more data
       if (bytesRead == 0) {
