@@ -14,8 +14,8 @@
 
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <benchmark_file_path>"
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <benchmark_parent_directory> <benchmark name e.g. cloverleaf_gcc10.3.0_armv8.4+sve> <Datafile path e.g. /simeng-benchmarks/Data_Files/CloverLeaf>"
     exit 1
 fi
 
