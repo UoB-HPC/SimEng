@@ -15,7 +15,7 @@ jobs:
       matrix:
 
         benchmarks: [{path: "simeng-benchmarks/binaries/CloverLeaf/openmp", name: "cloverleaf_gcc10.3.0_armv8.4+sve", datafile: "simeng-benchmarks/Data_Files/CloverLeaf"},
-                     {path: "simeng-benchmarks/binaries/miniBUDE/openmp", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "simeng-benchmarks/Data_Files/miniBUDE/bm"},
+                     {path: "simeng-benchmarks/binaries/miniBUDE/openmp", name: "minibude_gcc10.3.0_armv8.4+sve", datafile: "simeng-benchmarks/Data_Files/miniBUDE/bm1"},
                      {path: "simeng-benchmarks/binaries/STREAM", name: "stream_gcc10.3.0_armv8.4+sve", datafile: ""},
                      {path: "simeng-benchmarks/binaries/TeaLeaf/3d", name: "tealeaf_gcc10.3.0_armv8.4+sve", datafile: "simeng-benchmarks/Data_Files/TeaLeaf/3d"}] 
         
@@ -80,14 +80,16 @@ jobs:
           total_time=0
           runs=1
 
+          cd "${{ github.workspace }}/$benchmark_path"
+
           # Loop to run the benchmark 10 times
           for (( i=1; i<=runs; i++ ))
           do  
               # Run the benchmark and redirect output to a file
               if [ $datafile_path ]; then
-                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" "${{ github.workspace }}/$benchmark_path/$benchmark_name" -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
               else
-                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" "${{ github.workspace }}/$benchmark_path/$benchmark_name"  > "$output_file"
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name  > "$output_file"
               fi
 
               # Extract the time in milliseconds from the output
