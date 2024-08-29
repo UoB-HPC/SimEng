@@ -65,5 +65,38 @@ jobs:
       - name: Run benchmark averaging script
         shell: bash
         run: |
-          sudo ./.github/bench_avg.sh ${{ github.workspace }} ${{ matrix.benchmarks.path }} ${{ matrix.benchmarks.name }} ${{ matrix.benchmarks.datafile }} 
+          benchmark_path=${{ matrix.benchmarks.path }}
+          benchmark_name=${{ matrix.benchmarks.name }}
+          datafile_path=${{ matrix.benchmarks.datafile }}
+
+          output_file="benchmark_output.txt"
+          total_time=0
+          runs=1
+
+          # Loop to run the benchmark 10 times
+          for (( i=1; i<=runs; i++ ))
+          do  
+              # Run the benchmark and redirect output to a file
+              if [ $datafile_path ]; then
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" "$benchmark_path/$benchmark_name" -n 64 -i 1 --deck $datafile_path  > "$output_file"
+              else
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" "$benchmark_path/$benchmark_name"  > "$output_file"
+              fi
+
+              # Extract the time in milliseconds from the output
+              current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')
+              
+              # Add the extracted time to the total time
+              total_time=$(echo "$total_time + $current_time" | bc)
+              
+              echo "Run $i: $current_time ms"
+          done
+
+          # Calculate the average time
+          average_time=$(echo "scale=2; $total_time / $runs" | bc)
+
+          echo "Average time over $runs runs: $average_time ms"
+
+          # Clean up the output file
+          sudo rm "$output_file"
       
