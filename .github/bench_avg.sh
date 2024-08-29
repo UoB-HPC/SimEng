@@ -6,10 +6,10 @@
 # - USAGE: ./bench_avg.sh [relative path to benchmark binary]
 ###############################################
 # SOME OPTIONS YOU MIGHT LIKE:
-#../../simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve -> 10times average 38115.10 ms -> 100times 38799.21 ms
-#../../simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve ->100times 53.37ms
-#../../simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve -> 100times 5671.59 ms
-#../../simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve -> 100times  44.17 ms
+#../../simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve -> [40667.65 ms avg on github runner]
+#../../simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve -> [63.38 ms avg on github runner]
+#../../simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve -> [7396.88 ms average on github runner]
+#../../simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve -> [56.09 ms average on github runner]
 ###############################################
 
 

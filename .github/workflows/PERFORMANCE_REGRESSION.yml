@@ -190,3 +190,50 @@ jobs:
           echo "Current Time: $TEALEAF_CURRENT_TIME"
           echo "Previous Time: $TEALEAF_PREVIOUS_TIME"
           echo "Absolute Difference: $TEALEAF_DIFFERENCE"
+      
+      #######################################
+      # Compare Results: 5% acceptance rate
+      #######################################
+      - name: Check CLOVERLEAF time difference
+        if: ${{ always() }}
+        run: |
+          CLOVERLEAF_THRESHOLD=$(echo "scale=2; $CLOVERLEAF_PREVIOUS_TIME * 0.05" | bc)
+          CLOVERLEAF_DIFF=$(echo "scale=2; $CLOVERLEAF_CURRENT_TIME - $CLOVERLEAF_PREVIOUS_TIME" | bc)
+          CLOVERLEAF_ABS_DIFF=$(echo "if($CLOVERLEAF_DIFF < 0) -1*$CLOVERLEAF_DIFF else $CLOVERLEAF_DIFF" | bc)
+          if (( $(echo "$CLOVERLEAF_ABS_DIFF > $CLOVERLEAF_THRESHOLD" | bc -l) )); then
+            echo "CLOVERLEAF time difference exceeds 5% threshold!"
+            exit 1
+          fi
+      
+      - name: Check MINIBUDE time difference
+        if: ${{ always() }}
+        run: |
+          MINIBUDE_THRESHOLD=$(echo "scale=2; $MINIBUDE_PREVIOUS_TIME * 0.05" | bc)
+          MINIBUDE_DIFF=$(echo "scale=2; $MINIBUDE_CURRENT_TIME - $MINIBUDE_PREVIOUS_TIME" | bc)
+          MINIBUDE_ABS_DIFF=$(echo "if($MINIBUDE_DIFF < 0) -1*$MINIBUDE_DIFF else $MINIBUDE_DIFF" | bc)
+          if (( $(echo "$MINIBUDE_ABS_DIFF > $MINIBUDE_THRESHOLD" | bc -l) )); then
+            echo "MINIBUDE time difference exceeds 5% threshold!"
+            exit 1
+          fi
+      
+      - name: Check STREAM time difference
+        if: ${{ always() }}
+        run: |
+          STREAM_THRESHOLD=$(echo "scale=2; $STREAM_PREVIOUS_TIME * 0.05" | bc)
+          STREAM_DIFF=$(echo "scale=2; $STREAM_CURRENT_TIME - $STREAM_PREVIOUS_TIME" | bc)
+          STREAM_ABS_DIFF=$(echo "if($STREAM_DIFF < 0) -1*$STREAM_DIFF else $STREAM_DIFF" | bc)
+          if (( $(echo "$STREAM_ABS_DIFF > $STREAM_THRESHOLD" | bc -l) )); then
+            echo "STREAM time difference exceeds 5% threshold!"
+            exit 1
+          fi
+      
+      - name: Check TEALEAF time difference
+        if: ${{ always() }}
+        run: |
+          TEALEAF_THRESHOLD=$(echo "scale=2; $TEALEAF_PREVIOUS_TIME * 0.05" | bc)
+          TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - $TEALEAF_PREVIOUS_TIME" | bc)
+          TEALEAF_ABS_DIFF=$(echo "if($TEALEAF_DIFF < 0) -1*$TEALEAF_DIFF else $TEALEAF_DIFF" | bc)
+          if (( $(echo "$TEALEAF_ABS_DIFF > $TEALEAF_THRESHOLD" | bc -l) )); then
+            echo "TEALEAF time difference exceeds 5% threshold!"
+            exit 1
+          fi
