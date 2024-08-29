@@ -22,6 +22,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: info
+        shell: bash
+        run: |
+          echo ${{ matrix.benchmarks.path }}
+          echo ${{ matrix.benchmarks.name }}
+          echo ${{ matrix.benchmarks.datafile }}
       #######################################
       # Clone SimEng fork
       #######################################
