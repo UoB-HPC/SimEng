@@ -1,10 +1,11 @@
 #pragma once
 
+#include <cassert>
 #include <deque>
 #include <map>
 #include <vector>
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -30,17 +31,23 @@ class PerceptronPredictor : public BranchPredictor {
   ~PerceptronPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0) override;
+                           int64_t knownOffset) override;
 
-  /** Updates appropriate predictor model objects based on the address and
-   * outcome of the branch instruction. */
-  void update(uint64_t address, bool taken, uint64_t targetAddress,
-              BranchType type) override;
+  /** Updates appropriate predictor model objects based on the address, type and
+   * outcome of the branch instruction.  Update must be called on
+   * branches in program order.  To check this, instructionId is also passed
+   * to this function. */
+  void update(uint64_t address, bool isTaken, uint64_t targetAddress,
+              BranchType type, uint64_t instructionId) override;
 
-  /** Provides RAS rewinding behaviour. */
+  /** Provides flushing behaviour for the implemented branch prediction schemes
+   * via the instruction address.  Branches must be flushed in reverse
+   * program order (though, if a block of n instructions is being flushed at
+   * once, the exact order that the individual instructions within this block
+   * are flushed does not matter so long as they are all flushed). */
   void flush(uint64_t address) override;
 
  private:
@@ -59,15 +66,25 @@ class PerceptronPredictor : public BranchPredictor {
    * in Jiminez and Lin */
   std::vector<std::pair<std::vector<int8_t>, uint64_t>> btb_;
 
-  /** The previous hashed index for an address. */
-  std::map<uint64_t, uint64_t> btbHistory_;
+  /** Fetch Target Queue containing the dot product of the perceptron and the
+   * global history; and the global history, both at the time of prediction,
+   * for each of the branch instructions that are currently unresolved.  The dot
+   * product represents the confidence of the perceptrons direction
+   * prediction and is needed for a correct update when the branch
+   * instruction is resolved. */
+  std::deque<std::pair<int64_t, uint64_t>> ftq_;
 
   /** An n-bit history of previous branch directions where n is equal to
-   * globalHistoryLength_. */
+   * globalHistoryLength_.  Each bit represents a branch taken (1) or not
+   * taken (0), with the most recent branch being the least-significant-bit */
   uint64_t globalHistory_ = 0;
 
   /** The number of previous branch directions recorded globally. */
   uint64_t globalHistoryLength_;
+
+  /** A bit mask for truncating the global history to the correct size.
+   * Stored as a member variable to avoid duplicative calculation */
+  uint64_t globalHistoryMask_;
 
   /** The magnitude of the dot product of the perceptron and the global history,
    * below which the perceptron's weight must be updated */

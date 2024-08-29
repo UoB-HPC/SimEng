@@ -1,10 +1,11 @@
 #pragma once
 
+#include <cassert>
 #include <deque>
 #include <map>
 #include <vector>
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -27,17 +28,23 @@ class GenericPredictor : public BranchPredictor {
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0) override;
+                           int64_t knownOffset) override;
 
-  /** Updates appropriate predictor model objects based on the address and
-   * outcome of the branch instruction. */
-  void update(uint64_t address, bool taken, uint64_t targetAddress,
-              BranchType type) override;
+  /** Updates appropriate predictor model objects based on the address, type and
+   * outcome of the branch instruction.  Update must be called on
+   * branches in program order.  To check this, instructionId is also passed
+   * to this function. */
+  void update(uint64_t address, bool isTaken, uint64_t targetAddress,
+              BranchType type, uint64_t instructionId) override;
 
-  /** Provides RAS rewinding behaviour. */
+  /** Provides flushing behaviour for the implemented branch prediction schemes
+   * via the instruction address.  Branches must be flushed in reverse
+   * program order (though, if a block of n instructions is being flushed at
+   * once, the exact order that the individual instructions within this block
+   * are flushed does not matter so long as they are all flushed). */
   void flush(uint64_t address) override;
 
  private:
@@ -48,18 +55,24 @@ class GenericPredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  /** The previous BTB index calculated for an address. */
-  std::map<uint64_t, uint64_t> btbHistory_;
+  /** Fetch Target Queue containing the direction prediction and previous global
+   * history state of branches that are currently unresolved */
+  std::deque<std::pair<bool, uint64_t>> ftq_;
 
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint8_t satCntBits_;
 
-  /** A n-bit history of previous branch directions where n is equal to
-   * globalHistoryLength_. */
+  /** An n-bit history of previous branch directions where n is equal to
+   * globalHistoryLength_.  Each bit represents a branch taken (1) or not
+   * taken (0), with the most recent branch being the least-significant-bit */
   uint64_t globalHistory_ = 0;
 
   /** The number of previous branch directions recorded globally. */
   uint16_t globalHistoryLength_;
+
+  /** A bit mask for truncating the global history to the correct size.
+   * Stored as a member variable to avoid duplicative calculation */
+  uint64_t globalHistoryMask_;
 
   /** A return address stack. */
   std::deque<uint64_t> ras_;

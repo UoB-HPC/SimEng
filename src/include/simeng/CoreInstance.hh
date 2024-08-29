@@ -2,15 +2,15 @@
 
 #include <string>
 
-#include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
-#include "simeng/GenericPredictor.hh"
-#include "simeng/PerceptronPredictor.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/branchpredictors/AlwaysNotTakenPredictor.hh"
+#include "simeng/branchpredictors/GenericPredictor.hh"
+#include "simeng/branchpredictors/PerceptronPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/memory/FixedLatencyMemoryInterface.hh"

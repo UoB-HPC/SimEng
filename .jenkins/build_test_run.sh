@@ -55,6 +55,8 @@ test () {
 }
 
 # Run default program with and without specified configuration
+# Space needed before 'retired' and 'cycles' to differentiate from other
+# subfeilds.  E.g., 'branches.retired'
 run () {
     cd "$SIMENG_INSTALL" || exit
 
@@ -62,16 +64,16 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6721" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "6721" "simulated cycles"
+    compare_outputs "$(grep " retired:" run | rev | cut -d ' ' -f1 | rev)" "6721" "retired instructions"
+    compare_outputs "$(grep " cycles:" run | rev | cut -d ' ' -f1 | rev)" "6721" "simulated cycles"
     echo ""
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
     echo "Simulation with configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "6724" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "8612" "simulated cycles"
+    compare_outputs "$(grep " retired:" run | rev | cut -d ' ' -f1 | rev)" "6724" "retired instructions"
+    compare_outputs "$(grep " cycles:" run | rev | cut -d ' ' -f1 | rev)" "7867" "simulated cycles"
     echo ""
 }
 

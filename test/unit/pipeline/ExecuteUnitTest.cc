@@ -35,7 +35,7 @@ class PipelineExecuteUnitTest : public testing::Test {
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
             },
-            predictor, true, {3, 4, 5}),
+            true, {3, 4, 5}),
         uop(new MockInstruction),
         secondUop(new MockInstruction),
         thirdUop(new MockInstruction),
@@ -135,12 +135,6 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
     uop->setBranchResults(taken, pc);
   }));
 
-  // Check that the branch predictor was updated with the results
-  EXPECT_CALL(*uop, getBranchType()).Times(1);
-  EXPECT_CALL(predictor,
-              update(insnAddress, taken, pc, BranchType::Unconditional))
-      .Times(1);
-
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
       .Times(1);
@@ -152,8 +146,6 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
 
   EXPECT_EQ(executeUnit.shouldFlush(), false);
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
-  EXPECT_EQ(executeUnit.getBranchExecutedCount(), 1);
-  EXPECT_EQ(executeUnit.getBranchMispredictedCount(), 0);
 }
 
 // Test that an instruction that already encountered an exception will raise it
@@ -288,13 +280,6 @@ TEST_F(PipelineExecuteUnitTest, mispredictedBranch) {
     uop->setBranchResults(taken, pc);
   }));
 
-  // Check that the branch predictor was updated with the results
-  EXPECT_CALL(*uop, getBranchType()).Times(1);
-
-  EXPECT_CALL(predictor,
-              update(insnAddress, taken, pc, BranchType::Conditional))
-      .Times(1);
-
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
       .Times(1);
@@ -306,8 +291,6 @@ TEST_F(PipelineExecuteUnitTest, mispredictedBranch) {
 
   EXPECT_EQ(executeUnit.shouldFlush(), true);
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
-  EXPECT_EQ(executeUnit.getBranchExecutedCount(), 1);
-  EXPECT_EQ(executeUnit.getBranchMispredictedCount(), 1);
   EXPECT_EQ(executeUnit.getFlushAddress(), pc);
   EXPECT_EQ(executeUnit.getFlushInsnId(), insnID);
 }

@@ -64,7 +64,7 @@ void DecodeUnit::tick() {
       if (!uop->isBranch()) {
         // Non-branch incorrectly predicted as a branch; let the predictor know
         predictor_.update(uop->getInstructionAddress(), false, pc_,
-                          uop->getBranchType());
+                          uop->getBranchType(), uop->getInstructionId());
       }
       // Remove macro-operations in microOps_ buffer after macro-operation
       // decoded in this cycle
@@ -93,7 +93,13 @@ bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; }
 
-void DecodeUnit::purgeFlushed() { microOps_.clear(); }
+void DecodeUnit::purgeFlushed() {
+  while (!microOps_.empty()) {
+    if (microOps_.back()->isBranch())
+      predictor_.flush(microOps_.back()->getInstructionAddress());
+    microOps_.pop_back();
+  }
+}
 
 }  // namespace pipeline
 }  // namespace simeng

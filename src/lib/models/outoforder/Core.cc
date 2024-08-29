@@ -72,7 +72,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       portAllocator_(portAllocator),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()),
+      branchPredictor_(branchPredictor) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -87,7 +88,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor,
+        [](auto uop) { uop->setCommitReady(); },
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
@@ -223,16 +224,12 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
+  uint64_t totalBranchesFetched = fetchUnit_.getBranchFetchedCount();
+  uint64_t totalBranchesRetired = reorderBuffer_.getRetiredBranchesCount();
+  uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
 
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
+  auto branchMissRate = 100.0 * static_cast<double>(totalBranchMispredicts) /
+                        static_cast<double>(totalBranchesRetired);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
@@ -250,8 +247,9 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.fetched", std::to_string(totalBranchesFetched)},
+          {"branch.retired", std::to_string(totalBranchesRetired)},
+          {"branch.mispredicted", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
            std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
@@ -263,12 +261,18 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  // Check for branch instructions in buffer, and flush them from the BP.
+  // Then empty the buffers
+  branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 
+  branchPredictor_.flushBranchesInBufferFromSelf(decodeToRenameBuffer_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
 
+  // Instructions in this buffer are already accounted for in the ROB so no
+  // need to check for branch instructions in this buffer
   renameToDispatchBuffer_.fill(nullptr);
   renameToDispatchBuffer_.stall(false);
 
@@ -343,14 +347,20 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
+    // Check for branch instructions in buffer, and flush them from the BP.
+    // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
+    branchPredictor_.flushBranchesInBufferFromSelf(decodeToRenameBuffer_);
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
+    // Instructions in this buffer are already accounted for in the ROB so no
+    // need to check for branch instructions in this buffer
     renameToDispatchBuffer_.fill(nullptr);
     renameToDispatchBuffer_.stall(false);
 
@@ -369,8 +379,11 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
+    // Check for branch instructions in buffer, and flush them from the BP.
+    // Then empty the buffers
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
+    branchPredictor_.flushBranchesInBufferFromSelf(fetchToDecodeBuffer_);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
