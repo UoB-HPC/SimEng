@@ -36,18 +36,20 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
-    int64_t firstOp = -1;
+    uint64_t firstOp = UINT64_MAX;
     bool validForCommit = false;
+    bool foundFirstInstance = false;
 
     // Find first instance of uop belonging to macro-op instruction
     for (; index < buffer_.size(); index++) {
       if (buffer_[index]->getInstructionId() == insnId) {
         firstOp = index;
+        foundFirstInstance = true;
         break;
       }
     }
 
-    if (firstOp > -1) {
+    if (foundFirstInstance) {
       // If found, see if all uops are committable
       for (; index < buffer_.size(); index++) {
         if (buffer_[index]->getInstructionId() != insnId) break;

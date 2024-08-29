@@ -915,7 +915,7 @@ RegisterValue sveFTrigSMul(srcValContainer& sourceValues,
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
 
-  U bit_0_mask = 1ull << (sizeof(T) * 8 - 1);
+  U bit_0_mask = static_cast<U>(1) << (sizeof(T) * 8 - 1);
   // Square each element in the first source vector and then set the sign bit
   // to a copy of bit 0 of the corresponding element in the second source
   // register
@@ -941,8 +941,8 @@ RegisterValue sveFTrigSSel(srcValContainer& sourceValues,
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
 
-  U bit_0_mask = 1ull << (sizeof(T) * 8 - 1);
-  U bit_1_mask = 1ull << (sizeof(T) * 8 - 2);
+  U bit_0_mask = static_cast<U>(1) << (sizeof(T) * 8 - 1);
+  U bit_1_mask = static_cast<U>(1) << (sizeof(T) * 8 - 2);
 
   // Place the value 1.0 or a copy of the first source vector element in the
   // destination element, depending on bit 0 of the corresponding element of
