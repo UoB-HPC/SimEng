@@ -26,15 +26,16 @@ class A64FXPortAllocator : public PortAllocator {
 
   /** Allocate a port for the specified instruction group; returns the allocated
    * port. */
-  uint16_t allocate(const std::vector<uint16_t>& ports) override;
+  uint16_t allocate(const std::vector<uint16_t>& ports,
+                    const uint16_t stallCycles = 0) override;
 
   /** Inform the allocator that an instruction was issued to the specified port.
    */
-  void issued(uint16_t port) override;
+  void issued(uint16_t port, const uint16_t stallCycles = 0) override;
 
   /** Inform the allocator that an instruction will not issue to its
    * allocated port. */
-  void deallocate(uint16_t port) override;
+  void deallocate(uint16_t port, const uint16_t stallCycles = 0) override;
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */

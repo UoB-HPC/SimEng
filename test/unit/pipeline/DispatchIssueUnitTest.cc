@@ -137,7 +137,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
       .WillOnce(Return(span<Register>(destRegs)));
 
   // Expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
   // Ensure empty reservation stations pre tick()
   std::vector<uint32_t> rsSizes;
@@ -162,7 +162,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
   }
 
   // Detail expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, issued(EAGA));
+  EXPECT_CALL(portAlloc, issued(EAGA, 0));
 
   diUnit.issue();
   // Ensure all reservation stations empty again post issue()
@@ -241,7 +241,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
     EXPECT_CALL(*insns[i].get(), getDestinationRegisters())
         .WillOnce(Return(span<Register>()));
     // Expected call to port allocator during tick()
-    EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+    EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
     input.getHeadSlots()[0] = insns[i];
     diUnit.tick();
@@ -269,8 +269,8 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
   // All expected calls to instruction during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   // All expected calls to portAllocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
-  EXPECT_CALL(portAlloc, deallocate(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, deallocate(EAGA, 0));
   input.getHeadSlots()[0] = uopPtr;
   diUnit.tick();
   // Ensure Reservation station sizes have stayed the same
@@ -307,7 +307,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_portStall) {
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>()));
   // Expected call to portAllocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
   input.getHeadSlots()[0] = uopPtr;
   diUnit.tick();
@@ -377,8 +377,8 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_1)));
   // Expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
-  EXPECT_CALL(portAlloc, issued(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, issued(EAGA, 0));
 
   // Process instruction 1
   input.getHeadSlots()[0] = uopPtr;
@@ -396,7 +396,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   EXPECT_CALL(*uop2, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_2)));
   // Expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
   // Process instruction 2
   input.getHeadSlots()[0] = uop2Ptr;
@@ -430,7 +430,7 @@ TEST_F(PipelineDispatchIssueUnitTest, createdependency_raw) {
   diUnit.forwardOperands(span<Register>(srcRegs_2), vals);
 
   // Try issue again for instruction 2
-  EXPECT_CALL(portAlloc, issued(EAGA));
+  EXPECT_CALL(portAlloc, issued(EAGA, 0));
   diUnit.issue();
   // Ensure correct RS sizes post issue()
   rsSizes.clear();
@@ -471,7 +471,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_1)));
   // Expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
   // Process instruction 1
   input.getHeadSlots()[0] = uopPtr;
@@ -487,7 +487,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   EXPECT_CALL(*uop2, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs_2)));
   // Expected call to port allocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
+  EXPECT_CALL(portAlloc, allocate(suppPorts, 0)).WillOnce(Return(EAGA));
 
   // Process instruction 2
   input.getHeadSlots()[0] = uop2Ptr;
@@ -516,7 +516,7 @@ TEST_F(PipelineDispatchIssueUnitTest, purgeFlushed) {
   EXPECT_EQ(diUnit.getRSStalls(), 0);
 
   // Remove flushed uops
-  EXPECT_CALL(portAlloc, deallocate(EAGA)).Times(2);
+  EXPECT_CALL(portAlloc, deallocate(EAGA, 0)).Times(2);
   uopPtr->setFlushed();
   uop2Ptr->setFlushed();
   diUnit.purgeFlushed();

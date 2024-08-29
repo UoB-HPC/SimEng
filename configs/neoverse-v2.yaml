@@ -9,19 +9,22 @@ Core:
   Micro-Operations: True
   Vector-Length: 128
 Fetch:
-  Fetch-Block-Size: 128
+  Fetch-Block-Size: 32
+  MOP-Queue-Size: 32
+  MOP-Cache-Tag-Bits: 11
   Loop-Buffer-Size: 64
   Loop-Detection-Threshold: 4
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
 Register-Set:
-  GeneralPurpose-Count: 154
-  FloatingPoint/SVE-Count: 90
-  Conditional-Count: 128
+  GeneralPurpose-Count: 180
+  FloatingPoint/SVE-Count: 157
+  Predicate-Count: 48
+  Conditional-Count: 20
 Pipeline-Widths:
   Commit: 8
-  FrontEnd: 16
+  FrontEnd: 8
   LSQ-Completion: 3
 Queue-Sizes:
   ROB: 320
@@ -310,13 +313,14 @@ Latencies:
   4:
     Instruction-Groups: 
     - FP_DIV_OR_SQRT
-    Execution-Latency: 15
+    Execution-Latency: 10
     Execution-Throughput: 7
   6:
     Instruction-Groups: 
     - SVE_DIV_OR_SQRT
-    Execution-Latency: 15
-    Execution-Throughput: 14
+    Execution-Latency: 10
+    Execution-Throughput: 7
+
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:

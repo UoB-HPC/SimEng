@@ -12,7 +12,8 @@ A64FXPortAllocator::A64FXPortAllocator(
     :  // Initialise reservation station to port mapping
       rsToPort_({{0, 1, 2}, {3, 4}, {5}, {6}, {7}}) {}
 
-uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
+uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports,
+                                      const uint16_t stallCycles) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   const uint8_t attribute = attributeMapping(ports);
@@ -146,9 +147,11 @@ uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
   return port;
 }
 
-void A64FXPortAllocator::issued(uint16_t port) {}
+void A64FXPortAllocator::issued(uint16_t port, const uint16_t stallCycles) {}
 
-void A64FXPortAllocator::deallocate(uint16_t port) { issued(port); }
+void A64FXPortAllocator::deallocate(uint16_t port, const uint16_t stallCycles) {
+  issued(port);
+};
 
 uint8_t A64FXPortAllocator::attributeMapping(
     const std::vector<uint16_t>& ports) {

@@ -42,6 +42,8 @@ class MockInstruction : public Instruction {
 
   MOCK_METHOD1(setExecutionInfo, void(const ExecutionInfo& info));
 
+  MOCK_METHOD0(getOpcode, uint64_t());
+
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;

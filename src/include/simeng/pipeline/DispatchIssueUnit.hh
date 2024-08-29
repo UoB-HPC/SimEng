@@ -22,6 +22,8 @@ struct ReservationStationPort {
   /** Queue of instructions that are ready to be
    * issued */
   std::deque<std::shared_ptr<Instruction>> ready;
+
+  uint16_t dependent = 0;
 };
 
 /** A reservation station */
@@ -84,14 +86,34 @@ class DispatchIssueUnit {
   /** Retrieve the number of cycles no instructions were issued due to an empty
    * RS. */
   uint64_t getFrontendStalls() const;
+  std::vector<uint64_t> getFrontendSlotStalls() const {
+    return frontendSlotStalls_;
+  }
 
   /** Retrieve the number of cycles no instructions were issued due to
    * dependencies or a lack of available ports. */
   uint64_t getBackendStalls() const;
+  std::vector<uint64_t> getBackendSlotStalls() const {
+    return backendSlotStalls_;
+  }
 
   /** Retrieve the number of times an instruction was unable to issue due to a
    * busy port. */
   uint64_t getPortBusyStalls() const;
+
+  std::map<uint64_t, std::vector<uint64_t>> getIssueGroupUsage() const {
+    return issueGroupUsage_;
+  }
+
+  std::vector<std::vector<uint64_t>> getEmptyAtIssueNoDeps() const {
+    return emptyAtIssueNoDeps_;
+  }
+
+  std::vector<std::vector<uint64_t>> getEmptyAtIssueWithDeps() const {
+    return emptyAtIssueWithDeps_;
+  }
+
+  std::vector<std::vector<uint64_t>> getRsMiss() const { return rsMiss_; }
 
   /** Retrieve the current sizes and capacities of the reservation stations*/
   void getRSSizes(std::vector<uint32_t>&) const;
@@ -136,14 +158,23 @@ class DispatchIssueUnit {
 
   /** The number of cycles no instructions were issued due to an empty RS. */
   uint64_t frontendStalls_ = 0;
+  std::vector<uint64_t> frontendSlotStalls_;
 
   /** The number of cycles no instructions were issued due to dependencies or a
    * lack of available ports. */
   uint64_t backendStalls_ = 0;
+  std::vector<uint64_t> backendSlotStalls_;
 
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  std::vector<std::vector<uint64_t>> rsMiss_;
+
+  std::map<uint64_t, std::vector<uint64_t>> issueGroupUsage_;
+
+  std::vector<std::vector<uint64_t>> emptyAtIssueWithDeps_;
+  std::vector<std::vector<uint64_t>> emptyAtIssueNoDeps_;
 };
 
 }  // namespace pipeline

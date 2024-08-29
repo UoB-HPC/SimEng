@@ -34,122 +34,122 @@ class M1PortAllocatorTest : public testing::Test {
 // Tests correct allocation for single port groups (i.e. INT_DIV_OR_SQRT)
 TEST_F(M1PortAllocatorTest, singlePortAllocation) {
   std::vector<uint16_t> ports = {4};
-  EXPECT_EQ(portAllocator.allocate(ports), 4);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 4);
 }
 
 // Tests correct allocation of multiple INT_SIMPLE instructions
 TEST_F(M1PortAllocatorTest, allocationIntSimple) {
   std::vector<uint16_t> ports = {0, 1, 2, 3, 4, 5};
-  EXPECT_EQ(portAllocator.allocate(ports), 0);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 1);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 1);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 2);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 2);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 3);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 3);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 4);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 4);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 5);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 5);
   rsFreeEntries[5]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 0);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 0);
   rsFreeEntries[0]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(3);
+  portAllocator.issued(3, 0);
   rsFreeEntries[3]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 3);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 3);
   rsFreeEntries[3]--;
 }
 
 // Tests correct allocation of multiple BRANCH instructions
 TEST_F(M1PortAllocatorTest, allocationBranch) {
   std::vector<uint16_t> ports = {0, 1};
-  EXPECT_EQ(portAllocator.allocate(ports), 0);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 1);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 1);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 0);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 0);
   rsFreeEntries[0]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(0);
+  portAllocator.issued(0, 0);
   rsFreeEntries[0]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 0);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 0);
   rsFreeEntries[0]--;
 }
 
 // Tests correct allocation of multiple INT_MUL instructions
 TEST_F(M1PortAllocatorTest, allocationIntMul) {
   std::vector<uint16_t> ports = {4, 5};
-  EXPECT_EQ(portAllocator.allocate(ports), 4);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 4);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 5);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 5);
   rsFreeEntries[5]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 4);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 4);
   rsFreeEntries[4]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(4);
+  portAllocator.issued(4, 0);
   rsFreeEntries[4]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 4);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 4);
   rsFreeEntries[4]--;
 }
 
 // Tests correct allocation of multiple LOAD instructions
 TEST_F(M1PortAllocatorTest, allocationLoad) {
   std::vector<uint16_t> ports = {7, 8, 9};
-  EXPECT_EQ(portAllocator.allocate(ports), 7);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 7);
   rsFreeEntries[7]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 8);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 8);
   rsFreeEntries[8]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 9);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 9);
   rsFreeEntries[9]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 7);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 7);
   rsFreeEntries[7]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(9);
+  portAllocator.issued(9, 0);
   rsFreeEntries[9]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 9);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 9);
   rsFreeEntries[9]--;
 }
 
 // Tests correct allocation of multiple STORE instructions
 TEST_F(M1PortAllocatorTest, allocationStore) {
   std::vector<uint16_t> ports = {6, 7};
-  EXPECT_EQ(portAllocator.allocate(ports), 6);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 6);
   rsFreeEntries[6]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 7);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 7);
   rsFreeEntries[7]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 6);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 6);
   rsFreeEntries[6]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(6);
+  portAllocator.issued(6, 0);
   rsFreeEntries[6]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 6);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 6);
   rsFreeEntries[6]--;
 }
 
 // Tests correct allocation of multiple FP / VECTOR instructions
 TEST_F(M1PortAllocatorTest, allocationFpVec) {
   std::vector<uint16_t> ports = {10, 11, 12, 13};
-  EXPECT_EQ(portAllocator.allocate(ports), 10);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 10);
   rsFreeEntries[10]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 11);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 11);
   rsFreeEntries[11]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 12);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 12);
   rsFreeEntries[12]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 13);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 13);
   rsFreeEntries[13]--;
-  EXPECT_EQ(portAllocator.allocate(ports), 10);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 10);
   rsFreeEntries[10]--;
 
   // Ensure `issued()` logic works as expected
-  portAllocator.issued(12);
+  portAllocator.issued(12, 0);
   rsFreeEntries[12]++;
-  EXPECT_EQ(portAllocator.allocate(ports), 12);
+  EXPECT_EQ(portAllocator.allocate(ports, 0), 12);
   rsFreeEntries[12]--;
 }
 

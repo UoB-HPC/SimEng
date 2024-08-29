@@ -13,6 +13,23 @@
 #define DEFAULT_STR "Default"
 
 namespace simeng {
+
+class comma_numpunct : public std::numpunct<char> {
+ protected:
+  virtual char do_thousands_sep() const { return ','; }
+
+  virtual std::string do_grouping() const { return "\03"; }
+};
+
+template <class T>
+std::string formatWithCommas(const T value) {
+  std::locale comma_locale(std::locale(), new comma_numpunct());
+  std::stringstream ss;
+  ss.imbue(comma_locale);
+  ss << std::setprecision(2) << std::fixed << value;
+  return ss.str();
+}
+
 namespace config {
 
 /** Enum representing the possible simulation modes. */

@@ -205,8 +205,6 @@ uint64_t Core::getInstructionsRetiredCount() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
-  std::ostringstream ipcStr;
-  ipcStr << std::setprecision(2) << ipc;
 
   auto branchStalls = fetchUnit_.getBranchStalls();
 
@@ -232,28 +230,146 @@ std::map<std::string, std::string> Core::getStats() const {
   }
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
                         static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+  std::map<std::string, std::string> stats_ = {
+      {"cycles", formatWithCommas<uint64_t>(ticks_)},
+      {"retired", formatWithCommas<uint64_t>(retired)},
+      {"ipc", formatWithCommas<float>(ipc)},
+      {"flushes", formatWithCommas<uint64_t>(flushes_)},
+      {"fetch.branchStalls", formatWithCommas<uint64_t>(branchStalls)},
+      {"decode.earlyFlushes", formatWithCommas<uint64_t>(earlyFlushes)},
+      {"rename.allocationStalls", formatWithCommas<uint64_t>(allocationStalls)},
+      {"rename.robStalls", formatWithCommas<uint64_t>(robStalls)},
+      {"rename.lqStalls", formatWithCommas<uint64_t>(lqStalls)},
+      {"rename.sqStalls", formatWithCommas<uint64_t>(sqStalls)},
+      {"dispatch.rsStalls", formatWithCommas<uint64_t>(rsStalls)},
+      {"issue.frontendStalls", formatWithCommas<uint64_t>(frontendStalls)},
+      {"issue.backendStalls", formatWithCommas<uint64_t>(backendStalls)},
+      {"issue.portBusyStalls", formatWithCommas<uint64_t>(portBusyStalls)},
+      {"branch.executed", formatWithCommas<uint64_t>(totalBranchesExecuted)},
+      {"branch.mispredict", formatWithCommas<uint64_t>(totalBranchMispredicts)},
+      {"branch.missrate", formatWithCommas<float>(branchMissRate) + "%"},
+      {"lsq.loadViolations",
+       formatWithCommas<uint64_t>(reorderBuffer_.getViolatingLoadsCount())}};
+
+  // // Get port index to name mappings
+  // ryml::ConstNodeRef config = config::SimInfo::getConfig();
+  // std::map<uint16_t, std::string> portIdxToNames;
+  // for (uint16_t i = 0; i < config["Ports"].num_children(); i++) {
+  //   portIdxToNames[i] = config["Ports"][i]["Portname"].as<std::string>();
+  // }
+
+  // std::vector<uint64_t> feSlotStalls =
+  //     dispatchIssueUnit_.getFrontendSlotStalls();
+  // uint64_t feTotalSlotStalls = 0;
+  // std::vector<uint64_t> beSlotStalls =
+  //     dispatchIssueUnit_.getBackendSlotStalls();
+  // uint64_t beTotalSlotStalls = 0;
+
+  // for (int i = 0; i < feSlotStalls.size(); i++) {
+  //   stats_["issue.frontendSlotStall." + portIdxToNames[i]] =
+  //       formatWithCommas<uint64_t>(feSlotStalls[i]);
+  //   feTotalSlotStalls += feSlotStalls[i];
+  //   stats_["issue.backendSlotStall." + portIdxToNames[i]] =
+  //       formatWithCommas<uint64_t>(beSlotStalls[i]);
+  //   beTotalSlotStalls += beSlotStalls[i];
+  // }
+  // stats_["issue.frontendTotalSlotStalls"] =
+  //     formatWithCommas<uint64_t>(feTotalSlotStalls);
+  // stats_["issue.backendTotalSlotStalls"] =
+  //     formatWithCommas<uint64_t>(beTotalSlotStalls);
+
+  // std::map<uint64_t, std::vector<uint64_t>> issueGroupUsage =
+  //     dispatchIssueUnit_.getIssueGroupUsage();
+  // for (const auto& keyVal : issueGroupUsage) {
+  //   std::string key = "issue.portUsage.";
+  //   for (int i = 0; i < 64; i++) {
+  //     if (keyVal.first & (1ull << i)) {
+  //       if (key != "issue.portUsage.") key += "|";
+  //       key += portIdxToNames[i];
+  //     }
+  //   }
+  //   for (int i = 0; i < keyVal.second.size(); i++) {
+  //     if (keyVal.second[i])
+  //       stats_[key + "." + portIdxToNames[i]] =
+  //           formatWithCommas<uint64_t>(keyVal.second[i]);
+  //   }
+  // }
+
+  // for (int i = 0; i < fetchToDecodeBuffer_.getWidth(); i++) {
+  //   std::pair<uint64_t, uint64_t> usagePair =
+  //       fetchToDecodeBuffer_.getUsage()[i];
+  //   stats_["fetchToDecodeBuffer_.usage." + std::to_string(i)] =
+  //       formatWithCommas<uint64_t>(usagePair.first) + "/" +
+  //       formatWithCommas<uint64_t>(usagePair.second);
+  // }
+  // for (int i = 0; i < decodeToRenameBuffer_.getWidth(); i++) {
+  //   std::pair<uint64_t, uint64_t> usagePair =
+  //       decodeToRenameBuffer_.getUsage()[i];
+  //   stats_["decodeToRenameBuffer_.usage." + std::to_string(i)] =
+  //       formatWithCommas<uint64_t>(usagePair.first) + "/" +
+  //       formatWithCommas<uint64_t>(usagePair.second);
+  // }
+  // for (int i = 0; i < renameToDispatchBuffer_.getWidth(); i++) {
+  //   std::pair<uint64_t, uint64_t> usagePair =
+  //       renameToDispatchBuffer_.getUsage()[i];
+  //   stats_["renameToDispatchBuffer_.usage." + std::to_string(i)] =
+  //       formatWithCommas<uint64_t>(usagePair.first) + "/" +
+  //       formatWithCommas<uint64_t>(usagePair.second);
+  // }
+  // for (int j = 0; j < issuePorts_.size(); j++) {
+  //   for (int i = 0; i < issuePorts_[j].getWidth(); i++) {
+  //     std::pair<uint64_t, uint64_t> usagePair = issuePorts_[j].getUsage()[i];
+  //     stats_["issuePorts_." + portIdxToNames[j] + ".usage"] =
+  //         formatWithCommas<uint64_t>(usagePair.first) + "/" +
+  //         formatWithCommas<uint64_t>(usagePair.second);
+  //   }
+  // }
+  // for (int j = 0; j < completionSlots_.size(); j++) {
+  //   for (int i = 0; i < completionSlots_[j].getWidth(); i++) {
+  //     std::pair<uint64_t, uint64_t> usagePair =
+  //         completionSlots_[j].getUsage()[i];
+  //     stats_["completionSlots_." + std::to_string(j) + ".usage"] =
+  //         formatWithCommas<uint64_t>(usagePair.first) + "/" +
+  //         formatWithCommas<uint64_t>(usagePair.second);
+  //   }
+  // }
+
+  // std::vector<std::vector<uint64_t>> emptyAtIssueNoDeps =
+  //     dispatchIssueUnit_.getEmptyAtIssueNoDeps();
+  // for (int i = 0; i < emptyAtIssueNoDeps.size(); i++) {
+  //   for (int j = 0; j < emptyAtIssueNoDeps[i].size(); j++) {
+  //     if (emptyAtIssueNoDeps[i][j] > 0) {
+  //       stats_["issue.emptyButAvailable." + portIdxToNames[i] + "." +
+  //              portIdxToNames[j]] =
+  //           formatWithCommas<uint64_t>(emptyAtIssueNoDeps[i][j]);
+  //     }
+  //   }
+  // }
+
+  // std::vector<std::vector<uint64_t>> emptyAtIssueWithDeps =
+  //     dispatchIssueUnit_.getEmptyAtIssueWithDeps();
+  // for (int i = 0; i < emptyAtIssueWithDeps.size(); i++) {
+  //   for (int j = 0; j < emptyAtIssueWithDeps[i].size(); j++) {
+  //     if (emptyAtIssueWithDeps[i][j] > 0) {
+  //       stats_["issue.onlyDepsButAvailable." + portIdxToNames[i] + "." +
+  //              portIdxToNames[j]] =
+  //           formatWithCommas<uint64_t>(emptyAtIssueWithDeps[i][j]);
+  //     }
+  //   }
+  // }
+
+  // std::vector<std::vector<uint64_t>> rsMiss = dispatchIssueUnit_.getRsMiss();
+  // for (int i = 0; i < rsMiss.size(); i++) {
+  //   for (int j = 0; j < rsMiss[i].size(); j++) {
+  //     if (rsMiss[i][j] > 0) {
+  //       stats_["dispatch.rsMiss." + portIdxToNames[i] + "." +
+  //              std::to_string(j)] = formatWithCommas<uint64_t>(rsMiss[i][j]);
+  //     }
+  //   }
+  // }
+
+  return stats_;
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

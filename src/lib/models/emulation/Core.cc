@@ -147,10 +147,10 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-}
+  return {{"cycles", formatWithCommas<uint64_t>(ticks_)},
+          {"retired", formatWithCommas<uint64_t>(instructionsExecuted_)},
+          {"branch.executed", formatWithCommas<uint64_t>(branchesExecuted_)}};
+};
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();

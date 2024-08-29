@@ -12,7 +12,8 @@ M1PortAllocator::M1PortAllocator(
     std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
     : weights(portArrangement.size(), 0), rsArrangement_(rsArrangement) {}
 
-uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
+uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports,
+                                   const uint16_t stallCycles) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
@@ -54,12 +55,14 @@ uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
   return bestPort;
 }
 
-void M1PortAllocator::issued(uint16_t port) {
+void M1PortAllocator::issued(uint16_t port, const uint16_t stallCycles) {
   assert(weights[port] > 0);
   weights[port]--;
 }
 
-void M1PortAllocator::deallocate(uint16_t port) { issued(port); }
+void M1PortAllocator::deallocate(uint16_t port, const uint16_t stallCycles) {
+  issued(port);
+};
 
 void M1PortAllocator::setRSSizeGetter(
     std::function<void(std::vector<uint32_t>&)> rsSizes) {

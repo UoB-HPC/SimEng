@@ -175,6 +175,8 @@ const Architecture& Instruction::getArchitecture() const {
 
 InstructionException Instruction::getException() const { return exception_; }
 
+uint64_t Instruction::getOpcode() { return 0; }
+
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

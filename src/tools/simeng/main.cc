@@ -137,9 +137,11 @@ int main(int argc, char** argv) {
     std::cout << "[SimEng] " << key << ": " << value << std::endl;
   }
   std::cout << std::endl;
-  std::cout << "[SimEng] Finished " << iterations << " ticks in " << duration
-            << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
-            << mips << " MIPS)" << std::endl;
+  std::cout << "[SimEng] Finished "
+            << simeng::formatWithCommas<uint64_t>(iterations) << " ticks in "
+            << simeng::formatWithCommas<long long>(duration) << "ms ("
+            << simeng::formatWithCommas<double>(std::round(khz)) << " kHz, "
+            << simeng::formatWithCommas<double>(mips) << " MIPS)" << std::endl;
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning

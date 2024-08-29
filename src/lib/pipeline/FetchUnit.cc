@@ -106,6 +106,7 @@ void FetchUnit::tick() {
         pc_ = prediction.target;
       }
     } else {
+      if (mopQueue_.size() < output_.getWidth()) branchStalls_++;
       // Request new block from instruction memory if there isn't an existing
       // request
       uint64_t blockAddress = pc_ & blockMask_;

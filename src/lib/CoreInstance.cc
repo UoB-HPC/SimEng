@@ -237,7 +237,7 @@ void CoreInstance::createCore() {
     }
   }
   portAllocator_ =
-      std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
+      std::make_unique<pipeline::CapacityAwarePortAllocator>(portArrangement);
 
   // Construct the core object based on the defined simulation mode
   uint64_t entryPoint = process_->getEntryPoint();

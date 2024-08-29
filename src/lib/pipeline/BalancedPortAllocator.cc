@@ -9,7 +9,8 @@ BalancedPortAllocator::BalancedPortAllocator(
     const std::vector<std::vector<uint16_t>>& portArrangement)
     : weights(portArrangement.size(), 0) {}
 
-uint16_t BalancedPortAllocator::allocate(const std::vector<uint16_t>& ports) {
+uint16_t BalancedPortAllocator::allocate(const std::vector<uint16_t>& ports,
+                                         const uint16_t stallCycles) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
@@ -31,11 +32,14 @@ uint16_t BalancedPortAllocator::allocate(const std::vector<uint16_t>& ports) {
   return bestPort;
 }
 
-void BalancedPortAllocator::issued(uint16_t port) {
+void BalancedPortAllocator::issued(uint16_t port, const uint16_t stallCycles) {
   assert(weights[port] > 0);
   weights[port]--;
 }
-void BalancedPortAllocator::deallocate(uint16_t port) { issued(port); }
+void BalancedPortAllocator::deallocate(uint16_t port,
+                                       const uint16_t stallCycles) {
+  issued(port);
+};
 
 void BalancedPortAllocator::setRSSizeGetter(
     std::function<void(std::vector<uint32_t>&)> rsSizes) {

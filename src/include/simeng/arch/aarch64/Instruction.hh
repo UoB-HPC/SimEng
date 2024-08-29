@@ -370,6 +370,8 @@ class Instruction : public simeng::Instruction {
    * processing this instruction. */
   InstructionException getException() const;
 
+  uint64_t getOpcode() override;
+
  private:
   /** Process the instruction's metadata to determine source/destination
    * registers. */

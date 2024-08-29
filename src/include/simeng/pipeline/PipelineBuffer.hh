@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace simeng {
@@ -18,8 +19,11 @@ class PipelineBuffer {
  public:
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
-  PipelineBuffer(uint16_t width, const T& initialValue)
-      : width(width), buffer(width * length, initialValue) {}
+  PipelineBuffer(uint16_t width, const T initialValue)
+      : width(width),
+        initialValue_(initialValue),
+        buffer(width * length, initialValue),
+        usage(width, {0, 0}) {}
 
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
    * stalled. */
@@ -27,6 +31,11 @@ class PipelineBuffer {
     if (isStalled_) return;
 
     headIsStart = !headIsStart;
+    const T* headSlots = getHeadSlots();
+    for (int i = 0; i < width; i++) {
+      if (headSlots[i] != initialValue_) usage[i].first++;
+      usage[i].second++;
+    }
   }
 
   /** Return the slots waiting to be processed by the next pipeline unit */
@@ -73,12 +82,18 @@ class PipelineBuffer {
   /** Get the width of the buffer slots. */
   uint16_t getWidth() const { return width; }
 
+  std::vector<std::pair<uint64_t, uint64_t>> getUsage() const { return usage; }
+
  private:
   /** The width of each row of slots. */
   uint16_t width;
 
+  const T initialValue_;
+
   /** The buffer. */
   std::vector<T> buffer;
+
+  std::vector<std::pair<uint64_t, uint64_t>> usage;
 
   /** The offset of the head pointer; either 0 or 1. */
   bool headIsStart = 0;

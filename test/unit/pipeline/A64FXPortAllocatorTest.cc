@@ -36,33 +36,33 @@ TEST_F(A64FXPortAllocatorTest, singlePortAllocation) {
 
   // RSE0
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({0}), 0);
+  EXPECT_EQ(portAllocator.allocate({0}, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({1}), 1);
+  EXPECT_EQ(portAllocator.allocate({1}, 0), 1);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2}), 2);
+  EXPECT_EQ(portAllocator.allocate({2}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({0}), 0);
+  EXPECT_EQ(portAllocator.allocate({0}, 0), 0);
   rsFreeEntries[0]--;
   // RSE1
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({3}), 3);
+  EXPECT_EQ(portAllocator.allocate({3}, 0), 3);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({4}), 4);
+  EXPECT_EQ(portAllocator.allocate({4}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({3}), 3);
+  EXPECT_EQ(portAllocator.allocate({3}, 0), 3);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({4}), 4);
+  EXPECT_EQ(portAllocator.allocate({4}, 0), 4);
   rsFreeEntries[1]--;
   // BR
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
 }
 
@@ -70,22 +70,22 @@ TEST_F(A64FXPortAllocatorTest, singlePortAllocation) {
 TEST_F(A64FXPortAllocatorTest, RSX) {
   rsFreeEntries = {10, 10, 10, 10, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
 }
 
@@ -94,32 +94,32 @@ TEST_F(A64FXPortAllocatorTest, RSEA) {
   rsFreeEntries = {20, 20, 10, 10, 19};
   // RSE
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 4);
   rsFreeEntries[1]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 0);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 3);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 3);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 0);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 3);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 3);
   rsFreeEntries[1]--;
   // RSA
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 6);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 6);
   rsFreeEntries[3]--;
 }
 
@@ -127,22 +127,22 @@ TEST_F(A64FXPortAllocatorTest, RSEA) {
 TEST_F(A64FXPortAllocatorTest, table1) {
   rsFreeEntries = {20, 0, 0, 0, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
 }
 
@@ -150,22 +150,22 @@ TEST_F(A64FXPortAllocatorTest, table1) {
 TEST_F(A64FXPortAllocatorTest, table2) {
   rsFreeEntries = {20, 20, 0, 0, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
 }
 
@@ -173,22 +173,22 @@ TEST_F(A64FXPortAllocatorTest, table2) {
 TEST_F(A64FXPortAllocatorTest, table3) {
   rsFreeEntries = {0, 0, 10, 10, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
 }
 
@@ -196,22 +196,22 @@ TEST_F(A64FXPortAllocatorTest, table3) {
 TEST_F(A64FXPortAllocatorTest, table5) {
   rsFreeEntries = {9, 9, 10, 9, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 6);
   rsFreeEntries[3]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
 }
 
@@ -219,22 +219,22 @@ TEST_F(A64FXPortAllocatorTest, table5) {
 TEST_F(A64FXPortAllocatorTest, table6) {
   rsFreeEntries = {20, 0, 10, 0, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 0);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 0);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({0, 3}), 0);
+  EXPECT_EQ(portAllocator.allocate({0, 3}, 0), 0);
   rsFreeEntries[0]--;
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 5);
   rsFreeEntries[2]--;
 }
 
@@ -246,30 +246,30 @@ TEST_F(A64FXPortAllocatorTest, dispatchSlots) {
   // reset the dispatchSlot to 0 and start the allocation logic at the
   // appropriate place in the mechanism
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 5);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 5);
   rsFreeEntries[2]--;
   rsFreeEntries = {10, 10, 10, 10, 19};
   portAllocator.tick();
   // Should reset to dispatch slot 0 thus RSEm should be allocated as opposed
   // to RSAf in decode slot 3 of table 5-4
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 2);
   rsFreeEntries[0]--;
 
   // Dispatch slot values should be shared amongst all instruction attribute
   // dispatch mechanisms
   rsFreeEntries = {10, 10, 10, 10, 19};
   portAllocator.tick();
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 4);
+  EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}, 0), 4);
   rsFreeEntries[1]--;
-  EXPECT_EQ(portAllocator.allocate({7}), 7);
+  EXPECT_EQ(portAllocator.allocate({7}, 0), 7);
   rsFreeEntries[4]--;
-  EXPECT_EQ(portAllocator.allocate({5, 6}), 6);
+  EXPECT_EQ(portAllocator.allocate({5, 6}, 0), 6);
   rsFreeEntries[3]--;
 }
 

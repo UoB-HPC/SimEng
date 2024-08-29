@@ -192,6 +192,8 @@ const Architecture& Instruction::getArchitecture() const {
 
 InstructionException Instruction::getException() const { return exception_; }
 
+uint64_t Instruction::getOpcode() { return metadata_.opcode; }
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

@@ -53,6 +53,15 @@ DispatchIssueUnit::DispatchIssueUnit(
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 
   dispatches_ = std::make_unique<uint16_t[]>(reservationStations_.size());
+  frontendSlotStalls_ = std::vector<uint64_t>(issuePorts_.size(), 0);
+  backendSlotStalls_ = std::vector<uint64_t>(issuePorts_.size(), 0);
+  rsMiss_ = std::vector<std::vector<uint64_t>>(
+      issuePorts_.size(),
+      std::vector<uint64_t>(reservationStations_.size(), 0));
+  emptyAtIssueNoDeps_ = std::vector<std::vector<uint64_t>>(
+      issuePorts_.size(), std::vector<uint64_t>(issuePorts_.size(), 0));
+  emptyAtIssueWithDeps_ = std::vector<std::vector<uint64_t>>(
+      issuePorts_.size(), std::vector<uint64_t>(issuePorts_.size(), 0));
 }
 
 void DispatchIssueUnit::tick() {
@@ -75,7 +84,8 @@ void DispatchIssueUnit::tick() {
       continue;
     }
     // Allocate issue port to uop
-    uint16_t port = portAllocator_.allocate(supportedPorts);
+    uint16_t port =
+        portAllocator_.allocate(supportedPorts, uop->getStallCycles());
     uint16_t RS_Index = portMapping_[port].first;
     uint16_t RS_Port = portMapping_[port].second;
     assert(RS_Index < reservationStations_.size() &&
@@ -85,10 +95,30 @@ void DispatchIssueUnit::tick() {
     // When appropriate, stall uop or input buffer if stall buffer full
     if (rs.currentSize == rs.capacity ||
         dispatches_[RS_Index] == rs.dispatchRate) {
+      for (const auto pt : supportedPorts) {
+        uint16_t rsi = portMapping_[pt].first;
+        if (rsi != RS_Index) {
+          if (reservationStations_[rsi].currentSize !=
+                  reservationStations_[rsi].capacity &&
+              dispatches_[rsi] != reservationStations_[rsi].dispatchRate) {
+            // std::cerr << "Deallocated " << port << " as "
+            //           << (rs.currentSize == rs.capacity ? "at capacity"
+            //                                             : "exceeded rate")
+            //           << " but rs " << rsi << " had space"
+            //           << (dispatches_[rsi] !=
+            //                       reservationStations_[rsi].dispatchRate
+            //                   ? " and rate"
+            //                   : "")
+            //           << std::endl;
+            rsMiss_[port][rsi]++;
+          }
+        }
+      }
       // Deallocate port given
-      portAllocator_.deallocate(port);
+      portAllocator_.deallocate(port, uop->getStallCycles());
       input_.stall(true);
       rsStalls_++;
+      backendSlotStalls_[port]++;
       return;
     }
 
@@ -127,6 +157,8 @@ void DispatchIssueUnit::tick() {
 
     if (ready) {
       rs.ports[RS_Port].ready.push_back(std::move(uop));
+    } else {
+      rs.ports[RS_Port].dependent++;
     }
 
     input_.getHeadSlots()[slot] = nullptr;
@@ -143,21 +175,75 @@ void DispatchIssueUnit::issue() {
     if (issuePorts_[i].isStalled()) {
       if (queue.size() > 0) {
         portBusyStalls_++;
+        backendSlotStalls_[i]++;
+      } else if (rs.ports[portMapping_[i].second].dependent) {
+        backendSlotStalls_[i]++;
+      } else {
+        frontendSlotStalls_[i]++;
       }
       continue;
     }
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
+
+      // Get issueGroup
+      const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
+      uint64_t issueGroup = 0;
+      for (const uint16_t& pt : supportedPorts) {
+        issueGroup |= (1ull << pt);
+      }
+      if (issueGroupUsage_.find(issueGroup) == issueGroupUsage_.end()) {
+        issueGroupUsage_[issueGroup] = std::vector(issuePorts_.size(), 0ull);
+      }
+      issueGroupUsage_[issueGroup][i]++;
+
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
 
       // Inform the port allocator that an instruction issued
-      portAllocator_.issued(i);
+      portAllocator_.issued(i,
+                            issuePorts_[i].getTailSlots()[0]->getStallCycles());
       issued++;
 
       assert(rs.currentSize > 0);
       rs.currentSize--;
+    } else if (rs.ports[portMapping_[i].second].dependent) {
+      for (size_t j = 0; j < issuePorts_.size(); j++) {
+        if (reservationStations_[portMapping_[j].first]
+                .ports[portMapping_[j].second]
+                .ready.size() > 1) {
+          for (const auto& op : reservationStations_[portMapping_[j].first]
+                                    .ports[portMapping_[j].second]
+                                    .ready) {
+            if (std::find(op->getSupportedPorts().begin(),
+                          op->getSupportedPorts().end(),
+                          i) != op->getSupportedPorts().end()) {
+              emptyAtIssueWithDeps_[i][j]++;
+              break;
+            }
+          }
+        }
+      }
+      backendSlotStalls_[i]++;
+    } else {
+      for (size_t j = 0; j < issuePorts_.size(); j++) {
+        if (reservationStations_[portMapping_[j].first]
+                .ports[portMapping_[j].second]
+                .ready.size() > 1) {
+          for (const auto& op : reservationStations_[portMapping_[j].first]
+                                    .ports[portMapping_[j].second]
+                                    .ready) {
+            if (std::find(op->getSupportedPorts().begin(),
+                          op->getSupportedPorts().end(),
+                          i) != op->getSupportedPorts().end()) {
+              emptyAtIssueNoDeps_[i][j]++;
+              break;
+            }
+          }
+        }
+      }
+      frontendSlotStalls_[i]++;
     }
   }
 
@@ -189,8 +275,34 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
       if (entry.uop->canExecute()) {
         // Add the now-ready instruction to the relevant ready queue
         auto rsInfo = portMapping_[entry.port];
-        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
-            std::move(entry.uop));
+        auto it = reservationStations_[rsInfo.first]
+                      .ports[rsInfo.second]
+                      .ready.begin();
+        bool inserted = false;
+        while (it != reservationStations_[rsInfo.first]
+                         .ports[rsInfo.second]
+                         .ready.end()) {
+          if ((*it)->getSequenceId() > entry.uop->getSequenceId()) {
+            reservationStations_[rsInfo.first]
+                .ports[rsInfo.second]
+                .ready.insert(it, std::move(entry.uop));
+            inserted = true;
+            break;
+          } else {
+            it++;
+          }
+        }
+        if (!inserted) {
+          reservationStations_[rsInfo.first]
+              .ports[rsInfo.second]
+              .ready.push_back(std::move(entry.uop));
+        }
+        if (reservationStations_[rsInfo.first].ports[rsInfo.second].dependent ==
+            0) {
+          std::cerr << "ERR 0" << std::endl;
+          exit(1);
+        }
+        reservationStations_[rsInfo.first].ports[rsInfo.second].dependent--;
       }
     }
 
@@ -209,7 +321,7 @@ void DispatchIssueUnit::purgeFlushed() {
       while (readyIter != port.ready.end()) {
         auto& uop = *readyIter;
         if (uop->isFlushed()) {
-          portAllocator_.deallocate(port.issuePort);
+          portAllocator_.deallocate(port.issuePort, uop->getStallCycles());
           readyIter = port.ready.erase(readyIter);
           assert(rs.currentSize > 0);
           rs.currentSize--;
@@ -231,7 +343,16 @@ void DispatchIssueUnit::purgeFlushed() {
           auto rsIndex = portMapping_[entry.port].first;
           if (!flushed_[rsIndex].count(entry.uop)) {
             flushed_[rsIndex].insert(entry.uop);
-            portAllocator_.deallocate(entry.port);
+            portAllocator_.deallocate(entry.port, entry.uop->getStallCycles());
+            if (reservationStations_[portMapping_[entry.port].first]
+                    .ports[portMapping_[entry.port].second]
+                    .dependent == 0) {
+              std::cerr << "ERR 1" << std::endl;
+              exit(1);
+            }
+            reservationStations_[portMapping_[entry.port].first]
+                .ports[portMapping_[entry.port].second]
+                .dependent--;
           }
           it = dependencyList.erase(it);
         } else {
