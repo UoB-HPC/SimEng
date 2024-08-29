@@ -189,6 +189,21 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
+/** A helper macro to predecode the first instruction in a snippet of Armv9.2-a
+ * assembly code and check the assigned group(s) for each micro-op matches the
+ * expected group(s). Returns from the calling function if a fatal error occurs.
+ * Four bytes containing zeros are appended to the source to ensure that the
+ * program will terminate with an unallocated instruction encoding exception
+ * instead of running into the heap.
+ */
+#define EXPECT_GROUP(source, ...)                            \
+  {                                                          \
+    std::string sourceWithTerminator = source;               \
+    sourceWithTerminator += "\n.word 0";                     \
+    checkGroup(sourceWithTerminator.c_str(), {__VA_ARGS__}); \
+  }                                                          \
+  if (HasFatalFailure()) return
+
 /** The test fixture for all AArch64 regression tests. */
 class AArch64RegressionTest : public RegressionTest {
  protected:
@@ -197,17 +212,38 @@ class AArch64RegressionTest : public RegressionTest {
   /** Run the assembly code in `source`. */
   void run(const char* source);
 
+  /** Run the first instruction in source through predecode and check the
+   * groups. */
+  void checkGroup(const char* source,
+                  const std::vector<uint16_t>& expectedGroups);
+
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
 
-  /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
+  /** Instantiate an ISA specific architecture from a kernel. */
+  virtual std::unique_ptr<simeng::arch::Architecture> instantiateArchitecture(
       simeng::kernel::Linux& kernel) const override;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const override;
+
+  /** Initialise LLVM */
+  void initialiseLLVM() {
+    LLVMInitializeAArch64TargetInfo();
+    LLVMInitializeAArch64TargetMC();
+    LLVMInitializeAArch64AsmParser();
+  }
+
+  /** Get the subtarget feature string based on LLVM version being used */
+  std::string getSubtargetFeaturesString() {
+#if SIMENG_LLVM_VERSION < 14
+    return "+sve,+lse";
+#else
+    return "+sve,+lse,+sve2,+sme,+sme-f64";
+#endif
+  }
 
   /** Check the elements of a Neon register.
    *

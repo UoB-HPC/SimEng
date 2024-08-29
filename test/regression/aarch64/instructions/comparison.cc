@@ -3,6 +3,16 @@
 namespace {
 
 using InstComparison = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
+
+// Similar to RISC-V atomic instructions, read-modify-write operations i.e. a
+// load, comparison and store, is given the group LOAD_INT only. The instruction
+// object is tagged with the appropriate identifiers (isLoad and isStore) but
+// the group only reflects the first stage of execution. This ensures the
+// instruction goes to the correct part of the pipeline i.e. the LSQ. But we
+// currently do not model the rest of the atomic behaviour precisely as the
+// comparison happens here also. The change of the instructions behaviour over
+// its lifetime is currently not reflected in the group it is given.
 
 // Test correct Value stored after comparison for CASAL (32 & 64 bit)
 TEST_P(InstComparison, casal) {
@@ -38,6 +48,8 @@ TEST_P(InstComparison, casal) {
   EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(3)), 100);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()), 89);
 
+  EXPECT_GROUP("casal w1, w2, [x0]", LOAD_INT);
+
   // 64-bit
   initialHeapData_.resize(16);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
@@ -69,6 +81,8 @@ TEST_P(InstComparison, casal) {
             0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(3)), 101);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer()), 76);
+
+  EXPECT_GROUP("casal x1, x7, [sp]", LOAD_INT);
 }
 
 // Test that NZCV flags are set correctly by the 32-bit cmn instruction
@@ -94,6 +108,8 @@ TEST_P(InstComparison, cmnw) {
     cmn w0, #0x1
   )");
   EXPECT_EQ(getNZCV(), 0b0110);
+
+  EXPECT_GROUP(R"(cmn w0, #0x1)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 // Test that NZCV flags are set correctly by the 64-bit cmn instruction
@@ -119,6 +135,8 @@ TEST_P(InstComparison, cmnx) {
     cmn x0, #0x1
   )");
   EXPECT_EQ(getNZCV(), 0b0110);
+
+  EXPECT_GROUP(R"(cmn X0, #0x1)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 // Test that NZCV flags are set correctly by the 32-bit ccmn instruction
@@ -190,6 +208,9 @@ TEST_P(InstComparison, tstw) {
     tst w0, #0x80000000
   )");
   EXPECT_EQ(getNZCV(), 0b1000);
+
+  EXPECT_GROUP(R"(tst w0, w2)", INT_SIMPLE_LOGICAL_NOSHIFT);
+  EXPECT_GROUP(R"(tst w0, #0x80000000)", INT_SIMPLE_LOGICAL_NOSHIFT);
 }
 
 // Test that NZCV flags are set correctly by 32-bit cmp
@@ -243,6 +264,8 @@ TEST_P(InstComparison, cmpw) {
     cmp w1, #1
   )");
   EXPECT_EQ(getNZCV(), 0b0011);
+
+  EXPECT_GROUP(R"(cmp w1, #1)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 // Test that NZCV flags are set correctly by 64-bit cmp
@@ -323,6 +346,8 @@ TEST_P(InstComparison, cmpx) {
     cmp x0, x2, uxtx 4
   )");
   EXPECT_EQ(getNZCV(), 0b0010);
+
+  EXPECT_GROUP(R"(cmp x0, x2, uxtx 4)", INT_SIMPLE_ARTH);
 }
 
 // Test that NZCV flags are set correctly by 64-bit tst
@@ -347,6 +372,9 @@ TEST_P(InstComparison, tstx) {
     tst x0, #0x8000000000000000
   )");
   EXPECT_EQ(getNZCV(), 0b1000);
+
+  EXPECT_GROUP(R"(tst x0, x2)", INT_SIMPLE_LOGICAL_NOSHIFT);
+  EXPECT_GROUP(R"(tst x0, #0b0010)", INT_SIMPLE_LOGICAL_NOSHIFT);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstComparison,

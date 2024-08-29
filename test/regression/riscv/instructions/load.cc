@@ -3,6 +3,7 @@
 namespace {
 
 using InstLoad = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstLoad, lb) {
   initialHeapData_.resize(16);
@@ -28,6 +29,8 @@ TEST_P(InstLoad, lb) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x0000000000000012);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFAD);
 
+  EXPECT_GROUP(R"(lb t2, -2(t5))", LOAD_INT);
+
   // Load byte unsigned
   RUN_RISCV(R"(
       li a7, 214
@@ -44,6 +47,8 @@ TEST_P(InstLoad, lb) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x0000000000000078);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x0000000000000012);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x00000000000000AD);
+
+  EXPECT_GROUP(R"(lbu t2, -2(t5))", LOAD_INT);
 }
 
 TEST_P(InstLoad, lh) {
@@ -70,6 +75,8 @@ TEST_P(InstLoad, lh) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFDEAD);
 
+  EXPECT_GROUP(R"(lh t2, -2(t5))", LOAD_INT);
+
   // Load half word unsigned
   RUN_RISCV(R"(
       li a7, 214
@@ -86,6 +93,8 @@ TEST_P(InstLoad, lh) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x0000000000005678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x000000000000ED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000000000DEAD);
+
+  EXPECT_GROUP(R"(lhu t2, -2(t5))", LOAD_INT);
 }
 
 TEST_P(InstLoad, lw) {
@@ -112,6 +121,8 @@ TEST_P(InstLoad, lw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFEBDAED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000005678DEAD);
 
+  EXPECT_GROUP(R"(lw t2, -2(t5))", LOAD_INT);
+
   RUN_RISCV(R"(
       li a7, 214
       ecall
@@ -127,6 +138,8 @@ TEST_P(InstLoad, lw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0x0000000012345678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x00000000EBDAED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000005678DEAD);
+
+  EXPECT_GROUP(R"(lwu t2, -2(t5))", LOAD_INT);
 }
 
 TEST_P(InstLoad, ld) {
@@ -152,6 +165,8 @@ TEST_P(InstLoad, ld) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFEEBDAED12345678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x654321FEEBDAED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xDAED12345678DEAD);
+
+  EXPECT_GROUP(R"(ld t2, -2(t5))", LOAD_INT);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad,

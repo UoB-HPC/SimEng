@@ -3,6 +3,7 @@
 namespace {
 
 using InstBitmanip = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstBitmanip, bfm) {
   // 32-bit
@@ -243,6 +244,17 @@ TEST_P(InstBitmanip, sbfm) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x78);
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0x5678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0x12345678);
+
+  EXPECT_GROUP(R"(sbfm w4, w0, #30, #27)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sbfm x6, x0, #32, #22)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxtb w7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sxtb x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxth w7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sxth x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxtw x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstBitmanip, ubfm) {

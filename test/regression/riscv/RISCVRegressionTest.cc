@@ -5,13 +5,21 @@
 
 using namespace simeng::arch::riscv;
 
-void RISCVRegressionTest::run(const char* source, const char* extensions) {
-  // Initialise LLVM
-  LLVMInitializeRISCVTargetInfo();
-  LLVMInitializeRISCVTargetMC();
-  LLVMInitializeRISCVAsmParser();
+void RISCVRegressionTest::run(const char* source, bool compressed) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString(compressed);
 
-  RegressionTest::run(source, "riscv64", extensions);
+  RegressionTest::run(source, "riscv64", subtargetFeatures.c_str());
+}
+
+void RISCVRegressionTest::checkGroup(
+    const char* source, const std::vector<uint16_t>& expectedGroups,
+    bool compressed) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString(compressed);
+
+  RegressionTest::checkGroup(source, "riscv64", subtargetFeatures.c_str(),
+                             expectedGroups);
 }
 
 void RISCVRegressionTest::generateConfig() const {
@@ -41,7 +49,8 @@ void RISCVRegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+RISCVRegressionTest::instantiateArchitecture(
+    simeng::kernel::Linux& kernel) const {
   return std::make_unique<Architecture>(kernel);
 }
 
