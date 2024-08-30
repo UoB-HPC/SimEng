@@ -875,7 +875,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CMPHS_PPzZZ_B: {  // cmphs pd.b, pg/z, zn.b, zm.b
         auto [output, nzcv] = sveCmpPredicated_toPred<uint8_t>(
-            sourceValues_, metadata_, VL_bits, true,
+            sourceValues_, metadata_, VL_bits, false,
             [](uint8_t x, uint8_t y) -> bool { return x >= y; });
         results_[0] = nzcv;
         results_[1] = output;
@@ -883,7 +883,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CMPHS_PPzZZ_D: {  // cmphs pd.d, pg/z, zn.d, zm.d
         auto [output, nzcv] = sveCmpPredicated_toPred<uint64_t>(
-            sourceValues_, metadata_, VL_bits, true,
+            sourceValues_, metadata_, VL_bits, false,
             [](uint64_t x, uint64_t y) -> bool { return x >= y; });
         results_[0] = nzcv;
         results_[1] = output;
@@ -891,7 +891,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CMPHS_PPzZZ_H: {  // cmphs pd.h, pg/z, zn.h, zm.h
         auto [output, nzcv] = sveCmpPredicated_toPred<uint16_t>(
-            sourceValues_, metadata_, VL_bits, true,
+            sourceValues_, metadata_, VL_bits, false,
             [](uint16_t x, uint16_t y) -> bool { return x >= y; });
         results_[0] = nzcv;
         results_[1] = output;
@@ -899,7 +899,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CMPHS_PPzZZ_S: {  // cmphs pd.s, pg/z, zn.s, zm.s
         auto [output, nzcv] = sveCmpPredicated_toPred<uint32_t>(
-            sourceValues_, metadata_, VL_bits, true,
+            sourceValues_, metadata_, VL_bits, false,
             [](uint32_t x, uint32_t y) -> bool { return x >= y; });
         results_[0] = nzcv;
         results_[1] = output;
