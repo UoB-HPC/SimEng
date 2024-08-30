@@ -9,9 +9,9 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/** A struct to hold information to construct a default cs_arm64_op from. */
+/** A struct to hold information to construct a default cs_aarch64_op from. */
 struct OpType {
-  arm64_op_type type;
+  aarch64_op_type type;
   bool isDestination = false;
 };
 
@@ -33,38 +33,38 @@ class MicroDecoder {
  private:
   /** Detect if there's an overlap between the underlying hardware registers
    * (e.g. z5, v5, q5, d5, s5, h5, and b5). */
-  bool detectOverlap(arm64_reg registerA, arm64_reg registerB);
+  bool detectOverlap(aarch64_reg registerA, aarch64_reg registerB);
 
   /** Create a default cs_detail object from a vector of operand types. */
   cs_detail createDefaultDetail(std::vector<OpType> opTypes);
 
   /** Create an address offset uop from a base register and an immediate. */
   Instruction createImmOffsetUop(const Architecture& architecture,
-                                 arm64_reg base, int64_t offset,
+                                 aarch64_reg base, int64_t offset,
                                  csh capstoneHandle, bool lastMicroOp = false,
                                  int microOpIndex = 0);
 
   /** Create an address offset uop from a base register and a register. */
   Instruction createRegOffsetUop(const Architecture& architecture,
-                                 arm64_reg base, arm64_reg offset,
+                                 aarch64_reg base, aarch64_reg offset,
                                  csh capstoneHandle, bool lastMicroOp = false,
                                  int microOpIndex = 0);
 
   /** Create a load uop from a destination register and a capstone memory
    * operand. */
-  Instruction createLdrUop(const Architecture& architecture, arm64_reg dest,
-                           arm64_op_mem mem, csh capstoneHandle,
+  Instruction createLdrUop(const Architecture& architecture, aarch64_reg dest,
+                           aarch64_op_mem mem, csh capstoneHandle,
                            bool lastMicroOp = false, int microOpIndex = 0,
                            uint8_t dataSize = 0);
 
   /** Create a store data uop from a source register. */
-  Instruction createSDUop(const Architecture& architecture, arm64_reg src,
+  Instruction createSDUop(const Architecture& architecture, aarch64_reg src,
                           csh capstoneHandle, bool lastMicroOp = false,
                           int microOpIndex = 0);
 
   /** Create a store address uop from a capstone memory
    * operand. */
-  Instruction createStrUop(const Architecture& architecture, arm64_op_mem mem,
+  Instruction createStrUop(const Architecture& architecture, aarch64_op_mem mem,
                            csh capstoneHandle, bool lastMicroOp = false,
                            int microOpIndex = 0, uint8_t dataSize = 0);
 
@@ -87,14 +87,14 @@ class MicroDecoder {
   cs_arm64 default_info = {ARM64_CC_INVALID, false, false, 0, {}};
 
   /** Default register. */
-  cs_arm64_op default_op = {0,
-                            ARM64_VAS_INVALID,
-                            {ARM64_SFT_INVALID, 0},
-                            ARM64_EXT_INVALID,
-                            ARM64_OP_INVALID,
-                            ARM64_SVCR_INVALID,
-                            {},
-                            CS_AC_READ};
+  cs_aarch64_op default_op = {0,
+                              ARM64_VAS_INVALID,
+                              {ARM64_SFT_INVALID, 0},
+                              ARM64_EXT_INVALID,
+                              AARCH64_OP_INVALID,
+                              ARM64_SVCR_INVALID,
+                              {},
+                              CS_AC_READ};
 
   /** Default capstone instruction detail. */
   cs_detail default_detail = {{}, 0, {}, 0, {}, 0, {}};

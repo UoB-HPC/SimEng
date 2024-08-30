@@ -8,7 +8,7 @@
 #include "simeng/arch/aarch64/operandContainer.hh"
 #include "simeng/branchpredictors/BranchPredictor.hh"
 
-struct cs_arm64_op;
+struct cs_aarch64_op;
 
 namespace simeng {
 namespace arch {
@@ -83,39 +83,39 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
+// TODO: Handle multi-register aarch64_reg operands
 /** Get the size of the data to be accessed from/to memory. */
-inline uint8_t getDataSize(cs_arm64_op op) {
-  // Check from top of the range downwards
-
-  // ARM64_REG_V0 -> {end} are vector registers
-  if (op.reg >= ARM64_REG_V0) {
-    // Data size for vector registers relies on opcode, get vector access
-    // specifier
-    arm64_vas vas = op.vas;
-    assert(vas != ARM64_VAS_INVALID && "Invalid VAS type");
+inline uint8_t getDataSize(cs_aarch64_op op) {
+  // No V-register enum identifiers exist. Instead, depending on whether a full
+  // or half vector is accessed, a Q or D register is used instead.
+  // A `is_vreg` bool in `op` defines if we are using v-vecotr registers.
+  if (op.is_vreg && ((AARCH64_REG_D0 <= op.reg && op.reg <= AARCH64_REG_D31) ||
+                     (AARCH64_REG_Q0 <= op.reg && op.reg <= AARCH64_REG_Q31))) {
+    AArch64Layout_VectorLayout vas = op.vas;
+    assert(vas != AARCH64LAYOUT_INVALID && "Invalid VAS type");
     switch (vas) {
-      case ARM64_VAS_16B:
-      case ARM64_VAS_8H:
-      case ARM64_VAS_4S:
-      case ARM64_VAS_2D:
-      case ARM64_VAS_1Q: {
+      case AARCH64LAYOUT_VL_16B:
+      case AARCH64LAYOUT_VL_8H:
+      case AARCH64LAYOUT_VL_4S:
+      case AARCH64LAYOUT_VL_2D:
+      case AARCH64LAYOUT_VL_1Q: {
         return 16;
       }
-      case ARM64_VAS_8B:
-      case ARM64_VAS_4H:
-      case ARM64_VAS_2S:
-      case ARM64_VAS_1D: {
+      case AARCH64LAYOUT_VL_8B:
+      case AARCH64LAYOUT_VL_4H:
+      case AARCH64LAYOUT_VL_2S:
+      case AARCH64LAYOUT_VL_1D: {
         return 8;
       }
-      case ARM64_VAS_4B:
-      case ARM64_VAS_2H:
-      case ARM64_VAS_1S: {
+      case AARCH64LAYOUT_VL_4B:
+      case AARCH64LAYOUT_VL_2H:
+      case AARCH64LAYOUT_VL_1S: {
         return 4;
       }
-      case ARM64_VAS_1H: {
+      case AARCH64LAYOUT_VL_H: {
         return 2;
       }
-      case ARM64_VAS_1B: {
+      case AARCH64LAYOUT_VL_B: {
         return 1;
       }
       default: {
@@ -124,100 +124,121 @@ inline uint8_t getDataSize(cs_arm64_op op) {
     }
   }
 
-  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
-  if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+  // SME ZA Tiles, SVE Z registers, and SVE P predicates also have Vector
+  // Arrangement Specifier set
+  /** TODO: When SME, SVE instruction splitting is supported / implemented,
+   * update the data size returned based on VAS. */
+
+  // Work top down through register enums (highest value -> lowest value)
+  if (op.reg >= AARCH64_REG_D0_D1) {
+    // Multi-register currently not supported. Return 0.
+    return 0;
+  }
+
+  // AARCH64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
+  // AARCH64_REG_ZT0 is new 512-bit register from SME2
+  if (op.reg >= AARCH64_REG_ZAB0 || op.reg == AARCH64_REG_ZA ||
+      op.reg == AARCH64_REG_ZT0) {
     // Data size for tile registers relies on opcode thus return 0
     return 0;
   }
 
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z)
-  if (op.reg >= ARM64_REG_Z0) {
+  // AARCH64_REG_Z0 -> +31 are scalable vector registers (Z)
+  if (op.reg >= AARCH64_REG_Z0) {
     // Data size for vector registers relies on opcode thus return 0
     return 0;
   }
 
-  // ARM64_REG_X0 -> +28 are 64-bit (X) registers
-  if (op.reg >= ARM64_REG_X0) {
+  // AARCH64_REG_X0 -> +28 are 64-bit (X) registers
+  if (op.reg >= AARCH64_REG_X0) {
     return 8;
   }
 
-  // ARM64_REG_W0 -> +30 are 32-bit (W) registers
-  if (op.reg >= ARM64_REG_W0) {
+  // AARCH64_REG_W0 -> +30 are 32-bit (W) registers
+  if (op.reg >= AARCH64_REG_W0) {
     return 4;
   }
 
-  // ARM64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
-  if (op.reg >= ARM64_REG_S0) {
+  // AARCH64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
+  if (op.reg >= AARCH64_REG_S0) {
     return 4;
   }
 
-  // ARM64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
-  if (op.reg >= ARM64_REG_Q0) {
+  // AARCH64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
+  if (op.reg >= AARCH64_REG_Q0) {
     return 16;
   }
 
-  // ARM64_REG_P0 -> +15 are 256-bit (P) registers
-  if (op.reg >= ARM64_REG_P0) {
+  // ARCH64_REG_PN0 -> +15 are scalable predicate registers
+  if (op.reg >= AARCH64_REG_PN0) {
+    /** TODO: Check functionality is correct when multi-vector operands + SME2
+     * has been supported. */
     return 1;
   }
 
-  // ARM64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
-  if (op.reg >= ARM64_REG_H0) {
+  // AARCH64_REG_P0 -> +15 are 256-bit (P) registers
+  if (op.reg >= AARCH64_REG_P0) {
+    return 1;
+  }
+
+  // AARCH64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
+  if (op.reg >= AARCH64_REG_H0) {
     return 2;
   }
 
-  // ARM64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
-  if (op.reg >= ARM64_REG_D0) {
+  // AARCH64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
+  if (op.reg >= AARCH64_REG_D0) {
     return 8;
   }
 
-  // ARM64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
-  if (op.reg >= ARM64_REG_B0) {
+  // AARCH64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
+  if (op.reg >= AARCH64_REG_B0) {
     return 1;
   }
 
-  // ARM64_REG_XZR is the 64-bit zero register
-  if (op.reg == ARM64_REG_XZR) {
+  // AARCH64_REG_XZR is the 64-bit zero register
+  if (op.reg == AARCH64_REG_XZR) {
     return 8;
   }
 
-  // ARM64_REG_WZR is the 32-bit zero register
-  if (op.reg == ARM64_REG_WZR) {
+  // AARCH64_REG_WZR is the 32-bit zero register
+  if (op.reg == AARCH64_REG_WZR) {
     return 4;
   }
 
-  // ARM64_REG_WSP (w31) is the 32-bit stack pointer register
-  if (op.reg == ARM64_REG_WSP) {
+  // AARCH64_REG_WSP (w31) is the 32-bit stack pointer register
+  if (op.reg == AARCH64_REG_WSP) {
     return 4;
   }
 
-  // ARM64_REG_SP (x31) is the 64-bit stack pointer register
-  if (op.reg == ARM64_REG_SP) {
+  // AARCH64_REG_SP (x31) is the 64-bit stack pointer register
+  if (op.reg == AARCH64_REG_SP) {
     return 8;
   }
 
-  // ARM64_REG_NZCV is the NZCV flag register
-  if (op.reg == ARM64_REG_NZCV) {
+  // AARCH64_REG_NZCV is the NZCV flag register
+  if (op.reg == AARCH64_REG_NZCV) {
     return 1;
   }
 
-  // ARM64_REG_X30 is the 64-bit link register
-  if (op.reg == ARM64_REG_X30) {
+  // AARCH64_REG_X30 is the 64-bit link register
+  if (op.reg == AARCH64_REG_X30) {
     return 8;
   }
 
-  // ARM64_REG_X29 is the 64-bit frame pointer
-  if (op.reg == ARM64_REG_X29) {
+  // AARCH64_REG_X29 is the 64-bit frame pointer
+  if (op.reg == AARCH64_REG_X29) {
     return 8;
   }
 
-  // ARM64_REG_FFR (p15) is a special purpose predicate register
-  if (op.reg == ARM64_REG_FFR) {
+  // AARCH64_REG_FFR (p15) is a special purpose predicate register
+  if (op.reg == AARCH64_REG_FFR) {
     return 1;
   }
 
-  // ARM64_REG_INVALID is an invalid capstone register so return 0 bytes as size
-  if (op.reg == ARM64_REG_INVALID) {
+  // AARCH64_REG_INVALID is an invalid capstone register so return 0 bytes as
+  // size
+  if (op.reg == AARCH64_REG_INVALID) {
     return 0;
   }
 
