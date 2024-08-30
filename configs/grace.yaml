@@ -208,24 +208,32 @@ Reservation-Stations:
     - SX3
   6:
     Size: 28
+    # Doubled dispatch rate reflects intermediate scheduler seen here:
+    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
     Dispatch-Rate: 2
     Ports:
     - VX0
     - VX1
   7:
     Size: 28
+    # Doubled dispatch rate reflects intermediate scheduler seen here:
+    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
     Dispatch-Rate: 2
     Ports:
     - VX2
     - VX3
   8:
     Size: 16
+    # Doubled dispatch rate reflects intermediate scheduler seen here:
+    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
     Dispatch-Rate: 1
     Ports:
     - LS0
     - SD0
   9:
     Size: 16
+    # Doubled dispatch rate reflects intermediate scheduler seen here:
+    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
     Dispatch-Rate: 1
     Ports:
     - LS1
