@@ -31,48 +31,49 @@ def getMemoryProps(memory_size: int, si: str):
 
 
 
-# ------------------------------------------- A64FX Properties ---------------------------------------
+# ------------------------------------------- Grace Properties ---------------------------------------
 
-# This SST configuration file represents the memory model for the Fujitsu A64fx processor.
-# Reference: https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf
+# This SST configuration file represents the memory model for the NVIDIA Grace processor.
 
-# Cache line size of L1 & L2 in A64FX in bytes.
-A64FX_CLW = 256
-# Clock Frequency of A64FX.
-A64FX_CLOCK = "1.8GHz"
-# Size of L1 cache in A64fx.
-A64FX_L1_SIZE = "64KiB"
-# Size of L2 cache in A64fx.
-A64FX_L2_SIZE = "8MiB"
-# Set associativity of A64FX L1
-A64FX_SA_L1 = 4
-# Set associativity of A64FX L2
-A64FX_SA_L2 = 16
-# Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 3 # 5 cycles (-2 due to SimEng overhead)
-# Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 44 # 46-56 cycles (-2 due to SimEng overhead)
-# Coherence protocol of A64FX caches.
-A64FX_COHP = "MESI"
-# L1 & L2 cache type of A64FX.
-A64FX_CACHE_TYPE = "inclusive"
-# Throughput of L1 to L2 per core in A64FX. (bytes per cycle)
-A64FX_L1TOL2_PC_TPUT = "32B"
-# Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
-A64FX_L1TOCPU_PC_TPUT = "128B"
-# Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
-A64FX_L2TOMEM_PCMG_TPUT = "64B"
-# Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
-A64FX_L2TOL1_PC_TPUT = "64B"
-# Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
-A64FX_MEMTOL2_PCMG_TPUT = "128B"
-# A64FX Memory access time.
-A64FX_MEM_ACCESS = "135.5ns"
+# Cache line size of L1 & L2 in Grace in bytes.
+GRACE_CLW = 64
+# Clock Frequency of Grace.
+GRACE_CLOCK = "3.4GHz"
+# Size of L1 cache in Grace.
+GRACE_L1_SIZE = "64KiB"
+# Size of L2 cache in Grace.
+GRACE_L2_SIZE = "1MiB"
+
+
+# Set associativity of Grace L1
+GRACE_SA_L1 = 4
+# Set associativity of Grace L2
+GRACE_SA_L2 = 16
+# Hit latency of Grace L1 cache (cycles).
+GRACE_HL_L1 = 3 # 5 cycles (-2 due to SimEng overhead)
+# Hit latency of Grace L2 cache (cycles).
+GRACE_HL_L2 = 44 # 46-56 cycles (-2 due to SimEng overhead)
+# Coherence protocol of Grace caches.
+GRACE_COHP = "MESI"
+# L1 & L2 cache type of Grace.
+GRACE_CACHE_TYPE = "inclusive"
+# Throughput of L1 to L2 per core in Grace. (bytes per cycle)
+GRACE_L1TOL2_PC_TPUT = "32B"
+# Throughput of L1 to CPU per core in Grace. Value of 0 indicates infinity. (bytes per cycle)
+GRACE_L1TOCPU_PC_TPUT = "128B"
+# Throughput of L2 to Memory per CMG in Grace. (bytes per cycle)
+GRACE_L2TOMEM_PCMG_TPUT = "64B"
+# Throughput of L2 to L1 per core in Grace. (bytes per cycle)
+GRACE_L2TOL1_PC_TPUT = "64B"
+# Throughput of Memory to L2 per CMG in Grace. (bytes per cycle)
+GRACE_MEMTOL2_PCMG_TPUT = "128B"
+# Grace Memory access time.
+GRACE_MEM_ACCESS = "135.5ns"
 
 # Prefetcher to use
 PREFETCHER = "cassini.NextBlockPrefetcher"
 
-# ------------------------------------------- A64FX Properties ---------------------------------------
+# ------------------------------------------- Grace Properties ---------------------------------------
 
 
 # ---------------------------------------------- Variables -------------------------------------------
@@ -87,12 +88,12 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
+    "simeng_config_path": "<PATH TO GRACE SIMENG MODEL CONFIG>",
     "executable_path": "<PATH TO EXECUTABLE BINARY>",
     "executable_args": "",
-    "clock" : A64FX_CLOCK,
+    "clock" : GRACE_CLOCK,
     "max_addr_memory": memprops["end_addr"],
-    "cache_line_width": A64FX_CLW,
+    "cache_line_width": GRACE_CLW,
 })
 
 # Instantiating the StandardInterface which communicates with the SST memory model.
@@ -104,20 +105,20 @@ interface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l1cache = sst.Component("a64fx.l1cache", "memHierarchy.Cache")
+l1cache = sst.Component("GRACE.l1cache", "memHierarchy.Cache")
 l1cache.addParams({
       "L1" : 1,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L1,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L1,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L1_SIZE,
+      "cache_type": GRACE_CACHE_TYPE,
+      "access_latency_cycles" : GRACE_HL_L1,
+      "cache_frequency" : GRACE_CLOCK,
+      "associativity" : GRACE_SA_L1,
+      "cache_line_size" : GRACE_CLW,
+      "cache_size" : GRACE_L1_SIZE,
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
-      "coherence_protocol": A64FX_COHP,
-      "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+      "coherence_protocol": GRACE_COHP,
+      "request_link_width": GRACE_L1TOL2_PC_TPUT,
+      "response_link_width": GRACE_L1TOCPU_PC_TPUT,
       "mshr_latency_cycles": 1,
       "tag_access_latency": 1,
       "llsc_block_cycles": 1000,
@@ -130,7 +131,7 @@ replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.rep
 
 prefetcher_l1 = l1cache.setSubComponent("prefetcher", PREFETCHER)
 prefetcher_l1.addParams({
- "cache_line_size": A64FX_CLW,
+ "cache_line_size": GRACE_CLW,
  "aggressiveness": 1,
 })
 
@@ -140,21 +141,21 @@ prefetcher_l1.addParams({
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l2cache = sst.Component("a64fx.l2cache", "memHierarchy.Cache")
+l2cache = sst.Component("GRACE.l2cache", "memHierarchy.Cache")
 l2cache.addParams({
       "L1" : 0,
-      "cache_type": A64FX_CACHE_TYPE,
-      "access_latency_cycles" : A64FX_HL_L2,
-      "cache_frequency" : A64FX_CLOCK,
-      "associativity" : A64FX_SA_L2,
-      "cache_line_size" : A64FX_CLW,
-      "cache_size" : A64FX_L2_SIZE,
+      "cache_type": GRACE_CACHE_TYPE,
+      "access_latency_cycles" : GRACE_HL_L2,
+      "cache_frequency" : GRACE_CLOCK,
+      "associativity" : GRACE_SA_L2,
+      "cache_line_size" : GRACE_CLW,
+      "cache_size" : GRACE_L2_SIZE,
       "debug" : DEBUG_L2,
       "debug_level" : DEBUG_LEVEL,
-      "coherence_protocol": A64FX_COHP,
+      "coherence_protocol": GRACE_COHP,
       "max_requests_per_cycle": 4,
-      "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
-      "response_link_width": A64FX_L2TOL1_PC_TPUT,
+      "request_link_width": GRACE_L2TOMEM_PCMG_TPUT,
+      "response_link_width": GRACE_L2TOL1_PC_TPUT,
       "mshr_latency_cycles": 1,
       "tag_access_latency": 1,
       "llsc_block_cycles": 1000,
@@ -167,7 +168,7 @@ replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.rep
 
 prefetcher_l2 = l2cache.setSubComponent("prefetcher", PREFETCHER)
 prefetcher_l2.addParams({
-      "cache_line_size": A64FX_CLW,
+      "cache_line_size": GRACE_CLW,
       "aggressiveness": 1,
 })
 
@@ -176,11 +177,11 @@ prefetcher_l2.addParams({
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
-memory_controller = sst.Component("a64fx.memorycontroller", "memHierarchy.MemController")
+memory_controller = sst.Component("GRACE.memorycontroller", "memHierarchy.MemController")
 memory_controller.addParams({
-      "clock": A64FX_CLOCK,
-      "backend.access_time": A64FX_MEM_ACCESS,
-      "request_width": A64FX_MEMTOL2_PCMG_TPUT,
+      "clock": GRACE_CLOCK,
+      "backend.access_time": GRACE_MEM_ACCESS,
+      "request_width": GRACE_MEMTOL2_PCMG_TPUT,
       "debug": DEBUG_MEM,
       "debug_level": DEBUG_LEVEL,
       "addr_range_start": memprops["start_addr"],
@@ -189,7 +190,7 @@ memory_controller.addParams({
 
 memory_backend = memory_controller.setSubComponent("backend", "memHierarchy.simpleMem")
 memory_backend.addParams({
-      "access_time": A64FX_MEM_ACCESS,
+      "access_time": GRACE_MEM_ACCESS,
       "mem_size": memprops["size"],
       "request_width": 128,
 })
@@ -198,8 +199,8 @@ memory_backend.addParams({
 
 # sst.setStatisticLoadLevel(7)
 # sst.setStatisticOutput("sst.statOutputConsole")
-# sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
-# sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+# sst.enableStatisticsForComponentName("GRACE.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+# sst.enableStatisticsForComponentName("GRACE.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
 
 # ---------------------------------------------- Links ------------------------------------------------
 
