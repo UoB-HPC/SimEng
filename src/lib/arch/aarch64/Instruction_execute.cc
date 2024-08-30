@@ -2788,9 +2788,10 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
 
         // if #imm post-index, value can only be 16
-        const uint64_t postIndex = (metadata_.operands[2].type == ARM64_OP_REG)
-                                       ? sourceValues_[1].get<uint64_t>()
-                                       : 16;
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[1].get<uint64_t>()
+                : 16;
         results_[1] = sourceValues_[0].get<uint64_t>() + postIndex;
         break;
       }
@@ -3082,9 +3083,10 @@ void Instruction::execute() {
         results_[2] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
         results_[3] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         // if #imm post-index, value can only be 64
-        const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
-                                       ? sourceValues_[1].get<uint64_t>()
-                                       : 64;
+        const uint64_t postIndex =
+            (metadata_.operands[5].type == AARCH64_OP_REG)
+                ? sourceValues_[1].get<uint64_t>()
+                : 64;
         results_[4] = sourceValues_[0].get<uint64_t>() + postIndex;
         break;
       }
@@ -3111,9 +3113,10 @@ void Instruction::execute() {
         results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
 
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
-                                       ? sourceValues_[1].get<uint64_t>()
-                                       : 32;
+        const uint64_t postIndex =
+            (metadata_.operands[3].type == AARCH64_OP_REG)
+                ? sourceValues_[1].get<uint64_t>()
+                : 32;
         results_[2] = sourceValues_[0].get<uint64_t>() + postIndex;
         break;
       }
@@ -3848,7 +3851,7 @@ void Instruction::execute() {
         // Handle case where SVCR is being updated as this invokes additional
         // functionality
         if (metadata_.operands[0].reg ==
-            static_cast<arm64_reg>(ARM64_SYSREG_SVCR)) {
+            static_cast<aarch64_reg>(ARM64_SYSREG_SVCR)) {
           return SMZAupdated();
         } else {
           results_[0] = sourceValues_[0];
@@ -4634,9 +4637,10 @@ void Instruction::execute() {
                             16 * sizeof(uint8_t));
         }
         // if #imm post-index, value can only be 64
-        const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
-                                       ? sourceValues_[5].get<uint64_t>()
-                                       : 64;
+        const uint64_t postIndex =
+            (metadata_.operands[5].type == AARCH64_OP_REG)
+                ? sourceValues_[5].get<uint64_t>()
+                : 64;
         results_[0] = sourceValues_[4].get<uint64_t>() + postIndex;
         break;
       }
@@ -4659,9 +4663,10 @@ void Instruction::execute() {
                             2 * sizeof(uint64_t));
         }
         // if #imm post-index, value can only be 64
-        const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
-                                       ? sourceValues_[5].get<uint64_t>()
-                                       : 64;
+        const uint64_t postIndex =
+            (metadata_.operands[5].type == AARCH64_OP_REG)
+                ? sourceValues_[5].get<uint64_t>()
+                : 64;
         results_[0] = sourceValues_[4].get<uint64_t>() + postIndex;
         break;
       }
@@ -4674,9 +4679,10 @@ void Instruction::execute() {
                             2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
-                                       ? sourceValues_[5].get<uint64_t>()
-                                       : 32;
+        const uint64_t postIndex =
+            (metadata_.operands[5].type == AARCH64_OP_REG)
+                ? sourceValues_[5].get<uint64_t>()
+                : 32;
         results_[0] = sourceValues_[4].get<uint64_t>() + postIndex;
         break;
       }
@@ -4699,9 +4705,10 @@ void Instruction::execute() {
                             4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
-        const uint64_t postIndex = (metadata_.operands[5].type == ARM64_OP_REG)
-                                       ? sourceValues_[5].get<uint64_t>()
-                                       : 64;
+        const uint64_t postIndex =
+            (metadata_.operands[5].type == AARCH64_OP_REG)
+                ? sourceValues_[5].get<uint64_t>()
+                : 64;
         results_[0] = sourceValues_[4].get<uint64_t>() + postIndex;
         break;
       }
@@ -4722,9 +4729,10 @@ void Instruction::execute() {
         memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
 
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
-                                       ? sourceValues_[3].get<uint64_t>()
-                                       : 32;
+        const uint64_t postIndex =
+            (metadata_.operands[3].type == AARCH64_OP_REG)
+                ? sourceValues_[3].get<uint64_t>()
+                : 32;
         results_[0] = sourceValues_[2].get<uint64_t>() + postIndex;
         break;
       }
@@ -4745,9 +4753,10 @@ void Instruction::execute() {
         memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
 
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
-                                       ? sourceValues_[3].get<uint64_t>()
-                                       : 32;
+        const uint64_t postIndex =
+            (metadata_.operands[3].type == AARCH64_OP_REG)
+                ? sourceValues_[3].get<uint64_t>()
+                : 32;
         results_[0] = sourceValues_[2].get<uint64_t>() + postIndex;
         break;
       }
@@ -4768,9 +4777,10 @@ void Instruction::execute() {
         memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
 
         // if #imm post-index, value can only be 32
-        const uint64_t postIndex = (metadata_.operands[3].type == ARM64_OP_REG)
-                                       ? sourceValues_[3].get<uint64_t>()
-                                       : 32;
+        const uint64_t postIndex =
+            (metadata_.operands[3].type == AARCH64_OP_REG)
+                ? sourceValues_[3].get<uint64_t>()
+                : 32;
         results_[0] = sourceValues_[2].get<uint64_t>() + postIndex;
         break;
       }

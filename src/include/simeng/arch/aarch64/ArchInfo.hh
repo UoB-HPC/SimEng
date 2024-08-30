@@ -11,14 +11,14 @@ namespace aarch64 {
 class ArchInfo : public simeng::arch::ArchInfo {
  public:
   ArchInfo(ryml::ConstNodeRef config)
-      : sysRegisterEnums_({arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-                           arm64_sysreg::ARM64_SYSREG_FPCR,
-                           arm64_sysreg::ARM64_SYSREG_FPSR,
-                           arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-                           arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-                           arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_SVCR}),
+      : sysRegisterEnums_({aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_FPCR,
+                           aarch64_sysreg::AARCH64_SYSREG_FPSR,
+                           aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+                           aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_SVCR}),
         zaSize_(config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8) {
     // Generate the architecture-defined architectural register structure
     archRegStruct_ = {

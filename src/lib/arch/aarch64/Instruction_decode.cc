@@ -36,98 +36,99 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
-/** Parses the Capstone `arm64_reg` value to generate an architectural register
- * representation.
+/** Parses the Capstone `aarch64_reg` value to generate an architectural
+ * register representation.
  *
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
- * `arm64_reg` enum. Updates to the Capstone library version may cause this to
+ * `aarch64_reg` enum. Updates to the Capstone library version may cause this to
  * break. */
-Register csRegToRegister(arm64_reg reg) {
+Register csRegToRegister(aarch64_reg reg) {
   // Check from top of the range downwards
 
-  // ARM64_REG_V0 -> {end} are vector registers, reading from the vector file
-  if (reg >= ARM64_REG_V0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
+  // AARCH64_REG_V0 -> {end} are vector registers, reading from the vector file
+  if (reg >= AARCH64_REG_V0) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_V0)};
   }
 
-  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA), reading from
+  // AARCH64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA), reading from
   // the matrix file.
-  if (reg >= ARM64_REG_ZAB0) {
+  if (reg >= AARCH64_REG_ZAB0) {
     // Placeholder value returned as each tile (what the enum represents)
     // consists of multiple vectors (rows)
     return {RegisterType::MATRIX, 0};
   }
 
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
+  // AARCH64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
   // from the vector file
-  if (reg >= ARM64_REG_Z0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
+  if (reg >= AARCH64_REG_Z0) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_Z0)};
   }
 
-  // ARM64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
+  // AARCH64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
   // file. Excludes #29 (FP) and #30 (LR)
-  if (reg >= ARM64_REG_X0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};
+  if (reg >= AARCH64_REG_X0) {
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - AARCH64_REG_X0)};
   }
 
-  // ARM64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
+  // AARCH64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
   // file. Excludes #31 (WZR/WSP).
-  if (reg >= ARM64_REG_W0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};
+  if (reg >= AARCH64_REG_W0) {
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - AARCH64_REG_W0)};
   }
 
-  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // AARCH64_REG_Q0 and above are repeated ranges representing scalar access
   // specifiers on the vector registers with arrangements Q and S, each
   // covering 32 registers
-  if (reg >= ARM64_REG_Q0) {
+  if (reg >= AARCH64_REG_Q0) {
     return {RegisterType::VECTOR,
-            static_cast<uint16_t>((reg - ARM64_REG_Q0) % 32)};
+            static_cast<uint16_t>((reg - AARCH64_REG_Q0) % 32)};
   }
 
-  // ARM64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
-  if (reg >= ARM64_REG_P0) {
-    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};
+  // AARCH64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
+  if (reg >= AARCH64_REG_P0) {
+    return {RegisterType::PREDICATE,
+            static_cast<uint16_t>(reg - AARCH64_REG_P0)};
   }
 
-  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // AARCH64_REG_Q0 and above are repeated ranges representing scalar access
   // specifiers on the vector registers with arrangements B, D and H, each
   // covering 32 registers
-  if (reg >= ARM64_REG_B0) {
+  if (reg >= AARCH64_REG_B0) {
     return {RegisterType::VECTOR,
-            static_cast<uint16_t>((reg - ARM64_REG_B0) % 32)};
+            static_cast<uint16_t>((reg - AARCH64_REG_B0) % 32)};
   }
 
-  // ARM64_REG_WZR and _XZR are zero registers, and don't read
-  if (reg == ARM64_REG_WZR || reg == ARM64_REG_XZR) {
+  // AARCH64_REG_WZR and _XZR are zero registers, and don't read
+  if (reg == AARCH64_REG_WZR || reg == AARCH64_REG_XZR) {
     return RegisterType::ZERO_REGISTER;
   }
 
-  // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
+  // AARCH64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
   // general file
-  if (reg == ARM64_REG_SP || reg == ARM64_REG_WSP) {
+  if (reg == AARCH64_REG_SP || reg == AARCH64_REG_WSP) {
     return {RegisterType::GENERAL, 31};
   }
 
-  // ARM64_REG_NZCV is the condition flags register
-  if (reg == ARM64_REG_NZCV) {
+  // AARCH64_REG_NZCV is the condition flags register
+  if (reg == AARCH64_REG_NZCV) {
     return {RegisterType::NZCV, 0};
   }
-  // ARM64_REG_X29 is the frame pointer, stored in r29 of the general file
-  if (reg == ARM64_REG_X29) {
+  // AARCH64_REG_X29 is the frame pointer, stored in r29 of the general file
+  if (reg == AARCH64_REG_X29) {
     return {RegisterType::GENERAL, 29};
   }
-  // ARM64_REG_X30 is the link register, stored in r30 of the general file
-  if (reg == ARM64_REG_X30) {
+  // AARCH64_REG_X30 is the link register, stored in r30 of the general file
+  if (reg == AARCH64_REG_X30) {
     return {RegisterType::GENERAL, 30};
   }
 
-  if (reg == ARM64_REG_FFR) {
+  if (reg == AARCH64_REG_FFR) {
     return {RegisterType::PREDICATE, 16};
   }
 
   // The matrix register (ZA) can also be referenced as a whole in some
   // instructions.
-  if (reg == ARM64_REG_ZA) {
+  if (reg == AARCH64_REG_ZA) {
     // Placeholder value returned as each tile (what the enum represents)
     // consists of multiple vectors (rows)
     return {RegisterType::MATRIX, 0};
@@ -140,29 +141,30 @@ Register csRegToRegister(arm64_reg reg) {
 
 /** Returns a full set of rows from the ZA matrix register that make up the
  * supplied SME tile register. */
-std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
+std::vector<Register> getZARowVectors(aarch64_reg reg,
+                                      const uint64_t SVL_bits) {
   std::vector<Register> outRegs;
   // Get SVL in bytes (will equal total number of implemented ZA rows)
   uint64_t SVL = SVL_bits / 8;
 
   uint8_t base = 0;
   uint8_t tileTypeCount = 0;
-  if (reg == ARM64_REG_ZA || reg == ARM64_REG_ZAB0) {
+  if (reg == AARCH64_REG_ZA || reg == AARCH64_REG_ZAB0) {
     // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
     // Add all rows for this SVL
     // Don't need to set base as will always be 0
     tileTypeCount = 1;
-  } else if (reg >= ARM64_REG_ZAH0 && reg <= ARM64_REG_ZAH1) {
-    base = reg - ARM64_REG_ZAH0;
+  } else if (reg >= AARCH64_REG_ZAH0 && reg <= AARCH64_REG_ZAH1) {
+    base = reg - AARCH64_REG_ZAH0;
     tileTypeCount = 2;
-  } else if (reg >= ARM64_REG_ZAS0 && reg <= ARM64_REG_ZAS3) {
-    base = reg - ARM64_REG_ZAS0;
+  } else if (reg >= AARCH64_REG_ZAS0 && reg <= AARCH64_REG_ZAS3) {
+    base = reg - AARCH64_REG_ZAS0;
     tileTypeCount = 4;
-  } else if (reg >= ARM64_REG_ZAD0 && reg <= ARM64_REG_ZAD7) {
-    base = reg - ARM64_REG_ZAD0;
+  } else if (reg >= AARCH64_REG_ZAD0 && reg <= AARCH64_REG_ZAD7) {
+    base = reg - AARCH64_REG_ZAD0;
     tileTypeCount = 8;
-  } else if (reg >= ARM64_REG_ZAQ0 && reg <= ARM64_REG_ZAQ15) {
-    base = reg - ARM64_REG_ZAQ0;
+  } else if (reg >= AARCH64_REG_ZAQ0 && reg <= AARCH64_REG_ZAQ15) {
+    base = reg - AARCH64_REG_ZAQ0;
     tileTypeCount = 16;
   }
 
@@ -191,13 +193,13 @@ void Instruction::decode() {
   // Extract implicit writes
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
-        static_cast<arm64_reg>(metadata_.implicitDestinations[i]));
+        static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
   }
   // Extract implicit reads
   for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
     sourceRegisters_[sourceOperandsPending_] =
-        csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i]));
+        csRegToRegister(static_cast<aarch64_reg>(metadata_.implicitSources[i]));
     sourceRegisterCount_++;
     sourceOperandsPending_++;
   }
@@ -208,29 +210,29 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata_.operandCount; i++) {
     const auto& op = metadata_.operands[i];
 
-    if (op.type == ARM64_OP_REG) {  // Register operand
+    if (op.type == AARCH64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE)) {
-        if (op.reg != ARM64_REG_WZR && op.reg != ARM64_REG_XZR) {
+        if (op.reg != AARCH64_REG_WZR && op.reg != AARCH64_REG_XZR) {
           // Determine the data type the instruction operates on based on the
           // register operand used
           // Belongs to the predicate group if the destination register is a
           // predicate
-          if (op.reg >= ARM64_REG_V0) {
+          if (op.reg >= AARCH64_REG_V0) {
             setInstructionType(InsnType::isVectorData);
-          } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+          } else if (op.reg >= AARCH64_REG_ZAB0 || op.reg == AARCH64_REG_ZA) {
             setInstructionType(InsnType::isSMEData);
-          } else if (op.reg >= ARM64_REG_Z0) {
+          } else if (op.reg >= AARCH64_REG_Z0) {
             setInstructionType(InsnType::isSVEData);
-          } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+          } else if (op.reg <= AARCH64_REG_S31 && op.reg >= AARCH64_REG_Q0) {
             setInstructionType(InsnType::isScalarData);
-          } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+          } else if (op.reg <= AARCH64_REG_P15 && op.reg >= AARCH64_REG_P0) {
             setInstructionType(InsnType::isPredicate);
-          } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+          } else if (op.reg <= AARCH64_REG_H31 && op.reg >= AARCH64_REG_B0) {
             setInstructionType(InsnType::isScalarData);
           }
 
-          if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-              (op.reg == ARM64_REG_ZA)) {
+          if ((op.reg >= AARCH64_REG_ZAB0 && op.reg < AARCH64_REG_V0) ||
+              (op.reg == AARCH64_REG_ZA)) {
             // Add all Matrix register rows as destination operands
             std::vector<Register> regs = getZARowVectors(
                 op.reg, architecture_.getStreamingVectorLength());
@@ -258,8 +260,8 @@ void Instruction::decode() {
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
-        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-            (op.reg == ARM64_REG_ZA)) {
+        if ((op.reg >= AARCH64_REG_ZAB0 && op.reg < AARCH64_REG_V0) ||
+            (op.reg == AARCH64_REG_ZA)) {
           // Add all Matrix register rows as source operands
           std::vector<Register> regs =
               getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
@@ -288,7 +290,7 @@ void Instruction::decode() {
           setInstructionType(InsnType::isShift);  // Identify shift operands
         }
       }
-    } else if (op.type == ARM64_OP_MEM) {  // Memory operand
+    } else if (op.type == AARCH64_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
       sourceRegisterCount_++;
@@ -306,11 +308,11 @@ void Instruction::decode() {
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
-    } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
+    } else if (op.type == AARCH64_OP_SME_INDEX) {  // SME instruction with index
       std::vector<Register> regs;
-      if ((op.sme_index.reg >= ARM64_REG_ZAB0 &&
-           op.sme_index.reg < ARM64_REG_V0) ||
-          (op.sme_index.reg == ARM64_REG_ZA)) {
+      if ((op.sme_index.reg >= AARCH64_REG_ZAB0 &&
+           op.sme_index.reg < AARCH64_REG_V0) ||
+          (op.sme_index.reg == AARCH64_REG_ZA)) {
         // Set instruction group
         setInstructionType(InsnType::isSMEData);
         regs = getZARowVectors(op.sme_index.reg,
@@ -354,7 +356,7 @@ void Instruction::decode() {
           csRegToRegister(op.sme_index.base);
       sourceRegisterCount_++;
       sourceOperandsPending_++;
-    } else if (op.type == ARM64_OP_REG_MRS) {
+    } else if (op.type == AARCH64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
@@ -366,7 +368,7 @@ void Instruction::decode() {
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
-    } else if (op.type == ARM64_OP_REG_MSR) {
+    } else if (op.type == AARCH64_OP_REG_MSR) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
@@ -377,7 +379,7 @@ void Instruction::decode() {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount_++;
       }
-    } else if (op.type == ARM64_OP_SVCR) {
+    } else if (op.type == AARCH64_OP_SVCR) {
       // Updating of SVCR is done via an exception and not via the sysreg file.
       // No operands are required for this operation.
       // Any access to SVCR other than SMSTART and SMSTOP (i.e. this OP_TYPE)
@@ -499,19 +501,19 @@ void Instruction::decode() {
 
     if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
-      if (ARM64_REG_Z0 <= metadata_.operands[0].reg &&
-          metadata_.operands[0].reg <= ARM64_REG_Z31) {
+      if (AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
+          metadata_.operands[0].reg <= AARCH64_REG_Z31) {
         setInstructionType(InsnType::isSVEData);
-      } else if ((metadata_.operands[0].reg <= ARM64_REG_S31 &&
-                  metadata_.operands[0].reg >= ARM64_REG_Q0) ||
-                 (metadata_.operands[0].reg <= ARM64_REG_H31 &&
-                  metadata_.operands[0].reg >= ARM64_REG_B0)) {
+      } else if ((metadata_.operands[0].reg <= AARCH64_REG_S31 &&
+                  metadata_.operands[0].reg >= AARCH64_REG_Q0) ||
+                 (metadata_.operands[0].reg <= AARCH64_REG_H31 &&
+                  metadata_.operands[0].reg >= AARCH64_REG_B0)) {
         setInstructionType(InsnType::isScalarData);
-      } else if (metadata_.operands[0].reg >= ARM64_REG_V0) {
+      } else if (metadata_.operands[0].reg >= AARCH64_REG_V0) {
         setInstructionType(InsnType::isVectorData);
-      } else if ((metadata_.operands[0].reg >= ARM64_REG_ZAB0 &&
-                  metadata_.operands[0].reg < ARM64_REG_V0) ||
-                 metadata_.operands[0].reg == ARM64_REG_ZA) {
+      } else if ((metadata_.operands[0].reg >= AARCH64_REG_ZAB0 &&
+                  metadata_.operands[0].reg < AARCH64_REG_V0) ||
+                 metadata_.operands[0].reg == AARCH64_REG_ZA) {
         setInstructionType(InsnType::isSMEData);
       }
     }

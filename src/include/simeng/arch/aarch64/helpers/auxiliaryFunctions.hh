@@ -205,7 +205,7 @@ inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
 }
 
 /** Extend `value` using extension/shifting rules defined in `op`. */
-inline uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) {
+inline uint64_t extendOffset(uint64_t value, const cs_aarch64_op& op) {
   if (op.ext == 0) {
     if (op.shift.value == 0) {
       return value;
