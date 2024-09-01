@@ -1,5 +1,14 @@
 name: PERFORMANCE_REGRESSION
 
+on:
+  workflow_call:
+    inputs:
+        RUNS:
+          default: 10
+          required: true
+          type: number
+
+
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
@@ -28,10 +37,9 @@ env:
   TEALEAF_NAME: "tealeaf_gcc10.3.0_armv8.4+sve"
   TEALEAF_DATAFILE: "simeng-benchmarks/Data_Files/TeaLeaf/3d"
 
-  RUNS: 10
+  RUNS: ${{ inputs.RUNS }}
 
-on:
-  workflow_call:
+
 
 jobs:
   Compare_Performances:

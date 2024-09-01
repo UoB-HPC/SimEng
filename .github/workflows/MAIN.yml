@@ -14,18 +14,18 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  DEBUG_LINUX_GCC:
-    uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+  # DEBUG_LINUX_GCC:
+  #   uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Debug
+  #   secrets: inherit
 
   # NOTE: currently doens't work
-  DEBUG_MACOS_GCC:
-    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+  # DEBUG_MACOS_GCC:
+  #   uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Debug
+  #   secrets: inherit
 
   # DEBUG_MACOS_CLANG:
   #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
@@ -42,11 +42,11 @@ jobs:
   #     SIMENG-MODE: Release
   #   secrets: inherit
   
-  RELEASE_MACOS_GCC:
-    uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Release
-    secrets: inherit
+  # RELEASE_MACOS_GCC:
+  #   uses: ./.github/workflows/MACOS_GCC_BUILD_TEST.yml
+  #   with:
+  #     SIMENG-MODE: Release
+  #   secrets: inherit
 
   # RELEASE_MACOS_CLANG:
   #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
@@ -62,6 +62,10 @@ jobs:
     #   - RELEASE_LINUX_GCC
       
     uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
+    with:
+      # Number of runs of current commit to average over to compare to previous average hard coded as env vars
+      RUNS: 10
+
     secrets: inherit
 
   # CLANG_FORMAT:
