@@ -110,7 +110,7 @@ jobs:
         with:
           path: ${{ env.CLOVERLEAF_PATH}}
           name: ${{ env.CLOVERLEAF_NAME }}
-          datafile: ${{ env.CLOVERLEAF_DATAFILE }}
+          datafile_path: ${{ env.CLOVERLEAF_DATAFILE }}
           runs: ${{ env.RUNS }}
 
       #######################################
@@ -121,7 +121,7 @@ jobs:
         with:
           path: ${{ env.MINIBUDE_PATH }}
           name: ${{ env.MINIBUDE_NAME }}
-          datafile: ${{ env.MINIBUDE_DATAFILE }}
+          datafile_path: ${{ env.MINIBUDE_DATAFILE }}
           runs: ${{ env.runs }}
       #######################################
       # STREAM
@@ -131,7 +131,7 @@ jobs:
         with:
           path: ${{ env.STREAM_PATH }}
           name: ${{ env.STREAM_NAME }}
-          datafile: ${{ env.STREAM_DATAFILE }}
+          datafile_path: ${{ env.STREAM_DATAFILE }}
           runs: ${{ env.runs }}
       #######################################
       # TeaLeaf
@@ -141,7 +141,7 @@ jobs:
         with:
           path: ${{ env.TEALEAF_PATH }}
           name: ${{ env.TEALEAF_NAME }}
-          datafile: ${{ env.TEALEAF_DATAFILE }}
+          datafile_path: ${{ env.TEALEAF_DATAFILE }}
           runs: ${{ env.runs }}
       
       #######################################
