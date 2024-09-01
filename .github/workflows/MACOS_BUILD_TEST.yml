@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        COMPILER: ['gcc-10'] # NOTE: only gcc 10 works with provided macos runners on github actions
+        COMPILER: ['gcc-10', 'apple_clang_15'] # NOTE: only gcc 10 works with provided macos runners on github actions the other versions are difficult to get and don't work
 
 
     name: ${{ inputs.SIMENG-MODE }} + "macos-13 + ${{ matrix.compiler }}"

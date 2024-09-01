@@ -31,7 +31,7 @@ runs:
       run: |
           benchmark_path=${{ inputs.path }}
           benchmark_name=${{ inputs.name }}
-          datafile_path=${{ datafile_path.datafile }}
+          datafile_path=${{ inputs.datafile_path }}
 
           output_file="benchmark_output.txt"
           total_time=0
