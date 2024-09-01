@@ -6,6 +6,10 @@ on:
       SIMENG-MODE:
         required: true
         type: string
+      RUNNER:
+        default: ubuntu-latest
+        required: true
+        type: string
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
@@ -16,14 +20,14 @@ env:
 
 jobs:
   Build_and_Run:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.RUNNER }}
     
     strategy:
       fail-fast: false
       matrix:
         
-        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
         COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] # compiler names
+        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
         
         #######################################
         # Removes unecessary jobs as jobs are generated in the order seen in the matrix.

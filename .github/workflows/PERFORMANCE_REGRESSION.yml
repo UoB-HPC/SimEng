@@ -5,6 +5,31 @@ env:
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
   PAT: ${{ secrets.SIMENGUOB_PAT }}
 
+  # averages
+  CLOVERLEAF_AVG: 42396.21
+  MINIBUDE_AVG: 19414.35
+  STREAM_AVG:  7378.78
+  TEALEAF_AVG: 55.67
+
+  # benchmark information
+  CLOVERLEAF_PATH: "simeng-benchmarks/binaries/CloverLeaf/openmp"
+  CLOVERLEAF_NAME:  "cloverleaf_gcc10.3.0_armv8.4+sve"
+  CLOVERLEAF_DATAFILE: "simeng-benchmarks/Data_Files/CloverLeaf"
+
+  MINIBUDE_PATH: "simeng-benchmarks/binaries/miniBUDE/openmp"
+  MINIBUDE_NAME: "minibude_gcc10.3.0_armv8.4+sve"
+  MINIBUDE_DATAFILE: "simeng-benchmarks/Data_Files/miniBUDE/bm1"
+
+  STREAM_PATH: "simeng-benchmarks/binaries/STREAM"
+  STREAM_NAME: "stream_gcc10.3.0_armv8.4+sve"
+  STREAM_DATAFILE: ""
+
+  TEALEAF_PATH: "simeng-benchmarks/binaries/TeaLeaf/3d"
+  TEALEAF_NAME: "tealeaf_gcc10.3.0_armv8.4+sve"
+  TEALEAF_DATAFILE: "simeng-benchmarks/Data_Files/TeaLeaf/3d"
+
+  RUNS: 10
+
 on:
   workflow_call:
 
@@ -73,124 +98,43 @@ jobs:
       # Cloverleaf
       #######################################
       - name: run cloverleaf benchmark
-        uses: ./.github/actions/run_individual_benchmark
+        uses: ./.github/actions/average_single_benchmark
         with:
-          benchmark_suite_name: 'CLOVERLEAF'
-          benchmark_path: ./simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve
-          output_file: cloverleaf_benchmark_out.txt
+          path: ${{ env.CLOVERLEAF_PATH}}
+          name: ${{ env.CLOVERLEAF_NAME }}
+          datafile: ${{ env.CLOVERLEAF_DATAFILE }}
+          runs: ${{ env.RUNS }}
 
       #######################################
       # miniBUDE
       #######################################
       - name: run miniBUDE benchmark
-        uses: ./.github/actions/run_individual_benchmark
+        uses: ./.github/actions/average_single_benchmark
         with:
-          benchmark_suite_name: 'MINIBUDE'
-          benchmark_path: ./simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve
-          output_file: minibude_benchmark_out.txt
+          path: ${{ env.MINIBUDE_PATH }}
+          name: ${{ env.MINIBUDE_NAME }}
+          datafile: ${{ env.MINIBUDE_DATAFILE }}
+          runs: ${{ env.runs }}
       #######################################
       # STREAM
       #######################################
       - name: run stream benchmark
-        uses: ./.github/actions/run_individual_benchmark
+        uses: ./.github/actions/average_single_benchmark
         with:
-          benchmark_suite_name: 'STREAM'
-          benchmark_path: ./simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve
-          output_file: stream_benchmark_out.txt
+          path: ${{ env.STREAM_PATH }}
+          name: ${{ env.STREAM_NAME }}
+          datafile: ${{ env.STREAM_DATAFILE }}
+          runs: ${{ env.runs }}
       #######################################
       # TeaLeaf
       #######################################
       - name: run TeaLeaf benchmark
-        uses: ./.github/actions/run_individual_benchmark
+        uses: ./.github/actions/average_single_benchmark
         with:
-          benchmark_suite_name: 'TEALEAF'
-          benchmark_path: ./simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve
-          output_file: tealeaf_benchmark_out.txt
-      
-      
-      #######################################
-      # Delete Previous benchmark times and replace with new times
-      #######################################
-      - name: Delete previous benchmark time caches
-        shell: bash
-        run: |
-          sudo mkdir -p -m 755 /etc/apt/keyrings \
-          && wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-          && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-
-          sudo apt update && sudo apt install -y gh && sudo apt upgrade -y
-          gh extension install actions/gh-actions-cache
-
-          caches=(
-            cloverleaf_benchmark_out.txt
-            minibude_benchmark_out.txt
-            stream_benchmark_out.txt
-            tealeaf_benchmark_out.txt
-          )
-
-          set +e
-          echo "Deleting caches..."
-          for cache in "${caches[@]}"; do
-              gh actions-cache delete $cache --confirm
-          done
-          echo "Done"
-        env: # environement variable scoped to this
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: store cloverleaf output into cache
-        uses: actions/cache/save@v4
-        with:
-          path: ./cloverleaf_benchmark_out.txt
-          key: cloverleaf_benchmark_out.txt
-          
-      - name: store minibude output into cache
-        uses: actions/cache/save@v4
-        with:
-          path: ./minibude_benchmark_out.txt
-          key: minibude_benchmark_out.txt
-
-      - name: store stream output into cache
-        uses: actions/cache/save@v4
-        with:
-          path: ./stream_benchmark_out.txt
-          key: stream_benchmark_out.txt
-
-      - name: store tealeaf output into cache
-        uses: actions/cache/save@v4
-        with:
-          path: ./tealeaf_benchmark_out.txt
-          key: tealeaf_benchmark_out.txt
-
-      #######################################
-      # Summary
-      #######################################
-      - name: Summary
-        shell: bash
-        run: |
-          echo "#############################################"
-          echo "CLOVERLEAF (cloverleaf_gcc10.3.0_armv8.4+sve)"
-          echo "Current Time: $CLOVERLEAF_CURRENT_TIME"
-          echo "Previous Time: $CLOVERLEAF_PREVIOUS_TIME"
-          echo "Absolute Difference: $CLOVERLEAF_DIFFERENCE"
-          
-          echo "#############################################"
-          echo "MINIBUDE (minibude_gcc10.3.0_armv8.4+sve)"
-          echo "Current Time: $MINIBUDE_CURRENT_TIME"
-          echo "Previous Time: $MINIBUDE_PREVIOUS_TIME"
-          echo "Absolute Difference: $MINIBUDE_DIFFERENCE"
-
-          echo "#############################################"
-          echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
-          echo "Current Time: $STREAM_CURRENT_TIME"
-          echo "Previous Time: $STREAM_PREVIOUS_TIME"
-          echo "Absolute Difference: $STREAM_DIFFERENCE"
-
-          echo "#############################################"
-          echo "TEALEAF (tealeaf_gcc10.3.0_armv8.4+sve)"
-          echo "Current Time: $TEALEAF_CURRENT_TIME"
-          echo "Previous Time: $TEALEAF_PREVIOUS_TIME"
-          echo "Absolute Difference: $TEALEAF_DIFFERENCE"
+          path: ${{ env.TEALEAF_PATH }}
+          name: ${{ env.TEALEAF_NAME }}
+          datafile: ${{ env.TEALEAF_DATAFILE }}
+          runs: ${{ env.runs }}
       
       #######################################
       # Compare Results: 5% acceptance rate
@@ -199,11 +143,14 @@ jobs:
       - if: ${{ always() }}
         name: Check CLOVERLEAF threshold
         run: |
-          CLOVERLEAF_THRESHOLD=$(echo "scale=2; $CLOVERLEAF_PREVIOUS_TIME * 0.05" | bc)
-          CLOVERLEAF_DIFF=$(echo "scale=2; $CLOVERLEAF_CURRENT_TIME - $CLOVERLEAF_PREVIOUS_TIME" | bc)
+          average_name="avg_${{ env.CLOVERLEAF_NAME }}"
+          CURRENT_AVERAGE=${!average_name}
+
+          CLOVERLEAF_THRESHOLD=$(echo "scale=2; ${{ env.CLOVERLEAF_AVG }} * 0.05" | bc)
+          CLOVERLEAF_DIFF=$(echo "scale=2; $CLOVERLEAF_CURRENT_TIME - ${CURRENT_AVERAGE}" | bc)
           CLOVERLEAF_ABS_DIFF=$(echo "if($CLOVERLEAF_DIFF < 0) -1*$CLOVERLEAF_DIFF else $CLOVERLEAF_DIFF" | bc)
 
-          echo "Threashold: +- CLOVERLEAF_THRESHOLD"
+          echo "Threshold: +- CLOVERLEAF_THRESHOLD"
 
           if [ 1 -eq "$(echo "$CLOVERLEAF_ABS_DIFF > $CLOVERLEAF_THRESHOLD" | bc -l)" ]; then
             echo "CLOVERLEAF time difference exceeds 5% threshold!"
@@ -215,11 +162,14 @@ jobs:
       - if: ${{ always() }}
         name: Check MINIBUDE threshold
         run: |
-          MINIBUDE_THRESHOLD=$(echo "scale=2; $MINIBUDE_PREVIOUS_TIME * 0.05" | bc)
+          average_name="avg_${{ env.MINIBUDE_NAME }}"
+          CURRENT_AVERAGE=${!average_name}
+
+          MINIBUDE_THRESHOLD=$(echo "scale=2; ${{ env.MINIBUDE_AVG }} * 0.05" | bc)
           MINIBUDE_DIFF=$(echo "scale=2; $MINIBUDE_CURRENT_TIME - $MINIBUDE_PREVIOUS_TIME" | bc)
           MINIBUDE_ABS_DIFF=$(echo "if($MINIBUDE_DIFF < 0) -1*$MINIBUDE_DIFF else $MINIBUDE_DIFF" | bc)
 
-          echo "Threashold: +- MINIBUDE_THRESHOLD"
+          echo "Threshold: +- MINIBUDE_THRESHOLD"
 
           if [ 1 -eq "$(echo "$MINIBUDE_ABS_DIFF > $MINIBUDE_THRESHOLD" | bc -l)" ]; then
             echo "MINIBUDE time difference exceeds 5% threshold!"
@@ -231,11 +181,14 @@ jobs:
       - if: ${{ always() }}
         name: Check STREAM threshold
         run: |
-          STREAM_THRESHOLD=$(echo "scale=2; $STREAM_PREVIOUS_TIME * 0.05" | bc)
+          average_name="avg_${{ env.STREAM_NAME }}"
+          CURRENT_AVERAGE=${!average_name}
+
+          STREAM_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
           STREAM_DIFF=$(echo "scale=2; $STREAM_CURRENT_TIME - $STREAM_PREVIOUS_TIME" | bc)
           STREAM_ABS_DIFF=$(echo "if($STREAM_DIFF < 0) -1*$STREAM_DIFF else $STREAM_DIFF" | bc)
 
-          echo "Threashold: +- STREAM_THRESHOLD"
+          echo "Threshold: +- STREAM_THRESHOLD"
 
           if [ 1 -eq "$(echo "$STREAM_ABS_DIFF > $STREAM_THRESHOLD" | bc -l)" ]; then
             echo "STREAM time difference exceeds 5% threshold!"
@@ -247,11 +200,14 @@ jobs:
       - if: ${{ always() }}
         name: Check TEALEAF threshold
         run: |
-          TEALEAF_THRESHOLD=$(echo "scale=2; $TEALEAF_PREVIOUS_TIME * 0.05" | bc)
-          TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - $TEALEAF_PREVIOUS_TIME" | bc)
+          average_name="avg_${{ env.TEALEAF_NAME }}"
+          CURRENT_AVERAGE=${!average_name}
+
+          TEALEAF_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
+          TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - ${{ env.TEALEAF_AVG }}" | bc)
           TEALEAF_ABS_DIFF=$(echo "if($TEALEAF_DIFF < 0) -1*$TEALEAF_DIFF else $TEALEAF_DIFF" | bc)
 
-          echo "Threashold: +- $TEALEAF_THRESHOLD"
+          echo "Threshold: +- $TEALEAF_THRESHOLD"
 
           if [ 1 -eq "$(echo "$TEALEAF_ABS_DIFF > $TEALEAF_THRESHOLD" | bc -l)" ]; then
             echo "TEALEAF time difference exceeds 5% threshold!"
@@ -259,3 +215,33 @@ jobs:
           else
             echo "TEALEAF runtime is within threshold of 5%!"
           fi
+
+      # #######################################
+      # # Summary
+      # #######################################
+      # - name: Summary
+      #   shell: bash
+      #   run: |
+      #     echo "#############################################"
+      #     echo "CLOVERLEAF (cloverleaf_gcc10.3.0_armv8.4+sve)"
+      #     echo "Current Time: $CLOVERLEAF_CURRENT_TIME"
+      #     echo "Average Time: ${{ env.CLOVERLEAF_AVG }}"
+      #     echo "Absolute Difference: $CLOVERLEAF_DIFFERENCE"
+          
+      #     echo "#############################################"
+      #     echo "MINIBUDE (minibude_gcc10.3.0_armv8.4+sve)"
+      #     echo "Current Time: $MINIBUDE_CURRENT_TIME"
+      #     echo "Average Time: ${{ env.MINIBUDE_AVG }}"
+      #     echo "Absolute Difference: $MINIBUDE_DIFFERENCE"
+
+      #     echo "#############################################"
+      #     echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
+      #     echo "Current Time: $STREAM_CURRENT_TIME"
+      #     echo "Average Time: ${{ env.STREAM_AVG }}"
+      #     echo "Absolute Difference: $STREAM_DIFFERENCE"
+
+      #     echo "#############################################"
+      #     echo "TEALEAF (tealeaf_gcc10.3.0_armv8.4+sve)"
+      #     echo "Current Time: $TEALEAF_CURRENT_TIME"
+      #     echo "Average Time: ${{ env.TEALEAF_AVG }}"
+      #     echo "Absolute Difference: $TEALEAF_DIFFERENCE"
