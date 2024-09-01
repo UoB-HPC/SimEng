@@ -105,7 +105,7 @@ jobs:
       #######################################
       # Cloverleaf
       #######################################
-      - name: run cloverleaf benchmark
+      - name: Average ${{ inputs.RUNS }} runs of cloverleaf benchmark
         uses: ./.github/actions/average_single_benchmark
         with:
           path: ${{ env.CLOVERLEAF_PATH}}
@@ -116,7 +116,7 @@ jobs:
       #######################################
       # miniBUDE
       #######################################
-      - name: run miniBUDE benchmark
+      - name: Average ${{ inputs.RUNS }} runs of miniBUDE benchmark
         uses: ./.github/actions/average_single_benchmark
         with:
           path: ${{ env.MINIBUDE_PATH }}
@@ -126,7 +126,7 @@ jobs:
       #######################################
       # STREAM
       #######################################
-      - name: run stream benchmark
+      - name: Average ${{ inputs.RUNS }} runs of stream benchmark
         uses: ./.github/actions/average_single_benchmark
         with:
           path: ${{ env.STREAM_PATH }}
@@ -136,7 +136,7 @@ jobs:
       #######################################
       # TeaLeaf
       #######################################
-      - name: run TeaLeaf benchmark
+      - name: Average ${{ inputs.RUNS }} runs of TeaLeaf benchmark
         uses: ./.github/actions/average_single_benchmark
         with:
           path: ${{ env.TEALEAF_PATH }}
@@ -155,13 +155,14 @@ jobs:
           CURRENT_AVERAGE=${!average_name}
 
           CLOVERLEAF_THRESHOLD=$(echo "scale=2; ${{ env.CLOVERLEAF_AVG }} * 0.05" | bc)
-          CLOVERLEAF_DIFF=$(echo "scale=2; $CLOVERLEAF_CURRENT_TIME - ${CURRENT_AVERAGE}" | bc)
+          CLOVERLEAF_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.CLOVERLEAF_AVG }}" | bc)
           CLOVERLEAF_ABS_DIFF=$(echo "if($CLOVERLEAF_DIFF < 0) -1*$CLOVERLEAF_DIFF else $CLOVERLEAF_DIFF" | bc)
 
           echo "Threshold: +- CLOVERLEAF_THRESHOLD"
 
           if [ 1 -eq "$(echo "$CLOVERLEAF_ABS_DIFF > $CLOVERLEAF_THRESHOLD" | bc -l)" ]; then
             echo "CLOVERLEAF time difference exceeds 5% threshold!"
+            echo "Previous Average: ${{ env.CLOVERLEAF_AVG }} ms"
             exit 1
           else
             echo "CLOVERLEAF runtime is within threshold of 5%!"
@@ -174,13 +175,14 @@ jobs:
           CURRENT_AVERAGE=${!average_name}
 
           MINIBUDE_THRESHOLD=$(echo "scale=2; ${{ env.MINIBUDE_AVG }} * 0.05" | bc)
-          MINIBUDE_DIFF=$(echo "scale=2; $MINIBUDE_CURRENT_TIME - $MINIBUDE_PREVIOUS_TIME" | bc)
+          MINIBUDE_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.MINIBUDE_AVG }}" | bc)
           MINIBUDE_ABS_DIFF=$(echo "if($MINIBUDE_DIFF < 0) -1*$MINIBUDE_DIFF else $MINIBUDE_DIFF" | bc)
 
           echo "Threshold: +- MINIBUDE_THRESHOLD"
 
           if [ 1 -eq "$(echo "$MINIBUDE_ABS_DIFF > $MINIBUDE_THRESHOLD" | bc -l)" ]; then
             echo "MINIBUDE time difference exceeds 5% threshold!"
+            echo "Previous Average: ${{ env.MINIBUDE_AVG }} ms"
             exit 1
           else
             echo "MINIBUDE runtime is within threshold of 5%!"
@@ -193,13 +195,15 @@ jobs:
           CURRENT_AVERAGE=${!average_name}
 
           STREAM_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
-          STREAM_DIFF=$(echo "scale=2; $STREAM_CURRENT_TIME - $STREAM_PREVIOUS_TIME" | bc)
+          STREAM_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.STREAM_AVG }}" | bc)
           STREAM_ABS_DIFF=$(echo "if($STREAM_DIFF < 0) -1*$STREAM_DIFF else $STREAM_DIFF" | bc)
 
           echo "Threshold: +- STREAM_THRESHOLD"
 
           if [ 1 -eq "$(echo "$STREAM_ABS_DIFF > $STREAM_THRESHOLD" | bc -l)" ]; then
             echo "STREAM time difference exceeds 5% threshold!"
+            echo "Previous Average: ${{ env.STREAM_AVG }} ms"
+
             exit 1
           else
             echo "STREAM runtime is within threshold of 5%!"
@@ -212,13 +216,18 @@ jobs:
           CURRENT_AVERAGE=${!average_name}
 
           TEALEAF_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
-          TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - ${{ env.TEALEAF_AVG }}" | bc)
+
+          # TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - ${{ env.TEALEAF_AVG }}" | bc)
+
+          TEALEAF_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.TEALEAF_AVG }}" | bc)
           TEALEAF_ABS_DIFF=$(echo "if($TEALEAF_DIFF < 0) -1*$TEALEAF_DIFF else $TEALEAF_DIFF" | bc)
 
           echo "Threshold: +- $TEALEAF_THRESHOLD"
 
           if [ 1 -eq "$(echo "$TEALEAF_ABS_DIFF > $TEALEAF_THRESHOLD" | bc -l)" ]; then
             echo "TEALEAF time difference exceeds 5% threshold!"
+            echo "Average of current commit: ${CURRENT_AVERAGE} ms"
+            echo "Previous Average: ${{ env.TEALEAF_AVG }} ms"
             exit 1
           else
             echo "TEALEAF runtime is within threshold of 5%!"
