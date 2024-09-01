@@ -26,8 +26,8 @@ runs:
     - name: set clang and clang++ env variables
       shell: bash
       run: |
-        echo "APPLE_CLANG_DIR=$(which clang)" >> $GITHUB_ENV
-        echo "APPLE_CLANG_PLUS_PLUS_DIR=$(which clang++)" >> $GITHUB_ENV
+        echo "COMPILER=$(which clang)" >> $GITHUB_ENV
+        echo "COMPILER_PLUS_PLUS=$(which clang++)" >> $GITHUB_ENV
 
     # #######################################
     # # Build SimEng without external llvm or ninja.
@@ -35,8 +35,8 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.APPLE_CLANG_DIR }} \
-          -DCMAKE_CXX_COMPILER=${{ env.APPLE_CLANG_PLUS_PLUS_DIR }}
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.COMPILER }} \
+          -DCMAKE_CXX_COMPILER=${{ env.COMPILER_PLUS_PLUS }}
 
         cmake --build build -j $(sysctl -n hw.ncpu)
 

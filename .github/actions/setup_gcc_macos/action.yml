@@ -30,8 +30,8 @@ runs:
       run: |
         brew install gcc@$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
 
-        echo "GCC_DIR=/usr/local/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
-        echo "CPP_DIR=/usr/local/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+        echo "COMPILER=/usr/local/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+        echo "COMPILER_PLUS_PLUS=/usr/local/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
 
     #######################################
     # Build SimEng without external llvm or ninja.
@@ -39,8 +39,8 @@ runs:
     - name: Build SimEng
       shell: bash
       run: |
-        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.GCC_DIR }} \
-          -DCMAKE_CXX_COMPILER=${{ env.CPP_DIR }}
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.COMPILER }} \
+          -DCMAKE_CXX_COMPILER=${{ env.COMPILER_PLUS_PLUS }}
 
         cmake --build build -j $(sysctl -n hw.ncpu)
 
