@@ -151,8 +151,7 @@ jobs:
       - if: ${{ always() }}
         name: Check CLOVERLEAF threshold
         run: |
-          average_name="avg_${{ env.CLOVERLEAF_NAME }}"
-          CURRENT_AVERAGE=${!average_name}
+          CURRENT_AVERAGE=${avg_cloverleaf}
 
           CLOVERLEAF_THRESHOLD=$(echo "scale=2; ${{ env.CLOVERLEAF_AVG }} * 0.05" | bc)
           CLOVERLEAF_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.CLOVERLEAF_AVG }}" | bc)
@@ -171,8 +170,7 @@ jobs:
       - if: ${{ always() }}
         name: Check MINIBUDE threshold
         run: |
-          average_name="avg_${{ env.MINIBUDE_NAME }}"
-          CURRENT_AVERAGE=${!average_name}
+          CURRENT_AVERAGE=${avg_minibude}
 
           MINIBUDE_THRESHOLD=$(echo "scale=2; ${{ env.MINIBUDE_AVG }} * 0.05" | bc)
           MINIBUDE_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.MINIBUDE_AVG }}" | bc)
@@ -191,8 +189,7 @@ jobs:
       - if: ${{ always() }}
         name: Check STREAM threshold
         run: |
-          average_name="avg_${{ env.STREAM_NAME }}"
-          CURRENT_AVERAGE=${!average_name}
+          CURRENT_AVERAGE=${avg_stream}
 
           STREAM_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
           STREAM_DIFF=$(echo "scale=2; ${CURRENT_AVERAGE} - ${{ env.STREAM_AVG }}" | bc)
@@ -212,8 +209,7 @@ jobs:
       - if: ${{ always() }}
         name: Check TEALEAF threshold
         run: |
-          average_name="avg_${{ env.TEALEAF_NAME }}"
-          CURRENT_AVERAGE=${!average_name}
+          CURRENT_AVERAGE=${avg_tealeaf}
 
           TEALEAF_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
 
