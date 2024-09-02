@@ -22,11 +22,11 @@ jobs:
   #   secrets: inherit
 
   # NOTE: currently doens't work
-  # DEBUG_MACOS:
-  #   uses: ./.github/workflows/MACOS_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Debug
-  #   secrets: inherit
+  DEBUG_MACOS:
+    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Debug
+    secrets: inherit
 
   # DEBUG_MACOS_CLANG:
   #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml

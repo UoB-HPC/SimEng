@@ -57,14 +57,10 @@ runs:
 
           done
 
-          echo "total time $total_time"
-          echo "runs ${{ inputs.runs }}"
-
           # Calculate the average time
           average_time=$(echo "scale=2; $total_time / ${{ inputs.runs }}" | bc)
 
           echo "Final average time of ${{ inputs.runs }} runs: $average_time"
-          echo "yayaya avg_${benchmark_name%%_*}"
 
           echo "avg_${benchmark_name%%_*}=${average_time}" >> $GITHUB_ENV
 
