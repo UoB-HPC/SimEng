@@ -52,11 +52,11 @@ jobs:
           echo "_______________________________________"
           cmake --version
           echo "_______________________________________"
-          "${{ env.COMPILER }}" --version
-          which gcc
+          "${{ env.C_COMPILER }}" --version
+          which ${{ env.C_COMPILER }}
           echo "_______________________________________"
-          "${{ env.COMPILER_PLUS_PLUS }}" --version
-          which g++
+          "${{ env.CPP_COMPILER }}" --version
+          which ${{ env.CPP_COMPILER }}
           echo "_______________________________________"
           
       #######################################

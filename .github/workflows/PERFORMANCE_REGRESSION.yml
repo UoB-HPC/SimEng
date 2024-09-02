@@ -113,10 +113,6 @@ jobs:
           datafile_path: ${{ env.CLOVERLEAF_DATAFILE }}
           runs: ${{ env.RUNS }}
 
-      - name: print
-        run: |
-          echo "HERERERERE"
-
       #######################################
       # miniBUDE
       #######################################
@@ -221,7 +217,7 @@ jobs:
         run: |
           CURRENT_AVERAGE=${avg_tealeaf}
 
-          TEALEAF_THRESHOLD=$(echo "scale=2; ${{ env.STREAM_AVG }} * 0.05" | bc)
+          TEALEAF_THRESHOLD=$(echo "scale=2; ${{ env.TEALEAF_AVG }} * 0.05" | bc)
 
           # TEALEAF_DIFF=$(echo "scale=2; $TEALEAF_CURRENT_TIME - ${{ env.TEALEAF_AVG }}" | bc)
 

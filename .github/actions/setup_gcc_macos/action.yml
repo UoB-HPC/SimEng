@@ -45,7 +45,8 @@ runs:
         if [[ ${{ inputs.MODE }} == "Release" ]]; then
           cmake --build build -j $(sysctl -n hw.ncpu)
         else
-          cmake --build build -j 1
+          echo "cores: $(sysctl -n hw.ncpu)"
+          cmake --build build -j 5
         fi
 
         cmake --build build --target install

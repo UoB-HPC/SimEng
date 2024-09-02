@@ -15,8 +15,8 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  # DEBUG_LINUX_GCC:
-  #   uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+  # DEBUG_LINUX:
+  #   uses: ./.github/workflows/LINUX_BUILD_TEST.yml
   #   with:
   #     SIMENG-MODE: Debug
   #   secrets: inherit
@@ -28,29 +28,17 @@ jobs:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  # DEBUG_MACOS_CLANG:
-  #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Debug
-  #   secrets: inherit
-
   ###################################
   # Release Mode
   ###################################
-  # RELEASE_LINUX_GCC:
-  #   uses: ./.github/workflows/LINUX_GCC_BUILD_TEST.yml
+  # RELEASE_LINUX:
+  #   uses: ./.github/workflows/LINUX_BUILD_TEST.yml
   #   with:
   #     SIMENG-MODE: Release
   #   secrets: inherit
   
   # RELEASE_MACOS:
   #   uses: ./.github/workflows/MACOS_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Release
-  #   secrets: inherit
-
-  # RELEASE_MACOS_CLANG:
-  #   uses: ./.github/workflows/MACOS_CLANG_BUILD_TEST.yml
   #   with:
   #     SIMENG-MODE: Release
   #   secrets: inherit
@@ -71,12 +59,10 @@ jobs:
 
   # CLANG_FORMAT:
   #   needs: 
-  #     - DEBUG_LINUX_GCC
-  #     # - DEBUG_MACOS_GCC
-  #     - DEBUG_MACOS_CLANG
-  #     - RELEASE_LINUX_GCC
-  #     # - RELEASE_MACOS_GCC
-  #     - RELEASE_MACOS_CLANG
+  #     - RELEASE_LINUX
+  #     - DEBUG_LINUX
+  #     - RELEASE_MACOS
+  #     - DEBUG_MACOS 
   #     - PERFORMANCE_REGRESSION
 
   #   uses: ./.github/workflows/CLANG_FORMAT.yml
