@@ -15,7 +15,7 @@ runs:
     #######################################
     # Install dependencies
     #######################################
-    - name: install dependencies
+    - name: Install dependencies
       shell: bash
       run: |
         export DEBIAN_FRONTEND=noninteractive
@@ -53,7 +53,7 @@ runs:
     #######################################
     # Install Cmake
     #######################################
-    - name: install cmake via apt
+    - name: Install cmake via apt
       shell: bash
       run: |
         if [[ ${{ inputs.OS == 'ubuntu:18.04' }} ]]; then
@@ -68,7 +68,8 @@ runs:
         apt upgrade -y
 
     #######################################
-    # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason (installs some packages, not sure which ones prevent it, but it doesn't take long to run).
+    # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason
+    # (installs some packages, not sure which ones prevent failure, but it doesn't take long to run).
     #######################################
     - if: ${{ inputs.gcc-version == 'gcc-10' }}
       name: install llvm
@@ -78,7 +79,7 @@ runs:
         chmod +x llvm.sh
         ./llvm.sh 14
 
-    - name: install gcc
+    - name: Install gcc
       shell: bash
       run: |
         apt-get -y install ${{ inputs.gcc-version }}
@@ -97,7 +98,7 @@ runs:
 
         cmake --build build --target install
 
-        echo "GCC_DIR=/usr/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
-        echo "CPP_DIR=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+        echo "C_COMPILER=/usr/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
 
         

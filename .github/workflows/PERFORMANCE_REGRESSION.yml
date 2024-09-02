@@ -70,8 +70,8 @@ jobs:
 
           sudo cmake --build build --target install
 
-          echo "GCC_DIR=/usr/bin/gcc-10" >> $GITHUB_ENV
-          echo "CPP_DIR=/usr/bin/g++-10" >> $GITHUB_ENV
+          echo "C_COMPILER=/usr/bin/gcc-10" >> $GITHUB_ENV
+          echo "CPP_COMPILER=/usr/bin/g++-10" >> $GITHUB_ENV
 
       #######################################
       # Prints out info in isolated step for easy access.
@@ -83,10 +83,10 @@ jobs:
           echo "_______________________________________"
           cmake --version
           echo "_______________________________________"
-          "${{ env.GCC_DIR }}" --version
+          "${{ env.C_COMPILER }}" --version
           which gcc
           echo "_______________________________________"
-          "${{ env.CPP_DIR }}" --version
+          "${{ env.CPP_COMPILER }}" --version
           which g++
           echo "_______________________________________"
           ls
@@ -112,6 +112,10 @@ jobs:
           name: ${{ env.CLOVERLEAF_NAME }}
           datafile_path: ${{ env.CLOVERLEAF_DATAFILE }}
           runs: ${{ env.RUNS }}
+
+      - name: print
+        run: |
+          echo "HERERERERE"
 
       #######################################
       # miniBUDE
