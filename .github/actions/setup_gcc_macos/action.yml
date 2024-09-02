@@ -42,6 +42,10 @@ runs:
         cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_C_COMPILER=${{ env.C_COMPILER }} \
           -DCMAKE_CXX_C_COMPILER=${{ env.CPP_COMPILER }}
 
-        cmake --build build -j $(sysctl -n hw.ncpu)
+        if [[ ${{ inputs.MODE }} == "Release" ]]; then
+          cmake --build build -j $(sysctl -n hw.ncpu)
+        else
+          cmake --build build -j 1
+        fi
 
         cmake --build build --target install

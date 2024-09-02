@@ -126,7 +126,7 @@ jobs:
           path: ${{ env.MINIBUDE_PATH }}
           name: ${{ env.MINIBUDE_NAME }}
           datafile_path: ${{ env.MINIBUDE_DATAFILE }}
-          runs: ${{ env.runs }}
+          runs: ${{ env.RUNS }}
       #######################################
       # STREAM
       #######################################
@@ -136,7 +136,7 @@ jobs:
           path: ${{ env.STREAM_PATH }}
           name: ${{ env.STREAM_NAME }}
           datafile_path: ${{ env.STREAM_DATAFILE }}
-          runs: ${{ env.runs }}
+          runs: ${{ env.RUNS }}
       #######################################
       # TeaLeaf
       #######################################
@@ -146,7 +146,7 @@ jobs:
           path: ${{ env.TEALEAF_PATH }}
           name: ${{ env.TEALEAF_NAME }}
           datafile_path: ${{ env.TEALEAF_DATAFILE }}
-          runs: ${{ env.runs }}
+          runs: ${{ env.RUNS }}
       
       #######################################
       # Compare Results: 5% acceptance rate

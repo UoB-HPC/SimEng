@@ -4,8 +4,6 @@ description: installs dependencies and correct gcc version to build and test sim
 inputs:
   OS:
     required: true
-  gcc-version:
-    required: true
   MODE:
     required: true
 

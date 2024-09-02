@@ -71,11 +71,13 @@ runs:
     # ARMCLANG jobs
     # NOTE: DOENS'T WORK RIGHT NOW NEED TO SET UP ARM BASED SELF-HOSTED RUNNER
     ##########################################
-    # - if: ${{ contains( inputs.COMPILER, 'armclang') && contains(inputs.OS, 'ubuntu') }}
-    #   name:  Install ${{ inputs.COMPILER }} + Build SimEng
-    #   uses: ./.github/actions/setup_armclang_ubuntu
-    #   with:
-    #     OS: ${{ inputs.OS }}
+    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'macos') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_gcc_macos
+      with:
+        OS: ${{ inputs.OS }}
+        gcc-version: ${{ inputs.COMPILER }}
+        MODE: ${{ inputs.mode }}
     
     ##########################################
     # APPLE CLANG
