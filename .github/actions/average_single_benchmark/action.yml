@@ -53,17 +53,17 @@ runs:
               current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')
               
               # Add the extracted time to the total time
-              total_time=$(echo "$total_time + $current_time" | bc)
-              
+              total_time=$(echo "scale=2; $total_time + $current_time" | bc)
+
           done
 
           # Calculate the average time
           average_time=$(echo "scale=2; $total_time / ${{ env.runs }}" | bc)
-          
+
+          echo "Final average time of ${{ inputs.runs }} runs: $average_time"
+          echo "yayaya avg_${benchmark_name%%_*}"
 
           echo "avg_${benchmark_name%%_*}=${average_time}" >> $GITHUB_ENV
 
           # Clean up the output file
-          sudo rm "$output_file"
-
-          echo "HERERERERE"
+          sudo rm $output_file
