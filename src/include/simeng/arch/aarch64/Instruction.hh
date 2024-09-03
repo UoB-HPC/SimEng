@@ -38,6 +38,8 @@ const uint8_t NZCV = 3;
 const uint8_t SYSTEM = 4;
 /** The [256-byte x (SVL / 8)] SME matrix register za. */
 const uint8_t MATRIX = 5;
+/** The fixed width (512-bit) SME ZT0 table register. */
+const uint8_t TABLE = 6;
 
 /** A special register value representing the zero register. */
 const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};

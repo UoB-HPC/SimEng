@@ -42,9 +42,8 @@ bool MicroDecoder::detectOverlap(aarch64_reg registerA, aarch64_reg registerB) {
       indexes[i] = 30;
     } else {
       aarch64_reg base = (aarch64_reg)0;
-      if (registers[i] >= AARCH64_REG_V0) {
-        base = AARCH64_REG_V0;
-      } else if (registers[i] >= AARCH64_REG_Z0) {
+      // No need to check V registers as they are encoded as Q or D registers
+      if (registers[i] >= AARCH64_REG_Z0) {
         base = AARCH64_REG_Z0;
       } else if (registers[i] >= AARCH64_REG_X0) {
         base = AARCH64_REG_X0;
@@ -628,7 +627,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
 }
 
 cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
-  cs_arm64 info = default_info;
+  cs_aarch64 info = default_info;
   cs_detail detail = default_detail;
   info.op_count = opTypes.size();
 
@@ -689,7 +688,7 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
         break;
     }
   }
-  detail.arm64 = info;
+  detail.aarch64 = info;
   return detail;
 }
 
@@ -700,16 +699,19 @@ Instruction MicroDecoder::createImmOffsetUop(const Architecture& architecture,
                                              int microOpIndex) {
   cs_detail off_imm_detail = createDefaultDetail(
       {{AARCH64_OP_REG, 1}, {AARCH64_OP_REG}, {AARCH64_OP_IMM}});
-  off_imm_detail.arm64.operands[0].reg = base;
-  off_imm_detail.arm64.operands[1].reg = base;
-  off_imm_detail.arm64.operands[2].imm = offset;
+  off_imm_detail.aarch64.operands[0].reg = base;
+  off_imm_detail.aarch64.operands[1].reg = base;
+  off_imm_detail.aarch64.operands[2].imm = offset;
 
-  cs_insn off_imm_cs = {arm64_insn::ARM64_INS_ADD,
+  cs_insn off_imm_cs = {aarch64_insn::AARCH64_INS_ADD,
+                        aarch64_insn::AARCH64_INS_INVALID,
                         0x0,
                         4,
                         "",
                         "micro_offset_imm",
                         "",
+                        false,
+                        false,
                         &off_imm_detail,
                         MicroOpcode::OFFSET_IMM};
 
@@ -727,16 +729,19 @@ Instruction MicroDecoder::createRegOffsetUop(
     csh capstoneHandle, bool lastMicroOp, int microOpIndex) {
   cs_detail off_reg_detail = createDefaultDetail(
       {{AARCH64_OP_REG, 1}, {AARCH64_OP_REG}, {AARCH64_OP_REG}});
-  off_reg_detail.arm64.operands[0].reg = base;
-  off_reg_detail.arm64.operands[1].reg = base;
-  off_reg_detail.arm64.operands[2].reg = offset;
+  off_reg_detail.aarch64.operands[0].reg = base;
+  off_reg_detail.aarch64.operands[1].reg = base;
+  off_reg_detail.aarch64.operands[2].reg = offset;
 
-  cs_insn off_reg_cs = {arm64_insn::ARM64_INS_ADD,
+  cs_insn off_reg_cs = {aarch64_insn::AARCH64_INS_ADD,
+                        aarch64_insn::AARCH64_INS_INVALID,
                         0x0,
                         4,
                         "",
                         "micro_offset_reg",
                         "",
+                        false,
+                        false,
                         &off_reg_detail,
                         MicroOpcode::OFFSET_REG};
 
@@ -755,11 +760,19 @@ Instruction MicroDecoder::createLdrUop(const Architecture& architecture,
                                        int microOpIndex, uint8_t dataSize) {
   cs_detail ldr_detail =
       createDefaultDetail({{AARCH64_OP_REG, 1}, {AARCH64_OP_MEM}});
-  ldr_detail.arm64.operands[0].reg = dest;
-  ldr_detail.arm64.operands[1].mem = mem;
-  cs_insn ldr_cs = {
-      arm64_insn::ARM64_INS_LDR, 0x0, 4, "", "micro_ldr", "", &ldr_detail,
-      MicroOpcode::LDR_ADDR};
+  ldr_detail.aarch64.operands[0].reg = dest;
+  ldr_detail.aarch64.operands[1].mem = mem;
+  cs_insn ldr_cs = {aarch64_insn::AARCH64_INS_LDR,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_ldr",
+                    "",
+                    false,
+                    false,
+                    &ldr_detail,
+                    MicroOpcode::LDR_ADDR};
   InstructionMetadata ldr_metadata(ldr_cs);
   microMetadataCache_.emplace_front(ldr_metadata);
   Instruction ldr(architecture, microMetadataCache_.front(),
@@ -773,10 +786,18 @@ Instruction MicroDecoder::createSDUop(const Architecture& architecture,
                                       aarch64_reg src, csh capstoneHandle,
                                       bool lastMicroOp, int microOpIndex) {
   cs_detail sd_detail = createDefaultDetail({{AARCH64_OP_REG}});
-  sd_detail.arm64.operands[0].reg = src;
-  cs_insn sd_cs = {
-      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_sd", "", &sd_detail,
-      MicroOpcode::STR_DATA};
+  sd_detail.aarch64.operands[0].reg = src;
+  cs_insn sd_cs = {aarch64_insn::AARCH64_INS_STR,
+                   aarch64_insn::AARCH64_INS_INVALID,
+                   0x0,
+                   4,
+                   "",
+                   "micro_sd",
+                   "",
+                   false,
+                   false,
+                   &sd_detail,
+                   MicroOpcode::STR_DATA};
   InstructionMetadata sd_metadata(sd_cs);
   microMetadataCache_.emplace_front(sd_metadata);
   Instruction sd(
@@ -791,10 +812,18 @@ Instruction MicroDecoder::createStrUop(const Architecture& architecture,
                                        bool lastMicroOp, int microOpIndex,
                                        uint8_t dataSize) {
   cs_detail str_detail = createDefaultDetail({{AARCH64_OP_MEM}});
-  str_detail.arm64.operands[0].mem = mem;
-  cs_insn str_cs = {
-      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_str", "", &str_detail,
-      MicroOpcode::STR_DATA};
+  str_detail.aarch64.operands[0].mem = mem;
+  cs_insn str_cs = {aarch64_insn::AARCH64_INS_STR,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_str",
+                    "",
+                    false,
+                    false,
+                    &str_detail,
+                    MicroOpcode::STR_ADDR};
   InstructionMetadata str_metadata(str_cs);
   microMetadataCache_.emplace_front(str_metadata);
   Instruction str(architecture, microMetadataCache_.front(),

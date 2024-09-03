@@ -164,7 +164,7 @@ inline bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift`. Replicated from Instruction.cc */
 inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
+  if (extendType == AARCH64_EXT_INVALID && shift == 0) {
     // Special case: an invalid shift type with a shift amount of 0 implies an
     // identity operation
     return value;
@@ -172,28 +172,28 @@ inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
 
   uint64_t extended;
   switch (extendType) {
-    case ARM64_EXT_UXTB:
+    case AARCH64_EXT_UXTB:
       extended = static_cast<uint8_t>(value);
       break;
-    case ARM64_EXT_UXTH:
+    case AARCH64_EXT_UXTH:
       extended = static_cast<uint16_t>(value);
       break;
-    case ARM64_EXT_UXTW:
+    case AARCH64_EXT_UXTW:
       extended = static_cast<uint32_t>(value);
       break;
-    case ARM64_EXT_UXTX:
+    case AARCH64_EXT_UXTX:
       extended = value;
       break;
-    case ARM64_EXT_SXTB:
+    case AARCH64_EXT_SXTB:
       extended = static_cast<int8_t>(value);
       break;
-    case ARM64_EXT_SXTH:
+    case AARCH64_EXT_SXTH:
       extended = static_cast<int16_t>(value);
       break;
-    case ARM64_EXT_SXTW:
+    case AARCH64_EXT_SXTW:
       extended = static_cast<int32_t>(value);
       break;
-    case ARM64_EXT_SXTX:
+    case AARCH64_EXT_SXTX:
       extended = value;
       break;
     default:
@@ -211,7 +211,7 @@ inline uint64_t extendOffset(uint64_t value, const cs_aarch64_op& op) {
       return value;
     }
     if (op.shift.type == 1) {
-      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
+      return extendValue(value, AARCH64_EXT_UXTX, op.shift.value);
     }
   }
   return extendValue(value, op.ext, op.shift.value);
@@ -327,25 +327,25 @@ template <typename T>
 inline std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
 shiftValue(T value, uint8_t shiftType, uint8_t amount) {
   switch (shiftType) {
-    case ARM64_SFT_LSL:
+    case AARCH64_SFT_LSL:
       return value << amount;
-    case ARM64_SFT_LSR:
+    case AARCH64_SFT_LSR:
       return value >> amount;
-    case ARM64_SFT_ASR:
+    case AARCH64_SFT_ASR:
       return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
+    case AARCH64_SFT_ROR: {
       // Assuming sizeof(T) is a power of 2.
       const T mask = sizeof(T) * 8 - 1;
       assert((amount <= mask) && "Rotate amount exceeds type width");
       amount &= mask;
       return (value >> amount) | (value << ((-amount) & mask));
     }
-    case ARM64_SFT_MSL: {
+    case AARCH64_SFT_MSL: {
       // pad in with ones instead of zeros
       const T mask = (static_cast<T>(1) << static_cast<T>(amount)) - 1;
       return (value << amount) | mask;
     }
-    case ARM64_SFT_INVALID:
+    case AARCH64_SFT_INVALID:
       return value;
     default:
       assert(false && "Unknown shift type");
