@@ -28,12 +28,12 @@ class RegisterValue {
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
   RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
     if (isLocal()) {
-      T* view = reinterpret_cast<T*>(this->value);
+      T* view = reinterpret_cast<T*>(this->localValue);
       view[0] = value;
 
       if (bytes > sizeof(T)) {
         // Zero the remaining bytes not set by the provided value
-        std::fill<char*, uint16_t>(this->value + sizeof(T), this->value + bytes,
+        std::fill<char*, uint16_t>(this->localValue + sizeof(T), this->localValue + bytes,
                                    0);
       }
     } else {
@@ -57,7 +57,7 @@ class RegisterValue {
     assert(capacity >= bytes && "Capacity is less than requested bytes");
     char* dest;
     if (isLocal()) {
-      dest = this->value;
+      dest = this->localValue;
     } else {
       dest = static_cast<char*>(pool.allocate(capacity));
       std::memset(dest, 0, capacity);
@@ -96,7 +96,7 @@ class RegisterValue {
            "Attempted to access a RegisterValue as a datatype larger than the "
            "data held");
     if (isLocal()) {
-      return reinterpret_cast<const T*>(value);
+      return reinterpret_cast<const T*>(localValue);
     } else {
       return reinterpret_cast<const T*>(ptr.get());
     }
@@ -128,7 +128,7 @@ class RegisterValue {
 
   /** The underlying local member value. Aligned to 8 bytes to prevent
    * potential alignment issue when casting. */
-  alignas(8) char value[MAX_LOCAL_BYTES];
+  alignas(8) char localValue[MAX_LOCAL_BYTES] = {};
 };
 
 inline bool operator==(const RegisterValue& lhs, const RegisterValue& rhs) {
