@@ -57,6 +57,7 @@ runs:
     # Install ArmClang
     ######################################
     - name: Install armclang
+      shell: bash
       run: |
 
         dnf install -y environment-modules

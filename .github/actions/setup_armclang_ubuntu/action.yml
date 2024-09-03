@@ -68,6 +68,7 @@ runs:
     # Install ArmClang
     #######################################
     - name: Install armclang
+      shell: bash
       run: |
         apt-get update
         apt-get upgrade -y
