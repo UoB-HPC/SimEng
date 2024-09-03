@@ -19,11 +19,11 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  # DEBUG_LINUX:
-  #   uses: ./.github/workflows/LINUX_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Debug
-  #   secrets: inherit
+  DEBUG_LINUX:
+    uses: ./.github/workflows/LINUX_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Debug
+    secrets: inherit
 
   # NOTE: currently doens't work
   DEBUG_MACOS:
@@ -35,17 +35,17 @@ jobs:
   ###################################
   # Release Mode
   ###################################
-  # RELEASE_LINUX:
-  #   uses: ./.github/workflows/LINUX_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Release
-  #   secrets: inherit
+  RELEASE_LINUX:
+    uses: ./.github/workflows/LINUX_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Release
+    secrets: inherit
   
-  # RELEASE_MACOS:
-  #   uses: ./.github/workflows/MACOS_BUILD_TEST.yml
-  #   with:
-  #     SIMENG-MODE: Release
-  #   secrets: inherit
+  RELEASE_MACOS:
+    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
+    with:
+      SIMENG-MODE: Release
+    secrets: inherit
 
   ###################################
   # Compare runtime with Previous run time
