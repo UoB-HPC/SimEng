@@ -785,14 +785,21 @@ RegisterValue vecSumElems_2ops(srcValContainer& sourceValues) {
 template <typename D, typename N, int I>
 RegisterValue vecXtn(srcValContainer& sourceValues, bool isXtn2) {
   const D* d;
-  if (isXtn2) d = sourceValues[0].getAsVector<D>();
-  const N* n = sourceValues[isXtn2 ? 1 : 0].getAsVector<N>();
+  const N* n;
+  if (isXtn2) {
+    d = sourceValues[0].getAsVector<D>();
+    n = sourceValues[1].getAsVector<N>();
+  } else {
+    d = {};
+    n = sourceValues[0].getAsVector<N>();
+  }
 
   D out[16 / sizeof(D)] = {0};
   int index = 0;
 
   for (int i = 0; i < I; i++) {
     if (isXtn2 & (i < (I / 2))) {
+      assert(isXtn2 && "isXtn2 is false so d is not initialised");
       out[i] = d[i];
     } else {
       out[i] = static_cast<D>(n[index]);

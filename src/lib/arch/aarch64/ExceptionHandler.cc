@@ -329,7 +329,7 @@ bool ExceptionHandler::init() {
         return readStringThen(filename, filenamePtr,
                               kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
                                 // Invoke the kernel
-                                kernel::stat statOut;
+                                kernel::stat statOut = {};
                                 uint64_t retval = linux_.newfstatat(
                                     dfd, filename, statOut, flag);
                                 ProcessStateChange stateChange = {
