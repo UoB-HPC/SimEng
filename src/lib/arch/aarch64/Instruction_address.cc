@@ -476,20 +476,21 @@ Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w {zt.s}, pg/z, [xn, xm, lsl #2]
-        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        // const uint64_t* p = operands[0].getAsVector<uint64_t>();
         const uint64_t base = operands[1].get<uint64_t>();
         const uint64_t offset = operands[2].get<uint64_t>();
         const uint64_t addr = base + (offset * 4);
-        const uint16_t partition_num = VL_bits / 32;
+        // const uint16_t partition_num = VL_bits / 32;
 
-        std::vector<memory::MemoryAccessTarget> addresses;
-        addresses.reserve(partition_num);
+        // std::vector<memory::MemoryAccessTarget> addresses;
+        // addresses.reserve(partition_num);
 
-        generatePredicatedContiguousAddressBlocks(addr, partition_num, 4, 4, p,
-                                                  addresses);
+        // generatePredicatedContiguousAddressBlocks(addr, partition_num, 4, 4,
+        // p,
+        //                                           addresses);
 
-        // setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
-        setMemoryAddresses(std::move(addresses));
+        setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
+        // setMemoryAddresses(std::move(addresses));
         break;
       }
       case Opcode::AArch64_LD1W_D: {  // ld1w {zt.d}, pg/z, [xn, xm, lsl #2]

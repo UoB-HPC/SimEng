@@ -41,6 +41,13 @@ class RenameUnit {
    * space for a store operation. */
   uint64_t getStoreQueueStalls() const;
 
+  void unpause() {
+    pauseForAtomic_ = false;
+    // std::cout << tid_ << "|Unpaused atomic from flush" << std::endl;
+  }
+
+  void setTid(uint64_t tid) { tid_ = tid; }
+
  private:
   /** A buffer of instructions to rename. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
@@ -75,6 +82,10 @@ class RenameUnit {
   /** The number of cycles stalled due to insufficient load/store queue space
    * for a store operation. */
   uint64_t sqStalls_ = 0;
+
+  bool pauseForAtomic_ = false;
+
+  uint64_t tid_ = 0;
 };
 
 }  // namespace pipeline

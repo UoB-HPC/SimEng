@@ -47,6 +47,7 @@ class ReorderBuffer {
       unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       std::function<void(uint64_t branchAddress)> sendLoopBoundary,
+      std::function<void(const Register& reg)> updateScoreboard,
       BranchPredictor& predictor, uint16_t loopBufSize,
       uint16_t loopDetectionThreshold);
 
@@ -126,6 +127,10 @@ class ReorderBuffer {
 
   /** A function to send an instruction at a detected loop boundary. */
   std::function<void(uint64_t branchAddress)> sendLoopBoundary_;
+
+  /** Lets the Dispatch-Issue unit know to free the associated register in the
+   * scoreboard. */
+  std::function<void(const Register& reg)> updateScoreboard_;
 
   /** Whether or not a loop has been detected. */
   bool loopDetected_ = false;

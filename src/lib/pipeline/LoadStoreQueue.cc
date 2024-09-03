@@ -22,7 +22,8 @@ bool requestsOverlap(memory::MemoryAccessTarget a,
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(span<Register>, span<RegisterValue>, const uint16_t)>
+        forwardOperands,
     CompletionOrder completionOrder)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
@@ -35,7 +36,8 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     std::shared_ptr<memory::MMU> mmu,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    std::function<void(span<Register>, span<RegisterValue>, const uint16_t)>
+        forwardOperands,
     CompletionOrder completionOrder)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
@@ -192,212 +194,222 @@ void LoadStoreQueue::startStore(const std::shared_ptr<Instruction>& uop) {
     // completedRequests_ now
     if (completionOrder_ == CompletionOrder::INORDER)
       completedRequests_.push(uop);
+  } else if (uop->isAcquire()) {
+    for (int i = 0; i < data.size(); i++) {
+      mmu_->requestWrite(addresses[i], data[i]);
+    }
   } else {
+    for (int i = 0; i < data.size(); i++) {
+      requestStoreQueue_.push({addresses[i], data[i]});
+    }
+
+    // uint64_t seqId = uop->getSequenceId();
+    // std::vector<storeBufferEntry> entries;
     // for (int i = 0; i < data.size(); i++) {
-    //   requestStoreQueue_.push({addresses[i], data[i]});
+    //   if (stbPrint) {
+    //     std::cerr << "Start Store " << seqId << " - " << std::hex
+    //               << addresses[i].vaddr << std::dec << ":" <<
+    //               addresses[i].size
+    //               << "[" << std::hex;
+    //     for (int j = addresses[i].size - 1; j >= 0; j--) {
+    //       if (data[i].getAsVector<uint8_t>()[j] < 16) std::cerr << "0";
+    //       std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]) << " ";
+    //     }
+    //     std::cerr << std::dec << "\b]" << std::endl;
+    //   }
+    //   storeBufferEntry newEntry;
+    //   newEntry.target.vaddr = addresses[i].vaddr;
+    //   newEntry.target.size = addresses[i].size;
+    //   newEntry.target.id = seqId;
+    //   newEntry.data = data[i];
+    //   storeBufferEntry remainder = newEntry.split(storeBufferEntryWidth_);
+    //   entries.push_back(newEntry);
+    //   if (remainder.target.size != 0) {
+    //     entries.push_back(remainder);
+    //   }
     // }
 
-    uint64_t seqId = uop->getSequenceId();
-    std::vector<storeBufferEntry> entries;
-    for (int i = 0; i < data.size(); i++) {
-      if (stbPrint) {
-        std::cerr << "Start Store " << seqId << " - " << std::hex
-                  << addresses[i].vaddr << std::dec << ":" << addresses[i].size
-                  << "[" << std::hex;
-        for (int j = addresses[i].size - 1; j >= 0; j--) {
-          if (data[i].getAsVector<uint8_t>()[j] < 16) std::cerr << "0";
-          std::cerr << unsigned(data[i].getAsVector<uint8_t>()[j]) << " ";
-        }
-        std::cerr << std::dec << "\b]" << std::endl;
-      }
-      storeBufferEntry newEntry;
-      newEntry.target.vaddr = addresses[i].vaddr;
-      newEntry.target.size = addresses[i].size;
-      newEntry.target.id = seqId;
-      newEntry.data = data[i];
-      storeBufferEntry remainder = newEntry.split(storeBufferEntryWidth_);
-      entries.push_back(newEntry);
-      if (remainder.target.size != 0) {
-        entries.push_back(remainder);
-      }
-    }
+    // for (auto newEntry : entries) {
+    //   uint64_t baseVaddr = newEntry.target.vaddr -
+    //                        (newEntry.target.vaddr % storeBufferEntryWidth_);
+    //   bool inserted = false;
+    //   auto itr = storeBuffer_.find(baseVaddr);
+    //   if (itr != storeBuffer_.end()) {
+    //     // Determine if there's space for a new target
+    //     auto nextTgtItr = itr->second.first.begin();
+    //     auto prevTgtItr = itr->second.first.end();
+    //     while (nextTgtItr != itr->second.first.end()) {
+    //       if (stbPrint)
+    //         std::cerr << "\tTrying " << nextTgtItr -
+    //         itr->second.first.begin()
+    //                   << "..." << std::endl;
+    //       if (nextTgtItr == itr->second.first.begin()) {
+    //         // Check for valid address position
+    //         if (newEntry.target.vaddr + newEntry.target.size <=
+    //             nextTgtItr->target.vaddr) {
+    //           if (stbPrint) std::cerr << "\tValid at start..." << std::endl;
+    //           // Check for space
+    //           if (nextTgtItr->target.vaddr - baseVaddr >=
+    //               newEntry.target.size) {
+    //             if (stbPrint) std::cerr << "\tSpace at start..." <<
+    //             std::endl;
+    //             // Attempt merge, simply insert otherwise
+    //             inserted = nextTgtItr->mergeBefore(newEntry);
+    //             if (!inserted) {
+    //               nextTgtItr = itr->second.first.insert(nextTgtItr,
+    //               newEntry); if (stbPrint)
+    //                 std::cerr << "\tInserted at start as new block"
+    //                           << std::endl;
+    //               inserted = true;
+    //             } else {
+    //               if (stbPrint)
+    //                 std::cerr << "\tInserted at start via merge" <<
+    //                 std::endl;
+    //             }
+    //           } else {
+    //             break;
+    //           }
+    //         }
+    //       }
+    //       if (inserted) break;
 
-    for (auto newEntry : entries) {
-      uint64_t baseVaddr = newEntry.target.vaddr -
-                           (newEntry.target.vaddr % storeBufferEntryWidth_);
-      bool inserted = false;
-      auto itr = storeBuffer_.find(baseVaddr);
-      if (itr != storeBuffer_.end()) {
-        // Determine if there's space for a new target
-        auto nextTgtItr = itr->second.first.begin();
-        auto prevTgtItr = itr->second.first.end();
-        while (nextTgtItr != itr->second.first.end()) {
-          if (stbPrint)
-            std::cerr << "\tTrying " << nextTgtItr - itr->second.first.begin()
-                      << "..." << std::endl;
-          if (nextTgtItr == itr->second.first.begin()) {
-            // Check for valid address position
-            if (newEntry.target.vaddr + newEntry.target.size <=
-                nextTgtItr->target.vaddr) {
-              if (stbPrint) std::cerr << "\tValid at start..." << std::endl;
-              // Check for space
-              if (nextTgtItr->target.vaddr - baseVaddr >=
-                  newEntry.target.size) {
-                if (stbPrint) std::cerr << "\tSpace at start..." << std::endl;
-                // Attempt merge, simply insert otherwise
-                inserted = nextTgtItr->mergeBefore(newEntry);
-                if (!inserted) {
-                  nextTgtItr = itr->second.first.insert(nextTgtItr, newEntry);
-                  if (stbPrint)
-                    std::cerr << "\tInserted at start as new block"
-                              << std::endl;
-                  inserted = true;
-                } else {
-                  if (stbPrint)
-                    std::cerr << "\tInserted at start via merge" << std::endl;
-                }
-              } else {
-                break;
-              }
-            }
-          }
-          if (inserted) break;
+    //       if (nextTgtItr != itr->second.first.begin() &&
+    //           prevTgtItr != itr->second.first.end()) {
+    //         // Check for valid address position
+    //         if ((newEntry.target.vaddr + newEntry.target.size <=
+    //              nextTgtItr->target.vaddr) &&
+    //             (prevTgtItr->target.vaddr + prevTgtItr->target.size <=
+    //              newEntry.target.vaddr)) {
+    //           if (stbPrint)
+    //             std::cerr << "\tValid at "
+    //                       << nextTgtItr - itr->second.first.begin() << "..."
+    //                       << std::endl;
+    //           // Check for space
+    //           if ((nextTgtItr->target.vaddr -
+    //                (prevTgtItr->target.vaddr + prevTgtItr->target.size)) >=
+    //               newEntry.target.size) {
+    //             if (stbPrint)
+    //               std::cerr << "\tSpace at "
+    //                         << nextTgtItr - itr->second.first.begin() <<
+    //                         "..."
+    //                         << std::endl;
+    //             // Attempt merge, simply insert otherwise
+    //             inserted = nextTgtItr->mergeBefore(newEntry);
+    //             if (!inserted) {
+    //               nextTgtItr = itr->second.first.insert(nextTgtItr,
+    //               newEntry); if (stbPrint)
+    //                 std::cerr << "\tInserted at "
+    //                           << nextTgtItr - itr->second.first.begin()
+    //                           << " as new block" << std::endl;
+    //               inserted = true;
+    //             } else {
+    //               if (stbPrint)
+    //                 std::cerr << "\tInserted at "
+    //                           << nextTgtItr - itr->second.first.begin()
+    //                           << " via merge" << std::endl;
+    //             }
+    //           } else {
+    //             break;
+    //           }
+    //         }
+    //       }
+    //       if (inserted) break;
 
-          if (nextTgtItr != itr->second.first.begin() &&
-              prevTgtItr != itr->second.first.end()) {
-            // Check for valid address position
-            if ((newEntry.target.vaddr + newEntry.target.size <=
-                 nextTgtItr->target.vaddr) &&
-                (prevTgtItr->target.vaddr + prevTgtItr->target.size <=
-                 newEntry.target.vaddr)) {
-              if (stbPrint)
-                std::cerr << "\tValid at "
-                          << nextTgtItr - itr->second.first.begin() << "..."
-                          << std::endl;
-              // Check for space
-              if ((nextTgtItr->target.vaddr -
-                   (prevTgtItr->target.vaddr + prevTgtItr->target.size)) >=
-                  newEntry.target.size) {
-                if (stbPrint)
-                  std::cerr << "\tSpace at "
-                            << nextTgtItr - itr->second.first.begin() << "..."
-                            << std::endl;
-                // Attempt merge, simply insert otherwise
-                inserted = nextTgtItr->mergeBefore(newEntry);
-                if (!inserted) {
-                  nextTgtItr = itr->second.first.insert(nextTgtItr, newEntry);
-                  if (stbPrint)
-                    std::cerr << "\tInserted at "
-                              << nextTgtItr - itr->second.first.begin()
-                              << " as new block" << std::endl;
-                  inserted = true;
-                } else {
-                  if (stbPrint)
-                    std::cerr << "\tInserted at "
-                              << nextTgtItr - itr->second.first.begin()
-                              << " via merge" << std::endl;
-                }
-              } else {
-                break;
-              }
-            }
-          }
-          if (inserted) break;
+    //       if (nextTgtItr == itr->second.first.end() - 1) {
+    //         // Check for valid address position
+    //         if (nextTgtItr->target.vaddr + nextTgtItr->target.size <=
+    //             newEntry.target.vaddr) {
+    //           if (stbPrint) std::cerr << "\tValid at end..." << std::endl;
+    //           // Check for space
+    //           if (baseVaddr + storeBufferEntryWidth_ -
+    //                   nextTgtItr->target.vaddr >=
+    //               newEntry.target.size) {
+    //             if (stbPrint) std::cerr << "\tSpace at end..." << std::endl;
+    //             // Attempt merge, simply insert otherwise
+    //             inserted = nextTgtItr->mergeAfter(newEntry);
+    //             if (!inserted) {
+    //               itr->second.first.push_back(newEntry);
+    //               if (stbPrint)
+    //                 std::cerr << "\tInserted at end as new block" <<
+    //                 std::endl;
+    //               inserted = true;
+    //             } else {
+    //               if (stbPrint)
+    //                 std::cerr << "\tInserted at end via merge" << std::endl;
+    //             }
+    //           }
+    //         }
+    //       }
+    //       if (inserted) break;
 
-          if (nextTgtItr == itr->second.first.end() - 1) {
-            // Check for valid address position
-            if (nextTgtItr->target.vaddr + nextTgtItr->target.size <=
-                newEntry.target.vaddr) {
-              if (stbPrint) std::cerr << "\tValid at end..." << std::endl;
-              // Check for space
-              if (baseVaddr + storeBufferEntryWidth_ -
-                      nextTgtItr->target.vaddr >=
-                  newEntry.target.size) {
-                if (stbPrint) std::cerr << "\tSpace at end..." << std::endl;
-                // Attempt merge, simply insert otherwise
-                inserted = nextTgtItr->mergeAfter(newEntry);
-                if (!inserted) {
-                  itr->second.first.push_back(newEntry);
-                  if (stbPrint)
-                    std::cerr << "\tInserted at end as new block" << std::endl;
-                  inserted = true;
-                } else {
-                  if (stbPrint)
-                    std::cerr << "\tInserted at end via merge" << std::endl;
-                }
-              }
-            }
-          }
-          if (inserted) break;
+    //       prevTgtItr = nextTgtItr;
+    //       nextTgtItr++;
+    //     }
+    //     // Identify any final merges
+    //     auto baseTgtItr = itr->second.first.begin();
+    //     nextTgtItr = itr->second.first.begin() + 1;
+    //     while (nextTgtItr != itr->second.first.end()) {
+    //       if (baseTgtItr->mergeAfter((*nextTgtItr))) {
+    //         nextTgtItr = itr->second.first.erase(nextTgtItr);
+    //       } else {
+    //         baseTgtItr = nextTgtItr;
+    //         nextTgtItr++;
+    //       }
+    //     }
 
-          prevTgtItr = nextTgtItr;
-          nextTgtItr++;
-        }
-        // Identify any final merges
-        auto baseTgtItr = itr->second.first.begin();
-        nextTgtItr = itr->second.first.begin() + 1;
-        while (nextTgtItr != itr->second.first.end()) {
-          if (baseTgtItr->mergeAfter((*nextTgtItr))) {
-            nextTgtItr = itr->second.first.erase(nextTgtItr);
-          } else {
-            baseTgtItr = nextTgtItr;
-            nextTgtItr++;
-          }
-        }
+    //     if (!inserted) {
+    //       // If not inserted, drain STB entry and create fresh one with
+    //       newEntry for (auto tgt : itr->second.first) {
+    //         requestStoreQueue_.push({tgt.target, tgt.data});
+    //       }
+    //       itr->second.first = {};
+    //       itr->second.first.push_back(newEntry);
+    //       itr->second.second = tickCounter_;
+    //       if (stbPrint)
+    //         std::cerr << "\tInserted via conflict replacement" << std::endl;
+    //     }
+    //   } else {
+    //     // Determine if there's space for a new STB entry
+    //     if (storeBuffer_.size() >= storeBufferSize_) {
+    //       // Drain oldest entry and create fresh one with newEntry
+    //       uint64_t oldest = storeBuffer_.begin()->second.second;
+    //       uint64_t index = storeBuffer_.begin()->first;
+    //       for (const auto& entry : storeBuffer_) {
+    //         if (entry.second.second < oldest) {
+    //           oldest = entry.second.second;
+    //           index = entry.first;
+    //         }
+    //       }
 
-        if (!inserted) {
-          // If not inserted, drain STB entry and create fresh one with newEntry
-          for (auto tgt : itr->second.first) {
-            requestStoreQueue_.push({tgt.target, tgt.data});
-          }
-          itr->second.first = {};
-          itr->second.first.push_back(newEntry);
-          itr->second.second = tickCounter_;
-          if (stbPrint)
-            std::cerr << "\tInserted via conflict replacement" << std::endl;
-        }
-      } else {
-        // Determine if there's space for a new STB entry
-        if (storeBuffer_.size() >= storeBufferSize_) {
-          // Drain oldest entry and create fresh one with newEntry
-          uint64_t oldest = storeBuffer_.begin()->second.second;
-          uint64_t index = storeBuffer_.begin()->first;
-          for (const auto& entry : storeBuffer_) {
-            if (entry.second.second < oldest) {
-              oldest = entry.second.second;
-              index = entry.first;
-            }
-          }
+    //       auto baseTgtItr = storeBuffer_[index].first.begin();
+    //       auto nextTgtItr = storeBuffer_[index].first.begin() + 1;
+    //       while (nextTgtItr != storeBuffer_[index].first.end()) {
+    //         if (baseTgtItr->mergeAfter((*nextTgtItr))) {
+    //           nextTgtItr = storeBuffer_[index].first.erase(nextTgtItr);
+    //         } else {
+    //           baseTgtItr = nextTgtItr;
+    //           nextTgtItr++;
+    //         }
+    //       }
 
-          auto baseTgtItr = storeBuffer_[index].first.begin();
-          auto nextTgtItr = storeBuffer_[index].first.begin() + 1;
-          while (nextTgtItr != storeBuffer_[index].first.end()) {
-            if (baseTgtItr->mergeAfter((*nextTgtItr))) {
-              nextTgtItr = storeBuffer_[index].first.erase(nextTgtItr);
-            } else {
-              baseTgtItr = nextTgtItr;
-              nextTgtItr++;
-            }
-          }
+    //       for (auto tgt : storeBuffer_[index].first) {
+    //         requestStoreQueue_.push({tgt.target, tgt.data});
+    //       }
 
-          for (auto tgt : storeBuffer_[index].first) {
-            requestStoreQueue_.push({tgt.target, tgt.data});
-          }
+    //       storeBuffer_.erase(storeBuffer_.find(index));
 
-          storeBuffer_.erase(storeBuffer_.find(index));
-
-          storeBuffer_[baseVaddr].first.push_back(newEntry);
-          storeBuffer_[baseVaddr].second = tickCounter_;
-          if (stbPrint)
-            std::cerr << "\tInserted via capacity replacement" << std::endl;
-        } else {
-          // If there's space, create new STB entry
-          storeBuffer_[baseVaddr].first.push_back(newEntry);
-          storeBuffer_[baseVaddr].second = tickCounter_;
-          if (stbPrint) std::cerr << "\tInserted as new entry" << std::endl;
-        }
-      }
-    }
+    //       storeBuffer_[baseVaddr].first.push_back(newEntry);
+    //       storeBuffer_[baseVaddr].second = tickCounter_;
+    //       if (stbPrint)
+    //         std::cerr << "\tInserted via capacity replacement" << std::endl;
+    //     } else {
+    //       // If there's space, create new STB entry
+    //       storeBuffer_[baseVaddr].first.push_back(newEntry);
+    //       storeBuffer_[baseVaddr].second = tickCounter_;
+    //       if (stbPrint) std::cerr << "\tInserted as new entry" << std::endl;
+    //     }
+    //   }
+    // }
   }
 }
 
@@ -706,7 +718,7 @@ void LoadStoreQueue::tick() {
                       << baseLoadAddr << std::dec << "..." << std::endl;
           auto block = storeBuffer_.find(baseLoadAddr);
           if (block != storeBuffer_.end()) {
-            if ((*itInsn)->isPrefetch()) {
+            if ((*itInsn)->isPrefetch() || (*itInsn)->isLoadReserved()) {
               requestNeeded = true;
               drainSTB.push_back(baseLoadAddr);
             } else {
@@ -1029,7 +1041,8 @@ void LoadStoreQueue::tick() {
     }
 
     // Forward the results
-    forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
+    forwardOperands_(insn->getDestinationRegisters(), insn->getResults(),
+                     insn->getGroup());
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 

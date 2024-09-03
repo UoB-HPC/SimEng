@@ -3,6 +3,7 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+#include "simeng/arch/riscv/OperandBypassMaps/AllToAllBypassMap.hh"
 
 #define RISCV_ADDITIONAL_CONFIG                                                \
   ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
@@ -69,4 +70,9 @@ class RISCVRegressionTest : public RegressionTest {
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
       const override;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const override;
 };

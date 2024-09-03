@@ -8,16 +8,16 @@ namespace pipeline {
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFileSet& registerFileSet,
+    std::function<void(const Register& reg)> updateScoreboard,
     std::function<void(Register reg)> setRegisterReady,
     std::function<bool(uint64_t seqId)> canWriteback,
-    std::function<void(const std::shared_ptr<Instruction>&)> postWriteback,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
+    std::function<void(const std::shared_ptr<Instruction>&)> postWriteback)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
+      updateScoreboard_(updateScoreboard),
       setRegisterReady_(setRegisterReady),
       canWriteback_(canWriteback),
-      postWriteback_(postWriteback),
-      forwardOperands_(forwardOperands) {}
+      postWriteback_(postWriteback) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
@@ -41,10 +41,8 @@ void WritebackUnit::tick() {
       // Write results to register file
       registerFileSet_.set(destinations[i], results[i]);
       // Set the register as ready to be read from the register fileset
-      setRegisterReady_(destinations[i]);
+      updateScoreboard_(destinations[i]);
     }
-
-    // forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
 
     // Carry out core/model specific functionality after the uops writeback has
     // been complete

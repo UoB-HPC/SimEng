@@ -92,6 +92,10 @@ void RegressionTest::run(const char* source, const char* triple,
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
+  // Create bypass map for out-of-order core
+  std::unique_ptr<simeng::OperandBypassMap> bypassMap =
+      createOperandBypassMap();
+
   // Create a branch predictor for a pipelined core
   simeng::GenericPredictor predictor = simeng::GenericPredictor();
   // Create the core model
@@ -107,7 +111,7 @@ void RegressionTest::run(const char* source, const char* triple,
       break;
     case OUTOFORDER:
       core_ = std::make_shared<simeng::models::outoforder::Core>(
-          *architecture_, predictor, mmu, *portAllocator,
+          *architecture_, predictor, mmu, *portAllocator, *bypassMap,
           OS_->getSyscallReceiver(), haltCoreDescInOS);
       break;
   }

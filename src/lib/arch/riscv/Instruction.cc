@@ -10,18 +10,16 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
-
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture), metadata_(metadata) {
   decode();
 }
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata, uint8_t latency,
                          uint8_t stallCycles)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture), metadata_(metadata) {
   latency_ = latency;
   stallCycles_ = stallCycles;
   decode();
@@ -30,7 +28,7 @@ Instruction::Instruction(const Architecture& architecture,
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
                          InstructionException exception)
-    : architecture_(architecture), metadata(metadata) {
+    : architecture_(architecture), metadata_(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
 }
@@ -39,6 +37,10 @@ InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
+}
+
+const span<RegisterValue> Instruction::getSourceOperands() const {
+  return {const_cast<RegisterValue*>(operands.data()), sourceRegisterCount};
 }
 
 const span<Register> Instruction::getDestinationRegisters() const {
@@ -71,7 +73,8 @@ void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
 bool Instruction::canExecute() const { return (operandsPending == 0); }
 
 const span<RegisterValue> Instruction::getResults() const {
-  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
+  return {const_cast<RegisterValue*>(results_.data()),
+          destinationRegisterCount};
 }
 
 void Instruction::setMemoryAddresses(
@@ -84,7 +87,8 @@ void Instruction::setMemoryAddresses(
 void Instruction::supplyData(uint64_t address, const RegisterValue& data,
                              bool forwarded) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
-    if (memoryAddresses_[i].vaddr == address && !memoryData_[i]) {
+    if ((memoryAddresses_[i].vaddr & 0x00ffffffffffffffull) == address &&
+        !memoryData_[i]) {
       if (!data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
@@ -126,33 +130,46 @@ bool Instruction::isLoad() const { return insnTypeMetadata & isLoadMask; }
 
 bool Instruction::isBranch() const { return insnTypeMetadata & isBranchMask; }
 
-bool Instruction::isAtomic() const { return insnTypeMetadata & isAtomicMask; }
+bool Instruction::isAtomic() const {
+  return (insnTypeMetadata & isAtomicMask) ||
+         (insnTypeMetadata & isAcquireMask) ||
+         (insnTypeMetadata & isReleaseMask) ||
+         (insnTypeMetadata & isLoadReservedMask) ||
+         (insnTypeMetadata & isStoreCondMask);
+}
 
 bool Instruction::isAcquire() const { return insnTypeMetadata & isAcquireMask; }
 
 bool Instruction::isRelease() const { return insnTypeMetadata & isReleaseMask; }
 
 bool Instruction::isLoadReserved() const {
-  return insnTypeMetadata & isLoadReservedMask;
+  return (insnTypeMetadata & isLoadReservedMask) ||
+         (insnTypeMetadata & isAcquireMask);
 }
 
 bool Instruction::isStoreCond() const {
-  return insnTypeMetadata & isStoreCondMask;
+  return (insnTypeMetadata & isStoreCondMask) ||
+         (insnTypeMetadata & isReleaseMask);
 }
 
 bool Instruction::isPrefetch() const { return 0; }
 
-uint64_t Instruction::getOpcode() const { return metadata.opcode; }
+uint64_t Instruction::getOpcode() const { return metadata_.opcode; }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
+
+  if (insnTypeMetadata & isFloatMask) {
+    base = InstructionGroups::FLOAT;
+  }
 
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
   if (insnTypeMetadata & isDivideMask) return base + 7;
   if (insnTypeMetadata & isMultiplyMask) return base + 6;
-  if (insnTypeMetadata & isShiftMask) return base + 5;
+  if ((insnTypeMetadata & isShiftMask) || (insnTypeMetadata & isConvertMask))
+    return base + 5;
   if (insnTypeMetadata & isLogicalMask) return base + 4;
   if (insnTypeMetadata & isCompareMask) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
@@ -176,14 +193,16 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   return supportedPorts_;
 }
 
-const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+const InstructionMetadata& Instruction::getMetadata() const {
+  return metadata_;
+}
 
 void Instruction::updateCondStoreResult(const bool success) {
   assert((insnTypeMetadata & isStoreCondMask) &&
          "[SimEng:Instruction] Attempted to update the result register of a "
          "non-conditional-store instruction.");
   RegisterValue result = {(uint64_t)0 | !success, 8};
-  results[0] = result;
+  results_[0] = result;
   condResultReady_ = true;
 }
 

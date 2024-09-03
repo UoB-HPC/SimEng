@@ -7,12 +7,13 @@
 namespace simeng {
 namespace pipeline {
 
-bool print = false;
+bool print = true;
 
 ReorderBuffer::ReorderBuffer(
     unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     std::function<void(uint64_t branchAddress)> sendLoopBoundary,
+    std::function<void(const Register& reg)> updateScoreboard,
     BranchPredictor& predictor, uint16_t loopBufSize,
     uint16_t loopDetectionThreshold)
     : rat_(rat),
@@ -20,63 +21,64 @@ ReorderBuffer::ReorderBuffer(
       maxSize_(maxSize),
       raiseException_(raiseException),
       sendLoopBoundary_(sendLoopBoundary),
+      updateScoreboard_(updateScoreboard),
       predictor_(predictor),
       loopBufSize_(loopBufSize),
       loopDetectionThreshold_(loopDetectionThreshold) {}
 
 ReorderBuffer::~ReorderBuffer() {
-  // std::ofstream opcodeFile;
-  // std::ostringstream opcodeStr;
-  // opcodeStr << "/Users/jj16791/workspace/opcodes.out";
-  // opcodeFile.open(opcodeStr.str(), std::ofstream::out);
-  // opcodeFile.close();
-  // opcodeFile.open(opcodeStr.str(), std::ofstream::out | std::ofstream::app);
-  // std::vector<std::pair<std::string, uint64_t>> opcodePairs;
-  // for (auto& it : opcodesSeen_) {
-  //   opcodePairs.push_back(it);
-  // }
-  // std::sort(opcodePairs.begin(), opcodePairs.end(),
-  //           [](auto& a, auto& b) { return a.second > b.second; });
-  // for (auto& pair : opcodePairs) {
-  //   opcodeFile << pair.first << ": " << pair.second << std::endl;
-  // }
-  // opcodeFile.close();
+  std::ofstream opcodeFile;
+  std::ostringstream opcodeStr;
+  opcodeStr << "/Users/jj16791/workspace/opcodes.out";
+  opcodeFile.open(opcodeStr.str(), std::ofstream::out);
+  opcodeFile.close();
+  opcodeFile.open(opcodeStr.str(), std::ofstream::out | std::ofstream::app);
+  std::vector<std::pair<std::string, uint64_t>> opcodePairs;
+  for (auto& it : opcodesSeen_) {
+    opcodePairs.push_back(it);
+  }
+  std::sort(opcodePairs.begin(), opcodePairs.end(),
+            [](auto& a, auto& b) { return a.second > b.second; });
+  for (auto& pair : opcodePairs) {
+    opcodeFile << pair.first << ": " << pair.second << std::endl;
+  }
+  opcodeFile.close();
 
-  // std::ofstream addrFile;
-  // std::ostringstream addrStr;
-  // addrStr << "/Users/jj16791/workspace/addresses.out";
-  // addrFile.open(addrStr.str(), std::ofstream::out);
-  // addrFile.close();
-  // addrFile.open(addrStr.str(), std::ofstream::out | std::ofstream::app);
-  // std::vector<std::pair<std::string, uint64_t>> addrPairs;
-  // for (auto& it : addressesSeen_) {
-  //   addrPairs.push_back(it);
-  // }
-  // std::sort(addrPairs.begin(), addrPairs.end(),
-  //           [](auto& a, auto& b) { return a.second > b.second; });
-  // for (auto& pair : addrPairs) {
-  //   addrFile << pair.first << ": " << pair.second << std::endl;
-  // }
-  // addrFile.close();
+  std::ofstream addrFile;
+  std::ostringstream addrStr;
+  addrStr << "/Users/jj16791/workspace/addresses.out";
+  addrFile.open(addrStr.str(), std::ofstream::out);
+  addrFile.close();
+  addrFile.open(addrStr.str(), std::ofstream::out | std::ofstream::app);
+  std::vector<std::pair<std::string, uint64_t>> addrPairs;
+  for (auto& it : addressesSeen_) {
+    addrPairs.push_back(it);
+  }
+  std::sort(addrPairs.begin(), addrPairs.end(),
+            [](auto& a, auto& b) { return a.second > b.second; });
+  for (auto& pair : addrPairs) {
+    addrFile << pair.first << ": " << pair.second << std::endl;
+  }
+  addrFile.close();
 
-  // std::ofstream exeInfoFile;
-  // std::ostringstream str2;
-  // str2 << "/Users/jj16791/workspace/exeInfo.out";
-  // exeInfoFile.open(str2.str(), std::ofstream::out);
-  // exeInfoFile.close();
-  // exeInfoFile.open(str2.str(), std::ofstream::out | std::ofstream::app);
-  // for (auto& vec : executionInfos_) {
-  //   uint64_t idx = 0;
-  //   for (auto& info : vec.second) {
-  //     exeInfoFile << opcodeNames_[vec.first] << "_" << idx++
-  //                 << "\n\tGroup: " << std::get<0>(info)
-  //                 << "\n\tLat: " << std::get<1>(info)
-  //                 << "\n\tStall: " << std::get<2>(info) << "\n\tPorts: {";
-  //     for (auto& pt : std::get<3>(info)) exeInfoFile << portNames_[pt] << "
-  //     "; exeInfoFile << "\b}" << std::endl;
-  //   }
-  // }
-  // exeInfoFile.close();
+  std::ofstream exeInfoFile;
+  std::ostringstream str2;
+  str2 << "/Users/jj16791/workspace/exeInfo.out";
+  exeInfoFile.open(str2.str(), std::ofstream::out);
+  exeInfoFile.close();
+  exeInfoFile.open(str2.str(), std::ofstream::out | std::ofstream::app);
+  for (auto& vec : executionInfos_) {
+    uint64_t idx = 0;
+    for (auto& info : vec.second) {
+      exeInfoFile << opcodeNames_[vec.first] << "_" << idx++
+                  << "\n\tGroup: " << std::get<0>(info)
+                  << "\n\tLat: " << std::get<1>(info)
+                  << "\n\tStall: " << std::get<2>(info) << "\n\tPorts: {";
+      for (auto& pt : std::get<3>(info)) exeInfoFile << portNames_[pt] << " ";
+      exeInfoFile << "\b}" << std::endl;
+    }
+  }
+  exeInfoFile.close();
 }
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
@@ -175,74 +177,73 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize, uint64_t ticks) {
       }
     }
 
-    // if (!startCollection_ && uop->getInstructionAddress() == 0x2117a0) {
+    // if (!startCollection_ && uop->getInstructionAddress() == 0x212dd8) {
     //   startCollection_ = true;
-    //   return 16;
-    //   // std::cerr << "=================" << std::endl;
+    // return 16;
+    // std::cerr << "=================" << std::endl;
     // }
-    // if (startCollection_ && uop->getInstructionAddress() == 0x2117f0) {
+    // if (startCollection_ && uop->getInstructionAddress() == 0x212eb4) {
     //   startCollection_ = false;
-    //   return 17;
-    //   // std::cerr << "=================" << std::endl;
+    // return 17;
+    // std::cerr << "=================" << std::endl;
     // }
 
     if (uop->isLastMicroOp()) {
       instructionsCommitted_++;
     }
     lastAddr_ = uop->getInstructionAddress();
-    // if (startCollection_) {
-    // if (executionInfos_.find(uop->getOpcode()) == executionInfos_.end())
-    //   executionInfos_[uop->getOpcode()] = {};
-    // bool infFound = false;
-    // for (auto inf : executionInfos_[uop->getOpcode()]) {
-    //   if (std::get<0>(inf) == uop->getGroup() &&
-    //       std::get<1>(inf) == ((uop->isLoad() || uop->isStoreAddress())
-    //                                ? uop->getLSQLatency()
-    //                                : uop->getLatency()) &&
-    //       std::get<2>(inf) == uop->getStallCycles())
-    //     infFound = true;
-    // }
-    // if (!infFound) {
-    //   executionInfos_[uop->getOpcode()].push_back(
-    //       {uop->getGroup(),
-    //        (uop->isLoad() || uop->isStoreAddress()) ? uop->getLSQLatency()
-    //                                                 : uop->getLatency(),
-    //        uop->getStallCycles(), uop->getSupportedPorts()});
-    // }
+    if (startCollection_) {
+      if (executionInfos_.find(uop->getOpcode()) == executionInfos_.end())
+        executionInfos_[uop->getOpcode()] = {};
+      bool infFound = false;
+      for (auto inf : executionInfos_[uop->getOpcode()]) {
+        if (std::get<0>(inf) == uop->getGroup() &&
+            std::get<1>(inf) == ((uop->isLoad() || uop->isStoreAddress())
+                                     ? uop->getLSQLatency()
+                                     : uop->getLatency()) &&
+            std::get<2>(inf) == uop->getStallCycles())
+          infFound = true;
+      }
+      if (!infFound) {
+        executionInfos_[uop->getOpcode()].push_back(
+            {uop->getGroup(),
+             (uop->isLoad() || uop->isStoreAddress()) ? uop->getLSQLatency()
+                                                      : uop->getLatency(),
+             uop->getStallCycles(), uop->getSupportedPorts()});
+      }
 
-    // std::ostringstream opcodeStr;
-    // opcodeStr << opcodeNames_[uop->getOpcode()] << ":" << uop->getGroup() <<
-    // ":"
-    //           << ((uop->isLoad() || uop->isStoreAddress())
-    //                   ? uop->getLSQLatency()
-    //                   : uop->getLatency())
-    //           << ":" << uop->getStallCycles() << ":{";
-    // for (const auto& pt : uop->getSupportedPorts())
-    //   opcodeStr << portNames_[pt] << " ";
-    // opcodeStr << "\b}";
-    // if (opcodesSeen_.find(opcodeStr.str()) != opcodesSeen_.end()) {
-    //   opcodesSeen_[opcodeStr.str()]++;
-    // } else {
-    //   opcodesSeen_[opcodeStr.str()] = 1;
-    // }
+      std::ostringstream opcodeStr;
+      opcodeStr << opcodeNames_[uop->getOpcode()] << ":" << uop->getGroup()
+                << ":"
+                << ((uop->isLoad() || uop->isStoreAddress())
+                        ? uop->getLSQLatency()
+                        : uop->getLatency())
+                << ":" << uop->getStallCycles() << ":{";
+      for (const auto& pt : uop->getSupportedPorts())
+        opcodeStr << portNames_[pt] << " ";
+      opcodeStr << "\b}";
+      if (opcodesSeen_.find(opcodeStr.str()) != opcodesSeen_.end()) {
+        opcodesSeen_[opcodeStr.str()]++;
+      } else {
+        opcodesSeen_[opcodeStr.str()] = 1;
+      }
 
-    // std::ostringstream addrStr;
-    // addrStr << std::hex << uop->getInstructionAddress() << std::dec << ":"
-    //         << opcodeNames_[uop->getOpcode()] << ":" << uop->getGroup() <<
-    //         ":"
-    //         << ((uop->isLoad() || uop->isStoreAddress()) ?
-    //         uop->getLSQLatency()
-    //                                                      : uop->getLatency())
-    //         << ":" << uop->getStallCycles() << ":{";
-    // for (const auto& pt : uop->getSupportedPorts())
-    //   addrStr << portNames_[pt] << " ";
-    // addrStr << "\b}";
-    // if (addressesSeen_.find(addrStr.str()) != addressesSeen_.end()) {
-    //   addressesSeen_[addrStr.str()]++;
-    // } else {
-    //   addressesSeen_[addrStr.str()] = 1;
-    // }
-    // }
+      std::ostringstream addrStr;
+      addrStr << std::hex << uop->getInstructionAddress() << std::dec << ":"
+              << opcodeNames_[uop->getOpcode()] << ":" << uop->getGroup() << ":"
+              << ((uop->isLoad() || uop->isStoreAddress())
+                      ? uop->getLSQLatency()
+                      : uop->getLatency())
+              << ":" << uop->getStallCycles() << ":{";
+      for (const auto& pt : uop->getSupportedPorts())
+        addrStr << portNames_[pt] << " ";
+      addrStr << "\b}";
+      if (addressesSeen_.find(addrStr.str()) != addressesSeen_.end()) {
+        addressesSeen_[addrStr.str()]++;
+      } else {
+        addressesSeen_[addrStr.str()] = 1;
+      }
+    }
 
     const auto& destinations = uop->getDestinationRegisters();
     const auto& results = uop->getResults();
@@ -250,10 +251,12 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize, uint64_t ticks) {
     if (print) {
       if (lastInsnId_ != uop->getInstructionId()) {
         outputFile_ << std::hex << uop->getInstructionAddress() << std::dec;
+        // outputFile_ << " (" << uop->getOpcode() << ")";
         // outputFile_ << " (" << uop->getSequenceId() << ")";
         outputFile_ << std::endl;
 
         outputFile2_ << std::hex << uop->getInstructionAddress() << std::dec;
+        // outputFile2_ << " (" << uop->getOpcode() << ")";
         outputFile2_ << " (" << uop->getSequenceId() << ")";
         outputFile2_ << std::endl;
       }
@@ -432,12 +435,19 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
       break;
     }
 
+    // Check whether the instruction has dispatched, but has not yet written
+    // back
+    bool hasScoreboardEntries =
+        uop->hasDispatched() && !(uop->isWaitingCommit() || uop->canCommit());
+
     // To rewind destination registers in correct history order, rewinding of
     // register renaming is done backwards
     auto destinations = uop->getDestinationRegisters();
     for (int i = destinations.size() - 1; i >= 0; i--) {
       const auto& reg = destinations[i];
       rat_.rewind(reg);
+      // If needed, clear scoreboard entry for destination register
+      if (hasScoreboardEntries) updateScoreboard_(reg);
     }
     uop->setFlushed();
     // If the instruction is a branch, supply address to branch flushing logic
@@ -488,15 +498,18 @@ uint64_t ReorderBuffer::getRetiredBranchesCount() const {
 
 void ReorderBuffer::setTid(uint64_t tid) {
   tid_ = tid;
-  outputFile_.close();
-  std::ostringstream str;
-  str << "/Users/jj16791/workspace/simengRetire.out";
-  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+  if (print) {
+    outputFile_.close();
+    std::ostringstream str;
+    str << "/home/br-jjones/simulation/multithread" << tid_ << "Retire.out";
+    outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
 
-  outputFile2_.close();
-  std::ostringstream str2;
-  str2 << "/Users/jj16791/workspace/simengRetireWithIDs.out";
-  outputFile2_.open(str2.str(), std::ofstream::out | std::ofstream::app);
+    outputFile2_.close();
+    std::ostringstream str2;
+    str2 << "/home/br-jjones/simulation/multithread" << tid_
+         << "RetireWithIDs.out";
+    outputFile2_.open(str2.str(), std::ofstream::out | std::ofstream::app);
+  }
 }
 
 }  // namespace pipeline

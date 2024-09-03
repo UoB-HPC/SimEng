@@ -21,7 +21,6 @@ Register-Set:
   FloatingPoint-Count: 90
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 4
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -29,25 +28,23 @@ Queue-Sizes:
   Load: 64
   Store: 36
 Branch-Predictor:
-  BTB-Tag-Bits: 11
   Saturating-Count-Bits: 2
-  Global-History-Length: 10
-  RAS-entries: 1
+  BTB-Tag-Bits: 11
+  Global-History-Length: 19
+  RAS-entries: 8
   Fallback-Static-Predictor: "Always-Taken"
-  Branch-Predictor:
-  BTB-bitlength: 16
 Memory-Hierarchy:
   Cache-Line-Width: 128
   L1-Data: # Currently not in use
-    Access-Latency: 4
-    Size: 32768 # 32 KiB
+    Access-Latency: 5
+    Size: 65536 # 64 KiB
   DRAM:
-    Access-Latency: 4
-    Size: 2684354560 # 2.5 GiB
+    Access-Latency: 5
+    Size: 3221225472 # 3 GiB
 LSQ-Memory-Interface:
-  Exclusive: False
-  Load-Bandwidth: 32
-  Store-Bandwidth: 16
+  Exclusive: True
+  Load-Bandwidth: 512
+  Store-Bandwidth: 256
   Permitted-Requests-Per-Cycle: 2
   Permitted-Loads-Per-Cycle: 2
   Permitted-Stores-Per-Cycle: 1
@@ -57,10 +54,12 @@ Ports:
     Instruction-Group-Support:
       - INT_SIMPLE
       - INT_MUL
+      - FLOAT
   1:
     Portname: Port 1
     Instruction-Group-Support:
       - INT
+      - FLOAT
   2:
     Portname: Port 2
     Instruction-Group-Support:
@@ -117,9 +116,29 @@ Latencies:
     Execution-Throughput: 1
   2:
     Instruction-Groups:
-      - INT_DIV
+      - INT_DIV_OR_SQRT
     Execution-Latency: 39
     Execution-Throughput: 39
+  3:
+    Instruction-Groups:
+      - FLOAT_SIMPLE_CMP
+    Execution-Latency: 5
+    Execution-Throughput: 1
+  4:
+    Instruction-Groups:
+      - FLOAT_MUL
+    Execution-Latency: 6
+    Execution-Throughput: 1
+  5:
+    Instruction-Groups:
+      - FLOAT_SIMPLE_CVT
+    Execution-Latency: 7
+    Execution-Throughput: 1
+  6:
+    Instruction-Groups:
+      - FLOAT_DIV_OR_SQRT
+    Execution-Latency: 16
+    Execution-Throughput: 16
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:
@@ -143,5 +162,11 @@ CPU-Info:
   # Package-Count is used to generate
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
+Interpreter:
+  Path: "/Users/jj16791/workspace/riscvMiniBUDE/lib/ld-linux-riscv64-lp64d.so.1"
+  Debug: False
+  LD_LIBRARY_PATH:
+    - "/Users/jj16791/workspace/riscvMiniBUDE/lib/"
+  Extra-Env-Vars:
 Environment-Variables:
-  - "OMP_NUM_THREADS=1"
+  - "OMP_NUM_THREADS=2"

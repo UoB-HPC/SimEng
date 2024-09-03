@@ -18,10 +18,10 @@ class WritebackUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
           completionSlots,
       RegisterFileSet& registerFileSet,
+      std::function<void(const Register& reg)> updateScoreboard,
       std::function<void(Register reg)> setRegisterReady,
       std::function<bool(uint64_t seqId)> canWriteback,
-      std::function<void(const std::shared_ptr<Instruction>&)> postWriteback,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
+      std::function<void(const std::shared_ptr<Instruction>&)> postWriteback);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -39,6 +39,10 @@ class WritebackUnit {
   /** The register file set to write results into. */
   RegisterFileSet& registerFileSet_;
 
+  /** Lets the Dispatch-Issue unit know the register file has been updated and
+   * to update scoreboard accordingly. */
+  std::function<void(const Register& reg)> updateScoreboard_;
+
   /** A function handle to mark the destination registers as ready to be read
    * from by other instructions. */
   std::function<void(Register reg)> setRegisterReady_;
@@ -53,8 +57,6 @@ class WritebackUnit {
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;
-
-  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
 };
 
 }  // namespace pipeline

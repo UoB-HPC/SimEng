@@ -62,3 +62,8 @@ RISCVRegressionTest::createPortAllocator() const {
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 }
+
+std::unique_ptr<simeng::OperandBypassMap>
+RISCVRegressionTest::createOperandBypassMap(ryml::ConstNodeRef config) const {
+  return std::make_unique<simeng::arch::riscv::AllToAllBypassMap>();
+}

@@ -114,7 +114,8 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>, const uint16_t)>
+          forwardOperands,
       CompletionOrder completionOrder = CompletionOrder::OUTOFORDER);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
@@ -124,7 +125,8 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       std::shared_ptr<memory::MMU> mmu,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>, const uint16_t)>
+          forwardOperands,
       CompletionOrder completionOrder = CompletionOrder::OUTOFORDER);
 
   /** Retrieve the available space for load instructions. For combined queue
@@ -211,7 +213,8 @@ class LoadStoreQueue {
                                                                        true};
 
   /** A function handler to call to forward the results of a completed load. */
-  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
+  std::function<void(span<Register>, span<RegisterValue>, const uint16_t)>
+      forwardOperands_;
 
   /** The maximum number of loads that can be in-flight. Undefined if this
    * is a combined queue. */

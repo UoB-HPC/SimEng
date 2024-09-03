@@ -31,8 +31,8 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
            config::SimInfo::getValue<size_t>(
                config["Pipeline-Widths"]["LSQ-Completion"])},
-          [this](auto regs, auto values) {
-            issueUnit_.forwardOperands(regs, values);
+          [this](auto regs, auto values, auto producerGroup) {
+            issueUnit_.forwardOperands(regs, values, producerGroup);
           },
           simeng::pipeline::CompletionOrder::INORDER),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
@@ -47,13 +47,10 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto insn) { raiseException(insn); }, registerFileSet_,
           isa.getConfigPhysicalRegisterQuantities()),
       writebackUnit_(
-          completionSlots_, registerFileSet_,
+          completionSlots_, registerFileSet_, [](const Register& reg) {},
           [this](auto reg) { issueUnit_.setRegisterReady(reg); },
           [this](auto seqId) { return canWriteback(seqId); },
-          [this](auto insn) { retireInstruction(insn); },
-          [this](auto regs, auto values) {
-            issueUnit_.forwardOperands(regs, values);
-          }),
+          [this](auto insn) { retireInstruction(insn); }),
       portAllocator_(portAllocator),
       handleSyscall_(handleSyscall) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
@@ -65,8 +62,8 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
-        [this](auto regs, auto values) {
-          issueUnit_.forwardOperands(regs, values);
+        [this](auto regs, auto values, auto producerGroup) {
+          issueUnit_.forwardOperands(regs, values, producerGroup);
         },
         [this](auto insn) { loadStoreQueue_.startLoad(insn); },
         [this](auto insn) { loadStoreQueue_.supplyStoreData(insn); },

@@ -83,9 +83,9 @@ memprops = getMemoryProps(4, "GiB")
 simos = sst.Component("simos", "sstsimeng.simos")
 simos.addParams({
     "num_cores": 1,
-    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-1.yaml",
-    "executable_path": "/Users/jj16791/workspace/dynlibs/llvm/main",
-    "executable_args": "",
+    "simeng_config_path": "/Users/jj16791/workspace/simulation/SimEng/a64fx-1.yaml",
+    "executable_path": sys.argv[1],
+    "executable_args": ' '.join(sys.argv[2:]),
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -161,7 +161,7 @@ os_l1Icache.setRank(0, 0)
 #Core0
 cpu0 = sst.Component("core0", "sstsimeng.simengcore")
 cpu0.addParams({
-    "simeng_config_path": "/Users/jj16791/workspace/SimEng/a64fx-1.yaml",
+    "simeng_config_path": "/Users/jj16791/workspace/simulation/SimEng/a64fx-1.yaml",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,

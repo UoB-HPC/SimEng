@@ -30,10 +30,6 @@ def getMemoryProps(memory_size: int, si: str):
 
 # ------------------------------------------------ Utility -------------------------------------------
 
-# ranks = sst.getMPIRankCount()
-
-# print(ranks)
-
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -53,7 +49,7 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 3
+A64FX_HL_L1 = 4
 # Hit latency of A64FX L2 cache (cycles).
 A64FX_HL_L2 = 44
 # Cohenrence protocol of A64FX caches.
@@ -91,7 +87,7 @@ simos.addParams({
     "num_cores": 1,
     "simeng_config_path": "/Users/jj16791/workspace/SimEng/configs/a64fx_llvm.yaml",
     "executable_path": sys.argv[1],
-    "executable_args": "",
+    "executable_args": ' '.join(sys.argv[2:]),
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -239,7 +235,6 @@ prefetcher_c0_l1I.addParams({
     "cache_line_size": A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
     "aggressiveness": 3                                #Number of entries to keep for historical comparison
 })
-prefetcher_c0_l1I.addParams({"cache_line_size": A64FX_CLW})
 c0_l1Icache.setRank(1, 0)
 
 # --------------------------------------------- SSTSimEng Cores --------------------------------------
@@ -271,7 +266,6 @@ l2cache_0.addParams({
         "debug": DEBUG_L2,
         "debug_level": DEBUG_LEVEL,
         "coherence_protocol": A64FX_COHP,
-        "max_requests_per_cycle": 4,
         "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
         "response_link_width": A64FX_L2TOL1_PC_TPUT,
         "mshr_latency_cycles": 1,
@@ -288,15 +282,6 @@ prefetcher_l2cache_0.addParams({
     "cache_line_size": A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
     "aggressiveness": 3                                #Number of entries to keep for historical comparison
 })
-# prefetcher_l2cache_0.addParams({
-#     "cache_line_size": A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
-#     "history": 16,                                #Number of entries to keep for historical comparison
-#     "reach": 2,                                   #Reach (how far forward the prefetcher should fetch lines)
-#     "detect_range": 4,                            #Range to detect addresses over in request counts
-#     "address_count": 64,                          #Number of addresses to keep in prefetch table
-#     "page_size": 4096,                            #Page size for this controller
-#     "overrun_page_boundaries": 0,                 #Allow prefetcher to run over page boundaries, 0 is no, 1 is yes
-# })
 l2cache_0.setRank(0, 0)
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
@@ -336,11 +321,6 @@ l2cache_0.setRank(0, 0)
 # })
 # coherence_controller_l3= l3cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # replacement_policy_l3 = l3cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
-# prefetcher_l3cache = l3cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
-# prefetcher_l3cache.addParams({
-#     "cache_line_size": A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
-#     "aggressiveness": 3                                #Number of entries to keep for historical comparison
-# })
 # prefetcher_l3cache = l3cache.setSubComponent("prefetcher", "cassini.StridePrefetcher")
 # prefetcher_l3cache.addParams({
 #     "cache_line_size": A64FX_CLW,                 #Size of the cache line the prefetcher is attached to
@@ -408,8 +388,7 @@ router.addParams({
     "xbar_bw" : "1GB/s",
     "flit_size" : "32B",
     "num_ports" : "2",
-    "id" : 0,
-    "debug": 1
+    "id" : 0
 })
 router.setRank(0, 0)
 

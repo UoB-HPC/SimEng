@@ -125,6 +125,8 @@ void SimEngCoreWrapper::finish() {
   statsF32["frequency"]->addData(std::round(khz));
   statsF32["mips"]->addData(mips);
   memInterface_->printLatencies();
+  std::cout << std::endl;
+  std::cout << "[SimEng] Finished in " << duration << " ms" << std::endl;
 }
 
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {

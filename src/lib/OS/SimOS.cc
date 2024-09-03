@@ -273,8 +273,8 @@ void SimOS::updateCoreDesc(cpuContext ctx, uint16_t coreId, CoreStatus status,
   desc.info.ticks = ticks;
 
   if (status == CoreStatus::idle || status == CoreStatus::halted) {
-    // std::cout << "[SimEng:SimOS] DeSchedule TID " << ctx.TID << " from "
-    //           << coreId << std::endl;
+    std::cout << "[SimEng:SimOS] DeSchedule TID " << ctx.TID << " from "
+              << coreId << std::endl;
     recieveCoreInfo({coreId, status, ctx, ticks}, false);
   }
 }
@@ -370,9 +370,12 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
   // Update stack pointer
   newProc->context_.sp = stackPtr;
+  std::cerr << "TLS: " << std::hex << tls << std::dec << std::endl;
+  std::cerr << "SP: " << std::hex << stackPtr << std::dec << std::endl;
   if (config::SimInfo::getISA() == config::ISA::RV64) {
     newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
         stackPtr, 8};
+    newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][4] = {tls, 8};
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
@@ -385,8 +388,8 @@ void SimOS::resumeClone(CoreInfo cinfo) {
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
   processes_.emplace(newChildTid, newProc);
-  // std::cout << "[SimEng:SimOS] Adding " << newProc->getTID()
-  //           << " to waitingProcs_ via resumeClone" << std::endl;
+  std::cout << "[SimEng:SimOS] Adding " << newProc->getTID()
+            << " to waitingProcs_ via resumeClone" << std::endl;
   waitingProcs_.push_front(newProc);
 
   // Add stack to `proc/tgid/maps`
@@ -409,10 +412,10 @@ void SimOS::resumeClone(CoreInfo cinfo) {
 }
 
 void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
-  // std::cout << "[SimEng:SimOS] recieveCoreInfo call from " << cinfo.coreId
-  //           << std::endl;
+  std::cout << "[SimEng:SimOS] recieveCoreInfo call from " << cinfo.coreId
+            << std::endl;
   if (forClone) {
-    // std::cout << "[SimEng:SimOS]\tclone" << std::endl;
+    std::cout << "[SimEng:SimOS]\tclone" << std::endl;
     resumeClone(cinfo);
     return;
   };
@@ -440,8 +443,8 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
       // Change status from Executing to Waiting
       if (currProc->status_ == procStatus::executing) {
         currProc->status_ = procStatus::waiting;
-        // std::cout << "[SimEng:SimOS] Adding " << currProc->getTID()
-        //           << " to waitingProcs_ via recieveCoreInfo" << std::endl;
+        std::cout << "[SimEng:SimOS] Adding " << currProc->getTID()
+                  << " to waitingProcs_ via recieveCoreInfo" << std::endl;
         waitingProcs_.push_front(currProc);
       }
     }
@@ -451,10 +454,9 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     // Schedule new process on core
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    // std::cout << "[SimEng:SimOS] schedule "
-    //           << scheduledProcs_.front()->context_.TID << " to " <<
-    //           cinfo.coreId
-    //           << " from scheduledProcs_" << std::endl;
+    std::cout << "[SimEng:SimOS] schedule "
+              << scheduledProcs_.front()->context_.TID << " to " << cinfo.coreId
+              << " from scheduledProcs_" << std::endl;
     coreProxy_.schedule(cinfo.coreId, scheduledProcs_.front()->context_);
     // Update newly scheduled process' status
     scheduledProcs_.front()->status_ = procStatus::executing;
@@ -468,11 +470,10 @@ void SimOS::recieveCoreInfo(CoreInfo cinfo, bool forClone) {
     // processes inside waitingProcs which can jump ahead
     desc.info.status = simeng::executing;
     desc.info.ticks = 0;
-    // std::cout << "[SimEng:SimOS] schedule "
-    //           << waitingProcs_.front()->context_.TID << " to " <<
-    //           cinfo.coreId
-    //           << " from waitingProcs_. " << waitingProcs_.size() - 1
-    //           << " processes remain" << std::endl;
+    std::cout << "[SimEng:SimOS] schedule "
+              << waitingProcs_.front()->context_.TID << " to " << cinfo.coreId
+              << " from waitingProcs_. " << waitingProcs_.size() - 1
+              << " processes remain" << std::endl;
     coreProxy_.schedule(cinfo.coreId, waitingProcs_.front()->context_);
     // Update newly scheduled process' status
     waitingProcs_.front()->status_ = procStatus::executing;
@@ -494,8 +495,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     request->paddr_ = pAddr;
     request->markAsUntimed();
     processImageAddrs_.push_back(vAddr);
-    // std::cout << "Wrote Proc image addr " << std::hex << vAddr << std::dec
-    //           << " to " << std::hex << vAddr + size << std::dec << std::endl;
+    std::cout << "Wrote Proc image addr " << std::hex << vAddr << std::dec
+              << " to " << std::hex << vAddr + size << std::dec << std::endl;
     memPort_->send(std::move(request));
   };
 
@@ -552,8 +553,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
 
   process->status_ = procStatus::waiting;
   processes_.insert({tid, process});
-  // std::cout << "[SimEng:SimOS] Adding " << process->getTID()
-  //           << " to waitingProcs_ via createProcess" << std::endl;
+  std::cout << "[SimEng:SimOS] Adding " << process->getTID()
+            << " to waitingProcs_ via createProcess" << std::endl;
   waitingProcs_.push_front(process);
 
   return tid;
@@ -660,6 +661,7 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
   // If no process exists for the supplied TID, consider it to be a data abort
   // fault
   if (processItr == processes_.end()) {
+    std::cerr << "No tid " << tid << " in handleVAddrTranslation" << std::endl;
     return masks::faults::pagetable::FAULT |
            masks::faults::pagetable::DATA_ABORT;
   }

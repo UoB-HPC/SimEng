@@ -25,6 +25,7 @@
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
 #include "simeng/OS/SyscallHandler.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/pipeline/PortAllocator.hh"
@@ -71,6 +72,11 @@ class RegressionTest
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
       const = 0;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
+      ryml::ConstNodeRef config =
+          simeng::config::SimInfo::getConfig()) const = 0;
 
   /** Get the value of an architectural register. */
   template <typename T>

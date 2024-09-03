@@ -354,7 +354,8 @@ uint64_t Process::setupMemRegion<arch::riscv::Architecture>(uint64_t brk) {
    * 63–48 all equal to bit 47, or else a page-fault exception will occur."
    */
 
-  uint64_t stack_top = 0x00007fffffffffff;
+  // uint64_t stack_top = 0x00007fffffffffff;
+  uint64_t stack_top = 0x0001000000000000;
   uint64_t stack_size = 8 * 1024 * 1024;
   uint64_t stack_end = stack_top - stack_size;
   uint64_t stack_guard_gap = (256 << 12);
@@ -452,6 +453,8 @@ void Process::archSetup<arch::aarch64::Architecture>() {
 template <>
 void Process::archSetup<arch::riscv::Architecture>() {
   // Set the stack pointer register
+  std::cerr << "Starting SP " << std::hex << context_.sp << std::dec
+            << std::endl;
   context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {context_.sp, 8};
 }
 
@@ -551,6 +554,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
     }
   }
   uint64_t paddr = pageTable_->translate(stackPointer);
+  std::cerr << "VMA for " << std::hex << stackPointer << std::dec << " to "
+            << std::hex << stackPointer + stringBytes.size() << std::dec
+            << " got paddr " << std::hex << paddr << std::dec << std::endl;
   sendToMem_(stringBytes, paddr, stackPointer, stringBytes.size());
 
   initialStackFrame.push_back(0);  // null terminator
@@ -590,6 +596,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::vector<char> data(stackFrameBytes, stackFrameBytes + stackFrameSize);
   paddr = pageTable_->translate(stackPointer);
+  std::cerr << "VMA for " << std::hex << stackPointer << std::dec << " to "
+            << std::hex << stackPointer + stackFrameSize << std::dec
+            << " got paddr " << std::hex << paddr << std::dec << std::endl;
   sendToMem_(data, paddr, stackPointer, stackFrameSize);
   return stackPointer;
 }
@@ -598,9 +607,13 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   // Retrieve VMA containing the vaddr has raised a page fault.
   VirtualMemoryArea vm = memRegion_->getVMAFromAddr(vaddr);
   // Process VMA doesn't exist. This address is likely due to a speculation.
-  if (vm.vmSize_ == 0)
+  if (vm.vmSize_ == 0) {
+    // std::cerr << "VMA doesn't exist for vaddr " << std::hex << vaddr <<
+    // std::dec
+    //           << std::endl;
     return masks::faults::pagetable::FAULT |
            masks::faults::pagetable::DATA_ABORT;
+  }
 
   // Round down the memory address to page aligned value to create
   // a page mapping.

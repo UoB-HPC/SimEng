@@ -9,10 +9,16 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/SimOS.hh"
 #include "simeng/OS/SyscallHandler.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/PerceptronPredictor.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/A64fxBypassMap.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/AllToAllBypassMap.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/NoneToNoneBypassMap.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/arch/riscv/OperandBypassMaps/AllToAllBypassMap.hh"
+#include "simeng/arch/riscv/OperandBypassMaps/NoneToNoneBypassMap.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -62,6 +68,9 @@ class CoreInstance {
 
   /** Reference to the SimEng port allocator object. */
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_ = nullptr;
+
+  /** Reference to the SimEng Operand Bypass Map object. */
+  std::unique_ptr<simeng::OperandBypassMap> operandBypassMap_ = nullptr;
 
   /** Reference to the SimEng core object. */
   std::shared_ptr<simeng::Core> core_ = nullptr;

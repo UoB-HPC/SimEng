@@ -32,6 +32,10 @@ class Instruction {
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
 
+  /** Retrieve the data contained in the source registers this instruction
+   * reads.*/
+  virtual const span<RegisterValue> getSourceOperands() const = 0;
+
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
@@ -162,6 +166,12 @@ class Instruction {
     return memoryData_;
   }
 
+  /** Check whether the instruction has been dispatched. */
+  bool hasDispatched() const { return dispatched_; }
+
+  /** Mark this instruction as having been dispatched. */
+  void setDispatched() { dispatched_ = true; }
+
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const { return branchAddress_; }
 
@@ -258,6 +268,9 @@ class Instruction {
   bool canCommit_ = false;
 
   // ------ Execution ------
+  /** Has this instruction been dispatched? (Allocated a port + RS) */
+  bool dispatched_ = false;
+
   /** Whether or not this instruction has been executed. */
   bool executed_ = false;
 

@@ -27,6 +27,13 @@ uint64_t PageTable::generateOffsetMask(uint64_t pageSize) {
 
 PageTable::TableItr PageTable::find(uint64_t vaddr) {
   uint64_t lowestPageStart = downAlign(vaddr, PAGE_SIZE);
+  // std::cerr << "Trying to find pages for " << std::hex << vaddr << std::dec
+  //           << " (" << std::hex << lowestPageStart << std::dec << ")"
+  //           << ". Possible entires:" << std::endl;
+  // for (const auto& et : table_)
+  //   std::cerr << "\t" << std::hex << et.first << std::dec << " - " <<
+  //   std::hex
+  //             << et.second << std::dec << std::endl;
   TableItr itr = table_.find(lowestPageStart);
   return itr;
 }
@@ -56,6 +63,9 @@ uint64_t PageTable::calculateOffset(uint64_t vaddr) {
 
 uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
                                   size_t size) {
+  // std::cerr << "VMA mapping created for " << std::hex << vaddr << std::dec
+  //           << " to " << std::hex << vaddr + size << std::dec << " (size "
+  //           << std::hex << size << std::dec << ")" << std::endl;
   // Round the address down to pageSize aligned value so we can map base
   // vaddr to base paddr.
   vaddr = downAlign(vaddr, PAGE_SIZE);
@@ -70,6 +80,8 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
   // table fault.
   uint64_t vsize = size;
   while (vsize > 0) {
+    // std::cerr << "On increment " << std::hex << addr << std::dec << ", "
+    //           << std::hex << vsize << std::dec << std::endl;
     PageTable::TableItr itr = table_.find(addr);
     if (itr != table_.end()) {
       return masks::faults::pagetable::FAULT | masks::faults::pagetable::MAP;
@@ -77,20 +89,32 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
     addr += PAGE_SIZE;
     vsize -= PAGE_SIZE;
   }
+  // std::cerr << "Ending increment with " << std::hex << addr << std::dec << ",
+  // "
+  //           << std::hex << vsize << std::dec << std::endl;
 
   addr = vaddr;
   // Increment down aligned vaddr by PAGE_SIZE every loop iteration and
   // allocate a page table entry for each address range.
   while (size > 0) {
+    // std::cerr << "Allocating PT entry " << std::hex << addr << std::dec << "
+    // - "
+    //           << std::hex << basePhyAddr << std::dec << std::endl;
     allocatePTEntry(addr, basePhyAddr);
     addr += PAGE_SIZE;
     size -= PAGE_SIZE;
     basePhyAddr += PAGE_SIZE;
+    // std::cerr << "\tNext is addr: " << std::hex << addr << std::dec
+    //           << ", size: " << std::hex << size << std::dec
+    //           << ", basePhysAddr: " << std::hex << basePhyAddr << std::dec
+    //           << std::endl;
   }
   return vaddr;
 }
 
 uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
+  // std::cerr << "VMA " << std::hex << vaddr << std::dec << " to " << std::hex
+  //           << vaddr + size << std::dec << " deleted" << std::endl;
   // Round the address down to pageSize aligned value so we can delete mapping
   // from base vaddr.
   vaddr = downAlign(vaddr, PAGE_SIZE);

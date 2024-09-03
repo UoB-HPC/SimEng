@@ -44,7 +44,8 @@ class BlockingIssueUnit {
   /** Forwards operands to the instruction at the front of the issue queue and
    * issues it if ready to execute. */
   void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values);
+                       const span<RegisterValue>& values,
+                       const uint16_t producerGroup = 0);
 
   /** Set the scoreboard entry for the provided register as ready. */
   void setRegisterReady(Register reg);

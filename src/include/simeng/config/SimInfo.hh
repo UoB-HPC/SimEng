@@ -170,7 +170,7 @@ class SimInfo {
     } else if (isa == "rv64") {
       isa_ = config::ISA::RV64;
       // Define system registers
-      sysRegisterEnums_ = {};
+      sysRegisterEnums_ = {0x001, 0x002, 0x003, 0xC00, 0xC01, 0xC02};
     }
 
     // Initialise architectural reg structures by using the reset

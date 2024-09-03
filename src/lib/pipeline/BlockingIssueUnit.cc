@@ -148,7 +148,8 @@ void BlockingIssueUnit::tick() {
 }
 
 void BlockingIssueUnit::forwardOperands(const span<Register>& registers,
-                                        const span<RegisterValue>& values) {
+                                        const span<RegisterValue>& values,
+                                        uint16_t euIndex) {
   assert(registers.size() == values.size() &&
          "[SimEng:BlockingIssue] Mismatched register and value vector sizes");
 

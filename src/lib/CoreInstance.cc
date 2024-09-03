@@ -16,11 +16,14 @@ CoreInstance::CoreInstance(
 }
 
 void CoreInstance::createCore() {
-  // Create the architecture, with knowledge of the OS
+  // Create the architecture and operand bypass map, with knowledge of the OS
+  // std::string bypassMapType = config_[][].as<std::string>();
   if (config::SimInfo::getISA() == config::ISA::RV64) {
-    arch_ = std::make_unique<simeng::arch::riscv::Architecture>();
+    arch_ = std::make_unique<arch::riscv::Architecture>();
+    operandBypassMap_ = std::make_unique<arch::riscv::AllToAllBypassMap>();
   } else if (config::SimInfo::getISA() == config::ISA::AArch64) {
-    arch_ = std::make_unique<simeng::arch::aarch64::Architecture>();
+    arch_ = std::make_unique<arch::aarch64::Architecture>();
+    operandBypassMap_ = std::make_unique<arch::aarch64::A64fxBypassMap>();
   }
 
   // Construct branch predictor object
@@ -51,8 +54,8 @@ void CoreInstance::createCore() {
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
   } else if (config::SimInfo::getSimMode() == config::simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-        *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_,
-        updateCoreDescInOS_);
+        *arch_, *predictor_, mmu_, *portAllocator_, *operandBypassMap_,
+        handleSyscall_, updateCoreDescInOS_);
   }
   return;
 }

@@ -1,5 +1,5 @@
 # The following resources where utilised to create the config file and naming schemes:
-# https://github.com/fujitsu/A64FX
+# https:/github.com/fujitsu/A64FX
 
 Core:
   ISA: AArch64
@@ -22,7 +22,7 @@ Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
   Predicate-Count: 48
-  Conditional-Count: 120
+  Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
   FrontEnd: 4
@@ -185,6 +185,10 @@ Ports:
     - 1249
     - 1250
     - 1251
+    - 1506
+    - 1507
+    - 1508
+    - 1513
     - 1642
     - 1643
     - 2412
@@ -253,6 +257,10 @@ Ports:
     - 1249
     - 1250
     - 1251
+    - 1506
+    - 1507
+    - 1508
+    - 1513
     - 1642
     - 1643
     - 1973

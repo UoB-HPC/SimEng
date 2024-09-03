@@ -92,8 +92,10 @@ bool ExceptionHandler::handleException() {
       case 210:    // shutdown
       case 214:    // brk
       case 215:    // munmap
+      case 220:    // clone
       case 222:    // mmap
       case 226:    // mprotect
+      case 233:    // madvise
       case 261:    // prlimit64
       case 278:    // getrandom
       case 293: {  // rseq
@@ -144,6 +146,74 @@ bool ExceptionHandler::handleException() {
 
     processSyscallResult({false, false, 0, 0, stateChange});
     return concludeSyscall();
+  } else if (exception == InstructionException::PipelineFlush) {
+    // Retrieve metadata, operand values and destination registers from
+    // instruction
+    auto metadata = instruction_->getMetadata();
+    auto operands = instruction_->getSourceOperands();
+    auto destinationRegs = instruction_->getDestinationRegisters();
+
+    uint8_t rm = 0b110;  // Set to invalid rounding mode
+    uint64_t result = 0;
+
+    simeng::OS::ProcessStateChange stateChange = {};
+    switch (instruction_->getMetadata().opcode) {
+      case Opcode::RISCV_CSRRW:  // CSRRW rd,csr,rs1
+        if (metadata.operands[1].reg == 0x2) {
+          // Update CPP rounding mode but not floating point CSR as currently no
+          // implementation
+          rm = operands[0].get<uint64_t>() & 0b111;  // Take the lower 3 bits
+
+          switch (operands[0].get<uint64_t>()) {
+            case 0:  // RNE, Round to nearest, ties to even
+              fesetround(FE_TONEAREST);
+              break;
+            case 1:  // RTZ Round towards zero
+              fesetround(FE_TOWARDZERO);
+              break;
+            case 2:  // RDN Round down (-infinity)
+              fesetround(FE_DOWNWARD);
+              break;
+            case 3:  // RUP Round up (+infinity)
+              fesetround(FE_UPWARD);
+              break;
+            case 4:  // RMM Round to nearest, ties to max magnitude
+              // FE_TONEAREST ties towards even but no other options available
+              // in fenv
+              fesetround(FE_TONEAREST);
+              break;
+            default:
+              // Invalid Case
+              // TODO "If frm is set to an invalid
+              // value (101–111), any subsequent attempt to execute a
+              // floating-point operation with a dynamic rounding mode will
+              // raise an illegal instruction exception." - Volume I: RISC-V
+              // Unprivileged ISA V20191213 pg65
+              //
+              // Should be allowed to be set incorrectly and only caught when
+              // used. Set CSR to requested value, checking logic should be done
+              // by Instruction::setStaticRoundingModeThen. Requires full
+              // implementation of Zicsr
+              break;
+          }
+          // Shift rounding mode to correct position, frm[5:7]
+          result = rm << 5;
+        }
+
+        // Only update if registers should be written to
+        if (destinationRegs.size() > 0) {
+          // Dummy logic to allow progression. Set Rd to 0
+          stateChange = {simeng::OS::ChangeType::REPLACEMENT,
+                         {destinationRegs[0]},
+                         {result}};
+        }
+        break;
+      default:
+        printException();
+        return fatal();
+    }
+    processSyscallResult({false, false, 0, 0, stateChange});
+    return concludeSyscall();
   }
 
   printException();
@@ -175,16 +245,23 @@ bool ExceptionHandler::concludeSyscall() {
         }
         break;
       }
-      case 123: {  // sched_getaffinity
-        int64_t bitmask =
-            syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
-        // Currently, only a single CPU bitmask is supported
-        if (bitmask != 1) {
-          printException();
-          std::cout << "Unexpected CPU affinity mask returned in exception "
-                       "handler"
-                    << std::endl;
-        }
+        // case 123: {  // sched_getaffinity
+        //   int64_t bitmask =
+        //       syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
+        //   // Currently, only a single CPU bitmask is supported
+        //   if (bitmask != 1) {
+        //     printException();
+        //     std::cout << "Unexpected CPU affinity mask returned in exception
+        //     "
+        //                  "handler"
+        //               << std::endl;
+        //   }
+        //   break;
+        // }
+      case 220: {
+        std::cout << "[SimEng:SyscallHandler:" << core_.getCurrentTID()
+                  << "] Unsupported Flags for syscall: "
+                  << syscallResult_.syscallId << std::endl;
         break;
       }
     }
@@ -207,10 +284,13 @@ void ExceptionHandler::printException() const {
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
+      std::cout << "unallocated instruction encoding";
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
+      break;
+    case InstructionException::AliasNotYetImplemented:
+      std::cout << "alias not-yet-implemented";
       break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";
@@ -230,11 +310,32 @@ void ExceptionHandler::printException() const {
     case InstructionException::NoAvailablePort:
       std::cout << "unsupported execution port";
       break;
+    case InstructionException::IllegalInstruction:
+      std::cout << "illegal instruction";
+      break;
+    case InstructionException::PipelineFlush:
+      // TODO update/parameterize this output when more sources of this
+      // exception are implemented
+      std::cout << "unknown atomic operation";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";
   }
   std::cout << " exception\n";
+
+  if (exception == InstructionException::DataAbort) {
+    std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+              << "] Errored address(es):" << std::endl;
+    const auto& addrs = instruction_->getGeneratedAddresses();
+    const auto& data = instruction_->getData();
+    for (size_t i = 0; i < data.size(); i++) {
+      if (data[i].get<int>() == 0)
+        std::cout << "[SimEng:ExceptionHandler:" << core_.getCurrentTID()
+                  << "]\t0x" << std::hex << addrs[i].vaddr << std::dec
+                  << std::endl;
+    }
+  }
 
   std::cout << "[SimEng:ExceptionHandler]  Generated by instruction: \n"
             << "[SimEng:ExceptionHandler]    0x" << std::hex
@@ -242,9 +343,10 @@ void ExceptionHandler::printException() const {
             << instruction_->getInstructionAddress() << ": ";
 
   auto& metadata = instruction_->getMetadata();
-  for (uint8_t byte : metadata.encoding) {
+  for (uint8_t byteIndex = 0; byteIndex < metadata.getInsnLength();
+       byteIndex++) {
     std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(byte) << " ";
+              << static_cast<unsigned int>(metadata.encoding[byteIndex]) << " ";
   }
   std::cout << std::dec << "    ";
   if (exception == InstructionException::EncodingUnallocated) {

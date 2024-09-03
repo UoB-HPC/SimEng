@@ -1243,10 +1243,10 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
   } else {
-    assert(false &&
-           "[SimEng:SyscallHandler] Unhandled clk_id in clock_gettime "
-           "syscall");
-    return -1;
+    //    assert(false &&
+    //           "[SimEng:SyscallHandler] Unhandled clk_id in clock_gettime "
+    //           "syscall");
+    return -22;
   }
 }
 
@@ -1549,7 +1549,7 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
     return -1;
   }
 
-  OS_->cloneProcess(flags, parentTidPtr, stackPtr, tls, childTidPtr,
+  OS_->cloneProcess(flags, stackPtr, parentTidPtr, tls, childTidPtr,
                     currentInfo_.threadId, currentInfo_.coreId,
                     currentInfo_.ret);
 
@@ -1890,7 +1890,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
   auto ftableItr = futexTable_.find(tgid);
 
   if (wait) {
-    // std::cerr << currentInfo_.threadId << "| \tFutex wait" << std::endl;
+    // std::cout << currentInfo_.threadId << "| \tFutex wait" << std::endl;
     // Atomically get the value at the address specified by the futex.
     // If the read memory target does not equal the data required,
     // request it and recall the `futex` call after its return
@@ -1938,7 +1938,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
   }
 
   if (wake) {
-    // std::cerr << currentInfo_.threadId << "| \tFutex wake" << std::endl;
+    // std::cout << currentInfo_.threadId << "| \tFutex wake" << std::endl;
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
     if (ftableItr != futexTable_.end()) {
@@ -1953,7 +1953,7 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
         ftableItr->second.pop_front();
         procWokenUp++;
       }
-      // std::cerr << currentInfo_.threadId << "| \tWoke " << procWokenUp
+      // std::cout << currentInfo_.threadId << "| \tWoke " << procWokenUp
       //           << " procs" << std::endl;
     }
     // procWokenUp should be be 0 if no processes were woken up.

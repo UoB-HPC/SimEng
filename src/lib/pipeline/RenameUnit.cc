@@ -23,6 +23,16 @@ void RenameUnit::tick() {
     return;
   }
 
+  if (pauseForAtomic_) {
+    if (reorderBuffer_.size() == 0) {
+      pauseForAtomic_ = false;
+      // std::cout << tid_ << "|Unpaused atomic" << std::endl;
+    } else {
+      input_.stall(true);
+      return;
+    }
+  }
+
   input_.stall(false);
 
   // Get the number of available physical registers
@@ -40,6 +50,12 @@ void RenameUnit::tick() {
       robStalls_++;
       return;
     }
+
+    if (uop->isAtomic() && reorderBuffer_.size() > 0) {
+      input_.stall(true);
+      return;
+    }
+
     if (uop->exceptionEncountered()) {
       // Exception; place in ROB, mark as ready, and remove from pipeline
       reorderBuffer_.reserve(uop);
@@ -121,6 +137,14 @@ void RenameUnit::tick() {
     }
     if (isStore) {
       lsq_.addStore(uop);
+    }
+
+    if (uop->isAtomic()) {
+      pauseForAtomic_ = true;
+      // std::cout << tid_ << "|Paused on atomic " << std::hex
+      //           << uop->getInstructionAddress() << std::dec << ":" <<
+      //           std::hex
+      //           << uop->getSequenceId() << std::dec << std::endl;
     }
 
     output_.getTailSlots()[slot] = std::move(uop);

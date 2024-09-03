@@ -6,6 +6,7 @@
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
@@ -33,7 +34,7 @@ class Core : public simeng::Core {
    * predictor, and port allocator to use. */
   Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
        std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
-       arch::sendSyscallToHandler handleSyscall,
+       OperandBypassMap& bypassMap, arch::sendSyscallToHandler handleSyscall,
        std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
            updateCoreDescInOS,
        ryml::ConstNodeRef config = config::SimInfo::getConfig());

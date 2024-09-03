@@ -10,13 +10,15 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
+    OperandBypassMap& bypassMap,
     const std::vector<uint16_t>& physicalRegisterStructure)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
-      portAllocator_(portAllocator) {
+      portAllocator_(portAllocator),
+      operandBypassMap_(bypassMap) {
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
@@ -64,9 +66,49 @@ DispatchIssueUnit::DispatchIssueUnit(
 
 void DispatchIssueUnit::tick() {
   input_.stall(false);
+  ticks_++;
 
   // Reset the array
   std::fill_n(dispatches_.get(), reservationStations_.size(), 0);
+
+  // Check if waiting instructions are ready.
+  if (waitingInstructions_.find(ticks_) != waitingInstructions_.end()) {
+    // Loop over all pairs in vector
+    for (auto& waitPair : waitingInstructions_[ticks_]) {
+      auto& depEntry = waitPair.first;
+      auto& regValue = waitPair.second;
+      // Supply operand
+      depEntry.uop->supplyOperand(depEntry.operandIndex, regValue);
+      if (depEntry.uop->canExecute()) {
+        // Add the now-ready instruction to the relevant ready queue
+        auto rsInfo = portMapping_[depEntry.port];
+        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
+            std::move(depEntry.uop));
+      }
+    }
+    // Once all operands have been supplied, remove map entry
+    waitingInstructions_.erase(ticks_);
+  }
+
+  // Check if uops with a non-bypassable dependancy are ready.
+  auto itDep = dependantInstructions_.begin();
+  while (itDep != dependantInstructions_.end()) {
+    const auto& reg = itDep->uop->getOperandRegisters()[itDep->operandIndex];
+    if (scoreboard_[reg.type][reg.tag]) {
+      // The scoreboard says it's ready; read and supply the register value
+      itDep->uop->supplyOperand(itDep->operandIndex, registerFileSet_.get(reg));
+      if (itDep->uop->canExecute()) {
+        // Add the now-ready instruction to the relevant ready queue
+        auto rsInfo = portMapping_[itDep->port];
+        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
+            std::move(itDep->uop));
+      }
+
+      itDep = dependantInstructions_.erase(itDep);
+    } else {
+      itDep++;
+    }
+  }
 
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
@@ -144,6 +186,7 @@ void DispatchIssueUnit::tick() {
     // Increment dispatches made and RS occupied entries size
     dispatches_[RS_Index]++;
     rs.currentSize++;
+    uop->setDispatched();
 
     if (ready) {
       rs.ports[RS_Port].ready.push_back(std::move(uop));
@@ -202,7 +245,8 @@ void DispatchIssueUnit::issue() {
 }
 
 void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
-                                        const span<RegisterValue>& values) {
+                                        const span<RegisterValue>& values,
+                                        const uint16_t producerGroup) {
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
@@ -212,15 +256,59 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     // Supply the value to all dependent uops
     auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
-      entry.uop->supplyOperand(entry.operandIndex, values[i]);
-      if (entry.uop->canExecute()) {
-        // Add the now-ready instruction to the relevant ready queue
-        auto rsInfo = portMapping_[entry.port];
-        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
-            std::move(entry.uop));
+      int64_t bypassLatency = operandBypassMap_.getBypassLatency(
+          producerGroup, entry.uop->getGroup(), reg.type);
+
+      switch (bypassLatency) {
+        case -1: {
+          // std::cerr << groupOptions_[producerGroup] << " cannot pass to "
+          //           << groupOptions_[entry.uop->getGroup()] << " in port "
+          //           << portNames_[entry.port] << std::endl;
+          // No bypass allowed, add to dependantInstructions_
+          dependantInstructions_.push_back(entry);
+          break;
+        }
+        case 0: {
+          // std::cerr << groupOptions_[producerGroup] << " can pass to "
+          //           << groupOptions_[entry.uop->getGroup()]
+          //           << " with latency 0 in port " << portNames_[entry.port]
+          //           << std::endl;
+          // No bypass latency, can supply operand
+          entry.uop->supplyOperand(entry.operandIndex, values[i]);
+          if (entry.uop->canExecute()) {
+            // Add the now-ready instruction to the relevant ready queue
+            auto rsInfo = portMapping_[entry.port];
+            reservationStations_[rsInfo.first]
+                .ports[rsInfo.second]
+                .ready.push_back(std::move(entry.uop));
+          }
+          break;
+        }
+        default: {
+          // std::cerr << groupOptions_[producerGroup] << " can pass to "
+          //           << groupOptions_[entry.uop->getGroup()] << " with latency
+          //           "
+          //           << bypassLatency << " in port " << portNames_[entry.port]
+          //           << std::endl;
+          // Some bypass latency to adhear to, add to waitingInstructions_
+          assert(bypassLatency > 0 &&
+                 "Negative bypass latency other than -1 is not valid.");
+          uint64_t releaseOnTick = ticks_ + bypassLatency;
+          // Make vector containing new entry
+          std::vector<std::pair<dependencyEntry, RegisterValue>> vec = {
+              std::make_pair(entry, values[i])};
+          // If entries for this tick already exist, then add these to the new
+          // vector
+          if (waitingInstructions_.find(releaseOnTick) !=
+              waitingInstructions_.end()) {
+            vec.insert(vec.end(), waitingInstructions_[releaseOnTick].begin(),
+                       waitingInstructions_[releaseOnTick].end());
+          }
+          waitingInstructions_[releaseOnTick] = vec;
+          break;
+        }
       }
     }
-
     // Clear the dependency list
     dependencyMatrix_[reg.type][reg.tag].clear();
   }
@@ -259,7 +347,7 @@ void DispatchIssueUnit::purgeFlushed() {
       while (it != dependencyList.end()) {
         auto& entry = *it;
         if (entry.uop->isFlushed()) {
-          auto rsIndex = portMapping_[entry.port].first;
+          const uint16_t rsIndex = portMapping_[entry.port].first;
           if (!flushed_[rsIndex].count(entry.uop)) {
             flushed_[rsIndex].insert(entry.uop);
             portAllocator_.deallocate(entry.port, entry.uop->getStallCycles());
@@ -268,6 +356,41 @@ void DispatchIssueUnit::purgeFlushed() {
         } else {
           it++;
         }
+      }
+    }
+  }
+
+  // Collect flushed instructions from the dependantInstructions_ vector
+  auto itDepInsn = dependantInstructions_.begin();
+  while (itDepInsn != dependantInstructions_.end()) {
+    if (itDepInsn->uop->isFlushed()) {
+      const uint16_t rsIndex = portMapping_[itDepInsn->port].first;
+      if (!flushed_[rsIndex].count(itDepInsn->uop)) {
+        flushed_[rsIndex].insert(itDepInsn->uop);
+        portAllocator_.deallocate(itDepInsn->port,
+                                  itDepInsn->uop->getStallCycles());
+      }
+      itDepInsn = dependantInstructions_.erase(itDepInsn);
+    } else {
+      itDepInsn++;
+    }
+  }
+
+  // Collect flushed instructions from the waitingInstructions_ map
+  for (auto& mapEntry : waitingInstructions_) {
+    auto it = mapEntry.second.begin();
+    while (it != mapEntry.second.end()) {
+      auto& depEntry = it->first;
+      if (depEntry.uop->isFlushed()) {
+        const uint16_t rsIndex = portMapping_[depEntry.port].first;
+        if (!flushed_[rsIndex].count(depEntry.uop)) {
+          flushed_[rsIndex].insert(depEntry.uop);
+          portAllocator_.deallocate(depEntry.port,
+                                    depEntry.uop->getStallCycles());
+        }
+        it = mapEntry.second.erase(it);
+      } else {
+        it++;
       }
     }
   }
@@ -304,6 +427,10 @@ void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
   for (auto& rs : reservationStations_) {
     sizes.push_back(rs.capacity - rs.currentSize);
   }
+}
+
+void DispatchIssueUnit::updateScoreboard(const Register& reg) {
+  scoreboard_[reg.type][reg.tag] = true;
 }
 
 void DispatchIssueUnit::flush() {

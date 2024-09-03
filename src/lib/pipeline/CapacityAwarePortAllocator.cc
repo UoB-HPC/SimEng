@@ -120,6 +120,8 @@ uint16_t CapacityAwarePortAllocator::allocate(
   portUsage_[bestRS].totalStallCycles_ += stallCycles;
   dispatches_[bestRS]++;
   weights_[bestPort]++;
+  // std::cerr << "\tALLOCATE: " << portUsage_[bestRS].totalStallCycles_
+  //           << std::endl;
 
   if (print_) {
     std::cerr << "\tChose " << bestPort << " with lowestWeight=" << lowestWeight
@@ -136,9 +138,12 @@ uint16_t CapacityAwarePortAllocator::allocate(
 
 void CapacityAwarePortAllocator::issued(uint16_t port,
                                         const uint16_t stallCycles) {
+  // std::cerr << "\tPRE-ISSUE: "
+  //           << portUsage_[supportVector_[port]].totalStallCycles_ <<
+  //           std::endl;
   uint16_t rs = supportVector_[port];
   assert(portUsage_[rs].slotsUsed_ > 0);
-  assert(portUsage_[rs].totalStallCycles_ > stallCycles);
+  assert(portUsage_[rs].totalStallCycles_ >= stallCycles);
   portUsage_[rs].slotsUsed_--;
   portUsage_[rs].totalStallCycles_ -= stallCycles;
   // portUsage_[rs].portWeightings_[rsPortMappings_[rs][port]]--;
@@ -147,6 +152,9 @@ void CapacityAwarePortAllocator::issued(uint16_t port,
 }
 void CapacityAwarePortAllocator::deallocate(uint16_t port,
                                             const uint16_t stallCycles) {
+  // std::cerr << "\tPRE-DEALLOCATE: "
+  //           << portUsage_[supportVector_[port]].totalStallCycles_ <<
+  //           std::endl;
   weights_[port]--;
   issued(port, stallCycles);
 };

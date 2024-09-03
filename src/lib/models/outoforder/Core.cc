@@ -13,12 +13,12 @@ namespace simeng {
 namespace models {
 namespace outoforder {
 
-bool print = false;
+bool print = true;
 
 // TODO: System register count has to match number of supported system registers
 Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
            std::shared_ptr<memory::MMU> mmu,
-           pipeline::PortAllocator& portAllocator,
+           pipeline::PortAllocator& portAllocator, OperandBypassMap& bypassMap,
            arch::sendSyscallToHandler handleSyscall,
            std::function<void(OS::cpuContext, uint16_t, CoreStatus, uint64_t)>
                updateCoreDescInOS,
@@ -52,8 +52,8 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
           {completionSlots_.data() + config["Execution-Units"].num_children(),
            config::SimInfo::getValue<size_t>(
                config["Pipeline-Widths"]["LSQ-Completion"])},
-          [this](auto regs, auto values) {
-            dispatchIssueUnit_.forwardOperands(regs, values);
+          [this](auto regs, auto values, auto producerGroup) {
+            dispatchIssueUnit_.forwardOperands(regs, values, producerGroup);
           },
           simeng::pipeline::CompletionOrder::OUTOFORDER),
       fetchUnit_(fetchToDecodeBuffer_, mmu_,
@@ -67,6 +67,9 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
           [this](auto branchAddress) {
             fetchUnit_.registerLoopBoundary(branchAddress);
           },
+          [this](const Register& reg) {
+            dispatchIssueUnit_.updateScoreboard(reg);
+          },
           branchPredictor,
           config::SimInfo::getValue<uint16_t>(
               config["Fetch"]["Loop-Buffer-Size"]),
@@ -77,15 +80,15 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_),
+                         portAllocator, bypassMap, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
+          [this](const Register& reg) {
+            dispatchIssueUnit_.updateScoreboard(reg);
+          },
           [this](auto reg) { dispatchIssueUnit_.setRegisterReady(reg); },
           [](auto seqId) { return true; },
-          [this](auto insn) { microOpWriteback(insn); },
-          [this](auto regs, auto values) {
-            dispatchIssueUnit_.forwardOperands(regs, values);
-          }),
+          [this](auto insn) { microOpWriteback(insn); }),
       portAllocator_(portAllocator),
       commitWidth_(
           config::SimInfo::getValue<int>(config["Pipeline-Widths"]["Commit"])),
@@ -101,8 +104,8 @@ Core::Core(arch::Architecture& isa, BranchPredictor& branchPredictor,
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
-        [this](auto regs, auto values) {
-          dispatchIssueUnit_.forwardOperands(regs, values);
+        [this](auto regs, auto values, auto producerGroup) {
+          dispatchIssueUnit_.forwardOperands(regs, values, producerGroup);
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
@@ -139,6 +142,7 @@ void Core::tick() {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
+        renameUnit_.unpause();
         dispatchIssueUnit_.purgeFlushed();
         dispatchIssueUnit_.flush();
         writebackUnit_.flush();
@@ -296,6 +300,7 @@ void Core::flushIfNeeded() {
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer_.flush(lowestInsnId);
     decodeUnit_.purgeFlushed();
+    renameUnit_.unpause();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
     for (auto& eu : executionUnits_) {
@@ -353,6 +358,7 @@ void Core::handleException() {
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   fetchUnit_.flushLoopBuffer();
   decodeUnit_.purgeFlushed();
+  renameUnit_.unpause();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
   loadStoreQueue_.drainSTB();
@@ -383,9 +389,10 @@ void Core::processException() {
   const auto& result = exceptionHandler_->getResult();
   // if (getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>() != 98) {
   if (print) {
-    outputFile_ << "\tSyscall "
-                << getArchitecturalRegisterFileSet().get({0, 8}).get<uint64_t>()
-                << " results" << std::endl;
+    outputFile_
+        << "\tSyscall "
+        << getArchitecturalRegisterFileSet().get({0, 13}).get<uint64_t>()
+        << " results" << std::endl;
     outputFile_ << "\tfatal: " << result.fatal << std::endl;
     outputFile_ << "\tidleAftersycall: " << result.idleAfterSyscall
                 << std::endl;
@@ -542,6 +549,8 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
+  if (coreId_ != 1) return {};
+
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
@@ -730,18 +739,22 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
                             physicalRegisterQuantities_);
 
   currentTID_ = newContext.TID;
+  if (print) {
+    outputFile_.close();
+    std::ostringstream str;
+    str << "/home/br-jjones/simulation/multithread" << currentTID_
+        << "Retire.out";
+    outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
 
-  outputFile_.close();
-  std::ostringstream str;
-  str << "/Users/jj16791/workspace/simengRetire.out";
-  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
-
-  outputFile2_.close();
-  std::ostringstream str2;
-  str2 << "/Users/jj16791/workspace/simengRetireWithIDs.out";
-  outputFile2_.open(str2.str(), std::ofstream::out | std::ofstream::app);
+    outputFile2_.close();
+    std::ostringstream str2;
+    str2 << "/home/br-jjones/simulation/multithread" << currentTID_
+         << "RetireWithIDs.out";
+    outputFile2_.open(str2.str(), std::ofstream::out | std::ofstream::app);
+  }
 
   reorderBuffer_.setTid(currentTID_);
+  renameUnit_.setTid(currentTID_);
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
   for (size_t type = 0; type < newContext.regFile.size(); type++) {

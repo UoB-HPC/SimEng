@@ -133,6 +133,8 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
     }
   }
   if (uop->isLoadReserved()) {
+    // std::cerr << std::hex << uop->getInstructionAddress() << std::dec
+    //           << " is load reserved" << std::endl;
     // Set MemPackets to be atomic if uop is an atomic operation
     for (int i = 0; i < loadsStores_[LD].back().size(); i++) {
       loadsStores_[LD].back()[i]->markAsAtomic();
@@ -141,11 +143,11 @@ bool MMU::requestRead(const std::shared_ptr<Instruction>& uop) {
   // Register load in map
   uint16_t totalReqs = static_cast<uint16_t>(loadsStores_[LD].back().size());
   // if (totalReqs > 1) {
-  //   std::cerr << totalReqs << ":" << std::hex
-  //             << loadsStores_[LD].back()[0]->vaddr_ << std::dec << "-"
-  //             << loadsStores_[LD].back()[0]->size_ << "/" << std::hex
-  //             << loadsStores_[LD].back()[1]->vaddr_ << std::dec << "-"
-  //             << loadsStores_[LD].back()[1]->size_ << std::endl;
+  // std::cerr << totalReqs << ":";
+  // for (const auto& et : loadsStores_[LD].back())
+  //   std::cerr << std::hex << et->vaddr_ << std::dec << "-" << et->size_ <<
+  //   ",";
+  // std::cerr << "\b" << std::endl;
   // }
   pendingDataRequests_ += totalReqs;
   requestedLoads_[seqId] = {uop, totalReqs};
@@ -204,6 +206,8 @@ bool MMU::requestWrite(const std::shared_ptr<Instruction>& uop,
   requestedStores_[uop->getSequenceId()] = {uop, totalReqs};
 
   if (uop->isStoreCond()) {
+    // std::cerr << std::hex << uop->getInstructionAddress() << std::dec
+    //           << " is store conditional" << std::endl;
     // Set MemPackets to be atomic if uop is an atomic operation
     for (int i = 0; i < loadsStores_[STR].back().size(); i++) {
       loadsStores_[STR].back()[i]->markAsAtomic();
@@ -310,7 +314,7 @@ std::shared_ptr<Port<std::unique_ptr<MemPacket>>> MMU::initPort() {
     if (packet->isRead()) {
       pendingDataRequests_--;
       // if (requestedLoads_.find(seqId) == requestedLoads_.end())
-      //   std::cerr << seqId << std::endl;
+      // std::cerr << seqId << std::endl;
       assert(requestedLoads_.find(seqId) != requestedLoads_.end() &&
              "[SimEng:MMU] Read response packet recieved for instruction that "
              "does not exist.");
@@ -499,6 +503,7 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
   auto& insn = itr->second.insn;
   // Get map of all packets, grouped by packetOrderId
   auto& packets = readResponses_.find(insnSeqId)->second;
+  // std::cerr << packets.size() << std::endl;
   for (int i = 0; i < packets.size(); i++) {
     // Get vector containing all packets associated to a single target
     auto& pktVec = packets[i];
@@ -508,6 +513,8 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     uint64_t addr = pktVec[0]->vaddr_;
     // Do early check on first packet for data abort
     if (pktVec[0]->isFaulty()) {
+      // std::cerr << "Faulty supply A on addr " << std::hex << addr << std::dec
+      //           << std::endl;
       // If faulty, return no data. This signals a data abort.
       insn->supplyData(addr, RegisterValue());
       continue;
@@ -520,6 +527,7 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     for (int j = 1; j < pktVec.size(); j++) {
       if (pktVec[j]->isFaulty()) {
         // If faulty, return no data. This signals a data abort.
+        // std::cerr << "Faulty supply B" << std::endl;
         insn->supplyData(addr, RegisterValue());
         isFaulty = true;
         break;
@@ -532,6 +540,7 @@ void MMU::supplyLoadInsnData(const uint64_t insnSeqId) {
     }
     // Supply data to instruction
     if (!isFaulty) {
+      // std::cerr << "Non Faulty supply" << std::endl;
       insn->supplyData(addr, {mergedData.data(), mergedSize});
     }
   }

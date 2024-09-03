@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cfenv>
+#include <functional>
 #include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
@@ -21,6 +23,9 @@ const uint8_t GENERAL = 0;
 const uint8_t FLOAT = 1;
 /** The system registers. */
 const uint8_t SYSTEM = 2;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -38,14 +43,16 @@ struct executionInfo {
 enum class InstructionException : uint8_t {
   None = 0,
   EncodingUnallocated,
-  EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  IllegalInstruction,
+  PipelineFlush
 };
 
 /** Masks used for manipulating the insnTypeMetadata associated with a RISC-V
@@ -63,6 +70,8 @@ static constexpr uint16_t isAcquireMask = 0b0000000001000000;
 static constexpr uint16_t isReleaseMask = 0b0000000000100000;
 static constexpr uint16_t isLoadReservedMask = 0b0000000000010000;
 static constexpr uint16_t isStoreCondMask = 0b0000000000001000;
+static constexpr uint16_t isConvertMask = 0b0000000000000100;
+static constexpr uint16_t isFloatMask = 0b0000000000000010;
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
@@ -89,6 +98,8 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getOperandRegisters() const override;
+
+  const span<RegisterValue> getSourceOperands() const override;
 
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
@@ -189,12 +200,12 @@ class Instruction : public simeng::Instruction {
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
-  static const Register ZERO_REGISTER;
+  // static const Register ZERO_REGISTER;
 
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 2;
+  static const uint8_t MAX_SOURCE_REGISTERS = 3;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
@@ -203,15 +214,25 @@ class Instruction : public simeng::Instruction {
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata;
+  const InstructionMetadata& metadata_;
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
   std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
 
+  /** The immediate source operand for which there is only ever one. Remains 0
+   * if unused. */
+  int64_t sourceImm_ = 0;
+
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
+  std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results_;
+
+  /** For instructions with a valid rm field, extract the rm value and change
+   * the CPP rounding mode accordingly, then call the function "operation"
+   * before reverting the CPP rounding mode to its initial value. "Operation"
+   * should contain the entire execution logic of the instruction */
+  void setStaticRoundingModeThen(std::function<void(void)> operation);
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;

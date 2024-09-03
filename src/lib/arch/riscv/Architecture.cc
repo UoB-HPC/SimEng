@@ -6,18 +6,27 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
-#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
 namespace riscv {
-
-std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
-std::forward_list<InstructionMetadata> Architecture::metadataCache;
-
 Architecture::Architecture() {
+  std::ostringstream str;
+  str << SIMENG_SOURCE_DIR << "/simengMetadata.out";
+  outputFile_.open(str.str(), std::ofstream::out);
+  outputFile_.close();
+  outputFile_.open(str.str(), std::ofstream::out | std::ofstream::app);
+
   ryml::ConstNodeRef config = config::SimInfo::getConfig();
-  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
+  // Set initial rounding mode for F/D extensions
+  // TODO set fcsr accordingly when Zicsr extension supported
+  fesetround(FE_TONEAREST);
+
+  cs_err n = cs_open(CS_ARCH_RISCV,
+                     static_cast<cs_mode>(CS_MODE_RISCV64 | CS_MODE_RISCVC),
+                     &capstoneHandle);
+  addressAlignmentMask_ = 0x1;
+  minInsnLength_ = 0x2;
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
                  "to error "
@@ -28,10 +37,13 @@ Architecture::Architecture() {
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
-    systemRegisterMap_[config::SimInfo::getSysRegVec()[i]] =
-        systemRegisterMap_.size();
+  std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();
+  for (size_t i = 0; i < sysRegs.size(); i++) {
+    systemRegisterMap_[sysRegs[i]] = systemRegisterMap_.size();
   }
+
+  cycleSystemReg_ = {RegisterType::SYSTEM,
+                     static_cast<uint16_t>(getSystemRegisterTag(0xC00))};
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -137,65 +149,183 @@ Architecture::Architecture() {
 }
 Architecture::~Architecture() {
   cs_close(&capstoneHandle);
-  decodeCache.clear();
-  metadataCache.clear();
+  decodeCache_.clear();
+  metadataCache_.clear();
   groupExecutionInfo_.clear();
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress, MacroOp& output) {
   // Check that instruction address is 4-byte aligned as required by RISC-V
-  if (instructionAddress & 0x3) {
+  // 2-byte when Compressed extension is supported
+  if (instructionAddress & addressAlignmentMask_) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
-    metadataCache.emplace_front(metadata);
+    metadataCache_.emplace_front(metadata);
     output.resize(1);
     auto& uop = output[0];
-    uop = std::make_shared<Instruction>(*this, metadataCache.front(),
+    uop = std::make_shared<Instruction>(*this, metadataCache_.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
-    uop->setSequenceId(instrSeqIdCtr_++);
-    uop->setInstructionId(insnIdCtr_++);
     // Return non-zero value to avoid fatal error
     return 1;
   }
 
-  assert(bytesAvailable >= 4 &&
-         "Fewer than 4 bytes supplied to RISC-V decoder");
+  assert(bytesAvailable >= minInsnLength_ &&
+         "Fewer than bytes limit supplied to RISC-V decoder");
 
-  // Dereference the instruction pointer to obtain the instruction word
-  uint32_t insn;
-  memcpy(&insn, ptr, 4);
+  // Get the first byte
+  uint8_t firstByte = ((uint8_t*)ptr)[0];
+
+  uint32_t insnEncoding = 0;
+  size_t insnSize = 4;
+
+  // Predecode bytes to determine whether we have a compressed instruction.
+  // This will allow continuation if a compressed instruction is in the last 2
+  // bytes of a fetch block, but will request more data if only half of a
+  // non-compressed instruction is present
+
+  // Check the 2 least significant bits as these determine instruction length
+  if ((firstByte & 0b11) != 0b11) {
+    // 2 byte - compressed
+    // Only use relevant bytes
+    // Dereference the instruction pointer to obtain the instruction word
+    memcpy(&insnEncoding, ptr, 2);
+    insnSize = 2;
+  } else {
+    // 4 byte
+    if (bytesAvailable < 4) {
+      // Not enough bytes available, bail
+      return 0;
+    }
+    // Dereference the instruction pointer to obtain the instruction word
+    memcpy(&insnEncoding, ptr, 4);
+  }
 
   // Try to find the decoding in the decode cache
-  auto iter = decodeCache.find(insn);
-  if (iter == decodeCache.end()) {
+  auto iter = decodeCache_.find(insnEncoding);
+  if (iter == decodeCache_.end()) {
     // No decoding present. Generate a fresh decoding, and add to cache
-    cs_insn rawInsn;
+    // Calloc memory to ensure rawInsn is initialised with zeros. Errors can
+    // occur otherwise as Capstone doesn't update variables for invalid
+    // instructions
+    cs_insn* rawInsnPointer = (cs_insn*)calloc(1, sizeof(cs_insn));
+    cs_insn rawInsn = *rawInsnPointer;
+    assert(rawInsn.size == 0 && "rawInsn not initialised correctly");
+
     cs_detail rawDetail;
     rawInsn.detail = &rawDetail;
+    // Size requires initialisation in case of capstone failure which won't
+    // update this value
+    rawInsn.size = insnSize;
 
-    size_t size = 4;
     uint64_t address = 0;
 
     const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-    bool success =
-        cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
+    bool success = cs_disasm_iter(capstoneHandle, &encoding, &insnSize,
+                                  &address, &rawInsn);
 
-    auto metadata =
-        success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
+    auto metadata = success ? InstructionMetadata(rawInsn)
+                            : InstructionMetadata(encoding, rawInsn.size);
+
+    free(rawInsnPointer);
 
     // Cache the metadata
-    metadataCache.push_front(metadata);
+    metadataCache_.push_front(metadata);
 
     // Create an instruction using the metadata
-    Instruction newInsn(*this, metadataCache.front());
+    Instruction newInsn(*this, metadataCache_.front());
     // Set execution information for this instruction
     newInsn.setExecutionInfo(getExecutionInfo(newInsn));
+
     // Cache the instruction
-    iter = decodeCache.insert({insn, newInsn}).first;
+    iter = decodeCache_.insert({insnEncoding, newInsn}).first;
+
+    if (instructionAddress < 0) {
+      int i;
+      uint8_t access;
+      outputFile_ << "====== 0x" << std::hex << instructionAddress << std::dec
+                  << " === 0x" << std::hex
+                  << unsigned(iter->second.getMetadata().encoding[3])
+                  << unsigned(iter->second.getMetadata().encoding[2])
+                  << unsigned(iter->second.getMetadata().encoding[1])
+                  << unsigned(iter->second.getMetadata().encoding[0])
+                  << std::dec << " === " << iter->second.getMetadata().mnemonic
+                  << " " << iter->second.getMetadata().operandStr
+                  << " === " << iter->second.getMetadata().id
+                  << " === " << iter->second.getMetadata().opcode
+                  << " ======" << std::endl;
+      outputFile_ << "Other cs_insn details:" << std::endl;
+      outputFile_ << "\tsize = 4" << std::endl;
+      outputFile_ << "Other InstructionMetadata details:" << std::endl;
+      outputFile_ << "\tGroup: " << newInsn.getGroup() << std::endl;
+      executionInfo eInf = getExecutionInfo(newInsn);
+      outputFile_ << "\tLatency: " << eInf.latency << std::endl;
+      outputFile_ << "\tStall Cycles: " << eInf.stallCycles << std::endl;
+      outputFile_ << "\tPorts: [";
+      for (const auto& pt : eInf.ports) outputFile_ << pt << ",";
+      outputFile_ << "\b]" << std::endl;
+
+      outputFile_ << "Operands:" << std::endl;
+      if (iter->second.getMetadata().operandCount)
+        outputFile_ << "\top_count: "
+                    << unsigned(iter->second.getMetadata().operandCount)
+                    << std::endl;
+
+      for (i = 0; i < iter->second.getMetadata().operandCount; i++) {
+        cs_riscv_op op = iter->second.getMetadata().operands[i];
+        switch (op.type) {
+          default:
+            break;
+          case RISCV_OP_REG:
+            outputFile_ << "\t\toperands[" << i << "].type: REG = "
+                        << cs_reg_name(capstoneHandle, op.reg) << std::endl;
+            break;
+          case RISCV_OP_IMM:
+            outputFile_ << "\t\toperands[" << i << "].type: IMM = 0x%"
+                        << std::hex << op.imm << std::dec << std::endl;
+            break;
+          case RISCV_OP_MEM:
+            outputFile_ << "\t\toperands[" << i << "].type: MEM" << std::endl;
+            if (op.mem.base != RISCV_REG_INVALID)
+              outputFile_ << "\t\t\toperands[" << i << "].mem.base: REG = "
+                          << cs_reg_name(capstoneHandle, op.mem.base)
+                          << std::endl;
+            if (op.mem.disp != 0)
+              outputFile_ << "\t\t\toperands[" << i << "].mem.disp: 0x"
+                          << std::hex << op.mem.disp << std::dec << std::endl;
+
+            break;
+        }
+      }
+
+      // Print out all registers read by this instruction
+      outputFile_ << "\tImplicit registers read:";
+      for (i = 0; i < iter->second.getMetadata().implicitSourceCount; i++) {
+        outputFile_ << " "
+                    << cs_reg_name(
+                           capstoneHandle,
+                           iter->second.getMetadata().implicitSources[i]);
+      }
+      outputFile_ << std::endl;
+      // Print out all registers written to this instruction
+      outputFile_ << "\tImplicit registers modified:";
+      for (i = 0; i < iter->second.getMetadata().implicitDestinationCount;
+           i++) {
+        outputFile_ << " "
+                    << cs_reg_name(
+                           capstoneHandle,
+                           iter->second.getMetadata().implicitDestinations[i]);
+      }
+      outputFile_ << std::endl;
+    }
   }
+
+  assert(((insnEncoding & 0b11) != 0b11
+              ? iter->second.getMetadata().getInsnLength() == 2
+              : iter->second.getMetadata().getInsnLength() == 4) &&
+         "Predicted number of bytes don't match disassembled number of bytes");
 
   output.resize(1);
   auto& uop = output[0];
@@ -207,7 +337,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop->setSequenceId(instrSeqIdCtr_++);
   uop->setInstructionId(insnIdCtr_++);
 
-  return 4;
+  return iter->second.getMetadata().getInsnLength();
 }
 
 executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
@@ -230,7 +360,7 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
-  if (!systemRegisterMap_.count(reg)) return 0;
+  if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
 }
 
@@ -262,6 +392,7 @@ uint16_t Architecture::getNumSystemRegisters() const {
 // Left blank as no implementation necessary
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
+  regFile->set(cycleSystemReg_, iterations);
 }
 
 // Left blank as no implementation necessary

@@ -124,7 +124,7 @@ class FetchUnit {
 
   uint8_t mopCacheTagBits_ = 11;
 
-  std::vector<std::pair<uint64_t, uint64_t>> mopCache_;
+  std::vector<std::pair<RegisterValue, uint64_t>> mopCache_;
 
   std::vector<uint64_t> requestedBlocks_;
 
