@@ -37,6 +37,7 @@ jobs:
   RELEASE_LINUX:
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
+      RUNNER: ubuntu-latest
       SIMENG-MODE: Release
     secrets: inherit
   
