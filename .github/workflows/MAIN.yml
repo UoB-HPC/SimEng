@@ -22,6 +22,7 @@ jobs:
   DEBUG_LINUX:
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
+      RUNNER: ubuntu-latest
       SIMENG-MODE: Debug
     secrets: inherit
 
