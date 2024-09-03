@@ -6,19 +6,19 @@
 using namespace simeng::arch::aarch64;
 
 void AArch64RegressionTest::run(const char* source) {
-  // Initialise LLVM
-  LLVMInitializeAArch64TargetInfo();
-  LLVMInitializeAArch64TargetMC();
-  LLVMInitializeAArch64AsmParser();
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString();
 
-  const char* subtargetFeatures;
-#if SIMENG_LLVM_VERSION < 14
-  subtargetFeatures = "+sve,+lse";
-#else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
-#endif
+  RegressionTest::run(source, "aarch64", subtargetFeatures.c_str());
+}
 
-  RegressionTest::run(source, "aarch64", subtargetFeatures);
+void AArch64RegressionTest::checkGroup(
+    const char* source, const std::vector<uint16_t>& expectedGroups) {
+  initialiseLLVM();
+  std::string subtargetFeatures = getSubtargetFeaturesString();
+
+  RegressionTest::checkGroup(source, "aarch64", subtargetFeatures.c_str(),
+                             expectedGroups);
 }
 
 void AArch64RegressionTest::generateConfig() const {
@@ -47,7 +47,8 @@ void AArch64RegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
+AArch64RegressionTest::instantiateArchitecture(
+    simeng::kernel::Linux& kernel) const {
   return std::make_unique<Architecture>(kernel);
 }
 

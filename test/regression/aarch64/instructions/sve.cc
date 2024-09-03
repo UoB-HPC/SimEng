@@ -6,6 +6,7 @@
 namespace {
 
 using InstSve = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstSve, addvl) {
   // 64-bits
@@ -1889,6 +1890,8 @@ TEST_P(InstSve, eor) {
         (p1[i / 64] & shifted_active) == shifted_active ? 0 : shifted_active;
   }
   CHECK_PREDICATE(4, uint64_t, res_p4);
+
+  EXPECT_GROUP(R"(not p4.b, p0/z, p1.b)", PREDICATE);
 
   // Vectors, Predicated
   RUN_AARCH64(R"(

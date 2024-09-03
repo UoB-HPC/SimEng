@@ -103,7 +103,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   if (!isBranch()) {
     // Instruction isn't a branch; if predicted as taken, it will require a
     // flush
-    return {prediction_.taken, instructionAddress_ + 4};
+    return {prediction_.isTaken, instructionAddress_ + 4};
   }
 
   // Not enough information to determine this was a misprediction

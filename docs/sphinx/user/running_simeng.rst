@@ -26,7 +26,8 @@ Exit Clause
     The reason why the simulation has halted. Most commonly this is due to the invoking of the ``exit()`` system call by the workload under simulation.
 
 Statistics
-    A selection of simulation statistics describing the emergent simulated PMU-style hardware events.
+    A selection of simulation statistics describing the emergent simulated PMU-style hardware events. With respect to branch statistics, the misprediction rate
+is calculated as branches mispredicted / branches retired.
 
 All non-workload outputs from SimEng are prefixed with a tag of the format ``[SimEng:Object]`` (e.g. ``[SimEng:ExceptionHandler]``). If the output came from the root of the framework, the ``Object`` field is omitted.
 

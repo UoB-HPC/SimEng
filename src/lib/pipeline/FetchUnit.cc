@@ -53,6 +53,16 @@ void FetchUnit::tick() {
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
+        // Calling predict() in order to log the branch in the branch
+        // predictor. The branch needs to be logged in the branch predictor
+        // so that the branch predictor has the information needed to update
+        // itself when the branch instruction is retired. However, we are
+        // reusing the prediction from the loop buffer, thus we do not
+        // use the return value from predict().
+        branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
+                                 macroOp[0]->getBranchType(),
+                                 macroOp[0]->getKnownOffset());
+        branchesFetched_++;
       }
 
       // Cycle queue by moving front entry to back
@@ -147,6 +157,7 @@ void FetchUnit::tick() {
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                             macroOp[0]->getKnownOffset());
+      branchesFetched_++;
       macroOp[0]->setBranchPrediction(prediction);
     }
 
@@ -159,7 +170,7 @@ void FetchUnit::tick() {
 
       if (pc_ == loopBoundaryAddress_) {
         if (macroOp[0]->isBranch() &&
-            !macroOp[0]->getBranchPrediction().taken) {
+            !macroOp[0]->getBranchPrediction().isTaken) {
           // loopBoundaryAddress_ has been fetched whilst filling the loop
           // buffer BUT this is a branch, predicted to branch out of the loop
           // being buffered. Stop filling the loop buffer and don't supply to
@@ -176,8 +187,18 @@ void FetchUnit::tick() {
       }
     } else if (loopBufferState_ == LoopBufferState::WAITING &&
                pc_ == loopBoundaryAddress_) {
-      // Once set loopBoundaryAddress_ is fetched, start to fill loop buffer
-      loopBufferState_ = LoopBufferState::FILLING;
+      // loopBoundaryAddress_ has been fetched whilst loop buffer is waiting,
+      // start filling Loop Buffer if the branch predictor tells us to
+      // reenter the detected loop
+      if (macroOp[0]->isBranch() &&
+          !macroOp[0]->getBranchPrediction().isTaken) {
+        // If branch is not taken then we aren't re-entering the detected
+        // loop, therefore Loop Buffer stays idle
+        loopBufferState_ = LoopBufferState::IDLE;
+      } else {
+        // Otherwise, start to fill Loop Buffer
+        loopBufferState_ = LoopBufferState::FILLING;
+      }
     }
 
     assert(bytesRead <= bufferedBytes_ &&
@@ -187,12 +208,12 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
-    if (!prediction.taken) {
-      // Predicted as not taken; increment PC to next instruction
-      pc_ += bytesRead;
-    } else {
+    if (prediction.isTaken) {
       // Predicted as taken; set PC to predicted target address
       pc_ = prediction.target;
+    } else {
+      // Predicted as not taken; increment PC to next instruction
+      pc_ += bytesRead;
     }
 
     if (pc_ >= programByteLength_) {
@@ -200,7 +221,7 @@ void FetchUnit::tick() {
       break;
     }
 
-    if (prediction.taken) {
+    if (prediction.isTaken) {
       if (slot + 1 < output_.getWidth()) {
         branchStalls_++;
       }
@@ -270,6 +291,8 @@ void FetchUnit::flushLoopBuffer() {
   loopBufferState_ = LoopBufferState::IDLE;
   loopBoundaryAddress_ = 0;
 }
+
+uint64_t FetchUnit::getBranchFetchedCount() const { return branchesFetched_; }
 
 }  // namespace pipeline
 }  // namespace simeng

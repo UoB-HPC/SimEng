@@ -3,6 +3,7 @@
 namespace {
 
 using InstConditional = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstConditional, ccmn) {
   // 64-bit
@@ -120,6 +121,9 @@ TEST_P(InstConditional, csetm) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+
+  EXPECT_GROUP(R"(csetm w6, le)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(csetm x6, le)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstConditional, csinc) {
@@ -166,6 +170,11 @@ TEST_P(InstConditional, csinc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 42u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 42u);
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 43u);
+
+  EXPECT_GROUP(R"(csinc w6, w1, w2, le)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cinc w8, w1, ge)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(csinc x6, x1, x2, le)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cinc x8, x1, ge)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstConditional, csneg) {
@@ -212,6 +221,9 @@ TEST_P(InstConditional, csneg) {
   EXPECT_EQ(getGeneralRegister<int64_t>(6), 42);
   EXPECT_EQ(getGeneralRegister<int64_t>(7), 42);
   EXPECT_EQ(getGeneralRegister<int64_t>(8), -42);
+
+  EXPECT_GROUP(R"(cneg w8, w1, ge)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cneg x8, x1, ge)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstConditional, tbz) {

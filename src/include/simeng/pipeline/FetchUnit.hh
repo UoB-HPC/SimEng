@@ -69,6 +69,9 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
+  /** Retrieve the number of branch instructions that have been fetched. */
+  uint64_t getBranchFetchedCount() const;
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
@@ -117,6 +120,9 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint16_t bufferedBytes_ = 0;
+
+  /** The number of branch instructions that were fetched. */
+  uint64_t branchesFetched_ = 0;
 
   /** Let the following PipelineFetchUnitTest derived classes be a friend of
    * this class to allow proper testing of 'tick' function. */

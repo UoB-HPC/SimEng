@@ -3,9 +3,9 @@
 #include <vector>
 
 #include "capstone/capstone.h"
-#include "simeng/BranchPredictor.hh"
 #include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
+#include "simeng/branchpredictors/BranchPrediction.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/span.hh"
 
@@ -154,9 +154,9 @@ class Instruction {
   bool wasBranchMispredicted() const {
     assert(executed_ &&
            "Branch misprediction check requires instruction to have executed");
-    // Flag as mispredicted if taken state was wrongly predicted, or taken and
-    // predicted target is wrong
-    return (branchTaken_ != prediction_.taken ||
+    // Flag as mispredicted if taken state was wrongly predicted, or taken
+    // and predicted target is wrong
+    return ((branchTaken_ != prediction_.isTaken) ||
             (prediction_.target != branchAddress_));
   }
 
@@ -178,7 +178,7 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const { return stallCycles_; }
 
-  /** Retrieve the number of cycles this instruction will take to be prcoessed
+  /** Retrieve the number of cycles this instruction will take to be processed
    * by the LSQ. */
   uint16_t getLSQLatency() const { return lsqExecutionLatency_; }
 

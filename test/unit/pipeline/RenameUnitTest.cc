@@ -427,7 +427,7 @@ TEST_F(RenameUnitTest, serializedDest) {
   EXPECT_CALL(*uop2, getDestinationRegisters()).Times(1);
   EXPECT_CALL(*uop2, isLoad()).WillOnce(Return(false));
   EXPECT_CALL(*uop2, isStoreAddress()).WillOnce(Return(false));
-  EXPECT_CALL(*uop2, isBranch()).WillOnce(Return(false));
+  EXPECT_CALL(*uop2, isBranch()).Times(2).WillRepeatedly(Return(false));
   rob.commit(1);
   EXPECT_EQ(rob.size(), 0);
 
