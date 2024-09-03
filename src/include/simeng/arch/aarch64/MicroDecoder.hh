@@ -84,17 +84,18 @@ class MicroDecoder {
 
   // Default objects
   /** Default capstone instruction structure. */
-  cs_arm64 default_info = {ARM64_CC_INVALID, false, false, 0, {}};
+  cs_aarch64 default_info = {AArch64CC_Invalid, false, false, 0, {}};
 
   /** Default register. */
   cs_aarch64_op default_op = {0,
-                              ARM64_VAS_INVALID,
-                              {ARM64_SFT_INVALID, 0},
-                              ARM64_EXT_INVALID,
+                              AARCH64LAYOUT_INVALID,
+                              {AARCH64_SFT_INVALID, 0},
+                              AARCH64_EXT_INVALID,
                               AARCH64_OP_INVALID,
-                              ARM64_SVCR_INVALID,
+                              false,
                               {},
-                              CS_AC_READ};
+                              CS_AC_READ,
+                              false};
 
   /** Default capstone instruction detail. */
   cs_detail default_detail = {{}, 0, {}, 0, {}, 0, {}};

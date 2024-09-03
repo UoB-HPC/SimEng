@@ -653,7 +653,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Get the upper bound of what the opcode value can be based on the ISA
   uint16_t maxOpcode = 0;
   if (isa_ == ISA::AArch64) {
-    maxOpcode = arch::aarch64::Opcode::AArch64_INSTRUCTION_LIST_END;
+    maxOpcode = arch::aarch64::Opcode::INSTRUCTION_LIST_END;
   } else if (isa_ == ISA::RV64) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }

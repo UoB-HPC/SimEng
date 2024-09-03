@@ -1276,7 +1276,8 @@ std::array<uint64_t, 4> svePsel(
   const uint64_t* pn = sourceValues[0].getAsVector<uint64_t>();
   const uint64_t* pm = sourceValues[1].getAsVector<uint64_t>();
   const uint32_t wa = sourceValues[2].get<uint32_t>();
-  const uint32_t imm = metadata.operands[2].sme_index.disp;
+  const uint32_t imm =
+      static_cast<uint32_t>(metadata.operands[2].pred.imm_index);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
 

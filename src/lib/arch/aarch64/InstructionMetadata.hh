@@ -53,7 +53,7 @@ struct InstructionMetadata {
   static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
   /** The maximum number of operands as defined in Capstone */
   static const size_t MAX_OPERANDS =
-      sizeof(cs_arm64::operands) / sizeof(cs_aarch64_op);
+      sizeof(cs_aarch64::operands) / sizeof(cs_aarch64_op);
 
   /** The instruction's mnemonic ID. */
   unsigned int id;
