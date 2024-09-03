@@ -25,7 +25,6 @@ jobs:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  # NOTE: currently doens't work
   DEBUG_MACOS:
     uses: ./.github/workflows/MACOS_BUILD_TEST.yml
     with:
@@ -51,8 +50,8 @@ jobs:
   # Compare runtime with Previous run time
   ###################################
   PERFORMANCE_REGRESSION:
-    # needs:
-    #   - RELEASE_LINUX_GCC
+    needs:
+      - RELEASE_LINUX
       
     uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
     with:

@@ -68,24 +68,48 @@ runs:
         MODE: ${{ inputs.mode }}
         
     ##########################################
-    # ARMCLANG jobs
-    # NOTE: DOENS'T WORK RIGHT NOW NEED TO SET UP ARM BASED SELF-HOSTED RUNNER
-    ##########################################
-    - if: ${{ contains( inputs.COMPILER, 'gcc') && contains( inputs.OS, 'macos') }}
-      name:  Install ${{ inputs.COMPILER }} + Build SimEng
-      uses: ./.github/actions/setup_gcc_macos
-      with:
-        OS: ${{ inputs.OS }}
-        gcc-version: ${{ inputs.COMPILER }}
-        MODE: ${{ inputs.mode }}
-    
-    ##########################################
     # APPLE CLANG
     ##########################################
 
     - if: ${{ contains( inputs.COMPILER, 'clang') && contains( inputs.OS, 'macos') }}
       name:  Install ${{ inputs.COMPILER }} + Build SimEng
       uses: ./.github/actions/setup_clang_macos
+      with:
+        OS: ${{ inputs.OS }}
+        MODE: ${{ inputs.mode }}
+    
+    ##########################################
+    # ARM CLANG
+    ##########################################
+
+    # ubuntu
+    - if: ${{ contains( inputs.COMPILER, 'armclang') && contains( inputs.OS, 'ubuntu') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_armclang_ubuntu
+      with:
+        OS: ${{ inputs.OS }}
+        MODE: ${{ inputs.mode }}
+
+    # debian
+    - if: ${{ contains( inputs.COMPILER, 'armclang') && contains( inputs.OS, 'debian') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_armclang_debian
+      with:
+        OS: ${{ inputs.OS }}
+        MODE: ${{ inputs.mode }}
+
+    # redhat
+    - if: ${{ contains( inputs.COMPILER, 'armclang') && contains( inputs.OS, 'redhat') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_armclang_redhat
+      with:
+        OS: ${{ inputs.OS }}
+        MODE: ${{ inputs.mode }}
+
+    # rocky
+    - if: ${{ contains( inputs.COMPILER, 'armclang') && contains( inputs.OS, 'rocky') }}
+      name:  Install ${{ inputs.COMPILER }} + Build SimEng
+      uses: ./.github/actions/setup_armclang_rocky
       with:
         OS: ${{ inputs.OS }}
         MODE: ${{ inputs.mode }}
