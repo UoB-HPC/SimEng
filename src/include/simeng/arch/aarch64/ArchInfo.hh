@@ -47,13 +47,15 @@ class ArchInfo : public simeng::arch::ArchInfo {
                       {32, predCount},
                       {1, condCount},
                       {8, static_cast<uint16_t>(sysRegisterEnums_.size())},
-                      {256, matCount}};
+                      {256, matCount},
+                      {64, 1}};
     physRegQuantities_ = {gpCount,
                           fpCount,
                           predCount,
                           condCount,
                           static_cast<uint16_t>(sysRegisterEnums_.size()),
-                          matCount};
+                          matCount,
+                          1};
   }
 
   /** Get the set of system register enums currently supported. */

@@ -88,9 +88,9 @@ struct InstructionMetadata {
   uint8_t cc;
   /** Whether this instruction sets the condition flags. */
   bool setsFlags;
-  /** Whether this instruction performs a base-address register writeback
-   * operation. */
-  bool writeback;
+
+  /** Whether this instruction is an alias. */
+  bool isAlias;
 
   /** The explicit operands. */
   cs_aarch64_op operands[MAX_OPERANDS];

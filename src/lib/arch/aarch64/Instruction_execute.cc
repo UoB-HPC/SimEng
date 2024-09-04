@@ -3851,8 +3851,7 @@ void Instruction::execute() {
       case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
         // Handle case where SVCR is being updated as this invokes additional
         // functionality
-        if (metadata_.operands[0].type == AARCH64_OP_SYSALIAS &&
-            metadata_.operands[0].sysop.sub_type == AARCH64_OP_SVCR) {
+        if (metadata_.operands[0].sysop.reg.sysreg == AARCH64_SYSREG_SVCR) {
           return SMZAupdated();
         } else {
           results_[0] = sourceValues_[0];

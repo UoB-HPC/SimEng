@@ -17,14 +17,14 @@ TEST(ConfigTest, Default) {
             simeng::config::SimulationMode::Emulation);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Emulation");
   std::vector<uint64_t> sysRegisterEnums = {
-      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-      arm64_sysreg::ARM64_SYSREG_FPCR,
-      arm64_sysreg::ARM64_SYSREG_FPSR,
-      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-      arm64_sysreg::ARM64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_FPCR,
+      aarch64_sysreg::AARCH64_SYSREG_FPSR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+      aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_SVCR};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
@@ -373,14 +373,14 @@ TEST(ConfigTest, configFromFile) {
             simeng::config::SimulationMode::Outoforder);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Out-of-Order");
   std::vector<uint64_t> sysRegisterEnums = {
-      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-      arm64_sysreg::ARM64_SYSREG_FPCR,
-      arm64_sysreg::ARM64_SYSREG_FPSR,
-      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-      arm64_sysreg::ARM64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_FPCR,
+      aarch64_sysreg::AARCH64_SYSREG_FPSR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+      aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_SVCR};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
