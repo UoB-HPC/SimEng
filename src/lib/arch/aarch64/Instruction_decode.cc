@@ -1,3 +1,5 @@
+#include <regex>
+
 #include "InstructionMetadata.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
@@ -44,6 +46,7 @@ Register csRegToRegister(aarch64_reg reg) {
   // (full vector) or Dn (half vector).
   // As D and Q registers are also of type RegisterType::VECTOR, the outcome
   // will be the same
+  std::cerr << "Reg = " << reg << std::endl;
 
   // Assert that reg is not a SME tile as these should be passed to
   // `getZARowVectors()`
@@ -197,6 +200,14 @@ void Instruction::decode() {
     return;
   }
 
+  std::cerr << metadata_.opcode << ":" << metadata_.mnemonic << " "
+            << metadata_.operandStr << ", reg count "
+            << (unsigned)metadata_.operandCount << " ---- " << std::hex
+            << (unsigned)metadata_.encoding[0] << " "
+            << (unsigned)metadata_.encoding[1] << " "
+            << (unsigned)metadata_.encoding[2] << " "
+            << (unsigned)metadata_.encoding[3] << " " << std::dec << std::endl;
+
   // Extract implicit writes, including pre/post index writeback
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
     if (metadata_.implicitDestinations[i] == AARCH64_REG_NZCV &&
@@ -206,6 +217,7 @@ void Instruction::decode() {
       // destination. Ignore
       continue;
     }
+    std::cerr << "\tImplicit write - ";
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
         static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
@@ -213,6 +225,12 @@ void Instruction::decode() {
 
   // Extract implicit reads
   for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
+    // TODO: Implement FPCR usage properly
+    // Ignore implicit reading of FPCR
+    if (static_cast<aarch64_reg>(metadata_.implicitSources[i]) ==
+        AARCH64_REG_FPCR)
+      continue;
+    std::cerr << "\tImplicit Read - ";
     sourceRegisters_[sourceOperandsPending_] =
         csRegToRegister(static_cast<aarch64_reg>(metadata_.implicitSources[i]));
     sourceRegisterCount_++;
@@ -246,6 +264,7 @@ void Instruction::decode() {
 
           // Add register writes to destinations, but skip zero-register
           // destinations
+          std::cerr << "\tReg Write - ";
           destinationRegisters_[destinationRegisterCount_] =
               csRegToRegister(op.reg);
           destinationRegisterCount_++;
@@ -253,7 +272,7 @@ void Instruction::decode() {
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
-
+        std::cerr << "\tReg read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
@@ -273,19 +292,14 @@ void Instruction::decode() {
       // Check base register exists
       if (op.mem.base != AARCH64_REG_INVALID) {
         accessesMemory = true;
+        std::cerr << "\tMem base read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
-
-      // if (metadata_.writeback) {
-      //   // Writeback instructions modify the base address
-      //   destinationRegisters_[destinationRegisterCount_] =
-      //       csRegToRegister(op.mem.base);
-      //   destinationRegisterCount_++;
-      // }
       if (op.mem.index != AARCH64_REG_INVALID) {
         // Register offset; add to sources
+        std::cerr << "\tMem index read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.index);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
@@ -317,6 +331,7 @@ void Instruction::decode() {
       if (op.sme.type == AARCH64_SME_OP_TILE_VEC) {
         // SME tile has slice determined by register and immidiate.
         // Add base register to source operands
+        std::cerr << "\tSME tile vec base - ";
         sourceRegisters_[sourceRegisterCount_] =
             csRegToRegister(op.sme.slice_reg);
         sourceRegisterCount_++;
@@ -324,16 +339,19 @@ void Instruction::decode() {
       }
     } else if (op.type == AARCH64_OP_PRED) {
       if (op.access == CS_AC_READ) {
+        std::cerr << "\tPred read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
       if (op.access == CS_AC_WRITE) {
+        std::cerr << "\tPred write - ";
         destinationRegisters_[destinationRegisterCount_] =
             csRegToRegister(op.pred.reg);
         destinationRegisterCount_++;
       }
       if (op.pred.vec_select != AARCH64_REG_INVALID) {
+        std::cerr << "\tPred vec select read - ";
         sourceRegisters_[sourceRegisterCount_] =
             csRegToRegister(op.pred.vec_select);
         sourceRegisterCount_++;
@@ -361,8 +379,8 @@ void Instruction::decode() {
       }
     } else if (metadata_.operands[0].type == AARCH64_OP_SYSALIAS &&
                metadata_.operands[0].sysop.sub_type == AARCH64_OP_SVCR) {
-      // Updating of SVCR is done via an exception and not via the sysreg file.
-      // No operands are required for this operation.
+      // This case is for instruction alias SMSTART and SMSTOP. Updating of SVCR
+      // value is done via an exception so no registers required.
     }
   }
 
@@ -468,15 +486,15 @@ void Instruction::decode() {
     }
 
     // LDADD* are considered to be both a load and a store
-    if (AARCH64_INS_LDADDAB <= metadata_.id &&
-        metadata_.id <= AARCH64_INS_LDADD) {
+    if (Opcode::AArch64_LDADDAB <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_LDADDX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
 
     // CASAL* are considered to be both a load and a store
-    if (metadata_.opcode == Opcode::AArch64_CASALW ||
-        metadata_.opcode == Opcode::AArch64_CASALX) {
+    if (Opcode::AArch64_CASALB <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_CASALX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
@@ -510,23 +528,72 @@ void Instruction::decode() {
     setInstructionType(InsnType::isLoad);
   }
 
-  if ((264 <= metadata_.opcode && metadata_.opcode <= 267) ||    // AND
-      (1063 <= metadata_.opcode && metadata_.opcode <= 1084) ||  // AND (pt.2)
-      (284 <= metadata_.opcode && metadata_.opcode <= 287) ||    // BIC
-      (1167 <= metadata_.opcode && metadata_.opcode <= 1183) ||  // BIC (pt.2)
-      (321 <= metadata_.opcode && metadata_.opcode <= 324) ||    // EOR/EON
-      (1707 <= metadata_.opcode &&
-       metadata_.opcode <= 1736) ||                            // EOR/EON (pt.2)
-      (771 <= metadata_.opcode && metadata_.opcode <= 774) ||  // ORR/ORN
-      (3748 <= metadata_.opcode &&
-       metadata_.opcode <= 3771)) {  // ORR/ORN (pt.2)
+  // Identify Logical (bitwise) instructions
+  if (regex_match(metadata_.mnemonic, std::regex("(and)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bic)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bif)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bit)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bcax)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bmop)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(eor)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(eon)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mvn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(not)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(nand)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(nbsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(nor)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(rax)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(xar)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(orr)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(orq)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(orv)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(tst)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(orn)(.*)"))) {
     setInstructionType(InsnType::isLogical);
   }
 
-  if ((1252 <= metadata_.opcode && metadata_.opcode <= 1259) ||
-      (1314 <= metadata_.opcode && metadata_.opcode <= 1501) ||
-      (1778 <= metadata_.opcode && metadata_.opcode <= 1799) ||
-      (1842 <= metadata_.opcode && metadata_.opcode <= 1969)) {
+  // Identify comparison insturctions (excluding atomic LD-CMP-STR)
+  if (regex_match(metadata_.mnemonic, std::regex("(ccmn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmp)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpp)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(ccmp)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmeq)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmge)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmgt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmtst)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmhi)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmhs)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmle)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpeq)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpge)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpgt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmphi)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmphs)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmple)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmplo)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpls)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmplt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmpne)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmptst)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(facge)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(facgt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(facle)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(faclt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fccmp)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fccmpe)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmeq)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmge)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmgt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmle)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmne)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmp)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmpe)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmuo)(.*)"))) {
     setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
@@ -539,14 +606,46 @@ void Instruction::decode() {
     }
   }
 
-  if ((347 <= metadata_.opcode && metadata_.opcode <= 366) ||
-      (1142 <= metadata_.opcode && metadata_.opcode <= 1146) ||
-      (1976 <= metadata_.opcode && metadata_.opcode <= 2186) ||
-      (metadata_.opcode == 2207) ||
-      (782 <= metadata_.opcode && metadata_.opcode <= 788) ||
-      (4063 <= metadata_.opcode && metadata_.opcode <= 4097) ||
-      (898 <= metadata_.opcode && metadata_.opcode <= 904) ||
-      (5608 <= metadata_.opcode && metadata_.opcode <= 5642)) {
+  // Identify convert instructions
+  if (regex_match(metadata_.mnemonic, std::regex("(bf1cvtl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bf2cvtl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfcvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfcvtn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f1cvtl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f2cvtl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtas)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtau)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtms)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtmu)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtns)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtnu)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtps)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtpu)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtxn)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtzs)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtzu)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fjcvtzs)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(scvtf)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(ucvtf)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bf1cvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bf2cvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bf1cvtlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bf2cvtlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfcvtnt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f1cvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f2cvt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f1cvtlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(f2cvtlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtlt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtnb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtnt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtx)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtxnt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtzs)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcvtzu)(.*)"))) {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -558,85 +657,238 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  if ((367 <= metadata_.opcode && metadata_.opcode <= 375) ||
-      (789 <= metadata_.opcode && metadata_.opcode <= 790) ||
-      (905 <= metadata_.opcode && metadata_.opcode <= 906) ||
-      (2187 <= metadata_.opcode && metadata_.opcode <= 2200) ||
-      (4098 <= metadata_.opcode && metadata_.opcode <= 4103) ||
-      (5644 <= metadata_.opcode && metadata_.opcode <= 5649) ||
-      (481 <= metadata_.opcode && metadata_.opcode <= 483) ||
-      (metadata_.opcode == 940) ||
-      (2640 <= metadata_.opcode && metadata_.opcode <= 2661) ||
-      (2665 <= metadata_.opcode && metadata_.opcode <= 2675) ||
-      (6066 <= metadata_.opcode && metadata_.opcode <= 6068)) {
+  if (regex_match(metadata_.mnemonic, std::regex("(sdiv)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(udiv)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fdiv)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fdivr)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sdivr)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(udivr)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(frsqrte)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(frsqrts)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fsqrt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(ursqrte)(.*)"))) {
     setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
-  if ((433 <= metadata_.opcode &&
-       metadata_.opcode <= 447) ||  // all MUL variants
-      (759 <= metadata_.opcode && metadata_.opcode <= 762) ||
-      (816 <= metadata_.opcode && metadata_.opcode <= 819) ||
-      (915 <= metadata_.opcode && metadata_.opcode <= 918) ||
-      (2436 <= metadata_.opcode && metadata_.opcode <= 2482) ||
-      (2512 <= metadata_.opcode && metadata_.opcode <= 2514) ||
-      (2702 <= metadata_.opcode && metadata_.opcode <= 2704) ||
-      (3692 <= metadata_.opcode && metadata_.opcode <= 3716) ||
-      (3793 <= metadata_.opcode && metadata_.opcode <= 3805) ||
-      (4352 <= metadata_.opcode && metadata_.opcode <= 4380) ||
-      (4503 <= metadata_.opcode && metadata_.opcode <= 4543) ||
-      (4625 <= metadata_.opcode && metadata_.opcode <= 4643) ||
-      (5804 <= metadata_.opcode && metadata_.opcode <= 5832) ||
-      (2211 <= metadata_.opcode &&
-       metadata_.opcode <= 2216) ||  // all MADD/MAD variants
-      (2494 <= metadata_.opcode && metadata_.opcode <= 2499) ||
-      (2699 <= metadata_.opcode && metadata_.opcode <= 2701) ||
-      (3610 <= metadata_.opcode && metadata_.opcode <= 3615) ||
-      (4227 == metadata_.opcode) || (5682 == metadata_.opcode) ||
-      (2433 <= metadata_.opcode &&
-       metadata_.opcode <= 2435) ||  // all MSUB variants
-      (2509 <= metadata_.opcode && metadata_.opcode <= 2511) ||
-      (3690 <= metadata_.opcode && metadata_.opcode <= 3691) ||
-      (4351 == metadata_.opcode) || (5803 == metadata_.opcode) ||
-      (424 <= metadata_.opcode &&
-       metadata_.opcode <= 426) ||  // all MLA variants
-      (451 <= metadata_.opcode && metadata_.opcode <= 453) ||
-      (1151 <= metadata_.opcode && metadata_.opcode <= 1160) ||
-      (1378 <= metadata_.opcode && metadata_.opcode <= 1383) ||
-      (1914 <= metadata_.opcode && metadata_.opcode <= 1926) ||
-      (2341 <= metadata_.opcode && metadata_.opcode <= 2371) ||
-      (2403 <= metadata_.opcode && metadata_.opcode <= 2404) ||
-      (2500 <= metadata_.opcode && metadata_.opcode <= 2502) ||
-      (3618 <= metadata_.opcode && metadata_.opcode <= 3634) ||
-      (4295 <= metadata_.opcode && metadata_.opcode <= 4314) ||
-      (4335 <= metadata_.opcode && metadata_.opcode <= 4336) ||
-      (4453 <= metadata_.opcode && metadata_.opcode <= 4477) ||
-      (4581 <= metadata_.opcode && metadata_.opcode <= 4605) ||
-      (5749 <= metadata_.opcode && metadata_.opcode <= 5768) ||
-      (5789 <= metadata_.opcode && metadata_.opcode <= 5790) ||
-      (6115 <= metadata_.opcode && metadata_.opcode <= 6116) ||
-      (427 <= metadata_.opcode &&
-       metadata_.opcode <= 429) ||  // all MLS variants
-      (454 <= metadata_.opcode && metadata_.opcode <= 456) ||
-      (2372 <= metadata_.opcode && metadata_.opcode <= 2402) ||
-      (2503 <= metadata_.opcode && metadata_.opcode <= 2505) ||
-      (3635 <= metadata_.opcode && metadata_.opcode <= 3651) ||
-      (4315 <= metadata_.opcode && metadata_.opcode <= 4334) ||
-      (4478 <= metadata_.opcode && metadata_.opcode <= 4502) ||
-      (4606 <= metadata_.opcode && metadata_.opcode <= 4624) ||
-      (5769 <= metadata_.opcode && metadata_.opcode <= 5788) ||
-      (2430 <= metadata_.opcode &&
-       metadata_.opcode <= 2432) ||  // all MSB variants
-      (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
-      (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
-      (2405 <= metadata_.opcode &&
-       metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
-      (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
-      (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
-      (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
-      (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
+  if (regex_match(metadata_.mnemonic, std::regex("(madd)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(maddpt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mneg)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(msub)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(msubpt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smaddl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smnegl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smsubl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smulh)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umaddl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umnegl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umsubl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umulh)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlalb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlalt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fcmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmadd)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlal)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlal2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlalb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlalt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlallbb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlallbt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlalltb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlalltt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmls)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlsl2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmsub)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmulx)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmadd)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmsub)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mls)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(pmul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(pmull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(pmull2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlal)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlal2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlsl2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smull2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlal)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlal2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlsl2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmulh)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmull2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqrdmlah)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqrdmlsh)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqrdmulh)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlal)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlal2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlsl2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(ummla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umull)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umull2)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usmmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmls)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlslb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlslt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmul)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmad)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlslb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlslt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmsb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmad)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmla)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmls)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fnmsb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(ftmad)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mad)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(madpt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(mlapt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(msb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(pmullb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(pmullt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlalb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlalt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlslb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlslt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smullb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smullt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlalb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlalbt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlalt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlslb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlslbt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmlslt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmullb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqdmullt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sqrdcmlah)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlalb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlalt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlslb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlslt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umullb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umullt)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlal)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmlsl)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmlall)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlall)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smlsll)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sumlall)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlall)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umlsll)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usmlall)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfvdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fvdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fvdotb)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fvdott)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sudot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(suvdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(udot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usvdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(uvdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(cdot)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bfmops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bmopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(bmops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(fmops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(smops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sumopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(sumops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(umops)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usmopa)(.*)")) ||
+      regex_match(metadata_.mnemonic, std::regex("(usmops)(.*)"))) {
     setInstructionType(InsnType::isMultiply);
   }
+
+  //
+  // if ((433 <= metadata_.opcode &&
+  //  metadata_.opcode <= 447) ||  // all MUL variants
+  // (759 <= metadata_.opcode && metadata_.opcode <= 762) ||
+  // (816 <= metadata_.opcode && metadata_.opcode <= 819) ||
+  // (915 <= metadata_.opcode && metadata_.opcode <= 918) ||
+  // (2436 <= metadata_.opcode && metadata_.opcode <= 2482) ||
+  // (2512 <= metadata_.opcode && metadata_.opcode <= 2514) ||
+  // (2702 <= metadata_.opcode && metadata_.opcode <= 2704) ||
+  // (3692 <= metadata_.opcode && metadata_.opcode <= 3716) ||
+  // (3793 <= metadata_.opcode && metadata_.opcode <= 3805) ||
+  // (4352 <= metadata_.opcode && metadata_.opcode <= 4380) ||
+  // (4503 <= metadata_.opcode && metadata_.opcode <= 4543) ||
+  // (4625 <= metadata_.opcode && metadata_.opcode <= 4643) ||
+  // (5804 <= metadata_.opcode && metadata_.opcode <= 5832) ||
+  // (2211 <= metadata_.opcode &&
+  //  metadata_.opcode <= 2216) ||  // all MADD/MAD variants
+  // (2494 <= metadata_.opcode && metadata_.opcode <= 2499) ||
+  // (2699 <= metadata_.opcode && metadata_.opcode <= 2701) ||
+  // (3610 <= metadata_.opcode && metadata_.opcode <= 3615) ||
+  // (4227 == metadata_.opcode) || (5682 == metadata_.opcode) ||
+  // (2433 <= metadata_.opcode &&
+  //  metadata_.opcode <= 2435) ||  // all MSUB variants
+  // (2509 <= metadata_.opcode && metadata_.opcode <= 2511) ||
+  // (3690 <= metadata_.opcode && metadata_.opcode <= 3691) ||
+  // (4351 == metadata_.opcode) || (5803 == metadata_.opcode) ||
+  // (424 <= metadata_.opcode &&
+  //  metadata_.opcode <= 426) ||  // all MLA variants
+  // (451 <= metadata_.opcode && metadata_.opcode <= 453) ||
+  // (1151 <= metadata_.opcode && metadata_.opcode <= 1160) ||
+  // (1378 <= metadata_.opcode && metadata_.opcode <= 1383) ||
+  // (1914 <= metadata_.opcode && metadata_.opcode <= 1926) ||
+  // (2341 <= metadata_.opcode && metadata_.opcode <= 2371) ||
+  // (2403 <= metadata_.opcode && metadata_.opcode <= 2404) ||
+  // (2500 <= metadata_.opcode && metadata_.opcode <= 2502) ||
+  // (3618 <= metadata_.opcode && metadata_.opcode <= 3634) ||
+  // (4295 <= metadata_.opcode && metadata_.opcode <= 4314) ||
+  // (4335 <= metadata_.opcode && metadata_.opcode <= 4336) ||
+  // (4453 <= metadata_.opcode && metadata_.opcode <= 4477) ||
+  // (4581 <= metadata_.opcode && metadata_.opcode <= 4605) ||
+  // (5749 <= metadata_.opcode && metadata_.opcode <= 5768) ||
+  // (5789 <= metadata_.opcode && metadata_.opcode <= 5790) ||
+  // (6115 <= metadata_.opcode && metadata_.opcode <= 6116) ||
+  // (427 <= metadata_.opcode &&
+  //  metadata_.opcode <= 429) ||  // all MLS variants
+  // (454 <= metadata_.opcode && metadata_.opcode <= 456) ||
+  // (2372 <= metadata_.opcode && metadata_.opcode <= 2402) ||
+  // (2503 <= metadata_.opcode && metadata_.opcode <= 2505) ||
+  // (3635 <= metadata_.opcode && metadata_.opcode <= 3651) ||
+  // (4315 <= metadata_.opcode && metadata_.opcode <= 4334) ||
+  // (4478 <= metadata_.opcode && metadata_.opcode <= 4502) ||
+  // (4606 <= metadata_.opcode && metadata_.opcode <= 4624) ||
+  // (5769 <= metadata_.opcode && metadata_.opcode <= 5788) ||
+  // (2430 <= metadata_.opcode &&
+  //  metadata_.opcode <= 2432) ||  // all MSB variants
+  // (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
+  // (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
+  // (2405 <= metadata_.opcode &&
+  //  metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
+  // (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
+  // (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
+  // (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
+  // (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
+  // setInstructionType(InsnType::isMultiply);
+  // }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught predicate assignment due to lacking destination register
@@ -644,19 +896,24 @@ void Instruction::decode() {
     setInstructionType(InsnType::isPredicate);
   }
   // Uncaught float data assignment for FMOV move to general instructions
-  if (((430 <= metadata_.opcode && metadata_.opcode <= 432) ||
-       (2409 <= metadata_.opcode && metadata_.opcode <= 2429)) &&
+  if (((Opcode::AArch64_FMOVD0 <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_FMOVS0) ||
+       (Opcode::AArch64_FMOVDXHighr <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_FMOVv8f16_ns)) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
-  if ((4341 <= metadata_.opcode && metadata_.opcode <= 4350) ||
-      (5795 <= metadata_.opcode && metadata_.opcode <= 5802)) {
+  if ((Opcode::AArch64_SMOVvi16to32 <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_SMOVvi8to64_idx0) ||
+      (Opcode::AArch64_UMOVvi16 <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_UMOVvi8_idx0)) {
     setInstructionType(InsnType::isVectorData);
   }
   // Uncaught float data assignment for FCVT convert to general instructions
-  if ((1976 <= metadata_.opcode && metadata_.opcode <= 2186) &&
+  if ((Opcode::AArch64_FCVTASUWDr <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_FCVT_ZPmZ_StoH) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
@@ -672,8 +929,8 @@ void Instruction::decode() {
       }
     }
   } else {
-    // For SME instructions, resize the following structures to have the exact
-    // amount of space required
+    // For SME instructions, resize the following structures to have the
+    // exact amount of space required
     sourceRegisters_.resize(sourceRegisterCount_);
     destinationRegisters_.resize(destinationRegisterCount_);
     sourceValues_.resize(sourceRegisterCount_);

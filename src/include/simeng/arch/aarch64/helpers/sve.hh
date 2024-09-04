@@ -177,7 +177,8 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> sveCmpPredicated_toPred(
 template <typename T>
 uint64_t sveCnt_gpr(const simeng::arch::aarch64::InstructionMetadata& metadata,
                     const uint16_t VL_bits) {
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  // SVE pattern stored in metadata_.operands[1]
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
 
   const uint16_t elems =
       sveGetPattern(metadata.operandStr, (sizeof(T) * 8), VL_bits);

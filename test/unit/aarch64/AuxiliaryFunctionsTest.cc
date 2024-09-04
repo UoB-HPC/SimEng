@@ -240,19 +240,19 @@ TEST(AArch64AuxiliaryFunctionTest, ConditionHolds) {
 /** `extendValue` Tests */
 TEST(AArch64AuxiliaryFunctionTest, ExtendValue) {
   // Test special case
-  EXPECT_EQ(extendValue(123, ARM64_EXT_INVALID, 0), 123);
+  EXPECT_EQ(extendValue(123, AARCH64_EXT_INVALID, 0), 123);
 
   // Results validated on XCI and A64FX hardware
-  EXPECT_EQ(extendValue(270, ARM64_EXT_UXTB, 3), 112);
-  EXPECT_EQ(extendValue(65560, ARM64_EXT_UXTH, 3), 192);
-  EXPECT_EQ(extendValue(0xFFFFFFFF, ARM64_EXT_UXTW, 3), 34359738360);
-  EXPECT_EQ(extendValue(0x0F0F0F0F0F0F0F01, ARM64_EXT_UXTX, 4),
+  EXPECT_EQ(extendValue(270, AARCH64_EXT_UXTB, 3), 112);
+  EXPECT_EQ(extendValue(65560, AARCH64_EXT_UXTH, 3), 192);
+  EXPECT_EQ(extendValue(0xFFFFFFFF, AARCH64_EXT_UXTW, 3), 34359738360);
+  EXPECT_EQ(extendValue(0x0F0F0F0F0F0F0F01, AARCH64_EXT_UXTX, 4),
             0xF0F0F0F0F0F0F010);
 
-  EXPECT_EQ(extendValue(133, ARM64_EXT_SXTB, 3), -984);
-  EXPECT_EQ(extendValue(32768, ARM64_EXT_SXTH, 3), -262144);
-  EXPECT_EQ(extendValue(2147483648, ARM64_EXT_SXTW, 3), -17179869184);
-  EXPECT_EQ(extendValue(0x8000000000000000, ARM64_EXT_SXTX, 3), 0);
+  EXPECT_EQ(extendValue(133, AARCH64_EXT_SXTB, 3), -984);
+  EXPECT_EQ(extendValue(32768, AARCH64_EXT_SXTH, 3), -262144);
+  EXPECT_EQ(extendValue(2147483648, AARCH64_EXT_SXTW, 3), -17179869184);
+  EXPECT_EQ(extendValue(0x8000000000000000, AARCH64_EXT_SXTX, 3), 0);
 }
 
 /** `getNZCVfromPred` Tests */
@@ -476,229 +476,229 @@ TEST(AArch64AuxiliaryFunctionTest, sveGetPattern) {
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_LSL) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_LSL, 4), 0xF0);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_LSL, 4), 0xF0);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_LSL, 7), 0x00);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_LSL, 7), 0x00);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_LSL, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_LSL, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_LSL, 8), 0xFF00);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_LSL, 8), 0xFF00);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_LSL, 15), 0x0000);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_LSL, 15), 0x0000);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_LSL, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_LSL, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_LSL, 16), 0xFFFF0000);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_LSL, 16), 0xFFFF0000);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_LSL, 31), 0x00000000);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_LSL, 31), 0x00000000);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_LSL, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_LSL, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_LSL, 32), 0xFFFFFFFF00000000);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_LSL, 32), 0xFFFFFFFF00000000);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_LSL, 63), 0x0000000000000000);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_LSL, 63), 0x0000000000000000);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_LSL, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_LSL, 0), h);
 }
 
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_LSR) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_LSR, 4), 0x00);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_LSR, 4), 0x00);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_LSR, 7), 0x01);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_LSR, 7), 0x01);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_LSR, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_LSR, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_LSR, 8), 0x0);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_LSR, 8), 0x0);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_LSR, 15), 0x0001);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_LSR, 15), 0x0001);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_LSR, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_LSR, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_LSR, 16), 0x00000000);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_LSR, 16), 0x00000000);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_LSR, 31), 0x00000001);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_LSR, 31), 0x00000001);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_LSR, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_LSR, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_LSR, 32), 0x0000000000000000);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_LSR, 32), 0x0000000000000000);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_LSR, 63), 0x0000000000000001);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_LSR, 63), 0x0000000000000001);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_LSR, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_LSR, 0), h);
 }
 
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_ASR) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_ASR, 4), 0x00);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_ASR, 4), 0x00);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_ASR, 7), 0xFF);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_ASR, 7), 0xFF);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_ASR, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_ASR, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_ASR, 8), 0x0000);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_ASR, 8), 0x0000);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_ASR, 15), 0xFFFF);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_ASR, 15), 0xFFFF);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_ASR, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_ASR, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_ASR, 16), 0x00000000);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_ASR, 16), 0x00000000);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_ASR, 31), 0xFFFFFFFF);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_ASR, 31), 0xFFFFFFFF);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_ASR, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_ASR, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_ASR, 32), 0x0000000000000000);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_ASR, 32), 0x0000000000000000);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_ASR, 63), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_ASR, 63), 0xFFFFFFFFFFFFFFFF);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_ASR, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_ASR, 0), h);
 }
 
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_ROR) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_ROR, 4), 0xF0);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_ROR, 4), 0xF0);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_ROR, 7), 0xE1);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_ROR, 7), 0xE1);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_ROR, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_ROR, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_ROR, 8), 0xFF00);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_ROR, 8), 0xFF00);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_ROR, 15), 0xFE01);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_ROR, 15), 0xFE01);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_ROR, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_ROR, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_ROR, 16), 0xFFFF0000);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_ROR, 16), 0xFFFF0000);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_ROR, 31), 0xFFFE0001);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_ROR, 31), 0xFFFE0001);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_ROR, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_ROR, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_ROR, 32), 0xFFFFFFFF00000000);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_ROR, 32), 0xFFFFFFFF00000000);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_ROR, 63), 0xFFFFFFFE00000001);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_ROR, 63), 0xFFFFFFFE00000001);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_ROR, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_ROR, 0), h);
 }
 
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_MSL) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_MSL, 4), 0xFF);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_MSL, 4), 0xFF);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_MSL, 7), 0x7F);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_MSL, 7), 0x7F);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_MSL, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_MSL, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_MSL, 8), 0xFFFF);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_MSL, 8), 0xFFFF);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_MSL, 15), 0x7FFF);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_MSL, 15), 0x7FFF);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_MSL, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_MSL, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_MSL, 16), 0xFFFFFFFF);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_MSL, 16), 0xFFFFFFFF);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_MSL, 31), 0x7FFFFFFF);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_MSL, 31), 0x7FFFFFFF);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_MSL, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_MSL, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_MSL, 32), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_MSL, 32), 0xFFFFFFFFFFFFFFFF);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_MSL, 63), 0x7FFFFFFFFFFFFFFF);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_MSL, 63), 0x7FFFFFFFFFFFFFFF);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_MSL, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_MSL, 0), h);
 }
 
 TEST(AArch64AuxiliaryFunctionTest, ShiftValueTest_INVALID) {
   // 8-bit
   const uint8_t a = 0x0F;
-  EXPECT_EQ(shiftValue(a, ARM64_SFT_INVALID, 4), a);
+  EXPECT_EQ(shiftValue(a, AARCH64_SFT_INVALID, 4), a);
 
   const uint8_t b = 0xF0;
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_INVALID, 7), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_INVALID, 7), b);
 
-  EXPECT_EQ(shiftValue(b, ARM64_SFT_INVALID, 0), b);
+  EXPECT_EQ(shiftValue(b, AARCH64_SFT_INVALID, 0), b);
 
   // 16-bit
   const uint16_t c = 0x00FF;
-  EXPECT_EQ(shiftValue(c, ARM64_SFT_INVALID, 8), c);
+  EXPECT_EQ(shiftValue(c, AARCH64_SFT_INVALID, 8), c);
 
   const uint16_t d = 0xFF00;
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_INVALID, 15), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_INVALID, 15), d);
 
-  EXPECT_EQ(shiftValue(d, ARM64_SFT_INVALID, 0), d);
+  EXPECT_EQ(shiftValue(d, AARCH64_SFT_INVALID, 0), d);
 
   // 32-bit
   const uint32_t e = 0x0000FFFF;
-  EXPECT_EQ(shiftValue(e, ARM64_SFT_INVALID, 16), e);
+  EXPECT_EQ(shiftValue(e, AARCH64_SFT_INVALID, 16), e);
 
   const uint32_t f = 0xFFFF0000;
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_INVALID, 31), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_INVALID, 31), f);
 
-  EXPECT_EQ(shiftValue(f, ARM64_SFT_INVALID, 0), f);
+  EXPECT_EQ(shiftValue(f, AARCH64_SFT_INVALID, 0), f);
 
   // 64-bit
   const uint64_t g = 0x00000000FFFFFFFF;
-  EXPECT_EQ(shiftValue(g, ARM64_SFT_INVALID, 32), g);
+  EXPECT_EQ(shiftValue(g, AARCH64_SFT_INVALID, 32), g);
 
   const uint64_t h = 0xFFFFFFFF00000000;
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_INVALID, 63), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_INVALID, 63), h);
 
-  EXPECT_EQ(shiftValue(h, ARM64_SFT_INVALID, 0), h);
+  EXPECT_EQ(shiftValue(h, AARCH64_SFT_INVALID, 0), h);
 }
 
 }  // namespace aarch64

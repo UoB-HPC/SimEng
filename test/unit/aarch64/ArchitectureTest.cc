@@ -125,7 +125,7 @@ TEST_F(AArch64ArchitectureTest, getSystemRegisterTag) {
   EXPECT_EQ(output, -1);
 
   // Test for correct behaviour
-  output = arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0);
+  output = arch->getSystemRegisterTag(AARCH64_SYSREG_DCZID_EL0);
   EXPECT_EQ(output, 0);
 }
 
@@ -162,7 +162,7 @@ TEST_F(AArch64ArchitectureTest, getInitialState) {
   std::vector<Register> regs = {
       {RegisterType::GENERAL, 31},
       {RegisterType::SYSTEM,
-       (uint16_t)arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)}};
+       (uint16_t)arch->getSystemRegisterTag(AARCH64_SYSREG_DCZID_EL0)}};
   std::vector<RegisterValue> regVals = {{kernel.getInitialStackPointer(), 8},
                                         {20, 8}};
 
@@ -202,13 +202,13 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
     EXPECT_EQ(
         regFile
             .get({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
-                                            ARM64_SYSREG_PMCCNTR_EL0)})
+                                            AARCH64_SYSREG_PMCCNTR_EL0)})
             .get<uint64_t>(),
         i);
     EXPECT_EQ(
         regFile
             .get({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
-                                            ARM64_SYSREG_CNTVCT_EL0)})
+                                            AARCH64_SYSREG_CNTVCT_EL0)})
             .get<uint64_t>(),
         vctCount);
   }
