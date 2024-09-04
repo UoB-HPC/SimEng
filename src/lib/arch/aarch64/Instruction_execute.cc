@@ -2786,14 +2786,13 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], <#imm|xm>
-        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
-
         // if #imm post-index, value can only be 16
         const uint64_t postIndex =
             (metadata_.operands[2].type == AARCH64_OP_REG)
                 ? sourceValues_[1].get<uint64_t>()
                 : 16;
         results_[0] = sourceValues_[0].get<uint64_t>() + postIndex;
+        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
@@ -2936,9 +2935,9 @@ void Instruction::execute() {
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            val, val, val, val, val, val, val, val};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
@@ -2952,9 +2951,9 @@ void Instruction::execute() {
         // LOAD
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
@@ -2968,9 +2967,9 @@ void Instruction::execute() {
         // LOAD
         uint64_t val = memoryData_[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
@@ -2984,9 +2983,9 @@ void Instruction::execute() {
         // LOAD
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
@@ -3000,9 +2999,9 @@ void Instruction::execute() {
         // LOAD
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
@@ -3016,9 +3015,9 @@ void Instruction::execute() {
         // LOAD
         uint32_t val = memoryData_[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
@@ -3034,9 +3033,9 @@ void Instruction::execute() {
         uint8_t val = memoryData_[0].get<uint8_t>();
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            0,   0,   0,   0,   0,   0,   0,   0};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
@@ -3050,9 +3049,9 @@ void Instruction::execute() {
         // LOAD
         uint16_t val = memoryData_[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
-        results_[1] = {out, 256};
         results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[1].mem.disp;
+        results_[1] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1Fourv16b:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
@@ -3079,16 +3078,16 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Fourv4s_POST: {  // ld1 {vt1.4s, vt2.4s, vt3.4s,
                                                // vt4.4s}, [xn], <#imm|xm>
         // LOAD
-        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
-        results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
-        results_[3] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
-        results_[4] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
             (metadata_.operands[5].type == AARCH64_OP_REG)
                 ? sourceValues_[1].get<uint64_t>()
                 : 64;
         results_[0] = sourceValues_[0].get<uint64_t>() + postIndex;
+        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
+        results_[3] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
+        results_[4] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1Twov16b:  // ld1 {vt1.16b, vt2.16b}, [xn]
@@ -3110,15 +3109,14 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1Twov4s_POST: {  // ld1 {vt1.4s, vt2.4s}, [xn],
                                               // <#imm|xm>
         // LOAD
-        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
-        results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
-
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
             (metadata_.operands[3].type == AARCH64_OP_REG)
                 ? sourceValues_[1].get<uint64_t>()
                 : 32;
         results_[0] = sourceValues_[0].get<uint64_t>() + postIndex;
+        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
@@ -3190,9 +3188,13 @@ void Instruction::execute() {
         for (int i = 0; i < 2; i++) {
           out[i] = (i == index) ? memoryData_[0].get<uint64_t>() : vt[i];
         }
+        // If post index is #imm, it can only be 8
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[1].get<uint64_t>()
+                : 8;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
         results_[1] = {out, 256};
-        results_[0] =
-            sourceValues_[1].get<uint64_t>() + metadata_.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD2D:  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>, xm,
@@ -3234,19 +3236,19 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
-                                              // #imm
+                                              // <xm|#imm>
         // LOAD
         const float* region1 = memoryData_[0].getAsVector<float>();
         const float* region2 = memoryData_[1].getAsVector<float>();
         float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
         float t2[4] = {region1[1], region1[3], region2[1], region2[3]};
+        // #imm can only be 32
+        const uint64_t offset = (metadata_.operands[3].type == AARCH64_OP_REG)
+                                    ? sourceValues_[1].get<uint64_t>()
+                                    : 32;
+        results_[0] = sourceValues_[0].get<uint64_t>() + offset;
         results_[1] = {t1, 256};
         results_[2] = {t2, 256};
-        uint64_t offset = 32;
-        if (metadata_.operandCount == 4) {
-          offset = sourceValues_[3].get<uint64_t>();
-        }
-        results_[0] = sourceValues_[2].get<uint64_t>() + offset;
         break;
       }
       case Opcode::AArch64_LD3D_IMM: {  // ld3d {zt1.d, zt2.d, zt3.d}, pg/z,
@@ -4813,16 +4815,16 @@ void Instruction::execute() {
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
-      case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], xm
-                                           // st1 {vt.h}[index], [xn], #2
+      case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], <xm|#imm>
         // STORE
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
-        uint64_t offset = 2;
-        if (metadata_.operandCount == 3) {
-          offset = sourceValues_[2].get<uint64_t>();
-        }
-        results_[0] = sourceValues_[1].get<uint64_t>() + offset;
+        // if #imm post-index, value can only be 2
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[2].get<uint64_t>()
+                : 2;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
@@ -4831,16 +4833,16 @@ void Instruction::execute() {
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
-      case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], xm
-                                           // st1 {vt.s}[index], [xn], #4
+      case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], <xm|#imm>
         // STORE
         const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
-        uint64_t offset = 4;
-        if (metadata_.operandCount == 3) {
-          offset = sourceValues_[2].get<uint64_t>();
-        }
-        results_[0] = sourceValues_[1].get<uint64_t>() + offset;
+        // if #imm post-index, value can only be 4
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[2].get<uint64_t>()
+                : 4;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
@@ -4849,16 +4851,16 @@ void Instruction::execute() {
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
-      case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], xm
-                                           // st1 {vt.d}[index], [xn], #8
+      case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], <xm|#imm>
         // STORE
         const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
-        uint64_t offset = 8;
-        if (metadata_.operandCount == 3) {
-          offset = sourceValues_[2].get<uint64_t>();
-        }
-        results_[0] = sourceValues_[1].get<uint64_t>() + offset;
+        // if #imm post-index, value can only be 8
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[2].get<uint64_t>()
+                : 8;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
@@ -4867,17 +4869,16 @@ void Instruction::execute() {
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
-      case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], xm
-                                          // st1 {vt.b}[index], [xn], #1
+      case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], <xm|#imm>
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
-        uint64_t offset = 1;
-        if (metadata_.operandCount == 3) {
-          offset = sourceValues_[2].get<uint64_t>();
-        }
-        results_[0] =
-            RegisterValue(sourceValues_[1].get<uint64_t>() + offset, 8);
+        // if #imm post-index, value can only be 1
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[2].get<uint64_t>()
+                : 1;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_ST2D_IMM: {  // st2d {zt1.d, zt2.d}, pg, [<xn|sp>{,
@@ -4917,7 +4918,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
-                                              // #imm
+                                              // <xm|#imm>
         // STORE
         const float* t1 = sourceValues_[0].getAsVector<float>();
         const float* t2 = sourceValues_[1].getAsVector<float>();
@@ -4925,12 +4926,12 @@ void Instruction::execute() {
         std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
         memoryData_[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
         memoryData_[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
-
-        uint64_t offset = 32;
-        if (metadata_.operandCount == 4) {
-          offset = sourceValues_[3].get<uint64_t>();
-        }
-        results_[0] = sourceValues_[2].get<uint64_t>() + offset;
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex =
+            (metadata_.operands[3].type == AARCH64_OP_REG)
+                ? sourceValues_[3].get<uint64_t>()
+                : 32;
+        results_[0] = sourceValues_[2].get<uint64_t>() + postIndex;
         break;
       }
       case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
