@@ -100,29 +100,27 @@ inline uint8_t getDataSize(cs_aarch64_op op) {
       case AARCH64LAYOUT_VL_8H:
       case AARCH64LAYOUT_VL_4S:
       case AARCH64LAYOUT_VL_2D:
-      case AARCH64LAYOUT_VL_1Q: {
+      case AARCH64LAYOUT_VL_1Q:
+      case AARCH64LAYOUT_VL_Q:
         return 16;
-      }
       case AARCH64LAYOUT_VL_8B:
       case AARCH64LAYOUT_VL_4H:
       case AARCH64LAYOUT_VL_2S:
-      case AARCH64LAYOUT_VL_1D: {
+      case AARCH64LAYOUT_VL_1D:
+      case AARCH64LAYOUT_VL_D:
         return 8;
-      }
       case AARCH64LAYOUT_VL_4B:
       case AARCH64LAYOUT_VL_2H:
-      case AARCH64LAYOUT_VL_1S: {
+      case AARCH64LAYOUT_VL_1S:
+      case AARCH64LAYOUT_VL_S:
         return 4;
-      }
-      case AARCH64LAYOUT_VL_H: {
+      case AARCH64LAYOUT_VL_H:
         return 2;
-      }
-      case AARCH64LAYOUT_VL_B: {
+      case AARCH64LAYOUT_VL_B:
         return 1;
-      }
-      default: {
+      default:
         assert(false && "Unknown VAS type");
-      }
+        break;
     }
   }
 

@@ -268,7 +268,8 @@ int64_t sveDec_scalar(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const int64_t n = sourceValues[0].get<int64_t>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  // metadata_.operands[1] is the SVE pattern enum
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
   const uint16_t elems =
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
   return (n - static_cast<int64_t>(elems * imm));
@@ -860,7 +861,8 @@ int64_t sveInc_gprImm(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const int64_t n = sourceValues[0].get<int64_t>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  // metadata_.operands[1] is the SVE pattern enum
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
   const uint16_t elems =
       sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
   int64_t out = n + (elems * imm);
@@ -877,7 +879,8 @@ RegisterValue sveInc_imm(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const T* n = sourceValues[0].getAsVector<T>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  // metadata_.operands[1] is the SVE pattern enum
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};

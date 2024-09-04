@@ -99,7 +99,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint16_t partition_num = VL_bits / 64;
         const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;
-        if (metadata_.operands[2].mem.index)
+        if (metadata_.operands[2].mem.index != AARCH64_REG_INVALID)
           m = sourceValues_[partition_num + 3].get<uint64_t>() << 3;
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
@@ -429,7 +429,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
                                               // #imm
-        const uint64_t base = sourceValues_[2].get<uint64_t>();
+        const uint64_t base = sourceValues_[0].get<uint64_t>();
         setMemoryAddresses({{base, 16}, {base + 16, 16}});
         break;
       }

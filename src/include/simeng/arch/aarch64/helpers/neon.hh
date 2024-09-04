@@ -752,7 +752,7 @@ template <typename T, int I>
 RegisterValue vecSshrShift_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const T* n = sourceValues[1].getAsVector<T>();
+  const T* n = sourceValues[0].getAsVector<T>();
   uint64_t shift = metadata.operands[2].imm;
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {

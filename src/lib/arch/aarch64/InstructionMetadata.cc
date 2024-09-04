@@ -33,29 +33,33 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_D_0:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_D_2:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_D_3:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_S_0:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_S_1:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_S_2:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
-      //     // No defined access types
-      //     operandCount = 3;
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[2].type = AARCH64_OP_REG;
-      //     break;
-      //   }
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_0:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_2:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_3:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_0:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_1:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_2:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
+      // Change the last 2 Z-regs from one MEM operand to two REG operands
+      operandCount = 3;
+      operands[1].type = AARCH64_OP_REG;
+      operands[1].access = CS_AC_READ;
+      operands[1].reg = operands[1].mem.base;
+      operands[2].type = AARCH64_OP_REG;
+      operands[2].access = CS_AC_READ;
+      operands[2].reg = operands[1].mem.index;
+      operands[2].vas = operands[1].vas;
+      operands[2].shift = operands[1].shift;
+      break;
+    }
       //   case Opcode::AArch64_SMIN_ZPmZ_S:
       //     [[fallthrough]];
       //   case Opcode::AArch64_EOR_ZPmZ_B:
@@ -66,13 +70,16 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       //     [[fallthrough]];
       //   case Opcode::AArch64_EOR_ZPmZ_S:
       //     [[fallthrough]];
-      //   case Opcode::AArch64_AND_ZPmZ_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_AND_ZPmZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_AND_ZPmZ_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_AND_ZPmZ_S:
+    case Opcode::AArch64_AND_ZPmZ_D:
+    case Opcode::AArch64_AND_ZPmZ_H:
+    case Opcode::AArch64_AND_ZPmZ_S:
+    case Opcode::AArch64_AND_ZPmZ_B:
+      // Incorrect defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
       //     // No defined access types
       //     operands[0].access = CS_AC_WRITE;
       //     operands[1].access = CS_AC_READ;
@@ -235,13 +242,36 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       //     }
       //     break;
       //   }
-      //   case Opcode::AArch64_AND_ZI: {
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[2].type = AARCH64_OP_IMM;
-      //     operandCount = 3;
-
+    case Opcode::AArch64_ADD_ZI_B:
+    case Opcode::AArch64_ADD_ZI_D:
+    case Opcode::AArch64_ADD_ZI_H:
+    case Opcode::AArch64_ADD_ZI_S: {
+      // Incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      // If LSL #8 is present then immediate is not properly set.
+      // LSL is automatically applied to the imm for these instructions
+      std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
+      if (tmpOpStr[1] == 'x') {
+        operands[2].imm = static_cast<uint64_t>(std::stoi(tmpOpStr, 0, 16));
+      }
+      break;
+    }
+    case Opcode::AArch64_AND_ZI:
+      // Incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_EOR_ZPmZ_B:
+    case Opcode::AArch64_EOR_ZPmZ_D:
+    case Opcode::AArch64_EOR_ZPmZ_H:
+    case Opcode::AArch64_EOR_ZPmZ_S:
+      // Incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
       //     char specifier = operandStr[operandStr.find(".") + 1];
       //     switch (specifier) {
       //       case 'b': {
@@ -307,10 +337,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       //     operands[3].access = CS_AC_READ;
       //     break;
       //   }
-      //   case Opcode::AArch64_FMOVXDHighr:
-      //     // FMOVXDHighr incorrectly flags destination as only WRITE
-      //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      //     break;
+    case Opcode::AArch64_FMOVXDHighr:
+      // FMOVXDHighr incorrectly flags destination as only WRITE
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      break;
       //   case Opcode::AArch64_FNMSB_ZPmZZ_D:
       //     [[fallthrough]];
       //   case Opcode::AArch64_FNMSB_ZPmZZ_S:
@@ -985,744 +1015,769 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       //     operands[0].access = CS_AC_READ;
       //     operands[1].access = CS_AC_WRITE;
       //     break;
-      //   case Opcode::AArch64_LD2Twov4s_POST:
-      //     // Fixing wrong access flag for offset register operand
-      //     if (operandCount == 4) {
-      //       operands[3].access = CS_AC_READ;
-      //     }
-      //     break;
-      //   case Opcode::AArch64_LDR_PXI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_LDR_ZXI:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_LSL_ZZI_S:
-      //     // No defined access types
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     // No instruction id assigned
-      //     id = AARCH64_INS_LSL;
-      //     break;
-      //   case Opcode::AArch64_LD2D:
-      //   case Opcode::AArch64_LD2D_IMM: {
-      //     // LD2D doesn't correctly identify destination registers
-      //     uint16_t reg_enum0 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum1 = AARCH64_REG_Z0;
+    // case Opcode::AArch64_LD2Twov4s_POST:
+    //   // Post offset register is not put as mem.index
+    //   if (operands[3].type == AARCH64_OP_REG) {
+    //     operands[2].mem.index = operands[3].reg;
+    //     operands[3].type = AARCH64_OP_INVALID;
+    //   }
+    //   break;
+    case Opcode::AArch64_FCVTNv4i32:
+      // Wrong access type for destinatio operand
+      operands[0].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_CPY_ZPzI_B:
+    case Opcode::AArch64_CPY_ZPzI_D:
+    case Opcode::AArch64_CPY_ZPzI_H:
+    case Opcode::AArch64_CPY_ZPzI_S: {
+      // Imm value not correctly set
+      std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
+      auto value = std::stoi(tmpOpStr, 0, 16);
+      operands[2].imm = tmpOpStr.length() == 4 ? static_cast<int8_t>(value)
+                                               : static_cast<int16_t>(value);
+      break;
+    }
 
-      //     // tmpOpStr = "zxx.d, zyy.d"
-      //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
-      //     1));
-      //     // get dest0, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest1, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-      //     } else {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-      //     }
+    //   case Opcode::AArch64_LDR_PXI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_LDR_ZXI:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_LSL_ZZI_S:
+    //     // No defined access types
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     // No instruction id assigned
+    //     id = AARCH64_INS_LSL;
+    //     break;
+    //   case Opcode::AArch64_LD2D:
+    //   case Opcode::AArch64_LD2D_IMM: {
+    //     // LD2D doesn't correctly identify destination registers
+    //     uint16_t reg_enum0 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum1 = AARCH64_REG_Z0;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
-      //     operands[1].access = CS_AC_WRITE;
+    //     // tmpOpStr = "zxx.d, zyy.d"
+    //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
+    //     1));
+    //     // get dest0, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest1, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+    //     } else {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+    //     }
 
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_LD3D_IMM: {
-      //     // LD3D doesn't correctly identify destination registers
-      //     uint16_t reg_enum0 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum1 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum2 = AARCH64_REG_Z0;
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
+    //     operands[1].access = CS_AC_WRITE;
 
-      //     // tmpOpStr = "zxx.d, zyy.d, znn.d"
-      //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
-      //     1));
-      //     // get dest0, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest1, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest2
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
-      //     } else {
-      //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 2));
-      //     }
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_LD3D_IMM: {
+    //     // LD3D doesn't correctly identify destination registers
+    //     uint16_t reg_enum0 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum1 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum2 = AARCH64_REG_Z0;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
-      //     operands[1].access = CS_AC_WRITE;
-      //     operands[2].reg = static_cast<aarch64_reg>(reg_enum2);
-      //     operands[2].access = CS_AC_WRITE;
+    //     // tmpOpStr = "zxx.d, zyy.d, znn.d"
+    //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
+    //     1));
+    //     // get dest0, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest1, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest2
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
+    //     } else {
+    //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 2));
+    //     }
 
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_LD4D_IMM: {
-      //     // LD4D doesn't correctly identify destination registers
-      //     uint16_t reg_enum0 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum1 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum2 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum3 = AARCH64_REG_Z0;
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
+    //     operands[1].access = CS_AC_WRITE;
+    //     operands[2].reg = static_cast<aarch64_reg>(reg_enum2);
+    //     operands[2].access = CS_AC_WRITE;
 
-      //     // tmpOpStr = "zxx.d, zyy.d, znn.d, zmm.d"
-      //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
-      //     1));
-      //     // get dest0, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest1, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest2
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest3
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum3 += std::stoi(tmpOpStr.substr(1, 1));
-      //     } else {
-      //       reg_enum3 += std::stoi(tmpOpStr.substr(1, 2));
-      //     }
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_LD4D_IMM: {
+    //     // LD4D doesn't correctly identify destination registers
+    //     uint16_t reg_enum0 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum1 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum2 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum3 = AARCH64_REG_Z0;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
-      //     operands[1].access = CS_AC_WRITE;
-      //     operands[2].reg = static_cast<aarch64_reg>(reg_enum2);
-      //     operands[2].access = CS_AC_WRITE;
-      //     operands[3].reg = static_cast<aarch64_reg>(reg_enum3);
-      //     operands[3].access = CS_AC_WRITE;
+    //     // tmpOpStr = "zxx.d, zyy.d, znn.d, zmm.d"
+    //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
+    //     1));
+    //     // get dest0, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest1, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest2
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum2 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest3
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum3 += std::stoi(tmpOpStr.substr(1, 1));
+    //     } else {
+    //       reg_enum3 += std::stoi(tmpOpStr.substr(1, 2));
+    //     }
 
-      //     operands[4].access = CS_AC_READ;
-      //     operands[5].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_MOVNWi:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_MOVNXi:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_MOVZWi:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_MOVZXi:
-      //     // MOVZ incorrectly flags destination as READ | WRITE
-      //     operands[0].access = CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_MOVPRFX_ZZ:
-      //     // Assign operand access types
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_MRS:
-      //     // MRS incorrectly flags source/destination as READ | WRITE
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     // MRS incorrectly tags AARCH64_OP_REG_MRS as AARCH64_OP_SYS
-      //     operands[1].type = AARCH64_OP_REG_MRS;
-      //     break;
-      //   case Opcode::AArch64_MSR:
-      //     // MSR incorrectly flags source/destination as READ | WRITE
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     // MSR incorrectly tags AARCH64_OP_REG_MSR as AARCH64_OP_SYS
-      //     operands[0].type = AARCH64_OP_REG_MSR;
-      //     break;
-      //   case Opcode::AArch64_PTEST_PP: {
-      //     // PTEST doesn't label access types for operands
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     // Doesn't identify implicit NZCV destination
-      //     implicitDestinationCount = 1;
-      //     implicitDestinations[0] = AARCH64_REG_NZCV;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_PTRUE_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PTRUE_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PTRUE_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PTRUE_S:
-      //     // PTRUE doesn't label access
-      //     operands[0].access = CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_RET:
-      //     // If no register supplied to RET, default to x30 (LR)
-      //     if (operandCount == 0) {
-      //       operandCount = 1;
-      //       operands[0].type = AARCH64_OP_REG;
-      //       operands[0].reg = AARCH64_REG_LR;
-      //       operands[0].access = CS_AC_READ;
-      //     }
-      //     groupCount = 1;
-      //     groups[0] = CS_GRP_JUMP;
-      //     break;
-      //   case Opcode::AArch64_REV_ZZ_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_ZZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_ZZ_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_ZZ_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_PP_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_PP_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_PP_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_REV_PP_S: {
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_SST1B_D_REAL:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SST1D_REAL:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {
-      //     // ST1W doesn't correctly identify first source register
-      //     uint16_t reg_enum = AARCH64_REG_Z0;
-      //     // Single or double digit Z register identifier
-      //     if (operandStr[3] == '.') {
-      //       reg_enum += std::stoi(operandStr.substr(2, 1));
-      //     } else {
-      //       reg_enum += std::stoi(operandStr.substr(2, 2));
-      //     }
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
+    //     operands[1].access = CS_AC_WRITE;
+    //     operands[2].reg = static_cast<aarch64_reg>(reg_enum2);
+    //     operands[2].access = CS_AC_WRITE;
+    //     operands[3].reg = static_cast<aarch64_reg>(reg_enum3);
+    //     operands[3].access = CS_AC_WRITE;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
-      //     // No defined access types
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     // SST1D{_SCALED} gather instruction doesn't correctly identify
-      //     memory
-      //     // operands
-      //     operands[2].type = AARCH64_OP_MEM;
-      //     operands[2].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     operands[5].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_MOVNWi:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_MOVNXi:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_MOVZWi:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_MOVZXi:
+    //     // MOVZ incorrectly flags destination as READ | WRITE
+    //     operands[0].access = CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_MOVPRFX_ZZ:
+    //     // Assign operand access types
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_MRS:
+    //     // MRS incorrectly flags source/destination as READ | WRITE
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     // MRS incorrectly tags AARCH64_OP_REG_MRS as AARCH64_OP_SYS
+    //     operands[1].type = AARCH64_OP_REG_MRS;
+    //     break;
+    //   case Opcode::AArch64_MSR:
+    //     // MSR incorrectly flags source/destination as READ | WRITE
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     // MSR incorrectly tags AARCH64_OP_REG_MSR as AARCH64_OP_SYS
+    //     operands[0].type = AARCH64_OP_REG_MSR;
+    //     break;
+    //   case Opcode::AArch64_PTEST_PP: {
+    //     // PTEST doesn't label access types for operands
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     // Doesn't identify implicit NZCV destination
+    //     implicitDestinationCount = 1;
+    //     implicitDestinations[0] = AARCH64_REG_NZCV;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_PTRUE_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PTRUE_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PTRUE_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PTRUE_S:
+    //     // PTRUE doesn't label access
+    //     operands[0].access = CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_RET:
+    //     // If no register supplied to RET, default to x30 (LR)
+    //     if (operandCount == 0) {
+    //       operandCount = 1;
+    //       operands[0].type = AARCH64_OP_REG;
+    //       operands[0].reg = AARCH64_REG_LR;
+    //       operands[0].access = CS_AC_READ;
+    //     }
+    //     groupCount = 1;
+    //     groups[0] = CS_GRP_JUMP;
+    //     break;
+    //   case Opcode::AArch64_REV_ZZ_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_ZZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_ZZ_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_ZZ_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_PP_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_PP_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_PP_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_REV_PP_S: {
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_SST1B_D_REAL:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SST1D_REAL:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {
+    //     // ST1W doesn't correctly identify first source register
+    //     uint16_t reg_enum = AARCH64_REG_Z0;
+    //     // Single or double digit Z register identifier
+    //     if (operandStr[3] == '.') {
+    //       reg_enum += std::stoi(operandStr.substr(2, 1));
+    //     } else {
+    //       reg_enum += std::stoi(operandStr.substr(2, 2));
+    //     }
 
-      //     // ST1D doesn't correctly identify vector memory register correctly
-      //     uint16_t vec_enum = AARCH64_REG_Z0;
-      //     std::string tmp_str(operandStr.substr(operandStr.find("[")));
-      //     // Single or double digit Z register identifier
-      //     if (tmp_str.substr(tmp_str.find("z"))[2] == '.') {
-      //       vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 1));
-      //     } else {
-      //       vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 2));
-      //     }
-      //     operands[2].mem.index = static_cast<aarch64_reg>(vec_enum);
-      //     break;
-      //   }
-      //   case Opcode::AArch64_ST2D_IMM: {
-      //     // ST2D doesn't correctly identify destination registers
-      //     uint16_t reg_enum0 = AARCH64_REG_Z0;
-      //     uint16_t reg_enum1 = AARCH64_REG_Z0;
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
+    //     // No defined access types
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     // SST1D{_SCALED} gather instruction doesn't correctly identify
+    //     memory
+    //     // operands
+    //     operands[2].type = AARCH64_OP_MEM;
+    //     operands[2].access = CS_AC_READ;
 
-      //     // tmpOpStr = "zxx.d, zyy.d"
-      //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
-      //     1));
-      //     // get dest0, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
-      //     // get dest1, then remove from string
-      //     // Single or double digit Z register identifier
-      //     if (tmpOpStr[2] == '.') {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-      //       tmpOpStr.erase(0, 6);
-      //     } else {
-      //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-      //       tmpOpStr.erase(0, 7);
-      //     }
+    //     // ST1D doesn't correctly identify vector memory register correctly
+    //     uint16_t vec_enum = AARCH64_REG_Z0;
+    //     std::string tmp_str(operandStr.substr(operandStr.find("[")));
+    //     // Single or double digit Z register identifier
+    //     if (tmp_str.substr(tmp_str.find("z"))[2] == '.') {
+    //       vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 1));
+    //     } else {
+    //       vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 2));
+    //     }
+    //     operands[2].mem.index = static_cast<aarch64_reg>(vec_enum);
+    //     break;
+    //   }
+    //   case Opcode::AArch64_ST2D_IMM: {
+    //     // ST2D doesn't correctly identify destination registers
+    //     uint16_t reg_enum0 = AARCH64_REG_Z0;
+    //     uint16_t reg_enum1 = AARCH64_REG_Z0;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
-      //     operands[1].access = CS_AC_READ;
+    //     // tmpOpStr = "zxx.d, zyy.d"
+    //     std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") -
+    //     1));
+    //     // get dest0, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
+    //     // get dest1, then remove from string
+    //     // Single or double digit Z register identifier
+    //     if (tmpOpStr[2] == '.') {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+    //       tmpOpStr.erase(0, 6);
+    //     } else {
+    //       reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+    //       tmpOpStr.erase(0, 7);
+    //     }
 
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_ST1B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1B_IMM:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1D_IMM:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1W_IMM: {
-      //     // ST1W doesn't correctly identify first source register
-      //     uint16_t reg_enum = AARCH64_REG_Z0;
-      //     // Single or double digit Z register identifier
-      //     if (operandStr[3] == '.') {
-      //       reg_enum += std::stoi(operandStr.substr(2, 1));
-      //     } else {
-      //       reg_enum += std::stoi(operandStr.substr(2, 2));
-      //     }
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum0);
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].reg = static_cast<aarch64_reg>(reg_enum1);
+    //     operands[1].access = CS_AC_READ;
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
-      //     // No defined access types
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_ST1W:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1W_D: {
-      //     // ST1W doesn't correctly identify first source register
-      //     uint16_t reg_enum = AARCH64_REG_Z0;
-      //     // Single or double digit Z register identifier
-      //     if (operandStr[3] == '.') {
-      //       reg_enum += std::stoi(operandStr.substr(2, 1));
-      //     } else {
-      //       reg_enum += std::stoi(operandStr.substr(2, 2));
-      //     }
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_ST1B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1B_IMM:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1D_IMM:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1W_IMM: {
+    //     // ST1W doesn't correctly identify first source register
+    //     uint16_t reg_enum = AARCH64_REG_Z0;
+    //     // Single or double digit Z register identifier
+    //     if (operandStr[3] == '.') {
+    //       reg_enum += std::stoi(operandStr.substr(2, 1));
+    //     } else {
+    //       reg_enum += std::stoi(operandStr.substr(2, 2));
+    //     }
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
-      //     // No defined access types
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_SST1D_IMM:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SST1W_D_IMM:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SST1W_IMM: {
-      //     // ST1W scatter instruction doesn't correctly identify first source
-      //     // register
-      //     uint16_t reg_enum = AARCH64_REG_Z0;
-      //     // Single or double digit Z register identifier
-      //     if (operandStr[3] == '.') {
-      //       reg_enum += std::stoi(operandStr.substr(2, 1));
-      //     } else {
-      //       reg_enum += std::stoi(operandStr.substr(2, 2));
-      //     }
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
+    //     // No defined access types
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_ST1W:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1W_D: {
+    //     // ST1W doesn't correctly identify first source register
+    //     uint16_t reg_enum = AARCH64_REG_Z0;
+    //     // Single or double digit Z register identifier
+    //     if (operandStr[3] == '.') {
+    //       reg_enum += std::stoi(operandStr.substr(2, 1));
+    //     } else {
+    //       reg_enum += std::stoi(operandStr.substr(2, 2));
+    //     }
 
-      //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
-      //     // No defined access types
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     // ST1W scatter instruction doesn't correctly identify second Z reg
-      //     as
-      //     // memory operand
-      //     operands[2].type = AARCH64_OP_MEM;
-      //     operands[2].access = CS_AC_READ;
-      //     // ST1W scatter instruction doesn't recognise memory-offset
-      //     immediate
-      //     // correctly
-      //     if (operandStr[operandStr.length() - 3] != '.') {
-      //       int64_t startPos = operandStr.find('#') + 1;
-      //       int64_t immSize = (operandStr.length() - 1) - startPos;
-      //       if (immSize == 1) {
-      //         operands[2].mem.disp =
-      //             std::stoi(operandStr.substr(startPos, immSize));
-      //       } else {
-      //         // double or triple digit immediates are converted to hex, and
-      //         so
-      //         // require a different conversion to uint
-      //         operands[2].mem.disp =
-      //             std::stoul(operandStr.substr(startPos, immSize), nullptr,
-      //             16);
-      //       }
-      //     }
-      //     break;
-      //   }
-      //   case Opcode::AArch64_ST1i8_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1i16_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1i32_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1i64_POST:
-      //     // fixing incorrect access type for register offset
-      //     if (operandCount == 3) {
-      //       operands[2].access = CS_AC_READ;
-      //     }
-      //     break;
-      //   case Opcode::AArch64_ST1Fourv16b:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Fourv2d:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Fourv4s:
-      //     // ST1 incorrectly flags read and write
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_ST1Fourv16b_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Fourv2d_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Fourv2s_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Fourv4s_POST:
-      //     // ST1 incorrectly flags read and write
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ | CS_AC_WRITE;
-      //     operands[5].access = CS_AC_READ;
-      //     // determine correct type for operand 5
-      //     if (operandStr.find("#") != std::string::npos) {
-      //       operands[5].type = AARCH64_OP_IMM;
-      //     } else {
-      //       operands[5].type = AARCH64_OP_REG;
-      //     }
-      //     break;
-      //   case Opcode::AArch64_ST1Twov16b:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Twov2d:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Twov4s:
-      //     // ST1 incorrectly flags read and write
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_ST1Twov16b_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Twov2d_POST:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1Twov4s_POST:
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ | CS_AC_WRITE;
-      //     operands[3].access = CS_AC_READ;
-      //     // determine correct type for operand 3
-      //     if (operandStr.find("#") != std::string::npos) {
-      //       operands[3].type = AARCH64_OP_IMM;
-      //     } else {
-      //       operands[3].type = AARCH64_OP_REG;
-      //     }
-      //     break;
-      //   case Opcode::AArch64_ST2Twov4s_POST:
-      //     // ST2 post incorrectly flags read and write
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ | CS_AC_WRITE;
-      //     // Another incorrect access flag for register offset operand
-      //     if (operandCount == 4) {
-      //       operands[3].access = CS_AC_READ;
-      //     }
-      //     break;
-      //   case Opcode::AArch64_STRBui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRDui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRHui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRQui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRSui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRWui:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STRXui:
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_PFALSE:
-      //     operands[0].access = CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_STR_PXI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_STR_ZXI:
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_SBFMWri:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SBFMXri:
-      //     // SBFM incorrectly flags destination as READ | WRITE
-      //     operands[0].access = CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_SVC:
-      //     // SVC is incorrectly marked as setting x30
-      //     implicitDestinationCount = 0;
-      //     break;
-      //   case Opcode::AArch64_SYSxt:
-      //     // No defined metadata.id for SYS instructions
-      //     id = AARCH64_INS_SYS;
-      //     break;
-      //   case Opcode::AArch64_PSEL_PPPRI_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PSEL_PPPRI_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PSEL_PPPRI_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_PSEL_PPPRI_S:
-      //     // Add correct access types
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_UBFMWri:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UBFMXri:
-      //     // UBFM incorrectly flags destination as READ | WRITE
-      //     operands[0].access = CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_UQDECB_WPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECB_XPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECD_WPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECD_XPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECH_WPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECH_XPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECW_WPiI:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UQDECW_XPiI:
-      //     // UQDEC lacks access types
-      //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      //     if (operandCount == 1) {
-      //       operandCount = 2;
-      //       operands[1].type = AARCH64_OP_IMM;
-      //       operands[1].imm = 1;
-      //     }
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_UUNPKHI_ZZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UUNPKHI_ZZ_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UUNPKHI_ZZ_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UUNPKLO_ZZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UUNPKLO_ZZ_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_UUNPKLO_ZZ_S:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_WHILELT_PXX_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELT_PXX_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELT_PXX_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELT_PXX_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PWW_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PWW_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PWW_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PWW_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PXX_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PXX_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PXX_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_WHILELO_PXX_S:
-      //     // WHILELO doesn't label access or vector specifiers
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     // Doesn't identify implicit NZCV destination
-      //     implicitDestinationCount = 1;
-      //     implicitDestinations[0] = AARCH64_REG_NZCV;
-      //     break;
-      //   case Opcode::AArch64_XTNv16i8:
-      //   case Opcode::AArch64_XTNv4i32:
-      //   case Opcode::AArch64_XTNv8i16:
-      //     // XTN2 incorrectly flags destination as only WRITE
-      //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      //     break;
-      //   case Opcode::AArch64_ZIP1_PPP_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP1_PPP_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP1_PPP_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP1_PPP_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP1_ZZZ_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP1_ZZZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_PPP_B:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_PPP_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_PPP_H:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_PPP_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_ZZZ_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ZIP2_ZZZ_D:
-      //     // ZIP lacks access types
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_SXTW_ZPmZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_FCVT_ZPmZ_DtoS:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_FCVT_ZPmZ_StoD:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SCVTF_ZPmZ_DtoS:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SCVTF_ZPmZ_StoD:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SCVTF_ZPmZ_StoS:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_SCVTF_ZPmZ_DtoD:
-      //     // Need to see if Destination vector elements are active
-      //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_TBLv8i8One:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_TBLv16i8One:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_TBLv8i8Two:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_TBLv16i8Two:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_TBLv8i8Three:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_TBLv16i8Three:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_TBLv8i8Four:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_TBLv16i8Four:
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ;
-      //     operands[5].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_LD1_MXIPXX_H_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_LD1_MXIPXX_V_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_LD1_MXIPXX_V_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_LD1_MXIPXX_H_S: {
-      //     // Lacking access specifiers
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_ST1_MXIPXX_H_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1_MXIPXX_V_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1_MXIPXX_H_S:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_ST1_MXIPXX_V_S:
-      //     // Access types are not defined
-      //     operands[0].access = CS_AC_READ;
-      //     operands[1].access = CS_AC_READ;
-      //     break;
-      //   case Opcode::AArch64_FMOPA_MPPZZ_D:
-      //     [[fallthrough]];
-      //   case Opcode::AArch64_FMOPA_MPPZZ_S: {
-      //     // Need to add access specifiers
-      //     // although operands[0] should be READ | WRITE, due to the
-      //     implemented
-      //     // decode logic for SME tile destinations, the register will be
-      //     added as
-      //     // both source and destination with just WRITE access.
-      //     operands[0].access = CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].access = CS_AC_READ;
-      //     operands[4].access = CS_AC_READ;
-      //     operands[5].access = CS_AC_READ;
-      //     break;
-      //   }
-      //   case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
-      //     operandCount = 4;
-      //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      //     operands[1].access = CS_AC_READ;
-      //     operands[2].access = CS_AC_READ;
-      //     operands[3].reg = operands[2].sme_index.base;
-      //     operands[3].access = CS_AC_READ;
-      //     break;
-      //   }
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
+    //     // No defined access types
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_SST1D_IMM:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SST1W_D_IMM:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SST1W_IMM: {
+    //     // ST1W scatter instruction doesn't correctly identify first source
+    //     // register
+    //     uint16_t reg_enum = AARCH64_REG_Z0;
+    //     // Single or double digit Z register identifier
+    //     if (operandStr[3] == '.') {
+    //       reg_enum += std::stoi(operandStr.substr(2, 1));
+    //     } else {
+    //       reg_enum += std::stoi(operandStr.substr(2, 2));
+    //     }
+
+    //     operands[0].reg = static_cast<aarch64_reg>(reg_enum);
+    //     // No defined access types
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     // ST1W scatter instruction doesn't correctly identify second Z reg
+    //     as
+    //     // memory operand
+    //     operands[2].type = AARCH64_OP_MEM;
+    //     operands[2].access = CS_AC_READ;
+    //     // ST1W scatter instruction doesn't recognise memory-offset
+    //     immediate
+    //     // correctly
+    //     if (operandStr[operandStr.length() - 3] != '.') {
+    //       int64_t startPos = operandStr.find('#') + 1;
+    //       int64_t immSize = (operandStr.length() - 1) - startPos;
+    //       if (immSize == 1) {
+    //         operands[2].mem.disp =
+    //             std::stoi(operandStr.substr(startPos, immSize));
+    //       } else {
+    //         // double or triple digit immediates are converted to hex, and
+    //         so
+    //         // require a different conversion to uint
+    //         operands[2].mem.disp =
+    //             std::stoul(operandStr.substr(startPos, immSize), nullptr,
+    //             16);
+    //       }
+    //     }
+    //     break;
+    //   }
+    // case Opcode::AArch64_ST1i8_POST:
+    // case Opcode::AArch64_ST1i16_POST:
+    // case Opcode::AArch64_ST1i32_POST:
+    // case Opcode::AArch64_ST1i64_POST:
+    //   // Post offset register is not put as mem.index
+    //   if (operands[2].type == AARCH64_OP_REG) {
+    //     operands[1].mem.index = operands[2].reg;
+    //     operands[2].type = AARCH64_OP_INVALID;
+    //   }
+    //   break;
+    //   case Opcode::AArch64_ST1i16_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1i32_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1i64_POST:
+    //     // fixing incorrect access type for register offset
+    //     if (operandCount == 3) {
+    //       operands[2].access = CS_AC_READ;
+    //     }
+    //     break;
+    //   case Opcode::AArch64_ST1Fourv16b:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Fourv2d:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Fourv4s:
+    //     // ST1 incorrectly flags read and write
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_ST1Fourv16b_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Fourv2d_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Fourv2s_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Fourv4s_POST:
+    //     // ST1 incorrectly flags read and write
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ | CS_AC_WRITE;
+    //     operands[5].access = CS_AC_READ;
+    //     // determine correct type for operand 5
+    //     if (operandStr.find("#") != std::string::npos) {
+    //       operands[5].type = AARCH64_OP_IMM;
+    //     } else {
+    //       operands[5].type = AARCH64_OP_REG;
+    //     }
+    //     break;
+    //   case Opcode::AArch64_ST1Twov16b:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Twov2d:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Twov4s:
+    //     // ST1 incorrectly flags read and write
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_ST1Twov16b_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Twov2d_POST:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1Twov4s_POST:
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ | CS_AC_WRITE;
+    //     operands[3].access = CS_AC_READ;
+    //     // determine correct type for operand 3
+    //     if (operandStr.find("#") != std::string::npos) {
+    //       operands[3].type = AARCH64_OP_IMM;
+    //     } else {
+    //       operands[3].type = AARCH64_OP_REG;
+    //     }
+    //     break;
+    //   case Opcode::AArch64_ST2Twov4s_POST:
+    //     // ST2 post incorrectly flags read and write
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ | CS_AC_WRITE;
+    //     // Another incorrect access flag for register offset operand
+    //     if (operandCount == 4) {
+    //       operands[3].access = CS_AC_READ;
+    //     }
+    //     break;
+    //   case Opcode::AArch64_STRBui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRDui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRHui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRQui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRSui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRWui:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STRXui:
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_PFALSE:
+    //     operands[0].access = CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_STR_PXI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_STR_ZXI:
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_SBFMWri:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SBFMXri:
+    //     // SBFM incorrectly flags destination as READ | WRITE
+    //     operands[0].access = CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_SVC:
+    //     // SVC is incorrectly marked as setting x30
+    //     implicitDestinationCount = 0;
+    //     break;
+    //   case Opcode::AArch64_SYSxt:
+    //     // No defined metadata.id for SYS instructions
+    //     id = AARCH64_INS_SYS;
+    //     break;
+    //   case Opcode::AArch64_PSEL_PPPRI_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PSEL_PPPRI_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PSEL_PPPRI_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_PSEL_PPPRI_S:
+    //     // Add correct access types
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_UBFMWri:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UBFMXri:
+    //     // UBFM incorrectly flags destination as READ | WRITE
+    //     operands[0].access = CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_UQDECB_WPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECB_XPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECD_WPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECD_XPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECH_WPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECH_XPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECW_WPiI:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UQDECW_XPiI:
+    //     // UQDEC lacks access types
+    //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
+    //     if (operandCount == 1) {
+    //       operandCount = 2;
+    //       operands[1].type = AARCH64_OP_IMM;
+    //       operands[1].imm = 1;
+    //     }
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_UUNPKHI_ZZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UUNPKHI_ZZ_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UUNPKHI_ZZ_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UUNPKLO_ZZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UUNPKLO_ZZ_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_UUNPKLO_ZZ_S:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_WHILELT_PXX_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELT_PXX_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELT_PXX_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELT_PXX_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PWW_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PWW_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PWW_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PWW_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PXX_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PXX_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PXX_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_WHILELO_PXX_S:
+    //     // WHILELO doesn't label access or vector specifiers
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     // Doesn't identify implicit NZCV destination
+    //     implicitDestinationCount = 1;
+    //     implicitDestinations[0] = AARCH64_REG_NZCV;
+    //     break;
+    //   case Opcode::AArch64_XTNv16i8:
+    //   case Opcode::AArch64_XTNv4i32:
+    //   case Opcode::AArch64_XTNv8i16:
+    //     // XTN2 incorrectly flags destination as only WRITE
+    //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
+    //     break;
+    //   case Opcode::AArch64_ZIP1_PPP_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP1_PPP_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP1_PPP_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP1_PPP_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP1_ZZZ_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP1_ZZZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_PPP_B:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_PPP_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_PPP_H:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_PPP_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_ZZZ_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ZIP2_ZZZ_D:
+    //     // ZIP lacks access types
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_SXTW_ZPmZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_FCVT_ZPmZ_DtoS:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_FCVT_ZPmZ_StoD:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SCVTF_ZPmZ_DtoS:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SCVTF_ZPmZ_StoD:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SCVTF_ZPmZ_StoS:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_SCVTF_ZPmZ_DtoD:
+    //     // Need to see if Destination vector elements are active
+    //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_TBLv8i8One:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_TBLv16i8One:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_TBLv8i8Two:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_TBLv16i8Two:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_TBLv8i8Three:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_TBLv16i8Three:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_TBLv8i8Four:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_TBLv16i8Four:
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     operands[5].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_LD1_MXIPXX_H_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_LD1_MXIPXX_V_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_LD1_MXIPXX_V_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_LD1_MXIPXX_H_S: {
+    //     // Lacking access specifiers
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_ST1_MXIPXX_H_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1_MXIPXX_V_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1_MXIPXX_H_S:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_ST1_MXIPXX_V_S:
+    //     // Access types are not defined
+    //     operands[0].access = CS_AC_READ;
+    //     operands[1].access = CS_AC_READ;
+    //     break;
+    //   case Opcode::AArch64_FMOPA_MPPZZ_D:
+    //     [[fallthrough]];
+    //   case Opcode::AArch64_FMOPA_MPPZZ_S: {
+    //     // Need to add access specifiers
+    //     // although operands[0] should be READ | WRITE, due to the
+    //     implemented
+    //     // decode logic for SME tile destinations, the register will be
+    //     added as
+    //     // both source and destination with just WRITE access.
+    //     operands[0].access = CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].access = CS_AC_READ;
+    //     operands[4].access = CS_AC_READ;
+    //     operands[5].access = CS_AC_READ;
+    //     break;
+    //   }
+    //   case Opcode::AArch64_EXTRACT_ZPMXI_H_B: {
+    //     operandCount = 4;
+    //     operands[0].access = CS_AC_READ | CS_AC_WRITE;
+    //     operands[1].access = CS_AC_READ;
+    //     operands[2].access = CS_AC_READ;
+    //     operands[3].reg = operands[2].sme_index.base;
+    //     operands[3].access = CS_AC_READ;
+    //     break;
+    //   }
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode.
       // Need to re-extract relevant tiles from operandStr

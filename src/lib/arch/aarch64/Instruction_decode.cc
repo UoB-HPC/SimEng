@@ -338,6 +338,7 @@ void Instruction::decode() {
         sourceOperandsPending_++;
       }
     } else if (op.type == AARCH64_OP_PRED) {
+      setInstructionType(InsnType::isPredicate);
       if (op.access == CS_AC_READ) {
         std::cerr << "\tPred read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
@@ -919,16 +920,17 @@ void Instruction::decode() {
     setInstructionType(InsnType::isScalarData);
   }
 
-  if (!(isInstruction(InsnType::isSMEData))) {
-    // Catch zero register references and pre-complete those operands - not
-    // applicable to SME instructions
-    for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
-      if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
-        sourceValues_[i] = RegisterValue(0, 8);
-        sourceOperandsPending_--;
-      }
+  // if (!(isInstruction(InsnType::isSMEData))) {
+  // Catch zero register references and pre-complete those operands - not
+  // applicable to SME instructions
+  for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
+    if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
+      sourceValues_[i] = RegisterValue(0, 8);
+      sourceOperandsPending_--;
     }
-  } else {
+  }
+  // } else {
+  if (isInstruction(InsnType::isSMEData)) {
     // For SME instructions, resize the following structures to have the
     // exact amount of space required
     sourceRegisters_.resize(sourceRegisterCount_);
