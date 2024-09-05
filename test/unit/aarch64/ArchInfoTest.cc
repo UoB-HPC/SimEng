@@ -31,7 +31,8 @@ class AArch64ArchInfoTest : public ::testing::Test {
       {32, 17},
       {1, 1},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 64}};
+      {256, 64},
+      {64, 1}};
 
   const std::vector<simeng::RegisterFileStructure> physRegStruct = {
       {8, 96},
@@ -39,10 +40,11 @@ class AArch64ArchInfoTest : public ::testing::Test {
       {32, 48},
       {1, 128},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 128}};
+      {256, 128},
+      {64, 1}};
 
   const std::vector<uint16_t> physRegQuants = {
-      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128};
+      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128, 1};
 };
 
 // Test for the getSysRegEnums() function

@@ -13,7 +13,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
       groupCount(insn.detail->groups_count),
-      cc(insn.detail->aarch64.cc - 1),
+      cc(insn.detail->aarch64.cc),
       setsFlags(insn.detail->aarch64.update_flags),
       isAlias(insn.is_alias),
       operandCount(insn.detail->aarch64.op_count) {

@@ -251,14 +251,16 @@ void Instruction::decode() {
           // SME and Predicate based operations use individual op.type
           if (op.is_vreg) {
             setInstructionType(InsnType::isVectorData);
-          } else if ((AARCH64_REG_Z31 <= op.reg && op.reg >= AARCH64_REG_Z0) ||
+            std::cerr << "\t\tIsVector" << std::endl;
+          } else if ((AARCH64_REG_Z0 <= op.reg && op.reg <= AARCH64_REG_Z31) ||
                      op.reg == AARCH64_REG_ZT0) {
-            // zT0 is an SME register, but we declare it as an SVE instruction
+            // ZT0 is an SME register, but we declare it as an SVE instruction
             // due to its 1D format.
+            std::cerr << "\t\tIsSVE" << std::endl;
             setInstructionType(InsnType::isSVEData);
-          } else if (op.reg <= AARCH64_REG_S31 && op.reg >= AARCH64_REG_Q0) {
-            setInstructionType(InsnType::isScalarData);
-          } else if (op.reg <= AARCH64_REG_H31 && op.reg >= AARCH64_REG_B0) {
+          } else if ((op.reg <= AARCH64_REG_S31 && op.reg >= AARCH64_REG_Q0) ||
+                     (op.reg <= AARCH64_REG_H31 && op.reg >= AARCH64_REG_B0)) {
+            std::cerr << "\t\tIsScalar" << std::endl;
             setInstructionType(InsnType::isScalarData);
           }
 
@@ -338,7 +340,7 @@ void Instruction::decode() {
         sourceOperandsPending_++;
       }
     } else if (op.type == AARCH64_OP_PRED) {
-      setInstructionType(InsnType::isPredicate);
+      if (i == 0) setInstructionType(InsnType::isPredicate);
       if (op.access == CS_AC_READ) {
         std::cerr << "\tPred read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
