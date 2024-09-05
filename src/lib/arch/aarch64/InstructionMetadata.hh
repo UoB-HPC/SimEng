@@ -98,13 +98,6 @@ struct InstructionMetadata {
   uint8_t operandCount;
 
  private:
-  /** Detect instruction aliases and update metadata to match the de-aliased
-   * instruction. */
-  void revertAliasing();
-
-  /** Flag the instruction as invalid due to a detected unsupported alias. */
-  void aliasNYI();
-
   /** The current exception state of this instruction. */
   InstructionException metadataException_ = InstructionException::None;
 

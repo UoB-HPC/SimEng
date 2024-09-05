@@ -2306,8 +2306,8 @@ void Instruction::execute() {
             sourceValues_, [](float x, float y) -> float { return x - y; });
         break;
       }
-      case Opcode::AArch64_GLD1D_IMM: {  // ld1d {zd.d}, pg/z, [zn.d{,
-                                         // #imm}]
+      case Opcode::AArch64_GLD1D_IMM_REAL: {  // ld1d {zd.d}, pg/z, [zn.d{,
+                                              // #imm}]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
@@ -2324,11 +2324,11 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_GLD1D:  // ld1d {zt.d}, pg/z, [xn, zm.d]
+      case Opcode::AArch64_GLD1D_REAL:  // ld1d {zt.d}, pg/z, [xn, zm.d]
         // LOAD
         [[fallthrough]];
-      case Opcode::AArch64_GLD1D_SCALED: {  // ld1d {zt.d}, pg/z, [xn,
-                                            // zm.d, LSL #3]
+      case Opcode::AArch64_GLD1D_SCALED_REAL: {  // ld1d {zt.d}, pg/z, [xn,
+                                                 // zm.d, LSL #3]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
@@ -2347,8 +2347,8 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_GLD1SW_D_IMM: {  // ld1sw {zd.d}, pg/z, [zn.d{,
-                                            // #imm}]
+      case Opcode::AArch64_GLD1SW_D_IMM_REAL: {  // ld1sw {zd.d}, pg/z, [zn.d{,
+                                                 // #imm}]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
@@ -2365,8 +2365,8 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_GLD1W_D_SCALED: {  // ld1w {zd.d}, pg/z,
-                                              // [<xn|sp>, zm.d, lsl #2]
+      case Opcode::AArch64_GLD1W_D_SCALED_REAL: {  // ld1w {zd.d}, pg/z,
+                                                   // [<xn|sp>, zm.d, lsl #2]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
@@ -2383,8 +2383,8 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_GLD1W_SXTW: {  // ld1w {zd.s}, pg/z,
-                                          // [<xn|sp>, zm.s, sxtw]
+      case Opcode::AArch64_GLD1W_SXTW_REAL: {  // ld1w {zd.s}, pg/z,
+                                               // [<xn|sp>, zm.s, sxtw]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
