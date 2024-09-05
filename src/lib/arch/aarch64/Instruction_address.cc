@@ -600,7 +600,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
         setMemoryAddresses(
-            {{metadata_.operands[1].imm + instructionAddress_, 8}});
+            {{metadata_.operands[1].mem.disp + instructionAddress_, 8}});
         break;
       }
       case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend {#amount}}]
