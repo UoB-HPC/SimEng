@@ -33,6 +33,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_BLR:
+      // Incorrectly implicitly reads from SP
+      implicitSourceCount--;
+      break;
     case Opcode::AArch64_ADR_LSL_ZZZ_D_0:  // example bytecode = c8a0e704
     case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
     case Opcode::AArch64_ADR_LSL_ZZZ_D_2:

@@ -46,7 +46,6 @@ Register csRegToRegister(aarch64_reg reg) {
   // (full vector) or Dn (half vector).
   // As D and Q registers are also of type RegisterType::VECTOR, the outcome
   // will be the same
-  std::cerr << "Reg = " << reg << std::endl;
 
   // Assert that reg is not a SME tile as these should be passed to
   // `getZARowVectors()`
@@ -200,14 +199,6 @@ void Instruction::decode() {
     return;
   }
 
-  std::cerr << metadata_.opcode << ":" << metadata_.mnemonic << " "
-            << metadata_.operandStr << ", reg count "
-            << (unsigned)metadata_.operandCount << " ---- " << std::hex
-            << (unsigned)metadata_.encoding[0] << " "
-            << (unsigned)metadata_.encoding[1] << " "
-            << (unsigned)metadata_.encoding[2] << " "
-            << (unsigned)metadata_.encoding[3] << " " << std::dec << std::endl;
-
   // Extract implicit writes, including pre/post index writeback
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
     if (metadata_.implicitDestinations[i] == AARCH64_REG_NZCV &&
@@ -217,7 +208,6 @@ void Instruction::decode() {
       // destination. Ignore
       continue;
     }
-    std::cerr << "\tImplicit write - ";
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
         static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
@@ -230,7 +220,6 @@ void Instruction::decode() {
     if (static_cast<aarch64_reg>(metadata_.implicitSources[i]) ==
         AARCH64_REG_FPCR)
       continue;
-    std::cerr << "\tImplicit Read - ";
     sourceRegisters_[sourceOperandsPending_] =
         csRegToRegister(static_cast<aarch64_reg>(metadata_.implicitSources[i]));
     sourceRegisterCount_++;
@@ -251,22 +240,18 @@ void Instruction::decode() {
           // SME and Predicate based operations use individual op.type
           if (op.is_vreg) {
             setInstructionType(InsnType::isVectorData);
-            std::cerr << "\t\tIsVector" << std::endl;
           } else if ((AARCH64_REG_Z0 <= op.reg && op.reg <= AARCH64_REG_Z31) ||
                      op.reg == AARCH64_REG_ZT0) {
             // ZT0 is an SME register, but we declare it as an SVE instruction
             // due to its 1D format.
-            std::cerr << "\t\tIsSVE" << std::endl;
             setInstructionType(InsnType::isSVEData);
           } else if ((op.reg <= AARCH64_REG_S31 && op.reg >= AARCH64_REG_Q0) ||
                      (op.reg <= AARCH64_REG_H31 && op.reg >= AARCH64_REG_B0)) {
-            std::cerr << "\t\tIsScalar" << std::endl;
             setInstructionType(InsnType::isScalarData);
           }
 
           // Add register writes to destinations, but skip zero-register
           // destinations
-          std::cerr << "\tReg Write - ";
           destinationRegisters_[destinationRegisterCount_] =
               csRegToRegister(op.reg);
           destinationRegisterCount_++;
@@ -274,7 +259,6 @@ void Instruction::decode() {
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
-        std::cerr << "\tReg read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
@@ -294,14 +278,12 @@ void Instruction::decode() {
       // Check base register exists
       if (op.mem.base != AARCH64_REG_INVALID) {
         accessesMemory = true;
-        std::cerr << "\tMem base read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
       if (op.mem.index != AARCH64_REG_INVALID) {
         // Register offset; add to sources
-        std::cerr << "\tMem index read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.index);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
@@ -333,7 +315,6 @@ void Instruction::decode() {
       if (op.sme.type == AARCH64_SME_OP_TILE_VEC) {
         // SME tile has slice determined by register and immidiate.
         // Add base register to source operands
-        std::cerr << "\tSME tile vec base - ";
         sourceRegisters_[sourceRegisterCount_] =
             csRegToRegister(op.sme.slice_reg);
         sourceRegisterCount_++;
@@ -342,19 +323,16 @@ void Instruction::decode() {
     } else if (op.type == AARCH64_OP_PRED) {
       if (i == 0) setInstructionType(InsnType::isPredicate);
       if (op.access == CS_AC_READ) {
-        std::cerr << "\tPred read - ";
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
       if (op.access == CS_AC_WRITE) {
-        std::cerr << "\tPred write - ";
         destinationRegisters_[destinationRegisterCount_] =
             csRegToRegister(op.pred.reg);
         destinationRegisterCount_++;
       }
       if (op.pred.vec_select != AARCH64_REG_INVALID) {
-        std::cerr << "\tPred vec select read - ";
         sourceRegisters_[sourceRegisterCount_] =
             csRegToRegister(op.pred.vec_select);
         sourceRegisterCount_++;
@@ -390,6 +368,8 @@ void Instruction::decode() {
   // Identify branches
   for (size_t i = 0; i < metadata_.groupCount; i++) {
     if (metadata_.groups[i] == AARCH64_GRP_JUMP ||
+        metadata_.groups[i] == AARCH64_GRP_CALL ||
+        metadata_.groups[i] == AARCH64_GRP_RET ||
         metadata_.groups[i] == AARCH64_GRP_BRANCH_RELATIVE) {
       setInstructionType(InsnType::isBranch);
     }
@@ -448,10 +428,6 @@ void Instruction::decode() {
         else
           branchType_ = BranchType::Conditional;
         knownOffset_ = metadata_.operands[2].imm;
-        break;
-      }
-      case Opcode::AArch64_RET: {  // ret {xr}
-        branchType_ = BranchType::Return;
         break;
       }
       default:
