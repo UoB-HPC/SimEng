@@ -1048,17 +1048,16 @@ RegisterValue sveMax_vecImm(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `max zdn, zdn,
- * #imm`.
+/** Helper function for SVE instructions with the format `max zdn, pg/m zdn,
+ * zm`.
  * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const T* d = sourceValues[0].getAsVector<T>();
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const T* n = sourceValues[2].getAsVector<T>();
-  const T* m = sourceValues[3].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1068,7 +1067,7 @@ RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
     if (p[i / (64 / sizeof(T))] & shifted_active) {
       out[i] = std::max(n[i], m[i]);
     } else
-      out[i] = d[i];
+      out[i] = n[i];
   }
   return {out, 256};
 }
@@ -1597,7 +1596,8 @@ uint64_t sveUqdec(srcValContainer& sourceValues,
                   const simeng::arch::aarch64::InstructionMetadata& metadata,
                   const uint16_t VL_bits) {
   const D d = sourceValues[0].get<D>();
-  const uint8_t imm = metadata.operands[1].imm;
+  // metadata.operands[1] contains the SVE pattern
+  const uint8_t imm = metadata.operands[2].imm;
   const uint16_t count = sveGetPattern(metadata.operandStr, N, VL_bits);
 
   // The range of possible values does not fit in the range of any integral
