@@ -263,63 +263,54 @@ inline uint64_t mulhi(uint64_t a, uint64_t b) {
   return multhi;
 }
 
-/** Decode the instruction pattern from OperandStr. */
-inline uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
-                              const uint16_t VL_) {
+/** Get the number of elements to work on for SVE instructions. */
+inline uint16_t getElemsFromPattern(const aarch64_svepredpat svePattern,
+                                    const uint8_t esize, const uint16_t VL_) {
   const uint16_t elements = VL_ / esize;
-  const std::vector<std::string> patterns = {
-      "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
-      "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
-
-  // If no pattern present in operandStr then same behaviour as ALL
-  std::string pattern = "all";
-  for (uint8_t i = 0; i < patterns.size(); i++) {
-    if (operandStr.find(patterns[i]) != std::string::npos) {
-      pattern = patterns[i];
-      // Don't break when pattern found as vl1 will be found in vl128 etc
+  switch (svePattern) {
+    case AARCH64_SVEPREDPAT_ALL:
+      return elements;
+    case AARCH64_SVEPREDPAT_MUL3:
+      return elements - (elements % 3);
+    case AARCH64_SVEPREDPAT_MUL4:
+      return elements - (elements % 4);
+    case AARCH64_SVEPREDPAT_POW2: {
+      int n = 1;
+      while (elements >= std::pow(2, n)) {
+        n = n + 1;
+      }
+      return std::pow(2, n - 1);
     }
+    case AARCH64_SVEPREDPAT_VL1:
+      return (elements >= 1) ? 1 : 0;
+    case AARCH64_SVEPREDPAT_VL128:
+      return (elements >= 128) ? 128 : 0;
+    case AARCH64_SVEPREDPAT_VL16:
+      return (elements >= 16) ? 16 : 0;
+    case AARCH64_SVEPREDPAT_VL2:
+      return (elements >= 2) ? 2 : 0;
+    case AARCH64_SVEPREDPAT_VL256:
+      return (elements >= 256) ? 256 : 0;
+    case AARCH64_SVEPREDPAT_VL3:
+      return (elements >= 3) ? 3 : 0;
+    case AARCH64_SVEPREDPAT_VL32:
+      return (elements >= 32) ? 32 : 0;
+    case AARCH64_SVEPREDPAT_VL4:
+      return (elements >= 4) ? 4 : 0;
+    case AARCH64_SVEPREDPAT_VL5:
+      return (elements >= 5) ? 5 : 0;
+    case AARCH64_SVEPREDPAT_VL6:
+      return (elements >= 6) ? 6 : 0;
+    case AARCH64_SVEPREDPAT_VL64:
+      return (elements >= 64) ? 64 : 0;
+    case AARCH64_SVEPREDPAT_VL7:
+      return (elements >= 7) ? 7 : 0;
+    case AARCH64_SVEPREDPAT_VL8:
+      return (elements >= 8) ? 8 : 0;
+    default:
+      assert(false && "Unknown SVE Predicate Pattern.");
+      return 0;
   }
-
-  if (pattern == "all")
-    return elements;
-  else if (pattern == "pow2") {
-    int n = 1;
-    while (elements >= std::pow(2, n)) {
-      n = n + 1;
-    }
-    return std::pow(2, n - 1);
-  } else if (pattern == "vl1")
-    return (elements >= 1) ? 1 : 0;
-  else if (pattern == "vl2")
-    return (elements >= 2) ? 2 : 0;
-  else if (pattern == "vl3")
-    return (elements >= 3) ? 3 : 0;
-  else if (pattern == "vl4")
-    return (elements >= 4) ? 4 : 0;
-  else if (pattern == "vl5")
-    return (elements >= 5) ? 5 : 0;
-  else if (pattern == "vl6")
-    return (elements >= 6) ? 6 : 0;
-  else if (pattern == "vl7")
-    return (elements >= 7) ? 7 : 0;
-  else if (pattern == "vl8")
-    return (elements >= 8) ? 8 : 0;
-  else if (pattern == "vl16")
-    return (elements >= 16) ? 16 : 0;
-  else if (pattern == "vl32")
-    return (elements >= 32) ? 32 : 0;
-  else if (pattern == "vl64")
-    return (elements >= 64) ? 64 : 0;
-  else if (pattern == "vl128")
-    return (elements >= 128) ? 128 : 0;
-  else if (pattern == "vl256")
-    return (elements >= 256) ? 256 : 0;
-  else if (pattern == "mul4")
-    return elements - (elements % 4);
-  else if (pattern == "mul3")
-    return elements - (elements % 3);
-
-  return 0;
 }
 
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,

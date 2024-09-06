@@ -344,132 +344,122 @@ TEST(AArch64AuxiliaryFunctionTest, Mulhi) {
   EXPECT_EQ(mulhi(0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF), 0xFFFFFFFE);
 }
 
-/** `sveGetPattern` Tests */
-TEST(AArch64AuxiliaryFunctionTest, sveGetPattern) {
+/** `getElemsFromPattern` Tests */
+TEST(AArch64AuxiliaryFunctionTest, getElemsFromPattern) {
   uint16_t vl = 128;
-  EXPECT_EQ(sveGetPattern("", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("", 16, vl), 8);
-  EXPECT_EQ(sveGetPattern("all", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("all", 16, vl), 8);
-  EXPECT_EQ(sveGetPattern("notValid", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("notValid", 16, vl), 8);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 16, vl), 8);
 
-  EXPECT_EQ(sveGetPattern("vl1", 64, vl), 1);
-  EXPECT_EQ(sveGetPattern("vl2", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("vl3", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl4", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl5", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl6", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl7", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl8", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl16", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl32", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl64", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl128", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl256", 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL1, 64, vl), 1);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL2, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL3, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL4, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL5, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL6, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL7, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL8, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL16, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL32, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL64, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL128, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL256, 64, vl), 0);
 
-  EXPECT_EQ(sveGetPattern("mul4", 8, vl), 16);
-  EXPECT_EQ(sveGetPattern("mul3", 8, vl), 15);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL4, 8, vl), 16);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL3, 8, vl), 15);
+
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_POW2, 8, vl), 16);
 
   vl = 256;
-  EXPECT_EQ(sveGetPattern("", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("", 16, vl), 16);
-  EXPECT_EQ(sveGetPattern("all", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("all", 16, vl), 16);
-  EXPECT_EQ(sveGetPattern("notValid", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("notValid", 16, vl), 16);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 64, vl), 4);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 16, vl), 16);
 
-  EXPECT_EQ(sveGetPattern("vl1", 64, vl), 1);
-  EXPECT_EQ(sveGetPattern("vl2", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("vl3", 64, vl), 3);
-  EXPECT_EQ(sveGetPattern("vl4", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("vl5", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl6", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl7", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl8", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl16", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl32", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl64", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl128", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl256", 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL1, 64, vl), 1);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL2, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL3, 64, vl), 3);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL4, 64, vl), 4);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL5, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL6, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL7, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL8, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL16, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL32, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL64, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL128, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL256, 64, vl), 0);
 
-  EXPECT_EQ(sveGetPattern("mul4", 8, vl), 32);
-  EXPECT_EQ(sveGetPattern("mul3", 8, vl), 30);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL4, 8, vl), 32);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL3, 8, vl), 30);
+
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_POW2, 8, vl), 32);
 
   vl = 512;
-  EXPECT_EQ(sveGetPattern("", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("", 16, vl), 32);
-  EXPECT_EQ(sveGetPattern("all", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("all", 16, vl), 32);
-  EXPECT_EQ(sveGetPattern("notValid", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("notValid", 16, vl), 32);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 64, vl), 8);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 16, vl), 32);
 
-  EXPECT_EQ(sveGetPattern("vl1", 64, vl), 1);
-  EXPECT_EQ(sveGetPattern("vl2", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("vl3", 64, vl), 3);
-  EXPECT_EQ(sveGetPattern("vl4", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("vl5", 64, vl), 5);
-  EXPECT_EQ(sveGetPattern("vl6", 64, vl), 6);
-  EXPECT_EQ(sveGetPattern("vl7", 64, vl), 7);
-  EXPECT_EQ(sveGetPattern("vl8", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("vl16", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl32", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl64", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl128", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl256", 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL1, 64, vl), 1);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL2, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL3, 64, vl), 3);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL4, 64, vl), 4);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL5, 64, vl), 5);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL6, 64, vl), 6);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL7, 64, vl), 7);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL8, 64, vl), 8);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL16, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL32, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL64, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL128, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL256, 64, vl), 0);
 
-  EXPECT_EQ(sveGetPattern("mul4", 8, vl), 64);
-  EXPECT_EQ(sveGetPattern("mul3", 8, vl), 63);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL4, 8, vl), 64);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL3, 8, vl), 63);
+
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_POW2, 8, vl), 64);
 
   vl = 1024;
-  EXPECT_EQ(sveGetPattern("", 64, vl), 16);
-  EXPECT_EQ(sveGetPattern("", 16, vl), 64);
-  EXPECT_EQ(sveGetPattern("all", 64, vl), 16);
-  EXPECT_EQ(sveGetPattern("all", 16, vl), 64);
-  EXPECT_EQ(sveGetPattern("notValid", 64, vl), 16);
-  EXPECT_EQ(sveGetPattern("notValid", 16, vl), 64);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 64, vl), 16);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 16, vl), 64);
 
-  EXPECT_EQ(sveGetPattern("vl1", 64, vl), 1);
-  EXPECT_EQ(sveGetPattern("vl2", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("vl3", 64, vl), 3);
-  EXPECT_EQ(sveGetPattern("vl4", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("vl5", 64, vl), 5);
-  EXPECT_EQ(sveGetPattern("vl6", 64, vl), 6);
-  EXPECT_EQ(sveGetPattern("vl7", 64, vl), 7);
-  EXPECT_EQ(sveGetPattern("vl8", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("vl16", 64, vl), 16);
-  EXPECT_EQ(sveGetPattern("vl32", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl64", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl128", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl256", 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL1, 64, vl), 1);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL2, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL3, 64, vl), 3);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL4, 64, vl), 4);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL5, 64, vl), 5);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL6, 64, vl), 6);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL7, 64, vl), 7);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL8, 64, vl), 8);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL16, 64, vl), 16);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL32, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL64, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL128, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL256, 64, vl), 0);
 
-  EXPECT_EQ(sveGetPattern("mul4", 8, vl), 128);
-  EXPECT_EQ(sveGetPattern("mul3", 8, vl), 126);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL4, 8, vl), 128);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL3, 8, vl), 126);
+
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_POW2, 8, vl), 128);
 
   vl = 2048;
-  EXPECT_EQ(sveGetPattern("", 64, vl), 32);
-  EXPECT_EQ(sveGetPattern("", 16, vl), 128);
-  EXPECT_EQ(sveGetPattern("all", 64, vl), 32);
-  EXPECT_EQ(sveGetPattern("all", 16, vl), 128);
-  EXPECT_EQ(sveGetPattern("notValid", 64, vl), 32);
-  EXPECT_EQ(sveGetPattern("notValid", 16, vl), 128);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 64, vl), 32);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_ALL, 16, vl), 128);
 
-  EXPECT_EQ(sveGetPattern("vl1", 64, vl), 1);
-  EXPECT_EQ(sveGetPattern("vl2", 64, vl), 2);
-  EXPECT_EQ(sveGetPattern("vl3", 64, vl), 3);
-  EXPECT_EQ(sveGetPattern("vl4", 64, vl), 4);
-  EXPECT_EQ(sveGetPattern("vl5", 64, vl), 5);
-  EXPECT_EQ(sveGetPattern("vl6", 64, vl), 6);
-  EXPECT_EQ(sveGetPattern("vl7", 64, vl), 7);
-  EXPECT_EQ(sveGetPattern("vl8", 64, vl), 8);
-  EXPECT_EQ(sveGetPattern("vl16", 64, vl), 16);
-  EXPECT_EQ(sveGetPattern("vl32", 64, vl), 32);
-  EXPECT_EQ(sveGetPattern("vl64", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl128", 64, vl), 0);
-  EXPECT_EQ(sveGetPattern("vl256", 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL1, 64, vl), 1);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL2, 64, vl), 2);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL3, 64, vl), 3);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL4, 64, vl), 4);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL5, 64, vl), 5);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL6, 64, vl), 6);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL7, 64, vl), 7);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL8, 64, vl), 8);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL16, 64, vl), 16);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL32, 64, vl), 32);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL64, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL128, 64, vl), 0);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_VL256, 64, vl), 0);
 
-  EXPECT_EQ(sveGetPattern("mul4", 8, vl), 256);
-  EXPECT_EQ(sveGetPattern("mul3", 8, vl), 255);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL4, 8, vl), 256);
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_MUL3, 8, vl), 255);
+
+  EXPECT_EQ(getElemsFromPattern(AARCH64_SVEPREDPAT_POW2, 8, vl), 256);
 }
 
 /** `ShiftValue` Tests */
