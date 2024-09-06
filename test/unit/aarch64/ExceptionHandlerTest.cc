@@ -447,24 +447,6 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   buffer.str(std::string());
   uops.clear();
 
-  // Create instruction for AliasNotYetImplemented
-  arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
-                 uops);
-  exception = InstructionException::AliasNotYetImplemented;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
-  // Create ExceptionHandler
-  ExceptionHandler handler_2(insn, core, memory, kernel);
-  // Capture std::cout and tick exceptionHandler
-  sbuf = std::cout.rdbuf();         // Save cout's buffer
-  std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_2.printException(*static_cast<Instruction*>(insn.get()));
-  std::cout.rdbuf(sbuf);  // Restore cout
-  EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
-                                      "alias not-yet-implemented exception"));
-  buffer.str(std::string());
-  uops.clear();
-
   // Create instruction for MisalignedPC
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);

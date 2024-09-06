@@ -65,7 +65,7 @@ struct InstructionMetadata {
   uint8_t encoding[4];
 
   /** The instruction's mnemonic. */
-  char mnemonic[CS_MNEMONIC_SIZE];
+  std::string mnemonic;
   /** The remainder of the instruction's assembly representation. */
   std::string operandStr;
 
@@ -93,7 +93,7 @@ struct InstructionMetadata {
   bool isAlias;
 
   /** The explicit operands. */
-  cs_aarch64_op operands[MAX_OPERANDS];
+  cs_aarch64_op operands[MAX_OPERANDS * 2];  // Temp fix until Capstone updates
   /** The number of explicit operands. */
   uint8_t operandCount;
 

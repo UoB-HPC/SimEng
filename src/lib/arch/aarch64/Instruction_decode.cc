@@ -1,5 +1,3 @@
-#include <regex>
-
 #include "InstructionMetadata.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
@@ -40,7 +38,9 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
  *
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
  * `aarch64_reg` enum. Updates to the Capstone library version may cause this to
- * break. */
+ * break.
+ * TODO: Add multi-register enum decoding.
+ * */
 Register csRegToRegister(aarch64_reg reg) {
   // Do not need check for AARCH64_REG_Vn as in Capstone, they are aliased as Qn
   // (full vector) or Dn (half vector).
@@ -201,13 +201,6 @@ void Instruction::decode() {
 
   // Extract implicit writes, including pre/post index writeback
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
-    if (metadata_.implicitDestinations[i] == AARCH64_REG_NZCV &&
-        (metadata_.opcode == Opcode::AArch64_MRS ||
-         metadata_.opcode == Opcode::AArch64_MSR)) {
-      // MRS / MSR instructions mistakenly have NZCV added as an implicit
-      // destination. Ignore
-      continue;
-    }
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
         static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
@@ -508,71 +501,77 @@ void Instruction::decode() {
   }
 
   // Identify Logical (bitwise) instructions
-  if (regex_match(metadata_.mnemonic, std::regex("(and)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bic)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bif)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bit)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bcax)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bmop)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(eor)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(eon)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mvn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(not)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(nand)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(nbsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(nor)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(rax)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(xar)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(orr)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(orq)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(orv)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(tst)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(orn)(.*)"))) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity what
+  // is searched for.
+  if (metadata_.mnemonic.find("and") == 0 ||
+      metadata_.mnemonic.find("bic") == 0 ||
+      metadata_.mnemonic.find("bif") == 0 ||
+      metadata_.mnemonic.find("bit") == 0 ||
+      metadata_.mnemonic.find("bsl") == 0 ||
+      metadata_.mnemonic.find("bcax") == 0 ||
+      metadata_.mnemonic.find("bmop") == 0 ||
+      metadata_.mnemonic.find("eor") == 0 ||
+      metadata_.mnemonic.find("eon") == 0 ||
+      metadata_.mnemonic.find("mvn") == 0 ||
+      metadata_.mnemonic.find("not") == 0 ||
+      metadata_.mnemonic.find("nand") == 0 ||
+      metadata_.mnemonic.find("nbsl") == 0 ||
+      metadata_.mnemonic.find("nor") == 0 ||
+      metadata_.mnemonic.find("rax") == 0 ||
+      metadata_.mnemonic.find("xar") == 0 ||
+      metadata_.mnemonic.find("orr") == 0 ||
+      metadata_.mnemonic.find("orq") == 0 ||
+      metadata_.mnemonic.find("orv") == 0 ||
+      metadata_.mnemonic.find("tst") == 0 ||
+      metadata_.mnemonic.find("orn") == 0) {
     setInstructionType(InsnType::isLogical);
   }
 
   // Identify comparison insturctions (excluding atomic LD-CMP-STR)
-  if (regex_match(metadata_.mnemonic, std::regex("(ccmn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmp)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpp)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(ccmp)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmeq)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmge)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmgt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmtst)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmhi)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmhs)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmle)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpeq)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpge)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpgt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmphi)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmphs)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmple)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmplo)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpls)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmplt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmpne)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmptst)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(facge)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(facgt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(facle)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(faclt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fccmp)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fccmpe)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmeq)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmge)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmgt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmle)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmne)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmp)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmpe)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmuo)(.*)"))) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity what
+  // is searched for.
+  if (metadata_.mnemonic.find("ccmn") == 0 ||
+      metadata_.mnemonic.find("cmn") == 0 ||
+      metadata_.mnemonic.find("cmp") == 0 ||
+      // metadata_.mnemonic.find("cmpp") == 0 ||
+      // metadata_.mnemonic.find("cmpeq") == 0 ||
+      // metadata_.mnemonic.find("cmpge") == 0 ||
+      // metadata_.mnemonic.find("cmpgt") == 0 ||
+      // metadata_.mnemonic.find("cmphi") == 0 ||
+      // metadata_.mnemonic.find("cmphs") == 0 ||
+      // metadata_.mnemonic.find("cmple") == 0 ||
+      // metadata_.mnemonic.find("cmplo") == 0 ||
+      // metadata_.mnemonic.find("cmpls") == 0 ||
+      // metadata_.mnemonic.find("cmplt") == 0 ||
+      // metadata_.mnemonic.find("cmpne") == 0 ||
+      // metadata_.mnemonic.find("cmptst") == 0 ||
+      metadata_.mnemonic.find("ccmp") == 0 ||
+      metadata_.mnemonic.find("cmeq") == 0 ||
+      metadata_.mnemonic.find("cmge") == 0 ||
+      metadata_.mnemonic.find("cmgt") == 0 ||
+      metadata_.mnemonic.find("cmtst") == 0 ||
+      metadata_.mnemonic.find("cmhi") == 0 ||
+      metadata_.mnemonic.find("cmhs") == 0 ||
+      metadata_.mnemonic.find("cmla") == 0 ||
+      metadata_.mnemonic.find("cmle") == 0 ||
+      metadata_.mnemonic.find("cmlt") == 0 ||
+      // The non-complete opcode prefix `fac` only yields compare uops
+      metadata_.mnemonic.find("fac") == 0 ||
+      // metadata_.mnemonic.find("facge") == 0 ||
+      // metadata_.mnemonic.find("facgt") == 0 ||
+      // metadata_.mnemonic.find("facle") == 0 ||
+      // metadata_.mnemonic.find("faclt") == 0 ||
+      metadata_.mnemonic.find("fccmp") == 0 ||
+      // metadata_.mnemonic.find("fccmpe") == 0 ||
+      metadata_.mnemonic.find("fcmp") == 0 ||
+      // metadata_.mnemonic.find("fcmpe") == 0 ||
+      metadata_.mnemonic.find("fcmuo") == 0 ||
+      metadata_.mnemonic.find("fcmeq") == 0 ||
+      metadata_.mnemonic.find("fcmge") == 0 ||
+      metadata_.mnemonic.find("fcmgt") == 0 ||
+      metadata_.mnemonic.find("fcmle") == 0 ||
+      metadata_.mnemonic.find("fcmlt") == 0 ||
+      metadata_.mnemonic.find("fcmne") == 0) {
     setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
@@ -586,45 +585,47 @@ void Instruction::decode() {
   }
 
   // Identify convert instructions
-  if (regex_match(metadata_.mnemonic, std::regex("(bf1cvtl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bf2cvtl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfcvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfcvtn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f1cvtl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f2cvtl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtas)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtau)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtms)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtmu)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtns)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtnu)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtps)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtpu)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtxn)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtzs)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtzu)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fjcvtzs)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(scvtf)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(ucvtf)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bf1cvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bf2cvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bf1cvtlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bf2cvtlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfcvtnt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f1cvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f2cvt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f1cvtlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(f2cvtlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtlt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtnb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtnt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtx)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtxnt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtzs)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcvtzu)(.*)"))) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity what
+  // is searched for.
+  if (metadata_.mnemonic.find("bfcvt") == 0 ||
+      // metadata_.mnemonic.find("bfcvtn") == 0 ||
+      // metadata_.mnemonic.find("bfcvtnt") == 0 ||
+      metadata_.mnemonic.find("bf1cvt") == 0 ||
+      // metadata_.mnemonic.find("bf1cvtl") == 0 ||
+      // metadata_.mnemonic.find("bf1cvtlt") == 0 ||
+      metadata_.mnemonic.find("bf2cvt") == 0 ||
+      // metadata_.mnemonic.find("bf2cvtl") == 0 ||
+      // metadata_.mnemonic.find("bf2cvtlt") == 0 ||
+      metadata_.mnemonic.find("fcvt") == 0 ||
+      // metadata_.mnemonic.find("fcvtas") == 0 ||
+      // metadata_.mnemonic.find("fcvtau") == 0 ||
+      // metadata_.mnemonic.find("fcvtl") == 0 ||
+      // metadata_.mnemonic.find("fcvtms") == 0 ||
+      // metadata_.mnemonic.find("fcvtmu") == 0 ||
+      // metadata_.mnemonic.find("fcvtn") == 0 ||
+      // metadata_.mnemonic.find("fcvtns") == 0 ||
+      // metadata_.mnemonic.find("fcvtnu") == 0 ||
+      // metadata_.mnemonic.find("fcvtps") == 0 ||
+      // metadata_.mnemonic.find("fcvtpu") == 0 ||
+      // metadata_.mnemonic.find("fcvtxn") == 0 ||
+      // metadata_.mnemonic.find("fcvtzs") == 0 ||
+      // metadata_.mnemonic.find("fcvtzu") == 0 ||
+      // metadata_.mnemonic.find("fcvtlt") == 0 ||
+      // metadata_.mnemonic.find("fcvtnb") == 0 ||
+      // metadata_.mnemonic.find("fcvtnt") == 0 ||
+      // metadata_.mnemonic.find("fcvtx") == 0 ||
+      // metadata_.mnemonic.find("fcvtxnt") == 0 ||
+      // metadata_.mnemonic.find("fcvtzs") == 0 ||
+      // metadata_.mnemonic.find("fcvtzu") == 0 ||
+      metadata_.mnemonic.find("f1cvt") == 0 ||
+      // metadata_.mnemonic.find("f1cvtl") == 0 ||
+      // metadata_.mnemonic.find("f1cvtlt") == 0 ||
+      metadata_.mnemonic.find("f2cvt") == 0 ||
+      // metadata_.mnemonic.find("f2cvtl") == 0 ||
+      // metadata_.mnemonic.find("f2cvtlt") == 0 ||
+      metadata_.mnemonic.find("fjcvtzs") == 0 ||
+      metadata_.mnemonic.find("scvtf") == 0 ||
+      metadata_.mnemonic.find("ucvtf") == 0) {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -636,238 +637,195 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  if (regex_match(metadata_.mnemonic, std::regex("(sdiv)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(udiv)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fdiv)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fdivr)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sdivr)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(udivr)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(frsqrte)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(frsqrts)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fsqrt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(ursqrte)(.*)"))) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity what
+  // is searched for.
+  if (metadata_.mnemonic.find("sdiv") == 0 ||
+      // metadata_.mnemonic.find("sdivr") == 0 ||
+      metadata_.mnemonic.find("udiv") == 0 ||
+      // metadata_.mnemonic.find("udivr") == 0 ||
+      metadata_.mnemonic.find("fdiv") == 0 ||
+      // metadata_.mnemonic.find("fdivr") == 0 ||
+      // The non-complete opcode prefix `frsqrt` only yields divSqrt uops
+      metadata_.mnemonic.find("frsqrt") == 0 ||
+      // metadata_.mnemonic.find("frsqrte") == 0 ||
+      // metadata_.mnemonic.find("frsqrts") == 0 ||
+      metadata_.mnemonic.find("fsqrt") == 0 ||
+      metadata_.mnemonic.find("ursqrte") == 0) {
     setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
-  if (regex_match(metadata_.mnemonic, std::regex("(madd)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(maddpt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mneg)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(msub)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(msubpt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smaddl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smnegl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smsubl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smulh)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umaddl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umnegl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umsubl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umulh)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlalb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlalt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fcmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmadd)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlal)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlal2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlalb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlalt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlallbb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlallbt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlalltb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlalltt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmls)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlsl2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmsub)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmulx)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmadd)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmsub)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mls)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(pmul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(pmull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(pmull2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlal)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlal2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlsl2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smull2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlal)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlal2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlsl2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmulh)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmull2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqrdmlah)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqrdmlsh)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqrdmulh)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlal)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlal2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlsl2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(ummla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umull)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umull2)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usmmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmls)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlslb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlslt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmul)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmad)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlslb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlslt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmsb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmad)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmla)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmls)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fnmsb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(ftmad)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mad)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(madpt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(mlapt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(msb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(pmullb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(pmullt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlalb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlalt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlslb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlslt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smullb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smullt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlalb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlalbt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlalt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlslb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlslbt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmlslt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmullb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqdmullt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sqrdcmlah)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlalb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlalt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlslb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlslt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umullb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umullt)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlal)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmlsl)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmlall)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlall)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smlsll)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sumlall)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlall)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umlsll)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usmlall)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfvdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fvdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fvdotb)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fvdott)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sudot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(suvdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(udot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usvdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(uvdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(cdot)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bfmops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bmopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(bmops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(fmops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(smops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sumopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(sumops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(umops)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usmopa)(.*)")) ||
-      regex_match(metadata_.mnemonic, std::regex("(usmops)(.*)"))) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity what
+  // is searched for.
+  if (metadata_.mnemonic.find("bfmmla") == 0 ||
+      metadata_.mnemonic.find("bfmul") == 0 ||
+      // The non-complete opcode prefix `bfml` only yields multiply uops
+      metadata_.mnemonic.find("bfml") == 0 ||
+      // metadata_.mnemonic.find("bfmla") == 0 ||
+      // metadata_.mnemonic.find("bfmlalb") == 0 ||
+      // metadata_.mnemonic.find("bfmlalt") == 0 ||
+      // metadata_.mnemonic.find("bfmlal") == 0 ||
+      // metadata_.mnemonic.find("bfmls") == 0 ||
+      // metadata_.mnemonic.find("bfmlslb") == 0 ||
+      // metadata_.mnemonic.find("bfmlslt") == 0 ||
+      // metadata_.mnemonic.find("bfmlsl") == 0 ||
+      metadata_.mnemonic.find("cmla") == 0 ||
+      // The substring `dot` only appears in dot-product opcodes
+      metadata_.mnemonic.find("dot") != std::string::npos ||
+      // metadata_.mnemonic.find("bfdot") == 0 ||
+      // metadata_.mnemonic.find("bfvdot") == 0 ||
+      // metadata_.mnemonic.find("fdot") == 0 ||
+      // metadata_.mnemonic.find("fvdot") == 0 ||
+      // metadata_.mnemonic.find("fvdotb") == 0 ||
+      // metadata_.mnemonic.find("fvdott") == 0 ||
+      // metadata_.mnemonic.find("sdot") == 0 ||
+      // metadata_.mnemonic.find("sudot") == 0 ||
+      // metadata_.mnemonic.find("suvdot") == 0 ||
+      // metadata_.mnemonic.find("udot") == 0 ||
+      // metadata_.mnemonic.find("usdot") == 0 ||
+      // metadata_.mnemonic.find("usvdot") == 0 ||
+      // metadata_.mnemonic.find("uvdot") == 0 ||
+      // metadata_.mnemonic.find("cdot") == 0 ||
+      metadata_.mnemonic.find("fmla") == 0 ||
+      // metadata_.mnemonic.find("fmlal") == 0 ||
+      // metadata_.mnemonic.find("fmlal2") == 0 ||
+      // metadata_.mnemonic.find("fmlalb") == 0 ||
+      // metadata_.mnemonic.find("fmlalt") == 0 ||
+      // metadata_.mnemonic.find("fmlallbb") == 0 ||
+      // metadata_.mnemonic.find("fmlallbt") == 0 ||
+      // metadata_.mnemonic.find("fmlalltb") == 0 ||
+      // metadata_.mnemonic.find("fmlalltt") == 0 ||
+      // metadata_.mnemonic.find("fmlall") == 0 ||
+      metadata_.mnemonic.find("fmls") == 0 ||
+      // metadata_.mnemonic.find("fmlsl") == 0 ||
+      // metadata_.mnemonic.find("fmlsl2") == 0 ||
+      // metadata_.mnemonic.find("fmlslb") == 0 ||
+      // metadata_.mnemonic.find("fmlslt") == 0 ||
+      metadata_.mnemonic.find("fmul") == 0 ||
+      // metadata_.mnemonic.find("fmulx") == 0 ||
+      metadata_.mnemonic.find("fmad") == 0 ||
+      // metadata_.mnemonic.find("fmadd") == 0 ||
+      metadata_.mnemonic.find("fmmla") == 0 ||
+      metadata_.mnemonic.find("fmsb") == 0 ||
+      metadata_.mnemonic.find("fmsub") == 0 ||
+      metadata_.mnemonic.find("ftmad") == 0 ||
+      metadata_.mnemonic.find("fcmla") == 0 ||
+      // The non-complete opcode prefix `fnm` only yields multiply uops
+      metadata_.mnemonic.find("fnm") == 0 ||
+      // metadata_.mnemonic.find("fnmad") == 0 ||
+      // metadata_.mnemonic.find("fnmla") == 0 ||
+      // metadata_.mnemonic.find("fnmls") == 0 ||
+      // metadata_.mnemonic.find("fnmsb") == 0 ||
+      // metadata_.mnemonic.find("fnmadd") == 0 ||
+      // metadata_.mnemonic.find("fnmsub") == 0 ||
+      // metadata_.mnemonic.find("fnmul") == 0 ||
+      metadata_.mnemonic.find("madd") == 0 ||
+      // metadata_.mnemonic.find("maddpt") == 0 ||
+      metadata_.mnemonic.find("mul") == 0 ||
+      metadata_.mnemonic.find("mla") == 0 ||
+      // metadata_.mnemonic.find("mlapt") == 0 ||
+      metadata_.mnemonic.find("mls") == 0 ||
+      metadata_.mnemonic.find("mneg") == 0 ||
+      metadata_.mnemonic.find("msub") == 0 ||
+      // metadata_.mnemonic.find("msubpt") == 0 ||
+      metadata_.mnemonic.find("mad") == 0 ||
+      // metadata_.mnemonic.find("madpt") == 0 ||
+      metadata_.mnemonic.find("msb") == 0 ||
+      // The substring `mop` only appears in outer-product opcodes
+      metadata_.mnemonic.find("mop") != std::string::npos ||
+      // metadata_.mnemonic.find("bfmopa") == 0 ||
+      // metadata_.mnemonic.find("bfmops") == 0 ||
+      // metadata_.mnemonic.find("bmopa") == 0 ||
+      // metadata_.mnemonic.find("bmops") == 0 ||
+      // metadata_.mnemonic.find("fmopa") == 0 ||
+      // metadata_.mnemonic.find("fmops") == 0 ||
+      // metadata_.mnemonic.find("smopa") == 0 ||
+      // metadata_.mnemonic.find("smops") == 0 ||
+      // metadata_.mnemonic.find("sumopa") == 0 ||
+      // metadata_.mnemonic.find("sumops") == 0 ||
+      // metadata_.mnemonic.find("umopa") == 0 ||
+      // metadata_.mnemonic.find("umops") == 0 ||
+      // metadata_.mnemonic.find("usmopa") == 0 ||
+      // metadata_.mnemonic.find("usmops") == 0
+      metadata_.mnemonic.find("pmul") == 0 ||
+      // metadata_.mnemonic.find("pmull") == 0 ||
+      // metadata_.mnemonic.find("pmull2") == 0 ||
+      // metadata_.mnemonic.find("pmullb") == 0 ||
+      // metadata_.mnemonic.find("pmullt") == 0 ||
+      // The non-complete opcode prefix `sml` only yields multiply uops
+      metadata_.mnemonic.find("sml") == 0 ||
+      // metadata_.mnemonic.find("smlalb") == 0 ||
+      // metadata_.mnemonic.find("smlalt") == 0 ||
+      // metadata_.mnemonic.find("smlslb") == 0 ||
+      // metadata_.mnemonic.find("smlslt") == 0 ||
+      // metadata_.mnemonic.find("smlal") == 0 ||
+      // metadata_.mnemonic.find("smlal2") == 0 ||
+      // metadata_.mnemonic.find("smlsl") == 0 ||
+      // metadata_.mnemonic.find("smlsl2") == 0 ||
+      // metadata_.mnemonic.find("smlall") == 0 ||
+      // metadata_.mnemonic.find("smlsll") == 0 ||
+      metadata_.mnemonic.find("smmla") == 0 ||
+      // The non-complete opcode prefix `smul` only yields multiply uops
+      metadata_.mnemonic.find("smul") == 0 ||
+      // metadata_.mnemonic.find("smulh") == 0 ||
+      // metadata_.mnemonic.find("smull") == 0 ||
+      // metadata_.mnemonic.find("smull2") == 0 ||
+      // metadata_.mnemonic.find("smullb") == 0 ||
+      // metadata_.mnemonic.find("smullt") == 0 ||
+      // The non-complete opcode prefix `sqdm` only yields multiply uops
+      metadata_.mnemonic.find("sqdm") == 0 ||
+      // metadata_.mnemonic.find("sqdmlal") == 0 ||
+      // metadata_.mnemonic.find("sqdmlal2") == 0 ||
+      // metadata_.mnemonic.find("sqdmlsl") == 0 ||
+      // metadata_.mnemonic.find("sqdmlsl2") == 0 ||
+      // metadata_.mnemonic.find("sqdmulh") == 0 ||
+      // metadata_.mnemonic.find("sqdmull") == 0 ||
+      // metadata_.mnemonic.find("sqdmull2") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalb") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalbt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslb") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslbt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslt") == 0 ||
+      // metadata_.mnemonic.find("sqdmullb") == 0 ||
+      // metadata_.mnemonic.find("sqdmullt") == 0 ||
+      // The non-complete opcode prefix `sqrd` only yields multiply uops
+      metadata_.mnemonic.find("sqrd") == 0 ||
+      // metadata_.mnemonic.find("sqrdmlah") == 0 ||
+      // metadata_.mnemonic.find("sqrdmlsh") == 0 ||
+      // metadata_.mnemonic.find("sqrdmulh") == 0 ||
+      // metadata_.mnemonic.find("sqrdcmlah") == 0 ||
+      metadata_.mnemonic.find("sumlall") == 0 ||
+      metadata_.mnemonic.find("smaddl") == 0 ||
+      metadata_.mnemonic.find("smnegl") == 0 ||
+      metadata_.mnemonic.find("smsubl") == 0 ||
+      // The non-complete opcode prefix `umul` only yields multiply uops
+      metadata_.mnemonic.find("umul") == 0 ||
+      // metadata_.mnemonic.find("umulh") == 0 ||
+      // metadata_.mnemonic.find("umull") == 0 ||
+      // metadata_.mnemonic.find("umull2") == 0 ||
+      // metadata_.mnemonic.find("umullb") == 0 ||
+      // metadata_.mnemonic.find("umullt") == 0 ||
+      // The non-complete opcode prefix `uml` only yields multiply uops
+      metadata_.mnemonic.find("uml") == 0 ||
+      // metadata_.mnemonic.find("umlal") == 0 ||
+      // metadata_.mnemonic.find("umlal2") == 0 ||
+      // metadata_.mnemonic.find("umlsl") == 0 ||
+      // metadata_.mnemonic.find("umlsl2") == 0 ||
+      // metadata_.mnemonic.find("umlslt") == 0 ||
+      // metadata_.mnemonic.find("umlalb") == 0 ||
+      // metadata_.mnemonic.find("umlalt") == 0 ||
+      // metadata_.mnemonic.find("umlslb") == 0 ||
+      // metadata_.mnemonic.find("umlall") == 0 ||
+      // metadata_.mnemonic.find("umlsll") == 0 ||
+      metadata_.mnemonic.find("usmlall") == 0 ||
+      metadata_.mnemonic.find("usmmla") == 0 ||
+      metadata_.mnemonic.find("ummla") == 0 ||
+      metadata_.mnemonic.find("umaddl") == 0 ||
+      metadata_.mnemonic.find("umnegl") == 0 ||
+      metadata_.mnemonic.find("umsubl") == 0) {
     setInstructionType(InsnType::isMultiply);
   }
-
-  //
-  // if ((433 <= metadata_.opcode &&
-  //  metadata_.opcode <= 447) ||  // all MUL variants
-  // (759 <= metadata_.opcode && metadata_.opcode <= 762) ||
-  // (816 <= metadata_.opcode && metadata_.opcode <= 819) ||
-  // (915 <= metadata_.opcode && metadata_.opcode <= 918) ||
-  // (2436 <= metadata_.opcode && metadata_.opcode <= 2482) ||
-  // (2512 <= metadata_.opcode && metadata_.opcode <= 2514) ||
-  // (2702 <= metadata_.opcode && metadata_.opcode <= 2704) ||
-  // (3692 <= metadata_.opcode && metadata_.opcode <= 3716) ||
-  // (3793 <= metadata_.opcode && metadata_.opcode <= 3805) ||
-  // (4352 <= metadata_.opcode && metadata_.opcode <= 4380) ||
-  // (4503 <= metadata_.opcode && metadata_.opcode <= 4543) ||
-  // (4625 <= metadata_.opcode && metadata_.opcode <= 4643) ||
-  // (5804 <= metadata_.opcode && metadata_.opcode <= 5832) ||
-  // (2211 <= metadata_.opcode &&
-  //  metadata_.opcode <= 2216) ||  // all MADD/MAD variants
-  // (2494 <= metadata_.opcode && metadata_.opcode <= 2499) ||
-  // (2699 <= metadata_.opcode && metadata_.opcode <= 2701) ||
-  // (3610 <= metadata_.opcode && metadata_.opcode <= 3615) ||
-  // (4227 == metadata_.opcode) || (5682 == metadata_.opcode) ||
-  // (2433 <= metadata_.opcode &&
-  //  metadata_.opcode <= 2435) ||  // all MSUB variants
-  // (2509 <= metadata_.opcode && metadata_.opcode <= 2511) ||
-  // (3690 <= metadata_.opcode && metadata_.opcode <= 3691) ||
-  // (4351 == metadata_.opcode) || (5803 == metadata_.opcode) ||
-  // (424 <= metadata_.opcode &&
-  //  metadata_.opcode <= 426) ||  // all MLA variants
-  // (451 <= metadata_.opcode && metadata_.opcode <= 453) ||
-  // (1151 <= metadata_.opcode && metadata_.opcode <= 1160) ||
-  // (1378 <= metadata_.opcode && metadata_.opcode <= 1383) ||
-  // (1914 <= metadata_.opcode && metadata_.opcode <= 1926) ||
-  // (2341 <= metadata_.opcode && metadata_.opcode <= 2371) ||
-  // (2403 <= metadata_.opcode && metadata_.opcode <= 2404) ||
-  // (2500 <= metadata_.opcode && metadata_.opcode <= 2502) ||
-  // (3618 <= metadata_.opcode && metadata_.opcode <= 3634) ||
-  // (4295 <= metadata_.opcode && metadata_.opcode <= 4314) ||
-  // (4335 <= metadata_.opcode && metadata_.opcode <= 4336) ||
-  // (4453 <= metadata_.opcode && metadata_.opcode <= 4477) ||
-  // (4581 <= metadata_.opcode && metadata_.opcode <= 4605) ||
-  // (5749 <= metadata_.opcode && metadata_.opcode <= 5768) ||
-  // (5789 <= metadata_.opcode && metadata_.opcode <= 5790) ||
-  // (6115 <= metadata_.opcode && metadata_.opcode <= 6116) ||
-  // (427 <= metadata_.opcode &&
-  //  metadata_.opcode <= 429) ||  // all MLS variants
-  // (454 <= metadata_.opcode && metadata_.opcode <= 456) ||
-  // (2372 <= metadata_.opcode && metadata_.opcode <= 2402) ||
-  // (2503 <= metadata_.opcode && metadata_.opcode <= 2505) ||
-  // (3635 <= metadata_.opcode && metadata_.opcode <= 3651) ||
-  // (4315 <= metadata_.opcode && metadata_.opcode <= 4334) ||
-  // (4478 <= metadata_.opcode && metadata_.opcode <= 4502) ||
-  // (4606 <= metadata_.opcode && metadata_.opcode <= 4624) ||
-  // (5769 <= metadata_.opcode && metadata_.opcode <= 5788) ||
-  // (2430 <= metadata_.opcode &&
-  //  metadata_.opcode <= 2432) ||  // all MSB variants
-  // (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
-  // (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
-  // (2405 <= metadata_.opcode &&
-  //  metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
-  // (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
-  // (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
-  // (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
-  // (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
-  // setInstructionType(InsnType::isMultiply);
-  // }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught predicate assignment due to lacking destination register

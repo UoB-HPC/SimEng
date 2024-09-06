@@ -19,7 +19,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount(insn.detail->aarch64.op_count) {
   std::memcpy(encoding, insn.bytes, sizeof(encoding));
   // Copy printed output
-  std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
+  mnemonic = std::string(insn.mnemonic);
   operandStr = std::string(insn.op_str);
 
   // Copy register/group/operand information
@@ -33,9 +33,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
-    case Opcode::AArch64_BLR:
+    case Opcode::AArch64_BLR:  // Example bytecode - 20003fd6
       // Incorrectly implicitly reads from SP
       implicitSourceCount--;
+      break;
+    case Opcode::AArch64_MRS:  // Example bytecode - 42d03bd5
+      // Incorrectly implicitly writes to NZCV
+      implicitDestinationCount--;
+      break;
+    case Opcode::AArch64_FMOVXDHighr:  // Example bytecode - 4100af9e
+      // FMOVXDHighr incorrectly flags destination as WRITE only
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_FCVTNv4i32:  // Example bytecode - 0168614e
+      // Wrong access type for destination operand
+      operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_ADR_LSL_ZZZ_D_0:  // example bytecode = c8a0e704
     case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
@@ -57,17 +69,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].shift = operands[1].shift;
       break;
     }
-    case Opcode::AArch64_AND_ZPmZ_D:  // Example bytecode - 4901da04
-    case Opcode::AArch64_AND_ZPmZ_H:
-    case Opcode::AArch64_AND_ZPmZ_S:
-    case Opcode::AArch64_AND_ZPmZ_B:
-      // Incorrect defined access types
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
-      operands[3].access = CS_AC_READ;
-      break;
-    case Opcode::AArch64_CASALW:  // Example bbytecode - 02fce188
+    case Opcode::AArch64_CASALW:  // Example bytecode - 02fce188
     case Opcode::AArch64_CASALX:
       // Correct access types
       operandCount = 3;
@@ -126,6 +128,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         assert(false && "Invalid FP immidate contant.");
       break;
     }
+    case Opcode::AArch64_AND_ZPmZ_D:  // Example bytecode - 4901da04
+    case Opcode::AArch64_AND_ZPmZ_H:
+    case Opcode::AArch64_AND_ZPmZ_S:
+    case Opcode::AArch64_AND_ZPmZ_B:
     case Opcode::AArch64_SMULH_ZPmZ_B:  // Example bytecode - 20001204
     case Opcode::AArch64_SMULH_ZPmZ_D:
     case Opcode::AArch64_SMULH_ZPmZ_H:
@@ -180,14 +186,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
-    case Opcode::AArch64_FMOVXDHighr:  // Example bytecode - 4100af9e
-      // FMOVXDHighr incorrectly flags destination as WRITE only
-      operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      break;
-    case Opcode::AArch64_FCVTNv4i32:  // Example bytecode - 0168614e
-      // Wrong access type for destination operand
-      operands[0].access = CS_AC_WRITE;
-      break;
     case Opcode::AArch64_CPY_ZPzI_B:
     case Opcode::AArch64_CPY_ZPzI_D:
     case Opcode::AArch64_CPY_ZPzI_H:  // Example bytecode - 01215005
@@ -209,7 +207,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         size_t pos_2 = operandStr.find(".", pos);
         if (pos_2 != std::string::npos) {
           char type = operandStr[pos_2 + 1];
-          // Tile Number can only ever be 1 digit
+          // Tile Number can only ever be 1 digit due to legal overlappings
           uint8_t tileNum = std::stoi(operandStr.substr((pos + 2), 1));
           switch (type) {
             case 'b':
@@ -246,6 +244,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+  }
+
+  if (isAlias) {
+    exceptionString_ =
+        "This instruction is an alias. The printed mnemonic and operand string "
+        "differ from what is expected of the Capstone opcode.";
   }
 }
 
