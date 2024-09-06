@@ -689,7 +689,7 @@ bool ExceptionHandler::init() {
     std::vector<Register> regs;
     std::vector<RegisterValue> regValues;
 
-    // If SVCR.ZA has changed state then zero out ZA register, else don't
+    // If SVCR.ZA has changed state then zero out ZA and ZT0 registers
     if (exception != InstructionException::StreamingModeUpdate) {
       if ((newSVCR & AARCH64_SVCR_SVCRZA) != (currSVCR & AARCH64_SVCR_SVCRZA)) {
         for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
@@ -697,6 +697,8 @@ bool ExceptionHandler::init() {
           regs.push_back({RegisterType::MATRIX, i});
           regValues.push_back(RegisterValue(0, 256));
         }
+        regs.push_back({RegisterType::TABLE, 0});
+        regValues.push_back(RegisterValue(0, 64));
       }
     }
     // If SVCR.SM has changed state then zero out SVE, NEON, Predicate
@@ -885,9 +887,6 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
-      break;
-    case InstructionException::AliasNotYetImplemented:
-      std::cout << "alias not-yet-implemented";
       break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";

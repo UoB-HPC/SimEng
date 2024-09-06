@@ -50,7 +50,6 @@ enum class InstructionException {
   None = 0,
   EncodingUnallocated,
   ExecutionNotYetImplemented,
-  AliasNotYetImplemented,
   MisalignedPC,
   DataAbort,
   SupervisorCall,
