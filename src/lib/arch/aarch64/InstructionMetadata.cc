@@ -1676,6 +1676,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_LASTB_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_B: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+    }
     case Opcode::AArch64_CLASTB_VPZ_D:
       [[fallthrough]];
     case Opcode::AArch64_CLASTB_VPZ_S:
