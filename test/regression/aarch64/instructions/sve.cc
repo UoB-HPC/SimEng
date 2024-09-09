@@ -6733,6 +6733,110 @@ TEST_P(InstSve, clastb) {
   CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
 }
 
+TEST_P(InstSve, lastb) {
+  // 64 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        ptrue p0.d
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        lastb d4, p0, z2.d
+        mov z0.d, z4.d
+
+        ptrue p0.d
+        lastb d5, p0, z3.d
+        mov z1.d, z5.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x0123456789ABCDEF}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FEDCBA987654321}, 8));
+
+  // 32 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        lastb s4, p0, z2.s
+        mov z0.d, z4.d
+
+        ptrue p0.s
+        lastb s4, p0, z3.s
+        mov z1.d, z4.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x01234567}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FEDCBA9}, 8));
+
+  // 16 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        lastb h4, p0, z2.h
+        mov z0.d, z4.d
+
+        ptrue p0.h
+        lastb h4, p0, z3.h
+        mov z1.d, z4.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x0123}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1FED}, 8));
+
+  // 8 bit
+  RUN_AARCH64(R"(
+        movz    x0, #0xCDEF
+        movk    x0, #0x89AB, LSL #16
+        movk x0, #0x4567, LSL #32
+        movk x0, #0x0123, LSL #48
+        movz x1, #0x4321
+        movk x1, #0x8765, LSL #16
+        movk x1, #0xCBA9, LSL #32
+        movk x1, #0x1FED, LSL #48
+
+        dup z2.d, x0
+        dup z3.d, x1
+        
+        pfalse p0.b
+        lastb b4, p0, z2.b
+        mov z0.d, z4.d
+
+        ptrue p0.b
+        lastb b4, p0, z3.b
+        mov z1.d, z4.d
+    )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x01}, 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
+}
+
 TEST_P(InstSve, st1b) {
   initialHeapData_.resize(VL / 4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
