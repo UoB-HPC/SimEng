@@ -56,7 +56,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].type = ARM64_OP_REG;
       break;
     }
+    case Opcode::AArch64_SMIN_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_B:
       [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_B:
       [[fallthrough]];
@@ -446,7 +452,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_B:
       [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_B:
       [[fallthrough]];
     case Opcode::AArch64_TRN1_ZZZ_B:
       [[fallthrough]];
