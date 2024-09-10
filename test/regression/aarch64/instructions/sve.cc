@@ -6623,6 +6623,63 @@ TEST_P(InstSve, smax) {
 }
 
 TEST_P(InstSve, smin) {
+  // 64-bit
+  initialHeapData_.resize(VL / 4);
+  int64_t* heap64 = reinterpret_cast<int64_t*>(initialHeapData_.data());
+  std::vector<int64_t> srcA64 = {1,  2,   3,   4,   5,  6,  7,   8,
+                                 -9, -10, -11, -12, 13, 14, -15, -1};
+  std::vector<int64_t> srcB64 = {16, 15, 14, 13, -12, -11, -10, -9,
+                                 8,  7,  6,  5,  4,   3,   -2,  -1};
+  fillHeapCombined<int64_t>(heap64, srcA64, srcB64, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    udiv x3, x2, x5
+    whilelo p1.d, xzr, x3
+    ptrue p0.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z2.d}, p0/z, [x0, x2, lsl #3]
+
+    smin z1.d, p0/m, z1.d, z0.d
+    smin z2.d, p1/m, z2.d, z0.d
+
+    sminv d3, p1, z1.d
+    sminv d4, p0, z2.d
+  )");
+
+  std::vector<int64_t> results64 = {1,  2,   3,   4,   -12, -11, -10, -9,
+                                    -9, -10, -11, -12, 4,   3,   -15, -1};
+  std::array<int64_t, 32> arrA64 = fillNeon<int64_t>(results64, VL / 8);
+  std::rotate(srcB64.begin(), srcB64.begin() + ((VL / 128) % 16), srcB64.end());
+  std::array<int64_t, 32> arrB64 =
+      fillNeonCombined<int64_t>(results64, srcB64, VL / 8);
+
+  CHECK_NEON(1, int64_t, arrA64);
+  CHECK_NEON(2, int64_t, arrB64);
+  // Find miniumum element. Modify search end point to only consider the
+  // elements within the current VL and predication.
+  int64_t minElemA64 = arrA64[std::distance(
+      arrA64.begin(),
+      std::min_element(arrA64.begin(), arrA64.end() - (32 - VL / 128)))];
+  int64_t minElemB64 = arrB64[std::distance(
+      arrB64.begin(),
+      std::min_element(arrB64.begin(), arrB64.end() - (32 - VL / 64)))];
+  CHECK_NEON(3, int64_t, {minElemA64, 0, 0, 0});
+  CHECK_NEON(4, int64_t, {minElemB64, 0, 0, 0});
+
   // 32-bit
   initialHeapData_.resize(VL / 4);
   int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
@@ -6662,23 +6719,137 @@ TEST_P(InstSve, smin) {
 
   std::vector<int32_t> results32 = {1,  2,   3,   4,   -12, -11, -10, -9,
                                     -9, -10, -11, -12, 4,   3,   -15, -1};
-  std::array<int32_t, 64> arrA = fillNeon<int32_t>(results32, VL / 8);
+  std::array<int32_t, 64> arrA32 = fillNeon<int32_t>(results32, VL / 8);
   std::rotate(srcB32.begin(), srcB32.begin() + ((VL / 64) % 16), srcB32.end());
-  std::array<int32_t, 64> arrB =
+  std::array<int32_t, 64> arrB32 =
       fillNeonCombined<int32_t>(results32, srcB32, VL / 8);
 
-  CHECK_NEON(1, int32_t, arrA);
-  CHECK_NEON(2, int32_t, arrB);
+  CHECK_NEON(1, int32_t, arrA32);
+  CHECK_NEON(2, int32_t, arrB32);
   // Find miniumum element. Modify search end point to only consider the
   // elements within the current VL and predication.
-  int32_t minElemA = arrA[std::distance(
-      arrA.begin(),
-      std::min_element(arrA.begin(), arrA.end() - (64 - VL / 64)))];
-  int32_t minElemB = arrB[std::distance(
-      arrB.begin(),
-      std::min_element(arrB.begin(), arrB.end() - (64 - VL / 32)))];
-  CHECK_NEON(3, int32_t, {minElemA, 0, 0, 0});
-  CHECK_NEON(4, int32_t, {minElemB, 0, 0, 0});
+  int32_t minElemA32 = arrA32[std::distance(
+      arrA32.begin(),
+      std::min_element(arrA32.begin(), arrA32.end() - (64 - VL / 64)))];
+  int32_t minElemB32 = arrB32[std::distance(
+      arrB32.begin(),
+      std::min_element(arrB32.begin(), arrB32.end() - (64 - VL / 32)))];
+  CHECK_NEON(3, int32_t, {minElemA32, 0, 0, 0});
+  CHECK_NEON(4, int32_t, {minElemB32, 0, 0, 0});
+
+  // 16-bit
+  initialHeapData_.resize(VL / 4);
+  int16_t* heap16 = reinterpret_cast<int16_t*>(initialHeapData_.data());
+  std::vector<int16_t> srcA16 = {1,  2,   3,   4,   5,  6,  7,   8,
+                                 -9, -10, -11, -12, 13, 14, -15, -1};
+  std::vector<int16_t> srcB16 = {16, 15, 14, 13, -12, -11, -10, -9,
+                                 8,  7,  6,  5,  4,   3,   -2,  -1};
+  fillHeapCombined<int16_t>(heap16, srcA16, srcB16, VL / 8);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #2
+    mov x5, #2
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    udiv x3, x2, x5
+    whilelo p1.h, xzr, x3
+    ptrue p0.h
+
+    ld1h {z0.h}, p0/z, [x0, x1, lsl #1]
+    ld1h {z1.h}, p0/z, [x0, x2, lsl #1]
+    ld1h {z2.h}, p0/z, [x0, x2, lsl #1]
+
+    smin z1.h, p0/m, z1.h, z0.h
+    smin z2.h, p1/m, z2.h, z0.h
+
+    sminv h3, p1, z1.h
+    sminv h4, p0, z2.h
+  )");
+
+  std::vector<int16_t> results16 = {1,  2,   3,   4,   -12, -11, -10, -9,
+                                    -9, -10, -11, -12, 4,   3,   -15, -1};
+  std::array<int16_t, 128> arrA16 = fillNeon<int16_t>(results16, VL / 8);
+  std::rotate(srcB16.begin(), srcB16.begin() + ((VL / 32) % 16), srcB16.end());
+  std::array<int16_t, 128> arrB16 =
+      fillNeonCombined<int16_t>(results16, srcB16, VL / 8);
+
+  CHECK_NEON(1, int16_t, arrA16);
+  CHECK_NEON(2, int16_t, arrB16);
+  // Find miniumum element. Modify search end point to only consider the
+  // elements within the current VL and predication.
+  int16_t minElemA16 = arrA16[std::distance(
+      arrA16.begin(),
+      std::min_element(arrA16.begin(), arrA16.end() - (128 - VL / 32)))];
+  int16_t minElemB16 = arrB16[std::distance(
+      arrB16.begin(),
+      std::min_element(arrB16.begin(), arrB16.end() - (128 - VL / 16)))];
+  CHECK_NEON(3, int16_t, {minElemA16, 0, 0, 0});
+  CHECK_NEON(4, int16_t, {minElemB16, 0, 0, 0});
+
+  // 8-bit
+  initialHeapData_.resize(VL / 4);
+  int8_t* heap8 = reinterpret_cast<int8_t*>(initialHeapData_.data());
+  std::vector<int8_t> srcA8 = {1,  2,   3,   4,   5,  6,  7,   8,
+                               -9, -10, -11, -12, 13, 14, -15, -1};
+  std::vector<int8_t> srcB8 = {16, 15, 14, 13, -12, -11, -10, -9,
+                               8,  7,  6,  5,  4,   3,   -2,  -1};
+  fillHeapCombined<int8_t>(heap8, srcA8, srcB8, VL / 4);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #1
+    mov x5, #2
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    udiv x3, x2, x5
+    whilelo p1.b, xzr, x3
+    ptrue p0.b
+
+    ld1b {z0.b}, p0/z, [x0, x1]
+    ld1b {z1.b}, p0/z, [x0, x2]
+    ld1b {z2.b}, p0/z, [x0, x2]
+
+    smin z1.b, p0/m, z1.b, z0.b
+    smin z2.b, p1/m, z2.b, z0.b
+
+    sminv b3, p1, z1.b
+    sminv b4, p0, z2.b
+  )");
+
+  std::vector<int8_t> results8 = {1,  2,   3,   4,   -12, -11, -10, -9,
+                                  -9, -10, -11, -12, 4,   3,   -15, -1};
+  std::array<int8_t, 256> arrA8 = fillNeon<int8_t>(results8, VL / 8);
+  std::rotate(srcB8.begin(), srcB8.begin() + ((VL / 16) % 16), srcB8.end());
+  std::array<int8_t, 256> arrB8 =
+      fillNeonCombined<int8_t>(results8, srcB8, VL / 8);
+
+  CHECK_NEON(1, int8_t, arrA8);
+  CHECK_NEON(2, int8_t, arrB8);
+  // Find miniumum element. Modify search end point to only consider the
+  // elements within the current VL and predication.
+  int8_t minElemA8 = arrA8[std::distance(
+      arrA8.begin(),
+      std::min_element(arrA8.begin(), arrA8.end() - (256 - VL / 16)))];
+  int8_t minElemB8 = arrB8[std::distance(
+      arrB8.begin(),
+      std::min_element(arrB8.begin(), arrB8.end() - (256 - VL / 8)))];
+  CHECK_NEON(3, int8_t, {minElemA8, 0, 0, 0});
+  CHECK_NEON(4, int8_t, {minElemB8, 0, 0, 0});
 }
 
 TEST_P(InstSve, smulh) {
