@@ -236,33 +236,3 @@ jobs:
           else
             echo "TEALEAF runtime is within threshold of 5%!"
           fi
-
-      # #######################################
-      # # Summary
-      # #######################################
-      # - name: Summary
-      #   shell: bash
-      #   run: |
-      #     echo "#############################################"
-      #     echo "CLOVERLEAF (cloverleaf_gcc10.3.0_armv8.4+sve)"
-      #     echo "Current Time: $CLOVERLEAF_CURRENT_TIME"
-      #     echo "Average Time: ${{ env.CLOVERLEAF_AVG }}"
-      #     echo "Absolute Difference: $CLOVERLEAF_DIFFERENCE"
-          
-      #     echo "#############################################"
-      #     echo "MINIBUDE (minibude_gcc10.3.0_armv8.4+sve)"
-      #     echo "Current Time: $MINIBUDE_CURRENT_TIME"
-      #     echo "Average Time: ${{ env.MINIBUDE_AVG }}"
-      #     echo "Absolute Difference: $MINIBUDE_DIFFERENCE"
-
-      #     echo "#############################################"
-      #     echo "STREAM (stream_gcc10.3.0_armv8.4+sve)"
-      #     echo "Current Time: $STREAM_CURRENT_TIME"
-      #     echo "Average Time: ${{ env.STREAM_AVG }}"
-      #     echo "Absolute Difference: $STREAM_DIFFERENCE"
-
-      #     echo "#############################################"
-      #     echo "TEALEAF (tealeaf_gcc10.3.0_armv8.4+sve)"
-      #     echo "Current Time: $TEALEAF_CURRENT_TIME"
-      #     echo "Average Time: ${{ env.TEALEAF_AVG }}"
-      #     echo "Absolute Difference: $TEALEAF_DIFFERENCE"

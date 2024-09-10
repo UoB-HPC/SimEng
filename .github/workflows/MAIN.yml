@@ -7,9 +7,9 @@ on:
     # branches:
     #   - dev
 
-  # pull_request:
-  #   branches:
-  #     - main
+  pull_request:
+    branches:
+      - main
     
   schedule:
     - cron: '0 0 */6 * *'  # Runs every 6 days
@@ -59,7 +59,6 @@ jobs:
     with:
       # Number of runs of current commit to average over to compare to previous average hard coded as env vars
       RUNS: 10
-
     secrets: inherit
 
   # CLANG_FORMAT:
