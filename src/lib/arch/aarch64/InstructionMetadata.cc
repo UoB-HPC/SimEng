@@ -1591,6 +1591,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_WHILELT_PXX_S:
       [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_B:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_D:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_H:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_S:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_B:
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_D:
