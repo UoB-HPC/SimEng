@@ -3,7 +3,7 @@ name: Build_Test_SimEng
 
 on:
   # workflow_call:
-  push:
+  # push:
     # branches:
     #   - dev
 
