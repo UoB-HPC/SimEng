@@ -349,7 +349,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_MLA_ZPmZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_B:
       // No defined access types
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -432,7 +438,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_B:
       [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
       [[fallthrough]];
