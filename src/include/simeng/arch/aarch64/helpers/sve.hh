@@ -921,7 +921,7 @@ RegisterValue sveFTrigSMul(srcValContainer& sourceValues,
   // register
   for (int i = 0; i < partition_num; i++) {
     out[i] = n[i] * n[i];
-    T sign_bit = m[i] & bit_0_mask ? 1.0 : -1.0;
+    T sign_bit = m[i] & bit_0_mask ? -1.0 : 1.0;
     out[i] = std::abs(out[i]) * sign_bit;
   }
 

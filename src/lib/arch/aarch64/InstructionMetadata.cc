@@ -89,6 +89,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_SMAX_ZI_B:
       [[fallthrough]];
+    case Opcode::AArch64_FTSMUL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSMUL_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_D:
       [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_H:
