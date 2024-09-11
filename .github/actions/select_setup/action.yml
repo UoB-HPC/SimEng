@@ -8,9 +8,7 @@ description: installs dependencies and correct armclang version to build and tes
 inputs:
   OS:
     required: true
-  LLVM-VERSION:
-    required: true
-  COMPILER: 
+  COMPILER:
     required: true
   MODE:
     required: true

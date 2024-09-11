@@ -3,10 +3,13 @@ description: runs simeng benchmarks
 
 inputs:
   BENCHMARK_BRANCH:
+    description: name of the branch on the benchmark repo you want to checkout 
     required: true
   OS:
+    description: docker image name
     required: true
   PAT:
+    description: personal access token required to checkout private benchmark repo
     required: true
 
 runs:

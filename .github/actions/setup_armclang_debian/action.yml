@@ -3,8 +3,10 @@ description: installs dependencies and correct gcc version to build and test sim
 
 inputs:
   OS:
+    description: docker image name
     required: true
   MODE:
+    description: simeng-mode e.g. Release or Debug
     required: true
 
 runs:

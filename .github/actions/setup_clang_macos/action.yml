@@ -3,10 +3,11 @@ description: build and test simeng using clang compiler on apple
 
 inputs:
   OS:
+    description: docker image name
     required: true
   MODE:
+    description: simeng-mode e.g. Release or Debug
     required: true
-
 runs:
   using: 'composite'
   steps:

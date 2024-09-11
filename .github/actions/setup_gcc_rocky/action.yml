@@ -3,10 +3,13 @@ description: installs dependencies and correct gcc version to build and test sim
 
 inputs:
   OS:
+    description: docker image name
     required: true
   gcc-version:
+    description: gcc version
     required: true
   MODE:
+    description: Release or Debug mode
     required: true
 
 runs:

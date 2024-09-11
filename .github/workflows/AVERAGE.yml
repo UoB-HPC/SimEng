@@ -100,9 +100,9 @@ jobs:
           do  
               # Run the benchmark and redirect output to a file
               if [ $datafile_path ]; then
-                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
+                sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
               else
-                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name  > "$output_file"
+                sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name  > "$output_file"
               fi
 
               # Extract the time in milliseconds from the output

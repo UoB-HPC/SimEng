@@ -2,6 +2,7 @@ name: clang format
 
 on:
   workflow_call:
+  workflow_dispatch:
 
 jobs:
     clang_format:

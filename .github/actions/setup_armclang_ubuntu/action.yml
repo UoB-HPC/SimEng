@@ -3,8 +3,10 @@ description: installs dependencies and correct armclang version to build and tes
 
 inputs:
   OS:
+    description: docker image name
     required: true
-  LLVM-VERSION:
+  MODE:
+    description: simeng-mode e.g. Release or Debug
     required: true
     
 runs:

@@ -95,7 +95,6 @@ jobs:
       - name: setup compiler and OS env + build simeng
         uses: ./.github/actions/select_setup
         with: 
-          LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: ${{ matrix.OS }}
           COMPILER: ${{ matrix.COMPILER }}
           MODE: ${{ inputs.SIMENG-MODE }}

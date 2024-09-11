@@ -9,7 +9,6 @@ on:
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-  LLVM-VERSION: 14
   BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
   PAT: ${{ secrets.SIMENGUOB_PAT }}
 
@@ -38,7 +37,6 @@ jobs:
       - name: setup compiler and OS env + build simeng
         uses: ./.github/actions/select_setup
         with: 
-          LLVM-VERSION: ${{ env.LLVM-VERSION }}
           OS: macos
           COMPILER: ${{ matrix.COMPILER }}
           MODE: ${{ inputs.simeng-mode }}
