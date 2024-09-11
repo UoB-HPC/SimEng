@@ -240,8 +240,10 @@ class AArch64RegressionTest : public RegressionTest {
   std::string getSubtargetFeaturesString() {
 #if SIMENG_LLVM_VERSION < 14
     return "+sve,+lse";
-#else
+#elif SIMENG_LLVM_VERSION < 18
     return "+sve,+lse,+sve2,+sme,+sme-f64";
+#else
+    return "+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
 #endif
   }
 
