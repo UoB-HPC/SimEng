@@ -5971,6 +5971,26 @@ TEST_P(InstSve, pfalse) {
   CHECK_PREDICATE(0, uint64_t, fillPred(VL / 8, {0}, 1));
 }
 
+TEST_P(InstSve, pfirst) {
+  RUN_AARCH64(R"(
+    ptrue p0.b
+    pfalse p1.b
+    ptrue p2.b
+    ptrue p3.b
+    pfalse p4.b
+    pfalse p5.b
+
+    pfirst p2.b, p0, p2.b
+    pfirst p3.b, p1, p3.b
+    pfirst p4.b, p0, p4.b
+    pfirst p5.b, p1, p5.b
+  )");
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 8, {1}, 1));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 1));
+  CHECK_PREDICATE(4, uint64_t, fillPred(1, {1}, 1));
+  CHECK_PREDICATE(5, uint64_t, fillPred(VL / 8, {0}, 1));
+}
+
 TEST_P(InstSve, ptrue) {
   RUN_AARCH64(R"(
     ptrue p0.s
@@ -7226,6 +7246,48 @@ TEST_P(InstSve, lastb) {
     )");
   CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x01}, 8));
   CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
+}
+
+TEST_P(InstSve, splice) {
+  // 64-bit arrangement
+  RUN_AARCH64(R"(
+    fmov z0.d, #1.5
+    fmov z1.d, #-0.5
+    fmov z2.d, #1.5
+
+    ptrue p0.d
+
+    mov x2, #0
+    mov x4, #16
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    whilelo p1.d, xzr, x2
+
+    splice z0.d, p0, z0.d, z1.d
+    splice z2.d, p1, z2.d, z1.d
+  )");
+  CHECK_NEON(0, double, fillNeon<double>({1.5}, VL / 8));
+  CHECK_NEON(2, double, fillNeonCombined<double>({1.5}, {-0.5}, VL / 8));
+
+  // 32-bit arrangement
+  RUN_AARCH64(R"(
+    fmov z0.s, #1.5
+    fmov z1.s, #-0.5
+    fmov z2.s, #1.5
+
+    ptrue p0.s
+
+    mov x2, #0
+    mov x4, #8
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    whilelo p1.s, xzr, x2
+
+    splice z0.s, p0, z0.s, z1.s
+    splice z2.s, p1, z2.s, z1.s
+  )");
+  CHECK_NEON(0, float, fillNeon<float>({1.5}, VL / 8));
+  CHECK_NEON(2, float, fillNeonCombined<float>({1.5}, {-0.5}, VL / 8));
 }
 
 TEST_P(InstSve, st1b) {
