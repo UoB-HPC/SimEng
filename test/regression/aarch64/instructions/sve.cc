@@ -4934,6 +4934,77 @@ TEST_P(InstSve, index) {
   CHECK_NEON(7, uint64_t, fillNeonBaseAndOffset<uint64_t>(10, 10, VL / 8));
 }
 
+TEST_P(InstSve, ftsmul) {
+  initialHeapData_.resize(VL / 4);
+  // 64-bit arrangement
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> srcA64 = {1.0, 2.0, 4.0, 12.34};
+  std::vector<double> srcB64 = {1.0, -5.4, 0.0, 78.2};
+  fillHeapCombined<double>(dheap, srcA64, srcB64, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    udiv x2, x2, x3
+    ptrue p0.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3] 
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+
+    ftsmul z2.d, z0.d, z1.d
+  )");
+  CHECK_NEON(2, double, fillNeon<double>({1.0, -4.0, 16.0, 152.2756}, VL / 8));
+
+  // 32-bit arrangement
+  initialHeapData_.resize(VL / 8);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrcA = {1.0f,  2.0f,   4.0f, 12.34f,
+                              -3.0f, -19.6f, 0.0f, 7.0f};
+  std::vector<float> fsrcB = {1.0f, -5.4f,   0.0f,  78.2f,
+                              2.1f, -26.42f, 12.0f, 3.5f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+
+    ftsmul z2.s, z0.s, z1.s
+  )");
+  CHECK_NEON(
+      0, float,
+      fillNeon<float>({1.0f, 2.0f, 4.0f, 12.34f, -3.0f, -19.6f, 0.0f, 7.0f},
+                      VL / 16));
+  CHECK_NEON(
+      1, float,
+      fillNeon<float>({1.0f, -5.4f, 0.0f, 78.2f, 2.1f, -26.42f, 12.0f, 3.5f},
+                      VL / 16));
+  CHECK_NEON(2, float,
+             fillNeon<float>(
+                 {1.0f, -4.0f, 16.0f, 152.2756f, 9.0f, -384.16f, 0.0f, 49.0f},
+                 VL / 16));
+}
+
 TEST_P(InstSve, ld1rd) {
   initialHeapData_.resize(16);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
