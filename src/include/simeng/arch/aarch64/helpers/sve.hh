@@ -1536,12 +1536,12 @@ std::array<uint64_t, 4> svePsel(
 std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
   const uint16_t partition_num = VL_bits / 8;
-  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
-  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
+  // sourceValues are wrong and the correct value is in the previous index.
+  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[2].getAsVector<uint64_t>();
   // Set destination d as source n to copy all false lanes and the active lanes
   // beyond the first
   std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
-
   // Get the first active lane and set same lane in destination predicate
   for (int i = 0; i < partition_num; i++) {
     uint64_t shifted_active = 1ull << ((i % (64)));

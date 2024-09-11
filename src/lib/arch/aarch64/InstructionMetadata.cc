@@ -79,6 +79,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_AND_ZPmZ_H:
       [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -1708,6 +1712,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_PFIRST_B:
+      [[fallthrough]];
     case Opcode::AArch64_LASTB_VPZ_D:
       [[fallthrough]];
     case Opcode::AArch64_LASTB_VPZ_S:
