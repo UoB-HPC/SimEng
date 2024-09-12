@@ -139,6 +139,7 @@ Ports:
     Instruction-Group-Support:
     - SVE_SIMPLE_ARTH
     - SVE_SIMPLE_LOGICAL
+    - SVE_SIMPLE_CMP
     - SVE_MUL
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
@@ -154,6 +155,7 @@ Ports:
     Instruction-Group-Support:
     - SVE_SIMPLE_ARTH
     - SVE_SIMPLE_LOGICAL
+    - SVE_SIMPLE_CMP
     - SVE_SIMPLE_CVT
     - SVE_MUL
     - SVE_DIV_OR_SQRT
@@ -168,12 +170,17 @@ Ports:
     Instruction-Group-Support:
     - SVE_SIMPLE_ARTH
     - SVE_SIMPLE_LOGICAL
+    - SVE_SIMPLE_CMP
     - SVE_MUL
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
     - FP_MUL
     - VECTOR_SIMPLE_CMP
 Reservation-Stations:
+  # Configurations and dispatch rates influenced by the following resources:
+  # - Neoverse V2 Core Software Optimisation Guide version 3.0 (page 55)
+  # - https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
+  # - https://hc2023.hotchips.org/assets/program/conference/day1/CPU1/HC2023.Arm.MagnusBruce.v04.FINAL.pdf
   0:
     Size: 22
     Dispatch-Rate: 2
@@ -188,12 +195,12 @@ Reservation-Stations:
     - SX1
   2:
     Size: 22
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - MX0
   3:
     Size: 22
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - MX1
   4:
@@ -208,39 +215,31 @@ Reservation-Stations:
     - SX3
   6:
     Size: 28
-    # Doubled dispatch rate reflects intermediate scheduler seen here:
-    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
-    Dispatch-Rate: 2
+    Dispatch-Rate: 4
     Ports:
     - VX0
     - VX1
   7:
     Size: 28
-    # Doubled dispatch rate reflects intermediate scheduler seen here:
-    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
     Dispatch-Rate: 2
     Ports:
     - VX2
     - VX3
   8:
     Size: 16
-    # Doubled dispatch rate reflects intermediate scheduler seen here:
-    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - LS0
     - SD0
   9:
     Size: 16
-    # Doubled dispatch rate reflects intermediate scheduler seen here:
-    # https://i0.wp.com/chipsandcheese.com/wp-content/uploads/2023/09/neoverse_v2.drawio-1.jpg?ssl=1
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - LS1
     - SD1
   10:
     Size: 16
-    Dispatch-Rate: 1
+    Dispatch-Rate: 2
     Ports:
     - LD
 Execution-Units:

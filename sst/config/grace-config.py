@@ -108,8 +108,8 @@ memprops = getMemoryProps(8, "GiB")
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/Users/fw17231/Documents/SimEng/SimEng/configs/grace.yaml",
-    "executable_path": "/Users/fw17231/Documents/SimEng/SST-Prefetchers/Binaries/A64fx/sgemm_sve_128_100itr.elf",
-    "executable_args": "",
+    "executable_path": "/Users/fw17231/Documents/SimEng/simeng-benchmarks/binaries/miniBUDE/openmp/bude-gcc10.3.0-armv8.4-a+sve",
+    "executable_args": "--deck /Users/fw17231/Documents/SimEng/simeng-benchmarks/src/miniBUDE/data/bm1 -n 64 -i 2",
     "clock" : GRACE_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": GRACE_CLW,
