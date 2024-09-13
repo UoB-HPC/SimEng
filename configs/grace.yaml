@@ -40,8 +40,8 @@ L1-Instruction-Memory:
 LSQ-L1-Interface:
   Access-Latency: 4
   Exclusive: False
-  Load-Bandwidth: 32
-  Store-Bandwidth: 16
+  Load-Bandwidth: 48
+  Store-Bandwidth: 32
   Permitted-Requests-Per-Cycle: 3
   Permitted-Loads-Per-Cycle: 3
   Permitted-Stores-Per-Cycle: 2
