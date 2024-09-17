@@ -370,8 +370,7 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
         128, "Vector-Length", true));
     expectations_["Core"]["Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
-                              1280, 1408, 1536, 1664, 1792, 1920, 2048});
+        std::vector<uint64_t>{128, 256, 512, 1024, 2048});
 
     expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
         128, "Streaming-Vector-Length", true));
