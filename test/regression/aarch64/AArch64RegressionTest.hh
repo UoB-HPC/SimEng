@@ -76,7 +76,7 @@ inline std::string paramToString(
 inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
     CoreType type) {
   std::vector<std::tuple<CoreType, std::string>> coreVLPairs;
-  for (uint64_t i = 128; i <= 2048; i += 128) {
+  for (uint64_t i = 128; i <= 2048; i *= 2) {
     coreVLPairs.push_back(std::make_tuple(
         type,
         "{Core: {Vector-Length: " + std::to_string(i) +

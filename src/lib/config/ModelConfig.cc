@@ -443,6 +443,11 @@ void ModelConfig::setExpectations(bool isDefault) {
         ExpectationNode::createExpectation<uint16_t>(1, "Matrix-Count", true));
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint16_t>(
         1, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(1, "Table-Count", true));
+    expectations_["Register-Set"]["Table-Count"].setValueBounds<uint16_t>(
+        1, UINT16_MAX);
   } else if (isa_ == ISA::RV64) {
     // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
     // ConfigTest.

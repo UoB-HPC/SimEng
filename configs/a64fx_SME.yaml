@@ -22,7 +22,7 @@ Register-Set:
   Predicate-Count: 48
   Conditional-Count: 128
   Matrix-Count: 2
-  # Table-Count: 16
+  Table-Count: 8
 Pipeline-Widths:
   Commit: 4
   FrontEnd: 4
