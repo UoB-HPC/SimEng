@@ -423,6 +423,9 @@ void Instruction::decode() {
         knownOffset_ = metadata_.operands[2].imm;
         break;
       }
+      case Opcode::AArch64_RET:  // ret {xt}
+        branchType_ = BranchType::Return;
+        break;
       default:
         break;
     }
@@ -495,14 +498,14 @@ void Instruction::decode() {
   }
   if (metadata_.opcode == Opcode::AArch64_LDRXl ||
       metadata_.opcode == Opcode::AArch64_LDRSWl) {
-    // Literal loads aren't flagged as having a memory operand, so these must be
-    // marked as loads manually
+    // Literal loads aren't flagged as having a memory operand, so these must
+    // be marked as loads manually
     setInstructionType(InsnType::isLoad);
   }
 
   // Identify Logical (bitwise) instructions
-  // Opcode prefix-overlaps have been commented out but left in for clarity what
-  // is searched for.
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
   if (metadata_.mnemonic.find("and") == 0 ||
       metadata_.mnemonic.find("bic") == 0 ||
       metadata_.mnemonic.find("bif") == 0 ||
@@ -528,8 +531,8 @@ void Instruction::decode() {
   }
 
   // Identify comparison insturctions (excluding atomic LD-CMP-STR)
-  // Opcode prefix-overlaps have been commented out but left in for clarity what
-  // is searched for.
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
   if (metadata_.mnemonic.find("ccmn") == 0 ||
       metadata_.mnemonic.find("cmn") == 0 ||
       metadata_.mnemonic.find("cmp") == 0 ||
@@ -585,8 +588,8 @@ void Instruction::decode() {
   }
 
   // Identify convert instructions
-  // Opcode prefix-overlaps have been commented out but left in for clarity what
-  // is searched for.
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
   if (metadata_.mnemonic.find("bfcvt") == 0 ||
       // metadata_.mnemonic.find("bfcvtn") == 0 ||
       // metadata_.mnemonic.find("bfcvtnt") == 0 ||
@@ -637,8 +640,8 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  // Opcode prefix-overlaps have been commented out but left in for clarity what
-  // is searched for.
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
   if (metadata_.mnemonic.find("sdiv") == 0 ||
       // metadata_.mnemonic.find("sdivr") == 0 ||
       metadata_.mnemonic.find("udiv") == 0 ||
@@ -655,8 +658,8 @@ void Instruction::decode() {
   }
 
   // Identify multiply operations
-  // Opcode prefix-overlaps have been commented out but left in for clarity what
-  // is searched for.
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
   if (metadata_.mnemonic.find("bfmmla") == 0 ||
       metadata_.mnemonic.find("bfmul") == 0 ||
       // The non-complete opcode prefix `bfml` only yields multiply uops
