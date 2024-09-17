@@ -33,6 +33,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->riscv.operands,
               sizeof(cs_riscv_op) * operandCount);
 
+  std::cerr << std::hex << (unsigned)encoding[0] << " " << (unsigned)encoding[1]
+            << " " << (unsigned)encoding[2] << " " << (unsigned)encoding[3]
+            << std::dec << std::endl;
+
   convertCompressedInstruction(insn);
   alterPseudoInstructions(insn);
 }
@@ -457,23 +461,6 @@ void InstructionMetadata::duplicateFirstOp() {
   operandCount = 3;
 }
 
-void InstructionMetadata::createMemOpPosOne() {
-  // Given register sequence {Op_a, imm, reg} return {Op_a, mem, _}
-  assert(operands[1].type == RISCV_OP_IMM &&
-         "Incorrect operand type when creating memory operand");
-  assert(operands[2].type == RISCV_OP_REG &&
-         "Incorrect operand type when creating memory operand");
-
-  cs_riscv_op temp;
-  temp.type = RISCV_OP_MEM;
-  temp.mem.base = operands[2].reg;
-  temp.mem.disp = operands[1].imm;
-
-  operands[1] = temp;
-
-  operandCount = 2;
-}
-
 void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
   if (insnLengthBytes_ != 2) {
     return;
@@ -532,9 +519,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       }
 
       opcode = Opcode::RISCV_LD;
-
-      // Create operand formatted like LD instruction
-      createMemOpPosOne();
 
       break;
     }
@@ -600,16 +584,11 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       opcode = Opcode::RISCV_SD;
 
-      // Create operand formatted like SD instruction
-      createMemOpPosOne();
-
       break;
     }
     case Opcode::RISCV_C_SWSP: {
       // sw rs2, offset[7:2](x2)
       opcode = Opcode::RISCV_SW;
-
-      createMemOpPosOne();
 
       break;
     }
@@ -641,9 +620,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // ld rd ′ , offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_LD;
-
-      // Create operand formatted like LD instruction
-      createMemOpPosOne();
 
       break;
     }
@@ -678,8 +654,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // sd rs2 ′ , offset[7:3](rs1 ′)
 
       opcode = Opcode::RISCV_SD;
-      // Create operand formatted like SD instruction
-      createMemOpPosOne();
 
       break;
     }
@@ -728,8 +702,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       opcode = Opcode::RISCV_LW;
 
-      createMemOpPosOne();
-
       break;
     }
     case Opcode::RISCV_C_FLDSP:
@@ -737,15 +709,11 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // fld rd, offset[8:3](x2)
       opcode = Opcode::RISCV_FLD;
 
-      createMemOpPosOne();
-
       break;
     case Opcode::RISCV_C_SW: {
       // sw rs2 ′, offset[6:2](rs1 ′)
 
       opcode = Opcode::RISCV_SW;
-
-      createMemOpPosOne();
 
       break;
     }
@@ -792,8 +760,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
       // lw rd ′ , offset[6:2](rs1 ′ )
 
       opcode = Opcode::RISCV_LW;
-
-      createMemOpPosOne();
 
       break;
     case Opcode::RISCV_C_SRLI:
@@ -881,8 +847,6 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       opcode = Opcode::RISCV_FSD;
 
-      createMemOpPosOne();
-
       break;
     case Opcode::RISCV_C_FLD:
       // TODO rv64dc ONLY, make check for this once RV32 implemented
@@ -890,16 +854,12 @@ void InstructionMetadata::convertCompressedInstruction(const cs_insn& insn) {
 
       opcode = Opcode::RISCV_FLD;
 
-      createMemOpPosOne();
-
       break;
     case Opcode::RISCV_C_FSDSP:
       // TODO rv64dc ONLY, make check for this once RV32 implemented
       // fsd rs2, offset[8:3](x2)
 
       opcode = Opcode::RISCV_FSD;
-
-      createMemOpPosOne();
 
       break;
     case Opcode::RISCV_C_SUBW:
