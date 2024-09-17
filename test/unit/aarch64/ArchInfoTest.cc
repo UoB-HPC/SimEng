@@ -41,10 +41,10 @@ class AArch64ArchInfoTest : public ::testing::Test {
       {1, 128},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
       {256, 128},
-      {64, 1}};
+      {64, 8}};
 
   const std::vector<uint16_t> physRegQuants = {
-      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128, 1};
+      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128, 8};
 };
 
 // Test for the getSysRegEnums() function
