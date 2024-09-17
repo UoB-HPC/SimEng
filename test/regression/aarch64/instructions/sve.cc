@@ -4963,8 +4963,10 @@ TEST_P(InstSve, ftsmul) {
     ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
 
     ftsmul z2.d, z0.d, z1.d
+    ftsmul z3.d, z1.d, z0.d
   )");
   CHECK_NEON(2, double, fillNeon<double>({1.0, -4.0, 16.0, 152.2756}, VL / 8));
+  CHECK_NEON(3, double, fillNeon<double>({1.0, 29.16, 0.0, 6115.24}, VL / 8));
 
   // 32-bit arrangement
   initialHeapData_.resize(VL / 8);
@@ -4998,19 +5000,88 @@ TEST_P(InstSve, ftsmul) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     ftsmul z2.s, z0.s, z1.s
+    ftsmul z3.s, z1.s, z0.s
   )");
-  CHECK_NEON(
-      0, float,
-      fillNeon<float>({1.0f, 2.0f, 4.0f, 12.34f, -3.0f, -19.6f, 0.0f, 7.0f},
-                      VL / 16));
-  CHECK_NEON(
-      1, float,
-      fillNeon<float>({1.0f, -5.4f, 0.0f, 78.2f, 2.1f, -26.42f, 12.0f, 3.5f},
-                      VL / 16));
   CHECK_NEON(2, float,
              fillNeon<float>(
                  {1.0f, -4.0f, 16.0f, 152.2756f, 9.0f, -384.16f, 0.0f, 49.0f},
                  VL / 16));
+  CHECK_NEON(3, float,
+             fillNeon<float>({1.0f, 29.16f, 0.0f, 6115.24f, -4.41f, -698.0164f,
+                              144.0f, 12.25f},
+                             VL / 16));
+}
+
+TEST_P(InstSve, ftssel) {
+  initialHeapData_.resize(VL / 4);
+  // 64-bit arrangement
+  // We use uint64_t to model doubles here as we care about the bit patterns
+  // rather than values
+  uint64_t* dheap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> srcA64 = {0x1234, 0xABCD, 0x00000000F0F0FFFF, 0x9876};
+  // Note that "The use of the second operand is consistent with it holding an
+  // integer corresponding to the desired sine-wave quadrant."
+  std::vector<uint64_t> srcB64 = {0x0, 0x8000000000000000, 0x4000000000000000,
+                                  0xC000000000000000};
+  fillHeapCombined<uint64_t>(dheap, srcA64, srcB64, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    udiv x2, x2, x3
+    ptrue p0.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3] 
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+
+    ftssel z2.d, z0.d, z1.d
+  )");
+  CHECK_NEON(2, uint64_t,
+             fillNeon<uint64_t>({0x1234, 0x3ff0000000000000, 0x80000000F0F0FFFF,
+                                 0xbff0000000000000},
+                                VL / 8));
+
+  // 32-bit arrangement
+  // We use uint32_t to model floats here as we care about the bit patterns
+  // rather than values
+  initialHeapData_.resize(VL / 8);
+  uint32_t* fheap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> fsrcA = {0x1234, 0xABCD, 0x00F0FFFF, 0x9876};
+  // Note that "the elements of the second source vector hold the corresponding
+  // value of the quadrant Q number as an integer not a floating-point value".
+  std::vector<uint32_t> fsrcB = {0x0, 0x80000000, 0x40000000, 0xC0000000};
+  fillHeapCombined<uint32_t>(fheap, fsrcA, fsrcB, VL / 32);
+
+  RUN_AARCH64(R"(
+     # Get heap address
+     mov x0, 0
+     mov x8, 214
+     svc #0
+
+     mov x1, #0
+     mov x2, #0
+     mov x3, #8
+     addvl x2, x2, #1
+     sdiv x2, x2, x3
+
+     whilelo p0.s, xzr, x2
+     ptrue p1.s
+
+     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+
+     ftssel z2.s, z0.s, z1.s
+   )");
+  CHECK_NEON(2, uint32_t,
+             fillNeon<uint32_t>({0x1234, 0x3f800000, 0x80F0FFFF, 0xBF800000},
+                                VL / 16));
 }
 
 TEST_P(InstSve, ld1rd) {

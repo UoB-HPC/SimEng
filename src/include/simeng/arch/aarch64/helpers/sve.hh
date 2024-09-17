@@ -947,13 +947,11 @@ RegisterValue sveFTrigSSel(srcValContainer& sourceValues,
   // Place the value 1.0 or a copy of the first source vector element in the
   // destination element, depending on bit 0 of the corresponding element of
   // the second source vector. The sign bit of the destination element is
-  // copied from bit 1 of the second source vector
+  // negated from bit 1 of the second source vector
   for (int i = 0; i < partition_num; i++) {
-    out[i] = m[i] & bit_0_mask ? 1.0 : n[i];
-    T sign_bit = m[i] & bit_1_mask ? 1.0 : -1.0;
-    out[i] = std::abs(out[i]) * sign_bit;
+    out[i] = m[i] & bit_0_mask ? static_cast<T>(1.0) : n[i];
+    out[i] = m[i] & bit_1_mask ? -out[i] : out[i];
   }
-
   return {out, 256};
 }
 
