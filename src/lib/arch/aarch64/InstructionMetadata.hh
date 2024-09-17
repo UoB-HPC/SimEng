@@ -92,8 +92,10 @@ struct InstructionMetadata {
   /** Whether this instruction is an alias. */
   bool isAlias;
 
+  // Temp fix until Capstone updates as MAX_OPERANDS too small for SME2
   /** The explicit operands. */
-  cs_aarch64_op operands[MAX_OPERANDS * 2];  // Temp fix until Capstone updates
+  cs_aarch64_op operands[MAX_OPERANDS * 2];
+
   /** The number of explicit operands. */
   uint8_t operandCount;
 
