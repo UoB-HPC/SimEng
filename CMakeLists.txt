@@ -226,7 +226,7 @@ add_subdirectory(src)
 add_subdirectory(docs)
 
 if (SIMENG_ENABLE_SST)
-  if (SST_INSTALL_DIR)
+  if (SST_CORE_INSTALL_DIR AND SST_ELEMENT_INSTALL_DIR)
     add_subdirectory(sst)
     if (SIMENG_ENABLE_SST_TESTS)
       enable_testing()
@@ -237,8 +237,8 @@ if (SIMENG_ENABLE_SST)
       )
     endif()
   else()
-    message(WARNING "SST build was selected but SST install directory was not specified.
-    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+    message(FATAL_ERROR "SST build was selected but one or more SST install directories were not specified.
+    Please specify -DSST_CORE_INSTALL_DIR=<path> and -DSST_ELEMENT_INSTALL_DIR=<path> for the SST build to proceed.")  
   endif()
 endif()
 

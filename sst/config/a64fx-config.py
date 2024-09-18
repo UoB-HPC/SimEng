@@ -70,7 +70,8 @@ A64FX_MEMTOL2_PCMG_TPUT = "128B"
 A64FX_MEM_ACCESS = "135.5ns"
 
 # Prefetcher to use
-PREFETCHER = "cassini.NextBlockPrefetcher"
+PREFETCHER = "cassini.NextKBlockPrefetcher"
+AGGRESSIVENESS = 4
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -87,8 +88,8 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY>",
+    "simeng_config_path": "/Users/fw17231/Documents/SimEng/SimEng/configs/a64fx.yaml",
+    "executable_path": "/Users/fw17231/Documents/SimEng/simeng-benchmarks/binaries/STREAM/openmp/stream-gcc10.3.0-armv8.4-a+sve",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
@@ -131,7 +132,7 @@ replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.rep
 prefetcher_l1 = l1cache.setSubComponent("prefetcher", PREFETCHER)
 prefetcher_l1.addParams({
  "cache_line_size": A64FX_CLW,
- "aggressiveness": 1,
+ "aggressiveness": AGGRESSIVENESS,
 })
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
@@ -168,7 +169,7 @@ replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.rep
 prefetcher_l2 = l2cache.setSubComponent("prefetcher", PREFETCHER)
 prefetcher_l2.addParams({
       "cache_line_size": A64FX_CLW,
-      "aggressiveness": 1,
+      "aggressiveness": AGGRESSIVENESS,
 })
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
@@ -196,10 +197,10 @@ memory_backend.addParams({
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
 
-# sst.setStatisticLoadLevel(7)
-# sst.setStatisticOutput("sst.statOutputConsole")
-# sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
-# sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+sst.setStatisticLoadLevel(7)
+sst.setStatisticOutput("sst.statOutputConsole")
+sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
 
 # ---------------------------------------------- Links ------------------------------------------------
 

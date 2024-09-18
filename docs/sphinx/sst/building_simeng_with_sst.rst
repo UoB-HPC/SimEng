@@ -23,7 +23,8 @@ Two flags have been added to SimEng's CMake configuration step to enable integra
 .. code-block:: text
 
        -DSIMENG_ENABLE_SST={ON, OFF} // Defaults to OFF
-       -DSST_INSTALL_DIR=<sst-core_install_directory> // Path to the SST-Core install location
+       -DSST_CORE_INSTALL_DIR=<sst-core_install_directory> // Path to the SST-Core install location
+       -DSST_ELEMENT_INSTALL_DIR=<sst-elements_install_directory> // Path to the SST-Elements install location
 
 The rest of the steps for building and installing SimEng with SST integration remain the same as a standalone SimEng :ref:`installation<Building_SimEng>` i.e the build step and the install step.
 

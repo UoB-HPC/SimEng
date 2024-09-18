@@ -1,9 +1,10 @@
-set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc)
+set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc Prefetchers/nextKBlockPrefetch.cc)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
 # Including SimEng include files and SST include files
 target_include_directories(sstsimeng PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(sstsimeng PUBLIC ${SST_INSTALL_DIR}/include)
+target_include_directories(sstsimeng PUBLIC ${SST_CORE_INSTALL_DIR}/include)
+target_include_directories(sstsimeng PUBLIC ${SST_ELEMENT_INSTALL_DIR}/include)
 # Including libsimeng.so
 target_include_directories(sstsimeng PUBLIC ${PROJECT_SOURCE_DIR}/src/lib)
 # Including capstone
