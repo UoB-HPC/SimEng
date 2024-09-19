@@ -33,10 +33,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->riscv.operands,
               sizeof(cs_riscv_op) * operandCount);
 
-  std::cerr << std::hex << (unsigned)encoding[0] << " " << (unsigned)encoding[1]
-            << " " << (unsigned)encoding[2] << " " << (unsigned)encoding[3]
-            << std::dec << std::endl;
-
   convertCompressedInstruction(insn);
   alterPseudoInstructions(insn);
 }
