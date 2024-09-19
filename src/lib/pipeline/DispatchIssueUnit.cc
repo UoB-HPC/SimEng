@@ -67,26 +67,42 @@ void DispatchIssueUnit::tick() {
       continue;
     }
 
-    const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
+    std::vector<uint16_t> supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
       // Exception; mark as ready to commit, and remove from pipeline
       uop->setCommitReady();
       input_.getHeadSlots()[slot] = nullptr;
       continue;
     }
-    // Allocate issue port to uop
-    uint16_t port = portAllocator_.allocate(supportedPorts);
-    uint16_t RS_Index = portMapping_[port].first;
-    uint16_t RS_Port = portMapping_[port].second;
-    assert(RS_Index < reservationStations_.size() &&
-           "Allocated port inaccessible");
-    ReservationStation& rs = reservationStations_[RS_Index];
 
-    // When appropriate, stall uop or input buffer if stall buffer full
-    if (rs.currentSize == rs.capacity ||
-        dispatches_[RS_Index] == rs.dispatchRate) {
-      // Deallocate port given
-      portAllocator_.deallocate(port);
+    // Try find an available RS
+    uint16_t port = 0;
+    uint16_t RS_Index = 0;
+    uint16_t RS_Port = 0;
+    ReservationStation* rs;
+    bool foundRS = false;
+    while (false == foundRS && supportedPorts.size() > 0) {
+      // Allocate issue port to uop
+      port = portAllocator_.allocate(supportedPorts);
+      RS_Index = portMapping_[port].first;
+      RS_Port = portMapping_[port].second;
+      assert(RS_Index < reservationStations_.size() &&
+             "Allocated port inaccessible");
+      rs = &reservationStations_[RS_Index];
+      // When appropriate, stall uop or input buffer if stall buffer full
+      if (rs->currentSize == rs->capacity ||
+          dispatches_[RS_Index] == rs->dispatchRate) {
+        // Deallocate port given
+        portAllocator_.deallocate(port);
+        supportedPorts.erase(
+            std::find(supportedPorts.begin(), supportedPorts.end(), port));
+      } else {
+        foundRS = true;
+      }
+    }
+    // If no port with capacity or available dispatch rate found. Stall and
+    // return.
+    if (false == foundRS) {
       input_.stall(true);
       rsStalls_++;
       return;
@@ -123,10 +139,10 @@ void DispatchIssueUnit::tick() {
 
     // Increment dispatches made and RS occupied entries size
     dispatches_[RS_Index]++;
-    rs.currentSize++;
+    rs->currentSize++;
 
     if (ready) {
-      rs.ports[RS_Port].ready.push_back(std::move(uop));
+      rs->ports[RS_Port].ready.push_back(std::move(uop));
     }
 
     input_.getHeadSlots()[slot] = nullptr;
