@@ -60,6 +60,95 @@ TEST_P(InstStore, stlr) {
             0xBABA);
 }
 
+TEST_P(InstStore, stlxr) {
+  // stlxrb
+  RUN_AARCH64(R"(
+    mov w0, 0xAB
+    mov w1, 0x12
+    mov w2, 0xCD
+    mov w3, 0x34
+    sub sp, sp, #4
+    stlxrb w4, w0, [sp]
+    add sp, sp, #1
+    stlxrb w5, w1, [sp]
+    add sp, sp, #1
+    stlxrb w6, w2, [sp]
+    add sp, sp, #1
+    stlxrb w7, w3, [sp]
+    add sp, sp, #1
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 4),
+            0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 3),
+            0x12);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 2),
+            0xCD);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 1),
+            0x34);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
+
+  // stlxrh
+  RUN_AARCH64(R"(
+    mov w0, 0xABCD
+    mov w1, 0x1234
+    mov w2, 0xCDEF
+    mov w3, 0x3456
+    sub sp, sp, #8
+    stlxrh w4, w0, [sp]
+    add sp, sp, #2
+    stlxrh w5, w1, [sp]
+    add sp, sp, #2
+    stlxrh w6, w2, [sp]
+    add sp, sp, #2
+    stlxrh w7, w3, [sp]
+    add sp, sp, #2
+  )");
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 8),
+            0xABCD);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 6),
+            0x1234);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 4),
+            0xCDEF);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 2),
+            0x3456);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
+
+  // stlxr
+  RUN_AARCH64(R"(
+    mov w0, 0xABCD
+    mov w1, 0x1234
+    mov w2, 0xCDEF
+    mov w3, 0x3456
+    sub sp, sp, #24
+    stlxr w4, x0, [sp]
+    add sp, sp, #8
+    stlxr w5, x1, [sp]
+    add sp, sp, #8
+    stlxr w6, w2, [sp]
+    add sp, sp, #4
+    stlxr w7, w3, [sp]
+    add sp, sp, #4
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 24),
+            0xABCD);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 16),
+            0x1234);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 8),
+            0xCDEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 4),
+            0x3456);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
+}
+
 TEST_P(InstStore, strb) {
   RUN_AARCH64(R"(
     mov w0, 0xAB

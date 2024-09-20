@@ -56,7 +56,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].type = ARM64_OP_REG;
       break;
     }
+    case Opcode::AArch64_SMIN_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_B:
       [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_B:
       [[fallthrough]];
@@ -73,6 +79,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_AND_ZPmZ_H:
       [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -113,6 +123,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // incorrectly adds implicit nzcv dependency
       implicitSourceCount = 0;
       break;
+    case Opcode::AArch64_CMPHS_PPzZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHS_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHS_PPzZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHS_PPzZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_CMPHI_PPzZZ_B:
       [[fallthrough]];
     case Opcode::AArch64_CMPHI_PPzZZ_D:
@@ -341,7 +359,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_MLA_ZPmZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_B:
       // No defined access types
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -424,9 +448,29 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FTSMUL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSMUL_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSSEL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSSEL_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_S:
       [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_B:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_B:
       [[fallthrough]];
     case Opcode::AArch64_TRN1_ZZZ_B:
       [[fallthrough]];
@@ -455,6 +499,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FCPY_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FCPY_ZPmI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_S:
+      [[fallthrough]];
+    case Opcode::AArch64_CPY_ZPmV_D:
       [[fallthrough]];
     case Opcode::AArch64_FNEG_ZPmZ_D:
       [[fallthrough]];
@@ -502,6 +554,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[3].fp = 2.0f;
       }
 
+      break;
+    }
+    case Opcode::AArch64_FTMAD_ZZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTMAD_ZZI_S: {
+      // No defined access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[3].type = ARM64_OP_IMM;
       break;
     }
     case Opcode::AArch64_FCMLA_ZPmZZ_D: {
@@ -1551,6 +1614,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_WHILELT_PXX_S:
       [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_B:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_D:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_H:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELS_PXX_S:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_B:
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_D:
@@ -1660,6 +1731,48 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_PFIRST_B:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_LASTB_VPZ_B: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+    }
+    case Opcode::AArch64_CLASTB_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_B: {
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_PNEXT_D:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_S:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_H:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_B: {
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = ARM64_REG_NZCV;
+      break;
+    }
+
     case Opcode::AArch64_LD1_MXIPXX_H_D:
       [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_V_D:
@@ -2046,10 +2159,10 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias of dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode ::AArch64_CPY_ZPzI_B ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_D ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_H ||
-          opcode == Opcode ::AArch64_CPY_ZPzI_S) {
+      if (opcode == Opcode::AArch64_CPY_ZPzI_B ||
+          opcode == Opcode::AArch64_CPY_ZPzI_D ||
+          opcode == Opcode::AArch64_CPY_ZPzI_H ||
+          opcode == Opcode::AArch64_CPY_ZPzI_S) {
         // mov zd.T, pg/z, #imm{, shift}; alias of cpy zd.T, pg/z, #imm{,
         // shift}
         operandCount = 3;
@@ -2063,6 +2176,13 @@ void InstructionMetadata::revertAliasing() {
         auto value = std::stoi(tmpOpStr, 0, 16);
         operands[2].imm = tmpOpStr.length() == 4 ? static_cast<int8_t>(value)
                                                  : static_cast<int16_t>(value);
+        return;
+      }
+      if (opcode == Opcode::AArch64_CPY_ZPmV_B ||
+          opcode == Opcode::AArch64_CPY_ZPmV_D ||
+          opcode == Opcode::AArch64_CPY_ZPmV_H ||
+          opcode == Opcode::AArch64_CPY_ZPmV_S) {
+        // mov zd.T, pg/m, Vn; alias of cpy zd.T, pg/m, Vn;
         return;
       }
       if (opcode == Opcode::AArch64_DUPM_ZI ||
@@ -2404,6 +2524,19 @@ void InstructionMetadata::revertAliasing() {
         // ror xd, xn, xm; alias for : rorv xd, xn, xm
         // Blank entry was for a legitimate alias, however operands were
         // identical so nothing to alter between the instructions.
+        return;
+      }
+      if (opcode == Opcode::AArch64_EXTRWrri ||
+          opcode == Opcode::AArch64_EXTRXrri) {
+        // ror wd, ws, #shift; alias for : extr wd, ws, ws, #shift
+        operandCount = 4;
+        operands[3] = operands[2];
+        operands[2] = operands[1];
+
+        operands[2].type = ARM64_OP_REG;
+        operands[2].access = CS_AC_READ;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
         return;
       }
       return aliasNYI();

@@ -500,7 +500,7 @@ class AArch64RegressionTest : public RegressionTest {
     std::array<T, (32 / sizeof(T))> generatedArray;
     generatedArray.fill(0);
     // Fill array by cycling through source elements
-    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+    for (size_t i = 0; i < (num_bytes / sizeof(T)); i++) {
       generatedArray[i] = src[i % src.size()];
     }
     return generatedArray;

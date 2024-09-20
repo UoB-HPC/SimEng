@@ -463,7 +463,9 @@ void Instruction::decode() {
 
     // Check first operand access to determine if it's a load or store
     if (metadata_.operands[0].access & CS_AC_WRITE) {
-      if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR) {
+      if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR ||
+          metadata_.id == ARM64_INS_STLXRB ||
+          metadata_.id == ARM64_INS_STLXRH) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {

@@ -205,6 +205,10 @@ void Instruction::execute() {
         results_[0] = vecSumElems_2ops<uint8_t, 8>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_UADDLVv8i8v: {  // uaddlv hd, vn.8b
+        results_[0] = sveAddlv<uint32_t, uint8_t, 8>(sourceValues_);
+        break;
+      }
       case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
         auto [result, nzcv] =
             addShift_imm<uint32_t>(sourceValues_, metadata_, false);
@@ -353,6 +357,30 @@ void Instruction::execute() {
       case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {  // adr zd.s, [zn.s, zm.s, lsl #3]
         results_[0] =
             sveAdr_packedOffsets<uint32_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSMUL_ZZZ_S: {  // ftsmul zd.s, zn.s, zm.s
+        results_[0] = sveFTrigSMul<float, int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSMUL_ZZZ_D: {  // ftsmul zd.d, zn.d, zm.d
+        results_[0] = sveFTrigSMul<double, int64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSSEL_ZZZ_S: {  // ftssel zd.s, zn.s, zm.s
+        results_[0] = sveFTrigSSel<float, int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTSSEL_ZZZ_D: {  // ftssel zd.d, zn.d, zm.d
+        results_[0] = sveFTrigSSel<double, int64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTMAD_ZZI_S: {  // ftmad zd.s, zn.s, zm.s, #imm
+        results_[0] = sveFTrigMad<float>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FTMAD_ZZI_D: {  // ftmad zd.s, zn.s, zm.s, #imm
+        results_[0] = sveFTrigMad<double>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_ANDSWri: {  // ands wd, wn, #imm
@@ -675,6 +703,12 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> bool { return (x == y); });
         break;
       }
+      case Opcode::AArch64_CMEQv2i32rz: {  // cmeq vd.2s, vn.2s, #0
+        results_[0] = vecCompare<uint32_t, 2>(
+            sourceValues_, true,
+            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
+        break;
+      }
       case Opcode::AArch64_CMEQv4i32: {  // cmeq vd.4s, vn.4s, vm.4s
         results_[0] = vecCompare<uint32_t, 4>(
             sourceValues_, false,
@@ -691,6 +725,12 @@ void Instruction::execute() {
         results_[0] = vecCompare<int8_t, 8>(
             sourceValues_, true,
             [](int8_t x, int8_t y) -> bool { return (x == y); });
+        break;
+      }
+      case Opcode::AArch64_CMHIv2i32: {  // cmhi vd.2s, vn.2s, vm.2s
+        results_[0] = vecCompare<uint32_t, 2>(
+            sourceValues_, false,
+            [](uint32_t x, uint32_t y) -> bool { return (x > y); });
         break;
       }
       case Opcode::AArch64_CMHIv4i32: {  // cmhi vd.4s, vn.4s, vm.4s
@@ -833,6 +873,38 @@ void Instruction::execute() {
         results_[1] = output;
         break;
       }
+      case Opcode::AArch64_CMPHS_PPzZZ_B: {  // cmphs pd.b, pg/z, zn.b, zm.b
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint8_t>(
+            sourceValues_, metadata_, VL_bits, false,
+            [](uint8_t x, uint8_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_D: {  // cmphs pd.d, pg/z, zn.d, zm.d
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint64_t>(
+            sourceValues_, metadata_, VL_bits, false,
+            [](uint64_t x, uint64_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_H: {  // cmphs pd.h, pg/z, zn.h, zm.h
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint16_t>(
+            sourceValues_, metadata_, VL_bits, false,
+            [](uint16_t x, uint16_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_CMPHS_PPzZZ_S: {  // cmphs pd.s, pg/z, zn.s, zm.s
+        auto [output, nzcv] = sveCmpPredicated_toPred<uint32_t>(
+            sourceValues_, metadata_, VL_bits, false,
+            [](uint32_t x, uint32_t y) -> bool { return x >= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
       case Opcode::AArch64_CMPNE_PPzZI_B: {  // cmpne pd.b, pg/z. zn.b, #imm
         auto [output, nzcv] = sveCmpPredicated_toPred<int8_t>(
             sourceValues_, metadata_, VL_bits, true,
@@ -947,6 +1019,22 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_CPY_ZPzI_S: {  // cpy zd.s, pg/z, #imm{, shift}
         results_[0] = sveCpy_imm<int32_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_B: {  // cpy zd.b, pg/m, vn.b
+        results_[0] = sveCpy_Scalar<int8_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_D: {  // cpy zd.d, pg/m, vn.d
+        results_[0] = sveCpy_Scalar<int64_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_H: {  // cpy zd.h, pg/m, vn.h
+        results_[0] = sveCpy_Scalar<int16_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CPY_ZPmV_S: {  // cpy zd.s, pg/m, vn.s
+        results_[0] = sveCpy_Scalar<int32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
       case Opcode::AArch64_DUPi32: {  // dup vd, vn.s[index]
@@ -1749,6 +1837,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
         results_[0] = vecFDiv<double, 2>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_FDIVv4f32: {  // fdiv vd.4s, vn.4s, vm.4s
+        results_[0] = vecFDiv<float, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_FDUP_ZI_D: {  // fdup zd.d, #imm
@@ -2556,6 +2648,38 @@ void Instruction::execute() {
             vecInsIndex_gpr<uint8_t, uint32_t, 16>(sourceValues_, metadata_);
         break;
       }
+      case Opcode::AArch64_LASTB_VPZ_D: {  // lastb dd, pg, zn.d
+        results_[0] = sveLastBScalar<uint64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LASTB_VPZ_S: {  // lastb sd, pg, zn.s
+        results_[0] = sveLastBScalar<uint32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LASTB_VPZ_H: {  // lastb hd, pg, zn.h
+        results_[0] = sveLastBScalar<uint16_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_LASTB_VPZ_B: {  // lastb bd, pg, zn.b
+        results_[0] = sveLastBScalar<uint8_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_D: {  // clastb dd, pg, dn, zn.d
+        results_[0] = sveCLastBScalar<uint64_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_S: {  // clastb sd, pg, sn, zn.s
+        results_[0] = sveCLastBScalar<uint32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_H: {  // clastb hd, pg, hn, zn.h
+        results_[0] = sveCLastBScalar<uint16_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_CLASTB_VPZ_B: {  // clastb bd, pg, bn, zn.b
+        results_[0] = sveCLastBScalar<uint8_t>(sourceValues_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME, LOAD
@@ -3324,6 +3448,11 @@ void Instruction::execute() {
         results_[0] = memoryData_[0];
         break;
       }
+      case Opcode::AArch64_LDAXRB: {  // ldaxrb wt, [xn]
+        // LOAD
+        results_[0] = memoryData_[0].zeroExtend(1, 8);
+        break;
+      }
       case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(4, 8);
@@ -3592,6 +3721,12 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
+                                        // {#amount}}]
+        // LOAD
+        results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
+        break;
+      }
+      case Opcode::AArch64_LDRSWroW: {  // ldrsw xt, [xn, wm, {extend
                                         // {#amount}}]
         // LOAD
         results_[0] = static_cast<int64_t>(memoryData_[0].get<int32_t>());
@@ -4002,9 +4137,47 @@ void Instruction::execute() {
             [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
         break;
       }
+      case Opcode::AArch64_ORNv8i8: {  // orn vd.8b, vn.8b, vn.8b
+        results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
+            sourceValues_,
+            [](uint8_t x, uint8_t y) -> uint8_t { return x | (~y); });
+        break;
+      }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
         uint64_t out[4] = {0, 0, 0, 0};
         results_[0] = out;
+        break;
+      }
+      case Opcode::AArch64_PFIRST_B: {  // pfirst pdn.b, pg, pdn.b
+        results_[0] = svePfirst(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_PNEXT_B: {  // pnext pdn.b, pv, pdn.b
+        auto [result, nzcv] =
+            svePnext<uint8_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
+        break;
+      }
+      case Opcode::AArch64_PNEXT_H: {  // pnext pdn.h, pv, pdn.h
+        auto [result, nzcv] =
+            svePnext<uint16_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
+        break;
+      }
+      case Opcode::AArch64_PNEXT_S: {  // pnext pdn.s, pv, pdn.s
+        auto [result, nzcv] =
+            svePnext<uint32_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
+        break;
+      }
+      case Opcode::AArch64_PNEXT_D: {  // pnext pdn.d, pv, pdn.d
+        auto [result, nzcv] =
+            svePnext<uint64_t>(sourceValues_, metadata_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
@@ -4295,12 +4468,36 @@ void Instruction::execute() {
         results_[0] = maddl_4ops<int64_t, int32_t>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_SMAX_ZI_D: {  // smax zdn.d, zdn.d, #imm
+        results_[0] = sveMax_vecImm<int64_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_SMAX_ZI_S: {  // smax zdn.s, zdn.s, #imm
         results_[0] = sveMax_vecImm<int32_t>(sourceValues_, metadata_, VL_bits);
         break;
       }
+      case Opcode::AArch64_SMAX_ZI_H: {  // smax zdn.h, zdn.h, #imm
+        results_[0] = sveMax_vecImm<int16_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMAX_ZI_B: {  // smax zdn.b, zdn.b, #imm
+        results_[0] = sveMax_vecImm<int8_t>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMAX_ZPmZ_D: {  // smax zd.d, pg/m, zn.d, zm.d
+        results_[0] = sveMaxPredicated_vecs<int64_t>(sourceValues_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s
         results_[0] = sveMaxPredicated_vecs<int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMAX_ZPmZ_H: {  // smax zd.h, pg/m, zn.h, zm.h
+        results_[0] = sveMaxPredicated_vecs<int16_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMAX_ZPmZ_B: {  // smax zd.b, pg/m, zn.b, zm.b
+        results_[0] = sveMaxPredicated_vecs<int8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SMAXv4i32: {  // smax vd.4s, vn.4s, vm.4s
@@ -4309,18 +4506,48 @@ void Instruction::execute() {
             [](int32_t x, int32_t y) -> int32_t { return std::max(x, y); });
         break;
       }
+      case Opcode::AArch64_SMINV_VPZ_D: {  // sminv sd, pg, zn.d
+        results_[0] = sveSminv<int64_t>(sourceValues_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_SMINV_VPZ_S: {  // sminv sd, pg, zn.s
         results_[0] = sveSminv<int32_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMINV_VPZ_H: {  // sminv sd, pg, zn.h
+        results_[0] = sveSminv<int16_t>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SMINV_VPZ_B: {  // sminv sd, pg, zn.b
+        results_[0] = sveSminv<int8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SMINVv4i32v: {  // sminv sd, vn.4s
         results_[0] = vecMinv_2ops<int32_t, 4>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_SMIN_ZPmZ_D: {  // smin zd.d, pg/m, zn.d, zm.d
+        results_[0] = sveLogicOpPredicated_3vecs<int64_t>(
+            sourceValues_, VL_bits,
+            [](int64_t x, int64_t y) -> int64_t { return std::min(x, y); });
+        break;
+      }
       case Opcode::AArch64_SMIN_ZPmZ_S: {  // smin zd.s, pg/m, zn.s, zm.s
         results_[0] = sveLogicOpPredicated_3vecs<int32_t>(
             sourceValues_, VL_bits,
             [](int32_t x, int32_t y) -> int32_t { return std::min(x, y); });
+        break;
+      }
+      case Opcode::AArch64_SMIN_ZPmZ_H: {  // smin zd.h, pg/m, zn.h, zm.h
+        results_[0] = sveLogicOpPredicated_3vecs<int16_t>(
+            sourceValues_, VL_bits,
+            [](int16_t x, int16_t y) -> int16_t { return std::min(x, y); });
+        break;
+      }
+      case Opcode::AArch64_SMIN_ZPmZ_B: {  // smin zd.b, pg/m, zn.b, zm.b
+        results_[0] = sveLogicOpPredicated_3vecs<int8_t>(
+            sourceValues_, VL_bits,
+            [](int8_t x, int8_t y) -> int8_t { return std::min(x, y); });
         break;
       }
       case Opcode::AArch64_SMINv4i32: {  // smin vd.4s, vn.4s, vm.4s
@@ -4352,6 +4579,14 @@ void Instruction::execute() {
         // TODO: signed
         results_[0] = mulhi(sourceValues_[0].get<uint64_t>(),
                             sourceValues_[1].get<uint64_t>());
+        break;
+      }
+      case Opcode::AArch64_SPLICE_ZPZ_D: {  // splice zdn.d, pv, zdn.t, zm.d
+        results_[0] = sveSplice<double>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_SPLICE_ZPZ_S: {  // splice zdn.s, pv, zdn.t, zm.s
+        results_[0] = sveSplice<float>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
@@ -4931,16 +5166,19 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
-        // STORE
+                                     // STORE
+        std::cout << "sv0: " << sourceValues_[0] << "\n";
         memoryData_[0] = sourceValues_[0];
         break;
       }
+      case Opcode::AArch64_STLXRB:    // stlxrb ws, wt, [xn]
+      case Opcode::AArch64_STLXRH:    // stlxrh ws, wt, [xn]
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE
         memoryData_[0] = sourceValues_[0];
-        // TODO: Implement atomic memory access
-        results_[0] = static_cast<uint64_t>(0);
+        //  TODO: Implement atomic memory access
+        results_[0] = {0, 8};
         break;
       }
       case Opcode::AArch64_STPDi:    // stp dt1, dt2, [xn, #imm]
@@ -5558,6 +5796,26 @@ void Instruction::execute() {
         results_[0] = vecUMinP<uint8_t, 16>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_UMAXVv16i8v: {  // umaxv bd, vn.16b
+        results_[0] = sveUMaxV<uint8_t, 16>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_UMAXVv4i16v: {  // umaxv hd, vn.4h
+        results_[0] = sveUMaxV<uint16_t, 4>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_UMAXVv4i32v: {  // umaxv sd, vn.4s
+        results_[0] = sveUMaxV<uint32_t, 4>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_UMAXVv8i16v: {  // umaxv hd, vn.8h
+        results_[0] = sveUMaxV<uint16_t, 8>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_UMAXVv8i8v: {  // umaxv bd, vn.8b
+        results_[0] = sveUMaxV<uint8_t, 8>(sourceValues_);
+        break;
+      }
       case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]
       case Opcode::AArch64_UMOVvi32: {     // umov wd, vn.s[index]
         const uint32_t* vec = sourceValues_[0].getAsVector<uint32_t>();
@@ -5716,85 +5974,129 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_WHILELO_PWW_B: {  // whilelo pd.b, wn, wm
-        auto [output, nzcv] =
-            sveWhilelo<uint32_t, uint8_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint32_t, uint8_t>(
+            sourceValues_, VL_bits,
+            [](uint32_t x, uint32_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PWW_D: {  // whilelo pd.d, wn, wm
-        auto [output, nzcv] =
-            sveWhilelo<uint32_t, uint64_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint32_t, uint64_t>(
+            sourceValues_, VL_bits,
+            [](uint32_t x, uint32_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PWW_H: {  // whilelo pd.h, wn, wm
-        auto [output, nzcv] =
-            sveWhilelo<uint32_t, uint16_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint32_t, uint16_t>(
+            sourceValues_, VL_bits,
+            [](uint32_t x, uint32_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PWW_S: {  // whilelo pd.s, wn, wm
-        auto [output, nzcv] =
-            sveWhilelo<uint32_t, uint32_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint32_t, uint32_t>(
+            sourceValues_, VL_bits,
+            [](uint32_t x, uint32_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PXX_B: {  // whilelo pd.b, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<uint64_t, uint8_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint64_t, uint8_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PXX_D: {  // whilelo pd.d, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<uint64_t, uint64_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint64_t, uint64_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PXX_H: {  // whilelo pd.h, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<uint64_t, uint16_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint64_t, uint16_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELO_PXX_S: {  // whilelo pd.s, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<uint64_t, uint32_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<uint64_t, uint32_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x < y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELS_PXX_B: {  // whilels pd.b, xn, xm
+        auto [output, nzcv] = sveWhile<uint64_t, uint8_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x <= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELS_PXX_D: {  // whilels pd.d, xn, xm
+        auto [output, nzcv] = sveWhile<uint64_t, uint64_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x <= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELS_PXX_H: {  // whilels pd.h, xn, xm
+        auto [output, nzcv] = sveWhile<uint64_t, uint16_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x <= y; });
+        results_[0] = nzcv;
+        results_[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELS_PXX_S: {  // whilels pd.s, xn, xm
+        auto [output, nzcv] = sveWhile<uint64_t, uint32_t>(
+            sourceValues_, VL_bits,
+            [](uint64_t x, uint64_t y) -> bool { return x <= y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELT_PXX_B: {  // whilelt pd.b, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<int64_t, int8_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<int64_t, int8_t>(
+            sourceValues_, VL_bits,
+            [](int64_t x, int64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELT_PXX_D: {  // whilelt pd.d, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<int64_t, int64_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<int64_t, int64_t>(
+            sourceValues_, VL_bits,
+            [](int64_t x, int64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELT_PXX_H: {  // whilelt pd.h, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<int64_t, int16_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<int64_t, int16_t>(
+            sourceValues_, VL_bits,
+            [](int64_t x, int64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;
       }
       case Opcode::AArch64_WHILELT_PXX_S: {  // whilelt pd.s, xn, xm
-        auto [output, nzcv] =
-            sveWhilelo<int64_t, int32_t>(sourceValues_, VL_bits, true);
+        auto [output, nzcv] = sveWhile<int64_t, int32_t>(
+            sourceValues_, VL_bits,
+            [](int64_t x, int64_t y) -> bool { return x < y; });
         results_[0] = nzcv;
         results_[1] = output;
         break;

@@ -81,6 +81,20 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
+    if (uop->getInstructionAddress() == last_inst_addr) {
+      inst_repeat_counter++;
+    } else {
+      inst_repeat_counter = 0;
+    }
+    if (inst_repeat_counter > 10000000) {
+      std::cout
+          << "Infinite loop detected in rob commit at instruction address "
+          << std::hex << uop->getInstructionAddress() << std::dec << " ("
+          << uop->getMicroOpIndex() << "). Killing.\n";
+      exit(1);
+    }
+    last_inst_addr = uop->getInstructionAddress();
+
     if (!uop->canCommit()) {
       break;
     }

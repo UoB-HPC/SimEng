@@ -356,6 +356,26 @@ TEST_P(InstNeon, addv) {
   CHECK_NEON(1, uint8_t, {40});
 }
 
+TEST_P(InstNeon, uaddlv) {
+  // 16-bit
+  initialHeapData_.resize(16);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  for (int i = 0; i < 16; i++) {
+    heap8[i] = (i + 1);
+  }
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    uaddlv h1, v0.8b
+  )");
+  CHECK_NEON(1, uint16_t, {36});
+}
+
 TEST_P(InstNeon, and) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -691,18 +711,53 @@ TEST_P(InstNeon, cmeq) {
   CHECK_NEON(2, uint8_t, {0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF});
   CHECK_NEON(3, uint8_t, {0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00});
 
-  // 32-bit
+  // 32-bit, 2 lane
   initialHeapData_.resize(128);
-  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-  heap32[0] = 10;
-  heap32[1] = 11;
-  heap32[2] = 12;
-  heap32[3] = 13;
+  uint32_t* heapv2i32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapv2i32[0] = 10;
+  heapv2i32[1] = 0;
 
-  heap32[4] = 13;
-  heap32[5] = 11;
-  heap32[6] = 12;
-  heap32[7] = 10;
+  heapv2i32[2] = 0;
+  heapv2i32[3] = 12;
+
+  heapv2i32[4] = 15;
+  heapv2i32[5] = 9;
+
+  heapv2i32[6] = 0;
+  heapv2i32[7] = 0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+    ldr q2, [x0, #16]
+    ldr q3, [x0, #24]
+    cmeq v4.2s, v0.2s, #0
+    cmeq v5.2s, v1.2s, #0
+    cmeq v6.2s, v2.2s, #0
+    cmeq v7.2s, v3.2s, #0
+  )");
+  CHECK_NEON(4, uint32_t, {0, 0xFFFFFFFFu});
+  CHECK_NEON(5, uint32_t, {0xFFFFFFFFu, 0});
+  CHECK_NEON(6, uint32_t, {0, 0});
+  CHECK_NEON(7, uint32_t, {0xFFFFFFFFu, 0xFFFFFFFFu});
+
+  // 32-bit, 4 lane
+  initialHeapData_.resize(128);
+  uint32_t* heapv4i32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapv4i32[0] = 10;
+  heapv4i32[1] = 11;
+  heapv4i32[2] = 12;
+  heapv4i32[3] = 13;
+
+  heapv4i32[4] = 13;
+  heapv4i32[5] = 11;
+  heapv4i32[6] = 12;
+  heapv4i32[7] = 10;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -780,16 +835,40 @@ TEST_P(InstNeon, cmhs) {
 }
 
 TEST_P(InstNeon, cmhi) {
+  // 32-bit, 2 lane
   initialHeapData_.resize(32);
-  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-  heap[0] = 42;
-  heap[1] = 7;
-  heap[2] = UINT32_MAX;
-  heap[3] = 7;
-  heap[4] = 1;
-  heap[5] = (1u << 31) - 1;
-  heap[6] = 0;
-  heap[7] = 7;
+  uint32_t* heapv2i32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapv2i32[0] = UINT32_MAX;
+  heapv2i32[1] = 7;
+
+  heapv2i32[2] = 1;
+  heapv2i32[3] = 7;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+    cmhi v2.2s, v0.2s, v1.2s
+    cmhi v3.2s, v1.2s, v0.2s
+  )");
+  CHECK_NEON(2, uint32_t, {0xFFFFFFFF, 0x0});
+  CHECK_NEON(3, uint32_t, {0x0, 0x0});
+
+  // 32-bit, 4 lane
+  initialHeapData_.resize(32);
+  uint32_t* heapv4i32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapv4i32[0] = 42;
+  heapv4i32[1] = 7;
+  heapv4i32[2] = UINT32_MAX;
+  heapv4i32[3] = 7;
+  heapv4i32[4] = 1;
+  heapv4i32[5] = (1u << 31) - 1;
+  heapv4i32[6] = 0;
+  heapv4i32[7] = 7;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1009,6 +1088,27 @@ TEST_P(InstNeon, eor) {
   )");
   CHECK_NEON(2, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 1, 3, 1, 7, 1, 3, 1, 31});
   CHECK_NEON(3, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0});
+}
+
+TEST_P(InstNeon, orn) {
+  initialHeapData_.resize(16);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  for (int i = 0; i < 8; i++) {
+    heap[i] = i;
+    heap[i + 8] = i + 1;
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+
+    orn v2.8b, v0.8b, v1.8b
+  )");
+  CHECK_NEON(2, uint8_t, {254, 253, 254, 251, 254, 253, 254, 247});
 }
 
 TEST_P(InstNeon, ext) {
@@ -1531,11 +1631,12 @@ TEST_P(InstNeon, fcvtl2) {
 
 TEST_P(InstNeon, fdiv) {
   initialHeapData_.resize(32);
-  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
-  heap[0] = 1.0;
-  heap[1] = -42.5;
-  heap[2] = -0.125;
-  heap[3] = 16.0;
+  // 2 Doubles
+  double* heapv2f64 = reinterpret_cast<double*>(initialHeapData_.data());
+  heapv2f64[0] = 1.0;
+  heapv2f64[1] = -42.5;
+  heapv2f64[2] = -0.125;
+  heapv2f64[3] = 16.0;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1548,6 +1649,29 @@ TEST_P(InstNeon, fdiv) {
     fdiv v2.2d, v0.2d, v1.2d
   )");
   CHECK_NEON(2, double, {-8.0, -2.65625});
+
+  // 4 Floats
+  float* heapv4f32 = reinterpret_cast<float*>(initialHeapData_.data());
+  heapv4f32[0] = 1.0f;
+  heapv4f32[1] = -42.5f;
+  heapv4f32[2] = 10.0f;
+  heapv4f32[3] = 0.0f;
+  heapv4f32[4] = -0.125f;
+  heapv4f32[5] = 16.0f;
+  heapv4f32[6] = -2.0f;
+  heapv4f32[7] = 256.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fdiv v2.4s, v0.4s, v1.4s
+  )");
+  CHECK_NEON(2, float, {-8.0f, -2.65625f, -5.0f, 0.0f});
 }
 
 TEST_P(InstNeon, fmla) {
