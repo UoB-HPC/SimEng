@@ -18,6 +18,7 @@ set(SIMENG_SOURCES
     branchpredictors/GenericPredictor.cc
     branchpredictors/PerceptronPredictor.cc
     config/ModelConfig.cc
+    config/SimInfo.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     memory/FixedLatencyMemoryInterface.cc
