@@ -5166,17 +5166,19 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
-        // STORE
+                                     // STORE
+        std::cout << "sv0: " << sourceValues_[0] << "\n";
         memoryData_[0] = sourceValues_[0];
         break;
       }
       case Opcode::AArch64_STLXRB:    // stlxrb ws, wt, [xn]
+      case Opcode::AArch64_STLXRH:    // stlxrh ws, wt, [xn]
       case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
       case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
         // STORE
         memoryData_[0] = sourceValues_[0];
-        // TODO: Implement atomic memory access
-        results_[0] = static_cast<uint64_t>(0);
+        //  TODO: Implement atomic memory access
+        results_[0] = {0, 8};
         break;
       }
       case Opcode::AArch64_STPDi:    // stp dt1, dt2, [xn, #imm]
