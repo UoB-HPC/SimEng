@@ -1090,6 +1090,27 @@ TEST_P(InstNeon, eor) {
   CHECK_NEON(3, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0});
 }
 
+TEST_P(InstNeon, orn) {
+  initialHeapData_.resize(16);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  for (int i = 0; i < 8; i++) {
+    heap[i] = i;
+    heap[i + 8] = i + 1;
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+
+    orn v2.8b, v0.8b, v1.8b
+  )");
+  CHECK_NEON(2, uint8_t, {254, 253, 254, 251, 254, 253, 254, 247});
+}
+
 TEST_P(InstNeon, ext) {
   RUN_AARCH64(R"(
     movi v0.16b, #0xAB
