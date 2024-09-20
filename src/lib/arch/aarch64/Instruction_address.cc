@@ -1365,11 +1365,15 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 1}});
         break;
       }
-      case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
+      case Opcode::AArch64_STLXRH: {  // stlxrb ws, ht, [xn]
+        setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 2}});
+        break;
+      }
+      case Opcode::AArch64_STLXRW: {  // stlxrb ws, wt, [xn]
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 4}});
         break;
       }
-      case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
+      case Opcode::AArch64_STLXRX: {  // stlxr ws, xwt, [xn]
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 8}});
         break;
       }
