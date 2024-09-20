@@ -963,9 +963,9 @@ RegisterValue sveFTrigMad(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const T* n = sourceValues[0].getAsVector<T>();
-  const T* m = sourceValues[1].getAsVector<T>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[3].imm);
 
   const std::array<double, 8> sin64 = {1.0,
                                        -0.1666666666666661,
@@ -985,31 +985,30 @@ RegisterValue sveFTrigMad(
                                        0.2087558253975872e-08,
                                        -0.1135338700720054e-10};
 
-  const std::array<float, 8> sin32 = {1.0,
-                                      -1.666666716337e-01,
-                                      8.333330973983e-03,
-                                      -1.983967522392e-04,
-                                      2.721174723774e-06,
-                                      0.0,
-                                      0.0,
-                                      0.0};
+  const std::array<float, 8> sin32 = {1.0f,
+                                      -1.666666716337e-01f,
+                                      8.333330973983e-03f,
+                                      -1.983967522392e-04f,
+                                      2.721174723774e-06f,
+                                      0.0f,
+                                      0.0f,
+                                      0.0f};
 
-  const std::array<float, 8> cos32 = {1.0,
-                                      -5.000000000000e-01,
-                                      4.166664928198e-02,
-                                      -1.388759003021e-03,
-                                      2.446388680255e-05,
-                                      0.0,
-                                      0.0,
-                                      0.0};
+  const std::array<float, 8> cos32 = {1.0f,
+                                      -5.000000000000e-01f,
+                                      4.166664928198e-02f,
+                                      -1.388759003021e-03f,
+                                      2.446388680255e-05f,
+                                      0.0f,
+                                      0.0f,
+                                      0.0f};
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
-  // std::array<T, 8> lut;
 
   for (int i = 0; i < partition_num; i++) {
     T coeff;
-    const bool sign_bit = m[i] < 0 ? 1 : 0;
+    const bool sign_bit = std::signbit(m[i]);
     // If float then use those LUTs
     if (sizeof(T) == 4) {
       coeff = sign_bit ? cos32[imm] : sin32[imm];

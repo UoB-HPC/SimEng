@@ -5084,6 +5084,84 @@ TEST_P(InstSve, ftssel) {
                                 VL / 16));
 }
 
+TEST_P(InstSve, ftmad) {
+  initialHeapData_.resize(VL / 4);
+  // 64-bit arrangement
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> srcA64 = {0.0, 0.5, -0.5, 0.75};
+  std::vector<double> srcB64 = {0.0, 0.5, -0.4, -0.2};
+  fillHeapCombined<double>(dheap, srcA64, srcB64, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    udiv x2, x2, x3
+    ptrue p0.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    mov z2.d, z0.d
+    mov z3.d, z0.d
+    mov z4.d, z0.d
+
+    ftmad z2.d, z2.d, z1.d, #0
+    ftmad z3.d, z3.d, z1.d, #2
+    ftmad z4.d, z4.d, z1.d, #7
+  )");
+  CHECK_NEON(2, double, fillNeon<double>({1.0, 1.25, 0.8, 1.15}, VL / 8));
+  CHECK_NEON(3, double,
+             fillNeon<double>({0.008333333333320002, 0.258333333333320002,
+                               -0.15833333333333355, 0.19166666666666645},
+                              VL / 8));
+  CHECK_NEON(
+      4, double,
+      fillNeon<double>({0.0, 0.25, -0.20000000001135337, 0.1499999999886466},
+                       VL / 8));
+
+  // 32-bit arrangement
+  initialHeapData_.resize(VL / 4);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrcA = {0.0f, 0.5f, -0.5f, 0.75f};
+  std::vector<float> fsrcB = {0.0f, 0.5f, -0.4f, -0.2f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 16);
+
+  RUN_AARCH64(R"(
+     # Get heap address
+     mov x0, 0
+     mov x8, 214
+     svc #0
+
+     mov x1, #0
+     mov x2, #0
+     mov x3, #4
+     addvl x2, x2, #1
+     sdiv x2, x2, x3
+
+     whilelo p0.s, xzr, x2
+
+     ld1w {z2.s}, p0/z, [x0]
+     ld1w {z3.s}, p0/z, [x0]
+     ld1w {z4.s}, p0/z, [x0, x1, lsl #2]
+     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+
+     ftmad z2.s, z2.s, z1.s, #0
+     ftmad z3.s, z3.s, z1.s, #2
+     ftmad z4.s, z4.s, z1.s, #7
+   )");
+  CHECK_NEON(2, float, fillNeon<float>({1.0f, 1.25f, 0.8f, 1.15f}, VL / 8));
+  CHECK_NEON(3, float,
+             fillNeon<float>(
+                 {0.00833333f, 0.25833333f, -0.1583334f, 0.1916666f}, VL / 8));
+  CHECK_NEON(4, float, fillNeon<float>({0.0f, 0.25f, -0.2f, 0.15f}, VL / 8));
+}
+
 TEST_P(InstSve, ld1rd) {
   initialHeapData_.resize(16);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
