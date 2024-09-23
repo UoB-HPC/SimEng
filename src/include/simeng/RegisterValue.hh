@@ -33,8 +33,8 @@ class RegisterValue {
 
       if (bytes > sizeof(T)) {
         // Zero the remaining bytes not set by the provided value
-        std::fill<char*, uint16_t>(this->localValue + sizeof(T), this->localValue + bytes,
-                                   0);
+        std::fill<char*, uint16_t>(this->localValue + sizeof(T),
+                                   this->localValue + bytes, 0);
       }
     } else {
       void* data = pool.allocate(bytes);
