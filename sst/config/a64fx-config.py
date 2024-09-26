@@ -89,7 +89,7 @@ memprops = getMemoryProps(8, "GiB")
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/Users/fw17231/Documents/SimEng/SimEng/configs/a64fx.yaml",
-    "executable_path": "/Users/fw17231/Documents/SimEng/simeng-benchmarks/binaries/STREAM/openmp/stream-gcc10.3.0-armv8.4-a+sve",
+    "executable_path": "/Users/fw17231/Documents/SimEng/SST-Prefetchers/Binaries/A64fx/cloverleaf_a64fx.elf",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
