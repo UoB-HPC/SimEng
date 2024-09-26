@@ -40,7 +40,7 @@ TEST(RegisterValueTest, Reinterpret) {
 TEST(RegisterValueTest, Vector) {
   uint64_t value = 0x0000000200000001;
   auto registerValue = simeng::RegisterValue(value, 8);
-  auto vector = registerValue.getAsVector<uint32_t>();
+  const uint32_t* vector = registerValue.getAsVector<uint32_t>();
   EXPECT_EQ(vector[0], 1);
   EXPECT_EQ(vector[1], 2);
 }

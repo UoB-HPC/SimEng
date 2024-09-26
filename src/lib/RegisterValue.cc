@@ -19,8 +19,8 @@ RegisterValue RegisterValue::zeroExtend(uint16_t fromBytes,
   auto extended = RegisterValue(0, toBytes);
 
   // Get the appropriate source/destination pointers and copy the data
-  const char* src = (isLocal() ? value : ptr.get());
-  char* dest = (extended.isLocal() ? extended.value : extended.ptr.get());
+  const char* src = (isLocal() ? localValue : ptr.get());
+  char* dest = (extended.isLocal() ? extended.localValue : extended.ptr.get());
 
   std::memcpy(dest, src, fromBytes);
 
