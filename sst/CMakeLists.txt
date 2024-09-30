@@ -1,4 +1,4 @@
-set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc Prefetchers/nextKBlockPrefetch.cc)
+set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc Prefetchers/nextKBlockPrefetch.cc Prefetchers/offsetPrefetch.cc)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
 # Including SimEng include files and SST include files
