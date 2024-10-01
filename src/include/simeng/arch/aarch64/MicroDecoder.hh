@@ -94,6 +94,7 @@ class MicroDecoder {
                               AARCH64_OP_INVALID,
                               false,
                               {},
+                              {},
                               CS_AC_READ,
                               false};
 
