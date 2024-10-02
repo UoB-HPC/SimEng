@@ -31,16 +31,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->aarch64.operands,
               sizeof(cs_aarch64_op) * operandCount);
 
+  // std::cerr << mnemonic << " " << operandStr << " ---- " << std::hex
+  //           << (unsigned)encoding[0] << " " << (unsigned)encoding[1] << " "
+  //           << (unsigned)encoding[2] << " " << (unsigned)encoding[3] <<
+  //           std::dec
+  //           << " ------ implicit dests = " <<
+  //           (unsigned)implicitDestinationCount
+  //           << ", implicit src = " << (unsigned)implicitSourceCount
+  //           << std::endl;
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
-    case Opcode::AArch64_BLR:  // Example bytecode - 20003fd6
-      // Incorrectly implicitly reads from SP
-      implicitSourceCount--;
-      break;
-    case Opcode::AArch64_MRS:  // Example bytecode - 42d03bd5
-      // Incorrectly implicitly writes to NZCV
-      implicitDestinationCount--;
-      break;
+      //   case Opcode::AArch64_BLR:  // Example bytecode - 20003fd6
+      //     // Incorrectly implicitly reads from SP
+      //     implicitSourceCount--;
+      //     break;
+      //   case Opcode::AArch64_MRS:  // Example bytecode - 42d03bd5
+      //     // Incorrectly implicitly writes to NZCV
+      //     implicitDestinationCount--;
+      //     break;
     case Opcode::AArch64_FMOVXDHighr:  // Example bytecode - 4100af9e
       // FMOVXDHighr incorrectly flags destination as WRITE only
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
@@ -62,6 +70,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].type = AARCH64_OP_REG;
       operands[1].access = CS_AC_READ;
       operands[1].reg = operands[1].mem.base;
+      operands[1].vas = operands[1].vas;
       operands[2].type = AARCH64_OP_REG;
       operands[2].access = CS_AC_READ;
       operands[2].reg = operands[1].mem.index;
@@ -71,11 +80,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_CASALW:  // Example bytecode - 02fce188
     case Opcode::AArch64_CASALX:
-      // Correct access types
-      operandCount = 3;
-      operands[0].access = CS_AC_READ;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
+      // Remove implicit destination (MEM base reg)
+      implicitDestinationCount = 0;
       break;
     case Opcode::AArch64_ADD_ZI_B:  // Example bytecode - 00c12025
     case Opcode::AArch64_ADD_ZI_D:
@@ -84,12 +90,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Incorrect access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
-      // If LSL #8 is present then immediate is not properly set.
-      // LSL is automatically applied to the imm for these instructions
-      std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
-      if (tmpOpStr[1] == 'x') {
-        operands[2].imm = static_cast<uint64_t>(std::stoi(tmpOpStr, 0, 16));
-      }
+      //   // If LSL #8 is present then immediate is not properly set.
+      //   // LSL is automatically applied to the imm for these instructions
+      //   // std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
+      //   // if (tmpOpStr[1] == 'x') {
+      //   //   operands[2].imm = static_cast<uint64_t>(std::stoi(tmpOpStr, 0,
+      //   16));
+      //   // }
       break;
     }
     case Opcode::AArch64_SMAX_ZI_B:
@@ -114,18 +121,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
-      // Extract FP constant imm
-      aarch64_exactfpimm exactFp = operands[3].sysop.imm.exactfpimm;
-      if (exactFp == AARCH64_EXACTFPIMM_HALF)
-        operands[3].fp = 0.5;
-      else if (exactFp == AARCH64_EXACTFPIMM_ONE)
-        operands[3].fp = 1.0;
-      else if (exactFp == AARCH64_EXACTFPIMM_TWO)
-        operands[3].fp = 2.0;
-      else if (exactFp == AARCH64_EXACTFPIMM_ZERO)
-        operands[3].fp = 0.0;
-      else
-        assert(false && "Invalid FP immidate contant.");
+      //     // Extract FP constant imm
+      //     aarch64_exactfpimm exactFp = operands[3].sysop.imm.exactfpimm;
+      //     if (exactFp == AARCH64_EXACTFPIMM_HALF)
+      //       operands[3].fp = 0.5;
+      //     else if (exactFp == AARCH64_EXACTFPIMM_ONE)
+      //       operands[3].fp = 1.0;
+      //     else if (exactFp == AARCH64_EXACTFPIMM_TWO)
+      //       operands[3].fp = 2.0;
+      //     else if (exactFp == AARCH64_EXACTFPIMM_ZERO)
+      //       operands[3].fp = 0.0;
+      //     else
+      //       assert(false && "Invalid FP immidate contant.");
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_D:  // Example bytecode - 4901da04
@@ -186,18 +193,20 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
-    case Opcode::AArch64_CPY_ZPzI_B:
-    case Opcode::AArch64_CPY_ZPzI_D:
-    case Opcode::AArch64_CPY_ZPzI_H:  // Example bytecode - 01215005
-    case Opcode::AArch64_CPY_ZPzI_S: {
-      // Imm value not correctly set
-      std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
-      auto value = std::stoi(tmpOpStr, 0, 16);
-      // Ensure #imm is kept within the spec defined limits
-      operands[2].imm = tmpOpStr.length() == 4 ? static_cast<int8_t>(value)
-                                               : static_cast<int16_t>(value);
-      break;
-    }
+    //   case Opcode::AArch64_CPY_ZPzI_B:
+    //   case Opcode::AArch64_CPY_ZPzI_D:
+    //   case Opcode::AArch64_CPY_ZPzI_H:  // Example bytecode - 01215005
+    //   case Opcode::AArch64_CPY_ZPzI_S: {
+    //     // Imm value not correctly set
+    //     std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
+    //     auto value = std::stoi(tmpOpStr, 0, 16);
+    //     // Ensure #imm is kept within the spec defined limits
+    //     operands[2].imm = tmpOpStr.length() == 4 ?
+    //     static_cast<int8_t>(value)
+    //                                              :
+    //                                              static_cast<int16_t>(value);
+    //     break;
+    //   }
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode.
       // Need to re-extract relevant tiles from operandStr
