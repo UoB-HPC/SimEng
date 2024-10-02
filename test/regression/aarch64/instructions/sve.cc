@@ -8010,7 +8010,7 @@ TEST_P(InstSve, zip) {
 }
 
 #if SIMENG_LLVM_VERSION >= 14
-// If LLVm version supports SVE2 :
+// If LLVM version supports SVE2 :
 TEST_P(InstSve, psel) {
   RUN_AARCH64(R"(
     mov w13, #0
