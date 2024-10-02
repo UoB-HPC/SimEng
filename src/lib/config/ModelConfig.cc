@@ -367,15 +367,15 @@ void ModelConfig::setExpectations(bool isDefault) {
       std::vector{false, true});
 
   if (isa_ == ISA::AArch64) {
-    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint16_t>(
         128, "Vector-Length", true));
     expectations_["Core"]["Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 512, 1024, 2048});
+        std::vector<uint16_t>{128, 256, 512, 1024, 2048});
 
-    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint16_t>(
         128, "Streaming-Vector-Length", true));
     expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 512, 1024, 2048});
+        std::vector<uint16_t>{128, 256, 512, 1024, 2048});
   }
 
   // Fetch

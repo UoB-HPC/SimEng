@@ -658,7 +658,7 @@ bool ExceptionHandler::init() {
     if (metadata.opcode == Opcode::AArch64_MSR) {
       newSVCR = instruction_.getSourceOperands()[0].get<uint64_t>();
     } else if (metadata.opcode == Opcode::AArch64_MSRpstatesvcrImm1) {
-      // Enusre operand metadata is as expected
+      // Ensure operand metadata is as expected
       assert(metadata.operands[0].type == AARCH64_OP_SYSALIAS);
       assert(metadata.operands[0].sysop.sub_type == AARCH64_OP_SVCR);
       // extract SVCR bits

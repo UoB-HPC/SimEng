@@ -256,15 +256,10 @@ void Instruction::decode() {
         sourceRegisterCount_++;
         sourceOperandsPending_++;
 
-        // TODO checking of the shift type is a temporary fix to help reduce the
-        // chance of incorrectly reverted aliases from being mis-classified as
-        // isShift when op.shift contains garbage data. This should be reviewed
-        // on the next capstone update which should remove the need to revert
-        // aliasing
-        if (op.shift.type > aarch64_shifter::AARCH64_SFT_INVALID &&
-            op.shift.type <= aarch64_shifter::AARCH64_SFT_ROR &&
+        // Identify shift operands
+        if (op.shift.type != aarch64_shifter::AARCH64_SFT_INVALID &&
             op.shift.value > 0) {
-          setInstructionType(InsnType::isShift);  // Identify shift operands
+          setInstructionType(InsnType::isShift);
         }
       }
     } else if (op.type == AARCH64_OP_MEM) {  // Memory operand
