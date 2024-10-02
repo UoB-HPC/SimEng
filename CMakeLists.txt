@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(FetchContent)
 include(CheckCXXCompilerFlag)
+include(ProcessorCount)
 set(FETCHCONTENT_QUIET OFF)
 
 # FetchContent_MakeAvailable was introduced in 3.14
@@ -14,12 +15,17 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
     endif()
 endmacro()
 
-# we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
+# we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a relatively small part of it
 FetchContent_Declare(
-  llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-18.1.8.src.tar.xz
-  URL_HASH MD5=54e694dea8ba19db4a07d14507008e0b
+        llvm
+        URL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz
+        URL_HASH MD5=cfecaf29f50dce67836d32ca6b927e1d
+        #  URL https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz
+        #  URL_HASH MD5=81cd0be5ae6f1ad8961746116d426a96
 )
 
 FetchContent_Declare(
@@ -160,35 +166,75 @@ if(SIMENG_ENABLE_TESTS)
 
   else()
 
-    set(LLVM_TARGETS_TO_BUILD "AArch64;RISCV" CACHE INTERNAL "")
+    FetchContent_GetProperties(llvm)
+    if(NOT llvm_POPULATED)
+        FetchContent_Populate(llvm)
 
-    set(LLVM_BUILD_RUNTIME OFF)
+        set(COMMAND_ECHO_OPTION "")
+        # COMMAND_ECHO supported only in CMake >= 3.15
+        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15")
+            set(COMMAND_ECHO_OPTION COMMAND_ECHO STDOUT)
+        endif()
 
-    set(LLVM_BUILD_TOOLS OFF)
-    set(LLVM_INCLUDE_TOOLS OFF)
+        execute_process(
+                COMMAND ${CMAKE_COMMAND}
+                -S ${llvm_SOURCE_DIR}/llvm
+                -B ${llvm_BINARY_DIR}
+                -DCMAKE_WARN_DEPRECATED=OFF
+                -DCMAKE_INSTALL_MESSAGE=LAZY
+                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_INSTALL_PREFIX=${llvm_BINARY_DIR}/dist
+                -DCMAKE_SKIP_RPATH=OFF # keep the rpath prefix to avoid libLLVM.so
+                -DCMAKE_VERBOSE_MAKEFILE=${CMAKE_VERBOSE_MAKEFILE}
+                -G${CMAKE_GENERATOR}
 
-    set(LLVM_BUILD_EXAMPLES OFF)
-    set(LLVM_INCLUDE_EXAMPLES OFF)
+                -DLLVM_INCLUDE_BENCHMARKS=OFF
+                -DLLVM_INCLUDE_TESTS=OFF
+                -DLLVM_INCLUDE_DOCS=OFF
+                -DLLVM_INCLUDE_EXAMPLES=OFF
+                -DLLVM_BUILD_TESTS=OFF
+                -DLLVM_BUILD_DOCS=OFF
+                -DLLVM_BUILD_RUNTIME=OFF
+                -DLLVM_BUILD_TOOLS=OFF
+                -DLLVM_BUILD_EXAMPLES=OFF
+                -DLLVM_ENABLE_BINDINGS=OFF
+                -DLLVM_ENABLE_WARNINGS=OFF
+                "-DLLVM_TARGETS_TO_BUILD=AArch64\\;RISCV"
 
-    set(LLVM_BUILD_TESTS OFF)
-    set(LLVM_INCLUDE_TESTS OFF)
+                ${COMMAND_ECHO_OPTION}
+                RESULT_VARIABLE SUCCESS)
 
-    set(LLVM_BUILD_BENCHMARKS OFF)
-    set(LLVM_INCLUDE_BENCHMARKS OFF)
+        # XXX replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        if (NOT SUCCESS EQUAL "0")
+            message(FATAL_ERROR "LLVM configure did not succeed")
+        else ()
+            message(STATUS "LLVM configuration complete, starting build...")
+        endif ()
 
-    set(LLVM_BUILD_DOCS OFF)
-    set(LLVM_INCLUDE_DOCS OFF)
+        ProcessorCount(NPROC)
+        execute_process(
+                COMMAND ${CMAKE_COMMAND}
+                --build ${llvm_BINARY_DIR}
+                --target
+                # The full list of targets can be discovered via `ninja -t targets` inside the build
+                install-LLVMObject
+                install-LLVMAArch64AsmParser
+                install-LLVMRISCVAsmParser
+                # We also include the headers and CMake exports for a *complete* build
+                install-llvm-headers
+                install-cmake-exports
+                -- -j${N}
 
-    set(LLVM_INCLUDE_DOCS OFF)
-    set(LLVM_ENABLE_BINDINGS OFF)
-    set(LLVM_INSTALL_UTILS OFF)
+                ${COMMAND_ECHO_OPTION}
+                RESULT_VARIABLE SUCCESS)
 
-    set(LLVM_ENABLE_WARNINGS OFF)
-
-    # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
-    # make sure we get the headers too
-    FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
-    include_directories("${llvm_BINARY_DIR}/include/llvm" "${llvm_SOURCE_DIR}/include/llvm")
+        # XXX replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        if (NOT SUCCESS EQUAL "0")
+            message(FATAL_ERROR "LLVM build did not succeed")
+        endif ()
+    endif()
 
     find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
@@ -238,7 +284,7 @@ if (SIMENG_ENABLE_SST)
     endif()
   else()
     message(WARNING "SST build was selected but SST install directory was not specified.
-    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")
   endif()
 endif()
 
