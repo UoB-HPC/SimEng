@@ -89,7 +89,7 @@ struct MicroOpInfo {
 inline uint8_t getDataSize(cs_aarch64_op op) {
   // No V-register enum identifiers exist. Instead, depending on whether a full
   // or half vector is accessed, a Q or D register is used instead.
-  // A `is_vreg` bool in `op` defines if we are using v-vecotr registers.
+  // A `is_vreg` bool in `op` defines if we are using v-vector registers.
   if (op.is_vreg && ((AARCH64_REG_D0 <= op.reg && op.reg <= AARCH64_REG_D31) ||
                      (AARCH64_REG_Q0 <= op.reg && op.reg <= AARCH64_REG_Q31))) {
     AArch64Layout_VectorLayout vas = op.vas;
