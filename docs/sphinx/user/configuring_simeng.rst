@@ -102,6 +102,9 @@ AArch64
 - Matrix-Count (Optional)
     The number of physical ``za`` Arm SME registers.
 
+- Table-Count (Optional)
+    The number of physical SME Lookup Table registers (``zt0``).
+
 RISC-V
 
 - GeneralPurpose-Count
