@@ -22,10 +22,10 @@ endif()
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a relatively small part of it
 FetchContent_Declare(
         llvm
-        URL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz
-        URL_HASH MD5=cfecaf29f50dce67836d32ca6b927e1d
-        #  URL https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz
-        #  URL_HASH MD5=81cd0be5ae6f1ad8961746116d426a96
+        # URL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz
+        # URL_HASH MD5=cfecaf29f50dce67836d32ca6b927e1d
+         URL https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz
+         URL_HASH MD5=81cd0be5ae6f1ad8961746116d426a96
 )
 
 FetchContent_Declare(
@@ -165,7 +165,7 @@ if(SIMENG_ENABLE_TESTS)
     endif()
 
   else()
-
+    # If external LLVM not provided, download LLVM and build only what we need. Then point SimEng to use this sub-build
     FetchContent_GetProperties(llvm)
     if(NOT llvm_POPULATED)
         FetchContent_Populate(llvm)
