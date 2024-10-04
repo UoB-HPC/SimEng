@@ -225,7 +225,7 @@ if(SIMENG_ENABLE_TESTS)
                 # We also include the headers and CMake exports for a *complete* build
                 install-llvm-headers
                 install-cmake-exports
-                -- -j${N}
+                -j ${N}
 
                 ${COMMAND_ECHO_OPTION}
                 RESULT_VARIABLE SUCCESS)
