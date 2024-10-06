@@ -55,7 +55,7 @@ add_library(libsimeng SHARED ${SIMENG_SOURCES} ${SIMENG_HEADERS})
 set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(libsimeng PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(libsimeng capstone)
 # Only enable compiler warnings for our code
 target_compile_options(libsimeng PRIVATE ${SIMENG_COMPILE_OPTIONS})
@@ -69,5 +69,4 @@ install(TARGETS libsimeng DESTINATION lib)
 get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
 get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
 get_target_property(SIMENG_VERSION libsimeng VERSION)
-# TODO move this to build folder. Cmake may not reconfigure when rebuilding after a change, therefor version.hh and cmake options can differ. This is happens especially when using an IDEs when changing build types
-configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh)
+configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${CMAKE_CURRENT_BINARY_DIR}/simeng/version.hh)
