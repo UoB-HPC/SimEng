@@ -626,8 +626,7 @@ bool ExceptionHandler::init() {
 
         break;
       }
-      case 293:  // rseq
-      {
+      case 293: {  // rseq
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
@@ -818,7 +817,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   for (size_t i = 0; i < bytesCopied; i += 256) {
     uint8_t size = std::min<uint64_t>(bytesCopied - i, 256ul);
     stateChange.memoryAddresses.push_back({bufAddress + i, size});
-    stateChange.memoryAddressValues.push_back(RegisterValue(bufPtr, size));
+    stateChange.memoryAddressValues.push_back(RegisterValue(bufPtr + i, size));
   }
 
   concludeSyscall(stateChange);
