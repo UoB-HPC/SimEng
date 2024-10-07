@@ -170,7 +170,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   if (isAlias) {
     exceptionString_ =
         "This instruction is an alias. The printed mnemonic and operand string "
-        "differ from what is expected of the Capstone opcode.";
+        "may differ from the underlying opcode.";
   }
 }
 

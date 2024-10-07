@@ -274,11 +274,20 @@ TEST_P(InstBitmanip, ubfm) {
     ubfm w2, w0, #16, #31
     ubfm w3, w0, #28, #23
     ubfm w4, w0, #30, #27
+
+    # check alias
+    mov w10, #-1
+    mov w11, #-1
+    mov w12, #128
+    lsl w10, w12, #1
+    lsr w11, w12, #1
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x000007A0ull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x0000007Aull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x07A00000ull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(10), 256);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(11), 64);
 
   RUN_AARCH64(R"(
     # Fill destination registers with 1s
@@ -295,11 +304,20 @@ TEST_P(InstBitmanip, ubfm) {
     ubfm x2, x0, #16, #63
     ubfm x3, x0, #32, #23
     ubfm x4, x0, #60, #55
+
+    # check alias
+    mov x10, #-1
+    mov x11, #-1
+    mov x12, #128
+    lsl x10, x12, #1
+    lsr x11, x12, #1
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x00000000000007A0ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x000000000000007Aull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x007A000000000000ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000007A00000ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 256);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 64);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip,
