@@ -679,6 +679,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{base, 4}, {base + 4, 4}});
         break;
       }
+      case Opcode::AArch64_LDRSBWpost: {  // ldrsb wt, [xn], #imm
+        setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 1}});
+        break;
+      }
       case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
                                          // {#amount}}]
         uint64_t offset = extendOffset(sourceValues_[1].get<uint64_t>(),
