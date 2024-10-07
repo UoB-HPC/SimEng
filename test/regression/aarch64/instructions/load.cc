@@ -1222,14 +1222,23 @@ TEST_P(InstLoad, ldrsb) {
     mov x5, 1
     # Load 8-bit values from heap and sign-extend to 32-bits
     ldrsb w1, [x0, x5, sxtx]
+    # Post Index
+    mov x20, x0
+    ldrsb w2, [x20], #16
+
 
     # Load 8-bit values from heap and sign-extend to 64-bits
-    ldrsb x2, [x0]
-    ldrsb x3, [x0, #3]
+    ldrsb x3, [x0]
+    ldrsb x4, [x0, #3]
+
   )");
   EXPECT_EQ(getGeneralRegister<int32_t>(1), INT8_MAX);
-  EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
-  EXPECT_EQ(getGeneralRegister<int64_t>(3), 64);
+  EXPECT_EQ(getGeneralRegister<int32_t>(2), -2);
+  EXPECT_EQ(getGeneralRegister<int64_t>(20),
+            getGeneralRegister<uint64_t>(0) + 16);
+
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), -2);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 64);
 }
 
 TEST_P(InstLoad, ldrsh) {

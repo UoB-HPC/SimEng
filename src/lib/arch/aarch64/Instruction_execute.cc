@@ -3522,6 +3522,14 @@ void Instruction::execute() {
         results_[0] = memoryData_[0].zeroExtend(16, 256);
         break;
       }
+      case Opcode::AArch64_LDRSBWpost: {  // ldrsb wt, [xn], #imm
+        // LOAD
+        results_[1] = RegisterValue(
+            static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4);
+        results_[0] =
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+        break;
+      }
       case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
                                          // {#amount}}]
         // LOAD
