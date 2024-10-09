@@ -194,6 +194,21 @@ D fcvtzu_integer(srcValContainer& sourceValues) {
   return result;
 }
 
+/** Helper function for SCALAR/FP instructions with the format ucvtf rd, rn
+ * #fbits.
+ * D represents the destination register type (e.g. for Sd, D = float).
+ * N represents the source register type (e.g. for Xn, N = uint32_t).
+ * Returns single value of type D. */
+template <typename D, typename N>
+D ucvtf_fixedToFloat(srcValContainer& sourceValues) {
+  // Convert Fixed-Point to FP
+  // Using algorithm from
+  // https://embeddedartistry.com/blog/2018/07/12/simple-fixed-point-conversion-in-c/
+  const N xn = sourceValues_[0].get<N>();
+  const N fbits = static_cast<N>(metadata_.operands[2].imm);
+  return (static_cast<D>(xn) / static_cast<D>(1ull << fbits));
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
