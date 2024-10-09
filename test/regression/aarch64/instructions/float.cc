@@ -1453,6 +1453,37 @@ TEST_P(InstFloat, ucvtf) {
   CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});
   CHECK_NEON(10, float, {static_cast<float>(UINT64_MAX), 0.f, 0.f, 0.f});
   CHECK_NEON(11, float, {0.f, 0.f, 0.f, 0.f});
+
+  // 32-bit unsigned fixed-point to float
+  // Numbers have been chosen to have less than 0.0005 fixed-point
+  // representation error to ensure tests pass
+  initialHeapData_.resize(12);
+  heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 0x000001EE;
+  heap32[1] = 0x00021F3B;
+  heap32[2] = 0x32FE6B75;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # 2 fraction-bits (123.5)
+    ldr w1, [x0], #4
+    ucvtf s1, x1, #0x2
+
+    # 8 fraction-bits (543.23)
+    ldr w2, [x0], #4
+    ucvtf s2, x2, #0x8
+
+
+    # 23 fraction-bits (101.987654321)
+    ldr w3, [x0]
+    ucvtf s3, x3, #0x17
+  )");
+  CHECK_NEON(1, float, {123.5f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(2, float, {543.23f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(3, float, {101.987654321f, 0.0f, 0.0f, 0.0f});
 }
 
 TEST_P(InstFloat, frintp) {
