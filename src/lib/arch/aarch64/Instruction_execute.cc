@@ -5526,6 +5526,17 @@ void Instruction::execute() {
             bfm_2imms<uint64_t>(sourceValues_, metadata_, false, true);
         break;
       }
+      case Opcode::AArch64_UCVTFSXSri: {  // ucvtf sd, xn, #fbits
+        // Convert Fixed-Point to FP32
+        // Using algorithm from
+        // https://embeddedartistry.com/blog/2018/07/12/simple-fixed-point-conversion-in-c/
+        const uint64_t xn = sourceValues_[0].get<uint64_t>();
+        const uint64_t fbits = static_cast<uint64_t>(metadata_.operands[2].imm);
+        std::cerr << xn << " " << fbits << std::endl;
+        results_[0] = {
+            static_cast<float>(xn) / static_cast<float>(1ull << fbits), 256};
+        break;
+      }
       case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
         results_[0] = {static_cast<double>(sourceValues_[0].get<uint32_t>()),
                        256};
