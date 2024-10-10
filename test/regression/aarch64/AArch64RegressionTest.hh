@@ -238,13 +238,16 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Get the subtarget feature string based on LLVM version being used */
   std::string getSubtargetFeaturesString() {
-#if SIMENG_LLVM_VERSION < 14
-    return "+sve,+lse";
-#elif SIMENG_LLVM_VERSION < 18
-    return "+sve,+lse,+sve2,+sme,+sme-f64";
-#else
-    return "+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
+    std::string features = "+dotprod,+sve,+lse";
+#if SIMENG_LLVM_VERSION > 13
+    // "+dotprod,+sve,+lse,+sve2,+sme,+sme-f64";
+    features += ",+sve2,+sme,+sme-f64";
 #endif
+#if SIMENG_LLVM_VERSION > 17
+    // "+dotprod,+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
+    features += "f64,+sme-i16i64,+sme2";
+#endif
+    return features;
   }
 
   /** Check the elements of a Neon register.
