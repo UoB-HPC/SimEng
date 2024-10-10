@@ -3758,6 +3758,32 @@ TEST_P(InstNeon, uzp) {
   CHECK_NEON(8, uint64_t, {0x1e1c1a1816141210, 0x1f1d1b1917151311});
 }
 
+TEST_P(InstNeon, umlal) {
+  // uint32 to uint64, lower half
+  RUN_AARCH64(R"(
+    mov w0, #-1
+    mov w1, #344
+    mov v0.s[0], w0
+    mov v0.s[3], w1
+
+    mov w2, #-1
+    mov w3, #3
+    mov v1.s[0], w2
+    mov v1.s[1], w3
+
+    mov v2.d[0], xzr
+    mov v2.d[1], xzr
+    mov v3.d[0], xzr
+    mov v3.d[1], xzr
+
+    umlal v2.2d, v1.2s, v0.s[0]
+    umlal v3.2d, v1.2s, v0.s[3]
+  )");
+  CHECK_NEON(0, uint32_t, {UINT32_MAX, 0, 0, 344});
+  CHECK_NEON(2, uint64_t, {18446744065119617025ull, 12884901885ull});
+  CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
+}
+
 TEST_P(InstNeon, zip) {
   initialHeapData_.resize(128);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
