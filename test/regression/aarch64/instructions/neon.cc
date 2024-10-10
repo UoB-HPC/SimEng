@@ -3782,6 +3782,30 @@ TEST_P(InstNeon, umlal) {
   CHECK_NEON(0, uint32_t, {UINT32_MAX, 0, 0, 344});
   CHECK_NEON(2, uint64_t, {18446744065119617025ull, 12884901885ull});
   CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
+
+  // uint32 to uint64, upper half
+  RUN_AARCH64(R"(
+    mov w0, #-1
+    mov w1, #344
+    mov v0.s[0], w0
+    mov v0.s[3], w1
+
+    mov w2, #-1
+    mov w3, #3
+    mov v1.s[2], w2
+    mov v1.s[3], w3
+
+    mov v2.d[0], xzr
+    mov v2.d[1], xzr
+    mov v3.d[0], xzr
+    mov v3.d[1], xzr
+
+    umlal2 v2.2d, v1.4s, v0.s[0]
+    umlal2 v3.2d, v1.4s, v0.s[3]
+  )");
+  CHECK_NEON(0, uint32_t, {UINT32_MAX, 0, 0, 344});
+  CHECK_NEON(2, uint64_t, {18446744065119617025ull, 12884901885ull});
+  CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
 }
 
 TEST_P(InstNeon, zip) {

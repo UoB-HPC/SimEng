@@ -5605,6 +5605,19 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_UMLALv4i32_indexed: {  // umlal2 vd.2d, vn.4s,
+                                                  // vm.s[index]
+        const uint64_t* vd = sourceValues_[0].getAsVector<uint64_t>();
+        const uint32_t* vn = sourceValues_[1].getAsVector<uint32_t>();
+        const uint32_t* vm = sourceValues_[2].getAsVector<uint32_t>();
+        const int64_t index = metadata_.operands[2].vector_index;
+        const uint64_t vm_idx_elem = static_cast<uint64_t>(vm[index]);
+
+        uint64_t out[2] = {vd[0] + static_cast<uint64_t>(vn[2]) * vm_idx_elem,
+                           vd[1] + static_cast<uint64_t>(vn[3]) * vm_idx_elem};
+        results_[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]
       case Opcode::AArch64_UMOVvi32: {     // umov wd, vn.s[index]
         const uint32_t* vec = sourceValues_[0].getAsVector<uint32_t>();
