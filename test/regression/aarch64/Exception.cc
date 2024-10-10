@@ -293,7 +293,8 @@ TEST_P(Exception, svcr) {
     smstart
   )");
   for (uint64_t i = 0; i < (SVL / 8); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZA, i, uint32_t, fillNeon<uint32_t>({0}, SVL / 8));
+    CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                  fillNeon<uint32_t>({0}, SVL / 8));
   }
 
   // Check that changes to SVCR using msr svcr, xn work correctly
@@ -366,7 +367,8 @@ TEST_P(Exception, svcr) {
     msr svcr, x4
   )");
   for (uint64_t i = 0; i < (SVL / 8); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZA, i, uint32_t, fillNeon<uint32_t>({0}, SVL / 8));
+    CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                  fillNeon<uint32_t>({0}, SVL / 8));
   }
 }
 #endif

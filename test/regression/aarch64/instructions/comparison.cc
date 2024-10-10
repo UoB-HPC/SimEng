@@ -109,7 +109,7 @@ TEST_P(InstComparison, cmnw) {
   )");
   EXPECT_EQ(getNZCV(), 0b0110);
 
-  EXPECT_GROUP(R"(cmn w0, #0x1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cmn w0, #0x1)", INT_SIMPLE_CMP);
 }
 
 // Test that NZCV flags are set correctly by the 64-bit cmn instruction
@@ -136,7 +136,7 @@ TEST_P(InstComparison, cmnx) {
   )");
   EXPECT_EQ(getNZCV(), 0b0110);
 
-  EXPECT_GROUP(R"(cmn X0, #0x1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cmn X0, #0x1)", INT_SIMPLE_CMP);
 }
 
 // Test that NZCV flags are set correctly by the 32-bit ccmn instruction
@@ -265,7 +265,7 @@ TEST_P(InstComparison, cmpw) {
   )");
   EXPECT_EQ(getNZCV(), 0b0011);
 
-  EXPECT_GROUP(R"(cmp w1, #1)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(cmp w1, #1)", INT_SIMPLE_CMP);
 }
 
 // Test that NZCV flags are set correctly by 64-bit cmp
@@ -347,7 +347,7 @@ TEST_P(InstComparison, cmpx) {
   )");
   EXPECT_EQ(getNZCV(), 0b0010);
 
-  EXPECT_GROUP(R"(cmp x0, x2, uxtx 4)", INT_SIMPLE_ARTH);
+  EXPECT_GROUP(R"(cmp x0, x2, uxtx 4)", INT_SIMPLE_CMP);
 }
 
 // Test that NZCV flags are set correctly by 64-bit tst

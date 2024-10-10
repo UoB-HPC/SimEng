@@ -16,7 +16,7 @@ class AArch64InstructionTest : public testing::Test {
                .as<std::string>()),
         arch(os) {
     // Create InstructionMetadata objects
-    cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle);
+    cs_open(CS_ARCH_AARCH64, CS_MODE_ARM, &capstoneHandle);
     cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
     // Create instructions which cover the 3 main types: Arithmetic, Memory,

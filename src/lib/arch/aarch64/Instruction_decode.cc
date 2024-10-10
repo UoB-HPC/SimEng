@@ -23,9 +23,6 @@ constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
   return ((value >> start) & ((1 << width) - 1));
 }
 
-// Generate a general purpose register identifier with tag `tag`
-constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
-
 // Generate a NZCV register identifier
 constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
@@ -36,101 +33,114 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
-/** Parses the Capstone `arm64_reg` value to generate an architectural register
- * representation.
+/** Parses the Capstone `aarch64_reg` value to generate an architectural
+ * register representation.
  *
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
- * `arm64_reg` enum. Updates to the Capstone library version may cause this to
- * break. */
-Register csRegToRegister(arm64_reg reg) {
-  // Check from top of the range downwards
+ * `aarch64_reg` enum. Updates to the Capstone library version may cause this to
+ * break.
+ * TODO: Add multi-register enum decoding.
+ * */
+Register csRegToRegister(aarch64_reg reg) {
+  // Do not need check for AARCH64_REG_Vn as in Capstone, they are aliased as Qn
+  // (full vector) or Dn (half vector).
+  // As D and Q registers are also of type RegisterType::VECTOR, the outcome
+  // will be the same
 
-  // ARM64_REG_V0 -> {end} are vector registers, reading from the vector file
-  if (reg >= ARM64_REG_V0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
+  // Assert that reg is not a SME tile as these should be passed to
+  // `getZARowVectors()`
+  assert(reg != AARCH64_REG_ZA);
+  assert(!(AARCH64_REG_ZAB0 <= reg && reg <= AARCH64_REG_ZAS3));
+
+  // AARCH64_REG_ZT0 is a fixed with Table register, reading from the table
+  // register file.
+  if (reg == AARCH64_REG_ZT0) {
+    return {RegisterType::TABLE, 0};
   }
 
-  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA), reading from
-  // the matrix file.
-  if (reg >= ARM64_REG_ZAB0) {
-    // Placeholder value returned as each tile (what the enum represents)
-    // consists of multiple vectors (rows)
-    return {RegisterType::MATRIX, 0};
-  }
-
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
+  // AARCH64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
   // from the vector file
-  if (reg >= ARM64_REG_Z0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
+  if (AARCH64_REG_Z0 <= reg && reg <= AARCH64_REG_Z31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_Z0)};
   }
 
-  // ARM64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
+  // AARCH64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
   // file. Excludes #29 (FP) and #30 (LR)
-  if (reg >= ARM64_REG_X0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};
+  if (AARCH64_REG_X0 <= reg && reg <= AARCH64_REG_X28) {
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - AARCH64_REG_X0)};
   }
 
-  // ARM64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
+  // AARCH64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
   // file. Excludes #31 (WZR/WSP).
-  if (reg >= ARM64_REG_W0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};
+  if (AARCH64_REG_W0 <= reg && reg <= AARCH64_REG_W30) {
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - AARCH64_REG_W0)};
   }
 
-  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers with arrangements Q and S, each
-  // covering 32 registers
-  if (reg >= ARM64_REG_Q0) {
-    return {RegisterType::VECTOR,
-            static_cast<uint16_t>((reg - ARM64_REG_Q0) % 32)};
+  // AARCH64_REG_Q0 -> +31 are 128-bit registers representing scalar access
+  // specifiers on the vector registers
+  if (AARCH64_REG_Q0 <= reg && reg <= AARCH64_REG_Q31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_Q0)};
   }
 
-  // ARM64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
-  if (reg >= ARM64_REG_P0) {
-    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};
+  // AARCH64_REG_D0 -> +31 are 64-bit registers representing scalar access
+  // specifiers on the vector registers
+  if (AARCH64_REG_D0 <= reg && reg <= AARCH64_REG_D31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_D0)};
   }
 
-  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers with arrangements B, D and H, each
-  // covering 32 registers
-  if (reg >= ARM64_REG_B0) {
-    return {RegisterType::VECTOR,
-            static_cast<uint16_t>((reg - ARM64_REG_B0) % 32)};
+  // AARCH64_REG_S0 -> +31 are 32-bit registers representing scalar access
+  // specifiers on the vector registers
+  if (AARCH64_REG_S0 <= reg && reg <= AARCH64_REG_S31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_S0)};
   }
 
-  // ARM64_REG_WZR and _XZR are zero registers, and don't read
-  if (reg == ARM64_REG_WZR || reg == ARM64_REG_XZR) {
+  // AARCH64_REG_H0 -> +31 are 16-bit registers representing scalar access
+  // specifiers on the vector registers
+  if (AARCH64_REG_H0 <= reg && reg <= AARCH64_REG_H31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_H0)};
+  }
+
+  // AARCH64_REG_B0 -> +31 are 8-bit registers representing scalar access
+  // specifiers on the vector registers
+  if (AARCH64_REG_B0 <= reg && reg <= AARCH64_REG_B31) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - AARCH64_REG_B0)};
+  }
+
+  // AARCH64_REG_P0 -> +15 are 256-bit (P) "predicate-as-mask" registers.
+  // Excludes #16 (FFR).
+  // AARCH64_REG_PN0 -> +15 are 256-bit (PN) "predicate-as-counter" registers.
+  if (AARCH64_REG_P0 <= reg && reg <= AARCH64_REG_PN15) {
+    return {RegisterType::PREDICATE,
+            static_cast<uint16_t>(static_cast<uint16_t>(reg - AARCH64_REG_P0) %
+                                  16u)};
+  }
+
+  // AARCH64_REG_WZR and _XZR are zero registers, and don't read
+  if (reg == AARCH64_REG_WZR || reg == AARCH64_REG_XZR) {
     return RegisterType::ZERO_REGISTER;
   }
 
-  // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
+  // AARCH64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
   // general file
-  if (reg == ARM64_REG_SP || reg == ARM64_REG_WSP) {
+  if (reg == AARCH64_REG_SP || reg == AARCH64_REG_WSP) {
     return {RegisterType::GENERAL, 31};
   }
 
-  // ARM64_REG_NZCV is the condition flags register
-  if (reg == ARM64_REG_NZCV) {
+  // AARCH64_REG_NZCV is the condition flags register
+  if (reg == AARCH64_REG_NZCV) {
     return {RegisterType::NZCV, 0};
   }
-  // ARM64_REG_X29 is the frame pointer, stored in r29 of the general file
-  if (reg == ARM64_REG_X29) {
+  // AARCH64_REG_X29 is the frame pointer, stored in r29 of the general file
+  if (reg == AARCH64_REG_X29) {
     return {RegisterType::GENERAL, 29};
   }
-  // ARM64_REG_X30 is the link register, stored in r30 of the general file
-  if (reg == ARM64_REG_X30) {
+  // AARCH64_REG_X30 is the link register, stored in r30 of the general file
+  if (reg == AARCH64_REG_X30) {
     return {RegisterType::GENERAL, 30};
   }
 
-  if (reg == ARM64_REG_FFR) {
+  if (reg == AARCH64_REG_FFR) {
     return {RegisterType::PREDICATE, 16};
-  }
-
-  // The matrix register (ZA) can also be referenced as a whole in some
-  // instructions.
-  if (reg == ARM64_REG_ZA) {
-    // Placeholder value returned as each tile (what the enum represents)
-    // consists of multiple vectors (rows)
-    return {RegisterType::MATRIX, 0};
   }
 
   assert(false && "Decoding failed due to unknown register identifier");
@@ -140,29 +150,30 @@ Register csRegToRegister(arm64_reg reg) {
 
 /** Returns a full set of rows from the ZA matrix register that make up the
  * supplied SME tile register. */
-std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
+std::vector<Register> getZARowVectors(aarch64_reg reg,
+                                      const uint64_t SVL_bits) {
   std::vector<Register> outRegs;
   // Get SVL in bytes (will equal total number of implemented ZA rows)
   uint64_t SVL = SVL_bits / 8;
 
   uint8_t base = 0;
   uint8_t tileTypeCount = 0;
-  if (reg == ARM64_REG_ZA || reg == ARM64_REG_ZAB0) {
+  if (reg == AARCH64_REG_ZA || reg == AARCH64_REG_ZAB0) {
     // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
     // Add all rows for this SVL
     // Don't need to set base as will always be 0
     tileTypeCount = 1;
-  } else if (reg >= ARM64_REG_ZAH0 && reg <= ARM64_REG_ZAH1) {
-    base = reg - ARM64_REG_ZAH0;
+  } else if (reg >= AARCH64_REG_ZAH0 && reg <= AARCH64_REG_ZAH1) {
+    base = reg - AARCH64_REG_ZAH0;
     tileTypeCount = 2;
-  } else if (reg >= ARM64_REG_ZAS0 && reg <= ARM64_REG_ZAS3) {
-    base = reg - ARM64_REG_ZAS0;
+  } else if (reg >= AARCH64_REG_ZAS0 && reg <= AARCH64_REG_ZAS3) {
+    base = reg - AARCH64_REG_ZAS0;
     tileTypeCount = 4;
-  } else if (reg >= ARM64_REG_ZAD0 && reg <= ARM64_REG_ZAD7) {
-    base = reg - ARM64_REG_ZAD0;
+  } else if (reg >= AARCH64_REG_ZAD0 && reg <= AARCH64_REG_ZAD7) {
+    base = reg - AARCH64_REG_ZAD0;
     tileTypeCount = 8;
-  } else if (reg >= ARM64_REG_ZAQ0 && reg <= ARM64_REG_ZAQ15) {
-    base = reg - ARM64_REG_ZAQ0;
+  } else if (reg >= AARCH64_REG_ZAQ0 && reg <= AARCH64_REG_ZAQ15) {
+    base = reg - AARCH64_REG_ZAQ0;
     tileTypeCount = 16;
   }
 
@@ -182,22 +193,28 @@ std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
  * DECODING LOGIC
  *****************/
 void Instruction::decode() {
-  if (metadata_.id == ARM64_INS_INVALID) {
+  if (metadata_.id == AARCH64_INS_INVALID) {
     exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
     return;
   }
 
-  // Extract implicit writes
+  // Extract implicit writes, including pre/post index writeback
   for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
-        static_cast<arm64_reg>(metadata_.implicitDestinations[i]));
+        static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
     destinationRegisterCount_++;
   }
+
   // Extract implicit reads
   for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
+    // TODO: Implement FPCR usage properly
+    // Ignore implicit reading of FPCR
+    if (static_cast<aarch64_reg>(metadata_.implicitSources[i]) ==
+        AARCH64_REG_FPCR)
+      continue;
     sourceRegisters_[sourceOperandsPending_] =
-        csRegToRegister(static_cast<arm64_reg>(metadata_.implicitSources[i]));
+        csRegToRegister(static_cast<aarch64_reg>(metadata_.implicitSources[i]));
     sourceRegisterCount_++;
     sourceOperandsPending_++;
   }
@@ -208,186 +225,140 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata_.operandCount; i++) {
     const auto& op = metadata_.operands[i];
 
-    if (op.type == ARM64_OP_REG) {  // Register operand
+    if (op.type == AARCH64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE)) {
-        if (op.reg != ARM64_REG_WZR && op.reg != ARM64_REG_XZR) {
+        if (op.reg != AARCH64_REG_WZR && op.reg != AARCH64_REG_XZR) {
           // Determine the data type the instruction operates on based on the
           // register operand used
-          // Belongs to the predicate group if the destination register is a
-          // predicate
-          if (op.reg >= ARM64_REG_V0) {
+          // SME and Predicate based operations use individual op.type
+          if (op.is_vreg) {
             setInstructionType(InsnType::isVectorData);
-          } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-            setInstructionType(InsnType::isSMEData);
-          } else if (op.reg >= ARM64_REG_Z0) {
+          } else if ((AARCH64_REG_Z0 <= op.reg && op.reg <= AARCH64_REG_Z31) ||
+                     op.reg == AARCH64_REG_ZT0) {
+            // ZT0 is an SME register, but we declare it as an SVE instruction
+            // due to its 1D format.
             setInstructionType(InsnType::isSVEData);
-          } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-            setInstructionType(InsnType::isScalarData);
-          } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-            setInstructionType(InsnType::isPredicate);
-          } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+          } else if ((op.reg <= AARCH64_REG_S31 && op.reg >= AARCH64_REG_Q0) ||
+                     (op.reg <= AARCH64_REG_H31 && op.reg >= AARCH64_REG_B0)) {
             setInstructionType(InsnType::isScalarData);
           }
 
-          if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-              (op.reg == ARM64_REG_ZA)) {
-            // Add all Matrix register rows as destination operands
-            std::vector<Register> regs = getZARowVectors(
-                op.reg, architecture_.getStreamingVectorLength());
-            // Update operand structure sizes
-            sourceRegisters_.addSMEOperand(regs.size());
-            destinationRegisters_.addSMEOperand(regs.size());
-            sourceValues_.addSMEOperand(regs.size());
-            results_.addSMEOperand(regs.size());
-            for (size_t i = 0; i < regs.size(); i++) {
-              destinationRegisters_[destinationRegisterCount_] = regs[i];
-              destinationRegisterCount_++;
-              // If WRITE, also need to add to source registers to maintain
-              // unaltered row values
-              sourceRegisters_[sourceRegisterCount_] = regs[i];
-              sourceRegisterCount_++;
-              sourceOperandsPending_++;
-            }
-          } else {
-            // Add register writes to destinations, but skip zero-register
-            // destinations
-            destinationRegisters_[destinationRegisterCount_] =
-                csRegToRegister(op.reg);
-            destinationRegisterCount_++;
-          }
+          // Add register writes to destinations, but skip zero-register
+          // destinations
+          destinationRegisters_[destinationRegisterCount_] =
+              csRegToRegister(op.reg);
+          destinationRegisterCount_++;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
-        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
-            (op.reg == ARM64_REG_ZA)) {
-          // Add all Matrix register rows as source operands
-          std::vector<Register> regs =
-              getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
-          // Update source operand structure sizes
-          sourceRegisters_.addSMEOperand(regs.size());
-          sourceValues_.addSMEOperand(regs.size());
-          for (size_t i = 0; i < regs.size(); i++) {
-            sourceRegisters_[sourceRegisterCount_] = regs[i];
-            sourceRegisterCount_++;
-            sourceOperandsPending_++;
-          }
-        } else {
-          // Add register reads to destinations
-          sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
-          sourceRegisterCount_++;
-          sourceOperandsPending_++;
-        }
-        // TODO checking of the shift type is a temporary fix to help reduce the
-        // chance of incorrectly reverted aliases from being mis-classified as
-        // isShift when op.shift contains garbage data. This should be reviewed
-        // on the next capstone update which should remove the need to revert
-        // aliasing
-        if (op.shift.type > arm64_shifter::ARM64_SFT_INVALID &&
-            op.shift.type <= arm64_shifter::ARM64_SFT_ROR &&
-            op.shift.value > 0) {
-          setInstructionType(InsnType::isShift);  // Identify shift operands
-        }
-      }
-    } else if (op.type == ARM64_OP_MEM) {  // Memory operand
-      accessesMemory = true;
-      sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
-      sourceRegisterCount_++;
-      sourceOperandsPending_++;
+        // Add register reads to destinations
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
 
-      if (metadata_.writeback) {
-        // Writeback instructions modify the base address
-        destinationRegisters_[destinationRegisterCount_] =
-            csRegToRegister(op.mem.base);
-        destinationRegisterCount_++;
+        // Identify shift operands
+        if (op.shift.type != aarch64_shifter::AARCH64_SFT_INVALID &&
+            op.shift.value > 0) {
+          setInstructionType(InsnType::isShift);
+        }
       }
-      if (op.mem.index) {
+    } else if (op.type == AARCH64_OP_MEM) {  // Memory operand
+      // Check base register exists
+      if (op.mem.base != AARCH64_REG_INVALID) {
+        accessesMemory = true;
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.base);
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
+      }
+      if (op.mem.index != AARCH64_REG_INVALID) {
         // Register offset; add to sources
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.index);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
-    } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
-      std::vector<Register> regs;
-      if ((op.sme_index.reg >= ARM64_REG_ZAB0 &&
-           op.sme_index.reg < ARM64_REG_V0) ||
-          (op.sme_index.reg == ARM64_REG_ZA)) {
-        // Set instruction group
-        setInstructionType(InsnType::isSMEData);
-        regs = getZARowVectors(op.sme_index.reg,
-                               architecture_.getStreamingVectorLength());
-        // Update operands structure sizes
-        destinationRegisters_.addSMEOperand(regs.size());
-        results_.addSMEOperand(regs.size());
-        sourceRegisters_.addSMEOperand(regs.size());
-        sourceValues_.addSMEOperand(regs.size());
-        for (size_t i = 0; i < regs.size(); i++) {
-          // If READ access, we only need to add SME rows to source registers.
-          // If WRITE access, then we need to add SME rows to destination
-          // registers AND source registers. The latter is required to maintain
-          // any un-updated rows given that an SME_INDEX op will specify only
-          // one row (or column) to write to.
-          sourceRegisters_[sourceRegisterCount_] = regs[i];
-          sourceRegisterCount_++;
-          sourceOperandsPending_++;
-          if (op.access & cs_ac_type::CS_AC_WRITE) {
-            destinationRegisters_[destinationRegisterCount_] = regs[i];
-            destinationRegisterCount_++;
-          }
-        }
-      } else {
-        // SME_INDEX can also be for predicate
-        // Set instruction group
-        setInstructionType(InsnType::isPredicate);
+
+    } else if (op.type == AARCH64_OP_SME) {
+      setInstructionType(InsnType::isSMEData);
+      std::vector<Register> regs = getZARowVectors(
+          op.sme.tile, architecture_.getStreamingVectorLength());
+      // Update operands structure sizes
+      destinationRegisters_.addSMEOperand(regs.size());
+      results_.addSMEOperand(regs.size());
+      sourceRegisters_.addSMEOperand(regs.size());
+      sourceValues_.addSMEOperand(regs.size());
+      for (size_t i = 0; i < regs.size(); i++) {
+        // If READ access, we only need to add SME rows to source registers.
+        // If WRITE access, then we need to add SME rows to destination
+        // registers AND source registers. The latter is required to maintain
+        // any un-updated rows if an SME op will specifies
+        // one row (or column) to write to.
+        sourceRegisters_[sourceRegisterCount_] = regs[i];
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
         if (op.access & cs_ac_type::CS_AC_WRITE) {
-          destinationRegisters_[destinationRegisterCount_] =
-              csRegToRegister(op.sme_index.reg);
+          destinationRegisters_[destinationRegisterCount_] = regs[i];
           destinationRegisterCount_++;
-        } else if (op.access & cs_ac_type::CS_AC_READ) {
-          sourceRegisters_[sourceRegisterCount_] =
-              csRegToRegister(op.sme_index.reg);
-          sourceRegisterCount_++;
-          sourceOperandsPending_++;
         }
       }
-      // Register that is base of index will always be a source operand
-      sourceRegisters_[sourceRegisterCount_] =
-          csRegToRegister(op.sme_index.base);
-      sourceRegisterCount_++;
-      sourceOperandsPending_++;
-    } else if (op.type == ARM64_OP_REG_MRS) {
-      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
+      if (op.sme.type == AARCH64_SME_OP_TILE_VEC) {
+        // SME tile has slice determined by register and immidiate.
+        // Add base register to source operands
+        sourceRegisters_[sourceRegisterCount_] =
+            csRegToRegister(op.sme.slice_reg);
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
+      }
+    } else if (op.type == AARCH64_OP_PRED) {
+      if (i == 0) setInstructionType(InsnType::isPredicate);
+      if (op.access == CS_AC_READ) {
+        sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
+      }
+      if (op.access == CS_AC_WRITE) {
+        destinationRegisters_[destinationRegisterCount_] =
+            csRegToRegister(op.pred.reg);
+        destinationRegisterCount_++;
+      }
+      if (op.pred.vec_select != AARCH64_REG_INVALID) {
+        sourceRegisters_[sourceRegisterCount_] =
+            csRegToRegister(op.pred.vec_select);
+        sourceRegisterCount_++;
+        sourceOperandsPending_++;
+      }
+    } else if (op.type == AARCH64_OP_SYSREG) {
+      int32_t sysRegTag =
+          architecture_.getSystemRegisterTag(op.sysop.reg.sysreg);
+      // Check SYSREG is supported
       if (sysRegTag == -1) {
         exceptionEncountered_ = true;
         exception_ = InstructionException::UnmappedSysReg;
         return;
-      } else {
+      }
+      if (op.sysop.sub_type == AARCH64_OP_REG_MRS) {
         sourceRegisters_[sourceRegisterCount_] = {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         sourceRegisterCount_++;
         sourceOperandsPending_++;
       }
-    } else if (op.type == ARM64_OP_REG_MSR) {
-      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
-      if (sysRegTag == -1) {
-        exceptionEncountered_ = true;
-        exception_ = InstructionException::UnmappedSysReg;
-        return;
-      } else {
+      if (op.sysop.sub_type == AARCH64_OP_REG_MSR) {
         destinationRegisters_[destinationRegisterCount_] = {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount_++;
       }
-    } else if (op.type == ARM64_OP_SVCR) {
-      // Updating of SVCR is done via an exception and not via the sysreg file.
-      // No operands are required for this operation.
-      // Any access to SVCR other than SMSTART and SMSTOP (i.e. this OP_TYPE)
-      // will result in an `unmapped system register` exception.
+    } else if (metadata_.operands[0].type == AARCH64_OP_SYSALIAS &&
+               metadata_.operands[0].sysop.sub_type == AARCH64_OP_SVCR) {
+      // This case is for instruction alias SMSTART and SMSTOP. Updating of SVCR
+      // value is done via an exception so no registers required.
     }
   }
 
   // Identify branches
   for (size_t i = 0; i < metadata_.groupCount; i++) {
-    if (metadata_.groups[i] == ARM64_GRP_JUMP) {
+    if (metadata_.groups[i] == AARCH64_GRP_JUMP ||
+        metadata_.groups[i] == AARCH64_GRP_CALL ||
+        metadata_.groups[i] == AARCH64_GRP_RET ||
+        metadata_.groups[i] == AARCH64_GRP_BRANCH_RELATIVE) {
       setInstructionType(InsnType::isBranch);
     }
   }
@@ -447,10 +418,9 @@ void Instruction::decode() {
         knownOffset_ = metadata_.operands[2].imm;
         break;
       }
-      case Opcode::AArch64_RET: {  // ret {xr}
+      case Opcode::AArch64_RET:  // ret {xt}
         branchType_ = BranchType::Return;
         break;
-      }
       default:
         break;
     }
@@ -463,7 +433,8 @@ void Instruction::decode() {
 
     // Check first operand access to determine if it's a load or store
     if (metadata_.operands[0].access & CS_AC_WRITE) {
-      if (metadata_.id == ARM64_INS_STXR || metadata_.id == ARM64_INS_STLXR) {
+      if (metadata_.id == AARCH64_INS_STXR ||
+          metadata_.id == AARCH64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
@@ -485,33 +456,34 @@ void Instruction::decode() {
     }
 
     // LDADD* are considered to be both a load and a store
-    if (metadata_.id >= ARM64_INS_LDADD && metadata_.id <= ARM64_INS_LDADDLH) {
+    if (Opcode::AArch64_LDADDAB <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_LDADDX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
 
     // CASAL* are considered to be both a load and a store
-    if (metadata_.opcode == Opcode::AArch64_CASALW ||
-        metadata_.opcode == Opcode::AArch64_CASALX) {
+    if (Opcode::AArch64_CASALB <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_CASALX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
 
     if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
-      if (ARM64_REG_Z0 <= metadata_.operands[0].reg &&
-          metadata_.operands[0].reg <= ARM64_REG_Z31) {
+      if (AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
+          metadata_.operands[0].reg <= AARCH64_REG_Z31) {
         setInstructionType(InsnType::isSVEData);
-      } else if ((metadata_.operands[0].reg <= ARM64_REG_S31 &&
-                  metadata_.operands[0].reg >= ARM64_REG_Q0) ||
-                 (metadata_.operands[0].reg <= ARM64_REG_H31 &&
-                  metadata_.operands[0].reg >= ARM64_REG_B0)) {
+      } else if ((metadata_.operands[0].reg <= AARCH64_REG_S31 &&
+                  metadata_.operands[0].reg >= AARCH64_REG_Q0) ||
+                 (metadata_.operands[0].reg <= AARCH64_REG_H31 &&
+                  metadata_.operands[0].reg >= AARCH64_REG_B0)) {
         setInstructionType(InsnType::isScalarData);
-      } else if (metadata_.operands[0].reg >= ARM64_REG_V0) {
+      } else if (metadata_.operands[0].is_vreg) {
         setInstructionType(InsnType::isVectorData);
-      } else if ((metadata_.operands[0].reg >= ARM64_REG_ZAB0 &&
-                  metadata_.operands[0].reg < ARM64_REG_V0) ||
-                 metadata_.operands[0].reg == ARM64_REG_ZA) {
+      } else if ((metadata_.operands[0].reg >= AARCH64_REG_ZAB0 &&
+                  metadata_.operands[0].reg <= AARCH64_REG_ZT0) ||
+                 metadata_.operands[0].reg == AARCH64_REG_ZA) {
         setInstructionType(InsnType::isSMEData);
       }
     }
@@ -521,28 +493,83 @@ void Instruction::decode() {
   }
   if (metadata_.opcode == Opcode::AArch64_LDRXl ||
       metadata_.opcode == Opcode::AArch64_LDRSWl) {
-    // Literal loads aren't flagged as having a memory operand, so these must be
-    // marked as loads manually
+    // Literal loads aren't flagged as having a memory operand, so these must
+    // be marked as loads manually
     setInstructionType(InsnType::isLoad);
   }
 
-  if ((264 <= metadata_.opcode && metadata_.opcode <= 267) ||    // AND
-      (1063 <= metadata_.opcode && metadata_.opcode <= 1084) ||  // AND (pt.2)
-      (284 <= metadata_.opcode && metadata_.opcode <= 287) ||    // BIC
-      (1167 <= metadata_.opcode && metadata_.opcode <= 1183) ||  // BIC (pt.2)
-      (321 <= metadata_.opcode && metadata_.opcode <= 324) ||    // EOR/EON
-      (1707 <= metadata_.opcode &&
-       metadata_.opcode <= 1736) ||                            // EOR/EON (pt.2)
-      (771 <= metadata_.opcode && metadata_.opcode <= 774) ||  // ORR/ORN
-      (3748 <= metadata_.opcode &&
-       metadata_.opcode <= 3771)) {  // ORR/ORN (pt.2)
+  // Identify Logical (bitwise) instructions
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
+  if (metadata_.mnemonic.find("and") == 0 ||
+      metadata_.mnemonic.find("bic") == 0 ||
+      metadata_.mnemonic.find("bif") == 0 ||
+      metadata_.mnemonic.find("bit") == 0 ||
+      metadata_.mnemonic.find("bsl") == 0 ||
+      metadata_.mnemonic.find("bcax") == 0 ||
+      metadata_.mnemonic.find("bmop") == 0 ||
+      metadata_.mnemonic.find("eor") == 0 ||
+      metadata_.mnemonic.find("eon") == 0 ||
+      metadata_.mnemonic.find("mvn") == 0 ||
+      metadata_.mnemonic.find("not") == 0 ||
+      metadata_.mnemonic.find("nand") == 0 ||
+      metadata_.mnemonic.find("nbsl") == 0 ||
+      metadata_.mnemonic.find("nor") == 0 ||
+      metadata_.mnemonic.find("rax") == 0 ||
+      metadata_.mnemonic.find("xar") == 0 ||
+      metadata_.mnemonic.find("orr") == 0 ||
+      metadata_.mnemonic.find("orq") == 0 ||
+      metadata_.mnemonic.find("orv") == 0 ||
+      metadata_.mnemonic.find("tst") == 0 ||
+      metadata_.mnemonic.find("orn") == 0) {
     setInstructionType(InsnType::isLogical);
   }
 
-  if ((1252 <= metadata_.opcode && metadata_.opcode <= 1259) ||
-      (1314 <= metadata_.opcode && metadata_.opcode <= 1501) ||
-      (1778 <= metadata_.opcode && metadata_.opcode <= 1799) ||
-      (1842 <= metadata_.opcode && metadata_.opcode <= 1969)) {
+  // Identify comparison insturctions (excluding atomic LD-CMP-STR)
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
+  if (metadata_.mnemonic.find("ccmn") == 0 ||
+      metadata_.mnemonic.find("cmn") == 0 ||
+      metadata_.mnemonic.find("cmp") == 0 ||
+      // metadata_.mnemonic.find("cmpp") == 0 ||
+      // metadata_.mnemonic.find("cmpeq") == 0 ||
+      // metadata_.mnemonic.find("cmpge") == 0 ||
+      // metadata_.mnemonic.find("cmpgt") == 0 ||
+      // metadata_.mnemonic.find("cmphi") == 0 ||
+      // metadata_.mnemonic.find("cmphs") == 0 ||
+      // metadata_.mnemonic.find("cmple") == 0 ||
+      // metadata_.mnemonic.find("cmplo") == 0 ||
+      // metadata_.mnemonic.find("cmpls") == 0 ||
+      // metadata_.mnemonic.find("cmplt") == 0 ||
+      // metadata_.mnemonic.find("cmpne") == 0 ||
+      // metadata_.mnemonic.find("cmptst") == 0 ||
+      metadata_.mnemonic.find("ccmp") == 0 ||
+      metadata_.mnemonic.find("cmeq") == 0 ||
+      metadata_.mnemonic.find("cmge") == 0 ||
+      metadata_.mnemonic.find("cmgt") == 0 ||
+      metadata_.mnemonic.find("cmtst") == 0 ||
+      metadata_.mnemonic.find("cmhi") == 0 ||
+      metadata_.mnemonic.find("cmhs") == 0 ||
+      metadata_.mnemonic.find("cmla") == 0 ||
+      metadata_.mnemonic.find("cmle") == 0 ||
+      metadata_.mnemonic.find("cmlt") == 0 ||
+      // The non-complete opcode prefix `fac` only yields compare uops
+      metadata_.mnemonic.find("fac") == 0 ||
+      // metadata_.mnemonic.find("facge") == 0 ||
+      // metadata_.mnemonic.find("facgt") == 0 ||
+      // metadata_.mnemonic.find("facle") == 0 ||
+      // metadata_.mnemonic.find("faclt") == 0 ||
+      metadata_.mnemonic.find("fccmp") == 0 ||
+      // metadata_.mnemonic.find("fccmpe") == 0 ||
+      metadata_.mnemonic.find("fcmp") == 0 ||
+      // metadata_.mnemonic.find("fcmpe") == 0 ||
+      metadata_.mnemonic.find("fcmuo") == 0 ||
+      metadata_.mnemonic.find("fcmeq") == 0 ||
+      metadata_.mnemonic.find("fcmge") == 0 ||
+      metadata_.mnemonic.find("fcmgt") == 0 ||
+      metadata_.mnemonic.find("fcmle") == 0 ||
+      metadata_.mnemonic.find("fcmlt") == 0 ||
+      metadata_.mnemonic.find("fcmne") == 0) {
     setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
@@ -555,14 +582,48 @@ void Instruction::decode() {
     }
   }
 
-  if ((347 <= metadata_.opcode && metadata_.opcode <= 366) ||
-      (1142 <= metadata_.opcode && metadata_.opcode <= 1146) ||
-      (1976 <= metadata_.opcode && metadata_.opcode <= 2186) ||
-      (metadata_.opcode == 2207) ||
-      (782 <= metadata_.opcode && metadata_.opcode <= 788) ||
-      (4063 <= metadata_.opcode && metadata_.opcode <= 4097) ||
-      (898 <= metadata_.opcode && metadata_.opcode <= 904) ||
-      (5608 <= metadata_.opcode && metadata_.opcode <= 5642)) {
+  // Identify convert instructions
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
+  if (metadata_.mnemonic.find("bfcvt") == 0 ||
+      // metadata_.mnemonic.find("bfcvtn") == 0 ||
+      // metadata_.mnemonic.find("bfcvtnt") == 0 ||
+      metadata_.mnemonic.find("bf1cvt") == 0 ||
+      // metadata_.mnemonic.find("bf1cvtl") == 0 ||
+      // metadata_.mnemonic.find("bf1cvtlt") == 0 ||
+      metadata_.mnemonic.find("bf2cvt") == 0 ||
+      // metadata_.mnemonic.find("bf2cvtl") == 0 ||
+      // metadata_.mnemonic.find("bf2cvtlt") == 0 ||
+      metadata_.mnemonic.find("fcvt") == 0 ||
+      // metadata_.mnemonic.find("fcvtas") == 0 ||
+      // metadata_.mnemonic.find("fcvtau") == 0 ||
+      // metadata_.mnemonic.find("fcvtl") == 0 ||
+      // metadata_.mnemonic.find("fcvtms") == 0 ||
+      // metadata_.mnemonic.find("fcvtmu") == 0 ||
+      // metadata_.mnemonic.find("fcvtn") == 0 ||
+      // metadata_.mnemonic.find("fcvtns") == 0 ||
+      // metadata_.mnemonic.find("fcvtnu") == 0 ||
+      // metadata_.mnemonic.find("fcvtps") == 0 ||
+      // metadata_.mnemonic.find("fcvtpu") == 0 ||
+      // metadata_.mnemonic.find("fcvtxn") == 0 ||
+      // metadata_.mnemonic.find("fcvtzs") == 0 ||
+      // metadata_.mnemonic.find("fcvtzu") == 0 ||
+      // metadata_.mnemonic.find("fcvtlt") == 0 ||
+      // metadata_.mnemonic.find("fcvtnb") == 0 ||
+      // metadata_.mnemonic.find("fcvtnt") == 0 ||
+      // metadata_.mnemonic.find("fcvtx") == 0 ||
+      // metadata_.mnemonic.find("fcvtxnt") == 0 ||
+      // metadata_.mnemonic.find("fcvtzs") == 0 ||
+      // metadata_.mnemonic.find("fcvtzu") == 0 ||
+      metadata_.mnemonic.find("f1cvt") == 0 ||
+      // metadata_.mnemonic.find("f1cvtl") == 0 ||
+      // metadata_.mnemonic.find("f1cvtlt") == 0 ||
+      metadata_.mnemonic.find("f2cvt") == 0 ||
+      // metadata_.mnemonic.find("f2cvtl") == 0 ||
+      // metadata_.mnemonic.find("f2cvtlt") == 0 ||
+      metadata_.mnemonic.find("fjcvtzs") == 0 ||
+      metadata_.mnemonic.find("scvtf") == 0 ||
+      metadata_.mnemonic.find("ucvtf") == 0) {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -574,83 +635,193 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  if ((367 <= metadata_.opcode && metadata_.opcode <= 375) ||
-      (789 <= metadata_.opcode && metadata_.opcode <= 790) ||
-      (905 <= metadata_.opcode && metadata_.opcode <= 906) ||
-      (2187 <= metadata_.opcode && metadata_.opcode <= 2200) ||
-      (4098 <= metadata_.opcode && metadata_.opcode <= 4103) ||
-      (5644 <= metadata_.opcode && metadata_.opcode <= 5649) ||
-      (481 <= metadata_.opcode && metadata_.opcode <= 483) ||
-      (metadata_.opcode == 940) ||
-      (2640 <= metadata_.opcode && metadata_.opcode <= 2661) ||
-      (2665 <= metadata_.opcode && metadata_.opcode <= 2675) ||
-      (6066 <= metadata_.opcode && metadata_.opcode <= 6068)) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
+  if (metadata_.mnemonic.find("sdiv") == 0 ||
+      // metadata_.mnemonic.find("sdivr") == 0 ||
+      metadata_.mnemonic.find("udiv") == 0 ||
+      // metadata_.mnemonic.find("udivr") == 0 ||
+      metadata_.mnemonic.find("fdiv") == 0 ||
+      // metadata_.mnemonic.find("fdivr") == 0 ||
+      // The non-complete opcode prefix `frsqrt` only yields divSqrt uops
+      metadata_.mnemonic.find("frsqrt") == 0 ||
+      // metadata_.mnemonic.find("frsqrte") == 0 ||
+      // metadata_.mnemonic.find("frsqrts") == 0 ||
+      metadata_.mnemonic.find("fsqrt") == 0 ||
+      metadata_.mnemonic.find("ursqrte") == 0) {
     setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
-  if ((433 <= metadata_.opcode &&
-       metadata_.opcode <= 447) ||  // all MUL variants
-      (759 <= metadata_.opcode && metadata_.opcode <= 762) ||
-      (816 <= metadata_.opcode && metadata_.opcode <= 819) ||
-      (915 <= metadata_.opcode && metadata_.opcode <= 918) ||
-      (2436 <= metadata_.opcode && metadata_.opcode <= 2482) ||
-      (2512 <= metadata_.opcode && metadata_.opcode <= 2514) ||
-      (2702 <= metadata_.opcode && metadata_.opcode <= 2704) ||
-      (3692 <= metadata_.opcode && metadata_.opcode <= 3716) ||
-      (3793 <= metadata_.opcode && metadata_.opcode <= 3805) ||
-      (4352 <= metadata_.opcode && metadata_.opcode <= 4380) ||
-      (4503 <= metadata_.opcode && metadata_.opcode <= 4543) ||
-      (4625 <= metadata_.opcode && metadata_.opcode <= 4643) ||
-      (5804 <= metadata_.opcode && metadata_.opcode <= 5832) ||
-      (2211 <= metadata_.opcode &&
-       metadata_.opcode <= 2216) ||  // all MADD/MAD variants
-      (2494 <= metadata_.opcode && metadata_.opcode <= 2499) ||
-      (2699 <= metadata_.opcode && metadata_.opcode <= 2701) ||
-      (3610 <= metadata_.opcode && metadata_.opcode <= 3615) ||
-      (4227 == metadata_.opcode) || (5682 == metadata_.opcode) ||
-      (2433 <= metadata_.opcode &&
-       metadata_.opcode <= 2435) ||  // all MSUB variants
-      (2509 <= metadata_.opcode && metadata_.opcode <= 2511) ||
-      (3690 <= metadata_.opcode && metadata_.opcode <= 3691) ||
-      (4351 == metadata_.opcode) || (5803 == metadata_.opcode) ||
-      (424 <= metadata_.opcode &&
-       metadata_.opcode <= 426) ||  // all MLA variants
-      (451 <= metadata_.opcode && metadata_.opcode <= 453) ||
-      (1151 <= metadata_.opcode && metadata_.opcode <= 1160) ||
-      (1378 <= metadata_.opcode && metadata_.opcode <= 1383) ||
-      (1914 <= metadata_.opcode && metadata_.opcode <= 1926) ||
-      (2341 <= metadata_.opcode && metadata_.opcode <= 2371) ||
-      (2403 <= metadata_.opcode && metadata_.opcode <= 2404) ||
-      (2500 <= metadata_.opcode && metadata_.opcode <= 2502) ||
-      (3618 <= metadata_.opcode && metadata_.opcode <= 3634) ||
-      (4295 <= metadata_.opcode && metadata_.opcode <= 4314) ||
-      (4335 <= metadata_.opcode && metadata_.opcode <= 4336) ||
-      (4453 <= metadata_.opcode && metadata_.opcode <= 4477) ||
-      (4581 <= metadata_.opcode && metadata_.opcode <= 4605) ||
-      (5749 <= metadata_.opcode && metadata_.opcode <= 5768) ||
-      (5789 <= metadata_.opcode && metadata_.opcode <= 5790) ||
-      (6115 <= metadata_.opcode && metadata_.opcode <= 6116) ||
-      (427 <= metadata_.opcode &&
-       metadata_.opcode <= 429) ||  // all MLS variants
-      (454 <= metadata_.opcode && metadata_.opcode <= 456) ||
-      (2372 <= metadata_.opcode && metadata_.opcode <= 2402) ||
-      (2503 <= metadata_.opcode && metadata_.opcode <= 2505) ||
-      (3635 <= metadata_.opcode && metadata_.opcode <= 3651) ||
-      (4315 <= metadata_.opcode && metadata_.opcode <= 4334) ||
-      (4478 <= metadata_.opcode && metadata_.opcode <= 4502) ||
-      (4606 <= metadata_.opcode && metadata_.opcode <= 4624) ||
-      (5769 <= metadata_.opcode && metadata_.opcode <= 5788) ||
-      (2430 <= metadata_.opcode &&
-       metadata_.opcode <= 2432) ||  // all MSB variants
-      (2506 <= metadata_.opcode && metadata_.opcode <= 2508) ||
-      (3682 <= metadata_.opcode && metadata_.opcode <= 3685) ||
-      (2405 <= metadata_.opcode &&
-       metadata_.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
-      (4337 <= metadata_.opcode && metadata_.opcode <= 4340) ||
-      (5391 <= metadata_.opcode && metadata_.opcode <= 5394) ||
-      (5791 <= metadata_.opcode && metadata_.opcode <= 5794) ||
-      (6117 <= metadata_.opcode && metadata_.opcode <= 6120)) {
+  // Opcode prefix-overlaps have been commented out but left in for clarity
+  // what is searched for.
+  if (metadata_.mnemonic.find("bfmmla") == 0 ||
+      metadata_.mnemonic.find("bfmul") == 0 ||
+      // The non-complete opcode prefix `bfml` only yields multiply uops
+      metadata_.mnemonic.find("bfml") == 0 ||
+      // metadata_.mnemonic.find("bfmla") == 0 ||
+      // metadata_.mnemonic.find("bfmlalb") == 0 ||
+      // metadata_.mnemonic.find("bfmlalt") == 0 ||
+      // metadata_.mnemonic.find("bfmlal") == 0 ||
+      // metadata_.mnemonic.find("bfmls") == 0 ||
+      // metadata_.mnemonic.find("bfmlslb") == 0 ||
+      // metadata_.mnemonic.find("bfmlslt") == 0 ||
+      // metadata_.mnemonic.find("bfmlsl") == 0 ||
+      metadata_.mnemonic.find("cmla") == 0 ||
+      // The substring `dot` only appears in dot-product opcodes
+      metadata_.mnemonic.find("dot") != std::string::npos ||
+      // metadata_.mnemonic.find("bfdot") == 0 ||
+      // metadata_.mnemonic.find("bfvdot") == 0 ||
+      // metadata_.mnemonic.find("fdot") == 0 ||
+      // metadata_.mnemonic.find("fvdot") == 0 ||
+      // metadata_.mnemonic.find("fvdotb") == 0 ||
+      // metadata_.mnemonic.find("fvdott") == 0 ||
+      // metadata_.mnemonic.find("sdot") == 0 ||
+      // metadata_.mnemonic.find("sudot") == 0 ||
+      // metadata_.mnemonic.find("suvdot") == 0 ||
+      // metadata_.mnemonic.find("udot") == 0 ||
+      // metadata_.mnemonic.find("usdot") == 0 ||
+      // metadata_.mnemonic.find("usvdot") == 0 ||
+      // metadata_.mnemonic.find("uvdot") == 0 ||
+      // metadata_.mnemonic.find("cdot") == 0 ||
+      metadata_.mnemonic.find("fmla") == 0 ||
+      // metadata_.mnemonic.find("fmlal") == 0 ||
+      // metadata_.mnemonic.find("fmlal2") == 0 ||
+      // metadata_.mnemonic.find("fmlalb") == 0 ||
+      // metadata_.mnemonic.find("fmlalt") == 0 ||
+      // metadata_.mnemonic.find("fmlallbb") == 0 ||
+      // metadata_.mnemonic.find("fmlallbt") == 0 ||
+      // metadata_.mnemonic.find("fmlalltb") == 0 ||
+      // metadata_.mnemonic.find("fmlalltt") == 0 ||
+      // metadata_.mnemonic.find("fmlall") == 0 ||
+      metadata_.mnemonic.find("fmls") == 0 ||
+      // metadata_.mnemonic.find("fmlsl") == 0 ||
+      // metadata_.mnemonic.find("fmlsl2") == 0 ||
+      // metadata_.mnemonic.find("fmlslb") == 0 ||
+      // metadata_.mnemonic.find("fmlslt") == 0 ||
+      metadata_.mnemonic.find("fmul") == 0 ||
+      // metadata_.mnemonic.find("fmulx") == 0 ||
+      metadata_.mnemonic.find("fmad") == 0 ||
+      // metadata_.mnemonic.find("fmadd") == 0 ||
+      metadata_.mnemonic.find("fmmla") == 0 ||
+      metadata_.mnemonic.find("fmsb") == 0 ||
+      metadata_.mnemonic.find("fmsub") == 0 ||
+      metadata_.mnemonic.find("ftmad") == 0 ||
+      metadata_.mnemonic.find("fcmla") == 0 ||
+      // The non-complete opcode prefix `fnm` only yields multiply uops
+      metadata_.mnemonic.find("fnm") == 0 ||
+      // metadata_.mnemonic.find("fnmad") == 0 ||
+      // metadata_.mnemonic.find("fnmla") == 0 ||
+      // metadata_.mnemonic.find("fnmls") == 0 ||
+      // metadata_.mnemonic.find("fnmsb") == 0 ||
+      // metadata_.mnemonic.find("fnmadd") == 0 ||
+      // metadata_.mnemonic.find("fnmsub") == 0 ||
+      // metadata_.mnemonic.find("fnmul") == 0 ||
+      metadata_.mnemonic.find("madd") == 0 ||
+      // metadata_.mnemonic.find("maddpt") == 0 ||
+      metadata_.mnemonic.find("mul") == 0 ||
+      metadata_.mnemonic.find("mla") == 0 ||
+      // metadata_.mnemonic.find("mlapt") == 0 ||
+      metadata_.mnemonic.find("mls") == 0 ||
+      metadata_.mnemonic.find("mneg") == 0 ||
+      metadata_.mnemonic.find("msub") == 0 ||
+      // metadata_.mnemonic.find("msubpt") == 0 ||
+      metadata_.mnemonic.find("mad") == 0 ||
+      // metadata_.mnemonic.find("madpt") == 0 ||
+      metadata_.mnemonic.find("msb") == 0 ||
+      // The substring `mop` only appears in outer-product opcodes
+      metadata_.mnemonic.find("mop") != std::string::npos ||
+      // metadata_.mnemonic.find("bfmopa") == 0 ||
+      // metadata_.mnemonic.find("bfmops") == 0 ||
+      // metadata_.mnemonic.find("bmopa") == 0 ||
+      // metadata_.mnemonic.find("bmops") == 0 ||
+      // metadata_.mnemonic.find("fmopa") == 0 ||
+      // metadata_.mnemonic.find("fmops") == 0 ||
+      // metadata_.mnemonic.find("smopa") == 0 ||
+      // metadata_.mnemonic.find("smops") == 0 ||
+      // metadata_.mnemonic.find("sumopa") == 0 ||
+      // metadata_.mnemonic.find("sumops") == 0 ||
+      // metadata_.mnemonic.find("umopa") == 0 ||
+      // metadata_.mnemonic.find("umops") == 0 ||
+      // metadata_.mnemonic.find("usmopa") == 0 ||
+      // metadata_.mnemonic.find("usmops") == 0
+      metadata_.mnemonic.find("pmul") == 0 ||
+      // metadata_.mnemonic.find("pmull") == 0 ||
+      // metadata_.mnemonic.find("pmull2") == 0 ||
+      // metadata_.mnemonic.find("pmullb") == 0 ||
+      // metadata_.mnemonic.find("pmullt") == 0 ||
+      // The non-complete opcode prefix `sml` only yields multiply uops
+      metadata_.mnemonic.find("sml") == 0 ||
+      // metadata_.mnemonic.find("smlalb") == 0 ||
+      // metadata_.mnemonic.find("smlalt") == 0 ||
+      // metadata_.mnemonic.find("smlslb") == 0 ||
+      // metadata_.mnemonic.find("smlslt") == 0 ||
+      // metadata_.mnemonic.find("smlal") == 0 ||
+      // metadata_.mnemonic.find("smlal2") == 0 ||
+      // metadata_.mnemonic.find("smlsl") == 0 ||
+      // metadata_.mnemonic.find("smlsl2") == 0 ||
+      // metadata_.mnemonic.find("smlall") == 0 ||
+      // metadata_.mnemonic.find("smlsll") == 0 ||
+      metadata_.mnemonic.find("smmla") == 0 ||
+      // The non-complete opcode prefix `smul` only yields multiply uops
+      metadata_.mnemonic.find("smul") == 0 ||
+      // metadata_.mnemonic.find("smulh") == 0 ||
+      // metadata_.mnemonic.find("smull") == 0 ||
+      // metadata_.mnemonic.find("smull2") == 0 ||
+      // metadata_.mnemonic.find("smullb") == 0 ||
+      // metadata_.mnemonic.find("smullt") == 0 ||
+      // The non-complete opcode prefix `sqdm` only yields multiply uops
+      metadata_.mnemonic.find("sqdm") == 0 ||
+      // metadata_.mnemonic.find("sqdmlal") == 0 ||
+      // metadata_.mnemonic.find("sqdmlal2") == 0 ||
+      // metadata_.mnemonic.find("sqdmlsl") == 0 ||
+      // metadata_.mnemonic.find("sqdmlsl2") == 0 ||
+      // metadata_.mnemonic.find("sqdmulh") == 0 ||
+      // metadata_.mnemonic.find("sqdmull") == 0 ||
+      // metadata_.mnemonic.find("sqdmull2") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalb") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalbt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlalt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslb") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslbt") == 0 ||
+      // metadata_.mnemonic.find("sqdmlslt") == 0 ||
+      // metadata_.mnemonic.find("sqdmullb") == 0 ||
+      // metadata_.mnemonic.find("sqdmullt") == 0 ||
+      // The non-complete opcode prefix `sqrd` only yields multiply uops
+      metadata_.mnemonic.find("sqrd") == 0 ||
+      // metadata_.mnemonic.find("sqrdmlah") == 0 ||
+      // metadata_.mnemonic.find("sqrdmlsh") == 0 ||
+      // metadata_.mnemonic.find("sqrdmulh") == 0 ||
+      // metadata_.mnemonic.find("sqrdcmlah") == 0 ||
+      metadata_.mnemonic.find("sumlall") == 0 ||
+      metadata_.mnemonic.find("smaddl") == 0 ||
+      metadata_.mnemonic.find("smnegl") == 0 ||
+      metadata_.mnemonic.find("smsubl") == 0 ||
+      // The non-complete opcode prefix `umul` only yields multiply uops
+      metadata_.mnemonic.find("umul") == 0 ||
+      // metadata_.mnemonic.find("umulh") == 0 ||
+      // metadata_.mnemonic.find("umull") == 0 ||
+      // metadata_.mnemonic.find("umull2") == 0 ||
+      // metadata_.mnemonic.find("umullb") == 0 ||
+      // metadata_.mnemonic.find("umullt") == 0 ||
+      // The non-complete opcode prefix `uml` only yields multiply uops
+      metadata_.mnemonic.find("uml") == 0 ||
+      // metadata_.mnemonic.find("umlal") == 0 ||
+      // metadata_.mnemonic.find("umlal2") == 0 ||
+      // metadata_.mnemonic.find("umlsl") == 0 ||
+      // metadata_.mnemonic.find("umlsl2") == 0 ||
+      // metadata_.mnemonic.find("umlslt") == 0 ||
+      // metadata_.mnemonic.find("umlalb") == 0 ||
+      // metadata_.mnemonic.find("umlalt") == 0 ||
+      // metadata_.mnemonic.find("umlslb") == 0 ||
+      // metadata_.mnemonic.find("umlall") == 0 ||
+      // metadata_.mnemonic.find("umlsll") == 0 ||
+      metadata_.mnemonic.find("usmlall") == 0 ||
+      metadata_.mnemonic.find("usmmla") == 0 ||
+      metadata_.mnemonic.find("ummla") == 0 ||
+      metadata_.mnemonic.find("umaddl") == 0 ||
+      metadata_.mnemonic.find("umnegl") == 0 ||
+      metadata_.mnemonic.find("umsubl") == 0) {
     setInstructionType(InsnType::isMultiply);
   }
 
@@ -660,36 +831,42 @@ void Instruction::decode() {
     setInstructionType(InsnType::isPredicate);
   }
   // Uncaught float data assignment for FMOV move to general instructions
-  if (((430 <= metadata_.opcode && metadata_.opcode <= 432) ||
-       (2409 <= metadata_.opcode && metadata_.opcode <= 2429)) &&
+  if (((Opcode::AArch64_FMOVD0 <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_FMOVS0) ||
+       (Opcode::AArch64_FMOVDXHighr <= metadata_.opcode &&
+        metadata_.opcode <= Opcode::AArch64_FMOVv8f16_ns)) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
-  if ((4341 <= metadata_.opcode && metadata_.opcode <= 4350) ||
-      (5795 <= metadata_.opcode && metadata_.opcode <= 5802)) {
+  if ((Opcode::AArch64_SMOVvi16to32 <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_SMOVvi8to64_idx0) ||
+      (Opcode::AArch64_UMOVvi16 <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_UMOVvi8_idx0)) {
     setInstructionType(InsnType::isVectorData);
   }
   // Uncaught float data assignment for FCVT convert to general instructions
-  if ((1976 <= metadata_.opcode && metadata_.opcode <= 2186) &&
+  if ((Opcode::AArch64_FCVTASUWDr <= metadata_.opcode &&
+       metadata_.opcode <= Opcode::AArch64_FCVT_ZPmZ_StoH) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
 
-  if (!(isInstruction(InsnType::isSMEData))) {
-    // Catch zero register references and pre-complete those operands - not
-    // applicable to SME instructions
-    for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
-      if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
-        sourceValues_[i] = RegisterValue(0, 8);
-        sourceOperandsPending_--;
-      }
+  // if (!(isInstruction(InsnType::isSMEData))) {
+  // Catch zero register references and pre-complete those operands - not
+  // applicable to SME instructions
+  for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
+    if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
+      sourceValues_[i] = RegisterValue(0, 8);
+      sourceOperandsPending_--;
     }
-  } else {
-    // For SME instructions, resize the following structures to have the exact
-    // amount of space required
+  }
+  // } else {
+  if (isInstruction(InsnType::isSMEData)) {
+    // For SME instructions, resize the following structures to have the
+    // exact amount of space required
     sourceRegisters_.resize(sourceRegisterCount_);
     destinationRegisters_.resize(destinationRegisterCount_);
     sourceValues_.resize(sourceRegisterCount_);

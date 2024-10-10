@@ -11,14 +11,14 @@ namespace aarch64 {
 class ArchInfo : public simeng::arch::ArchInfo {
  public:
   ArchInfo(ryml::ConstNodeRef config)
-      : sysRegisterEnums_({arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-                           arm64_sysreg::ARM64_SYSREG_FPCR,
-                           arm64_sysreg::ARM64_SYSREG_FPSR,
-                           arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-                           arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-                           arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-                           arm64_sysreg::ARM64_SYSREG_SVCR}),
+      : sysRegisterEnums_({aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_FPCR,
+                           aarch64_sysreg::AARCH64_SYSREG_FPSR,
+                           aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+                           aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+                           aarch64_sysreg::AARCH64_SYSREG_SVCR}),
         zaSize_(config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8) {
     // Generate the architecture-defined architectural register structure
     archRegStruct_ = {
@@ -27,7 +27,8 @@ class ArchInfo : public simeng::arch::ArchInfo {
         {32, 17},   // Predicate
         {1, 1},     // NZCV
         {8, static_cast<uint16_t>(sysRegisterEnums_.size())},  // System
-        {256, zaSize_}  // Matrix (Each row is a register)
+        {256, zaSize_},  // Matrix (Each row is a register)
+        {64, 1}          // SME ZT0 table register (fixed width of 512-bit)
     };
 
     // Generate the config-defined physical register structure and quantities
@@ -37,6 +38,7 @@ class ArchInfo : public simeng::arch::ArchInfo {
     uint16_t predCount = regConfig["Predicate-Count"].as<uint16_t>();
     uint16_t condCount = regConfig["Conditional-Count"].as<uint16_t>();
     uint16_t matCount = regConfig["Matrix-Count"].as<uint16_t>();
+    uint16_t tabCount = regConfig["Table-Count"].as<uint16_t>();
     // Matrix-Count multiplied by (SVL/8) as internal representation of ZA is a
     // block of row-vector-registers. Therefore, we need to convert physical
     // counts from whole-ZA to rows-in-ZA.
@@ -46,13 +48,15 @@ class ArchInfo : public simeng::arch::ArchInfo {
                       {32, predCount},
                       {1, condCount},
                       {8, static_cast<uint16_t>(sysRegisterEnums_.size())},
-                      {256, matCount}};
+                      {256, matCount},
+                      {64, tabCount}};
     physRegQuantities_ = {gpCount,
                           fpCount,
                           predCount,
                           condCount,
                           static_cast<uint16_t>(sysRegisterEnums_.size()),
-                          matCount};
+                          matCount,
+                          tabCount};
   }
 
   /** Get the set of system register enums currently supported. */

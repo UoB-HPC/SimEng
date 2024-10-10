@@ -17,14 +17,14 @@ TEST(ConfigTest, Default) {
             simeng::config::SimulationMode::Emulation);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Emulation");
   std::vector<uint64_t> sysRegisterEnums = {
-      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-      arm64_sysreg::ARM64_SYSREG_FPCR,
-      arm64_sysreg::ARM64_SYSREG_FPSR,
-      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-      arm64_sysreg::ARM64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_FPCR,
+      aarch64_sysreg::AARCH64_SYSREG_FPSR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+      aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_SVCR};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
@@ -32,7 +32,8 @@ TEST(ConfigTest, Default) {
       {32, 17},
       {1, 1},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 16}};
+      {256, 16},
+      {64, 1}};
   EXPECT_EQ(simeng::config::SimInfo::getArchRegStruct(), archRegStruct);
 
   // Test that default config generated matches for AArch64 ISA
@@ -47,25 +48,25 @@ TEST(ConfigTest, Default) {
       "5\n'Process-Image':\n  'Heap-Size': 100000\n  'Stack-Size': "
       "100000\n'Register-Set':\n  'GeneralPurpose-Count': 38\n  "
       "'FloatingPoint/SVE-Count': 38\n  'Predicate-Count': 17\n  "
-      "'Conditional-Count': 1\n  'Matrix-Count': 1\n'Pipeline-Widths':\n  "
-      "Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': 1\n'Queue-Sizes':\n  ROB: "
-      "32\n  Load: 16\n  Store: 16\n'Branch-Predictor':\n  Type: Perceptron\n  "
-      "'BTB-Tag-Bits': 8\n  'Global-History-Length': 8\n  'RAS-entries': "
-      "8\n'L1-Data-Memory':\n  'Interface-Type': "
-      "Flat\n'L1-Instruction-Memory':\n  'Interface-Type': "
+      "'Conditional-Count': 1\n  'Matrix-Count': 1\n  'Table-Count': "
+      "1\n'Pipeline-Widths':\n  Commit: 1\n  FrontEnd: 1\n  'LSQ-Completion': "
+      "1\n'Queue-Sizes':\n  ROB: 32\n  Load: 16\n  Store: "
+      "16\n'Branch-Predictor':\n  Type: Perceptron\n  'BTB-Tag-Bits': 8\n  "
+      "'Global-History-Length': 8\n  'RAS-entries': 8\n'L1-Data-Memory':\n  "
+      "'Interface-Type': Flat\n'L1-Instruction-Memory':\n  'Interface-Type': "
       "Flat\n'LSQ-L1-Interface':\n  'Access-Latency': 4\n  Exclusive: 0\n  "
       "'Load-Bandwidth': 32\n  'Store-Bandwidth': 32\n  "
       "'Permitted-Requests-Per-Cycle': 1\n  'Permitted-Loads-Per-Cycle': 1\n  "
       "'Permitted-Stores-Per-Cycle': 1\nPorts:\n  0:\n    Portname: 0\n    "
       "'Instruction-Group-Support':\n      - ALL\n    "
-      "'Instruction-Opcode-Support':\n      - 6343\n    "
+      "'Instruction-Opcode-Support':\n      - 8232\n    "
       "'Instruction-Group-Support-Nums':\n      - "
       "86\n'Reservation-Stations':\n  0:\n    Size: 32\n    'Dispatch-Rate': "
       "4\n    Ports:\n      - 0\n    'Port-Nums':\n      - "
       "0\n'Execution-Units':\n  0:\n    Pipelined: 1\n    'Blocking-Groups':\n "
       "     - NONE\n    'Blocking-Group-Nums':\n      - 87\nLatencies:\n  0:\n "
       "   'Instruction-Groups':\n      - NONE\n    'Instruction-Opcodes':\n    "
-      "  - 6343\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n   "
+      "  - 8232\n    'Execution-Latency': 1\n    'Execution-Throughput': 1\n   "
       " 'Instruction-Group-Nums':\n      - 87\n'CPU-Info':\n  "
       "'Generate-Special-Dir': 1\n  'Special-File-Dir-Path': " SIMENG_BUILD_DIR
       "/specialFiles/\n  'Core-Count': 1\n  'Socket-Count': 1\n  SMT: 1\n  "
@@ -373,14 +374,14 @@ TEST(ConfigTest, configFromFile) {
             simeng::config::SimulationMode::Outoforder);
   EXPECT_EQ(simeng::config::SimInfo::getSimModeStr(), "Out-of-Order");
   std::vector<uint64_t> sysRegisterEnums = {
-      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-      arm64_sysreg::ARM64_SYSREG_FPCR,
-      arm64_sysreg::ARM64_SYSREG_FPSR,
-      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-      arm64_sysreg::ARM64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_FPCR,
+      aarch64_sysreg::AARCH64_SYSREG_FPSR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+      aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_SVCR};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
@@ -388,7 +389,8 @@ TEST(ConfigTest, configFromFile) {
       {32, 17},
       {1, 1},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 16}};
+      {256, 16},
+      {64, 1}};
   EXPECT_EQ(simeng::config::SimInfo::getArchRegStruct(), archRegStruct);
   std::vector<simeng::RegisterFileStructure> physRegStruct = {
       {8, 96},
@@ -396,10 +398,11 @@ TEST(ConfigTest, configFromFile) {
       {32, 48},
       {1, 128},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 16}};
+      {256, 16},
+      {64, 1}};
   EXPECT_EQ(simeng::config::SimInfo::getPhysRegStruct(), physRegStruct);
   std::vector<uint16_t> physRegQuants = {
-      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 16};
+      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 16, 1};
   EXPECT_EQ(simeng::config::SimInfo::getPhysRegQuantities(), physRegQuants);
 }
 // getPhysRegStruct()

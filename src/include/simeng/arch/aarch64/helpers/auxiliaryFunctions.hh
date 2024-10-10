@@ -125,6 +125,7 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
 
 /** Function to check if NZCV conditions hold. */
 inline bool conditionHolds(uint8_t cond, uint8_t nzcv) {
+  // Due to Capstone enum changes, need to add 1 to cond
   bool inverse = cond & 1;
   uint8_t upper = cond >> 1;
   bool n = (nzcv >> 3) & 1;
@@ -164,7 +165,7 @@ inline bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift`. Replicated from Instruction.cc */
 inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
+  if (extendType == AARCH64_EXT_INVALID && shift == 0) {
     // Special case: an invalid shift type with a shift amount of 0 implies an
     // identity operation
     return value;
@@ -172,28 +173,28 @@ inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
 
   uint64_t extended;
   switch (extendType) {
-    case ARM64_EXT_UXTB:
+    case AARCH64_EXT_UXTB:
       extended = static_cast<uint8_t>(value);
       break;
-    case ARM64_EXT_UXTH:
+    case AARCH64_EXT_UXTH:
       extended = static_cast<uint16_t>(value);
       break;
-    case ARM64_EXT_UXTW:
+    case AARCH64_EXT_UXTW:
       extended = static_cast<uint32_t>(value);
       break;
-    case ARM64_EXT_UXTX:
+    case AARCH64_EXT_UXTX:
       extended = value;
       break;
-    case ARM64_EXT_SXTB:
+    case AARCH64_EXT_SXTB:
       extended = static_cast<int8_t>(value);
       break;
-    case ARM64_EXT_SXTH:
+    case AARCH64_EXT_SXTH:
       extended = static_cast<int16_t>(value);
       break;
-    case ARM64_EXT_SXTW:
+    case AARCH64_EXT_SXTW:
       extended = static_cast<int32_t>(value);
       break;
-    case ARM64_EXT_SXTX:
+    case AARCH64_EXT_SXTX:
       extended = value;
       break;
     default:
@@ -205,13 +206,13 @@ inline uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
 }
 
 /** Extend `value` using extension/shifting rules defined in `op`. */
-inline uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) {
+inline uint64_t extendOffset(uint64_t value, const cs_aarch64_op& op) {
   if (op.ext == 0) {
     if (op.shift.value == 0) {
       return value;
     }
     if (op.shift.type == 1) {
-      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
+      return extendValue(value, AARCH64_EXT_UXTX, op.shift.value);
     }
   }
   return extendValue(value, op.ext, op.shift.value);
@@ -262,63 +263,54 @@ inline uint64_t mulhi(uint64_t a, uint64_t b) {
   return multhi;
 }
 
-/** Decode the instruction pattern from OperandStr. */
-inline uint16_t sveGetPattern(const std::string operandStr, const uint8_t esize,
-                              const uint16_t VL_) {
+/** Get the number of elements to work on for SVE instructions. */
+inline uint16_t getElemsFromPattern(const aarch64_svepredpat svePattern,
+                                    const uint8_t esize, const uint16_t VL_) {
   const uint16_t elements = VL_ / esize;
-  const std::vector<std::string> patterns = {
-      "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
-      "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
-
-  // If no pattern present in operandStr then same behaviour as ALL
-  std::string pattern = "all";
-  for (uint8_t i = 0; i < patterns.size(); i++) {
-    if (operandStr.find(patterns[i]) != std::string::npos) {
-      pattern = patterns[i];
-      // Don't break when pattern found as vl1 will be found in vl128 etc
+  switch (svePattern) {
+    case AARCH64_SVEPREDPAT_ALL:
+      return elements;
+    case AARCH64_SVEPREDPAT_MUL3:
+      return elements - (elements % 3);
+    case AARCH64_SVEPREDPAT_MUL4:
+      return elements - (elements % 4);
+    case AARCH64_SVEPREDPAT_POW2: {
+      int n = 1;
+      while (elements >= std::pow(2, n)) {
+        n = n + 1;
+      }
+      return std::pow(2, n - 1);
     }
+    case AARCH64_SVEPREDPAT_VL1:
+      return (elements >= 1) ? 1 : 0;
+    case AARCH64_SVEPREDPAT_VL128:
+      return (elements >= 128) ? 128 : 0;
+    case AARCH64_SVEPREDPAT_VL16:
+      return (elements >= 16) ? 16 : 0;
+    case AARCH64_SVEPREDPAT_VL2:
+      return (elements >= 2) ? 2 : 0;
+    case AARCH64_SVEPREDPAT_VL256:
+      return (elements >= 256) ? 256 : 0;
+    case AARCH64_SVEPREDPAT_VL3:
+      return (elements >= 3) ? 3 : 0;
+    case AARCH64_SVEPREDPAT_VL32:
+      return (elements >= 32) ? 32 : 0;
+    case AARCH64_SVEPREDPAT_VL4:
+      return (elements >= 4) ? 4 : 0;
+    case AARCH64_SVEPREDPAT_VL5:
+      return (elements >= 5) ? 5 : 0;
+    case AARCH64_SVEPREDPAT_VL6:
+      return (elements >= 6) ? 6 : 0;
+    case AARCH64_SVEPREDPAT_VL64:
+      return (elements >= 64) ? 64 : 0;
+    case AARCH64_SVEPREDPAT_VL7:
+      return (elements >= 7) ? 7 : 0;
+    case AARCH64_SVEPREDPAT_VL8:
+      return (elements >= 8) ? 8 : 0;
+    default:
+      assert(false && "Unknown SVE Predicate Pattern.");
+      return 0;
   }
-
-  if (pattern == "all")
-    return elements;
-  else if (pattern == "pow2") {
-    int n = 1;
-    while (elements >= std::pow(2, n)) {
-      n = n + 1;
-    }
-    return std::pow(2, n - 1);
-  } else if (pattern == "vl1")
-    return (elements >= 1) ? 1 : 0;
-  else if (pattern == "vl2")
-    return (elements >= 2) ? 2 : 0;
-  else if (pattern == "vl3")
-    return (elements >= 3) ? 3 : 0;
-  else if (pattern == "vl4")
-    return (elements >= 4) ? 4 : 0;
-  else if (pattern == "vl5")
-    return (elements >= 5) ? 5 : 0;
-  else if (pattern == "vl6")
-    return (elements >= 6) ? 6 : 0;
-  else if (pattern == "vl7")
-    return (elements >= 7) ? 7 : 0;
-  else if (pattern == "vl8")
-    return (elements >= 8) ? 8 : 0;
-  else if (pattern == "vl16")
-    return (elements >= 16) ? 16 : 0;
-  else if (pattern == "vl32")
-    return (elements >= 32) ? 32 : 0;
-  else if (pattern == "vl64")
-    return (elements >= 64) ? 64 : 0;
-  else if (pattern == "vl128")
-    return (elements >= 128) ? 128 : 0;
-  else if (pattern == "vl256")
-    return (elements >= 256) ? 256 : 0;
-  else if (pattern == "mul4")
-    return elements - (elements % 4);
-  else if (pattern == "mul3")
-    return elements - (elements % 3);
-
-  return 0;
 }
 
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,
@@ -327,25 +319,25 @@ template <typename T>
 inline std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
 shiftValue(T value, uint8_t shiftType, uint8_t amount) {
   switch (shiftType) {
-    case ARM64_SFT_LSL:
+    case AARCH64_SFT_LSL:
       return value << amount;
-    case ARM64_SFT_LSR:
+    case AARCH64_SFT_LSR:
       return value >> amount;
-    case ARM64_SFT_ASR:
+    case AARCH64_SFT_ASR:
       return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
+    case AARCH64_SFT_ROR: {
       // Assuming sizeof(T) is a power of 2.
       const T mask = sizeof(T) * 8 - 1;
       assert((amount <= mask) && "Rotate amount exceeds type width");
       amount &= mask;
       return (value >> amount) | (value << ((-amount) & mask));
     }
-    case ARM64_SFT_MSL: {
+    case AARCH64_SFT_MSL: {
       // pad in with ones instead of zeros
       const T mask = (static_cast<T>(1) << static_cast<T>(amount)) - 1;
       return (value << amount) | mask;
     }
-    case ARM64_SFT_INVALID:
+    case AARCH64_SFT_INVALID:
       return value;
     default:
       assert(false && "Unknown shift type");

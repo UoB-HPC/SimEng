@@ -99,7 +99,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint16_t partition_num = VL_bits / 64;
         const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;
-        if (metadata_.operands[2].mem.index)
+        if (metadata_.operands[2].mem.index != AARCH64_REG_INVALID)
           m = sourceValues_[partition_num + 3].get<uint64_t>() << 3;
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
@@ -290,8 +290,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({base + offset, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1B_IMM_REAL: {  // ld1b {zt.b}, pg/z, [xn{, #imm,
-                                             // mul vl}]
+      case Opcode::AArch64_LD1B_IMM: {  // ld1b {zt.b}, pg/z, [xn{, #imm,
+                                        // mul vl}]
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const int64_t offset =
             static_cast<int64_t>(metadata_.operands[2].mem.disp);
@@ -308,8 +308,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1D_IMM_REAL: {  // ld1d {zt.d}, pg/z, [xn{, #imm,
-                                             // mul vl}]
+      case Opcode::AArch64_LD1D_IMM: {  // ld1d {zt.d}, pg/z, [xn{, #imm,
+                                        // mul vl}]
         const uint16_t partition_num = VL_bits / 64;
 
         const uint64_t base = sourceValues_[1].get<uint64_t>();
@@ -336,8 +336,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1W_IMM_REAL: {  // ld1w {zt.s}, pg/z, [xn{, #imm,
-                                             // mul vl}]
+      case Opcode::AArch64_LD1W_IMM: {  // ld1w {zt.s}, pg/z, [xn{, #imm,
+                                        // mul vl}]
         const uint16_t partition_num = VL_bits / 32;
 
         const uint64_t base = sourceValues_[1].get<uint64_t>();
@@ -429,7 +429,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
                                               // #imm
-        const uint64_t base = sourceValues_[2].get<uint64_t>();
+        const uint64_t base = sourceValues_[0].get<uint64_t>();
         setMemoryAddresses({{base, 16}, {base + 16, 16}});
         break;
       }
@@ -600,7 +600,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
         setMemoryAddresses(
-            {{metadata_.operands[1].imm + instructionAddress_, 8}});
+            {{metadata_.operands[1].mem.disp + instructionAddress_, 8}});
         break;
       }
       case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend {#amount}}]
@@ -847,7 +847,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_SST1B_D_REAL: {  // st1b {zd.d}, pg, [xn, zm.d]
+      case Opcode::AArch64_SST1B_D: {  // st1b {zd.d}, pg, [xn, zm.d]
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
 
@@ -866,7 +866,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_SST1D_REAL: {  // st1d {zt.d}, pg, [xn, zm.d]
+      case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
 
@@ -886,8 +886,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {  // st1d {zt.d}, pg, [xn,
-                                                        // zm.d, lsl #3]
+      case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn,
+                                            // zm.d, lsl #3]
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
 

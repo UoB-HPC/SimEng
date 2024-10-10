@@ -1,7 +1,7 @@
 AArch64
 =======
 
-SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the Armv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
+SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the Armv9.4-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
@@ -135,7 +135,8 @@ There are several useful variables that execution behaviours have access to:
 ``results``
   This is the output vector, into which ``RegisterValue`` instances containing the results should be placed. Each entry in the vector corresponds to a destination register.
 
-  Some instructions have "implicit" destination registers: in these cases, the implicit destinations are added to the start of the results vector. For example, ``subs w0, w1, #1`` writes explicitly to ``w0``, but also implicitly sets the "NZCV" comparison flags. In this case, ``results[0]`` is expected to be the updated NZCV flags, while ``results[1]`` is expected to be the new value of ``w0``.
+  Some instructions have "implicit" destination registers: in these cases, the implicit destinations are added to the **start** of the results vector. For example, ``subs w0, w1, #1`` writes explicitly to ``w0``, but also implicitly sets the "NZCV" comparison flags. In this case, ``results[0]`` is expected to be the updated NZCV flags, while ``results[1]`` is expected to be the new value of ``w0``.
+  Some Load and Store instructions update the base memory address register (pre- or post-indexing). These registers are also classes as implicit destination registers and thus will be added to the start of the results vector. For example, ``ldr	x1, [x0], #8`` writes explicitly to ``x1`` but also writes implicitly to ``x0``. In this case, ``results[0]`` is expected to be the updated ``x0`` value (``x0 + 8``) and ``results[1]`` is expected to be the new value of ``x1``.
 
   Memory instructions may have a "writeback" variant, where the register containing the address is updated by an offset during execution. In these cases, the address register is added as a destination *after* the other registers, corresponding with the textual representation of the registers. E.g., the instruction ``ldr x1, [x2, #8]!`` will expect the value of ``x1`` in ``results[0]``, while the updated address ``x2`` should be placed in ``results[1]``.
 
@@ -157,6 +158,8 @@ Also supported is the Arm SME extension and thus the use of ``ZA`` sub-tile regi
 SME instructions can also operate on sub-tile slices; individual rows or columns within a sub-tile. Regardless of whether a whole sub-tile or a slice is used as a source operand, all rows associated with said tile will be added to the ``sourceValues_`` vector. There are two reasons for this. First, the index value pointing to the relevant slice cannot be evaluated before instruction execution, thus, all sub-tile rows need to be provided. Second, if the source slice is a vertical slice (or a column of the sub-tile) then an element from each row is needed to construct the correct output.
 
 Furthermore, a similar situation is present when a sub-tile slice is a destination operand. The ``results`` vector will expect a ``registerValue`` entry for each row of the targeted sub-tile, again due to the same two reasons listed previously. But, when a sub-tile slice is a destination operand, **all** associated rows of the sub-tile will also be added to the ``sourceValues_`` vector. Again, this is down to two key, similar reasons. First, when a destination is a sub-tile slice, we only want to update that row or column. As the we are unable to calculate which slice will be our destination before execution has commenced, all possible slices must be added to the ``results`` vector. If we were to not provide a ``RegisterValue`` to each entry of the ``results`` vector, the default value is 0. Therefore, in order to not zero-out the other slices within the sub-tile we will need access to their current values. Secondly, if the destination is a vertical slice (or sub-tile column) then only one element per row should be updated; the rest should remain unchanged.
+
+Additionally, a fixed width 512-bit register ``ZT0`` was introduced with SME2 and is also now supported by SimEng. It can be treated in the same way as an SVE vector register.
 
 Before implementing any further SME functionality we highly recommend familiarising yourself with the specification; found `here <https://developer.arm.com/documentation/ddi0616/latest>`_.
 
@@ -184,7 +187,7 @@ cstool
 
 Capstone provides a ``cstool`` utility, which provides a visual representation of the ``metadata`` information available for any given instruction. For example, feeding it the bytes for the ``str`` instruction displayed above results in the following::
 
-    $ cstool -d arm64 f30f1ef8
+    $ cstool -d -r aarch64 f30f1ef8
      0  f3 0f 1e f8  str    x19, [sp, #-0x20]!
             op_count: 2
                     operands[0].type: REG = x19
@@ -223,9 +226,7 @@ Concerning SVE & SME loads and stores, an effort should be made to merge contigu
 Instruction aliases
 *******************
 
-As Capstone is primarily a disassembler, it will attempt to generate the correct aliases for instructions: for example, the ``cmp w0, #0`` instruction is an alias for ``subs wzr, w0, #0``. As it's the underlying instruction that is of use (in this case, the ``subs`` instruction), this implementation includes a de-aliasing component that reverses this conversion. The logic for this may be found in ``src/lib/arch/aarch64/InstructionMetadata``.
-
-If a known but unsupported alias is encountered, it will generate an invalid instruction error, and the output will identify the instruction as unknown in place of the usual textual representation. It is recommended to reference a disassembled version of the program to identify what the instruction at this address should be correctly disassembled to, and implement the necessary dealiasing logic accordingly.
+Although Capstone has been configured to produce the disassembly information for the "real" instruction rather than that of its (preferred) alias, the instruction's mnemonic and operand string will still be that of its alias. Hence, if an exception occurs the printed instruction informtion may not match the internal opcode used.
 
 Common Instruction Execution behaviour issues
 *********************************************

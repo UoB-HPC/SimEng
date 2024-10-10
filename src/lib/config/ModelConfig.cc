@@ -367,16 +367,15 @@ void ModelConfig::setExpectations(bool isDefault) {
       std::vector{false, true});
 
   if (isa_ == ISA::AArch64) {
-    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint16_t>(
         128, "Vector-Length", true));
     expectations_["Core"]["Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 384, 512, 640, 768, 896, 1024, 1152,
-                              1280, 1408, 1536, 1664, 1792, 1920, 2048});
+        std::vector<uint16_t>{128, 256, 512, 1024, 2048});
 
-    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint64_t>(
+    expectations_["Core"].addChild(ExpectationNode::createExpectation<uint16_t>(
         128, "Streaming-Vector-Length", true));
     expectations_["Core"]["Streaming-Vector-Length"].setValueSet(
-        std::vector<uint64_t>{128, 256, 512, 1024, 2048});
+        std::vector<uint16_t>{128, 256, 512, 1024, 2048});
   }
 
   // Fetch
@@ -443,6 +442,11 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Register-Set"].addChild(
         ExpectationNode::createExpectation<uint16_t>(1, "Matrix-Count", true));
     expectations_["Register-Set"]["Matrix-Count"].setValueBounds<uint16_t>(
+        1, UINT16_MAX);
+
+    expectations_["Register-Set"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(1, "Table-Count", true));
+    expectations_["Register-Set"]["Table-Count"].setValueBounds<uint16_t>(
         1, UINT16_MAX);
   } else if (isa_ == ISA::RV64) {
     // TODO: Reduce to 32 once renaming issue has been sorted. Also replace in
@@ -653,7 +657,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   // Get the upper bound of what the opcode value can be based on the ISA
   uint16_t maxOpcode = 0;
   if (isa_ == ISA::AArch64) {
-    maxOpcode = arch::aarch64::Opcode::AArch64_INSTRUCTION_LIST_END;
+    maxOpcode = arch::aarch64::Opcode::INSTRUCTION_LIST_END;
   } else if (isa_ == ISA::RV64) {
     maxOpcode = arch::riscv::Opcode::RISCV_INSTRUCTION_LIST_END;
   }

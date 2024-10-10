@@ -177,10 +177,10 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> sveCmpPredicated_toPred(
 template <typename T>
 uint64_t sveCnt_gpr(const simeng::arch::aarch64::InstructionMetadata& metadata,
                     const uint16_t VL_bits) {
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
 
-  const uint16_t elems =
-      sveGetPattern(metadata.operandStr, (sizeof(T) * 8), VL_bits);
+  const uint16_t elems = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, (sizeof(T) * 8), VL_bits);
   return (uint64_t)(elems * imm);
 }
 
@@ -267,9 +267,9 @@ int64_t sveDec_scalar(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const int64_t n = sourceValues[0].get<int64_t>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-  const uint16_t elems =
-      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
+  const uint16_t elems = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, sizeof(T) * 8, VL_bits);
   return (n - static_cast<int64_t>(elems * imm));
 }
 
@@ -859,9 +859,10 @@ int64_t sveInc_gprImm(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const int64_t n = sourceValues[0].get<int64_t>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-  const uint16_t elems =
-      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
+  const uint16_t elems = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, sizeof(T) * 8, VL_bits);
   int64_t out = n + (elems * imm);
   return out;
 }
@@ -876,12 +877,13 @@ RegisterValue sveInc_imm(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const T* n = sourceValues[0].getAsVector<T>();
-  const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+
+  const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};
-  const uint16_t elems =
-      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+  const uint16_t elems = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, sizeof(T) * 8, VL_bits);
 
   for (int i = 0; i < partition_num; i++) {
     out[i] = n[i] + (elems * imm);
@@ -1044,17 +1046,16 @@ RegisterValue sveMax_vecImm(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `max zdn, zdn,
- * #imm`.
+/** Helper function for SVE instructions with the format `max zdn, pg/m zdn,
+ * zm`.
  * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const T* d = sourceValues[0].getAsVector<T>();
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const T* n = sourceValues[2].getAsVector<T>();
-  const T* m = sourceValues[3].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1064,7 +1065,7 @@ RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
     if (p[i / (64 / sizeof(T))] & shifted_active) {
       out[i] = std::max(n[i], m[i]);
     } else
-      out[i] = d[i];
+      out[i] = n[i];
   }
   return {out, 256};
 }
@@ -1276,7 +1277,8 @@ std::array<uint64_t, 4> svePsel(
   const uint64_t* pn = sourceValues[0].getAsVector<uint64_t>();
   const uint64_t* pm = sourceValues[1].getAsVector<uint64_t>();
   const uint32_t wa = sourceValues[2].get<uint32_t>();
-  const uint32_t imm = metadata.operands[2].sme_index.disp;
+  const uint32_t imm =
+      static_cast<uint32_t>(metadata.operands[2].pred.imm_index);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
 
@@ -1303,8 +1305,8 @@ std::array<uint64_t, 4> svePtrue(
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
   // Get pattern
-  const uint16_t count =
-      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+  const uint16_t count = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, sizeof(T) * 8, VL_bits);
   // Exit early if count == 0
   if (count == 0) return out;
 
@@ -1592,8 +1594,10 @@ uint64_t sveUqdec(srcValContainer& sourceValues,
                   const simeng::arch::aarch64::InstructionMetadata& metadata,
                   const uint16_t VL_bits) {
   const D d = sourceValues[0].get<D>();
-  const uint8_t imm = metadata.operands[1].imm;
-  const uint16_t count = sveGetPattern(metadata.operandStr, N, VL_bits);
+
+  const uint8_t imm = metadata.operands[2].imm;
+  const uint16_t count = getElemsFromPattern(
+      metadata.operands[1].sysop.alias.svepredpat, N, VL_bits);
 
   // The range of possible values does not fit in the range of any integral
   // type, so a double is used as an intermediate value. The end result must

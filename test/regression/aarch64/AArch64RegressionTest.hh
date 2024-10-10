@@ -76,7 +76,7 @@ inline std::string paramToString(
 inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
     CoreType type) {
   std::vector<std::tuple<CoreType, std::string>> coreVLPairs;
-  for (uint64_t i = 128; i <= 2048; i += 128) {
+  for (uint64_t i = 128; i <= 2048; i *= 2) {
     coreVLPairs.push_back(std::make_tuple(
         type,
         "{Core: {Vector-Length: " + std::to_string(i) +
@@ -162,7 +162,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
  * For example:
  *
  *     // Compare za1h.s[0] to some expected 32-bit floating point values.
- *     CHECK_MAT_ROW(ARM64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
+ *     CHECK_MAT_ROW(AARCH64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
  */
 #define CHECK_MAT_ROW(tag, index, type, ...)               \
   {                                                        \
@@ -181,7 +181,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
  * For example:
  *
  *     // Compare za1v.s[0] to some expected 32-bit floating point values.
- *     CHECK_MAT_COL(ARM64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
+ *     CHECK_MAT_COL(AARCH64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
  */
 #define CHECK_MAT_COL(tag, index, type, ...)               \
   {                                                        \
@@ -240,8 +240,10 @@ class AArch64RegressionTest : public RegressionTest {
   std::string getSubtargetFeaturesString() {
 #if SIMENG_LLVM_VERSION < 14
     return "+sve,+lse";
-#else
+#elif SIMENG_LLVM_VERSION < 18
     return "+sve,+lse,+sve2,+sme,+sme-f64";
+#else
+    return "+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
 #endif
   }
 
@@ -289,22 +291,22 @@ class AArch64RegressionTest : public RegressionTest {
     // Get matrix row register tag
     uint8_t base = 0;
     uint8_t tileTypeCount = 0;
-    if (tag == ARM64_REG_ZA || tag == ARM64_REG_ZAB0) {
+    if (tag == AARCH64_REG_ZA || tag == AARCH64_REG_ZAB0) {
       // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
       // Add all rows for this SVL
       // Don't need to set base as will always be 0
       tileTypeCount = 1;
-    } else if (tag >= ARM64_REG_ZAH0 && tag <= ARM64_REG_ZAH1) {
-      base = tag - ARM64_REG_ZAH0;
+    } else if (tag >= AARCH64_REG_ZAH0 && tag <= AARCH64_REG_ZAH1) {
+      base = tag - AARCH64_REG_ZAH0;
       tileTypeCount = 2;
-    } else if (tag >= ARM64_REG_ZAS0 && tag <= ARM64_REG_ZAS3) {
-      base = tag - ARM64_REG_ZAS0;
+    } else if (tag >= AARCH64_REG_ZAS0 && tag <= AARCH64_REG_ZAS3) {
+      base = tag - AARCH64_REG_ZAS0;
       tileTypeCount = 4;
-    } else if (tag >= ARM64_REG_ZAD0 && tag <= ARM64_REG_ZAD7) {
-      base = tag - ARM64_REG_ZAD0;
+    } else if (tag >= AARCH64_REG_ZAD0 && tag <= AARCH64_REG_ZAD7) {
+      base = tag - AARCH64_REG_ZAD0;
       tileTypeCount = 8;
-    } else if (tag >= ARM64_REG_ZAQ0 && tag <= ARM64_REG_ZAQ15) {
-      base = tag - ARM64_REG_ZAQ0;
+    } else if (tag >= AARCH64_REG_ZAQ0 && tag <= AARCH64_REG_ZAQ15) {
+      base = tag - AARCH64_REG_ZAQ0;
       tileTypeCount = 16;
     }
     uint16_t reg_tag = base + (index * tileTypeCount);
@@ -328,22 +330,22 @@ class AArch64RegressionTest : public RegressionTest {
     // Get matrix row register tag
     uint8_t base = 0;
     uint8_t tileTypeCount = 0;
-    if (tag == ARM64_REG_ZA || tag == ARM64_REG_ZAB0) {
+    if (tag == AARCH64_REG_ZA || tag == AARCH64_REG_ZAB0) {
       // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
       // Add all rows for this SVL
       // Don't need to set base as will always be 0
       tileTypeCount = 1;
-    } else if (tag >= ARM64_REG_ZAH0 && tag <= ARM64_REG_ZAH1) {
-      base = tag - ARM64_REG_ZAH0;
+    } else if (tag >= AARCH64_REG_ZAH0 && tag <= AARCH64_REG_ZAH1) {
+      base = tag - AARCH64_REG_ZAH0;
       tileTypeCount = 2;
-    } else if (tag >= ARM64_REG_ZAS0 && tag <= ARM64_REG_ZAS3) {
-      base = tag - ARM64_REG_ZAS0;
+    } else if (tag >= AARCH64_REG_ZAS0 && tag <= AARCH64_REG_ZAS3) {
+      base = tag - AARCH64_REG_ZAS0;
       tileTypeCount = 4;
-    } else if (tag >= ARM64_REG_ZAD0 && tag <= ARM64_REG_ZAD7) {
-      base = tag - ARM64_REG_ZAD0;
+    } else if (tag >= AARCH64_REG_ZAD0 && tag <= AARCH64_REG_ZAD7) {
+      base = tag - AARCH64_REG_ZAD0;
       tileTypeCount = 8;
-    } else if (tag >= ARM64_REG_ZAQ0 && tag <= ARM64_REG_ZAQ15) {
-      base = tag - ARM64_REG_ZAQ0;
+    } else if (tag >= AARCH64_REG_ZAQ0 && tag <= AARCH64_REG_ZAQ15) {
+      base = tag - AARCH64_REG_ZAQ0;
       tileTypeCount = 16;
     }
 

@@ -14,13 +14,14 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
       vctModulo_((config["Core"]["Clock-Frequency-GHz"].as<float>() * 1e9) /
                  (config["Core"]["Timer-Frequency-MHz"].as<uint32_t>() * 1e6)) {
-  if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle_) != CS_ERR_OK) {
+  if (cs_open(CS_ARCH_AARCH64, CS_MODE_ARM, &capstoneHandle_) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
     exit(1);
   }
 
   cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_ON);
+  cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
 
   // Generate zero-indexed system register map
   std::vector<uint64_t> sysRegs = config::SimInfo::getSysRegVec();
@@ -31,10 +32,10 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
       RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0))};
+      static_cast<uint16_t>(getSystemRegisterTag(AARCH64_SYSREG_CNTVCT_EL0))};
   PCCreg_ = {
       RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
+      static_cast<uint16_t>(getSystemRegisterTag(AARCH64_SYSREG_PMCCNTR_EL0))};
 
   // Instantiate an ExecutionInfo entry for each group in the
   // InstructionGroup namespace.
@@ -231,7 +232,7 @@ ProcessStateChange Architecture::getInitialState() const {
   // but is disabled due to bit 4 being set
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM,
-       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
+       static_cast<uint16_t>(getSystemRegisterTag(AARCH64_SYSREG_DCZID_EL0))});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
 
   return changes;
