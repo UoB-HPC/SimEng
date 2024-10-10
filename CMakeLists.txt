@@ -36,10 +36,12 @@ FetchContent_Declare(
   GIT_PROGRESS   TRUE
 )
 
+# WARNING: When updating capstone version, we MUST make a new, discrete branch in the UoB-HPC Capstone fork to ensure
+#          current / previous SimEng versions continue to operate correctly.
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG next-update
+  GIT_TAG next-update # Branch for SimEng version 0.9.7
   GIT_PROGRESS TRUE
 
   # Old Git tag pre-Armv9.2
