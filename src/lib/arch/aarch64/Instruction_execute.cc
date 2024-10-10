@@ -5527,7 +5527,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UCVTFSXSri: {  // ucvtf sd, xn, #fbits
-        results_[0] = {ucvtf_fixedToFloat<float, uint32_t>(sourceValues_), 256};
+        results_[0] = {
+            ucvtf_fixedToFloat<float, uint32_t>(sourceValues_, metadata_), 256};
         break;
       }
       case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
@@ -5566,6 +5567,14 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
         results_[0] = {div_3ops<uint64_t>(sourceValues_), 8};
+        break;
+      }
+      case Opcode::AArch64_UDOTlanev16i8: {  // udot vd.4s, vn.16b, vm.4b[index]
+        results_[0] = vecUdot_byElement<4>(sourceValues_, metadata_);
+        break;
+      }
+      case Opcode::AArch64_UDOTlanev8i8: {  // udot vd.2s, vn.8b, vm.4b[index]
+        results_[0] = vecUdot_byElement<2>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_UMADDLrrr: {  // umaddl xd, wn, wm, xa
