@@ -275,6 +275,9 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_LD1Twov2d_POST:  // ld1 {vt1.2d, vt2.2d}, [xn],
                                             // <#imm|xm>
         [[fallthrough]];
+      case Opcode::AArch64_LD1Twov8h_POST:  // ld1 {vt1.8h, vt2.8h}, [xn],
+                                            // <#imm|xm>
+        [[fallthrough]];
       case Opcode::AArch64_LD1Twov4s:  // ld1 {vt1.4s, vt2.4s}, [xn]
         [[fallthrough]];
       case Opcode::AArch64_LD1Twov4s_POST: {  // ld1 {vt1.4s, vt2.4s}, [xn],
