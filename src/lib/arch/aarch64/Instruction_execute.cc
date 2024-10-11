@@ -2795,6 +2795,16 @@ void Instruction::execute() {
         results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         break;
       }
+      case Opcode::AArch64_LD1Onev8b_POST: {  // ld1 {vt.8b}, [xn], <#imm|xm>
+        // if #imm post-index, value can only be 8
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[1].get<uint64_t>()
+                : 8;
+        results_[0] = sourceValues_[0].get<uint64_t>() + postIndex;
+        results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
+        break;
+      }
       case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
         // LOAD
         const uint16_t partition_num = VL_bits / 64;
