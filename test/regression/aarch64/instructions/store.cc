@@ -437,6 +437,26 @@ TEST_P(InstStore, st1_multi_struct) {
     }
   }
 
+  // one reg, 4s elements (post offset only)
+  RUN_AARCH64(R"(
+    mov x0, #32
+    movi v0.4s, #1
+    sub sp, sp, #96
+    st1 {v0.4s}, [sp], #16
+    st1 {v0.4s}, [sp], x0
+  )");
+  const uint64_t sp = process_->getInitialStackPointer();
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), sp - 48);
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 96), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 92), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 88), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 84), static_cast<uint32_t>(1));
+
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 80), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 76), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 72), static_cast<uint32_t>(1));
+  EXPECT_EQ(getMemoryValue<uint32_t>(sp - 68), static_cast<uint32_t>(1));
+
   // two reg, 4s elements
   RUN_AARCH64(R"(
     mov x0, #32

@@ -1284,6 +1284,11 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST1Onev4s_POST: {  // st1 {vt.4s}, [xn|sp], <#imm|xm>
+        const uint64_t base = sourceValues_[1].get<uint64_t>();
+        setMemoryAddresses({base, 16});
+        break;
+      }
       case Opcode::AArch64_ST1Twov16b:  // st1 {vt.16b, vt2.16b}, [xn]
         [[fallthrough]];
       case Opcode::AArch64_ST1Twov16b_POST:  // st1 {vt.16b, vt2.16b}, [xn],

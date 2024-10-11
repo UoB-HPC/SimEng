@@ -4724,6 +4724,19 @@ void Instruction::execute() {
         results_[0] = sourceValues_[4].get<uint64_t>() + postIndex;
         break;
       }
+      case Opcode::AArch64_ST1Onev4s_POST: {  // st1 {vt.4s}, [xn|sp], <#imm|xm>
+        // STORE
+        const uint32_t* vt = sourceValues_[0].getAsVector<uint32_t>();
+        memoryData_[0] = RegisterValue((char*)vt, 4 * sizeof(uint32_t));
+
+        // if #imm post-index, value can only be 16
+        const uint64_t postIndex =
+            (metadata_.operands[2].type == AARCH64_OP_REG)
+                ? sourceValues_[2].get<uint64_t>()
+                : 16;
+        results_[0] = sourceValues_[1].get<uint64_t>() + postIndex;
+        break;
+      }
       case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
         // STORE
         const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
