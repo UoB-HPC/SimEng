@@ -243,6 +243,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 16}});
         break;
       }
+      case Opcode::AArch64_LD1Onev8b_POST: {  // ld1 {vt.8b}, [xn], <#imm|xm>
+        setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 8}});
+        break;
+      }
       case Opcode::AArch64_LD1Fourv16b:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
                                          // vt4.16b}, [xn]
         [[fallthrough]];

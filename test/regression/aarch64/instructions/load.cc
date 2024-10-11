@@ -231,6 +231,41 @@ TEST_P(InstLoad, ld1_multi_struct) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(12),
             getGeneralRegister<uint64_t>(10) + 16);
 
+  // One reg, 8b elements
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #8
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with imm post-index
+    ld1 {v1.8b}, [x0], #8
+
+    # save heap address after post index
+    mov x11, x0
+
+    # Load values from heap with reg post-index
+    ld1 {v2.8b}, [x0], x1
+
+    mov x12, x0
+  )");
+
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x00, 0x00, 0x00,
+              0x00, 0x00, 0x00, 0x00, 0x00});
+  CHECK_NEON(2, uint8_t,
+             {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0x00, 0x00, 0x00,
+              0x00, 0x00, 0x00, 0x00, 0x00});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 16);
+
   // Two reg, 16b elements
   RUN_AARCH64(R"(
     # Get heap address
