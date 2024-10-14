@@ -2852,6 +2852,84 @@ TEST_P(InstSve, fadda) {
   CHECK_NEON(3, double, {resultB, 0});
 }
 
+TEST_P(InstSve, faddv) {
+  // float
+  initialHeapData_.resize(VL / 8);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrc = {
+      1.0f,    -42.76f, -0.125f, 0.0f,   40.26f,   -684.72f, -0.15f,  107.86f,
+      -34.71f, -0.917f, 0.0f,    80.72f, -125.67f, -0.01f,   701.90f, 7.0f};
+  fillHeap<float>(fheap, fsrc, VL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x2, xzr
+    mov x3, xzr
+    mov x4, #4
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    ptrue p0.s
+    whilelo p1.s, xzr, x2
+
+    ld1w {z0.s}, p0/z, [x0]
+
+    faddv s3, p0, z0.s
+    faddv s4, p1, z0.s
+  )");
+  float s3 = 0.0f;
+  float s4 = 0.0f;
+  for (int i = 0; i < VL / 32; i++) {
+    s3 += fsrc[i % (fsrc.size())];
+    if (i < (VL / 64)) s4 += fsrc[i % (fsrc.size())];
+  }
+  CHECK_NEON(3, float, {s3, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(4, float, {s4, 0.0f, 0.0f, 0.0f});
+
+  // double
+  initialHeapData_.resize(VL);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> dsrc = {1.0,     -42.76, -0.125, 0.0,    40.26, -684.72,
+                              -0.15,   107.86, -34.71, -0.917, 0.0,   80.72,
+                              -125.67, -0.01,  701.90, 7.0};
+  fillHeap<double>(dheap, dsrc, VL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x2, xzr
+    mov x3, xzr
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    ptrue p0.d
+    whilelo p1.d, xzr, x2
+
+    ld1d {z0.d}, p0/z, [x0]
+
+    faddv d3, p0, z0.d
+    faddv d4, p1, z0.d
+  )");
+  double d3 = 0.0;
+  double d4 = 0.0;
+  for (int i = 0; i < VL / 64; i++) {
+    d3 += dsrc[i % (dsrc.size())];
+    if (i < (VL / 128)) d4 += dsrc[i % (dsrc.size())];
+  }
+  CHECK_NEON(3, double, {d3, 0.0});
+  CHECK_NEON(4, double, {d4, 0.0});
+}
+
 TEST_P(InstSve, fcmge) {
   // double
   initialHeapData_.resize(VL / 16);
