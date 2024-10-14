@@ -2832,6 +2832,29 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1RQ_B_IMM: {  // ld1rqb {zd.b}, pg/z, [xn{, #imm }]
+        // LOAD
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 8;
+        uint8_t out[256] = {0};
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+
+        // Get mini-vector (quadword)
+        uint8_t mini[16] = {0};
+        for (int i = 0; i < 16; i++) {
+          uint64_t shifted_active = 1ull << (i % 64);
+          if (p[i / 64] & shifted_active) {
+            mini[i] = data[i];
+          }
+        }
+
+        // Duplicate mini-vector into output vector
+        for (int i = 0; i < partition_num; i++) {
+          out[i] = mini[i % 16];
+        }
+        results_[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
