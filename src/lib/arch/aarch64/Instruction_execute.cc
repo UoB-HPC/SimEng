@@ -4111,6 +4111,22 @@ void Instruction::execute() {
         results_[0] = svePtrue<uint32_t>(metadata_, VL_bits);
         break;
       }
+      case Opcode::AArch64_PTRUE_C_B: {  // ptrue pnd.b
+        results_[0] = svePtrue_counter<uint8_t>(VL_bits);
+        break;
+      }
+      case Opcode::AArch64_PTRUE_C_D: {  // ptrue pnd.d
+        results_[0] = svePtrue_counter<uint64_t>(VL_bits);
+        break;
+      }
+      case Opcode::AArch64_PTRUE_C_H: {  // ptrue pnd.h
+        results_[0] = svePtrue_counter<uint16_t>(VL_bits);
+        break;
+      }
+      case Opcode::AArch64_PTRUE_C_S: {  // ptrue pnd.s
+        results_[0] = svePtrue_counter<uint32_t>(VL_bits);
+        break;
+      }
       case Opcode::AArch64_PUNPKHI_PP: {  // punpkhi pd.h, pn.b
         results_[0] = svePunpk(sourceValues_, VL_bits, true);
         break;
