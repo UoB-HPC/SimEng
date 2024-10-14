@@ -4641,6 +4641,49 @@ TEST_P(InstSve, ld1rd) {
   CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0x12345678}, VL / 16));
 }
 
+TEST_P(InstSve, ld1rqb) {
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  fillHeap<uint64_t>(heap64,
+                     {0x12345678DEADBEEF, 0xABCDEF0198765432,
+                      0xABBACAFEFEDCBA98, 0xFEEDABCDBEADCABB},
+                     4);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and broadcast values from heap
+    ptrue p0.b
+    ld1rqb {z0.b}, p0/z, [x0]
+    ld1rqb {z1.b}, p0/z, [x0, #16]
+
+    # Test for inactive lanes
+    ptrue p1.b, vl1
+    ld1rqb {z2.b}, p1/z, [x0]
+    add x0, x0, #32
+    ld1rqb {z3.b}, p1/z, [x0, #-16]
+  )");
+  CHECK_NEON(0, uint8_t,
+             fillNeon<uint8_t>({0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
+                                0x32, 0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB},
+                               VL / 8));
+  CHECK_NEON(1, uint8_t,
+             fillNeon<uint8_t>({0x98, 0xBA, 0xDC, 0xFE, 0xFE, 0xCA, 0xBA, 0xAB,
+                                0xBB, 0xCA, 0xAD, 0xBE, 0xCD, 0xAB, 0xED, 0xFE},
+                               VL / 8));
+  CHECK_NEON(2, uint8_t,
+             fillNeon<uint8_t>({0xEF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                               VL / 8));
+  CHECK_NEON(3, uint8_t,
+             fillNeon<uint8_t>({0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+                               VL / 8));
+}
+
 TEST_P(InstSve, ld1rqd) {
   initialHeapData_.resize(32);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
