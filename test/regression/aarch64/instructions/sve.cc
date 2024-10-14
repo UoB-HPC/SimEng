@@ -7098,6 +7098,32 @@ TEST_P(InstSve, uaddv) {
   CHECK_NEON(3, uint64_t, {(9 * (VL / 128)), 0});
 }
 
+TEST_P(InstSve, udot) {
+  // udot by element
+  initialHeapData_.resize(16);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFFFFF00FF;
+  heap64[1] = 0x01234567ABBACAFE;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+
+    dup z2.b, #2
+    dup z3.b, #3
+    dup z4.s, #4
+    dup z5.s, #5
+
+    udot z4.s, z2.b, z0.b[0]
+    udot z5.s, z3.b, z0.b[3]
+  )");
+  CHECK_NEON(4, uint32_t, fillNeon<uint32_t>({1534}, VL / 8));
+  CHECK_NEON(5, uint32_t, fillNeon<uint32_t>({629}, VL / 8));
+}
+
 TEST_P(InstSve, uqdec) {
   // d arrangement
   RUN_AARCH64(R"(

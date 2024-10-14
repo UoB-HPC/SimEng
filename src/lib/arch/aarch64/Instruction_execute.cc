@@ -5619,6 +5619,11 @@ void Instruction::execute() {
         results_[0] = {div_3ops<uint64_t>(sourceValues_), 8};
         break;
       }
+      case Opcode::AArch64_UDOT_ZZZI_S: {  // udot zd.s, zn.b, zm.b[index]
+        results_[0] = sveUdot_indexed<uint32_t, uint8_t, 4>(sourceValues_,
+                                                            metadata_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_UDOTlanev16i8: {  // udot vd.4s, vn.16b, vm.4b[index]
         results_[0] = vecUdot_byElement<4>(sourceValues_, metadata_);
         break;
