@@ -1388,6 +1388,16 @@ void Instruction::execute() {
         results_[0] = vecAdd_3ops<float, 4>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_FADDV_VPZ_D: {  // faddv dd, p0, zn.d
+
+        results_[0] = sveFaddv_predicated<double>(sourceValues_, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FADDV_VPZ_S: {  // faddv sd, p0, zn.s
+
+        results_[0] = sveFaddv_predicated<float>(sourceValues_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_FCADD_ZPmZ_D: {  // fcadd zdn.d, pg/m, zdn.d, zm.d,
                                             // #imm
         results_[0] =

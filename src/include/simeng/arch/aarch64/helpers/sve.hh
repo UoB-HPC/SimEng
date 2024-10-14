@@ -626,6 +626,27 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
   return {out, 256};
 }
 
+/** Helpfer function for SVE instructions with the format `faddv rd, pg, zn.
+ * D represents the source vector element type and the destination scalar
+ * register type (i.e. for zn.s and sd, D = float).
+ * Returns correctly formatted RegisterValue. */
+template <typename D>
+RegisterValue sveFaddv_predicated(srcValContainer& sourceValues,
+                                  const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const D* zn = sourceValues[1].getAsVector<D>();
+
+  const uint16_t partition_num = VL_bits / (8 * sizeof(D));
+  D out[256 / sizeof(D)] = {0};
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(D))) * sizeof(D));
+    if (p[i / (64 / sizeof(D))] & shifted_active) {
+      out[0] += zn[i];
+    }
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `fmad zd, pg/m, zn,
  * zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = double).
