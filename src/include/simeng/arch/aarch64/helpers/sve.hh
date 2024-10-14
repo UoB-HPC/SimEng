@@ -1340,6 +1340,48 @@ std::array<uint64_t, 4> svePtrue(
   return out;
 }
 
+/** Helper function for SVE instructions with the format `ptrue pnd.
+ * T represents the type of sourceValues (e.g. for pnd.d, T = uint64_t).
+ * Returns an array of 4 uint64_t elements. */
+template <typename T>
+std::array<uint64_t, 4> svePtrue_counter(const uint16_t VL_bits) {
+  // Predicate as counter is 16-bits and has the following encoding:
+  //    - Up to first 4 bits encode the element size (0b1, 0b10, 0b100, 0b1000
+  //    for b h s d respectively)
+  //            - bits 0->LSZ
+  //    - Bits LSZ -> 14 represent a uint of the number of consecutive elements
+  //    from element 0 that are active / inactive
+  //            - If invert bit = 0 it is number of active elements
+  //            - If invert bit = 1 it is number of inactive elements
+  //    - Bit 15 represents the invert bit
+  std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+  // Set invert bit
+  out[0] |= 0b1000000000000000;
+
+  // Set Element size field
+  uint8_t bitsUsed = 0;
+  if (sizeof(T) == 1) {
+    out[0] |= 0b1;
+    bitsUsed += 1;
+  } else if (sizeof(T) == 2) {
+    out[0] |= 0b10;
+    bitsUsed += 2;
+  } else if (sizeof(T) == 4) {
+    out[0] |= 0b100;
+    bitsUsed += 3;
+  } else if (sizeof(T) == 8) {
+    out[0] |= 0b1000;
+    bitsUsed += 4;
+  }
+
+  // Set Element count (max value is 256 (2048 bit VL for pnd.b))
+  const uint64_t elementCount = VL_bits / (sizeof(T) * 8);
+  out[0] |= (elementCount << bitsUsed);
+
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `punpk<hi,lo> pd.h,
  * pn.b`.
  * If `isHI` = false, then PUNPKLO is performed.

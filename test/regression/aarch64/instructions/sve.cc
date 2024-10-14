@@ -5816,6 +5816,31 @@ TEST_P(InstSve, ptrue) {
   CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 2));
 }
 
+TEST_P(InstSve, ptrue_counter) {
+  RUN_AARCH64(R"(
+    ptrue pn8.s
+    ptrue pn9.d
+    ptrue pn10.b
+    ptrue pn11.h
+  )");
+  const uint64_t ps =
+      0b0000000000000000000000000000000000000000000000001000000000000100 |
+      ((static_cast<uint64_t>(VL / 32)) << 3);
+  const uint64_t pd =
+      0b0000000000000000000000000000000000000000000000001000000000001000 |
+      ((static_cast<uint64_t>(VL / 64)) << 4);
+  const uint64_t pb =
+      0b0000000000000000000000000000000000000000000000001000000000000001 |
+      ((static_cast<uint64_t>(VL / 8)) << 1);
+  const uint64_t ph =
+      0b0000000000000000000000000000000000000000000000001000000000000010 |
+      ((static_cast<uint64_t>(VL / 16)) << 2);
+  CHECK_PREDICATE(8, uint64_t, {ps, 0x0, 0x0, 0x0});
+  CHECK_PREDICATE(9, uint64_t, {pd, 0x0, 0x0, 0x0});
+  CHECK_PREDICATE(10, uint64_t, {pb, 0x0, 0x0, 0x0});
+  CHECK_PREDICATE(11, uint64_t, {ph, 0x0, 0x0, 0x0});
+}
+
 TEST_P(InstSve, punpk) {
   RUN_AARCH64(R"(
     ptrue p0.b
