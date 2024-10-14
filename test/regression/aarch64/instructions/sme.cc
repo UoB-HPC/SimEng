@@ -7,7 +7,6 @@ namespace {
 
 using InstSme = AArch64RegressionTest;
 
-#if SIMENG_LLVM_VERSION >= 14
 TEST_P(InstSme, mova) {
   // 8-bit
   RUN_AARCH64(R"(
@@ -576,8 +575,5 @@ TEST_P(InstSme, zero) {
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSme,
                          ::testing::ValuesIn(genCoreTypeSVLPairs(EMULATION)),
                          paramToString);
-#else
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(InstSme);
-#endif
 
 }  // namespace

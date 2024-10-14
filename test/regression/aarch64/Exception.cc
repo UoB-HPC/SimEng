@@ -151,7 +151,6 @@ TEST_P(Exception, unmapped_sys_reg) {
   EXPECT_EQ(stdout_.substr(0, strlen(err)), err);
 }
 
-#if SIMENG_LLVM_VERSION >= 14
 // TODO: Write test for InstructionException::StreamingModeUpdate once it has a
 // trigger case
 // TODO: Write test for InstructionException::ZAregisterStatusUpdate once it has
@@ -371,7 +370,6 @@ TEST_P(Exception, svcr) {
                   fillNeon<uint32_t>({0}, SVL / 8));
   }
 }
-#endif
 
 INSTANTIATE_TEST_SUITE_P(
     AArch64, Exception,

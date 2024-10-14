@@ -8087,14 +8087,12 @@ TEST_P(InstSve, zip_pred) {
 }
 
 TEST_P(InstSve, zip) {
-  // d arrangement
   RUN_AARCH64(R"(
     # 64-bit  
     fdup z0.d, #0.5
     fdup z1.d, #-0.5
     fdup z2.d, #0.75
     fdup z3.d, #-0.75
-
     zip1 z4.d, z0.d, z1.d
     zip2 z5.d, z2.d, z3.d
 
@@ -8105,16 +8103,24 @@ TEST_P(InstSve, zip) {
     fdup z9.s, #0.75
     zip1 z10.s, z6.s, z7.s
     zip2 z11.s, z8.s, z9.s
+
+    # 8-bit
+    dup z12.b, #1
+    dup z13.b, #-2
+    dup z14.b, #-1
+    dup z15.b, #2
+    zip1 z16.b, z12.b, z13.b
+    zip2 z17.b, z14.b, z15.b
   )");
 
   CHECK_NEON(4, double, fillNeon<double>({0.5, -0.5}, VL / 8));
   CHECK_NEON(5, double, fillNeon<double>({0.75, -0.75}, VL / 8));
   CHECK_NEON(10, float, fillNeon<float>({0.5, -0.75}, VL / 8));
   CHECK_NEON(11, float, fillNeon<float>({-0.5, 0.75}, VL / 8));
+  CHECK_NEON(16, int8_t, fillNeon<int8_t>({1, -2}, VL / 8));
+  CHECK_NEON(17, int8_t, fillNeon<int8_t>({-1, 2}, VL / 8));
 }
 
-#if SIMENG_LLVM_VERSION >= 14
-// If LLVM version supports SVE2 :
 TEST_P(InstSve, psel) {
   RUN_AARCH64(R"(
     mov w13, #0
@@ -8148,7 +8154,6 @@ TEST_P(InstSve, psel) {
   CHECK_PREDICATE(14, uint64_t, fillPred(VL / 8, {0}, 4));
   CHECK_PREDICATE(15, uint64_t, fillPred(VL / 8, {0}, 8));
 }
-#endif
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSve,
                          ::testing::ValuesIn(genCoreTypeVLPairs(EMULATION)),
