@@ -2832,6 +2832,7 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1RQ_B:        // ld1rqb {zd.b}, pg/z, [xn, xm]
       case Opcode::AArch64_LD1RQ_B_IMM: {  // ld1rqb {zd.b}, pg/z, [xn{, #imm }]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
