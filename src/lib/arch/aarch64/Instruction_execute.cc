@@ -5943,6 +5943,10 @@ void Instruction::execute() {
         results_[0] = sveZip_preds<uint32_t>(sourceValues_, VL_bits, false);
         break;
       }
+      case Opcode::AArch64_ZIP1_ZZZ_B: {  // zip1 zd.b, zn.b, zm.b
+        results_[0] = sveZip_vecs<uint8_t>(sourceValues_, VL_bits, false);
+        break;
+      }
       case Opcode::AArch64_ZIP1_ZZZ_D: {  // zip1 zd.d, zn.d, zm.d
         results_[0] = sveZip_vecs<uint64_t>(sourceValues_, VL_bits, false);
         break;
@@ -5993,6 +5997,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ZIP2_PPP_S: {  // zip2 pd.s, pn.s, pm.s
         results_[0] = sveZip_preds<uint32_t>(sourceValues_, VL_bits, true);
+        break;
+      }
+      case Opcode::AArch64_ZIP2_ZZZ_B: {  // zip2 zd.b, zn.b, zm.b
+        results_[0] = sveZip_vecs<uint8_t>(sourceValues_, VL_bits, true);
         break;
       }
       case Opcode::AArch64_ZIP2_ZZZ_D: {  // zip2 zd.d, zn.d, zm.d
