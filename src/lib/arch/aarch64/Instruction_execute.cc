@@ -838,9 +838,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMHSv16i8: {  // cmhs vd.16b, vn.16b, vm.16b
-        results_[0] = vecCompare<int8_t, 16>(
+        results_[0] = vecCompare<uint8_t, 16>(
             sourceValues_, false,
-            [](int8_t x, int8_t y) -> bool { return (x >= y); });
+            [](uint8_t x, uint8_t y) -> bool { return (x >= y); });
         break;
       }
       case Opcode::AArch64_CMPEQ_PPzZI_B: {  // cmpeq pd.b, pg/z, zn.b, #imm

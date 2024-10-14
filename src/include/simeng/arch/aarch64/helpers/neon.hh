@@ -568,9 +568,14 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
   const T* n = sourceValues[0].getAsVector<T>();
   const T* m = sourceValues[1].getAsVector<T>();
 
+  // Concatenate the vectors
+  T temp[2 * I];
+  memcpy(temp, m, sizeof(T) * I);
+  memcpy(temp + (sizeof(T) * I), n, sizeof(T) * I);
+  // Compare each adjacent pair of elements
   T out[I];
   for (int i = 0; i < I; i++) {
-    out[i] = std::max(n[i], m[i]);
+    out[i] = std::max(temp[2 * i], temp[2 * i + 1]);
   }
   return {out, 256};
 }
@@ -585,9 +590,14 @@ RegisterValue vecUMinP(srcValContainer& sourceValues) {
   const T* n = sourceValues[0].getAsVector<T>();
   const T* m = sourceValues[1].getAsVector<T>();
 
+  // Concatenate the vectors
+  T temp[2 * I];
+  memcpy(temp, m, sizeof(T) * I);
+  memcpy(temp + (sizeof(T) * I), n, sizeof(T) * I);
+
   T out[I];
   for (int i = 0; i < I; i++) {
-    out[i] = std::min(n[i], m[i]);
+    out[i] = std::min(temp[2 * i], temp[2 * i + 1]);
   }
   return {out, 256};
 }
