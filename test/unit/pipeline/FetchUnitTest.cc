@@ -316,7 +316,7 @@ TEST_P(PipelineFetchUnitTest, supplyFromLoopBuffer) {
   MacroOp mOp2 = {uopPtr2};
   ON_CALL(isa, predecode(_, _, 0xC, _))
       .WillByDefault(DoAll(SetArgReferee<3>(mOp2), Return(4)));
-  ON_CALL(*uop2, isBranch()).WillByDefault(Return(false)); // Should be true
+  ON_CALL(*uop2, isBranch()).WillByDefault(Return(true));
 
   MacroOp mOp = {uopPtr};
   ON_CALL(isa, predecode(_, _, Ne(0xC), _))
