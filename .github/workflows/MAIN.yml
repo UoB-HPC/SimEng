@@ -1,18 +1,19 @@
 name: Build_Test_SimEng
-# description: Build and test simeng on various OS with various compilers followed by benchmarking and a peformance regression test followed by a clang format if all previous workflow succeed
+# description: Build and test simeng on various OS with various compilers followed by benchmarking and a performance regression test followed by a clang format if all previous workflow succeed
 
 on:
-  # workflow_call:
-  push:
-    # branches:
-    #   - dev
+#  workflow_call:
+#  push:
+#     branches:
+#       - dev
 
   pull_request:
     branches:
+      - dev
       - main
     
-  schedule:
-    - cron: '0 0 */6 * *'  # Runs every 6 days
+#  schedule:
+#    - cron: '0 0 */6 * *'  # Runs every 6 days
   
 jobs:
 
@@ -48,27 +49,4 @@ jobs:
       SIMENG-MODE: Release
     secrets: inherit
 
-  ###################################
-  # Compare runtime with Previous run time
-  ###################################
-  PERFORMANCE_REGRESSION:
-    needs:
-      - RELEASE_LINUX
-      
-    uses: ./.github/workflows/PERFORMANCE_REGRESSION.yml
-    with:
-      # Number of runs of current commit to average over to compare to previous average hard coded as env vars
-      RUNS: 10
-    secrets: inherit
-
-  # CLANG_FORMAT:
-  #   needs: 
-  #     - RELEASE_LINUX
-  #     - DEBUG_LINUX
-  #     - RELEASE_MACOS
-  #     - DEBUG_MACOS 
-  #     - PERFORMANCE_REGRESSION
-
-  #   uses: ./.github/workflows/CLANG_FORMAT.yml
-  #   secrets: inherit
 

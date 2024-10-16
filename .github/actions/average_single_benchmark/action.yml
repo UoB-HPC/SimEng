@@ -39,7 +39,7 @@ runs:
 
           cd "${{ github.workspace }}/$benchmark_path"
 
-          # Loop to run the benchmark 10 times
+          # Loop to run the benchmark 'runs' times
           for (( i=1; i<=runs; i++ ))
           do  
               # Run the benchmark and redirect output to a file
