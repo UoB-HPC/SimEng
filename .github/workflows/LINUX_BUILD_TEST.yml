@@ -1,4 +1,4 @@
-name: LINUX_GCC_BUILD_TEST
+name: Linux
 
 on:
   workflow_call:
@@ -73,7 +73,7 @@ jobs:
     container:
       image: ${{ matrix.OS }}
 
-    name: ${{ inputs.SIMENG-MODE }} + ${{ matrix.OS }} + ${{ matrix.compiler }}
+    name: "${{ inputs.SIMENG-MODE }}, ${{ matrix.OS }}, ${{ matrix.compiler }}"
 
     steps:
       #######################################

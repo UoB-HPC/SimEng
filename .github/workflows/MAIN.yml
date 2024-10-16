@@ -1,4 +1,4 @@
-name: "Build and tests"
+name: "Build"
 # description: Build and test simeng on various OS with various compilers followed by benchmarking and a performance regression test followed by a clang format if all previous workflow succeed
 
 on:
@@ -21,6 +21,7 @@ jobs:
   # Debug Mode
   ###################################
   DEBUG_LINUX:
+    name: "Linux Debug"
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
       RUNNER: ubuntu-latest
@@ -28,6 +29,7 @@ jobs:
     secrets: inherit
 
   DEBUG_MACOS:
+    name: "macOS Debug"
     uses: ./.github/workflows/MACOS_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
@@ -37,13 +39,15 @@ jobs:
   # Release Mode
   ###################################
   RELEASE_LINUX:
+    name: "Linux Release"
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
       RUNNER: ubuntu-latest
       SIMENG-MODE: Release
     secrets: inherit
-  
+
   RELEASE_MACOS:
+    name: "macOS Release"
     uses: ./.github/workflows/MACOS_BUILD_TEST.yml
     with:
       SIMENG-MODE: Release
