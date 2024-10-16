@@ -21,7 +21,7 @@ jobs:
   # Debug Mode
   ###################################
   DEBUG_LINUX:
-    name: "Linux Debug"
+    name: "Linux, Debug"
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
       RUNNER: ubuntu-latest
@@ -29,7 +29,7 @@ jobs:
     secrets: inherit
 
   DEBUG_MACOS:
-    name: "macOS Debug"
+    name: "macOS, Debug"
     uses: ./.github/workflows/MACOS_BUILD_TEST.yml
     with:
       SIMENG-MODE: Debug
@@ -39,7 +39,7 @@ jobs:
   # Release Mode
   ###################################
   RELEASE_LINUX:
-    name: "Linux Release"
+    name: "Linux, Release"
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
     with:
       RUNNER: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
     secrets: inherit
 
   RELEASE_MACOS:
-    name: "macOS Release"
+    name: "macOS, Release"
     uses: ./.github/workflows/MACOS_BUILD_TEST.yml
     with:
       SIMENG-MODE: Release
