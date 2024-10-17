@@ -2,6 +2,8 @@ name: "Build"
 # description: Build and test simeng on various OS with various compilers followed by benchmarking and a performance regression test followed by a clang format if all previous workflow succeed
 
 on:
+  workflow_dispatch:
+
 #  workflow_call:
 #  push:
 #     branches:
@@ -11,7 +13,8 @@ on:
     branches:
       - dev
       - main
-    
+
+
 #  schedule:
 #    - cron: '0 0 */6 * *'  # Runs every 6 days
   
