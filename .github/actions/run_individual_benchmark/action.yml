@@ -1,0 +1,54 @@
+name: Run Indiviudal Benchmark
+description: runs individual benchmark based on inputs provided
+
+inputs:
+  benchmark_suite_name:
+    required: true
+    description: e.g. cloverleaf, tealeaf, stream, bude
+    
+  benchmark_path:
+    required: true
+    description: e.g. ./simeng-benchmarks/binaries/...
+
+  output_file:
+    required: true
+    description: The benchmark suit name in lowercase followed by _benchmark_out
+
+runs:
+  using: 'composite'
+  steps:
+    ##########################################
+    # Check cache for cached benchmark outputs
+    ##########################################
+    - name: check for previous benchmark output in cache
+      uses: actions/cache/restore@v4
+      id: benchmark_restore
+      with:
+        path: ./${{ inputs.output_file }}
+        key: ${{ inputs.output_file }}
+
+    ############################################################################
+    # run individual benchmark + calculate and store into env variable via echo
+    ############################################################################
+    - name: run benchmark & compare runtimes
+      shell: bash
+      run: |
+        if [[ ${{ steps.benchmark_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
+          previous_time=" $(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}')"
+        else
+          previous_time="No Previous Time"
+        fi
+
+        sudo simeng ./configs/a64fx.yaml ${{ inputs.benchmark_path }} > ${{ inputs.output_file }}
+        
+        current_time="$(grep 'ticks in' ${{ inputs.output_file }} | awk '{print substr($6, 1, length($6)-2)}')"
+
+        echo "${{ inputs.benchmark_suite_name }}_CURRENT_TIME=${current_time} ms" >> $GITHUB_ENV
+        echo "${{ inputs.benchmark_suite_name }}_PREVIOUS_TIME=${previous_time} ms" >> $GITHUB_ENV
+
+        if [[ ${{ steps.benchmark_restore.outputs.cache-hit == 'true' }} == 'true' ]]; then
+          difference=$((current_time-previous_time))
+          echo "${{ inputs.benchmark_suite_name }}_DIFFERENCE=${difference#-} ms" >> $GITHUB_ENV
+        else
+          echo "${{ inputs.benchmark_suite_name }}_DIFFERENCE=No Previous Time" >> $GITHUB_ENV
+        fi

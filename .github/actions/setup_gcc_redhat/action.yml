@@ -1,0 +1,126 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  gcc-version:
+    description: gcc version
+    required: true
+  MODE:
+    description: Release or Debug mode
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf -y install \
+        gcc gcc-c++ make \
+        wget \
+        python3 \
+        git \
+        diffutils \
+        openssl-devel \
+        bzip2 \
+        automake \
+        autoconf \
+        cmake \
+        file \
+        zlib-devel 
+
+        if [[ ${{  inputs.OS  }} == 'redhat/ubi8:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm 
+        elif [[ ${{  inputs.OS  }} == 'redhat/ubi9:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
+        fi
+
+        # add pyparsing for benchmarking
+        dnf install -y python3-pip
+        pip3 install pyparsing
+
+        dnf update -y
+        dnf upgrade -y 
+        dnf clean all
+
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake via DNF
+      shell: bash
+      run: |
+        dnf install -y cmake
+
+    #######################################
+    # Restore gcc 7 or 8 from cache.
+    #######################################
+    - name: restore gcc
+      uses: actions/cache/restore@v4
+      id: gcc-restore-v4
+      with: 
+        path: /usr/local/${{ inputs.gcc-version }}.5.0
+        key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
+
+    #######################################
+    # If restoring gcc set env vars for info step in OS_BUILD_TEST.yml.
+    #######################################
+    - if: ${{ steps.gcc-restore-v4.outputs.cache-hit == 'true' }}
+      name: set env vars if restoring from cache
+      shell: bash
+      run: |
+        echo "C_COMPILER=/usr/local/${{ inputs.gcc-version }}.5.0/bin/gcc" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/local/${{ inputs.gcc-version }}.5.0/bin/g++" >> $GITHUB_ENV
+
+    #######################################
+    # As redhat 8 doesn't support installation of gcc via package manager unless you have a subscription,
+    # hence, we install all gcc versions from source.
+    #######################################
+    - if: ${{ steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
+      name: install gcc
+      shell: bash
+      run: |
+        GCC_VER="${{ inputs.gcc-version }}.5.0"
+
+        wget https://ftp.gnu.org/gnu/gcc/$GCC_VER/$GCC_VER.tar.gz > /dev/null 2>&1
+        tar xf $GCC_VER.tar.gz
+        cd $GCC_VER
+        ./contrib/download_prerequisites
+        cd ..
+        mkdir gcc-build
+        cd gcc-build
+        ../$GCC_VER/configure --enable-languages=c,c++ --disable-multilib --prefix=/usr/local/$GCC_VER
+        make -j$(nproc)
+        make install
+
+        echo "C_COMPILER=/usr/local/$GCC_VER/bin/gcc" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/local/$GCC_VER/bin/g++" >> $GITHUB_ENV
+
+    #######################################
+    # Save gcc to cache if earlier miss occured.
+    #######################################
+    - if: ${{ steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
+      name: save gcc
+      uses: actions/cache/save@v4
+      id: gcc-save-v4
+      with: 
+        path: /usr/local/${{ inputs.gcc-version }}.5.0
+        key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
+
+    #######################################
+    # Build SimEng without external llvm or ninja.
+    #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.C_COMPILER }} -DCMAKE_CXX_COMPILER=${{ env.CPP_COMPILER }}
+
+        cmake --build build -j $(nproc)
+
+        cmake --build build --target install

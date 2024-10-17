@@ -1,0 +1,91 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  MODE:
+    description: simeng-mode e.g. Release or Debug
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf -y install \
+        gcc gcc-c++ make \
+        wget \
+        python3 \
+        git \
+        diffutils \
+        openssl-devel \
+        bzip2 \
+        automake \
+        autoconf \
+        cmake \
+        file \
+        zlib-devel 
+
+        if [[ ${{  inputs.OS  }} == 'redhat/ubi8:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm 
+        elif [[ ${{  inputs.OS  }} == 'redhat/ubi9:latest' ]]; then
+          dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm 
+        fi
+
+        # add pyparsing for benchmarking
+        dnf install -y python3-pip
+        pip3 install pyparsing
+
+        dnf update -y
+        dnf upgrade -y 
+        dnf clean all
+
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake via DNF
+      shell: bash
+      run: |
+        dnf install -y cmake
+
+    ######################################
+    # Install ArmClang
+    ######################################
+    - name: Install armclang
+      shell: bash
+      run: |
+
+        dnf install -y environment-modules
+        source /etc/profile.d/modules.sh
+
+        wget https://developer.arm.com/-/cdn-downloads/permalink/Arm-Compiler-for-Linux/Version_24.04/arm-compiler-for-linux_24.04_Ubuntu-22.04_aarch64.tar
+        tar -xf arm-compiler-for-linux_24.04_Ubuntu-22.04_aarch64.tar
+
+        ./arm-compiler-for-linux_24.04_Ubuntu-20.04/arm-compiler-for-linux_24.04_Ubuntu-20.04.sh --install-to ./armclang_compiler
+        export MODULEPATH=$MODULEPATH:$(pwd)/armclang_compiler/modulefiles
+
+        module avail
+        module load acfl/24.04
+        armclang -v
+
+        echo "C_COMPILER=$(which armclang)" >> $GITHUB_ENV
+        echo "CPP_COMPILER=$(which armclang++)" >> $GITHUB_ENV
+
+    #######################################
+    # Build SimEng without external llvm or ninja.
+    #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.C_COMPILER }} -DCMAKE_CXX_COMPILER=${{ env.CPP_COMPILER }}
+
+        cmake --build build -j $(nproc)
+
+        cmake --build build --target install

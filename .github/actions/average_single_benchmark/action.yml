@@ -1,0 +1,68 @@
+name: Average of a single benchmark
+description: runs individual benchmark based on inputs provided
+
+inputs:
+  path:
+    required: true
+    description: e.g. simeng-benchmarks/binaries/CloverLeaf/openmp
+    
+  name:
+    required: true
+    description: e.g. cloverleaf_gcc10.3.0_armv8.4+sve
+
+  datafile_path:
+    required: true
+    description: The path to the corresponding data file for that benchmark e.g. simeng-benchmarks/Data_Files/CloverLeaf.
+
+  runs:
+    required: true
+    default: 10
+    description: The number of times a single benchmark should be averaged over.
+
+runs:
+  using: 'composite'
+  steps:
+
+    ############################################################################
+    # run individual benchmark + calculate and store into env variable via echo
+    ############################################################################
+    - name: run benchmark & compare runtimes
+      shell: bash
+      run: |
+          benchmark_path=${{ inputs.path }}
+          benchmark_name=${{ inputs.name }}
+          datafile_path=${{ inputs.datafile_path }}
+
+          output_file="benchmark_output.txt"
+          total_time=0
+          runs=${{ inputs.runs }}
+
+          cd "${{ github.workspace }}/$benchmark_path"
+
+          # Loop to run the benchmark 'runs' times
+          for (( i=1; i<=runs; i++ ))
+          do  
+              # Run the benchmark and redirect output to a file
+              if [ $datafile_path ]; then
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
+              else
+                  sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name  > "$output_file"
+              fi
+
+              # Extract the time in milliseconds from the output
+              current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')
+              
+              # Add the extracted time to the total time
+              total_time=$(echo "scale=2; $total_time + $current_time" | bc)
+
+          done
+
+          # Calculate the average time
+          average_time=$(echo "scale=2; $total_time / ${{ inputs.runs }}" | bc)
+
+          echo "Final average time of ${{ inputs.runs }} runs: $average_time"
+
+          echo "avg_${benchmark_name%%_*}=${average_time}" >> $GITHUB_ENV
+
+          # Clean up the output file
+          sudo rm $output_file

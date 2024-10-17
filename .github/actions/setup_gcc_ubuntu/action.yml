@@ -1,0 +1,107 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  gcc-version:
+    description: gcc version
+    required: true
+  MODE:
+    description: Release or Debug mode
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies
+    #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+
+        # Update package lists
+        apt-get update
+
+        # Install essential packages
+        apt-get install -y \
+          software-properties-common \
+          sudo \
+          wget \
+          zlib1g-dev \
+          python3 \
+          build-essential \
+          libssl-dev \
+          ninja-build \
+          tree \
+          git
+
+        # add pyparsing for benchmarking
+        apt-get install -y python3-pip
+        pip3 install pyparsing
+
+        # Add additional repositories
+        add-apt-repository universe
+        add-apt-repository ppa:ubuntu-toolchain-r/ppa
+
+        # Update package lists again after adding repositories
+        apt-get update
+
+        # Upgrade all installed packages
+        apt-get upgrade -y
+        
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install cmake via apt
+      shell: bash
+      run: |
+        if [[ ${{ inputs.OS == 'ubuntu:18.04' }} ]]; then
+          NAME=bionic
+        else
+          NAME=focal
+        fi
+
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null && \
+        apt-add-repository "deb https://apt.kitware.com/ubuntu/ $NAME main" && \
+        apt update && apt install cmake -y
+        apt upgrade -y
+
+    #######################################
+    # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason
+    # (installs some packages, not sure which ones prevent failure, but it doesn't take long to run).
+    #######################################
+    - if: ${{ inputs.gcc-version == 'gcc-10' }}
+      name: install llvm
+      shell: bash
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        ./llvm.sh 14
+
+    - name: Install gcc
+      shell: bash
+      run: |
+        apt-get -y install ${{ inputs.gcc-version }}
+        apt-get -y install g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+        apt update && apt upgrade -y
+        
+    #######################################
+    # Build SimEng without llvm or ninja
+    #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=/usr/bin/${{ inputs.gcc-version }} -DCMAKE_CXX_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+
+        cmake --build build -j $(nproc)
+
+        cmake --build build --target install
+
+        echo "C_COMPILER=/usr/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+
+        

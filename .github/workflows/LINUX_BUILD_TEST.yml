@@ -1,0 +1,165 @@
+name: Linux
+
+on:
+  workflow_call:
+    inputs:
+      SIMENG-MODE:
+        required: true
+        type: string
+      RUNNER:
+        default: ubuntu-latest
+        required: true
+        type: string
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  LLVM-VERSION: 14
+  BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
+  PAT: ${{ secrets.SIMENGUOB_PAT }}
+
+
+jobs:
+  Build_and_Run:
+    runs-on: ${{ inputs.RUNNER }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        
+        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] # armclang ] compiler names
+        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
+        
+        #######################################
+        # Removes unecessary jobs as jobs are generated in the order seen in the matrix.
+        # "Exclude" is to keep job ordering nice i.e. keeping ubuntu jobs next to each other in the list.
+        #######################################
+        exclude:      
+          - OS: 'ubuntu:20.04'
+            COMPILER: 'gcc-7'
+
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-8'
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-9'
+          - OS: 'ubuntu:18.04'
+            COMPILER: 'gcc-10'
+
+          # need redhat 8 for gcc 7 and 8 | redhat 9 for gcc 9 and 10
+          - OS: 'redhat/ubi8:latest'
+            COMPILER: gcc-9
+          - OS: 'redhat/ubi8:latest'
+            COMPILER: gcc-10
+
+          - OS: 'redhat/ubi9:latest'
+            COMPILER: gcc-7
+          - OS: 'redhat/ubi9:latest'
+            COMPILER: gcc-8
+
+          # need debian-10 (buster) for gcc 7 |  
+          - OS: 'debian:10'
+            COMPILER: 'gcc-8'
+          - OS: 'debian:10'
+            COMPILER: 'gcc-9'
+          - OS: 'debian:10'
+            COMPILER: 'gcc-10'
+
+          - OS: 'debian:11'
+            COMPILER: 'gcc-7'
+    
+    #######################################
+    # Choose container and set name of workflow
+    #######################################
+    
+    container:
+      image: ${{ matrix.OS }}
+
+    name: "${{ matrix.OS }}, ${{ matrix.compiler }}"
+
+    steps:
+      #######################################
+      # Clones repo to workspace. (ubuntu 18 is missing correct glibc version for newer checkout action version i.e. use older checkout version) 
+      # NOTE: may want to remove support for gcc-7 soon
+      #######################################
+      - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
+        name: checkout v3
+        uses: actions/checkout@v3
+
+      - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
+        name: checkout v4
+        uses: actions/checkout@v4
+
+      #######################################
+      # Depending on OS and compiler, this step chooses the correct setup action to run.
+      # The action is located in .github/actions/select_setup
+      #######################################
+      - name: setup compiler and OS env + build simeng
+        uses: ./.github/actions/select_setup
+        with: 
+          OS: ${{ matrix.OS }}
+          COMPILER: ${{ matrix.COMPILER }}
+          MODE: ${{ inputs.SIMENG-MODE }}
+
+      #######################################
+      # Prints out info in isolated step for easy access.
+      #######################################
+      - name: INFO
+        shell: bash
+        run: |
+          cat /etc/os-release 
+          echo "_______________________________________"
+          uname -a
+          echo "_______________________________________"
+          cmake --version
+          echo "_______________________________________"
+          "${{ env.C_COMPILER }}" --version
+          which gcc
+          echo "_______________________________________"
+          "${{ env.CPP_COMPILER }}" --version
+          which g++
+          echo "_______________________________________"
+          
+      #######################################
+      # Run Integration Tests.
+      #######################################
+      - name: Integration Tests
+        shell: bash
+        run: |
+          ./build/test/integration/integrationtests
+
+      #######################################
+      # Run Unit Tests.
+      #######################################
+      - name: Unit Tests
+        shell: bash
+        run: |
+          ./build/test/unit/unittests
+
+      #######################################
+      # Run Regression AARCH64 Tests.
+      #######################################
+      - name: Regression Test (aarch64)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/aarch64/regression-aarch64
+
+      #######################################
+      # Run Regression RISCV Tests.
+      #######################################
+      - name: Regression Test (riscv)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/riscv/regression-riscv
+
+      #######################################
+      # Run Benchmark Tests.
+      #######################################
+      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+        name: Run Benchmarks
+        uses: ./.github/actions/simeng_benchmarks
+        with:
+          BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
+          OS: ${{ matrix.OS }}
+          PAT: ${{ env.PAT }}
+      ##########################################

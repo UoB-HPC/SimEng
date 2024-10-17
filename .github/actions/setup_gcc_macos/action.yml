@@ -1,0 +1,55 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  gcc-version:
+    description: gcc version
+    required: true
+  MODE:
+    description: Release or Debug mode
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+
+    - name: install dependencies
+      shell: bash
+      run: |
+        pip3 install pyparsing
+        brew install make
+
+    #######################################
+    # Install gcc from source if not in cache.
+    #######################################
+    - name: install gcc
+      shell: bash
+      run: |
+        brew install gcc@$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+
+        echo "C_COMPILER=/usr/local/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/local/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
+
+    #######################################
+    # Build SimEng without external llvm or ninja.
+    #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_C_COMPILER=${{ env.C_COMPILER }} \
+          -DCMAKE_CXX_C_COMPILER=${{ env.CPP_COMPILER }}
+
+        if [[ ${{ inputs.MODE }} == "Release" ]]; then
+          cmake --build build -j $(sysctl -n hw.ncpu)
+        else
+          echo "cores: $(sysctl -n hw.ncpu)"
+          cmake --build build -j 5
+        fi
+
+        cmake --build build --target install

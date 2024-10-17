@@ -1,0 +1,127 @@
+name: setup gcc
+description: installs dependencies and correct gcc version to build and test simeng
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  gcc-version:
+    description: gcc version
+    required: true
+  MODE:
+    description: Release or Debug mode
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required (cmake, etc).
+    #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        dnf -y update && \
+        dnf install -y epel-release \
+          gcc gcc-c++ make \
+          git \
+          wget \
+          openssl-devel \
+          automake \
+          autoconf \
+          bzip2 \
+          file \
+          sudo \
+          tree \
+          zlib-devel
+
+        # add pyparsing for benchmarking
+        dnf install -y python3-pip
+        pip3 install pyparsing
+
+        dnf group install -y "Development Tools"
+        dnf update -y
+        dnf upgrade -y
+
+    #######################################
+    # Install Cmake
+    #######################################
+    - name: Install Cmake via DNF
+      shell: bash
+      run: |
+        dnf install -y cmake
+
+    #######################################
+    # Restore gcc 7 or 8 from cache.
+    #######################################
+    - if: ${{ contains(fromJson('["gcc-7", "gcc-8"]'), inputs.gcc-version) }}
+      name: restore gcc
+      uses: actions/cache/restore@v4
+      id: gcc-restore-v4
+      with: 
+        path: /usr/local/${{ inputs.gcc-version }}.5.0
+        key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
+
+    #######################################
+    # If restoring gcc set env vars for info step in OS_BUILD_TEST.yml.
+    #######################################
+    - if: ${{ steps.gcc-restore-v4.outputs.cache-hit == 'true' }}
+      name: set env vars if restoring from cache
+      shell: bash
+      run: |
+        echo "C_COMPILER=/usr/local/${{ inputs.gcc-version }}.5.0/bin/gcc" >> $GITHUB_ENV
+        echo "CPP_COMPILER=/usr/local/${{ inputs.gcc-version }}.5.0/bin/g++" >> $GITHUB_ENV
+
+    #######################################
+    # As rocky 8 doesn't support installing older versions of gcc via package manager,
+    # gcc 7 and 8 are installed from source and gcc 9 and 10 are installed via dnf.
+    #######################################
+    - if: ${{ steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
+      name: install gcc
+      shell: bash
+      run: |
+        if [[ " gcc-9 gcc-10 " =~ (^|[[:space:]])${{inputs.gcc-version}}($|[[:space:]]) ]]; then
+          dnf install -y gcc-toolset-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)
+          echo "C_COMPILER=/opt/rh/gcc-toolset-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)/root/usr/bin/gcc" >> $GITHUB_ENV
+          echo "CPP_COMPILER=/opt/rh/gcc-toolset-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)/root/usr/bin/g++" >> $GITHUB_ENV
+        else
+          GCC_VER="${{ inputs.gcc-version }}.5.0"
+
+          wget https://ftp.gnu.org/gnu/gcc/$GCC_VER/$GCC_VER.tar.gz > /dev/null 2>&1
+          tar zxf $GCC_VER.tar.gz
+          cd $GCC_VER
+          ./contrib/download_prerequisites
+          cd ..
+          mkdir gcc-build
+          cd gcc-build
+          ../$GCC_VER/configure --enable-languages=c,c++ --disable-multilib --prefix=/usr/local/$GCC_VER
+          make -j$(nproc)
+          make install
+
+          echo "C_COMPILER=/usr/local/$GCC_VER/bin/gcc" >> $GITHUB_ENV
+          echo "CPP_COMPILER=/usr/local/$GCC_VER/bin/g++" >> $GITHUB_ENV
+        fi
+
+    #######################################
+    # Save gcc to cache if earlier miss occured.
+    #######################################
+    - if: ${{ contains(fromJson('["gcc-7", "gcc-8"]'), inputs.gcc-version) && steps.gcc-restore-v4.outputs.cache-hit != 'true' }}
+      name: save gcc
+      uses: actions/cache/save@v4
+      id: gcc-save-v4
+      with: 
+        path: /usr/local/${{ inputs.gcc-version }}.5.0
+        key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
+
+    #######################################
+    # Build SimEng without llvm or ninja
+    #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.C_COMPILER }} \
+          -DCMAKE_CXX_COMPILER=${{ env.CPP_COMPILER }}
+
+        cmake --build build -j $(nproc)
+
+        cmake --build build --target install

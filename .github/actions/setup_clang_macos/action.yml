@@ -1,0 +1,44 @@
+name: setup clang for apple
+description: build and test simeng using clang compiler on apple
+
+inputs:
+  OS:
+    description: docker image name
+    required: true
+  MODE:
+    description: simeng-mode e.g. Release or Debug
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    #######################################
+    # Install dependencies required 
+    #######################################
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pip3 install pyparsing
+        brew install make
+
+    #######################################
+    # Clang is already installed with xcode
+    #######################################
+
+    - name: set clang and clang++ env variables
+      shell: bash
+      run: |
+        echo "C_COMPILER=$(which clang)" >> $GITHUB_ENV
+        echo "CPP_COMPILER=$(which clang++)" >> $GITHUB_ENV
+
+    # #######################################
+    # # Build SimEng without external llvm or ninja.
+    # #######################################
+    - name: Build SimEng
+      shell: bash
+      run: |
+        cmake -B build -S . -DCMAKE_BUILD_TYPE=${{ inputs.MODE }} -DSIMENG_ENABLE_TESTS=ON -DSIMENG_OPTIMIZE=ON -DCMAKE_C_COMPILER=${{ env.C_COMPILER }} \
+          -DCMAKE_CXX_COMPILER=${{ env.CPP_COMPILER }}
+
+        cmake --build build -j $(sysctl -n hw.ncpu)
+
+        cmake --build build --target install
