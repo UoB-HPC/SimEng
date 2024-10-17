@@ -45,7 +45,7 @@ runs:
 
         # Add additional repositories
         add-apt-repository universe
-        add-apt-repository ppa:ubuntu-toolchain-r/test
+        add-apt-repository ppa:ubuntu-toolchain-r/ppa
 
         # Update package lists again after adding repositories
         apt-get update
