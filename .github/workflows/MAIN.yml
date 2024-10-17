@@ -35,9 +35,9 @@ jobs:
       SIMENG-MODE: Debug
     secrets: inherit
 
-  ###################################
+  ##################################
   # Release Mode
-  ###################################
+  ##################################
   RELEASE_LINUX:
     name: "Release - build, test and benchmarks"
     uses: ./.github/workflows/LINUX_BUILD_TEST.yml
