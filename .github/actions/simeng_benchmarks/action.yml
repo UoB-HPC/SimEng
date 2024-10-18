@@ -38,12 +38,22 @@ runs:
         token: ${{ inputs.PAT }}
         path: simeng-benchmarks
 
-    - name: run benchmark
+#    - name: run benchmark
+#      shell: bash
+#      run: |
+#        cd ./simeng-benchmarks/Tools/simulation/validation
+#        SIMENG_BENCHMARKS_SRC_DIR=$GITHUB_WORKSPACE/simeng-benchmarks python3 validate_simulation.py all_a64fx.json $GITHUB_WORKSPACE/configs/a64fx.yaml
+
+    - name: CloverLeaf serial gcc8.3.0 armv8.4
       shell: bash
       run: |
-        cd ./simeng-benchmarks/Tools/simulation/validation
-        SIMENG_BENCHMARKS_SRC_DIR=$GITHUB_WORKSPACE/simeng-benchmarks python3 validate_simulation.py all_a64fx.json $GITHUB_WORKSPACE/configs/a64fx.yaml
-
+        cd $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+        $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4 &> >(tee $GITHUB_WORKSPACE/output.txt)
+        grep "This test is considered PASSED" $GITHUB_WORKSPACE/output.txt >> $NUM_INSTANCES
+        if $NUM_INSTANCES == 1; then
+          exit 1
+        fi
+        
 
 
 
