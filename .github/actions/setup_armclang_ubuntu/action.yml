@@ -89,6 +89,10 @@ runs:
         echo "C_COMPILER=$(which armclang)" >> $GITHUB_ENV
         echo "CPP_COMPILER=$(which armclang++)" >> $GITHUB_ENV
 
+    #######################################
+    # Build SimEng
+    #######################################
+
     - name: Build SimEng
       shell: bash
       run: |

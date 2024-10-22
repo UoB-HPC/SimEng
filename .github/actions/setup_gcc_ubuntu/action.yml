@@ -90,7 +90,7 @@ runs:
         apt update && apt upgrade -y
         
     #######################################
-    # Build SimEng without llvm or ninja
+    # Build SimEng
     #######################################
     - name: Build SimEng
       shell: bash
@@ -101,6 +101,7 @@ runs:
 
         cmake --build build --target install
 
+# Store the C compiler and CPP compiler as environmental variables to be used by LINUX_BUILD_TEST
         echo "C_COMPILER=/usr/bin/${{ inputs.gcc-version }}" >> $GITHUB_ENV
         echo "CPP_COMPILER=/usr/bin/g++-$( echo ${{ inputs.gcc-version }} | cut -d '-' -f 2)" >> $GITHUB_ENV
 

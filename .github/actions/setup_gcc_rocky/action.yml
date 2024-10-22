@@ -114,7 +114,7 @@ runs:
         key: ${{ inputs.gcc-version }}-${{ inputs.OS }}
 
     #######################################
-    # Build SimEng without llvm or ninja
+    # Build SimEng
     #######################################
     - name: Build SimEng
       shell: bash

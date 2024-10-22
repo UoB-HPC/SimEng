@@ -79,7 +79,7 @@ runs:
         echo "CPP_COMPILER=$(which armclang++)" >> $GITHUB_ENV
 
     #######################################
-    # Build SimEng without external llvm or ninja.
+    # Build SimEng
     #######################################
     - name: Build SimEng
       shell: bash
