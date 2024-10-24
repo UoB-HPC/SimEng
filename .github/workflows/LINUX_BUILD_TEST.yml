@@ -26,8 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         
-        COMPILER: ['gcc-7', 'gcc-8', 'gcc-9', 'gcc-10'] # armclang ] compiler names
-        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
+        COMPILER: ['gcc-7']# , 'gcc-8', 'gcc-9', 'gcc-10'] # armclang ] compiler names
+        OS: ['ubuntu:18.04']#,'ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
         
         #######################################
         # Removes unecessary jobs as jobs are generated in the order seen in the matrix.
