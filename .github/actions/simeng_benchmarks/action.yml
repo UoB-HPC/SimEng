@@ -24,7 +24,7 @@ runs:
         echo "just CDed to $GITHUB_WORKSPACE"
         pwd
         ls
-        if grep ${{ inputs.PASS_STRING }} --file=./simeng.tmp; then
+        if grep ${{ inputs.PASS_STRING }} --file=$GITHUB_WORKSPACE/simeng.tmp; then
           echo "Passed"
         else
           echo "Failed"
