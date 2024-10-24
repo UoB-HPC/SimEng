@@ -21,7 +21,8 @@ runs:
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 | tee $GITHUB_WORKSPACE/simeng.tmp
         cd $GITHUB_WORKSPACE
-        grep ${{ inputs.PASS_STRING }} simeng.tmp | $STRING_FOUND
+        cat simeng.tmp | grep ${{ inputs.PASS_STRING }}  | $STRING_FOUND
+        echo $STRING_FOUND
         if $STRING_FOUND; then
           echo "Passed"
         else
