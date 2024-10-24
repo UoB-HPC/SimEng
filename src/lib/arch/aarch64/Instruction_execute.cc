@@ -568,7 +568,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_AND_ZI: {  // and zdn, zdn, #imm
-        const uint64_t* dn = sourceValues_[0].getAsVector<uint64_t>();
+        const auto dn = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t imm = static_cast<uint64_t>(metadata_.operands[2].imm);
 
         const uint16_t partition_num = VL_bits / 64;
@@ -1223,7 +1223,7 @@ void Instruction::execute() {
         // can use uint64_t.
         const uint16_t index =
             2 * static_cast<uint16_t>(metadata_.operands[1].vector_index);
-        const uint64_t* n = sourceValues_[0].getAsVector<uint64_t>();
+        const auto n = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 128;
         uint64_t out[32] = {0};
@@ -1377,14 +1377,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 8;
-        const uint8_t* zd = sourceValues_[0].getAsVector<uint8_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint8_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
                  metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
-        const uint8_t* zaRow =
+        const auto zaRow =
             sourceValues_[2 + sliceNum].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
@@ -2299,17 +2299,16 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const double* zn = sourceValues_[rowCount + 2].getAsVector<double>();
-        const double* zm = sourceValues_[rowCount + 3].getAsVector<double>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<double>();
+        const auto zm = sourceValues_[rowCount + 3].getAsVector<double>();
 
         // zn is row, zm is col
         for (int row = 0; row < rowCount; row++) {
           double outRow[32] = {0};
           uint64_t shifted_active_row = 1ull << ((row % 8) * 8);
-          const double* zadaRow = sourceValues_[row].getAsVector<double>();
+          const auto zadaRow = sourceValues_[row].getAsVector<double>();
           for (int col = 0; col < rowCount; col++) {
             double zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 8) * 8);
@@ -2331,17 +2330,16 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const float* zn = sourceValues_[rowCount + 2].getAsVector<float>();
-        const float* zm = sourceValues_[rowCount + 3].getAsVector<float>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<float>();
+        const auto zm = sourceValues_[rowCount + 3].getAsVector<float>();
 
         // zn is row, zm is col
         for (int row = 0; row < rowCount; row++) {
           float outRow[64] = {0};
           uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
-          const float* zadaRow = sourceValues_[row].getAsVector<float>();
+          const auto zadaRow = sourceValues_[row].getAsVector<float>();
           for (int col = 0; col < rowCount; col++) {
             float zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
@@ -2780,7 +2778,7 @@ void Instruction::execute() {
       case Opcode::AArch64_GLD1D_IMM_REAL: {  // ld1d {zd.d}, pg/z, [zn.d{,
                                               // #imm}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
@@ -2801,7 +2799,7 @@ void Instruction::execute() {
       case Opcode::AArch64_GLD1D_SCALED_REAL: {  // ld1d {zt.d}, pg/z, [xn,
                                                  // zm.d, LSL #3]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -2821,7 +2819,7 @@ void Instruction::execute() {
       case Opcode::AArch64_GLD1SW_D_IMM_REAL: {  // ld1sw {zd.d}, pg/z, [zn.d{,
                                                  // #imm}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         int64_t out[32] = {0};
@@ -2839,7 +2837,7 @@ void Instruction::execute() {
       case Opcode::AArch64_GLD1W_D_SCALED_REAL: {  // ld1w {zd.d}, pg/z,
                                                    // [<xn|sp>, zm.d, lsl #2]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
@@ -2857,7 +2855,7 @@ void Instruction::execute() {
       case Opcode::AArch64_GLD1W_SXTW_REAL: {  // ld1w {zd.s}, pg/z,
                                                // [<xn|sp>, zm.s, sxtw]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
@@ -3388,12 +3386,12 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint16_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3421,7 +3419,7 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
@@ -3497,7 +3495,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3643,7 +3641,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         for (int i = 0; i < partition_num; i++) {
           const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
@@ -3659,10 +3657,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3679,10 +3677,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1B_IMM: {  // ld1b {zt.b}, pg/z, [xn{, #imm,
                                         // mul vl}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 8;
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << (i % 64);
@@ -3697,10 +3695,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1D: {  // ld1d  {zt.d}, pg/z, [xn, xm, lsl #3]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3717,10 +3715,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1D_IMM: {  // ld1d  {zt.d}, pg/z, [xn{, #imm,
                                         // mul vl}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3736,10 +3734,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1H: {  // ld1h  {zt.h}, pg/z, [xn, xm, lsl #1]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 16;
-        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
+        const auto data = memoryData_[0].getAsVector<uint16_t>();
 
         uint16_t out[128] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3774,7 +3772,7 @@ void Instruction::execute() {
         uint16_t index = 0;
         // Check if any lanes are active, otherwise set all to 0 and break early
         bool active = false;
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         for (int i = 0; i < 4; i++) {
           if (p[i] != 0) {
             active = true;
@@ -3796,10 +3794,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         uint64_t out[32] = {0};
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         // Get mini-vector (quadword)
         uint64_t mini[2] = {0};
@@ -3820,10 +3818,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1RQ_W: {  // ld1rqw {zd.s}, pg/z, [xn, xm, lsl #2]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         // Get mini-vector (quadword)
         uint32_t mini[4] = {0};
@@ -3846,10 +3844,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 32;
         uint32_t out[64] = {0};
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         // Get mini-vector (quadword)
         uint32_t mini[4] = {0};
@@ -3877,7 +3875,7 @@ void Instruction::execute() {
 
         // Check if any lanes are active, otherwise set all to 0 and break early
         bool active = false;
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         for (int i = 0; i < 4; i++) {
           if (p[i] != 0) {
             active = true;
@@ -4093,10 +4091,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -4113,10 +4111,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1W_IMM: {  // ld1w  {zt.s}, pg/z, [xn{, #imm,
                                         // mul vl}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
-        const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
+        const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -4133,7 +4131,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
         // LOAD
         const int index = metadata_.operands[0].vector_index;
-        const uint32_t* vt = sourceValues_[0].getAsVector<uint32_t>();
+        const auto vt = sourceValues_[0].getAsVector<uint32_t>();
         uint32_t out[4];
         for (int i = 0; i < 4; i++) {
           out[i] = (i == index) ? memoryData_[0].get<uint32_t>() : vt[i];
@@ -4144,7 +4142,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1i64: {  // ld1 {vt.d}[index], [xn]
         // LOAD
         const int index = metadata_.operands[0].vector_index;
-        const uint64_t* vt = sourceValues_[0].getAsVector<uint64_t>();
+        const auto vt = sourceValues_[0].getAsVector<uint64_t>();
         uint64_t out[2];
         for (int i = 0; i < 2; i++) {
           out[i] = (i == index) ? memoryData_[0].get<uint64_t>() : vt[i];
@@ -4155,7 +4153,7 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1i64_POST: {  // ld1 {vt.d}[index], [xn], #8
         // LOAD
         const int index = metadata_.operands[0].vector_index;
-        const uint64_t* vt = sourceValues_[0].getAsVector<uint64_t>();
+        const auto vt = sourceValues_[0].getAsVector<uint64_t>();
         uint64_t out[2];
         for (int i = 0; i < 2; i++) {
           out[i] = (i == index) ? memoryData_[0].get<uint64_t>() : vt[i];
@@ -4174,11 +4172,10 @@ void Instruction::execute() {
       case Opcode::AArch64_LD2D_IMM: {  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>{,
                                         // #imm, mul vl}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData_[0].getAsVector<uint64_t>(),
-            memoryData_[1].getAsVector<uint64_t>()};
+            auto memoryData_[1].getAsVector<uint64_t>()};
         uint64_t out[2][32] = {{0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4197,8 +4194,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s} [xn]
-        const float* region1 = memoryData_[0].getAsVector<float>();
-        const float* region2 = memoryData_[1].getAsVector<float>();
+        const auto region1 = memoryData_[0].getAsVector<float>();
+        const auto region2 = memoryData_[1].getAsVector<float>();
 
         // LD2 multistruct uses de-interleaving
         float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
@@ -4210,8 +4207,8 @@ void Instruction::execute() {
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
                                               // <xm|#imm>
         // LOAD
-        const float* region1 = memoryData_[0].getAsVector<float>();
-        const float* region2 = memoryData_[1].getAsVector<float>();
+        const auto region1 = memoryData_[0].getAsVector<float>();
+        const auto region2 = memoryData_[1].getAsVector<float>();
         float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
         float t2[4] = {region1[1], region1[3], region2[1], region2[3]};
         // #imm can only be 32
@@ -4226,12 +4223,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LD3D_IMM: {  // ld3d {zt1.d, zt2.d, zt3.d}, pg/z,
                                         // [xn|sp{, #imm, MUL VL}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData_[0].getAsVector<uint64_t>(),
-            memoryData_[1].getAsVector<uint64_t>(),
-            memoryData_[2].getAsVector<uint64_t>()};
+            auto memoryData_[1].getAsVector<uint64_t>(),
+            auto memoryData_[2].getAsVector<uint64_t>()};
         uint64_t out[3][32] = {{0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4252,13 +4248,11 @@ void Instruction::execute() {
       case Opcode::AArch64_LD4D_IMM: {  // ld4d {zt1.d, zt2.d, zt3.d, zt4.d},
                                         // pg/z, [xn|sp{, #imm, MUL VL}]
         // LOAD
-        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
         std::vector<const uint64_t*> data = {
-            memoryData_[0].getAsVector<uint64_t>(),
-            memoryData_[1].getAsVector<uint64_t>(),
-            memoryData_[2].getAsVector<uint64_t>(),
-            memoryData_[3].getAsVector<uint64_t>()};
+            auto memoryData_[1].getAsVector<uint64_t>(),
+            auto memoryData_[3].getAsVector<uint64_t>()};
         uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4619,7 +4613,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
-        const uint8_t* memData = memoryData_[0].getAsVector<uint8_t>();
+        const auto memData = memoryData_[0].getAsVector<uint8_t>();
 
         uint64_t out[4] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -4635,7 +4629,7 @@ void Instruction::execute() {
         // LOAD
         const uint16_t partition_num = VL_bits / 8;
         uint8_t out[256] = {0};
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
           out[i] = data[i];
@@ -5029,8 +5023,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
-        const uint64_t* g = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* s = sourceValues_[1].getAsVector<uint64_t>();
+        const auto g = sourceValues_[0].getAsVector<uint64_t>();
+        const auto s = sourceValues_[1].getAsVector<uint64_t>();
         std::array<uint64_t, 4> masked_n = {(g[0] & s[0]), (g[1] & s[1]),
                                             (g[2] & s[2]), (g[3] & s[3])};
         // Byte count = 1 as destination predicate is regarding single bytes.
@@ -5529,8 +5523,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1B_D: {  // st1b {zd.d}, pg, [xn, zm.d]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -5545,8 +5539,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -5561,8 +5555,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1D_IMM: {  // st1d {zd.d}, pg, [zn.d{, #imm}]
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -5578,8 +5572,8 @@ void Instruction::execute() {
       case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn,
                                             // zm.d, lsl #3]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -5620,13 +5614,13 @@ void Instruction::execute() {
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
         const uint64_t* pg =
-            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+            auto + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         const uint64_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint64_t>();
+            auto sourceValues_[sliceNum].getAsVector<uint64_t>();
         memoryData_ = sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
         break;
       }
@@ -5756,7 +5750,7 @@ void Instruction::execute() {
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
         const uint64_t* pg =
-            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+            auto + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5792,7 +5786,7 @@ void Instruction::execute() {
         const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
         const uint64_t* pg =
-            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+            auto + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5870,7 +5864,7 @@ void Instruction::execute() {
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
         const uint64_t* pg =
-            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
+            auto + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5899,8 +5893,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
@@ -5915,8 +5909,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_SST1W_IMM: {  // st1w {zt.s}, pg, [zn.s{, #imm}]
         // STORE
-        const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint32_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         const uint16_t partition_num = VL_bits / 32;
         uint16_t index = 0;
@@ -5931,32 +5925,32 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1B: {  // st1b {zt.b}, pg, [xn, xm]
         // STORE
-        const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint8_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
         // STORE
-        const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint8_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
@@ -5966,8 +5960,8 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
-                            16 * sizeof(uint8_t));
+              auto RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
+                                 16 * sizeof(uint8_t));
         }
         break;
       }
@@ -5977,8 +5971,8 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
-                            16 * sizeof(uint8_t));
+              auto RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
+                                 16 * sizeof(uint8_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -5992,9 +5986,9 @@ void Instruction::execute() {
                                           // vt4.2d}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint64_t>(),
-                            2 * sizeof(uint64_t));
+          memoryData_[i] = auto RegisterValue(
+              (char*)sourceValues_[i].getAsVector<uint64_t>(),
+              2 * sizeof(uint64_t));
         }
         break;
       }
@@ -6002,9 +5996,9 @@ void Instruction::execute() {
                                                // vt4.2d}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint64_t>(),
-                            2 * sizeof(uint64_t));
+          memoryData_[i] = auto RegisterValue(
+              (char*)sourceValues_[i].getAsVector<uint64_t>(),
+              2 * sizeof(uint64_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -6018,9 +6012,9 @@ void Instruction::execute() {
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
-                            2 * sizeof(uint32_t));
+          memoryData_[i] = auto RegisterValue(
+              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+              2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6034,9 +6028,9 @@ void Instruction::execute() {
                                           // vt4.4s}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
-                            4 * sizeof(uint32_t));
+          memoryData_[i] = auto RegisterValue(
+              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+              4 * sizeof(uint32_t));
         }
         break;
       }
@@ -6044,9 +6038,9 @@ void Instruction::execute() {
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] =
-              RegisterValue((char*)sourceValues_[i].getAsVector<uint32_t>(),
-                            4 * sizeof(uint32_t));
+          memoryData_[i] = auto RegisterValue(
+              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+              4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -6058,8 +6052,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
         // STORE
-        const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
-        const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
+        const auto t = sourceValues_[0].getAsVector<uint8_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
         memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
         memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
         break;
@@ -6067,8 +6061,8 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov16b_POST: {  // st1 {vt.16b, vt2.16b},
                                                // [xn|sp], <#imm|xm>
         // STORE
-        const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
-        const uint8_t* t2 = sourceValues_[1].getAsVector<uint8_t>();
+        const auto t = sourceValues_[0].getAsVector<uint8_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
         memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
         memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
 
@@ -6082,8 +6076,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1Twov2d: {  // st1 {vt.2d, vt2.2d}, [xn|sp]
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
         memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
         memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
         break;
@@ -6091,8 +6085,8 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
                                               // [xn|sp], <#imm|xm>
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
         memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
         memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
 
@@ -6106,8 +6100,8 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
         // STORE
-        const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
-        const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
+        const auto t = sourceValues_[0].getAsVector<uint32_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
         memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
         memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
         break;
@@ -6115,8 +6109,8 @@ void Instruction::execute() {
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
                                               // [xn|sp], <#imm|xm>
         // STORE
-        const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
-        const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
+        const auto t = sourceValues_[0].getAsVector<uint32_t>();
+        const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
         memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
         memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
 
@@ -6130,37 +6124,37 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
         // STORE
-        const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint32_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
         // STORE
-        const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint64_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint64_t, uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
         // STORE
-        const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
-        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        const auto d = sourceValues_[0].getAsVector<uint32_t>();
+        const auto p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
       case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
         // STORE
-        const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
+        const auto t = sourceValues_[0].getAsVector<uint16_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], <xm|#imm>
         // STORE
-        const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
+        const auto t = sourceValues_[0].getAsVector<uint16_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         // if #imm post-index, value can only be 2
         const uint64_t postIndex =
@@ -6172,13 +6166,13 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
         // STORE
-        const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
+        const auto t = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], <xm|#imm>
         // STORE
-        const uint32_t* t = sourceValues_[0].getAsVector<uint32_t>();
+        const auto t = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         // if #imm post-index, value can only be 4
         const uint64_t postIndex =
@@ -6190,13 +6184,13 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], <xm|#imm>
         // STORE
-        const uint64_t* t = sourceValues_[0].getAsVector<uint64_t>();
+        const auto t = sourceValues_[0].getAsVector<uint64_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         // if #imm post-index, value can only be 8
         const uint64_t postIndex =
@@ -6208,13 +6202,13 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
         // STORE
-        const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
+        const auto t = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         break;
       }
       case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], <xm|#imm>
         // STORE
-        const uint8_t* t = sourceValues_[0].getAsVector<uint8_t>();
+        const auto t = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = t[metadata_.operands[0].vector_index];
         // if #imm post-index, value can only be 1
         const uint64_t postIndex =
@@ -6227,9 +6221,9 @@ void Instruction::execute() {
       case Opcode::AArch64_ST2D_IMM: {  // st2d {zt1.d, zt2.d}, pg, [<xn|sp>{,
                                         // #imm, mul vl}]
         // STORE
-        const uint64_t* d1 = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* d2 = sourceValues_[1].getAsVector<uint64_t>();
-        const uint64_t* p = sourceValues_[2].getAsVector<uint64_t>();
+        const auto d1 = sourceValues_[0].getAsVector<uint64_t>();
+        const auto d2 = sourceValues_[1].getAsVector<uint64_t>();
+        const auto p = sourceValues_[2].getAsVector<uint64_t>();
 
         std::vector<uint64_t> memData;
         bool inActiveBlock = false;
@@ -6263,8 +6257,8 @@ void Instruction::execute() {
       case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
                                               // <xm|#imm>
         // STORE
-        const float* t1 = sourceValues_[0].getAsVector<float>();
-        const float* t2 = sourceValues_[1].getAsVector<float>();
+        const auto t1 = sourceValues_[0].getAsVector<float>();
+        const auto t2 = sourceValues_[1].getAsVector<float>();
         std::vector<float> m1 = {t1[0], t2[0], t1[1], t2[1]};
         std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
         memoryData_[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
@@ -6472,7 +6466,7 @@ void Instruction::execute() {
         // STORE
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
-        const uint8_t* p = sourceValues_[0].getAsVector<uint8_t>();
+        const auto p = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = RegisterValue((char*)p, partition_num);
         break;
       }
@@ -6494,7 +6488,7 @@ void Instruction::execute() {
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;
-        const uint8_t* z = sourceValues_[0].getAsVector<uint8_t>();
+        const auto z = sourceValues_[0].getAsVector<uint8_t>();
         memoryData_[0] = RegisterValue((char*)z, partition_num);
         break;
       }
@@ -7232,19 +7226,19 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]
       case Opcode::AArch64_UMOVvi32: {     // umov wd, vn.s[index]
-        const uint32_t* vec = sourceValues_[0].getAsVector<uint32_t>();
+        const auto vec = sourceValues_[0].getAsVector<uint32_t>();
         results_[0] = {vec[metadata_.operands[1].vector_index], 8};
         break;
       }
       case Opcode::AArch64_UMOVvi64_idx0:  // umov xd, vn.d[0]
       case Opcode::AArch64_UMOVvi64: {     // umov xd, vn.d[index]
-        const uint64_t* vec = sourceValues_[0].getAsVector<uint64_t>();
+        const auto vec = sourceValues_[0].getAsVector<uint64_t>();
         results_[0] = vec[metadata_.operands[1].vector_index];
         break;
       }
       case Opcode::AArch64_UMOVvi8_idx0:  // umov wd, vn.b[0]
       case Opcode::AArch64_UMOVvi8: {     // umov wd, vn.b[index]
-        const uint8_t* vec = sourceValues_[0].getAsVector<uint8_t>();
+        const auto vec = sourceValues_[0].getAsVector<uint8_t>();
         results_[0] = {vec[metadata_.operands[1].vector_index], 8};
         break;
       }

@@ -634,7 +634,7 @@ void Instruction::decode() {
     // applicable to SME instructions
     for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
       if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
-        sourceValues_[i] = RegisterValue(0, 8);
+        sourceValues_[i] = RegisterValue(0ull, 8);
         sourceOperandsPending_--;
       }
     }

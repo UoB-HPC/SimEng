@@ -54,7 +54,7 @@ void Core::tick() {
   // complete reads
   const auto& instructionBytes = instructionMemory_.getCompletedReads()[0].data;
   // Predecode fetched data
-  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
+  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>().ptr,
                                   FETCH_SIZE, pc_, macroOp_);
   // Clear the fetched data
   instructionMemory_.clearCompletedReads();

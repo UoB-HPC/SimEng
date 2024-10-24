@@ -1325,7 +1325,7 @@ std::array<uint64_t, 4> svePtrue(
  * Returns an array of 4 uint64_t elements. */
 std::array<uint64_t, 4> svePunpk(srcValContainer& sourceValues,
                                  const uint16_t VL_bits, bool isHi) {
-  const uint64_t* n = sourceValues[0].getAsVector<uint64_t>();
+  const auto n = sourceValues[0].getAsVector<uint64_t>();
 
   const uint16_t partition_num = VL_bits / 8;
   std::array<uint64_t, 4> out = {0, 0, 0, 0};

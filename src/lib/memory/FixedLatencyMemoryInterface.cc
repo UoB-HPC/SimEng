@@ -6,7 +6,7 @@ namespace simeng {
 
 namespace memory {
 
-FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(char* memory,
+FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(uint8_t* memory,
                                                          size_t size,
                                                          uint16_t latency)
     : memory_(memory), size_(size), latency_(latency) {}
@@ -35,7 +35,7 @@ void FixedLatencyMemoryInterface::tick() {
 
       auto ptr = memory_ + target.address;
       // Copy the data from the RegisterValue to memory
-      memcpy(ptr, request.data.getAsVector<char>(), target.size);
+      memcpy(ptr, request.data.getAsVector<char>().ptr, target.size);
     } else {
       // Read: read data into `completedReads`
       if (target.address + target.size > size_ ||
@@ -43,7 +43,7 @@ void FixedLatencyMemoryInterface::tick() {
         // Read outside of memory; return an invalid value to signal a fault
         completedReads_.push_back({target, RegisterValue(), request.requestId});
       } else {
-        const char* ptr = memory_ + target.address;
+        const uint8_t* ptr = memory_ + target.address;
 
         // Copy the data at the requested memory address into a RegisterValue
         completedReads_.push_back(

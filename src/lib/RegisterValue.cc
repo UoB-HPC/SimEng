@@ -4,7 +4,7 @@
 
 namespace simeng {
 
-Pool pool = Pool();
+// Pool pool = Pool();
 
 RegisterValue::RegisterValue() : bytes(0) {}
 
@@ -19,8 +19,9 @@ RegisterValue RegisterValue::zeroExtend(uint16_t fromBytes,
   auto extended = RegisterValue(0, toBytes);
 
   // Get the appropriate source/destination pointers and copy the data
-  const char* src = (isLocal() ? localValue : ptr.get());
-  char* dest = (extended.isLocal() ? extended.localValue : extended.ptr.get());
+  const uint8_t* src = (isLocal() ? localValue : ptr.get());
+  uint8_t* dest =
+      (extended.isLocal() ? extended.localValue : extended.ptr.get());
 
   std::memcpy(dest, src, fromBytes);
 

@@ -102,7 +102,7 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
 
     // Fill the payload vector currReqSize number of bytes starting
     // and inclusive of the dataIndex.
-    const char* data = aggrReq->data.getAsVector<char>();
+    const uint8_t* data = aggrReq->data.getAsVector<char>().ptr;
     memcpy((void*)&payload[0], &(data[dataIndex]), currReqSize);
     StandardMem::Request* writeReq =
         new StandardMem::Write(addrStart, currReqSize, payload);

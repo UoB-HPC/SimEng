@@ -71,7 +71,7 @@ std::array<uint8_t, sizeof(T)> rev(srcValContainer& sourceValues) {
   auto bytes = sourceValues[0].getAsVector<uint8_t>();
   std::array<uint8_t, sizeof(T)> reversed;
   // Copy `bytes` backwards onto `reversed`
-  std::copy(bytes, bytes + sizeof(T), std::rbegin(reversed));
+  std::copy(bytes.ptr, bytes.ptr + sizeof(T), std::rbegin(reversed));
   return reversed;
 }
 

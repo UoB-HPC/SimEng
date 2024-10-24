@@ -11,7 +11,7 @@ namespace memory {
 /** A memory interface to a flat memory system. */
 class FlatMemoryInterface : public MemoryInterface {
  public:
-  FlatMemoryInterface(char* memory, size_t size);
+  FlatMemoryInterface(uint8_t* memory, size_t size);
 
   /** Request a read from the supplied target location.
    *
@@ -37,7 +37,7 @@ class FlatMemoryInterface : public MemoryInterface {
 
  private:
   /** The array representing the flat memory system to access. */
-  char* memory_;
+  uint8_t* memory_;
   /** The size of accessible memory. */
   size_t size_;
   /** A vector containing all completed read requests. */

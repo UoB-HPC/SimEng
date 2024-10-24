@@ -104,7 +104,7 @@ class RegressionTest
 
   /** Get a pointer to the value of an architectural vector register. */
   template <typename T>
-  const T* getVectorRegister(simeng::Register reg) const {
+  simeng::safePointer<T> getVectorRegister(simeng::Register reg) const {
     return core_->getArchitecturalRegisterFileSet().get(reg).getAsVector<T>();
   }
 
