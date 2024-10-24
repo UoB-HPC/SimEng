@@ -20,7 +20,8 @@ runs:
       run: |
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 | tee $GITHUB_WORKSPACE/simeng.tmp
-        if grep -q ${{ inputs.PASS_STRING }} $GITHUB_WORKSPACE/simeng.tmp; then
+        ls $GITHUB_WORKSPACE
+        if grep ${{ inputs.PASS_STRING }} $GITHUB_WORKSPACE/simeng.tmp; then
           echo "Passed"
         else
           echo "Failed"
