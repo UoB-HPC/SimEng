@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: UoB-HPC/simeng-benchmarks
-          token: ${{ inputs.PAT }}
+          token: ${{ env.PAT }}
           ref: makefile-build-system
           path: simeng-benchmarks
 
@@ -172,24 +172,16 @@ jobs:
         with:
           repository: UoB-HPC/simeng-benchmarks
           ref: makefile-build-system
-          token: ${{ inputs.PAT }}
+          token: ${{ env.PAT }}
           path: simeng-benchmarks
 
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: CloverLeaf serial gcc8.3.0 armv8.4
-        shell: bash
-        run: |
-          echo "BASH running"
-          cd $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          echo "cd done"
-          ls
-          simeng $GITHUB_WORKSPACE/configs/a64fx.yaml $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4 >> $GITHUB_WORKSPACE/simeng.tmp 2> $GITHUB_WORKSPACE/simeng.tmp
-          if grep -q "This test is considered PASSED" $GITHUB_WORKSPACE/simeng.tmp; then
-            echo "Passed"
-          else
-            echo "Failed"
-            exit 1
-          fi
+        uses: ./.github/actions/simeng_benchmarks
+        with:
+          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4
+          PASS_STRING: "This test is considered PASSED"
 
 
 #      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
