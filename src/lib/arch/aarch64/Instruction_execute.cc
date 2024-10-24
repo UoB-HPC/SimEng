@@ -2752,6 +2752,42 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      // case Opcode::AArch64_LD1D_4Z_IMM: {  // ld1d {zt1.d - zt4.d}, png/z,
+      // [xn{,
+      //                                      // #imm, mul vl}]
+      //   // LOAD
+      //   const uint64_t* pn = sourceValues_[0].getAsVector<uint64_t>();
+      //   const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+
+      //   const uint16_t partition_num = VL_bits / 64;
+
+      //   // Get predicate-as-counter information
+      //   const bool invert =
+      //       (pn[0] & static_cast<uint64_t>(0b1000000000000000)) != 0;
+      //   const uint64_t numElems =
+      //       (pn[0] & static_cast<uint64_t>(0b0111111111110000)) >> 4;
+
+      //   uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
+      //   uint64_t index = 0;
+
+      //   for (int r = 0; r < 4; r++) {
+      //     // If invert = 1, dictates number of inactive elements at start of
+      //     // each
+      //     // vector. Otherwise, it is number of active elements at start of
+      //     each
+      //     // vector.
+      //     int iMax = (invert) ? partition_num : numElems;
+      //     for (int i = (invert) ? numElems : 0; i < iMax; i++) {
+      //       out[r][i] = data[index];
+      //       index++;
+      //     }
+      //   }
+      //   results_[0] = {out[0], 256};
+      //   results_[1] = {out[1], 256};
+      //   results_[2] = {out[2], 256};
+      //   results_[3] = {out[3], 256};
+      //   break;
+      // }
       case Opcode::AArch64_LD1D_IMM: {  // ld1d  {zt.d}, pg/z, [xn{, #imm,
                                         // mul vl}]
         // LOAD
@@ -4060,6 +4096,14 @@ void Instruction::execute() {
         results_[0] = vecLogicOp_3vecs<uint8_t, 8>(
             sourceValues_,
             [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
+        break;
+      }
+      case Opcode::AArch64_AUTIASP:  // autiasp
+        [[fallthrough]];
+      case Opcode::AArch64_PACIASP: {  // paciasp
+        const uint64_t x30 = sourceValues_[0].get<uint64_t>();
+        // Mimic execution by writing leaving x30 unmodified
+        results_[0] = {x30, 8};
         break;
       }
       case Opcode::AArch64_PFALSE: {  // pfalse pd.b
