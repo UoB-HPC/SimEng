@@ -2,7 +2,7 @@ name: setup armclang
 description: installs dependencies and correct armclang version to build and test simeng
 
 ##############################################################################
-# Calls the correct setup action based on parameters passed into this action;.
+# Calls the correct setup action based on parameters passed into this action.
 ##############################################################################
 
 inputs:

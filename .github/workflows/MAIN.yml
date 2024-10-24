@@ -4,19 +4,10 @@ name: "Build"
 on:
   workflow_dispatch:
 
-#  workflow_call:
-#  push:
-#     branches:
-#       - dev
-
   pull_request:
     branches:
       - dev
       - main
-
-
-#  schedule:
-#    - cron: '0 0 */6 * *'  # Runs every 6 days
   
 jobs:
 

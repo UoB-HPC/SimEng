@@ -71,17 +71,8 @@ runs:
         apt upgrade -y
 
     #######################################
-    # Running this prevents gcc-10 on ubuntu 20 from segfaulting in unit tests for some reason
-    # (installs some packages, not sure which ones prevent failure, but it doesn't take long to run).
+    # Install GCC
     #######################################
-#    - if: ${{ inputs.gcc-version == 'gcc-10' }}
-#      name: install llvm
-#      shell: bash
-#      run: |
-#        wget https://apt.llvm.org/llvm.sh
-#        chmod +x llvm.sh
-#        ./llvm.sh 14
-
     - name: Install gcc
       shell: bash
       run: |
@@ -91,7 +82,8 @@ runs:
         
     #######################################
     # Build SimEng
-    # Then store the C compiler and CPP compiler as environmental variables to be used by LINUX_BUILD_TEST
+    # Then store the C compiler and CPP compiler as environmental variables to
+    # be used by LINUX_BUILD_TEST
     #######################################
     - name: Build SimEng
       shell: bash

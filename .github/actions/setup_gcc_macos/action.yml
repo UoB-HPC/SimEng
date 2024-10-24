@@ -38,14 +38,6 @@ runs:
 
     #######################################
     # Build SimEng
-
-    #        if [[ ${{ inputs.MODE }} == "Release" ]]; then
-    #          cmake --build build -j $(sysctl -n hw.ncpu)
-    #        else
-    #          echo "cores: $(sysctl -n hw.ncpu)"
-    #          cmake --build build -j 5
-    #        fi
-
     #######################################
     - name: Build SimEng
       shell: bash

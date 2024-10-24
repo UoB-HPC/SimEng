@@ -17,7 +17,9 @@ runs:
   steps:
 
     ##################################
-    # clones repo with different versions of the checkout action, as container has different node versions and some compilers run on older OSes that have differing node versions
+    # clones repo with different versions of the checkout action, as container
+    # has different node versions and some compilers run on older OSes that
+    # have differing node versions
     ##################################
 
     - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) }}
