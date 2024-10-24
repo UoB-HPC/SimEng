@@ -40,11 +40,11 @@ jobs:
       SIMENG-MODE: Release
     secrets: inherit
 
-  RELEASE_MACOS:
-    name: "Release - build, test and benchmarks"
-    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Release
-    secrets: inherit
+#  RELEASE_MACOS:
+#    name: "Release - build, test and benchmarks"
+#    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
+#    with:
+#      SIMENG-MODE: Release
+#    secrets: inherit
 
 

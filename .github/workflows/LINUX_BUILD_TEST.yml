@@ -158,7 +158,7 @@ jobs:
       #######################################
 
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
-        name: Checking out benchmark repository
+        name: Checking out benchmark repository (v3)
         uses: actions/checkout@v3
         with:
           repository: UoB-HPC/simeng-benchmarks
@@ -167,7 +167,7 @@ jobs:
           path: simeng-benchmarks
 
       - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
-        name: Checking out benchmark repository
+        name: Checking out benchmark repository (v4)
         uses: actions/checkout@v4
         with:
           repository: UoB-HPC/simeng-benchmarks
