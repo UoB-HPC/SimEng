@@ -43,7 +43,10 @@ runs:
     - name: CloverLeaf serial gcc8.3.0 armv8.4
       shell: bash
       run: |
+        echo "BASH running"
         cd $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+        echo "cd done"
+        ls
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml $SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4 >> $GITHUB_WORKSPACE/simeng.tmp 2> $GITHUB_WORKSPACE/simeng.tmp
         if grep -q "This test is considered PASSED" $GITHUB_WORKSPACE/simeng.tmp; then
           echo "Passed"
