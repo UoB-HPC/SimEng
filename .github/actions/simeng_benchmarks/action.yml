@@ -23,6 +23,7 @@ runs:
         echo "cd done"
         ls
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} >> $GITHUB_WORKSPACE/simeng.tmp 2> $GITHUB_WORKSPACE/simeng.tmp
+        cat $GITHUB_WORKSPACE/simeng.tmp
         if grep -q ${{ inputs.PASS_STRING }} $GITHUB_WORKSPACE/simeng.tmp; then
           echo "Passed"
         else
