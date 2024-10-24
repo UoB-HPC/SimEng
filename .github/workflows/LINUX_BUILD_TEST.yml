@@ -154,12 +154,48 @@ jobs:
           ./build/test/regression/riscv/regression-riscv
 
       #######################################
-      # Run Benchmark Tests.
+      # Load Benchmarks repo
       #######################################
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: Run Benchmarks
-        uses: ./.github/actions/simeng_benchmarks
+
+      - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
+        name: Checking out benchmark repository
+        uses: actions/checkout@v3
         with:
-          BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
-          OS: ${{ matrix.OS }}
-          PAT: ${{ env.PAT }}
+          repository: UoB-HPC/simeng-benchmarks
+          token: ${{ inputs.PAT }}
+          ref: makefile-build-system
+          path: simeng-benchmarks
+
+      - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
+        name: Checking out benchmark repository
+        uses: actions/checkout@v4
+        with:
+          repository: UoB-HPC/simeng-benchmarks
+          ref: makefile-build-system
+          token: ${{ inputs.PAT }}
+          path: simeng-benchmarks
+
+      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+        name: CloverLeaf serial gcc8.3.0 armv8.4
+        shell: bash
+        run: |
+          echo "BASH running"
+          cd $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+          echo "cd done"
+          ls
+          simeng $GITHUB_WORKSPACE/configs/a64fx.yaml $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4 >> $GITHUB_WORKSPACE/simeng.tmp 2> $GITHUB_WORKSPACE/simeng.tmp
+          if grep -q "This test is considered PASSED" $GITHUB_WORKSPACE/simeng.tmp; then
+            echo "Passed"
+          else
+            echo "Failed"
+            exit 1
+          fi
+
+
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: Run Benchmarks
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
+#          OS: ${{ matrix.OS }}
+#          PAT: ${{ env.PAT }}
