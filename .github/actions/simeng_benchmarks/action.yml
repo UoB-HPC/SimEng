@@ -19,8 +19,8 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.RUN_DIR }}
-        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 | tee grep ${{ inputs.PASS_STRING }} > $STRING_FOUND
-        if STRING_FOUND; then
+        STRING_FOUND=$(simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee grep ${{ inputs.PASS_STRING }})
+        if $STRING_FOUND; then
           echo "Passed"
         else
           echo "Failed"
