@@ -20,7 +20,16 @@ runs:
       run: |
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
-        if contains($GITHUB_WORKSPACE/simeng.tmp, ${{ inputs.PASS_STRING }}); then
+    - name: Read benchmark output
+      id: package
+      uses: jaywcjlove/github-action-read-file@main
+      with:
+        path: $GITHUB_WORKSPACE/simeng.tmp
+
+    - name: Check benchmark passed
+      shell: bash
+      run: |  
+        if contains("${{ steps.package.outputs.content }}", ${{ inputs.PASS_STRING }}); then
           echo "Passed"
         else 
           echo "Failed"
