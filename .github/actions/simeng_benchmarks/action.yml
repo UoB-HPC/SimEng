@@ -20,22 +20,12 @@ runs:
       run: |
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
-        python -c "
-            import os
-
-            file_path = $GITHUB_WORKSPACE/simeng.tmp
-
-            if not os.path.exists(file_path):
-              print(f'File not found: {file_path}')
-              exit(1)
-
-            with open(file_path, 'r') as f:
-              if ${{ inputs.PASS_STRING }} in f.read():
-                print('Passed')
-              else:
-                print('Failed')
-                exit(1)
-          "
+        if contains(${{ inputs.PASS_STRING }}, $GITHUB_WORKSPACE/simeng.tmp); then
+          echo "Passed"
+        else 
+          echo "Failed"
+          exit(1)
+        fi
 #
 #    "name": "CloverLeaf serial gcc8.3.0 armv8.4",
 #    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
