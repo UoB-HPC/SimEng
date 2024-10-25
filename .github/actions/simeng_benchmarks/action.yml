@@ -21,12 +21,13 @@ runs:
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
         cd $GITHUB_WORKSPACE
-        cat simeng.tmp | while read line; do 
+        filename="simeng.tmp"
+        while IFS= read -r line; do
           if contains($line, ${{ inputs.PASS_STRING }}); then
             echo "Passed"
             exit(0);
           fi
-        done
+        done < "$filename"
 
 #
 #    "name": "CloverLeaf serial gcc8.3.0 armv8.4",
