@@ -175,11 +175,6 @@ jobs:
           token: ${{ env.PAT }}
           path: simeng-benchmarks
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: CloverLeaf serial gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks

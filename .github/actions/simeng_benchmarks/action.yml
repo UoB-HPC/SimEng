@@ -20,11 +20,13 @@ runs:
       run: |
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
+        cd $GITHUB_WORKSPACE
+
     - name: Read benchmark output
       id: package
       uses: jaywcjlove/github-action-read-file@main
       with:
-        path: $GITHUB_WORKSPACE/simeng.tmp
+        path: ./simeng.tmp
 
     - name: Check benchmark passed
       shell: bash
