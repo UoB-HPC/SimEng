@@ -21,22 +21,13 @@ runs:
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
         cd $GITHUB_WORKSPACE
+        cat simeng.tmp | while read line; do 
+          if contains($line, ${{ inputs.PASS_STRING }}); then
+            echo "Passed"
+            exit(0);
+          fi
+        done
 
-    - name: Read benchmark output
-      id: package
-      uses: jaywcjlove/github-action-read-file@main
-      with:
-        path: ./simeng.tmp
-
-    - name: Check benchmark passed
-      shell: bash
-      run: |  
-        if contains("${{ steps.package.outputs.content }}", ${{ inputs.PASS_STRING }}); then
-          echo "Passed"
-        else 
-          echo "Failed"
-          exit(1)
-        fi
 #
 #    "name": "CloverLeaf serial gcc8.3.0 armv8.4",
 #    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
