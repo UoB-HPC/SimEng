@@ -1,0 +1,104 @@
+name: MacOS
+
+on:
+  workflow_call:
+    inputs:
+      SIMENG-MODE:
+        required: true
+        type: string
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  BENCHMARK_BRANCH: 'make-file-build-system' # The branch inside the benchmark repo that has the script to run all benchmarks.
+  PAT: ${{ secrets.SIMENGUOB_PAT }}
+
+jobs:
+  Build_and_Run:
+    runs-on: macos-13
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        COMPILER: ['gcc-10', 'apple_clang_15'] # NOTE: only gcc 10 works with provided macos runners on github actions the other versions are difficult to get and don't work
+
+
+    name: "macos-13, ${{ matrix.compiler }}"
+
+    steps:
+      #######################################
+      # Clones repo to workspace.
+      #######################################
+      - name: checkout v4
+        uses: actions/checkout@v4
+
+      #######################################
+      # Depending on OS and compiler, this step chooses the correct setup action to run.
+      #######################################
+      - name: setup compiler and OS env + build simeng
+        uses: ./.github/actions/select_setup
+        with: 
+          OS: macos
+          COMPILER: ${{ matrix.COMPILER }}
+          MODE: ${{ inputs.simeng-mode }}
+
+      #######################################
+      # Prints out info in isolated step for easy access.
+      #######################################
+      - name: INFO
+        shell: bash
+        run: |
+          echo "_______________________________________"
+          cmake --version
+          echo "_______________________________________"
+          "${{ env.C_COMPILER }}" --version
+          which ${{ env.C_COMPILER }}
+          echo "_______________________________________"
+          "${{ env.CPP_COMPILER }}" --version
+          which ${{ env.CPP_COMPILER }}
+          echo "_______________________________________"
+          
+      #######################################
+      # Run Integration Tests.
+      #######################################
+      - name: Integration Tests
+        shell: bash
+        run: |
+          ./build/test/integration/integrationtests
+
+      #######################################
+      # Run Unit Tests.
+      #######################################
+      - name: Unit Tests
+        shell: bash
+        run: |
+          ./build/test/unit/unittests
+
+      #######################################
+      # Run Regression AARCH64 Tests.
+      #######################################
+      - name: regression test (aarch64)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/aarch64/regression-aarch64
+
+      #######################################
+      # Run Regression RISCV Tests.
+      #######################################
+      - name: regression test (riscv)
+        if: always()
+        shell: bash
+        run: |
+          ./build/test/regression/riscv/regression-riscv
+
+      #######################################
+      # Run Benchmark Tests.
+      #######################################
+      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+        name: Run Benchmarks
+        uses: ./.github/actions/simeng_benchmarks
+        with:
+          BENCHMARK_BRANCH: ${{ env.BENCHMARK_BRANCH }}
+          OS: macos
+          PAT: ${{ env.PAT }}
+      ##########################################

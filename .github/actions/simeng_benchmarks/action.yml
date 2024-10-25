@@ -1,0 +1,451 @@
+name: simeng-benchmarks
+description: runs simeng benchmarks
+
+inputs:
+  RUN_DIR:
+    description: directory from which the benchmark binary should be run
+    required: true
+  BIN_PATH:
+    description: path to the binary for the benchmark
+    required: true
+  PASS_STRING:
+    description: string that is searched for in the benchmark's output to confirm whether or not it has passed
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Benchmark
+      shell: bash
+      run: |
+        cd ${{ inputs.RUN_DIR }}
+        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
+        python3 -c "
+            import os
+
+            file_path = $GITHUB_WORKSPACE/simeng.tmp
+
+            if not os.path.exists(file_path):
+              print(f'File not found: {file_path}')
+              exit(1)
+
+            with open(file_path, 'r') as f:
+              if ${{ PASS_STRING }} in f.read():
+                print('Passed')
+              else:
+                print('Failed')
+                exit(1)
+          "
+#
+#    "name": "CloverLeaf serial gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc8.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4 -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc9.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4 -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc10.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4 -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp armclang20 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4 -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "STREAM serial gcc8.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc8.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial gcc9.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc9.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial gcc10.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc10.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial armclang20 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_armclang20_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc8.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc9.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc10.3.0 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp armclang20 armv8.4",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_armclang20_armv8.4",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc8.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc8.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc9.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc10.3.0 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp armclang20 armv8.4",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf serial armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "CloverLeaf openmp armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/CloverLeaf",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4+sve",
+#    "validation_string": "This test is considered PASSED"
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc8.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4+sve -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc9.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4+sve -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp gcc10.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "miniBUDE openmp armclang20 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4+sve -n 64 -i 1 --deck $SIMENG_BENCHMARKS_SRC_DIR/Data_Files/miniBUDE/bm1",
+#    "validation_string": "Largest difference was 0.000%."
+#  },
+#  {
+#    "name": "STREAM serial gcc8.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial gcc9.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial gcc10.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM serial armclang20 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream_armclang20_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc8.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc9.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp gcc10.3.0 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "STREAM openmp armclang20 armv8.4+sve",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/STREAM/stream-omp_armclang20_armv8.4+sve",
+#    "validation_string": "Solution Validates"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D serial armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 2D openmp armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/2d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D serial armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc8.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc9.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp gcc10.3.0 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  },
+#  {
+#    "name": "TeaLeaf 3D openmp armclang20 armv8.4+sve",
+#    "run_from": "$SIMENG_BENCHMARKS_SRC_DIR/Data_Files/TeaLeaf/3d",
+#    "cmd": "$SIMENG_BENCHMARKS_SRC_DIR/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4+sve",
+#    "validation_string": "This run PASSED"
+#  }
+
+
+
+
+
