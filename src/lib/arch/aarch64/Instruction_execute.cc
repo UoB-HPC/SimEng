@@ -6139,6 +6139,15 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_ZERO_T: {  // zero {zt0}
+        // SME
+        // Not in right context mode. Raise exception
+        if (!ZAenabled) return ZAdisabled();
+
+        // ZT0 has a fixed width of 512-bits
+        results_[0] = RegisterValue(0, 64);
+        break;
+      }
       default:
         return executionNYI();
     }

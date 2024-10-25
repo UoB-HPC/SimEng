@@ -534,6 +534,15 @@ TEST_P(InstSme, st1w) {
 }
 
 TEST_P(InstSme, zero) {
+  // ZT0
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {zt0}
+  )");
+  CHECK_TABLE(0, uint64_t, {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0});
+
+  // ZA tiles
   RUN_AARCH64(R"(
     smstart
 
