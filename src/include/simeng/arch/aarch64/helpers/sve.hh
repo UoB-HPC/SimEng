@@ -1356,28 +1356,20 @@ std::array<uint64_t, 4> svePtrue_counter(const uint16_t VL_bits) {
   //    - Bit 15 represents the invert bit
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
-  // Set invert bit
+  // Set invert bit to 1 and count to 0
+  // (The first 0 elements are FALSE)
   out[0] |= 0b1000000000000000;
 
   // Set Element size field
-  uint8_t bitsUsed = 0;
   if (sizeof(T) == 1) {
     out[0] |= 0b1;
-    bitsUsed += 1;
   } else if (sizeof(T) == 2) {
     out[0] |= 0b10;
-    bitsUsed += 2;
   } else if (sizeof(T) == 4) {
     out[0] |= 0b100;
-    bitsUsed += 3;
   } else if (sizeof(T) == 8) {
     out[0] |= 0b1000;
-    bitsUsed += 4;
   }
-
-  // Set Element count (max value is 256 (2048 bit VL for pnd.b))
-  const uint64_t elementCount = VL_bits / (sizeof(T) * 8);
-  out[0] |= (elementCount << bitsUsed);
 
   return out;
 }

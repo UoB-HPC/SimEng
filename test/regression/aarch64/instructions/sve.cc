@@ -5063,6 +5063,7 @@ TEST_P(InstSve, ld1d_gather) {
 }
 
 TEST_P(InstSve, ld1d) {
+  // Single vector
   initialHeapData_.resize(VL / 4);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
   std::vector<uint64_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
@@ -5104,6 +5105,52 @@ TEST_P(InstSve, ld1d) {
              fillNeon<uint64_t>({src[(base) % 4], src[(base + 1) % 4],
                                  src[(base + 2) % 4], src[(base + 3) % 4]},
                                 VL / 16));
+
+  // Multi vector
+  initialHeapData_.resize(VL);
+  uint64_t* heap64_multi = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src_multi = {0xDEADBEEF, 0x12345678, 0x98765432,
+                                     0xABCDEF01};
+  fillHeap<uint64_t>(heap64_multi, src_multi, VL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.d, #1
+    dup z1.d, #2
+    dup z2.d, #3
+    dup z3.d, #4
+
+    ptrue pn8.d
+
+    ld1d {z0.d - z3.d}, pn8/z, [x0, #4, mul vl]
+  )");
+  base = (VL / 64) * 4;
+  uint16_t offset = (VL / 64);
+  CHECK_NEON(0, uint64_t,
+             fillNeon<uint64_t>({src[(base) % 4], src[(base + 1) % 4],
+                                 src[(base + 2) % 4], src[(base + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(
+      1, uint64_t,
+      fillNeon<uint64_t>(
+          {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
+           src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
+          VL / 8));
+  CHECK_NEON(2, uint64_t,
+             fillNeon<uint64_t>({src[((base + (offset * 2))) % 4],
+                                 src[((base + (offset * 2)) + 1) % 4],
+                                 src[((base + (offset * 2)) + 2) % 4],
+                                 src[((base + (offset * 2)) + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(3, uint64_t,
+             fillNeon<uint64_t>({src[((base + (offset * 3))) % 4],
+                                 src[((base + (offset * 3)) + 1) % 4],
+                                 src[((base + (offset * 3)) + 2) % 4],
+                                 src[((base + (offset * 3)) + 3) % 4]},
+                                VL / 8));
 }
 
 TEST_P(InstSve, ld1h) {
@@ -5824,17 +5871,13 @@ TEST_P(InstSve, ptrue_counter) {
     ptrue pn11.h
   )");
   const uint64_t ps =
-      0b0000000000000000000000000000000000000000000000001000000000000100 |
-      ((static_cast<uint64_t>(VL / 32)) << 3);
+      0b0000000000000000000000000000000000000000000000001000000000000100;
   const uint64_t pd =
-      0b0000000000000000000000000000000000000000000000001000000000001000 |
-      ((static_cast<uint64_t>(VL / 64)) << 4);
+      0b0000000000000000000000000000000000000000000000001000000000001000;
   const uint64_t pb =
-      0b0000000000000000000000000000000000000000000000001000000000000001 |
-      ((static_cast<uint64_t>(VL / 8)) << 1);
+      0b0000000000000000000000000000000000000000000000001000000000000001;
   const uint64_t ph =
-      0b0000000000000000000000000000000000000000000000001000000000000010 |
-      ((static_cast<uint64_t>(VL / 16)) << 2);
+      0b0000000000000000000000000000000000000000000000001000000000000010;
   CHECK_PREDICATE(8, uint64_t, {ps, 0x0, 0x0, 0x0});
   CHECK_PREDICATE(9, uint64_t, {pd, 0x0, 0x0, 0x0});
   CHECK_PREDICATE(10, uint64_t, {pb, 0x0, 0x0, 0x0});
