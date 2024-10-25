@@ -5112,6 +5112,35 @@ TEST_P(InstSve, ld1d) {
   std::vector<uint64_t> src_multi = {0xDEADBEEF, 0x12345678, 0x98765432,
                                      0xABCDEF01};
   fillHeap<uint64_t>(heap64_multi, src_multi, VL / 8);
+
+  // Two vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.d, #1
+    dup z1.d, #2
+
+    ptrue pn8.d
+
+    ld1d {z0.d, z1.d}, pn8/z, [x0, #2, mul vl]
+  )");
+  base = (VL / 64) * 2;
+  uint16_t offset = (VL / 64);
+  CHECK_NEON(0, uint64_t,
+             fillNeon<uint64_t>({src[(base) % 4], src[(base + 1) % 4],
+                                 src[(base + 2) % 4], src[(base + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(
+      1, uint64_t,
+      fillNeon<uint64_t>(
+          {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
+           src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
+          VL / 8));
+
+  // Four vector
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -5128,7 +5157,7 @@ TEST_P(InstSve, ld1d) {
     ld1d {z0.d - z3.d}, pn8/z, [x0, #4, mul vl]
   )");
   base = (VL / 64) * 4;
-  uint16_t offset = (VL / 64);
+  offset = (VL / 64);
   CHECK_NEON(0, uint64_t,
              fillNeon<uint64_t>({src[(base) % 4], src[(base + 1) % 4],
                                  src[(base + 2) % 4], src[(base + 3) % 4]},

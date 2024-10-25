@@ -2752,6 +2752,38 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1D_2Z_IMM: {  // ld1d {zt1.d, zt2.d}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        // LOAD
+        const uint64_t* pn = sourceValues_[0].getAsVector<uint64_t>();
+
+        // Get predicate-as-counter information
+        const bool invert =
+            (pn[0] & static_cast<uint64_t>(0b1000000000000000)) != 0;
+        const uint64_t predElemCount =
+            (pn[0] & static_cast<uint64_t>(0b0111111111110000)) >> 4;
+
+        uint64_t out[2][32] = {{0}, {0}};
+        const uint16_t partition_num = VL_bits / 64;
+
+        for (int r = 0; r < 2; r++) {
+          for (int i = 0; i < partition_num; i++) {
+            // If invert = 1, predElemCount dictates number of initial inactive
+            // elements.
+            // Otherwise, it is number of initial active elements.
+            if ((r * partition_num) + i < predElemCount) {
+              out[r][i] =
+                  (invert) ? 0 : memoryData_[r].getAsVector<uint64_t>()[i];
+            } else {
+              out[r][i] =
+                  (invert) ? memoryData_[r].getAsVector<uint64_t>()[i] : 0;
+            }
+          }
+        }
+        results_[0] = {out[0], 256};
+        results_[1] = {out[1], 256};
+        break;
+      }
       case Opcode::AArch64_LD1D_4Z_IMM: {  // ld1d {zt1.d - zt4.d}, png/z, [xn{,
                                            // #imm, mul vl}]
         // LOAD
