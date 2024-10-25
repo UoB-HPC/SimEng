@@ -23,7 +23,7 @@ runs:
         cd $GITHUB_WORKSPACE
         filename="simeng.tmp"
         while IFS= read -r line; do
-          if contains($line, ${{ inputs.PASS_STRING }}); then
+          if contains("$line", ${{ inputs.PASS_STRING }}); then
             echo "Passed"
             exit(0);
           fi
