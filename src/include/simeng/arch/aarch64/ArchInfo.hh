@@ -18,7 +18,8 @@ class ArchInfo : public simeng::arch::ArchInfo {
                            aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
                            aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
                            aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
-                           aarch64_sysreg::AARCH64_SYSREG_SVCR}),
+                           aarch64_sysreg::AARCH64_SYSREG_SVCR,
+                           aarch64_sysreg::AARCH64_SYSREG_TPIDR2_EL0}),
         zaSize_(config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8) {
     // Generate the architecture-defined architectural register structure
     archRegStruct_ = {

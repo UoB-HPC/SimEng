@@ -271,6 +271,21 @@ TEST_P(InstSme, ld1w) {
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
 }
 
+TEST_P(InstSme, rdsvl) {
+  RUN_AARCH64(R"(
+    rdsvl x0, #-32
+    rdsvl x1, #-3
+    rdsvl x2, #0
+    rdsvl x3, #3
+    rdsvl x4, #31
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), (SVL / 8) * -32);
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), (SVL / 8) * -3);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), (SVL / 8) * 3);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), (SVL / 8) * 31);
+}
+
 TEST_P(InstSme, st1d) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);

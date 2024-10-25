@@ -4187,9 +4187,18 @@ void Instruction::execute() {
         results_[0] = rbit<uint64_t>(sourceValues_, metadata_);
         break;
       }
+      case Opcode::AArch64_RDSVLI_XI: {  // rdsvl xd, #imm
+        // Uses Streaming SVE vector register size, regardless of streaming mode
+        // state
+        int64_t imm = metadata_.operands[1].imm;
+        results_[0] = imm * static_cast<int64_t>(
+                                architecture_.getStreamingVectorLength() / 8);
+        break;
+      }
       case Opcode::AArch64_RDVLI_XI: {  // rdvl xd, #imm
-        int8_t imm = static_cast<int8_t>(metadata_.operands[1].imm);
-        results_[0] = (uint64_t)(imm * (VL_bits / 8));
+        // Uses current vector register size
+        int64_t imm = metadata_.operands[1].imm;
+        results_[0] = imm * static_cast<int64_t>(VL_bits / 8);
         break;
       }
       case Opcode::AArch64_RET: {  // ret {xr}
