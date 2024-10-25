@@ -5767,6 +5767,17 @@ void Instruction::execute() {
                             sourceValues_[1].get<uint64_t>());
         break;
       }
+      case Opcode::AArch64_UMULLv4i16_v4i32: {  // umull vd.4s, vn.4h, vm.4h
+        const uint16_t* vn = sourceValues_[0].getAsVector<uint16_t>();
+        const uint16_t* vm = sourceValues_[1].getAsVector<uint16_t>();
+
+        uint32_t out[4] = {0};
+        for (int i = 0; i < 4; i++) {
+          out[i] = static_cast<uint32_t>(vn[i]) * static_cast<uint32_t>(vm[i]);
+        }
+        results_[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_UQDECD_WPiI: {  // uqdecd wd{, pattern{, MUL #imm}}
         results_[0] =
             sveUqdec<uint32_t, 64u>(sourceValues_, metadata_, VL_bits);

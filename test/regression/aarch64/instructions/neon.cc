@@ -3808,6 +3808,42 @@ TEST_P(InstNeon, umlal) {
   CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
 }
 
+TEST_P(InstNeon, umull) {
+  // uint16_t to uint32_t
+  initialHeapData_.resize(32);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  heap16[0] = UINT16_MAX;
+  heap16[1] = 0;
+  heap16[2] = 1234;
+  heap16[3] = 0xBEEF;
+  heap16[4] = 0xABBA;
+  heap16[5] = 0xCAFE;
+  heap16[6] = 0xDEAD;
+  heap16[7] = 0xACDC;
+
+  heap16[8] = UINT16_MAX;
+  heap16[9] = 0xACDC;
+  heap16[10] = 0xCAFE;
+  heap16[11] = 0xABBA;
+  heap16[12] = 0xBEEF;
+  heap16[13] = 0xDEAD;
+  heap16[14] = 9876;
+  heap16[15] = 0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    umull v2.4s, v0.4h, v1.4h
+  )");
+  CHECK_NEON(2, uint32_t, {4294836225u, 0, 64126044u, 2148818598u});
+}
+
 TEST_P(InstNeon, zip) {
   initialHeapData_.resize(128);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
