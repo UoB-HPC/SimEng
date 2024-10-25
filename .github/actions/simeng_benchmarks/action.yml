@@ -30,7 +30,7 @@ runs:
               exit(1)
 
             with open(file_path, 'r') as f:
-              if ${{ PASS_STRING }} in f.read():
+              if ${{ inputs.PASS_STRING }} in f.read():
                 print('Passed')
               else:
                 print('Failed')
