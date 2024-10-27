@@ -21,23 +21,36 @@ runs:
     - name: Run Benchmark
       shell: bash
       run: |
-        cd ${{ inputs.RUN_DIR }}
-        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee ${{ inputs.OUTPUT_FILE }} 
-        echo "Output file = ${{ inputs.OUTPUT_FILE }}"
-        echo "#####"
-        echo "#####"
-        echo "#####"
-        ls $GITHUB_WORKSPACE
-        echo "#####"
-        echo "#####"
-        echo "#####"
-        benchmark_passed = $(grep ${{ inputs.PASS_STRING }} ${{ inputs.OUTPUT_FILE }})
-        if benchmark_passed; then
-          echo "Passed"
+        benchmark_path=${{ input.path }}
+        benchmark_name=${{ input.name }}
+        datafile_path=${{ input.datafile }}
+
+        output_file="benchmark_output.txt"
+
+        cd "${{ github.workspace }}/$benchmark_path"
+
+        # Run the benchmark and redirect output to a file
+        if [ $datafile_path ]; then
+          sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name -n 64 -i 1 --deck "${{ github.workspace }}/$datafile_path"  > "$output_file"
         else
-          echo "Failed"
-          exit(1)
+          sudo simeng "${{ github.workspace }}/configs/a64fx.yaml" $benchmark_name  > "$output_file"
         fi
+
+        # Extract the time in milliseconds from the output
+        current_time=$(grep 'ticks in' "$output_file" | awk '{print substr($6, 1, length($6)-2)}')
+  
+        # Add the extracted time to the total time
+        total_time=$(echo "$total_time + $current_time" | bc)
+  
+        echo "Run $i: $current_time ms"
+
+        # Calculate the average time
+        average_time=$(echo "scale=2; $total_time / $runs" | bc)
+
+        echo "Average time over $runs runs: $average_time ms"
+
+        # Clean up the output file
+        sudo rm "$output_file"
 
 #
 #    "name": "CloverLeaf serial gcc8.3.0 armv8.4",
