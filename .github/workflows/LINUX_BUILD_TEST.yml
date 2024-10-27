@@ -186,6 +186,7 @@ jobs:
           then
             echo "Passed"
           else
+            cat $GITHUB_WORKSPACE/simeng.tmp
             echo "Failed"
             exit 1
           fi
