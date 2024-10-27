@@ -106,6 +106,9 @@ jobs:
       - name: INFO
         shell: bash
         run: |
+          sudo apt-get -y install bc
+          sudo apt-get -y install gcc-10 g++-10 pip
+          pip install pyparsing
           cat /etc/os-release 
           echo "_______________________________________"
           uname -a
@@ -182,7 +185,7 @@ jobs:
           path: "simeng-benchmarks/binaries/CloverLeaf/openmp"
           name: "cloverleaf_gcc10.3.0_armv8.4+sve"
           datafile_path: "simeng-benchmarks/Data_Files/CloverLeaf"
-          pass_string: "This test is considered PASSED"
+          runs: 1
 
 
 #      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
