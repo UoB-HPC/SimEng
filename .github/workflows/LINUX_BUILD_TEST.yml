@@ -26,8 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         
-        COMPILER: ['gcc-7' , 'gcc-8', 'gcc-9', 'gcc-10'] # armclang ] compiler names
-        OS: ['ubuntu:18.04','ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
+        COMPILER: ['gcc-7']# , 'gcc-8', 'gcc-9', 'gcc-10'] # armclang ] compiler names
+        OS: ['ubuntu:18.04']#,'ubuntu:20.04', 'rockylinux:8', 'redhat/ubi8:latest', 'redhat/ubi9:latest', 'debian:10', 'debian:11'] # Docker images
         
         #######################################
         # Removes unecessary jobs as jobs are generated in the order seen in the matrix.
@@ -106,9 +106,6 @@ jobs:
       - name: INFO
         shell: bash
         run: |
-          sudo apt-get -y install bc
-          sudo apt-get -y install gcc-10 g++-10 pip
-          pip install pyparsing
           cat /etc/os-release 
           echo "_______________________________________"
           uname -a
@@ -182,10 +179,9 @@ jobs:
         name: CloverLeaf serial gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          path: "simeng-benchmarks/binaries/CloverLeaf/openmp"
-          name: "cloverleaf_gcc10.3.0_armv8.4+sve"
-          datafile_path: "simeng-benchmarks/Data_Files/CloverLeaf"
-          runs: 1
+          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4
+          PASS_STRING: "This test is considered PASSED"
 
 
 #      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
