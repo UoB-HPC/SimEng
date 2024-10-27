@@ -181,7 +181,7 @@ jobs:
         with:
           path: "simeng-benchmarks/binaries/CloverLeaf/openmp"
           name: "cloverleaf_gcc10.3.0_armv8.4+sve"
-          datafile: "simeng-benchmarks/Data_Files/CloverLeaf"
+          datafile_path: "simeng-benchmarks/Data_Files/CloverLeaf"
           pass_string: "This test is considered PASSED"
 
 
