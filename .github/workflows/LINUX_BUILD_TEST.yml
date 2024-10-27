@@ -184,10 +184,10 @@ jobs:
           benchmark_passed=$(grep -q "This test is considered PASSED" "$GITHUB_WORKSPACE/simeng.tmp")
           if [ $benchmark_passed ]
           then
+            echo "Passed"
+          else
             echo "Failed"
             exit 1
-          else
-            echo "Passed"
           fi
 
 
