@@ -24,7 +24,7 @@ runs:
         echo "#####"
         echo "#####"
         echo "#####"
-        ls
+        ls $GITHUB_WORKSPACE
         echo "#####"
         echo "#####"
         echo "#####"
