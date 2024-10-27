@@ -20,6 +20,14 @@ runs:
       run: |
         cd ${{ inputs.RUN_DIR }}
         simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee ${{ inputs.OUTPUT_FILE }} 
+        echo "Output file = ${{ inputs.OUTPUT_FILE }}"
+        echo "#####"
+        echo "#####"
+        echo "#####"
+        ls
+        echo "#####"
+        echo "#####"
+        echo "#####"
         benchmark_passed = $(grep ${{ inputs.PASS_STRING }} ${{ inputs.OUTPUT_FILE }})
         if benchmark_passed; then
           echo "Passed"
