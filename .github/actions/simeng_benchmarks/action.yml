@@ -37,6 +37,7 @@ runs:
         total_time=0
         runs=${{ inputs.runs }}
         
+        ls "${{ github.workspace }}"
         cd "${{ github.workspace }}/$benchmark_path"
         
         # Loop to run the benchmark 10 times
