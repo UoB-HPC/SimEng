@@ -181,7 +181,8 @@ jobs:
         with:
           RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
+          PASS_STRING: This test is considered PASSED
+          OUTPUT_FILE: $GITHUB_WORKSPACE/CL_s_gcc8.txt
 
 
 #      - if: ${{ inputs.SIMENG-MODE == 'Release' }}

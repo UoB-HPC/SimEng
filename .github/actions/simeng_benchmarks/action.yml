@@ -19,8 +19,8 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.RUN_DIR }}
-        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
-        benchmark_passed = "$(grep ${{ inputs.PASS_STRING }} ${{ inputs.output_file }})"
+        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee ${{ inputs.OUTPUT_FILE }} 
+        benchmark_passed = $(grep ${{ inputs.PASS_STRING }} ${{ inputs.OUTPUT_FILE }})
         if benchmark_passed; then
           echo "Passed"
         else
