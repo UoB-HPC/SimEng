@@ -11,6 +11,9 @@ inputs:
   PASS_STRING:
     description: string that is searched for in the benchmark's output to confirm whether or not it has passed
     required: true
+  OUTPUT_FILE:
+    description: path to temp file storing output of benchmark run
+    required: true
 
 runs:
   using: 'composite'
