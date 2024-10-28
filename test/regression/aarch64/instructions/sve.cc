@@ -6651,6 +6651,7 @@ TEST_P(InstSve, st1d_multivec) {
     svc #0
 
     sub sp, sp, #4095
+    mov x1, #1
     mov x4, #256
     madd x4, x4, x4, x4
     ptrue p0.d
@@ -6658,18 +6659,17 @@ TEST_P(InstSve, st1d_multivec) {
     ld1d {z0.d}, p0/z, [x0]
     ld1d {z1.d}, p0/z, [x0, #1, mul vl]
     st1d {z0.d, z1.d}, pn8, [sp]
-    st1d {z0.d, z1.d}, pn8, [x4, #2, mul vl]
+    st1d {z0.d, z1.d}, pn8, [x4, #4, mul vl]
+    st1d {z0.d, z1.d}, pn8, [x4, x1, lsl #3]
   )");
 
   for (uint64_t i = 0; i < (VL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 8)),
               src[i % 4]);
-  }
-
-  for (uint64_t i = 0; i < (VL / 32); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (2 * (VL / 8)) + (i * 8)),
+    EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (4 * (VL / 8)) + (i * 8)),
               src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(65792 + 8 + (i * 8)), src[i % 4]);
   }
 }
 

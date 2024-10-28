@@ -4780,6 +4780,10 @@ void Instruction::execute() {
         memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
         break;
       }
+      case Opcode::AArch64_ST1D_2Z:  // st1d {zt1.d, zt2.d}, png, [xn, xm, lsl
+                                     // #3]
+        // STORE
+        [[fallthrough]];
       case Opcode::AArch64_ST1D_2Z_IMM: {  // st1d {zt1.d, zt2.d}, png, [xn{,
                                            // #imm, mul vl}]
         // STORE
