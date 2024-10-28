@@ -20,6 +20,7 @@ runs:
       run: |
         if [ ${{ inputs.RUN_DIR }} ]
         then
+          ls "${{ inputs.RUN_DIR }}"
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1 --deck "${{ inputs.RUN_DIR }}"  > $GITHUB_WORKSPACE/simeng.tmp
         else
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1  > $GITHUB_WORKSPACE/simeng.tmp
