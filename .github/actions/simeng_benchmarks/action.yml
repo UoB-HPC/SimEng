@@ -27,7 +27,7 @@ runs:
           cd ${{ inputs.RUN_DIR }}
         fi
     
-        simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" "${{ inputs.ARGS }}" > $GITHUB_WORKSPACE/simeng.tmp
+        simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" ${{ inputs.ARGS }} > $GITHUB_WORKSPACE/simeng.tmp
         
         if grep -q ${{ inputs.PASS_STRING }} "$GITHUB_WORKSPACE/simeng.tmp"
         then
