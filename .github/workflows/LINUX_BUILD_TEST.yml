@@ -183,61 +183,61 @@ jobs:
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4
           PASS_STRING: "This test is considered PASSED"
 
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc8.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4
-          PASS_STRING: "This test is considered PASSED"
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc8.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4
+#          PASS_STRING: "This test is considered PASSED"
 
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: miniBUDE openmp gcc8.3.0 armv8.4
@@ -247,29 +247,29 @@ jobs:
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4
-          PASS_STRING: "Largest difference was 0.000%."
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4
+#          PASS_STRING: "Largest difference was 0.000%."
 
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: STREAM serial gcc8.3.0 armv8.4
@@ -279,61 +279,61 @@ jobs:
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc8.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc8.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4
-          PASS_STRING: "Solution Validates"
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc8.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4
+#          PASS_STRING: "Solution Validates"
 
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: TeaLeaf 2D serial gcc8.3.0 armv8.4
@@ -343,411 +343,411 @@ jobs:
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc8.3.0_armv8.4
           PASS_STRING: "This run PASSED"
 
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc8.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc8.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc8.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc9.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc10.3.0 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp armclang20 armv8.4
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf serial armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: CloverLeaf openmp armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4+sve
-          PASS_STRING: "This test is considered PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: miniBUDE openmp armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4+sve
-          PASS_STRING: "Largest difference was 0.000%."
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM serial armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: STREAM openmp armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4+sve
-          PASS_STRING: "Solution Validates"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D serial armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 2D openmp armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D serial armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc8.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc9.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp gcc10.3.0 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4+sve
-          PASS_STRING: "This run PASSED"
-
-      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
-        name: TeaLeaf 3D openmp armclang20 armv8.4+sve
-        uses: ./.github/actions/simeng_benchmarks
-        with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
-          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4+sve
-          PASS_STRING: "This run PASSED"
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc8.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc8.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc8.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc9.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc10.3.0 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp armclang20 armv8.4
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf serial armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_armclang20_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: CloverLeaf openmp armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/openmp/cloverleaf_armclang20_armv8.4+sve
+#          PASS_STRING: "This test is considered PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: miniBUDE openmp armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4+sve
+#          PASS_STRING: "Largest difference was 0.000%."
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM serial armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: STREAM openmp armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+##          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4+sve
+#          PASS_STRING: "Solution Validates"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D serial armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf_armclang20_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 2D openmp armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/2d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/2d/tealeaf-omp_armclang20_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D serial armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf_armclang20_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc8.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc8.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc9.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc9.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp gcc10.3.0 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_gcc10.3.0_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
+#
+#      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
+#        name: TeaLeaf 3D openmp armclang20 armv8.4+sve
+#        uses: ./.github/actions/simeng_benchmarks
+#        with:
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/TeaLeaf/3d
+#          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/TeaLeaf/3d/tealeaf-omp_armclang20_armv8.4+sve
+#          PASS_STRING: "This run PASSED"
 

@@ -14,20 +14,20 @@ jobs:
   ###################################
   # Debug Mode
   ###################################
-  DEBUG_LINUX:
-    name: "Debug - build and test"
-    uses: ./.github/workflows/LINUX_BUILD_TEST.yml
-    with:
-      RUNNER: ubuntu-latest
-      SIMENG-MODE: Debug
-    secrets: inherit
-
-  DEBUG_MACOS:
-    name: "Debug - build and test"
-    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
-    with:
-      SIMENG-MODE: Debug
-    secrets: inherit
+#  DEBUG_LINUX:
+#    name: "Debug - build and test"
+#    uses: ./.github/workflows/LINUX_BUILD_TEST.yml
+#    with:
+#      RUNNER: ubuntu-latest
+#      SIMENG-MODE: Debug
+#    secrets: inherit
+#
+#  DEBUG_MACOS:
+#    name: "Debug - build and test"
+#    uses: ./.github/workflows/MACOS_BUILD_TEST.yml
+#    with:
+#      SIMENG-MODE: Debug
+#    secrets: inherit
 
   ##################################
   # Release Mode

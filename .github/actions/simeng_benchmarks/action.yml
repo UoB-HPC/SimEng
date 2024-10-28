@@ -18,7 +18,7 @@ runs:
     - name: Run Benchmark
       shell: bash
       run: |
-        if [ $datafile_path ]
+        if [ ${{ inputs.RUN_DIR }} ]
         then
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1 --deck "${{ inputs.RUN_DIR }}"  > $GITHUB_WORKSPACE/simeng.tmp
         else
