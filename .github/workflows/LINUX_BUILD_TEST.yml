@@ -243,7 +243,7 @@ jobs:
         name: miniBUDE openmp gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 

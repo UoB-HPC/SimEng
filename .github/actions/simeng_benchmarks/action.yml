@@ -5,6 +5,9 @@ inputs:
   RUN_DIR:
     description: directory from which the benchmark binary should be run
     required: false
+  DATA_PATH:
+    description: location of the data file(s) for this benchmarks
+    required: false
   BIN_PATH:
     description: path to the binary for the benchmark
     required: true
@@ -18,10 +21,13 @@ runs:
     - name: Run Benchmark
       shell: bash
       run: |
-        if [ ${{ inputs.RUN_DIR }} ]
+        if [ ${{ inputs.DATA_PATH }} ]
         then
-          ls "${{ inputs.RUN_DIR }}"
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1 --deck "${{ inputs.RUN_DIR }}"  > $GITHUB_WORKSPACE/simeng.tmp
+        elif [ ${{ inputs.RUN_DIR }} ]
+        then
+          cd ${{ inputs.RUN_DIR }}
+          simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1  > $GITHUB_WORKSPACE/simeng.tmp
         else
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1  > $GITHUB_WORKSPACE/simeng.tmp
         fi
