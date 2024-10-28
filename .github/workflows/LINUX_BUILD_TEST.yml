@@ -243,7 +243,7 @@ jobs:
         name: miniBUDE openmp gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -251,7 +251,7 @@ jobs:
         name: miniBUDE openmp gcc9.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -259,7 +259,7 @@ jobs:
         name: miniBUDE openmp gcc10.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -267,7 +267,7 @@ jobs:
         name: miniBUDE openmp armclang20 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -523,7 +523,7 @@ jobs:
         name: miniBUDE openmp gcc8.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc8.3.0_armv8.4+sve
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -531,7 +531,7 @@ jobs:
         name: miniBUDE openmp gcc9.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc9.3.0_armv8.4+sve
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -539,7 +539,7 @@ jobs:
         name: miniBUDE openmp gcc10.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_gcc10.3.0_armv8.4+sve
           PASS_STRING: "Largest difference was 0.000%."
 
@@ -547,7 +547,7 @@ jobs:
         name: miniBUDE openmp armclang20 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          DATA_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1
+          ARGS: "-n 64 -i 1 --deck $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/miniBUDE/bm1"
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/miniBUDE/openmp/minibude_armclang20_armv8.4+sve
           PASS_STRING: "Largest difference was 0.000%."
 
