@@ -275,7 +275,7 @@ jobs:
         name: STREAM serial gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc8.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -283,7 +283,7 @@ jobs:
         name: STREAM serial gcc9.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -291,7 +291,7 @@ jobs:
         name: STREAM serial gcc10.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -299,7 +299,7 @@ jobs:
         name: STREAM serial armclang20 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -307,7 +307,7 @@ jobs:
         name: STREAM openmp gcc8.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -315,7 +315,7 @@ jobs:
         name: STREAM openmp gcc9.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -323,7 +323,7 @@ jobs:
         name: STREAM openmp gcc10.3.0 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -331,7 +331,7 @@ jobs:
         name: STREAM openmp armclang20 armv8.4
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4
           PASS_STRING: "Solution Validates"
 
@@ -563,7 +563,7 @@ jobs:
         name: STREAM serial gcc8.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc8.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -571,7 +571,7 @@ jobs:
         name: STREAM serial gcc9.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc9.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -579,7 +579,7 @@ jobs:
         name: STREAM serial gcc10.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_gcc10.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -587,7 +587,7 @@ jobs:
         name: STREAM serial armclang20 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream_armclang20_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -595,7 +595,7 @@ jobs:
         name: STREAM openmp gcc8.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc8.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -603,7 +603,7 @@ jobs:
         name: STREAM openmp gcc9.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc9.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -611,7 +611,7 @@ jobs:
         name: STREAM openmp gcc10.3.0 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_gcc10.3.0_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
@@ -619,7 +619,7 @@ jobs:
         name: STREAM openmp armclang20 armv8.4+sve
         uses: ./.github/actions/simeng_benchmarks
         with:
-          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
+#          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks
           BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/STREAM/stream-omp_armclang20_armv8.4+sve
           PASS_STRING: "Solution Validates"
 
