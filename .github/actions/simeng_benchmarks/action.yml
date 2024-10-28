@@ -5,7 +5,7 @@ inputs:
   RUN_DIR:
     description: directory from which the benchmark binary should be run
     required: false
-  AGRS:
+  ARGS:
     description: Any additional arguments needed to run this benchmark on SimEng
     required: false
     default: ""
