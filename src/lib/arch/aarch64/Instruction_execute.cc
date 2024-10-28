@@ -3892,6 +3892,34 @@ void Instruction::execute() {
         results_[0] = sveMlaPredicated_vecs<uint32_t>(sourceValues_, VL_bits);
         break;
       }
+      case Opcode::AArch64_MOVA_4ZMXI_H_B: {  // mova {zd1.b - zd4.b},
+                                              // za0h.b[ws, offs1:offs4]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t sliceCount = VL_bits / 8;
+
+        const uint32_t ws = sourceValues_[sliceCount].get<uint32_t>();
+        const uint8_t offs1 =
+            metadata_.operands[4].sme.slice_offset.imm_range.first;
+        const uint8_t offs4 =
+            metadata_.operands[4].sme.slice_offset.imm_range.offset;
+
+        uint8_t out[4][256] = {{0}, {0}, {0}, {0}};
+
+        for (uint8_t i = offs1; i <= offs4; i++) {
+          // Get correct next row
+          const uint8_t* row =
+              sourceValues_[(ws + i) % sliceCount].getAsVector<uint8_t>();
+          // Update out and results_
+          const uint8_t index = i - offs1;
+          memcpy(out[index], row, sliceCount);
+          results_[index] = {out[index], 256};
+        }
+        break;
+      }
       case Opcode::AArch64_MOVID: {  // movi dd, #imm
         results_[0] = {static_cast<uint64_t>(metadata_.operands[1].imm), 256};
         break;

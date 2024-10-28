@@ -47,6 +47,47 @@ TEST_P(InstSme, mova) {
   CHECK_NEON(7, float, fillNeonCombined<float>({4}, {10}, SVL / 8));
 }
 
+TEST_P(InstSme, mova_tilesToVecs) {
+  // uint8_t; 4 vectors
+  initialHeapData_.resize(SVL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src, SVL / 16);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov w12, #0
+    ptrue p0.s
+
+    # Pre-fill first 4 rows of za0.b
+    ld1w {za0h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za1h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za2h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za3h.s[w12, 0]}, p0/z, [x0]
+
+
+    mova {z4.b-z7.b}, za0h.b[w12, 0:3]
+    
+    # Test Alias
+    mov w13, #1
+    dup z11.b, #3
+    mov {z8.b-z11.b}, za0h.b[w13, 0:3]
+  )");
+  for (int i = 4; i <= 10; i++) {
+    CHECK_NEON(
+        i, uint8_t,
+        fillNeon<uint8_t>({0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12, 0x32,
+                           0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB},
+                          SVL / 8));
+  }
+  CHECK_NEON(11, uint8_t, fillNeon<uint8_t>({0x00}, SVL / 8));
+}
+
 TEST_P(InstSme, fmopa) {
   // 32-bit
   RUN_AARCH64(R"(
@@ -218,15 +259,16 @@ TEST_P(InstSme, ld1w) {
     whilelo p1.s, xzr, x1
     ld1w {za1h.s[w12, 0]}, p1/z, [x0, x2, lsl #2]
   )");
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 1, uint32_t,
+                fillNeon<uint32_t>(
+                    {0x12345678, 0x98765432, 0xABCDEF01, 0xDEADBEEF}, SVL / 8));
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 3, uint32_t,
+                fillNeon<uint32_t>(
+                    {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
   CHECK_MAT_ROW(
-      AARCH64_REG_ZAS0, 1, uint64_t,
-      fillNeon<uint64_t>({0x9876543212345678, 0xDEADBEEFABCDEF01}, SVL / 8));
-  CHECK_MAT_ROW(
-      AARCH64_REG_ZAS0, 3, uint64_t,
-      fillNeon<uint64_t>({0x12345678DEADBEEF, 0xABCDEF0198765432}, SVL / 8));
-  CHECK_MAT_ROW(AARCH64_REG_ZAS1, 1, uint64_t,
-                fillNeonCombined<uint64_t>(
-                    {0x12345678DEADBEEF, 0xABCDEF0198765432}, {0}, SVL / 8));
+      AARCH64_REG_ZAS1, 1, uint32_t,
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
 
   // Vertical
   initialHeapData_.resize(SVL / 4);
