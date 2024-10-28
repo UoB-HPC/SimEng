@@ -19,11 +19,13 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.RUN_DIR }}
-        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} 2>&1 tee $GITHUB_WORKSPACE/simeng.tmp
-        STRING_FOUND=$(grep -s ${{ inputs.PASS_STRING }} $GITHUB_WORKSPACE/simeng.tmp) 
-        if [ $STRING_FOUND ]; then
+        simeng $GITHUB_WORKSPACE/configs/a64fx.yaml ${{ inputs.BIN_PATH }} > $GITHUB_WORKSPACE/simeng.tmp
+        if grep -q ${{ inputs.PASS_STRING }} "$GITHUB_WORKSPACE/simeng.tmp"
+        then
+          cat $GITHUB_WORKSPACE/simeng.tmp
           echo "Passed"
         else
+          cat $GITHUB_WORKSPACE/simeng.tmp
           echo "Failed"
           exit 1
         fi

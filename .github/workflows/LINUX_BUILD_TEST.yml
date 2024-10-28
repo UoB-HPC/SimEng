@@ -177,21 +177,11 @@ jobs:
 
       - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: CloverLeaf serial gcc8.3.0 armv8.4
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
-          simeng $GITHUB_WORKSPACE/configs/a64fx.yaml $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4 > $GITHUB_WORKSPACE/simeng.tmp
-          if [[ grep -q "This test is considered PASSED" "$GITHUB_WORKSPACE/simeng.tmp" ]]
-          then
-            cat $GITHUB_WORKSPACE/simeng.tmp
-            echo "Passed"
-          else
-            cat $GITHUB_WORKSPACE/simeng.tmp
-            echo "Failed"
-            exit 1
-          fi
-
-
+        uses: ./.github/actions/simeng_benchmarks
+        with:
+          RUN_DIR: $GITHUB_WORKSPACE/simeng-benchmarks/Data_Files/CloverLeaf
+          BIN_PATH: $GITHUB_WORKSPACE/simeng-benchmarks/binaries/CloverLeaf/serial/cloverleaf_gcc8.3.0_armv8.4
+          PASS_STRING: "This test is considered PASSED"
 #      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
 #        name: Run Benchmarks
 #        uses: ./.github/actions/simeng_benchmarks
