@@ -23,7 +23,7 @@ runs:
       run: |
         if [ ${{ inputs.DATA_PATH }} ]
         then
-          simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1 --deck "${{ inputs.RUN_DIR }}"  > $GITHUB_WORKSPACE/simeng.tmp
+          simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1 --deck "${{ inputs.DATA_PATH }}"  > $GITHUB_WORKSPACE/simeng.tmp
         elif [ ${{ inputs.RUN_DIR }} ]
         then
           cd ${{ inputs.RUN_DIR }}
