@@ -31,6 +31,7 @@ runs:
         else
           simeng "$GITHUB_WORKSPACE/configs/a64fx.yaml" "${{ inputs.BIN_PATH }}" -n 64 -i 1  > $GITHUB_WORKSPACE/simeng.tmp
         fi
+        
         if grep -q ${{ inputs.PASS_STRING }} "$GITHUB_WORKSPACE/simeng.tmp"
         then
           cat $GITHUB_WORKSPACE/simeng.tmp
