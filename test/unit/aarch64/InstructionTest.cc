@@ -627,6 +627,39 @@ TEST_F(AArch64InstructionTest, setters) {
   EXPECT_TRUE(insn.isWaitingCommit());
 }
 
+// Test predAsCounterToMasks function.
+TEST_F(AArch64InstructionTest, predAsCounterToMasks_test) {
+  // 1.5 full vectors from start, VL = 128b, uint8_t elem size
+  std::vector<std::array<uint64_t, 4>> ref(2, {0, 0, 0, 0});
+  ref[0][0] =
+      0b0000000000000000000000000000000000000000000000001111111111111111;
+  ref[1][0] =
+      0b0000000000000000000000000000000000000000000000000000000011111111;
+  // invert = 0, num active Elems = 24
+  uint64_t pn =
+      0b0000000000000000000000000000000000000000000000000000000000110001;
+  auto out = predAsCounterToMasks<uint8_t, 2>(pn, 128);
+  EXPECT_EQ(out[0][0], ref[0][0]);
+  EXPECT_EQ(out[1][0], ref[1][0]);
+
+  // 0.5 of last vector, VL = 1024b, uint64_t elem size
+  std::vector<std::array<uint64_t, 4>> ref2(4, {0, 0, 0, 0});
+  ref2[3][1] =
+      0b0000000100000001000000010000000100000001000000010000000100000001;
+  // Invert = 1, num inactive Elems = 56
+  uint64_t pn2 =
+      0b0000000000000000000000000000000000000000000000001000001110001000;
+  auto out2 = predAsCounterToMasks<uint64_t, 4>(pn2, 1024);
+  EXPECT_EQ(out2[0][0], ref2[0][0]);
+  EXPECT_EQ(out2[0][1], ref2[0][1]);
+  EXPECT_EQ(out2[1][0], ref2[1][0]);
+  EXPECT_EQ(out2[1][1], ref2[1][1]);
+  EXPECT_EQ(out2[2][0], ref2[2][0]);
+  EXPECT_EQ(out2[2][1], ref2[2][1]);
+  EXPECT_EQ(out2[3][0], ref2[3][0]);
+  EXPECT_EQ(out2[3][1], ref2[3][1]);
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

@@ -283,6 +283,42 @@ enum class InsnType : uint32_t {
   isBranch = 1 << 14
 };
 
+/** Predefined shift values for converting pred-as-counter to pred-as-mask. */
+const uint64_t predCountShiftVals[9] = {0, 1, 2, 0, 3, 0, 0, 0, 4};
+
+/** Convert Predicate-as-Mask to Predicate-as-Masks.
+ * T represents the element type (i.e. for pg.s, T = uint32_t).
+ * V represents the number of vectors the predicate-as-counter is being used
+ * for. */
+template <typename T, int V>
+std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
+    const uint64_t predAsCounter, const uint16_t VL_bits) {
+  std::vector<std::array<uint64_t, 4>> out(V, {0, 0, 0, 0});
+
+  const uint16_t elemsPerVec = VL_bits / (sizeof(T) * 8);
+  // Get predicate-as-counter information
+  const bool invert = (predAsCounter & 0b1000000000000000) != 0;
+  const uint64_t predElemCount =
+      (predAsCounter & static_cast<uint64_t>(0b0111111111111111)) >>
+      predCountShiftVals[sizeof(T)];
+
+  for (int r = 0; r < V; r++) {
+    for (int i = 0; i < elemsPerVec; i++) {
+      // Move bit to next position based on element type
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      // If invert = 1, predElemCount dictates number of initial inactive
+      // elements.
+      // If invert = 0, it is number of initial active elements.
+      if ((r * elemsPerVec) + i < predElemCount) {
+        out[r][i / (64 / sizeof(T))] |= (invert) ? 0 : shifted_active;
+      } else {
+        out[r][i / (64 / sizeof(T))] |= (invert) ? shifted_active : 0;
+      }
+    }
+  }
+  return out;
+}
+
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
