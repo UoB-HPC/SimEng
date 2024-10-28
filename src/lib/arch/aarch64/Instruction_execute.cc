@@ -2755,28 +2755,18 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1D_2Z_IMM: {  // ld1d {zt1.d, zt2.d}, png/z, [xn{,
                                            // #imm, mul vl}]
         // LOAD
-        const uint64_t* pn = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        // Get predicate-as-counter information
-        const bool invert =
-            (pn[0] & static_cast<uint64_t>(0b1000000000000000)) != 0;
-        const uint64_t predElemCount =
-            (pn[0] & static_cast<uint64_t>(0b0111111111110000)) >> 4;
+        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
 
         uint64_t out[2][32] = {{0}, {0}};
         const uint16_t partition_num = VL_bits / 64;
 
         for (int r = 0; r < 2; r++) {
           for (int i = 0; i < partition_num; i++) {
-            // If invert = 1, predElemCount dictates number of initial inactive
-            // elements.
-            // Otherwise, it is number of initial active elements.
-            if ((r * partition_num) + i < predElemCount) {
-              out[r][i] =
-                  (invert) ? 0 : memoryData_[r].getAsVector<uint64_t>()[i];
-            } else {
-              out[r][i] =
-                  (invert) ? memoryData_[r].getAsVector<uint64_t>()[i] : 0;
+            uint64_t shifted_active = 1ull << ((i % 8) * 8);
+            if (preds[r][i / 8] & shifted_active) {
+              out[r][i] = memoryData_[r].getAsVector<uint64_t>()[i];
             }
           }
         }
@@ -2787,28 +2777,18 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1D_4Z_IMM: {  // ld1d {zt1.d - zt4.d}, png/z, [xn{,
                                            // #imm, mul vl}]
         // LOAD
-        const uint64_t* pn = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        // Get predicate-as-counter information
-        const bool invert =
-            (pn[0] & static_cast<uint64_t>(0b1000000000000000)) != 0;
-        const uint64_t predElemCount =
-            (pn[0] & static_cast<uint64_t>(0b0111111111110000)) >> 4;
+        auto preds = predAsCounterToMasks<uint64_t, 4>(pn, VL_bits);
 
         uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
         const uint16_t partition_num = VL_bits / 64;
 
         for (int r = 0; r < 4; r++) {
           for (int i = 0; i < partition_num; i++) {
-            // If invert = 1, predElemCount dictates number of initial inactive
-            // elements.
-            // Otherwise, it is number of initial active elements.
-            if ((r * partition_num) + i < predElemCount) {
-              out[r][i] =
-                  (invert) ? 0 : memoryData_[r].getAsVector<uint64_t>()[i];
-            } else {
-              out[r][i] =
-                  (invert) ? memoryData_[r].getAsVector<uint64_t>()[i] : 0;
+            uint64_t shifted_active = 1ull << ((i % 8) * 8);
+            if (preds[r][i / 8] & shifted_active) {
+              out[r][i] = memoryData_[r].getAsVector<uint64_t>()[i];
             }
           }
         }
@@ -4798,6 +4778,22 @@ void Instruction::execute() {
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
         memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_ST1D_2Z_IMM: {  // st1d {zt1.d, zt2.d}, png, [xn{,
+                                           // #imm, mul vl}]
+        // STORE
+        const uint64_t* t1 = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
+        const uint64_t pn = sourceValues_[2].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+
+        memoryData_ =
+            sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
+        std::vector<RegisterValue> out2 =
+            sve_merge_store_data<uint64_t>(t2, preds[1].data(), VL_bits);
+        memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         break;
       }
       case Opcode::AArch64_ST1Fourv16b: {  // st1 {vt.16b, vt2.16b, vt3.16b,

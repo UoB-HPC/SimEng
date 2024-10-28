@@ -1002,6 +1002,27 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST1D_2Z_IMM: {  // st1d {zt1.d, zt2.d}, png, [xn{,
+                                           // #imm, mul vl}]
+        const uint64_t pn = sourceValues_[2].get<uint64_t>();
+        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+        const uint16_t partition_num = VL_bits / 64;
+
+        const uint64_t base = sourceValues_[3].get<uint64_t>();
+        const int64_t offset =
+            static_cast<int64_t>(metadata_.operands[3].mem.disp);
+        const uint64_t addr = base + (offset * partition_num * 8);
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+
+        generatePredicatedContiguousAddressBlocks(addr, partition_num, 8, 8,
+                                                  preds[0].data(), addresses);
+        generatePredicatedContiguousAddressBlocks(addr + (VL_bits / 8),
+                                                  partition_num, 8, 8,
+                                                  preds[1].data(), addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_ST2D_IMM: {  // st2d {zt1.d, zt2.d}, pg, [<xn|sp>{,
                                         // #imm, mul vl}]
         const uint64_t* p = sourceValues_[2].getAsVector<uint64_t>();
