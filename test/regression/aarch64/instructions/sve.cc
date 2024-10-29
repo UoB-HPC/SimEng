@@ -6977,6 +6977,41 @@ TEST_P(InstSve, st1w) {
   }
 }
 
+TEST_P(InstSve, st1w_multivec) {
+  // Two vectors
+  initialHeapData_.resize(VL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src, VL / 16);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    sub sp, sp, #4095
+    mov x1, #2
+    mov x4, #256
+    madd x4, x4, x4, x4
+    ptrue p0.s
+    ptrue pn8.s
+    ld1w {z0.s}, p0/z, [x0]
+    ld1w {z1.s}, p0/z, [x0, #1, mul vl]
+    st1w {z0.s, z1.s}, pn8, [sp]
+    st1w {z0.s, z1.s}, pn8, [x4, #4, mul vl]
+    st1w {z0.s, z1.s}, pn8, [x4, x1, lsl #2]
+  )");
+
+  for (uint64_t i = 0; i < (VL / 16); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 4)),
+              src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(65792 + (4 * (VL / 8)) + (i * 4)),
+              src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(65792 + 8 + (i * 4)), src[i % 4]);
+  }
+}
+
 TEST_P(InstSve, str_predicate) {
   initialHeapData_.resize(VL / 64);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());

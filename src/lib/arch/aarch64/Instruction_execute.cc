@@ -5054,6 +5054,26 @@ void Instruction::execute() {
         memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
+      case Opcode::AArch64_ST1W_2Z:  // st1w {zt1.s, zt2.s}, png, [xn, xm, lsl
+                                     // #2]
+        // STORE
+        [[fallthrough]];
+      case Opcode::AArch64_ST1W_2Z_IMM: {  // st1w {zt1.s, zt2.s}, png, [xn{,
+                                           // #imm, mul vl}]
+        // STORE
+        const uint32_t* t1 = sourceValues_[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
+        const uint64_t pn = sourceValues_[2].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+
+        memoryData_ =
+            sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
+        std::vector<RegisterValue> out2 =
+            sve_merge_store_data<uint32_t>(t2, preds[1].data(), VL_bits);
+        memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
+        break;
+      }
       case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
         // STORE
         const uint16_t* t = sourceValues_[0].getAsVector<uint16_t>();
