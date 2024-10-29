@@ -91,8 +91,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 8}});
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_B:    // ld1b {zatv.b[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm}]
+      case Opcode::AArch64_LD1_MXIPXX_V_B:  // ld1b {zatv.b[ws, #imm]}, pg/z,
+                                            // [<xn|sp>{, xm}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_LD1_MXIPXX_H_B: {  // ld1b {zath.b[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm}]
         // SME
@@ -104,8 +106,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_D:    // ld1d {zatv.d[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm, lsl #3}]
+      case Opcode::AArch64_LD1_MXIPXX_V_D:  // ld1d {zatv.d[ws, #imm]}, pg/z,
+                                            // [<xn|sp>{, xm, lsl #3}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_LD1_MXIPXX_H_D: {  // ld1d {zath.d[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME
@@ -117,8 +121,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_H:    // ld1h {zatv.h[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm, lsl #1}]
+      case Opcode::AArch64_LD1_MXIPXX_V_H:  // ld1h {zatv.h[ws, #imm]}, pg/z,
+                                            // [<xn|sp>{, xm, lsl #1}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_LD1_MXIPXX_H_H: {  // ld1h {zath.h[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #1}]
         // SME
@@ -130,8 +136,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_Q:    // ld1q {zatv.q[ws]}, pg/z,
-                                              // [<xn|sp>{, xm, lsl #4}]
+      case Opcode::AArch64_LD1_MXIPXX_V_Q:  // ld1q {zatv.q[ws]}, pg/z,
+                                            // [<xn|sp>{, xm, lsl #4}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_LD1_MXIPXX_H_Q: {  // ld1q {zath.q[ws]}, pg/z,
                                               // [<xn|sp>{, xm, lsl #4}]
         // SME
@@ -143,8 +151,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
-      case Opcode::AArch64_LD1_MXIPXX_V_S:    // ld1w {zatv.s[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm, LSL #2}]
+      case Opcode::AArch64_LD1_MXIPXX_V_S:  // ld1w {zatv.s[ws, #imm]}, pg/z,
+                                            // [<xn|sp>{, xm, LSL #2}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME
@@ -551,19 +561,32 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[0].get<uint64_t>() + offset, 8}});
         break;
       }
-      case Opcode::AArch64_LDRBui:     // ldr bt, [xn, #imm]
-      case Opcode::AArch64_LDRBpre:    // ldr bt, [xn, #imm]!
-      case Opcode::AArch64_LDRDui:     // ldr dt, [xn, #imm]
-      case Opcode::AArch64_LDRDpre:    // ldr dt, [xn, #imm]!
-      case Opcode::AArch64_LDRHui:     // ldr ht, [xn, #imm]
-      case Opcode::AArch64_LDRHpre:    // ldr ht, [xn, #imm]!
-      case Opcode::AArch64_LDRQui:     // ldr qt, [xn, #imm]
-      case Opcode::AArch64_LDRQpre:    // ldr qt, [xn, #imm]!
-      case Opcode::AArch64_LDRSui:     // ldr st, [xn, #imm]
-      case Opcode::AArch64_LDRSpre:    // ldr st, [xn, #imm]!
-      case Opcode::AArch64_LDRWui:     // ldr wt, [xn, #imm]
-      case Opcode::AArch64_LDRWpre:    // ldr wt, [xn, #imm]!
-      case Opcode::AArch64_LDRXui:     // ldr xt, [xn, #imm]
+      case Opcode::AArch64_LDRBui:  // ldr bt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRBpre:  // ldr bt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRDui:  // ldr dt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRDpre:  // ldr dt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRHui:  // ldr ht, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRHpre:  // ldr ht, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRQui:  // ldr qt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRQpre:  // ldr qt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRSui:  // ldr st, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRSpre:  // ldr st, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRWui:  // ldr wt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDRWpre:  // ldr wt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_LDRXui:  // ldr xt, [xn, #imm]
+        [[fallthrough]];
       case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
@@ -572,12 +595,18 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_LDRBpost:    // ldr bt, [xn], #imm
-      case Opcode::AArch64_LDRDpost:    // ldr dt, [xn], #imm
-      case Opcode::AArch64_LDRHpost:    // ldr ht, [xn], #imm
-      case Opcode::AArch64_LDRQpost:    // ldr qt, [xn], #imm
-      case Opcode::AArch64_LDRSpost:    // ldr st, [xn], #imm
-      case Opcode::AArch64_LDRWpost:    // ldr wt, [xn], #imm
+      case Opcode::AArch64_LDRBpost:  // ldr bt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDRDpost:  // ldr dt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDRHpost:  // ldr ht, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDRQpost:  // ldr qt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDRSpost:  // ldr st, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDRWpost:  // ldr wt, [xn], #imm
+        [[fallthrough]];
       case Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
         std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[0].get<uint64_t>(), 1,
@@ -695,15 +724,24 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{base, 4}, {base + 4, 4}});
         break;
       }
-      case Opcode::AArch64_LDPDi:      // ldp dt1, dt2, [xn, #imm]
-      case Opcode::AArch64_LDPDpre:    // ldp dt1, dt2, [xn, #imm!]
-      case Opcode::AArch64_LDPQi:      // ldp qt1, qt2, [xn, #imm]
-      case Opcode::AArch64_LDPQpre:    // ldp qt1, qt2, [xn, #imm!]
-      case Opcode::AArch64_LDPSi:      // ldp st1, st2, [xn, #imm]
-      case Opcode::AArch64_LDPSpre:    // ldp st1, st2, [xn, #imm!]
-      case Opcode::AArch64_LDPWi:      // ldp wt1, wt2, [xn, #imm]
-      case Opcode::AArch64_LDPWpre:    // ldp wt1, wt2, [xn, #imm!]
-      case Opcode::AArch64_LDPXi:      // ldp xt1, xt2, [xn, #imm]
+      case Opcode::AArch64_LDPDi:  // ldp dt1, dt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPDpre:  // ldp dt1, dt2, [xn, #imm!]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPQi:  // ldp qt1, qt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPQpre:  // ldp qt1, qt2, [xn, #imm!]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPSi:  // ldp st1, st2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPSpre:  // ldp st1, st2, [xn, #imm!]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPWi:  // ldp wt1, wt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPWpre:  // ldp wt1, wt2, [xn, #imm!]
+        [[fallthrough]];
+      case Opcode::AArch64_LDPXi:  // ldp xt1, xt2, [xn, #imm]
+        [[fallthrough]];
       case Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm!]
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
@@ -712,10 +750,14 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_LDPDpost:    // ldp dt1, dt2, [xn], #imm
-      case Opcode::AArch64_LDPQpost:    // ldp qt1, qt2, [xn], #imm
-      case Opcode::AArch64_LDPSpost:    // ldp st1, st2, [xn], #imm
-      case Opcode::AArch64_LDPWpost:    // ldp wt1, wt2, [xn], #imm
+      case Opcode::AArch64_LDPDpost:  // ldp dt1, dt2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDPQpost:  // ldp qt1, qt2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDPSpost:  // ldp st1, st2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_LDPWpost:  // ldp wt1, wt2, [xn], #imm
+        [[fallthrough]];
       case Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
         std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[0].get<uint64_t>(), 2,
@@ -1008,8 +1050,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_B:    // st1b {zath.b[ws, #imm]}, pg,
-                                              // [<xn|sp>{, xm}]
+      case Opcode::AArch64_ST1_MXIPXX_H_B:  // st1b {zath.b[ws, #imm]}, pg,
+                                            // [<xn|sp>{, xm}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_ST1_MXIPXX_V_B: {  // st1b {zatv.b[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm}]
         // SME
@@ -1029,8 +1073,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_D:    // st1d {zath.d[ws, #imm]}, pg,
-                                              // [<xn|sp>{, xm, lsl #3}]
+      case Opcode::AArch64_ST1_MXIPXX_H_D:  // st1d {zath.d[ws, #imm]}, pg,
+                                            // [<xn|sp>{, xm, lsl #3}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
         // SME
@@ -1050,8 +1096,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_H:    // st1h {zath.h[ws, #imm]}, pg,
-                                              // [<xn|sp>{, xm, lsl #1}]
+      case Opcode::AArch64_ST1_MXIPXX_H_H:  // st1h {zath.h[ws, #imm]}, pg,
+                                            // [<xn|sp>{, xm, lsl #1}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_ST1_MXIPXX_V_H: {  // st1h {zatv.h[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #1}]
         // SME
@@ -1073,6 +1121,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_ST1_MXIPXX_H_Q:  // st1q {zath.q[ws]}, pg, [<xn|sp>{,
                                             // xm, lsl #4}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_ST1_MXIPXX_V_Q: {  // st1q {zatv.q[ws]}, pg,
                                               // [<xn|sp>{, xm, lsl #4}]
         // SME
@@ -1092,8 +1142,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-      case Opcode::AArch64_ST1_MXIPXX_H_S:    // st1w {zath.s[ws, #imm]}, pg/z,
-                                              // [<xn|sp>{, xm, LSL #2}]
+      case Opcode::AArch64_ST1_MXIPXX_H_S:  // st1w {zath.s[ws, #imm]}, pg/z,
+                                            // [<xn|sp>{, xm, LSL #2}]
+        // SME
+        [[fallthrough]];
       case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
                                               // [<xn|sp>{, xm, LSL #2}]
         // SME
@@ -1471,15 +1523,24 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 8}});
         break;
       }
-      case Opcode::AArch64_STPDi:      // stp dt1, dt2, [xn, #imm]
-      case Opcode::AArch64_STPDpre:    // stp dt1, dt2, [xn, #imm]!
-      case Opcode::AArch64_STPQi:      // stp qt1, qt2, [xn, #imm]
-      case Opcode::AArch64_STPQpre:    // stp qt1, qt2, [xn, #imm]!
-      case Opcode::AArch64_STPSi:      // stp st1, st2, [xn, #imm]
-      case Opcode::AArch64_STPSpre:    // stp st1, st2, [xn, #imm]!
-      case Opcode::AArch64_STPWi:      // stp wt1, wt2, [xn, #imm]
-      case Opcode::AArch64_STPWpre:    // stp wt1, wt2, [xn, #imm]!
-      case Opcode::AArch64_STPXi:      // stp xt1, xt2, [xn, #imm]
+      case Opcode::AArch64_STPDi:  // stp dt1, dt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STPDpre:  // stp dt1, dt2, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STPQi:  // stp qt1, qt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STPQpre:  // stp qt1, qt2, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STPSi:  // stp st1, st2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STPSpre:  // stp st1, st2, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STPWi:  // stp wt1, wt2, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STPWpre:  // stp wt1, wt2, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STPXi:  // stp xt1, xt2, [xn, #imm]
+        [[fallthrough]];
       case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
@@ -1488,10 +1549,14 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_STPDpost:    // stp dt1, dt2, [xn], #imm
-      case Opcode::AArch64_STPQpost:    // stp qt1, qt2, [xn], #imm
-      case Opcode::AArch64_STPSpost:    // stp st1, st2, [xn], #imm
-      case Opcode::AArch64_STPWpost:    // stp wt1, wt2, [xn], #imm
+      case Opcode::AArch64_STPDpost:  // stp dt1, dt2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STPQpost:  // stp qt1, qt2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STPSpost:  // stp st1, st2, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STPWpost:  // stp wt1, wt2, [xn], #imm
+        [[fallthrough]];
       case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
         std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[2].get<uint64_t>(), 2,
@@ -1541,19 +1606,32 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>() + offset, 8}});
         break;
       }
-      case Opcode::AArch64_STRBui:     // str bt, [xn, #imm]
-      case Opcode::AArch64_STRBpre:    // str bt, [xn, #imm]!
-      case Opcode::AArch64_STRDui:     // str dt, [xn, #imm]
-      case Opcode::AArch64_STRDpre:    // str dt, [xn, #imm]!
-      case Opcode::AArch64_STRHui:     // str ht, [xn, #imm]
-      case Opcode::AArch64_STRHpre:    // str ht, [xn, #imm]!
-      case Opcode::AArch64_STRQui:     // str qt, [xn, #imm]
-      case Opcode::AArch64_STRQpre:    // str qt, [xn, #imm]!
-      case Opcode::AArch64_STRSui:     // str st, [xn, #imm]
-      case Opcode::AArch64_STRSpre:    // str st, [xn, #imm]!
-      case Opcode::AArch64_STRWui:     // str wt, [xn, #imm]
-      case Opcode::AArch64_STRWpre:    // str wt, [xn, #imm]!
-      case Opcode::AArch64_STRXui:     // str xt, [xn, #imm]
+      case Opcode::AArch64_STRBui:  // str bt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRBpre:  // str bt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRDui:  // str dt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRDpre:  // str dt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRHui:  // str ht, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRHpre:  // str ht, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRQui:  // str qt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRQpre:  // str qt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRSui:  // str st, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRSpre:  // str st, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRWui:  // str wt, [xn, #imm]
+        [[fallthrough]];
+      case Opcode::AArch64_STRWpre:  // str wt, [xn, #imm]!
+        [[fallthrough]];
+      case Opcode::AArch64_STRXui:  // str xt, [xn, #imm]
+        [[fallthrough]];
       case Opcode::AArch64_STRXpre: {  // str xt, [xn, #imm]!
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(
@@ -1562,12 +1640,18 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_STRBpost:    // str bt, [xn], #imm
-      case Opcode::AArch64_STRDpost:    // str dt, [xn], #imm
-      case Opcode::AArch64_STRHpost:    // str ht, [xn], #imm
-      case Opcode::AArch64_STRQpost:    // str qt, [xn], #imm
-      case Opcode::AArch64_STRSpost:    // str st, [xn], #imm
-      case Opcode::AArch64_STRWpost:    // str wt, [xn], #imm
+      case Opcode::AArch64_STRBpost:  // str bt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STRDpost:  // str dt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STRHpost:  // str ht, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STRQpost:  // str qt, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STRSpost:  // str st, [xn], #imm
+        [[fallthrough]];
+      case Opcode::AArch64_STRWpost:  // str wt, [xn], #imm
+        [[fallthrough]];
       case Opcode::AArch64_STRXpost: {  // str xt, [xn], #imm
         std::vector<memory::MemoryAccessTarget> addresses;
         generateContiguousAddresses(sourceValues_[1].get<uint64_t>(), 1,

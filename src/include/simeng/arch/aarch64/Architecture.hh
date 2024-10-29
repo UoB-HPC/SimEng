@@ -74,7 +74,7 @@ class Architecture : public arch::Architecture {
   bool isStreamingModeEnabled() const;
 
   /** Returns if the SME ZA Register is enabled. */
-  bool isZA_RegisterEnabled() const;
+  bool isZARegisterEnabled() const;
 
   /** Update the value of SVCRval_. */
   void setSVCRval(const uint64_t newVal) const;

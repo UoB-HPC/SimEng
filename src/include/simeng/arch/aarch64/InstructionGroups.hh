@@ -4,7 +4,33 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/** The IDs of the instruction groups for AArch64 instructions. */
+/** The IDs of the instruction groups for AArch64 instructions.
+ * Each new group must contain 14 entries to ensure correct group assignment and
+ * general functionality.
+ * Their order must be as follows:
+ *  - BASE
+ *  - BASE_SIMPLE
+ *  - BASE_SIMPLE_ARTH
+ *  - BASE_SIMPLE_ARTH_NOSHIFT
+ *  - BASE_SIMPLE_LOGICAL
+ *  - BASE_SIMPLE_LOGICAL_NOSHIFT
+ *  - BASE_SIMPLE_CMP
+ *  - BASE_SIMPLE_CVT
+ *  - BASE_MUL
+ *  - BASE_DIV_OR_SQRT
+ *  - LOAD_BASE
+ *  - STORE_ADDRESS_BASE
+ *  - STORE_DATA_BASE
+ *  - STORE_BASE
+ *
+ * An exception to the above is "Parent" groups which do not require the LOAD_*
+ * or STORE_* groups.
+ * "Parent" groups allow for easier grouping of similar groups that may have
+ * identical execution latencies, ports, etc. For example, FP is the parent
+ * group of SCALAR and VECTOR.
+ * In simulation, an instruction's allocated group will never be a "Parent"
+ * group; they are only used to simplify config file creation and management.
+ */
 namespace InstructionGroups {
 const uint16_t INT = 0;
 const uint16_t INT_SIMPLE = 1;

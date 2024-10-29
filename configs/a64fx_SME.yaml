@@ -65,12 +65,7 @@ Ports:
     Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
-    - STORE_DATA_INT
-    - STORE_DATA_SCALAR
-    - STORE_DATA_VECTOR
-    - STORE_DATA_SVE
-    - STORE_DATA_STREAMING_SVE
-    - STORE_DATA_SME
+    - STORE_DATA
   3:
     Portname: FLB
     Instruction-Group-Support:
@@ -86,36 +81,16 @@ Ports:
   5:
     Portname: EAGA
     Instruction-Group-Support: 
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE
-    - LOAD_STREAMING_SVE
-    - LOAD_SME
-    - STORE_ADDRESS_INT
-    - STORE_ADDRESS_SCALAR
-    - STORE_ADDRESS_VECTOR
-    - STORE_ADDRESS_SVE
-    - STORE_ADDRESS_STREAMING_SVE
-    - STORE_ADDRESS_SME
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
     Instruction-Group-Support:
-    - LOAD_INT
-    - LOAD_SCALAR
-    - LOAD_VECTOR
-    - LOAD_SVE
-    - LOAD_STREAMING_SVE
-    - LOAD_SME
-    - STORE_ADDRESS_INT
-    - STORE_ADDRESS_SCALAR
-    - STORE_ADDRESS_VECTOR
-    - STORE_ADDRESS_SVE
-    - STORE_ADDRESS_STREAMING_SVE
-    - STORE_ADDRESS_SME
+    - LOAD
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP

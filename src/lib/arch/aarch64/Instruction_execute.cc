@@ -69,7 +69,7 @@ void Instruction::execute() {
   // 0th bit of SVCR register determines if streaming-mode is enabled.
   const bool SMenabled = architecture_.isStreamingModeEnabled();
   // 1st bit of SVCR register determines if ZA register is enabled.
-  const bool ZAenabled = architecture_.isZA_RegisterEnabled();
+  const bool ZAenabled = architecture_.isZARegisterEnabled();
   // When streaming mode is enabled, the architectural vector length goes from
   // SVE's VL to SME's SVL.
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
@@ -125,8 +125,9 @@ void Instruction::execute() {
           const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
-          // Slice element is active IFF:
-          //  - Element in 1st source pred corresponding to horiz. slice is TRUE
+          // Slice element is active IFF all of the following conditions hold:
+          //  - Element in 1st source pred corresponding to horizontal
+          //    slice is TRUE
           //  - Corresponding element in 2nd source pred is TRUE
           const uint64_t shifted_active_pn = 1ull << ((row % 8) * 8);
           if (pn[row / 8] & shifted_active_pn) {
@@ -158,8 +159,9 @@ void Instruction::execute() {
           const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
           std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
-          // Slice element is active IFF:
-          //  - Element in 1st source pred corresponding to horiz. slice is TRUE
+          // Slice element is active IFF all of the following conditions hold:
+          //  - Element in 1st source pred corresponding to horizontal
+          //    slice is TRUE
           //  - Corresponding element in 2nd source pred is TRUE
           const uint64_t shifted_active_pn = 1ull << ((row % 16) * 4);
           if (pn[row / 16] & shifted_active_pn) {
@@ -191,9 +193,10 @@ void Instruction::execute() {
           const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
-          // Slice element is active IFF:
+          // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
-          //  - Element in 2nd source pred corresponding to vert. slice is TRUE
+          //  - Element in 2nd source pred corresponding to vertical
+          //    slice is TRUE
           const uint64_t shifted_active_pn = 1ull << ((row % 8) * 8);
           if (pn[row / 8] & shifted_active_pn) {
             // Corresponding slice element is active (i.e. all elements in row).
@@ -227,9 +230,10 @@ void Instruction::execute() {
           const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
           std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
-          // Slice element is active IFF:
+          // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
-          //  - Element in 2nd source pred corresponding to vert. slice is TRUE
+          //  - Element in 2nd source pred corresponding to vertical
+          //    slice is TRUE
           const uint64_t shifted_active_pn = 1ull << ((row % 16) * 4);
           if (pn[row / 16] & shifted_active_pn) {
             // Corresponding slice element is active (i.e. all elements in row).
@@ -3178,11 +3182,12 @@ void Instruction::execute() {
         const uint8_t* zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          uint8_t* row =
-              const_cast<uint8_t*>(sourceValues_[i].getAsVector<uint8_t>());
+          const uint8_t* row = sourceValues_[i].getAsVector<uint8_t>();
+          uint8_t out[256] = {0};
+          memcpy(out, row, rowCount * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
-          if (pg[i / 64] & shifted_active) row[sliceNum] = zn[i];
-          results_[i] = {(char*)row, 256};
+          if (pg[i / 64] & shifted_active) out[sliceNum] = zn[i];
+          results_[i] = {out, 256};
         }
         break;
       }
@@ -3204,11 +3209,12 @@ void Instruction::execute() {
             sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          uint64_t* row =
-              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          memcpy(out, row, rowCount * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (pg[i / 8] & shifted_active) row[sliceNum] = zn[i];
-          results_[i] = {(char*)row, 256};
+          if (pg[i / 8] & shifted_active) out[sliceNum] = zn[i];
+          results_[i] = {out, 256};
         }
         break;
       }
@@ -3230,11 +3236,12 @@ void Instruction::execute() {
             sourceValues_[rowCount + 2].getAsVector<uint16_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          uint16_t* row =
-              const_cast<uint16_t*>(sourceValues_[i].getAsVector<uint16_t>());
+          const uint16_t* row = sourceValues_[i].getAsVector<uint16_t>();
+          uint16_t out[128] = {0};
+          memcpy(out, row, rowCount * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
-          if (pg[i / 32] & shifted_active) row[sliceNum] = zn[i];
-          results_[i] = {(char*)row, 256};
+          if (pg[i / 32] & shifted_active) out[sliceNum] = zn[i];
+          results_[i] = {out, 256};
         }
         break;
       }
@@ -3255,16 +3262,18 @@ void Instruction::execute() {
 
         for (uint16_t i = 0; i < rowCount; i++) {
           // Use uint64_t in place of 128-bit
-          uint64_t* row =
-              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          // *2 in memcpy as need 128-bit elements but using uint64_t
+          memcpy(out, row, rowCount * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
             // Need to move two consecutive 64-bit elements
-            row[2 * sliceNum] = zn[2 * i];
-            row[2 * sliceNum + 1] = zn[2 * i + 1];
+            out[2 * sliceNum] = zn[2 * i];
+            out[2 * sliceNum + 1] = zn[2 * i + 1];
           }
-          results_[i] = {(char*)row, 256};
+          results_[i] = {out, 256};
         }
         break;
       }
@@ -3286,11 +3295,12 @@ void Instruction::execute() {
             sourceValues_[rowCount + 2].getAsVector<uint32_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          uint32_t* row =
-              const_cast<uint32_t*>(sourceValues_[i].getAsVector<uint32_t>());
+          const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
+          uint32_t out[64] = {0};
+          memcpy(out, row, rowCount * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (pg[i / 16] & shifted_active) row[sliceNum] = zn[i];
-          results_[i] = {(char*)row, 256};
+          if (pg[i / 16] & shifted_active) out[sliceNum] = zn[i];
+          results_[i] = {out, 256};
         }
         break;
       }
@@ -3508,15 +3518,14 @@ void Instruction::execute() {
         const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          uint8_t* row =
-              const_cast<uint8_t*>(sourceValues_[i].getAsVector<uint8_t>());
+          const uint8_t* row = sourceValues_[i].getAsVector<uint8_t>();
+          uint8_t out[256] = {0};
+          memcpy(out, row, partition_num * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
           if (pg[i / 64] & shifted_active) {
-            row[sliceNum] = data[i];
-          } else {
-            row[sliceNum] = 0;
+            out[sliceNum] = data[i];
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+          results_[i] = RegisterValue(out, 256);
         }
         break;
       }
@@ -3536,15 +3545,14 @@ void Instruction::execute() {
         const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          uint64_t* row =
-              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          memcpy(out, row, partition_num * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) {
-            row[sliceNum] = data[i];
-          } else {
-            row[sliceNum] = 0;
+            out[sliceNum] = data[i];
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+          results_[i] = RegisterValue(out, 256);
         }
         break;
       }
@@ -3564,15 +3572,14 @@ void Instruction::execute() {
         const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          uint16_t* row =
-              const_cast<uint16_t*>(sourceValues_[i].getAsVector<uint16_t>());
+          const uint16_t* row = sourceValues_[i].getAsVector<uint16_t>();
+          uint16_t out[128] = {0};
+          memcpy(out, row, partition_num * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (pg[i / 32] & shifted_active) {
-            row[sliceNum] = data[i];
-          } else {
-            row[sliceNum] = 0;
+            out[sliceNum] = data[i];
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+          results_[i] = RegisterValue(out, 256);
         }
         break;
       }
@@ -3593,20 +3600,18 @@ void Instruction::execute() {
 
         for (int i = 0; i < partition_num; i++) {
           // Using uint64_t as no 128-bit data type
-          uint64_t* row =
-              const_cast<uint64_t*>(sourceValues_[i].getAsVector<uint64_t>());
+          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          uint64_t out[32] = {0};
+          // *2 in memcpy as need 128-bit but using uint64_t
+          memcpy(out, row, partition_num * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
             // As using uint64_t need to modify 2 elements
-            row[2 * sliceNum] = data[2 * i];
-            row[2 * sliceNum + 1] = data[2 * i + 1];
-          } else {
-            // As using uint64_t need to modify 2 elements
-            row[2 * sliceNum] = 0;
-            row[2 * sliceNum + 1] = 0;
+            out[2 * sliceNum] = data[2 * i];
+            out[2 * sliceNum + 1] = data[2 * i + 1];
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+          results_[i] = RegisterValue(out, 256);
         }
         break;
       }
@@ -3626,15 +3631,14 @@ void Instruction::execute() {
         const uint32_t* data = memoryData_[0].getAsVector<uint32_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          uint32_t* row =
-              const_cast<uint32_t*>(sourceValues_[i].getAsVector<uint32_t>());
+          const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
+          uint32_t out[64] = {0};
+          memcpy(out, row, partition_num * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
-            row[sliceNum] = data[i];
-          } else {
-            row[sliceNum] = 0;
+            out[sliceNum] = data[i];
           }
-          results_[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+          results_[i] = RegisterValue(out, 256);
         }
         break;
       }

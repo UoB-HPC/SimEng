@@ -625,7 +625,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         // Check if SVE or Predicate instructions need their group updating due
         // to SVE Streaming Mode activeness being different from when the
         // instruction was first decoded.
-        if (cachedUops[uop].checkStreamingGroup()) {
+        if (cachedUops[uop].checkStreamingGroupAndUpdate()) {
           // If the instruction's group has changed then update its execution
           // info. The newly set group is most likely to be the most accurate,
           // as an incorrect group allocation is only achieved when an

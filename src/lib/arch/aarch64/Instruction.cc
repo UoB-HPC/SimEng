@@ -164,7 +164,7 @@ const Architecture& Instruction::getArchitecture() const {
 
 InstructionException Instruction::getException() const { return exception_; }
 
-bool Instruction::checkStreamingGroup() {
+bool Instruction::checkStreamingGroupAndUpdate() {
   // Only instruction groups that depend on SVE Streaming Mode are SVE and
   // PREDICATE
   const uint16_t currentGroup = instructionGroup_;

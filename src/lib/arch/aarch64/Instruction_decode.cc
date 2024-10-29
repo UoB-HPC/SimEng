@@ -688,7 +688,7 @@ void Instruction::decode() {
   } else if (isInstruction(InsnType::isShift))
     group += 2;
   else
-    group += 3;  // Default is {Data type}_SIMPLE_ARTH
+    group += 3;  // Default is {Data type}_SIMPLE_ARTH_NOSHIFT
   instructionGroup_ = group;
 }
 

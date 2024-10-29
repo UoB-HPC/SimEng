@@ -196,7 +196,7 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
     // Check if SVE or Predicate instructions need their group updating due to
     // SVE Streaming Mode activeness being different from when the instruction
     // was first decoded.
-    if (cachedInsn.checkStreamingGroup()) {
+    if (cachedInsn.checkStreamingGroupAndUpdate()) {
       // If the instruction's group has changed then update its execution info.
       // The newly set group is most likely to be the most accurate, as an
       // incorrect group allocation is only achieved when an exception/flush is
@@ -302,7 +302,7 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
 bool Architecture::isStreamingModeEnabled() const { return SVCRval_ & 1; }
 
 // 1st bit of SVCR register determines if ZA register is enabled.
-bool Architecture::isZA_RegisterEnabled() const { return SVCRval_ & 2; }
+bool Architecture::isZARegisterEnabled() const { return SVCRval_ & 2; }
 
 }  // namespace aarch64
 }  // namespace arch

@@ -395,7 +395,7 @@ class Instruction : public simeng::Instruction {
    * this instruction was first decoded, and updates the instruction group
    * accordingly if required.
    * Returns TRUE if the group was updated, FALSE otherwise. */
-  bool checkStreamingGroup();
+  bool checkStreamingGroupAndUpdate();
 
  private:
   /** Process the instruction's metadata to determine source/destination

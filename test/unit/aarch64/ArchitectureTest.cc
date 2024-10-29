@@ -286,19 +286,19 @@ TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
 
 TEST_F(AArch64ArchitectureTest, isSM_ZA_enabled) {
   EXPECT_FALSE(arch->isStreamingModeEnabled());
-  EXPECT_FALSE(arch->isZA_RegisterEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
   arch->setSVCRval(1);
   EXPECT_TRUE(arch->isStreamingModeEnabled());
-  EXPECT_FALSE(arch->isZA_RegisterEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
   arch->setSVCRval(2);
   EXPECT_FALSE(arch->isStreamingModeEnabled());
-  EXPECT_TRUE(arch->isZA_RegisterEnabled());
+  EXPECT_TRUE(arch->isZARegisterEnabled());
   arch->setSVCRval(3);
   EXPECT_TRUE(arch->isStreamingModeEnabled());
-  EXPECT_TRUE(arch->isZA_RegisterEnabled());
+  EXPECT_TRUE(arch->isZARegisterEnabled());
   arch->setSVCRval(0);
   EXPECT_FALSE(arch->isStreamingModeEnabled());
-  EXPECT_FALSE(arch->isZA_RegisterEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
 }
 
 }  // namespace aarch64
