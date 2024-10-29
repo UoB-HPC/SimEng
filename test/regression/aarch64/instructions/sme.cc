@@ -575,6 +575,38 @@ TEST_P(InstSme, st1w) {
   }
 }
 
+TEST_P(InstSme, umopa) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+
+    zero {za}
+
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+
+    dup z3.b, #7
+    dup z4.b, #4
+    mov x0, #0
+    mov x1, #2
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.b, xzr, x0
+
+    umopa za2.s, p0/m, p2/m, z3.b, z4.b
+  )");
+  for (uint64_t i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
+                  fillNeon<uint32_t>({96}, (SVL / 8)));
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
+                  fillNeon<uint32_t>({112}, (SVL / 16)));
+  }
+}
+
 TEST_P(InstSme, zero) {
   // ZT0
   RUN_AARCH64(R"(
