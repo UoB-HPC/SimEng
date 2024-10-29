@@ -2733,6 +2733,31 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1B_2Z:  // ld1b {zt1.b, zt2.b}, png/z, [xn, xm]
+        // LOAD
+        [[fallthrough]];
+      case Opcode::AArch64_LD1B_2Z_IMM: {  // ld1b {zt1.b, zt2.b}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        // LOAD
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint8_t, 2>(pn, VL_bits);
+
+        uint8_t out[2][256] = {{0}, {0}};
+        const uint16_t partition_num = VL_bits / 8;
+
+        for (int r = 0; r < 2; r++) {
+          for (int i = 0; i < partition_num; i++) {
+            uint64_t shifted_active = 1ull << (i % 64);
+            if (preds[r][i / 64] & shifted_active) {
+              out[r][i] = memoryData_[r].getAsVector<uint8_t>()[i];
+            }
+          }
+        }
+        results_[0] = {out[0], 256};
+        results_[1] = {out[1], 256};
+        break;
+      }
       case Opcode::AArch64_LD1D: {  // ld1d  {zt.d}, pg/z, [xn, xm, lsl #3]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();

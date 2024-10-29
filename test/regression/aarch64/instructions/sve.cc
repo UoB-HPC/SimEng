@@ -4893,6 +4893,7 @@ TEST_P(InstSve, ld1rw) {
 }
 
 TEST_P(InstSve, ld1b) {
+  // Single vector
   initialHeapData_.resize(VL / 4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   std::vector<uint8_t> src = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
@@ -4930,6 +4931,94 @@ TEST_P(InstSve, ld1b) {
                                VL / 16));
   std::rotate(src.begin(), src.begin() + ((VL / 8) % 16), src.end());
   CHECK_NEON(2, uint8_t, fillNeon<uint8_t>(src, VL / 16));
+
+  // Multi vector
+  initialHeapData_.resize(VL);
+  uint8_t* heap8_multi = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src_multi = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56,
+                                    0x34, 0x12, 0x32, 0x54, 0x76, 0x98,
+                                    0x01, 0xEF, 0xCD, 0xAB};
+  ;
+  fillHeap<uint8_t>(heap8_multi, src_multi, VL);
+
+  // Two vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.b, #1
+    dup z1.b, #2
+    dup z2.b, #3
+    dup z3.b, #4
+
+    ptrue pn8.b
+    mov x1, #2
+
+    ld1b {z0.b, z1.b}, pn8/z, [x0, #2, mul vl]
+    ld1b {z2.b, z3.b}, pn8/z, [x0, x1]
+  )");
+  uint16_t base = (VL / 8) * 2;
+  uint16_t offset = (VL / 8);
+  CHECK_NEON(0, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[(base) % 16],
+                     src[(base + 1) % 16],
+                     src[(base + 2) % 16],
+                     src[(base + 3) % 16],
+                     src[(base + 4) % 16],
+                     src[(base + 5) % 16],
+                     src[(base + 6) % 16],
+                     src[(base + 7) % 16],
+                     src[(base + 8) % 16],
+                     src[(base + 9) % 16],
+                     src[(base + 10) % 16],
+                     src[(base + 11) % 16],
+                     src[(base + 12) % 16],
+                     src[(base + 13) % 16],
+                     src[(base + 14) % 16],
+                     src[(base + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(1, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + offset)) % 16],
+                     src[((base + offset) + 1) % 16],
+                     src[((base + offset) + 2) % 16],
+                     src[((base + offset) + 3) % 16],
+                     src[((base + offset) + 4) % 16],
+                     src[((base + offset) + 5) % 16],
+                     src[((base + offset) + 6) % 16],
+                     src[((base + offset) + 7) % 16],
+                     src[((base + offset) + 8) % 16],
+                     src[((base + offset) + 9) % 16],
+                     src[((base + offset) + 10) % 16],
+                     src[((base + offset) + 11) % 16],
+                     src[((base + offset) + 12) % 16],
+                     src[((base + offset) + 13) % 16],
+                     src[((base + offset) + 14) % 16],
+                     src[((base + offset) + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(2, uint8_t,
+             fillNeon<uint8_t>({src[2], src[3], src[4], src[5], src[6], src[7],
+                                src[8], src[9], src[10], src[11], src[12],
+                                src[13], src[14], src[15], src[0], src[1]},
+                               VL / 8));
+  CHECK_NEON(
+      3, uint8_t,
+      fillNeon<uint8_t>({src[(2 + offset) % 16], src[(3 + offset) % 16],
+                         src[(4 + offset) % 16], src[(5 + offset) % 16],
+                         src[(6 + offset) % 16], src[(7 + offset) % 16],
+                         src[(8 + offset) % 16], src[(9 + offset) % 16],
+                         src[(10 + offset) % 16], src[(11 + offset) % 16],
+                         src[(12 + offset) % 16], src[(13 + offset) % 16],
+                         src[(14 + offset) % 16], src[(15 + offset) % 16],
+                         src[(0 + offset) % 16], src[(1 + offset) % 16]},
+                        VL / 8));
 }
 
 TEST_P(InstSve, ld1sw_gather) {
