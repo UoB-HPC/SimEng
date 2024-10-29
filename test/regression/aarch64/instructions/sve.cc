@@ -5277,10 +5277,14 @@ TEST_P(InstSve, ld1w) {
 
     dup z0.s, #1
     dup z1.s, #2
+    dup z2.s, #3
+    dup z3.s, #4
 
     ptrue pn8.s
+    mov x1, #2
 
     ld1w {z0.s, z1.s}, pn8/z, [x0, #2, mul vl]
+    ld1w {z2.s, z3.s}, pn8/z, [x0, x1, lsl #2]
   )");
   uint16_t base = (VL / 32) * 2;
   uint16_t offset = (VL / 32);
@@ -5294,6 +5298,13 @@ TEST_P(InstSve, ld1w) {
           {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
            src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
           VL / 8));
+
+  CHECK_NEON(2, uint32_t,
+             fillNeon<uint32_t>({src[2], src[3], src[0], src[1]}, VL / 8));
+  CHECK_NEON(3, uint32_t,
+             fillNeon<uint32_t>({src[(2 + offset) % 4], src[(3 + offset) % 4],
+                                 src[(0 + offset) % 4], src[(1 + offset) % 4]},
+                                VL / 8));
 
   // Four vector
   RUN_AARCH64(R"(

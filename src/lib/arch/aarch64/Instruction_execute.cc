@@ -3251,6 +3251,10 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1W_2Z:  // ld1w {zt1.s, zt2.s}, png/z, [xn, xm,
+                                     // lsl #2]
+        // LOAD
+        [[fallthrough]];
       case Opcode::AArch64_LD1W_2Z_IMM: {  // ld1w {zt1.s, zt2.s}, png/z, [xn{,
                                            // #imm, mul vl}]
         // LOAD
