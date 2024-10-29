@@ -3251,6 +3251,52 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1W_2Z_IMM: {  // ld1w {zt1.s, zt2.s}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        // LOAD
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+
+        uint32_t out[2][64] = {{0}, {0}};
+        const uint16_t partition_num = VL_bits / 32;
+
+        for (int r = 0; r < 2; r++) {
+          for (int i = 0; i < partition_num; i++) {
+            uint64_t shifted_active = 1ull << ((i % 16) * 4);
+            if (preds[r][i / 16] & shifted_active) {
+              out[r][i] = memoryData_[r].getAsVector<uint32_t>()[i];
+            }
+          }
+        }
+        results_[0] = {out[0], 256};
+        results_[1] = {out[1], 256};
+        break;
+      }
+      case Opcode::AArch64_LD1W_4Z_IMM: {  // ld1w {zt1.s - zt4.s}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        // LOAD
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint32_t, 4>(pn, VL_bits);
+
+        uint32_t out[4][64] = {{0}, {0}, {0}, {0}};
+        const uint16_t partition_num = VL_bits / 32;
+
+        for (int r = 0; r < 4; r++) {
+          for (int i = 0; i < partition_num; i++) {
+            uint64_t shifted_active = 1ull << ((i % 16) * 4);
+            if (preds[r][i / 16] & shifted_active) {
+              out[r][i] = memoryData_[r].getAsVector<uint32_t>()[i];
+            }
+          }
+        }
+        results_[0] = {out[0], 256};
+        results_[1] = {out[1], 256};
+        results_[2] = {out[2], 256};
+        results_[3] = {out[3], 256};
+        break;
+      }
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
         // LOAD
         const int index = metadata_.operands[0].vector_index;

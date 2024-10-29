@@ -333,7 +333,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
 
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const uint64_t offset =
-            static_cast<uint64_t>(metadata_.operands[5].mem.disp);
+            static_cast<uint64_t>(metadata_.operands[3].mem.disp);
         const uint64_t addr = base + (offset * partition_num * 8);
 
         std::vector<memory::MemoryAccessTarget> addresses;
@@ -405,6 +405,46 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         const uint64_t addr = base + (offset * partition_num * 4);
 
         setMemoryAddresses({addr, static_cast<uint16_t>(VL_bits / 8)});
+        break;
+      }
+      case Opcode::AArch64_LD1W_2Z_IMM: {  // ld1w {zt1.s, zt2.s}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        const uint16_t partition_num = VL_bits / 32;
+
+        const uint64_t base = sourceValues_[1].get<uint64_t>();
+        const uint64_t offset =
+            static_cast<uint64_t>(metadata_.operands[3].mem.disp);
+        const uint64_t addr = base + (offset * partition_num * 4);
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(2);
+
+        uint16_t blockSize = VL_bits / 8;
+        addresses.push_back({addr, blockSize});
+        addresses.push_back({addr + blockSize, blockSize});
+
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_LD1W_4Z_IMM: {  // ld1w {zt1.s - zt4.s}, png/z, [xn{,
+                                           // #imm, mul vl}]
+        const uint16_t partition_num = VL_bits / 32;
+
+        const uint64_t base = sourceValues_[1].get<uint64_t>();
+        const uint64_t offset =
+            static_cast<uint64_t>(metadata_.operands[5].mem.disp);
+        const uint64_t addr = base + (offset * partition_num * 4);
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(4);
+
+        uint16_t blockSize = VL_bits / 8;
+        addresses.push_back({addr, blockSize});
+        addresses.push_back({addr + blockSize, blockSize});
+        addresses.push_back({addr + 2 * blockSize, blockSize});
+        addresses.push_back({addr + 3 * blockSize, blockSize});
+
+        setMemoryAddresses(std::move(addresses));
         break;
       }
       case Opcode::AArch64_LD2D: {  // ld2d {zt1.d, zt2.d}, pg/z, [xn|sp, xm,

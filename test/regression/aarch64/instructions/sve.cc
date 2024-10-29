@@ -5221,11 +5221,11 @@ TEST_P(InstSve, ld1h) {
 }
 
 TEST_P(InstSve, ld1w) {
+  // Single vector
   initialHeapData_.resize(VL / 4);
   uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
   fillHeap<uint32_t>(heap32, src, VL / 16);
-
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -5260,6 +5260,81 @@ TEST_P(InstSve, ld1w) {
   CHECK_NEON(3, uint64_t,
              fillNeonCombined<uint64_t>(
                  {0x12345678DEADBEEF, 0xABCDEF0198765432}, {0}, VL / 8));
+
+  // Multi vector
+  initialHeapData_.resize(VL);
+  uint32_t* heap32_multi = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src_multi = {0xDEADBEEF, 0x12345678, 0x98765432,
+                                     0xABCDEF01};
+  fillHeap<uint32_t>(heap32_multi, src_multi, VL / 4);
+
+  // Two vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.s, #1
+    dup z1.s, #2
+
+    ptrue pn8.s
+
+    ld1w {z0.s, z1.s}, pn8/z, [x0, #2, mul vl]
+  )");
+  uint16_t base = (VL / 32) * 2;
+  uint16_t offset = (VL / 32);
+  CHECK_NEON(0, uint32_t,
+             fillNeon<uint32_t>({src[(base) % 4], src[(base + 1) % 4],
+                                 src[(base + 2) % 4], src[(base + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(
+      1, uint32_t,
+      fillNeon<uint32_t>(
+          {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
+           src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
+          VL / 8));
+
+  // Four vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.s, #1
+    dup z1.s, #2
+    dup z2.s, #3
+    dup z3.s, #4
+
+    ptrue pn8.s
+
+    ld1w {z0.s - z3.s}, pn8/z, [x0, #4, mul vl]
+  )");
+  base = (VL / 32) * 4;
+  offset = (VL / 32);
+  CHECK_NEON(0, uint32_t,
+             fillNeon<uint32_t>({src[(base) % 4], src[(base + 1) % 4],
+                                 src[(base + 2) % 4], src[(base + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(
+      1, uint32_t,
+      fillNeon<uint32_t>(
+          {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
+           src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
+          VL / 8));
+  CHECK_NEON(2, uint32_t,
+             fillNeon<uint32_t>({src[((base + (offset * 2))) % 4],
+                                 src[((base + (offset * 2)) + 1) % 4],
+                                 src[((base + (offset * 2)) + 2) % 4],
+                                 src[((base + (offset * 2)) + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(3, uint32_t,
+             fillNeon<uint32_t>({src[((base + (offset * 3))) % 4],
+                                 src[((base + (offset * 3)) + 1) % 4],
+                                 src[((base + (offset * 3)) + 2) % 4],
+                                 src[((base + (offset * 3)) + 3) % 4]},
+                                VL / 8));
 }
 
 TEST_P(InstSve, ld2d) {
