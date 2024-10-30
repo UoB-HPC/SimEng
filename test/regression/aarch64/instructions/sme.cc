@@ -7,7 +7,7 @@ namespace {
 
 using InstSme = AArch64RegressionTest;
 
-TEST_P(InstSme, mova) {
+TEST_P(InstSme, mova_tileToVec) {
   // 8-bit
   RUN_AARCH64(R"(
     smstart
@@ -45,6 +45,60 @@ TEST_P(InstSme, mova) {
   CHECK_NEON(5, float, fillNeon<float>({2}, SVL / 8));
   CHECK_NEON(6, float, fillNeonCombined<float>({3}, {5}, SVL / 8));
   CHECK_NEON(7, float, fillNeonCombined<float>({4}, {10}, SVL / 8));
+}
+
+TEST_P(InstSme, mova_zaToVecs) {
+  // 4 vectors
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # Set 4 of the za rows
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+
+    mov w9, #0
+    mova {z20.d - z23.d}, za.d[w9, #0, vgx4]
+    mov {z24.d - z27.d}, za.d[w8, #1, vgx4]
+  )");
+  // Check extracted un-effected rows (two uint32_t values of 96 equal one
+  // uint64_t value of 412316860512)
+  CHECK_NEON(20, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(21, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(22, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(23, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  // Check extracted effected rows (two uint32_t values concatonated into one
+  // uint64_t value)
+  CHECK_NEON(24, uint64_t, fillNeon<uint64_t>({2044404433372}, SVL / 8));
+  CHECK_NEON(25, uint64_t, fillNeon<uint64_t>({2207613190658}, SVL / 8));
+  CHECK_NEON(26, uint64_t, fillNeon<uint64_t>({2370821947944}, SVL / 8));
+  CHECK_NEON(27, uint64_t, fillNeon<uint64_t>({2534030705230}, SVL / 8));
 }
 
 TEST_P(InstSme, mova_tilesToVecs) {

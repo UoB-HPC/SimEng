@@ -3986,17 +3986,30 @@ void Instruction::execute() {
         const uint8_t offs4 =
             metadata_.operands[4].sme.slice_offset.imm_range.offset;
 
-        uint8_t out[4][256] = {{0}, {0}, {0}, {0}};
-
         for (uint8_t i = offs1; i <= offs4; i++) {
-          // Get correct next row
-          const uint8_t* row =
-              sourceValues_[(ws + i) % sliceCount].getAsVector<uint8_t>();
-          // Update out and results_
           const uint8_t index = i - offs1;
-          memcpy(out[index], row, sliceCount);
-          results_[index] = {out[index], 256};
+          results_[index] = sourceValues_[(ws + i) % sliceCount];
         }
+        break;
+      }
+      case Opcode::AArch64_MOVA_VG4_4ZMXI: {  // mova {zd1.d - zd4.d}, za.d[wv,
+                                              // offs, vgx4]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        // Get ZA stride between quarters and index into each ZA quarter
+        const uint16_t zaStride = zaRowCount / 4;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[4].sme.slice_offset.imm) %
+                                 zaStride;
+
+        results_[0] = sourceValues_[zaIndex];
+        results_[1] = sourceValues_[zaStride + zaIndex];
+        results_[2] = sourceValues_[(2 * zaStride) + zaIndex];
+        results_[3] = sourceValues_[(3 * zaStride) + zaIndex];
         break;
       }
       case Opcode::AArch64_MOVID: {  // movi dd, #imm
