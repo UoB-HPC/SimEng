@@ -575,6 +575,67 @@ TEST_P(InstSme, st1w) {
   }
 }
 
+TEST_P(InstSme, udot_vgx4) {
+  // 8-bit to 32-bit widening
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # initialise registers
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm values of {8, 9, 10, 11}
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({476}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({514}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({552}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({590}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, umopa) {
   // 32-bit
   RUN_AARCH64(R"(
