@@ -1640,9 +1640,13 @@ RegisterValue sveUdot_indexed(
   D out[256 / sizeof(D)] = {0};
   for (int i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
     D acc = zd[i];
+    // Index into zm selects which D-type element within each 128-bit vector
+    // segment to use
+    int base = i - (i % (128 / (sizeof(D) * 8)));
+    int zmIndex = base + index;
     for (int j = 0; j < W; j++) {
       acc += (static_cast<D>(zn[(W * i) + j]) *
-              static_cast<N>(zm[(W * index) + j]));
+              static_cast<N>(zm[(W * zmIndex) + j]));
     }
     out[i] = acc;
   }

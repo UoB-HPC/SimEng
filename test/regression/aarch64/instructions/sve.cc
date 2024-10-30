@@ -7662,7 +7662,8 @@ TEST_P(InstSve, udot) {
     mov x8, #214
     svc #0
 
-    ldr q0, [x0]
+    ptrue p0.b
+    ld1rqb	{ z0.b }, p0/z, [x0]
 
     dup z2.b, #2
     dup z3.b, #3
@@ -7672,6 +7673,7 @@ TEST_P(InstSve, udot) {
     udot z4.s, z2.b, z0.b[0]
     udot z5.s, z3.b, z0.b[3]
   )");
+
   CHECK_NEON(4, uint32_t, fillNeon<uint32_t>({1534}, VL / 8));
   CHECK_NEON(5, uint32_t, fillNeon<uint32_t>({629}, VL / 8));
 }
