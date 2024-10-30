@@ -7192,7 +7192,6 @@ TEST_P(InstSve, st1w_multivec) {
     st1w {z0.s, z1.s}, pn8, [x4, #4, mul vl]
     st1w {z0.s, z1.s}, pn8, [x4, x1, lsl #2]
   )");
-
   for (uint64_t i = 0; i < (VL / 16); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
                                        4095 + (i * 4)),
@@ -7200,6 +7199,37 @@ TEST_P(InstSve, st1w_multivec) {
     EXPECT_EQ(getMemoryValue<uint32_t>(65792 + (4 * (VL / 8)) + (i * 4)),
               src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>(65792 + 8 + (i * 4)), src[i % 4]);
+  }
+
+  // Four vectors
+  initialHeapData_.resize(VL);
+  heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  fillHeap<uint32_t>(heap32, src, VL / 4);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    sub sp, sp, #4095
+    mov x1, #2
+    mov x4, #256
+    madd x4, x4, x4, x4
+    ptrue p0.s
+    ptrue pn8.s
+    ld1w {z0.s}, p0/z, [x0]
+    ld1w {z1.s}, p0/z, [x0, #1, mul vl]
+    ld1w {z2.s}, p0/z, [x0, #2, mul vl]
+    ld1w {z3.s}, p0/z, [x0, #3, mul vl]
+    st1w {z0.s - z3.s}, pn8, [sp]
+    st1w {z0.s - z3.s}, pn8, [x4, #8, mul vl]
+  )");
+  for (uint64_t i = 0; i < (VL / 8); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 4)),
+              src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(65792 + (8 * (VL / 8)) + (i * 4)),
+              src[i % 4]);
   }
 }
 
