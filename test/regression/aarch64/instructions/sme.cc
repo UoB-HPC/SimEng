@@ -142,6 +142,126 @@ TEST_P(InstSme, mova_tilesToVecs) {
   CHECK_NEON(11, uint8_t, fillNeon<uint8_t>({0x00}, SVL / 8));
 }
 
+TEST_P(InstSme, fmla_indexed_vgx4) {
+  // float
+  initialHeapData_.resize(SVL);
+  float* heapf = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> srcf = {0.0f, 1.0f, 2.0f, 3.0f};
+  fillHeap<float>(heapf, srcf, SVL / 4);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.s, #3.0
+    fdup z2.s, #8.0
+    ptrue p0.s
+    ptrue p1.s
+    fmopa za0.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za1.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za2.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za3.s, p0/m, p1/m, z1.s, z2.s
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.s, #0.25
+    fdup z5.s, #1.5
+    fdup z6.s, #-0.5
+    fdup z7.s, #-2.5
+    ld1w {z10.s}, p0/z, [x0]
+
+    fmla za.s[w8, #1, vgx4], {z4.s - z7.s}, z10.s[2]
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0f
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.5f}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({27.0f}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({23.0f}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({19.0f}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.0f}, (SVL / 8)));
+    }
+  }
+
+  // double
+  initialHeapData_.resize(SVL);
+  double* heapd = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> srcd = {2.0f, 3.0f};
+  fillHeap<double>(heapd, srcd, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.d, #3.0
+    fdup z2.d, #8.0
+    ptrue p0.d
+    ptrue p1.d
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za1.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za2.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za3.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za4.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za5.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za6.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za7.d, p0/m, p1/m, z1.d, z2.d
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.d, #0.25
+    fdup z5.d, #1.5
+    fdup z6.d, #-0.5
+    fdup z7.d, #-2.5
+    ld1d {z10.d}, p0/z, [x0]
+
+    fmla za.d[w8, #1, vgx4], {z4.d - z7.d}, z10.d[0]
+  )");
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0f
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.5}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({27.0}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({23.0}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({19.0}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.0}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, fmopa) {
   // 32-bit
   RUN_AARCH64(R"(
@@ -629,7 +749,7 @@ TEST_P(InstSme, st1w) {
   }
 }
 
-TEST_P(InstSme, udot_vgx4) {
+TEST_P(InstSme, udot_Indexed_vgx4) {
   // 8-bit to 32-bit widening
   initialHeapData_.resize(SVL / 8);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());

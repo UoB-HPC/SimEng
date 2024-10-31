@@ -1824,6 +1824,112 @@ void Instruction::execute() {
             [](double x, double y) -> double { return std::fmin(x, y); });
         break;
       }
+      case Opcode::AArch64_FMLA_VG4_M4ZZI_D: {  // fmla za.d[wv, offs, vgx4],
+                                                // {zn1.d - zn4.d}, zm.d[index]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 64;
+        // Get ZA stride between quarters and index into each ZA quarter
+        const uint16_t zaStride = zaRowCount / 4;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+        // Get zm vector and zm's index
+        const double* zm = sourceValues_[zaRowCount + 5].getAsVector<double>();
+        const int zmIndex = metadata_.operands[5].vector_index;
+
+        // Pre-set all ZA result rows as only 4 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        // Loop over each source vector and destination vector (from the za
+        // single-vector group) pair
+        for (int r = 0; r < 4; r++) {
+          // For ZA single-vector groups of 4 vectors (vgx4), each vector is in
+          // a different quarter of ZA; indexed into it by Wv+off.
+          const double* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<double>();
+          const double* znr =
+              sourceValues_[zaRowCount + 1 + r].getAsVector<double>();
+          double out[32] = {0.0};
+          // Loop over all elements of output row vector `zaRow`
+          for (int e = 0; e < elemCount; e++) {
+            // This instruction multiplies each element of the current `znr` by
+            // an indexed element of `zm` and destructively adds the result to
+            // the corresponding element in the current `zaRow`.
+            //
+            // The index for `zm` specifies which element in each 128-bit
+            // segment to use. The 128-bit segment of `zm` currently in use
+            // corresponds to the 128-bit segment that the current element of
+            // `znr` and `zaRow` is within.
+
+            // MOD 2 as there are 2 64-bit elements per 128-bit segment of `zm`
+            const int zmSegBase = e - (e % 2);
+            out[e] = zaRow[e] + (znr[e] * zm[zmSegBase + zmIndex]);
+          }
+          // Update results_ for completed row
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
+      case Opcode::AArch64_FMLA_VG4_M4ZZI_S: {  // fmla za.s[wv, offs, vgx4],
+                                                // {zn1.s - zn4.s}, zm.s[index]
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 32;
+        // Get ZA stride between quarters and index into each ZA quarter
+        const uint16_t zaStride = zaRowCount / 4;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+        // Get zm vector and zm's index
+        const float* zm = sourceValues_[zaRowCount + 5].getAsVector<float>();
+        const int zmIndex = metadata_.operands[5].vector_index;
+
+        // Pre-set all ZA result rows as only 4 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        // Loop over each source vector and destination vector (from the za
+        // single-vector group) pair
+        for (int r = 0; r < 4; r++) {
+          // For ZA single-vector groups of 4 vectors (vgx4), each vector is in
+          // a different quarter of ZA; indexed into it by Wv+off.
+          const float* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<float>();
+          const float* znr =
+              sourceValues_[zaRowCount + 1 + r].getAsVector<float>();
+          float out[64] = {0.0f};
+          // Loop over all elements of output row vector `zaRow`
+          for (int e = 0; e < elemCount; e++) {
+            // This instruction multiplies each element of the current `znr` by
+            // an indexed element of `zm` and destructively adds the result to
+            // the corresponding element in the current `zaRow`.
+            //
+            // The index for `zm` specifies which element in each 128-bit
+            // segment to use. The 128-bit segment of `zm` currently in use
+            // corresponds to the 128-bit segment that the current element of
+            // `znr` and `zaRow` is within.
+
+            // MOD 4 as there are 4 32-bit elements per 128-bit segment of `zm`
+            const int zmSegBase = e - (e % 4);
+            out[e] = zaRow[e] + (znr[e] * zm[zmSegBase + zmIndex]);
+          }
+          // Update results_ for completed row
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
       case Opcode::AArch64_FMLA_ZPmZZ_D: {  // fmla zd.d, pg/m, zn.d, zm.d
         results_[0] = sveMlaPredicated_vecs<double>(sourceValues_, VL_bits);
         break;
