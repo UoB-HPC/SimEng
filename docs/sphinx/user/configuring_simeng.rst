@@ -99,10 +99,10 @@ AArch64
 - Conditional-Count
     The number of physical status/flag/conditional-code registers.
 
-- Matrix-Count (Optional)
+- SME-Matrix-Count (Optional)
     The number of physical ``za`` Arm SME registers.
 
-- Table-Count (Optional)
+- SME-Lookup-Table-Count (Optional)
     The number of physical SME Lookup Table registers (``zt0``).
 
 RISC-V

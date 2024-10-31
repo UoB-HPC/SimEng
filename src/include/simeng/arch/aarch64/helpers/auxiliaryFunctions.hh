@@ -125,7 +125,6 @@ bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
 
 /** Function to check if NZCV conditions hold. */
 inline bool conditionHolds(uint8_t cond, uint8_t nzcv) {
-  // Due to Capstone enum changes, need to add 1 to cond
   bool inverse = cond & 1;
   uint8_t upper = cond >> 1;
   bool n = (nzcv >> 3) & 1;

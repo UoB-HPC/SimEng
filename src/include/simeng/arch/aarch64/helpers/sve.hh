@@ -1046,7 +1046,7 @@ RegisterValue sveMax_vecImm(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `max zdn, pg/m zdn,
+/** Helper function for SVE instructions with the format `max zdn, pg/m, zdn,
  * zm`.
  * T represents the type of sourceValues (e.g. for zdn.d, T = uint64_t).
  * Returns correctly formatted RegisterValue. */

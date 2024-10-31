@@ -136,7 +136,7 @@ There are several useful variables that execution behaviours have access to:
   This is the output vector, into which ``RegisterValue`` instances containing the results should be placed. Each entry in the vector corresponds to a destination register.
 
   Some instructions have "implicit" destination registers: in these cases, the implicit destinations are added to the **start** of the results vector. For example, ``subs w0, w1, #1`` writes explicitly to ``w0``, but also implicitly sets the "NZCV" comparison flags. In this case, ``results[0]`` is expected to be the updated NZCV flags, while ``results[1]`` is expected to be the new value of ``w0``.
-  Some Load and Store instructions update the base memory address register (pre- or post-indexing). These registers are also classes as implicit destination registers and thus will be added to the start of the results vector. For example, ``ldr	x1, [x0], #8`` writes explicitly to ``x1`` but also writes implicitly to ``x0``. In this case, ``results[0]`` is expected to be the updated ``x0`` value (``x0 + 8``) and ``results[1]`` is expected to be the new value of ``x1``.
+  Some Load and Store instructions update the base memory address register (pre- or post-indexing). These registers are also classed as implicit destination registers and thus will be added to the start of the results vector. For example, ``ldr	x1, [x0], #8`` writes explicitly to ``x1`` but also writes implicitly to ``x0``. In this case, ``results[0]`` is expected to be the updated ``x0`` value (``x0 + 8``) and ``results[1]`` is expected to be the new value of ``x1``.
 
   Memory instructions may have a "writeback" variant, where the register containing the address is updated by an offset during execution. In these cases, the address register is added as a destination *after* the other registers, corresponding with the textual representation of the registers. E.g., the instruction ``ldr x1, [x2, #8]!`` will expect the value of ``x1`` in ``results[0]``, while the updated address ``x2`` should be placed in ``results[1]``.
 
@@ -226,7 +226,7 @@ Concerning SVE & SME loads and stores, an effort should be made to merge contigu
 Instruction aliases
 *******************
 
-Although Capstone has been configured to produce the disassembly information for the "real" instruction rather than that of its (preferred) alias, the instruction's mnemonic and operand string will still be that of its alias. Hence, if an exception occurs the printed instruction informtion may not match the internal opcode used.
+Although Capstone has been configured to produce the disassembly information for the "real" instruction rather than that of its (preferred) alias, the instruction's mnemonic and operand string will still be that of its alias. Hence, if an exception occurs the printed instruction information may not match the internal opcode used.
 
 Common Instruction Execution behaviour issues
 *********************************************

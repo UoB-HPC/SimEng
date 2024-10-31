@@ -84,7 +84,7 @@ class MicroDecoder {
 
   // Default objects
   /** Default capstone instruction structure. */
-  cs_aarch64 default_info = {AArch64CC_Invalid, false, false, 0, {}};
+  cs_aarch64 default_info = {AArch64CC_Invalid, false, false, false, 0, {}};
 
   /** Default register. */
   cs_aarch64_op default_op = {0,

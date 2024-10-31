@@ -39,7 +39,6 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
  * `aarch64_reg` enum. Updates to the Capstone library version may cause this to
  * break.
- * TODO: Add multi-register enum decoding.
  * */
 Register csRegToRegister(aarch64_reg reg) {
   // Do not need check for AARCH64_REG_Vn as in Capstone, they are aliased as Qn
@@ -109,6 +108,7 @@ Register csRegToRegister(aarch64_reg reg) {
   // AARCH64_REG_P0 -> +15 are 256-bit (P) "predicate-as-mask" registers.
   // Excludes #16 (FFR).
   // AARCH64_REG_PN0 -> +15 are 256-bit (PN) "predicate-as-counter" registers.
+  // Occupy same registers as (P) predicates but use a different encoding.
   if (AARCH64_REG_P0 <= reg && reg <= AARCH64_REG_PN15) {
     return {RegisterType::PREDICATE,
             static_cast<uint16_t>(static_cast<uint16_t>(reg - AARCH64_REG_P0) %
@@ -273,10 +273,16 @@ void Instruction::decode() {
       if (op.mem.index != AARCH64_REG_INVALID) {
         // Register offset; add to sources
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.mem.index);
+        // Early check for WZR/XZR registers used as scalar index. Allows SME
+        // instructions to avoid checking all source operands later on.
+        if (sourceRegisters_[sourceRegisterCount_] ==
+            RegisterType::ZERO_REGISTER) {
+          sourceValues_[sourceRegisterCount_] = RegisterValue(0, 8);
+        } else {
+          sourceOperandsPending_++;
+        }
         sourceRegisterCount_++;
-        sourceOperandsPending_++;
       }
-
     } else if (op.type == AARCH64_OP_SME) {
       setInstructionType(InsnType::isSMEData);
       std::vector<Register> regs = getZARowVectors(
@@ -340,8 +346,7 @@ void Instruction::decode() {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         sourceRegisterCount_++;
         sourceOperandsPending_++;
-      }
-      if (op.sysop.sub_type == AARCH64_OP_REG_MSR) {
+      } else if (op.sysop.sub_type == AARCH64_OP_REG_MSR) {
         destinationRegisters_[destinationRegisterCount_] = {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount_++;
@@ -854,17 +859,16 @@ void Instruction::decode() {
     setInstructionType(InsnType::isScalarData);
   }
 
-  // if (!(isInstruction(InsnType::isSMEData))) {
-  // Catch zero register references and pre-complete those operands - not
-  // applicable to SME instructions
-  for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
-    if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
-      sourceValues_[i] = RegisterValue(0, 8);
-      sourceOperandsPending_--;
+  if (!(isInstruction(InsnType::isSMEData))) {
+    // Catch zero register references and pre-complete those operands - not
+    // applicable to SME instructions
+    for (uint16_t i = 0; i < sourceRegisterCount_; i++) {
+      if (sourceRegisters_[i] == RegisterType::ZERO_REGISTER) {
+        sourceValues_[i] = RegisterValue(0, 8);
+        sourceOperandsPending_--;
+      }
     }
-  }
-  // } else {
-  if (isInstruction(InsnType::isSMEData)) {
+  } else {
     // For SME instructions, resize the following structures to have the
     // exact amount of space required
     sourceRegisters_.resize(sourceRegisterCount_);

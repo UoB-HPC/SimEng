@@ -16,7 +16,8 @@
       FloatingPoint/SVE-Count: 90,
       Predicate-Count: 17, 
       Conditional-Count: 128,
-      Matrix-Count: 2,
+      SME-Matrix-Count: 2,
+      SME-Lookup-Table-Count: 8,
     },
   L1-Data-Memory:
     {

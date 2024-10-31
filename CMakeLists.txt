@@ -22,8 +22,6 @@ endif()
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a relatively small part of it
 FetchContent_Declare(
         llvm
-        # URL https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.0/llvm-project-19.1.0.src.tar.xz
-        # URL_HASH MD5=cfecaf29f50dce67836d32ca6b927e1d
          URL https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz
          URL_HASH MD5=81cd0be5ae6f1ad8961746116d426a96
 )
@@ -43,9 +41,6 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
   GIT_TAG next-update # Branch for SimEng version 0.9.7
   GIT_PROGRESS TRUE
-
-  # Old Git tag pre-Armv9.2
-  # GIT_TAG e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
 )
 
 cmake_policy(SET CMP0048 NEW)
@@ -155,7 +150,7 @@ if(SIMENG_ENABLE_TESTS)
 
       # Check LLVM version
     if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "18.2"))
-      message(FATAL_ERROR "LLVM version must be >= 8.0 and <= 18.2")
+      message(FATAL_ERROR "LLVM version must be >= 8.0 and < 18.2")
     endif()
 
       # Print message containing if the full test suite will run

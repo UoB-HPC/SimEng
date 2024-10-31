@@ -21,6 +21,8 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   }
 
   cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_ON);
+  // This second Capstone option reverses instruction aliases, and instead
+  // means all operand information is that of the "real" underlying instruction.
   cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_DETAIL_REAL);
 
   // Generate zero-indexed system register map

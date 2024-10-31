@@ -42,12 +42,19 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_ADR_LSL_ZZZ_D_0:  // example bytecode = c8a0e704
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_D_2:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_D_3:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_S_0:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_S_1:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_S_2:
+      [[fallthrough]];
     case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
       // Change the last 2 Z-regs from one MEM operand to two REG operands
       operandCount = 3;
@@ -63,13 +70,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     }
     case Opcode::AArch64_CASALW:  // Example bytecode - 02fce188
+      [[fallthrough]];
     case Opcode::AArch64_CASALX:
       // Remove implicit destination (MEM base reg)
       implicitDestinationCount = 0;
       break;
     case Opcode::AArch64_ADD_ZI_B:  // Example bytecode - 00c12025
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZI_H:
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZI_S: {
       // Incorrect access types
       operands[0].access = CS_AC_WRITE;
@@ -77,22 +88,34 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     }
     case Opcode::AArch64_SMAX_ZI_B:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_H:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_S:  // Example bytecode - 03c0a825
-    case Opcode::AArch64_AND_ZI:     // Example bytecode - 00068005
+      [[fallthrough]];
+    case Opcode::AArch64_AND_ZI:  // Example bytecode - 00068005
       // Incorrect access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       break;
     case Opcode::AArch64_FSUB_ZPmI_D:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmI_H:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmI_S:  // Example bytecode - 00849965
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmI_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmI_H:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmI_S:  // Example bytecode - 00809a65
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmI_D:  // Example bytecode - 0584d865
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmI_H:
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmI_S: {
       // Incorrect access types
       operands[0].access = CS_AC_WRITE;
@@ -101,56 +124,107 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_D:  // Example bytecode - 4901da04
+      [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_B:
+      [[fallthrough]];
     case Opcode::AArch64_SMULH_ZPmZ_B:  // Example bytecode - 20001204
+      [[fallthrough]];
     case Opcode::AArch64_SMULH_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMULH_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_SMULH_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_B:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_SMIN_ZPmZ_S:  // Example bytecode - 01008a04
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_B:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_S:  // Example bytecode - 01008804
-    case Opcode::AArch64_MUL_ZPmZ_B:   // Example bytecode - 40001004
+      [[fallthrough]];
+    case Opcode::AArch64_MUL_ZPmZ_B:  // Example bytecode - 40001004
+      [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FSUBR_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FSUBR_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FSUBR_ZPmZ_S:  // Example bytecode - 24808365
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmZ_S:  // Example bytecode - 24808165
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_S:  // Example bytecode - 83808265
+      [[fallthrough]];
     case Opcode::AArch64_FDIV_ZPmZ_D:  // Example bytecode - 0184cd65
+      [[fallthrough]];
     case Opcode::AArch64_FDIV_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FDIV_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_D:  // Example bytecode - 0184cc65
+      [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FADDA_VPZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FADDA_VPZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FADDA_VPZ_S:  // Example bytecode - 01249865
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_D:  // Example bytecode - 6480c065
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FCADD_ZPmZ_D:  // Example bytecode - 2080c064
+      [[fallthrough]];
     case Opcode::AArch64_FCADD_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_FCADD_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZPmZ_B:  // Example bytecode - 00000004
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_ADD_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_B:  // Example bytecode - 20001904
+      [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_H:
+      [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_S:
       // Incorrect access types
       operands[0].access = CS_AC_WRITE;

@@ -84,7 +84,6 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
-// TODO: Handle multi-register aarch64_reg operands
 /** Get the size of the data to be accessed from/to memory. */
 inline uint8_t getDataSize(cs_aarch64_op op) {
   // No V-register enum identifiers exist. Instead, depending on whether a full
@@ -118,7 +117,11 @@ inline uint8_t getDataSize(cs_aarch64_op op) {
       case AARCH64LAYOUT_VL_B:
         return 1;
       default:
-        assert(false && "Unknown VAS type");
+        std::cerr << "[SimEng] Cannot determine size of Arm V vector register "
+                     "elements with `reg` value "
+                  << op.reg << " and `vas` value of " << vas << ". Exiting..."
+                  << std::endl;
+        exit(1);
         break;
     }
   }
@@ -168,16 +171,14 @@ inline uint8_t getDataSize(cs_aarch64_op op) {
     return 16;
   }
 
-  // ARCH64_REG_PN0 -> +15 are scalable predicate registers
+  // ARCH64_REG_PN0 -> +15 are 256-bit (P) registers
   if (op.reg >= AARCH64_REG_PN0) {
-    /** TODO: Check functionality is correct when multi-vector operands + SME2
-     * has been supported. */
-    return 1;
+    return 32;
   }
 
   // AARCH64_REG_P0 -> +15 are 256-bit (P) registers
   if (op.reg >= AARCH64_REG_P0) {
-    return 1;
+    return 32;
   }
 
   // AARCH64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
