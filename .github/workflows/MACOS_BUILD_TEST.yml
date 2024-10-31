@@ -93,6 +93,8 @@ jobs:
 
       #######################################
       # Run Benchmarks
+      # Separate steps for each benchmark to ensure itemised outputs
+      # in the actions interface
       #######################################
 
       - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
