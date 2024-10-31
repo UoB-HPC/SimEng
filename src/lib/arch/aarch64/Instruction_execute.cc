@@ -486,6 +486,29 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
         break;
       }
+      case Opcode::AArch64_BF16DOTlanev8bf16: {  // bfdot vd.4s, vn.8h,
+                                                 // vm.2h[index]
+        // BF16 -- EXPERIMENTAL
+        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
+        // Must be enabled at SimEng compile time
+        // Not verified to be working for all compilers or OSs.
+        // No Tests written
+
+        const float* vd = sourceValues_[0].getAsVector<float>();
+        const __bf16* vn = sourceValues_[1].getAsVector<__bf16>();
+        const __bf16* vm = sourceValues_[2].getAsVector<__bf16>();
+        const int vmIndex = metadata_.operands[2].vector_index;
+
+        float out[4] = {vd[0], vd[1], vd[2], vd[3]};
+        for (int i = 0; i < 4; i++) {
+          out[i] += (static_cast<float>(vn[2 * i]) *
+                     static_cast<float>(vm[2 * vmIndex])) +
+                    (static_cast<float>(vn[2 * i + 1]) *
+                     static_cast<float>(vm[2 * vmIndex + 1]));
+        }
+        results_[0] = RegisterValue(out, 256);
+        break;
+      }
       case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, false, false), 8};
