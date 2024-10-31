@@ -5019,6 +5019,30 @@ void Instruction::execute() {
         memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         break;
       }
+      case Opcode::AArch64_ST1D_4Z_IMM: {  // st1d {zt1.d - zt4.d}, png, [xn{,
+                                           // #imm, mul vl}]
+        // STORE
+        const uint64_t* t1 = sourceValues_[0].getAsVector<uint64_t>();
+        const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
+        const uint64_t* t3 = sourceValues_[2].getAsVector<uint64_t>();
+        const uint64_t* t4 = sourceValues_[3].getAsVector<uint64_t>();
+        const uint64_t pn = sourceValues_[4].get<uint64_t>();
+
+        auto preds = predAsCounterToMasks<uint64_t, 4>(pn, VL_bits);
+
+        memoryData_ =
+            sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
+        std::vector<RegisterValue> out2 =
+            sve_merge_store_data<uint64_t>(t2, preds[1].data(), VL_bits);
+        std::vector<RegisterValue> out3 =
+            sve_merge_store_data<uint64_t>(t3, preds[2].data(), VL_bits);
+        std::vector<RegisterValue> out4 =
+            sve_merge_store_data<uint64_t>(t4, preds[3].data(), VL_bits);
+        memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
+        memoryData_.insert(memoryData_.end(), out3.begin(), out3.end());
+        memoryData_.insert(memoryData_.end(), out4.begin(), out4.end());
+        break;
+      }
       case Opcode::AArch64_ST1Fourv16b: {  // st1 {vt.16b, vt2.16b, vt3.16b,
                                            // vt4.16b}, [xn|sp]
         // STORE

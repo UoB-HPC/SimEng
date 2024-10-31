@@ -6948,6 +6948,37 @@ TEST_P(InstSve, st1d_multivec) {
               src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint64_t>(65792 + 8 + (i * 8)), src[i % 4]);
   }
+
+  // Four vectors
+  initialHeapData_.resize(VL);
+  heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  fillHeap<uint64_t>(heap64, src, VL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    sub sp, sp, #4095
+    mov x1, #2
+    mov x4, #256
+    madd x4, x4, x4, x4
+    ptrue p0.d
+    ptrue pn8.d
+    ld1d {z0.d}, p0/z, [x0]
+    ld1d {z1.d}, p0/z, [x0, #1, mul vl]
+    ld1d {z2.d}, p0/z, [x0, #2, mul vl]
+    ld1d {z3.d}, p0/z, [x0, #3, mul vl]
+    st1d {z0.d - z3.d}, pn8, [sp]
+    st1d {z0.d - z3.d}, pn8, [x4, #8, mul vl]
+  )");
+  for (uint64_t i = 0; i < (VL / 16); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 8)),
+              src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (8 * (VL / 8)) + (i * 8)),
+              src[i % 4]);
+  }
 }
 
 TEST_P(InstSve, st2d) {
