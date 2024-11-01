@@ -191,6 +191,7 @@ void ReorderBuffer::flush(uint64_t afterInsnId) {
     // If the instruction is a branch, supply address to branch flushing logic
     if (uop->isBranch()) {
       predictor_.flush(uop->getInstructionAddress());
+
     }
     buffer_.pop_back();
   }
