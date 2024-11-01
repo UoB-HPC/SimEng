@@ -353,6 +353,28 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_LD1B_4Z_STRIDED: {  // ld1b {zt1.b, zt2.b, zt3.b,
+                                               // zt4.b}, png/z, [xn, xm]
+        const uint64_t base = sourceValues_[1].get<uint64_t>();
+        const uint64_t offset = sourceValues_[2].get<uint64_t>();
+        const uint64_t addr = base + offset;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(4);
+
+        uint16_t blockSize = VL_bits / 8;
+        addresses.push_back({addr, blockSize});
+        addresses.push_back({addr + blockSize, blockSize});
+        addresses.push_back({addr + 2 * blockSize, blockSize});
+        addresses.push_back({addr + 3 * blockSize, blockSize});
+
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_LD1B_4Z_STRIDED_IMM:  // ld1b {zt1.b, zt2.b, zt3.b,
+                                                 // zt4.b}, png/z, [xn{, #imm,
+                                                 // mul vl}]
+        [[fallthrough]];
       case Opcode::AArch64_LD1B_4Z_IMM: {  // ld1b {zt1.b - zt4.b}, png/z, [xn{,
                                            // #imm, mul vl}]
         const uint16_t partition_num = VL_bits / 8;

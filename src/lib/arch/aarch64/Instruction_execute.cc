@@ -2887,6 +2887,15 @@ void Instruction::execute() {
         results_[1] = {out[1], 256};
         break;
       }
+      case Opcode::AArch64_LD1B_4Z_STRIDED:  // ld1b {zt1.b, zt2.b, zt3.b,
+                                             // zt4.b}, png/z, [xn, xm]
+        // LOAD
+        [[fallthrough]];
+      case Opcode::AArch64_LD1B_4Z_STRIDED_IMM:  // ld1b {zt1.b, zt2.b, zt3.b,
+                                                 // zt4.b}, png/z, [xn{, #imm,
+                                                 // mul vl}]
+        // LOAD
+        [[fallthrough]];
       case Opcode::AArch64_LD1B_4Z_IMM: {  // ld1b {zt1.b - zt4.b}, png/z, [xn{,
                                            // #imm, mul vl}]
         // LOAD

@@ -5033,10 +5033,14 @@ TEST_P(InstSve, ld1b) {
 
     ptrue pn8.b
 
+    mov x1, #4
     ld1b {z0.b - z3.b}, pn8/z, [x0, #4, mul vl]
+    ld1b {z16.b, z20.b, z24.b, z28.b}, pn8/z, [x0, #4, mul vl]
+    ld1b {z17.b, z21.b, z25.b, z29.b}, pn8/z, [x0, x1]
   )");
   base = (VL / 8) * 4;
   offset = (VL / 8);
+  // Consecutive vectors
   CHECK_NEON(0, uint8_t,
              fillNeon<uint8_t>(
                  {
@@ -5101,6 +5105,176 @@ TEST_P(InstSve, ld1b) {
                  },
                  VL / 8));
   CHECK_NEON(3, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + (3 * offset))) % 16],
+                     src[((base + (3 * offset)) + 1) % 16],
+                     src[((base + (3 * offset)) + 2) % 16],
+                     src[((base + (3 * offset)) + 3) % 16],
+                     src[((base + (3 * offset)) + 4) % 16],
+                     src[((base + (3 * offset)) + 5) % 16],
+                     src[((base + (3 * offset)) + 6) % 16],
+                     src[((base + (3 * offset)) + 7) % 16],
+                     src[((base + (3 * offset)) + 8) % 16],
+                     src[((base + (3 * offset)) + 9) % 16],
+                     src[((base + (3 * offset)) + 10) % 16],
+                     src[((base + (3 * offset)) + 11) % 16],
+                     src[((base + (3 * offset)) + 12) % 16],
+                     src[((base + (3 * offset)) + 13) % 16],
+                     src[((base + (3 * offset)) + 14) % 16],
+                     src[((base + (3 * offset)) + 15) % 16],
+                 },
+                 VL / 8));
+  // Strided (4-stride) vectors
+  CHECK_NEON(16, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[(base) % 16],
+                     src[(base + 1) % 16],
+                     src[(base + 2) % 16],
+                     src[(base + 3) % 16],
+                     src[(base + 4) % 16],
+                     src[(base + 5) % 16],
+                     src[(base + 6) % 16],
+                     src[(base + 7) % 16],
+                     src[(base + 8) % 16],
+                     src[(base + 9) % 16],
+                     src[(base + 10) % 16],
+                     src[(base + 11) % 16],
+                     src[(base + 12) % 16],
+                     src[(base + 13) % 16],
+                     src[(base + 14) % 16],
+                     src[(base + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(20, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + offset)) % 16],
+                     src[((base + offset) + 1) % 16],
+                     src[((base + offset) + 2) % 16],
+                     src[((base + offset) + 3) % 16],
+                     src[((base + offset) + 4) % 16],
+                     src[((base + offset) + 5) % 16],
+                     src[((base + offset) + 6) % 16],
+                     src[((base + offset) + 7) % 16],
+                     src[((base + offset) + 8) % 16],
+                     src[((base + offset) + 9) % 16],
+                     src[((base + offset) + 10) % 16],
+                     src[((base + offset) + 11) % 16],
+                     src[((base + offset) + 12) % 16],
+                     src[((base + offset) + 13) % 16],
+                     src[((base + offset) + 14) % 16],
+                     src[((base + offset) + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(24, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + (2 * offset))) % 16],
+                     src[((base + (2 * offset)) + 1) % 16],
+                     src[((base + (2 * offset)) + 2) % 16],
+                     src[((base + (2 * offset)) + 3) % 16],
+                     src[((base + (2 * offset)) + 4) % 16],
+                     src[((base + (2 * offset)) + 5) % 16],
+                     src[((base + (2 * offset)) + 6) % 16],
+                     src[((base + (2 * offset)) + 7) % 16],
+                     src[((base + (2 * offset)) + 8) % 16],
+                     src[((base + (2 * offset)) + 9) % 16],
+                     src[((base + (2 * offset)) + 10) % 16],
+                     src[((base + (2 * offset)) + 11) % 16],
+                     src[((base + (2 * offset)) + 12) % 16],
+                     src[((base + (2 * offset)) + 13) % 16],
+                     src[((base + (2 * offset)) + 14) % 16],
+                     src[((base + (2 * offset)) + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(28, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + (3 * offset))) % 16],
+                     src[((base + (3 * offset)) + 1) % 16],
+                     src[((base + (3 * offset)) + 2) % 16],
+                     src[((base + (3 * offset)) + 3) % 16],
+                     src[((base + (3 * offset)) + 4) % 16],
+                     src[((base + (3 * offset)) + 5) % 16],
+                     src[((base + (3 * offset)) + 6) % 16],
+                     src[((base + (3 * offset)) + 7) % 16],
+                     src[((base + (3 * offset)) + 8) % 16],
+                     src[((base + (3 * offset)) + 9) % 16],
+                     src[((base + (3 * offset)) + 10) % 16],
+                     src[((base + (3 * offset)) + 11) % 16],
+                     src[((base + (3 * offset)) + 12) % 16],
+                     src[((base + (3 * offset)) + 13) % 16],
+                     src[((base + (3 * offset)) + 14) % 16],
+                     src[((base + (3 * offset)) + 15) % 16],
+                 },
+                 VL / 8));
+  base = (VL / 8) + 4;
+  CHECK_NEON(17, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[(base) % 16],
+                     src[(base + 1) % 16],
+                     src[(base + 2) % 16],
+                     src[(base + 3) % 16],
+                     src[(base + 4) % 16],
+                     src[(base + 5) % 16],
+                     src[(base + 6) % 16],
+                     src[(base + 7) % 16],
+                     src[(base + 8) % 16],
+                     src[(base + 9) % 16],
+                     src[(base + 10) % 16],
+                     src[(base + 11) % 16],
+                     src[(base + 12) % 16],
+                     src[(base + 13) % 16],
+                     src[(base + 14) % 16],
+                     src[(base + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(21, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + offset)) % 16],
+                     src[((base + offset) + 1) % 16],
+                     src[((base + offset) + 2) % 16],
+                     src[((base + offset) + 3) % 16],
+                     src[((base + offset) + 4) % 16],
+                     src[((base + offset) + 5) % 16],
+                     src[((base + offset) + 6) % 16],
+                     src[((base + offset) + 7) % 16],
+                     src[((base + offset) + 8) % 16],
+                     src[((base + offset) + 9) % 16],
+                     src[((base + offset) + 10) % 16],
+                     src[((base + offset) + 11) % 16],
+                     src[((base + offset) + 12) % 16],
+                     src[((base + offset) + 13) % 16],
+                     src[((base + offset) + 14) % 16],
+                     src[((base + offset) + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(25, uint8_t,
+             fillNeon<uint8_t>(
+                 {
+                     src[((base + (2 * offset))) % 16],
+                     src[((base + (2 * offset)) + 1) % 16],
+                     src[((base + (2 * offset)) + 2) % 16],
+                     src[((base + (2 * offset)) + 3) % 16],
+                     src[((base + (2 * offset)) + 4) % 16],
+                     src[((base + (2 * offset)) + 5) % 16],
+                     src[((base + (2 * offset)) + 6) % 16],
+                     src[((base + (2 * offset)) + 7) % 16],
+                     src[((base + (2 * offset)) + 8) % 16],
+                     src[((base + (2 * offset)) + 9) % 16],
+                     src[((base + (2 * offset)) + 10) % 16],
+                     src[((base + (2 * offset)) + 11) % 16],
+                     src[((base + (2 * offset)) + 12) % 16],
+                     src[((base + (2 * offset)) + 13) % 16],
+                     src[((base + (2 * offset)) + 14) % 16],
+                     src[((base + (2 * offset)) + 15) % 16],
+                 },
+                 VL / 8));
+  CHECK_NEON(29, uint8_t,
              fillNeon<uint8_t>(
                  {
                      src[((base + (3 * offset))) % 16],
