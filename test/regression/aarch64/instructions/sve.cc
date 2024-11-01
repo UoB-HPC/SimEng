@@ -5684,8 +5684,10 @@ TEST_P(InstSve, ld1w) {
     dup z3.s, #4
 
     ptrue pn8.s
+    addvl x1, x1, #1
 
     ld1w {z0.s - z3.s}, pn8/z, [x0, #4, mul vl]
+    ld1w {z4.s - z7.s}, pn8/z, [x0, x1, lsl #2]
   )");
   base = (VL / 32) * 4;
   offset = (VL / 32);
@@ -5706,6 +5708,28 @@ TEST_P(InstSve, ld1w) {
                                  src[((base + (offset * 2)) + 3) % 4]},
                                 VL / 8));
   CHECK_NEON(3, uint32_t,
+             fillNeon<uint32_t>({src[((base + (offset * 3))) % 4],
+                                 src[((base + (offset * 3)) + 1) % 4],
+                                 src[((base + (offset * 3)) + 2) % 4],
+                                 src[((base + (offset * 3)) + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(4, uint32_t,
+             fillNeon<uint32_t>({src[(base) % 4], src[(base + 1) % 4],
+                                 src[(base + 2) % 4], src[(base + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(
+      5, uint32_t,
+      fillNeon<uint32_t>(
+          {src[((base + offset)) % 4], src[((base + offset) + 1) % 4],
+           src[((base + offset) + 2) % 4], src[((base + offset) + 3) % 4]},
+          VL / 8));
+  CHECK_NEON(6, uint32_t,
+             fillNeon<uint32_t>({src[((base + (offset * 2))) % 4],
+                                 src[((base + (offset * 2)) + 1) % 4],
+                                 src[((base + (offset * 2)) + 2) % 4],
+                                 src[((base + (offset * 2)) + 3) % 4]},
+                                VL / 8));
+  CHECK_NEON(7, uint32_t,
              fillNeon<uint32_t>({src[((base + (offset * 3))) % 4],
                                  src[((base + (offset * 3)) + 1) % 4],
                                  src[((base + (offset * 3)) + 2) % 4],
