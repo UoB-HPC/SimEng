@@ -121,6 +121,8 @@ void GenericPredictor::update(uint64_t address, bool isTaken,
     // We know how many predictions there have since been by the size of the FTQ
     globalHistory_ ^= (1ull << (ftq_.size()));
   }
+
+  return;
 }
 
 void GenericPredictor::flush(uint64_t address) {
