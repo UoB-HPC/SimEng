@@ -467,7 +467,7 @@ TEST_F(RiscVInstructionTest, earlyBranchMisprediction) {
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 }
 
-// Test that a correct prediction (branch taken) is handled correctly
+// Test that a correct prediction (branch isTaken) is handled correctly
 TEST_F(RiscVInstructionTest, correctPred_taken) {
   // insn is `bgeu a5, a4, -86`
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
@@ -484,7 +484,7 @@ TEST_F(RiscVInstructionTest, correctPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test a correct prediction where branch is taken is handled correctly
+  // Test a correct prediction where branch is isTaken is handled correctly
   pred = {true, 400 - 86};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -497,7 +497,7 @@ TEST_F(RiscVInstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), pred.target);
 }
 
-// Test that a correct prediction (branch not taken) is handled correctly
+// Test that a correct prediction (branch not isTaken) is handled correctly
 TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   // insn is `bgeu a5, a4, -86`
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
@@ -514,7 +514,7 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test a correct prediction where a branch isn't taken is handled correctly
+  // Test a correct prediction where a branch isn't isTaken is handled correctly
   // imm operand 0x28 has 4 added implicitly by dissassembler
   pred = {false, 400 + 4};
   insn.setBranchPrediction(pred);
@@ -559,7 +559,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 400 - 86);
 }
 
-// Test that an incorrect prediction (wrong taken) is handled correctly
+// Test that an incorrect prediction (wrong isTaken) is handled correctly
 TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   // insn is `bgeu a5, a4, -86`
   Instruction insn = Instruction(arch, *bgeuMetadata.get());
@@ -576,7 +576,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test an incorrect prediction is handled correctly - taken is wrong
+  // Test an incorrect prediction is handled correctly - isTaken is wrong
   // imm operand 0x28 has 4 added implicitly by dissassembler
   pred = {true, 400 - 86};
   insn.setBranchPrediction(pred);

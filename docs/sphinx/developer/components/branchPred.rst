@@ -30,13 +30,13 @@ Global History
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR'ed with the current global branch history value.
 
-    If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be taken. If the supplied branch type is ``Conditional`` and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
+    If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be isTaken. If the supplied branch type is ``Conditional`` and the predicted direction is not isTaken, then the predicted target is overridden to be the next sequential instruction.
 
 Return Address Stack (RAS)
     Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction's corresponding Return instruction.
 
 Static Prediction
-    Based on the chosen static prediction method of "always taken" or "always not taken", the n-bit saturating counter value in the initial entries of the BTB structure are filled with the weakest variant of taken or not-taken respectively.
+    Based on the chosen static prediction method of "always isTaken" or "always not isTaken", the n-bit saturating counter value in the initial entries of the BTB structure are filled with the weakest variant of isTaken or not-isTaken respectively.
 
 Perceptron Predictor
 --------------------
@@ -48,9 +48,9 @@ Global History
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with a perceptron for an associated direction. The indexing of this structure uses the lower, non-zero bits of an instruction address XOR'ed with the current global branch history value.
 
-    The direction prediction is obtained from the perceptron by taking its dot-product with the global history.  The prediction is not taken if this is negative, or taken otherwise.  The perceptron is updated when its prediction is wrong or when the magnitude of the dot-product is below a pre-determined threshold (i.e., the confidence of the prediction is low).  To update, each ith weight of the perceptron is incremented if the actual outcome of the branch is the same as the ith bit of ``globalHistory_``, and decremented otherwise.
+    The direction prediction is obtained from the perceptron by taking its dot-product with the global history.  The prediction is not isTaken if this is negative, or isTaken otherwise.  The perceptron is updated when its prediction is wrong or when the magnitude of the dot-product is below a pre-determined threshold (i.e., the confidence of the prediction is low).  To update, each ith weight of the perceptron is incremented if the actual outcome of the branch is the same as the ith bit of ``globalHistory_``, and decremented otherwise.
 
-    If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be taken. If the supplied branch type is ``Conditional`` and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
+    If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be isTaken. If the supplied branch type is ``Conditional`` and the predicted direction is not isTaken, then the predicted target is overridden to be the next sequential instruction.
 
 Return Address Stack (RAS)
     Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction's corresponding Return instruction.

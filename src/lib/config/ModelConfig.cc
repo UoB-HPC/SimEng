@@ -504,7 +504,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
   expectations_["Branch-Predictor"]["Type"].setValueSet(
-      std::vector<std::string>{"Generic", "Perceptron"});
+      std::vector<std::string>{"Generic", "Perceptron", "Tage"});
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
@@ -530,8 +530,9 @@ void ModelConfig::setExpectations(bool isDefault) {
       // Ensure the key "Branch-Predictor:Type" exists before querying the
       // associated YAML node
       if (configTree_["Branch-Predictor"].has_child(ryml::to_csubstr("Type"))) {
-        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-            "Generic") {
+        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+            "Generic") || (configTree_["Branch-Predictor"]["Type"]
+                        .as<std::string>() == "Tage")) {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(
                   2, "Saturating-Count-Bits"));
