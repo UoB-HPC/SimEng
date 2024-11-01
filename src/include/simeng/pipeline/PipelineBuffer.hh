@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "simeng/BranchPredictor.hh"
+#include "simeng/branchPredictors/BranchPredictor.hh"
 
 namespace simeng {
 namespace pipeline {
