@@ -7156,7 +7156,6 @@ TEST_P(InstSve, st1d_multivec) {
 }
 
 TEST_P(InstSve, st2d) {
-  // 32-bit
   RUN_AARCH64(R"(
     ptrue p0.d
     mov x0, #0
@@ -7190,6 +7189,52 @@ TEST_P(InstSve, st2d) {
   for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8)), 5);
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8) + 8), 6);
+  }
+}
+
+TEST_P(InstSve, st4w) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    mov x0, #0
+    addvl x1, x0, #1
+    mov x2, #8
+    udiv x3, x1, x2
+    whilelo p1.s, xzr, x3
+
+    sub sp, sp, #4095
+    mov x6, #300
+
+    dup z0.s, #3
+    dup z1.s, #4
+    dup z2.s, #5
+    dup z3.s, #6
+
+    st4w {z0.s - z3.s}, p0, [sp]
+    st4w {z0.s - z3.s}, p1, [x6, #4, mul vl]
+  )");
+
+  for (uint64_t i = 0; i < (VL / 32); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (4 * i * 4)),
+              3);
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (4 * i * 4) + 4),
+              4);
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (4 * i * 4) + 8),
+              5);
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (4 * i * 4) + 12),
+              6);
+  }
+
+  int index = 4 * (VL / 8);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4)), 3);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 4), 4);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 8), 5);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 12), 6);
   }
 }
 

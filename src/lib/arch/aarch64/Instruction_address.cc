@@ -1222,6 +1222,26 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_ST4W_IMM: {  // st4w {zt1.s, zt2.s, zt3.s, zt4.s},
+                                        // pg, [<xn|sp>{, #imm, mul vl}]
+        const uint64_t* p = sourceValues_[4].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+
+        const uint64_t base = sourceValues_[5].get<uint64_t>();
+        const int64_t offset =
+            static_cast<int64_t>(metadata_.operands[5].mem.disp);
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num * 4);
+
+        uint64_t addr = base + (offset * partition_num * 4);
+
+        generatePredicatedContiguousAddressBlocks(addr, partition_num, 16, 4, p,
+                                                  addresses);
+
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_ST1_MXIPXX_H_D:    // st1d {zath.d[ws, #imm]}, pg,
                                               // [<xn|sp>{, xm, lsl #3}]
       case Opcode::AArch64_ST1_MXIPXX_V_D: {  // st1d {zatv.d[ws, #imm]}, pg,
