@@ -418,7 +418,7 @@ TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
 
   // Set the first expectation from the predictor to be true so a loop body will
   // be detected
-  EXPECT_CALL(predictor, predict(_, _, _, _))
+  EXPECT_CALL(predictor, predict(_, _, _, false))
       .WillOnce(Return(BranchPrediction({true, 0x0})));
 
   // Set Loop Buffer state to be LoopBufferState::FILLING
@@ -430,7 +430,7 @@ TEST_P(PipelineFetchUnitTest, idleLoopBufferDueToNotTakenBoundary) {
   // Fetch the next block of instructions from memory and change the expected
   // outcome of the branch predictor
   fetchUnit.requestFromPC();
-  EXPECT_CALL(predictor, predict(_, _, _, _))
+  EXPECT_CALL(predictor, predict(_, _, _, false))
       .WillRepeatedly(Return(BranchPrediction({false, 0x0})));
 
   // Attempt to fill Loop Buffer but prevent it on a not taken outcome at the
