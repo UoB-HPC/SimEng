@@ -3168,6 +3168,10 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1H_IMM:  // ld1h  {zt.h}, pg/z, [xn{, #imm, mul
+                                      // vl}]
+        // LOAD
+        [[fallthrough]];
       case Opcode::AArch64_LD1H: {  // ld1h  {zt.h}, pg/z, [xn, xm, lsl #1]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();

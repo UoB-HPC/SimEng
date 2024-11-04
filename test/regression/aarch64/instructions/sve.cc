@@ -5591,6 +5591,7 @@ TEST_P(InstSve, ld1h) {
     ptrue p0.h
     # Load and broadcast values from heap
     ld1h {z0.h}, p0/z, [x0, x1, lsl #1]
+    ld1h {z2.h}, p0/z, [x0]
 
     # Test for inactive lanes
     mov x1, #0
@@ -5600,12 +5601,24 @@ TEST_P(InstSve, ld1h) {
     mov x2, #0
     whilelo p1.h, xzr, x1
     ld1h {z1.h}, p1/z, [x0, x2, lsl #1]
+
+    addvl x10, x10, #1
+    add x10, x10, x0
+    ld1h {z3.h}, p1/z, [x10, #-1, mul vl]
   )");
   CHECK_NEON(0, uint16_t,
              fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
                                  0xEF01, 0xABCD},
                                 VL / 8));
   CHECK_NEON(1, uint16_t,
+             fillNeonCombined<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432,
+                                         0x9876, 0xEF01, 0xABCD},
+                                        {0}, VL / 8));
+  CHECK_NEON(2, uint16_t,
+             fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
+                                 0xEF01, 0xABCD},
+                                VL / 8));
+  CHECK_NEON(3, uint16_t,
              fillNeonCombined<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432,
                                          0x9876, 0xEF01, 0xABCD},
                                         {0}, VL / 8));
