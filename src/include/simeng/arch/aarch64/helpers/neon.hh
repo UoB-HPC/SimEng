@@ -570,8 +570,8 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
 
   // Concatenate the vectors
   T temp[2 * I];
-  memcpy(temp, m, sizeof(T) * I);
-  memcpy(temp + (sizeof(T) * I), n, sizeof(T) * I);
+  memcpy(temp, n, sizeof(T) * I);
+  memcpy(temp + (sizeof(T) * I), m, sizeof(T) * I);
   // Compare each adjacent pair of elements
   T out[I];
   for (int i = 0; i < I; i++) {

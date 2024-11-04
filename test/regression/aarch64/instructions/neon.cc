@@ -2738,7 +2738,7 @@ TEST_P(InstNeon, umaxp) {
 
     ldr q0, [x0]
     ldr q1, [x0, #16]
-    umaxp v2.16b, v0.16b, v1.16b
+    umaxp v2.16b, v1.16b, v0.16b
 
   )");
   CHECK_NEON(2, uint8_t,
