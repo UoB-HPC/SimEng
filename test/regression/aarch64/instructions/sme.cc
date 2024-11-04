@@ -235,7 +235,6 @@ TEST_P(InstSme, fadd) {
   const uint16_t zaStride = (SVL / 8) / 2;
   const uint16_t zaHalfIndex = 2;
   for (uint64_t i = 0; i < (SVL / 8); i++) {
-    // Effected rows all use same zm value of 2.0f
     if (i == zaHalfIndex) {
       CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
                     fillNeon<float>({21.5f}, (SVL / 8)));
@@ -246,6 +245,57 @@ TEST_P(InstSme, fadd) {
       // un-effected rows should still be 24.0f throughout
       CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
                     fillNeon<float>({24.0f}, (SVL / 8)));
+    }
+  }
+
+  // Double, VGx2
+  initialHeapData_.resize(SVL / 8);
+  heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  src = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0
+    fdup z1.d, #3.0
+    fdup z2.d, #8.0
+    ptrue p0.d
+    ptrue p1.d
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za1.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za2.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za3.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za4.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za5.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za6.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za7.d, p0/m, p1/m, z1.d, z2.d
+
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.d, #-2.5
+    fdup z5.d, #3.0
+
+    fadd za.d[w8, #1, vgx2], {z4.d, z5.d}
+  )");
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({21.5}, (SVL / 8)));
+    } else if (i == zaStride + zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({27.0}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.0}, (SVL / 8)));
     }
   }
 }

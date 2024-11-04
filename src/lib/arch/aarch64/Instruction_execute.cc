@@ -1373,6 +1373,43 @@ void Instruction::execute() {
         results_[0] = {add_3ops<float>(sourceValues_), 256};
         break;
       }
+      case Opcode::AArch64_FADD_VG2_M2Z_D: {  // fadd za.d[wv, #off, vgx2],
+                                              // {zn1.d, zn2.d}
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 64;
+        // Get ZA stride between halves and index into each ZA half
+        const uint16_t zaStride = zaRowCount / 2;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+
+        // Pre-set all ZA result rows as only 2 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        // For each source vector and ZA Row pair
+        for (int r = 0; r < 2; r++) {
+          // Get row in correct ZA half
+          const double* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<double>();
+          // Get current source vector
+          const double* znr =
+              sourceValues_[zaRowCount + 1 + r].getAsVector<double>();
+          double out[32] = {0.0};
+          // Loop over all elements and destructively add
+          for (int e = 0; e < elemCount; e++) {
+            out[e] = zaRow[e] + znr[e];
+          }
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
       case Opcode::AArch64_FADD_VG2_M2Z_S: {  // fadd za.s[wv, #off, vgx2],
                                               // {zn1.s, zn2.s}
         // SME
