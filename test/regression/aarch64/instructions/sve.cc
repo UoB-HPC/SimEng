@@ -5574,6 +5574,7 @@ TEST_P(InstSve, ld1d) {
 }
 
 TEST_P(InstSve, ld1h) {
+  // Single vector
   initialHeapData_.resize(VL / 4);
   uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
   fillHeap<uint16_t>(
@@ -5622,6 +5623,51 @@ TEST_P(InstSve, ld1h) {
              fillNeonCombined<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432,
                                          0x9876, 0xEF01, 0xABCD},
                                         {0}, VL / 8));
+
+  // Multi vector
+
+  // Two vector
+  initialHeapData_.resize(VL);
+  heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  fillHeap<uint16_t>(
+      heap16, {0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD},
+      VL / 2);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue pn8.h
+    mov x1, #1
+    ld1h {z0.h, z1.h}, pn8/z, [x0]
+    ld1h {z2.h, z3.h}, pn8/z, [x0, x1, lsl #1]
+    ld1h {z4.h, z5.h}, pn8/z, [x0, #2, mul vl]
+  )");
+  CHECK_NEON(0, uint16_t,
+             fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
+                                 0xEF01, 0xABCD},
+                                VL / 8));
+  CHECK_NEON(1, uint16_t,
+             fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
+                                 0xEF01, 0xABCD},
+                                VL / 8));
+  CHECK_NEON(2, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01,
+                                 0xABCD, 0xBEEF},
+                                VL / 8));
+  CHECK_NEON(3, uint16_t,
+             fillNeon<uint16_t>({0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01,
+                                 0xABCD, 0xBEEF},
+                                VL / 8));
+  CHECK_NEON(4, uint16_t,
+             fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
+                                 0xEF01, 0xABCD},
+                                VL / 8));
+  CHECK_NEON(5, uint16_t,
+             fillNeon<uint16_t>({0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876,
+                                 0xEF01, 0xABCD},
+                                VL / 8));
 }
 
 TEST_P(InstSve, ld1w) {
