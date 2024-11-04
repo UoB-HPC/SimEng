@@ -2219,6 +2219,64 @@ void Instruction::execute() {
         results_[0] = vecFmlsIndexed_3vecs<float, 4>(sourceValues_, metadata_);
         break;
       }
+      case Opcode::AArch64_BFMOPA_MPPZZ: {  // bfmopa zada.s, pn/m, pm/m, zn.h,
+                                            // zm.h
+        // SME
+        // BF16 -- EXPERIMENTAL
+        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
+        // Must be enabled at SimEng compile time
+        // Not verified to be working for all compilers or OSs.
+        // No Tests written
+
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm =
+            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        // Use uint16_t to get 2-byte elements
+        const uint16_t* zn =
+            sourceValues_[rowCount + 2].getAsVector<uint16_t>();
+        const uint16_t* zm =
+            sourceValues_[rowCount + 3].getAsVector<uint16_t>();
+
+        // zn is row, zm is col
+        for (int row = 0; row < rowCount; row++) {
+          float outRow[64] = {0.0f};
+          // Shifted active is for bf16 elements
+          uint64_t shifted_active_row = 1ull << ((row % 32) * 2);
+          const float* zadaRow = sourceValues_[row].getAsVector<float>();
+          for (int col = 0; col < rowCount; col++) {
+            outRow[col] = zadaRow[col];
+            // Shifted active is for bf16 elements
+            uint64_t shifted_active_col = 1ull << ((col % 32) * 2);
+            bool pred_row1 = pn[(2 * row) / 32] & shifted_active_row;
+            bool pred_row2 = pn[(2 * row + 1) / 32] & shifted_active_row;
+            bool pred_col1 = pm[(2 * col) / 32] & shifted_active_col;
+            bool pred_col2 = pm[(2 * col + 1) / 32] & shifted_active_col;
+            if ((pred_row1 && pred_col1) || (pred_row2 && pred_col2)) {
+              float zn1, zn2, zm1, zm2;
+              // Horrible hack in order to convert bf16 (currently stored in a
+              // uint16_t) into a float.
+              // Each bf16 is copied into the least significant 16-bits of each
+              // float variable.
+              // Need to re-interpret each float destination as a uint16_t*
+              // inside the memcpy so that the least-significant bits can be
+              // accessed.
+              memcpy((uint16_t*)&zn1 + 1, &zn[2 * row], 2);
+              memcpy((uint16_t*)&zn2 + 1, &zn[2 * row + 1], 2);
+              memcpy((uint16_t*)&zm1 + 1, &zm[2 * col], 2);
+              memcpy((uint16_t*)&zm2 + 1, &zm[2 * col + 1], 2);
+              outRow[col] += (pred_row1 && pred_col1) ? zn1 * zm1 : 0.0f;
+              outRow[col] += (pred_row2 && pred_col2) ? zn2 * zm2 : 0.0f;
+            }
+          }
+          results_[row] = {outRow, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_FMOPA_MPPZZ_D: {  // fmopa zada.d, pn/m, pm/m, zn.d,
                                              // zm.d
         // SME
