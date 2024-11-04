@@ -286,7 +286,7 @@ enum class InsnType : uint32_t {
 /** Predefined shift values for converting pred-as-counter to pred-as-mask. */
 const uint64_t predCountShiftVals[9] = {0, 1, 2, 0, 3, 0, 0, 0, 4};
 
-/** Convert Predicate-as-Mask to Predicate-as-Masks.
+/** Convert Predicate-as-Counter to Predicate-as-Masks.
  * T represents the element type (i.e. for pg.s, T = uint32_t).
  * V represents the number of vectors the predicate-as-counter is being used
  * for. */
