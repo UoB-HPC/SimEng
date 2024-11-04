@@ -509,6 +509,44 @@ void Instruction::execute() {
         results_[0] = RegisterValue(out, 256);
         break;
       }
+      case Opcode::AArch64_BFDOT_ZZI: {  // bfdot zd.s, zn.h, zm.h[index]
+        // BF16 -- EXPERIMENTAL
+        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
+        // Must be enabled at SimEng compile time
+        // Not verified to be working for all compilers or OSs.
+        // No Tests written
+
+        const uint16_t partition_num = VL_bits / 16;
+
+        const float* zd = sourceValues_[0].getAsVector<float>();
+        // Extract data as uint16_t so that bytes-per-element is correct
+        const uint16_t* zn = sourceValues_[1].getAsVector<uint16_t>();
+        const uint16_t* zm = sourceValues_[2].getAsVector<uint16_t>();
+        const int index = metadata_.operands[2].vector_index;
+
+        float out[64] = {0.0f};
+        for (int i = 0; i < partition_num; i++) {
+          // MOD 4 as 4 32-bit elements in each 128-bit segment
+          const int zmBase = i - (i % 4);
+          const int zmIndex = zmBase + index;
+
+          float zn1, zn2, zm1, zm2;
+          // Horrible hack in order to convert bf16 (currently stored in a
+          // uint16_t) into a float.
+          // Each bf16 is copied into the least significant 16-bits of each
+          // float variable.
+          // Need to re-interpret each float destination as a uint16_t* inside
+          // the memcpy so that the least-significant bits can be accessed.
+          memcpy((uint16_t*)&zn1 + 1, &zn[2 * i], 2);
+          memcpy((uint16_t*)&zn2 + 1, &zn[2 * i + 1], 2);
+          memcpy((uint16_t*)&zm1 + 1, &zm[2 * zmIndex], 2);
+          memcpy((uint16_t*)&zm2 + 1, &zm[2 * zmIndex + 1], 2);
+
+          out[i] = zd[i] + ((zn1 * zm1) + (zn2 * zm2));
+        }
+        results_[0] = RegisterValue(out, 256);
+        break;
+      }
       case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, false, false), 8};
