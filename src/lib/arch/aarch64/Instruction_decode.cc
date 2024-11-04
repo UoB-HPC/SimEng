@@ -839,7 +839,7 @@ void Instruction::decode() {
   if (((Opcode::AArch64_FMOVD0 <= metadata_.opcode &&
         metadata_.opcode <= Opcode::AArch64_FMOVS0) ||
        (Opcode::AArch64_FMOVDXHighr <= metadata_.opcode &&
-        metadata_.opcode <= Opcode::AArch64_FMOVv8f16_ns)) &&
+        metadata_.opcode <= Opcode::AArch64_FMOVXHr)) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
