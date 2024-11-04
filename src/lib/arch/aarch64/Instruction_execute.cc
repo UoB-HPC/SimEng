@@ -1884,6 +1884,48 @@ void Instruction::execute() {
             [](double x, double y) -> double { return std::fmin(x, y); });
         break;
       }
+      case Opcode::AArch64_FMLA_VG4_M4Z4Z_D: {  // fmla za.d[wv, offs, vgx4],
+                                                // {zn1.d - zn4.d}, {zm1.d -
+                                                // zm4.d}
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 64;
+        // Get ZA stride between quarters and index into each ZA quarter
+        const uint16_t zaStride = zaRowCount / 4;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+
+        // Pre-set all ZA result rows as only 4 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        // Get sourceValues_ index of first zn and zm regs
+        const uint16_t n = zaRowCount + 1;
+        const uint16_t m = zaRowCount + 5;
+
+        // Loop over each source vector and destination vector (from the za
+        // single-vector group) pair
+        for (int r = 0; r < 4; r++) {
+          // For ZA single-vector groups of 4 vectors (vgx4), each vector is in
+          // a different quarter of ZA; indexed into it by Wv+off.
+          const double* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<double>();
+          const double* zn = sourceValues_[n + r].getAsVector<double>();
+          const double* zm = sourceValues_[m + r].getAsVector<double>();
+          double out[32] = {0.0};
+          for (int e = 0; e < elemCount; e++) {
+            out[e] = zaRow[e] + (zn[e] * zm[e]);
+          }
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
       case Opcode::AArch64_FMLA_VG4_M4Z4Z_S: {  // fmla za.s[wv, offs, vgx4],
                                                 // {zn1.s - zn4.s}, {zm1.s -
                                                 // zm4.s}
