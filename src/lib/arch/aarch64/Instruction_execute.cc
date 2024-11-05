@@ -533,10 +533,9 @@ void Instruction::execute() {
           float zn1, zn2, zm1, zm2;
           // Horrible hack in order to convert bf16 (currently stored in a
           // uint16_t) into a float.
-          // Each bf16 is copied into the least significant 16-bits of each
-          // float variable.
-          // Need to re-interpret each float destination as a uint16_t* inside
-          // the memcpy so that the least-significant bits can be accessed.
+          // Each bf16 is copied into the most significant 16-bits of each
+          // float variable; given IEEE FP32 and BF16 have the same width
+          // exponent and one sign bit.
           memcpy((uint16_t*)&zn1 + 1, &zn[2 * i], 2);
           memcpy((uint16_t*)&zn2 + 1, &zn[2 * i + 1], 2);
           memcpy((uint16_t*)&zm1 + 1, &zm[2 * zmIndex], 2);
@@ -2260,11 +2259,9 @@ void Instruction::execute() {
               float zn1, zn2, zm1, zm2;
               // Horrible hack in order to convert bf16 (currently stored in a
               // uint16_t) into a float.
-              // Each bf16 is copied into the least significant 16-bits of each
-              // float variable.
-              // Need to re-interpret each float destination as a uint16_t*
-              // inside the memcpy so that the least-significant bits can be
-              // accessed.
+              // Each bf16 is copied into the most significant 16-bits of each
+              // float variable; given IEEE FP32 and BF16 have the same width
+              // exponent and one sign bit.
               memcpy((uint16_t*)&zn1 + 1, &zn[2 * row], 2);
               memcpy((uint16_t*)&zn2 + 1, &zn[2 * row + 1], 2);
               memcpy((uint16_t*)&zm1 + 1, &zm[2 * col], 2);
