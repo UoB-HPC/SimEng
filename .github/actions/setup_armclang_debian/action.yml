@@ -1,4 +1,4 @@
-name: setup gcc
+name: setup armclang
 description: installs dependencies and correct gcc version to build and test simeng
 
 inputs:

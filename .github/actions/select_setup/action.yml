@@ -1,5 +1,5 @@
-name: setup armclang
-description: installs dependencies and correct armclang version to build and test simeng
+name: Setup compiler and OS combo
+description: installs dependencies and correct compiler/OS versions to build and test simeng
 
 ##############################################################################
 # Calls the correct setup action based on parameters passed into this action.
