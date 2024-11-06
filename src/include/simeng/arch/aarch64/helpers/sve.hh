@@ -1618,6 +1618,34 @@ RegisterValue sveTrn2_3vecs(srcValContainer& sourceValues,
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `udot zd, zn, zm`.
+ * D represents the element type of the destination register (i.e. for zd.s,
+ * D = uint32_t).
+ * N represents the element type of the source registers (i.e. for zn.b, N =
+ * uint8_t).
+ * W represents how many source elements are multiplied to form an output
+ * element (i.e. for 4-way, W = 4).
+ * Returns correctly formatted RegisterValue. */
+template <typename D, typename N, int W>
+RegisterValue sveUdot(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const D* zd = sourceValues[0].getAsVector<D>();
+  const N* zn = sourceValues[1].getAsVector<N>();
+  const N* zm = sourceValues[2].getAsVector<N>();
+
+  D out[256 / sizeof(D)] = {0};
+  for (int i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
+    out[i] = zd[i];
+    for (int j = 0; j < W; j++) {
+      out[i] +=
+          (static_cast<D>(zn[(W * i) + j]) * static_cast<N>(zm[(W * i) + j]));
+    }
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `udot zd, zn,
  * zm[index]`.
  * D represents the element type of the destination register (i.e. for uint32_t,

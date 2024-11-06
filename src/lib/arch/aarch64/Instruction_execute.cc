@@ -6545,6 +6545,11 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_UDOT_ZZZ_S: {  // udot zd.s, zn.b, zm.b
+        results_[0] =
+            sveUdot<uint32_t, uint8_t, 4>(sourceValues_, metadata_, VL_bits);
+        break;
+      }
       case Opcode::AArch64_UDOT_ZZZI_S: {  // udot zd.s, zn.b, zm.b[index]
         results_[0] = sveUdot_indexed<uint32_t, uint8_t, 4>(sourceValues_,
                                                             metadata_, VL_bits);
