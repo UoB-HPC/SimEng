@@ -3075,7 +3075,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
+      case Opcode::AArch64_LD1B: {  // ld1b {zt.b}, pg/z, [xn, xm]
         // LOAD
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
@@ -3145,6 +3145,9 @@ void Instruction::execute() {
       case Opcode::AArch64_LD1B_4Z_STRIDED_IMM:  // ld1b {zt1.b, zt2.b, zt3.b,
                                                  // zt4.b}, png/z, [xn{, #imm,
                                                  // mul vl}]
+        // LOAD
+        [[fallthrough]];
+      case Opcode::AArch64_LD1B_4Z:  // ld1b {zt1.b - zt4.b}, png/z, [xn, xm]
         // LOAD
         [[fallthrough]];
       case Opcode::AArch64_LD1B_4Z_IMM: {  // ld1b {zt1.b - zt4.b}, png/z, [xn{,

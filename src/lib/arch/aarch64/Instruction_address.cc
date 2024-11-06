@@ -396,6 +396,23 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_LD1B_4Z: {  // ld1b {zt1.b - zt4.b}, png/z, [xn, xm]
+        const uint64_t base = sourceValues_[1].get<uint64_t>();
+        const int64_t offset = sourceValues_[2].get<int64_t>();
+        const uint64_t addr = base + offset;
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(4);
+
+        uint16_t blockSize = VL_bits / 8;
+        addresses.push_back({addr, blockSize});
+        addresses.push_back({addr + blockSize, blockSize});
+        addresses.push_back({addr + 2 * blockSize, blockSize});
+        addresses.push_back({addr + 3 * blockSize, blockSize});
+
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_LD1D: {  // ld1d {zt.d}, pg/z, [xn, xm, lsl #3]
         const uint64_t base = sourceValues_[1].get<uint64_t>();
         const uint64_t offset = sourceValues_[2].get<uint64_t>();
