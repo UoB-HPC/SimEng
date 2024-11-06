@@ -6550,6 +6550,10 @@ void Instruction::execute() {
                                                             metadata_, VL_bits);
         break;
       }
+      case Opcode::AArch64_UDOTv16i8: {  // udot vd.4s, vn.16b, vm.16b
+        results_[0] = vecUdot<4>(sourceValues_, metadata_);
+        break;
+      }
       case Opcode::AArch64_UDOTlanev16i8: {  // udot vd.4s, vn.16b, vm.4b[index]
         results_[0] = vecUdot_byElement<4>(sourceValues_, metadata_);
         break;

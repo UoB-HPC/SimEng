@@ -952,6 +952,33 @@ RegisterValue vecUzp(srcValContainer& sourceValues, bool isUzp1) {
 }
 
 /** Helper function for NEON instructions with the format `udot vd.s, vn.b,
+ * vm.b`. D represents the number of elements in the output vector to be updated
+ * (i.e. for vd.2s D = 2). Only 2 or 4 are valid. Returns correctly formatted
+ * RegisterValue. */
+template <int D>
+RegisterValue vecUdot(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata) {
+  // Check D and N are valid values
+  static_assert((D == 2 || D == 4) &&
+                "D must be either 2 or 4 to align with vd.2s or vd.4s.");
+
+  const uint32_t* vd = sourceValues[0].getAsVector<uint32_t>();
+  const uint8_t* vn = sourceValues[1].getAsVector<uint8_t>();
+  const uint8_t* vm = sourceValues[2].getAsVector<uint8_t>();
+
+  uint32_t out[D] = {0};
+  for (int i = 0; i < D; i++) {
+    out[i] = vd[i];
+    for (int j = 0; j < 4; j++) {
+      out[i] += (static_cast<uint32_t>(vn[(4 * i) + j]) *
+                 static_cast<uint32_t>(vm[(4 * i) + j]));
+    }
+  }
+  return {out, 256};
+}
+
+/** Helper function for NEON instructions with the format `udot vd.s, vn.b,
  * vm.4b[index]`.
  * D represents the number of elements in the output vector to be updated (i.e.
  * for vd.2s D = 2). Only 2 or 4 are valid.

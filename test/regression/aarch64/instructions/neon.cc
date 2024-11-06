@@ -3681,6 +3681,30 @@ TEST_P(InstNeon, udot) {
   CHECK_NEON(3, uint32_t, {0xd328, 0x288e8, 0x27e25, 0x2b87f});
   CHECK_NEON(4, uint32_t, {0xc333, 0x2731b, 0x0, 0x0});
   CHECK_NEON(5, uint32_t, {0x1fe2, 0x8e62, 0xad7e, 0xb52f});
+
+  // udot by vector
+  initialHeapData_.resize(128);
+  heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFFFFFFFFF;
+  heap64[1] = 0x01234567ABBACAFE;
+  heap64[2] = 0xFEDCBA98FFFFFFFF;
+  heap64[3] = 0xDEADCAFEABBABEEF;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    movi v2.4s, #3
+
+    udot v2.4s, v1.16b, v0.16b
+  )");
+  CHECK_NEON(0, uint64_t, {0xDEADBEEFFFFFFFFF, 0x01234567ABBACAFE});
+  CHECK_NEON(1, uint64_t, {0xFEDCBA98FFFFFFFF, 0xDEADCAFEABBABEEF});
+  CHECK_NEON(2, uint32_t, {0x3F807, 0x288E7, 0x27C6E, 0xB52C});
 }
 
 TEST_P(InstNeon, uzp) {
