@@ -1,5 +1,5 @@
 name: setup armclang
-description: installs dependencies and correct gcc version to build and test simeng
+description: installs dependencies and correct armclang version to build and test simeng
 
 inputs:
   OS:
