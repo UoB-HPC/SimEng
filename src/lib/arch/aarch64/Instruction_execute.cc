@@ -5709,33 +5709,15 @@ void Instruction::execute() {
         const uint64_t* d2 = sourceValues_[1].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[2].getAsVector<uint64_t>();
 
-        std::vector<uint64_t> memData;
-        bool inActiveBlock = false;
-
         const uint16_t partition_num = VL_bits / 64;
         uint16_t index = 0;
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
-            // If active and not in active block, initialise
-            if (!inActiveBlock) {
-              memData.clear();
-              inActiveBlock = true;
-            }
-            memData.push_back(d1[i]);
-            memData.push_back(d2[i]);
-          } else if (inActiveBlock) {
-            inActiveBlock = false;
-            memoryData_[index] = RegisterValue(
-                (char*)memData.data(), sizeof(uint64_t) * memData.size());
-            index++;
+            memoryData_[index++] = RegisterValue(d1[i], 8);
+            memoryData_[index++] = RegisterValue(d2[i], 8);
           }
         }
-        // Add final block if needed
-        if (inActiveBlock)
-          memoryData_[index] = RegisterValue((char*)memData.data(),
-                                             sizeof(uint64_t) * memData.size());
-
         break;
       }
       case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
@@ -5755,6 +5737,9 @@ void Instruction::execute() {
         results_[0] = sourceValues_[2].get<uint64_t>() + postIndex;
         break;
       }
+      case Opcode::AArch64_ST4W:  // st4w {zt1.s, zt2.s, zt3.s, zt4.s},
+                                  // pg, [<xn|sp>, xm, lsl #2]
+        [[fallthrough]];
       case Opcode::AArch64_ST4W_IMM: {  // st4w {zt1.s, zt2.s, zt3.s, zt4.s},
                                         // pg, [<xn|sp>{, #imm, mul vl}]
         // STORE
@@ -5764,35 +5749,17 @@ void Instruction::execute() {
         const uint32_t* d4 = sourceValues_[3].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[4].getAsVector<uint64_t>();
 
-        std::vector<uint32_t> memData;
-        bool inActiveBlock = false;
-
         const uint16_t partition_num = VL_bits / 32;
         uint16_t index = 0;
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
-            // If active and not in active block, initialise
-            if (!inActiveBlock) {
-              memData.clear();
-              inActiveBlock = true;
-            }
-            memData.push_back(d1[i]);
-            memData.push_back(d2[i]);
-            memData.push_back(d3[i]);
-            memData.push_back(d4[i]);
-          } else if (inActiveBlock) {
-            inActiveBlock = false;
-            memoryData_[index] = RegisterValue(
-                (char*)memData.data(), sizeof(uint32_t) * memData.size());
-            index++;
+            memoryData_[index++] = RegisterValue(d1[i], 4);
+            memoryData_[index++] = RegisterValue(d2[i], 4);
+            memoryData_[index++] = RegisterValue(d3[i], 4);
+            memoryData_[index++] = RegisterValue(d4[i], 4);
           }
         }
-        // Add final block if needed
-        if (inActiveBlock)
-          memoryData_[index] = RegisterValue((char*)memData.data(),
-                                             sizeof(uint32_t) * memData.size());
-
         break;
       }
       case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]

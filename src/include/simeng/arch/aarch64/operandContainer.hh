@@ -10,7 +10,7 @@ namespace arch {
 namespace aarch64 {
 
 /** The maximum number of source registers a non-SME instruction can have. */
-const uint8_t MAX_SOURCE_REGISTERS = 6;
+const uint8_t MAX_SOURCE_REGISTERS = 7;
 
 /** The maximum number of destination registers a non-SME instruction can have.
  */

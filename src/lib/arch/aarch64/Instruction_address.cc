@@ -1299,8 +1299,52 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
 
         uint64_t addr = base + (offset * partition_num * 8);
 
-        generatePredicatedContiguousAddressBlocks(addr, partition_num, 16, 8, p,
-                                                  addresses);
+        // As vectors are stored in an interleaved manner (i.e. zt1[0], zt2[0],
+        // zt1[1], zt2[1], ...) we must generate an address for each element (if
+        // the predicate is true for that element). This is because, if the
+        // predicate indicates that all elements are active, a single address
+        // and MemoryAccessTarget will be generated with a size of 2xVL. This
+        // could lead to issues for core models which have a maximum store
+        // bandwidth of 1xVL.
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            addresses.push_back({addr + (2 * i * 8), 8});
+            addresses.push_back({addr + (2 * i * 8) + 8, 8});
+          }
+        }
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST4W: {  // st4w {zt1.s, zt2.s, zt3.s, zt4.s},
+                                    // pg, [<xn|sp>, xm, lsl #2]
+        const uint64_t* p = sourceValues_[4].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+
+        const uint64_t base = sourceValues_[5].get<uint64_t>();
+        const int64_t offset = sourceValues_[6].get<int64_t>();
+
+        std::vector<memory::MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num * 4);
+
+        uint64_t addr = base + (offset << 2);
+
+        // As vectors are stored in an interleaved manner (i.e. zt1[0], zt2[0],
+        // zt3[0], zt4[0], zt1[1], zt2[1], zt3[1], zt4[1] ...) we must generate
+        // an address for each element (if the predicate is true for that
+        // element). This is because, if the predicate indicates that all
+        // elements are active, a single address and MemoryAccessTarget will be
+        // generated with a size of 4xVL. This could lead to issues for core
+        // models which have a maximum store bandwidth of 1xVL.
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            addresses.push_back({addr + (4 * i * 4), 4});
+            addresses.push_back({addr + (4 * i * 4) + 4, 4});
+            addresses.push_back({addr + (4 * i * 4) + 8, 4});
+            addresses.push_back({addr + (4 * i * 4) + 12, 4});
+          }
+        }
         setMemoryAddresses(std::move(addresses));
         break;
       }
@@ -1315,12 +1359,24 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
 
         std::vector<memory::MemoryAccessTarget> addresses;
         addresses.reserve(partition_num * 4);
-
         uint64_t addr = base + (offset * partition_num * 4);
 
-        generatePredicatedContiguousAddressBlocks(addr, partition_num, 16, 4, p,
-                                                  addresses);
-
+        // As vectors are stored in an interleaved manner (i.e. zt1[0], zt2[0],
+        // zt3[0], zt4[0], zt1[1], zt2[1], zt3[1], zt4[1] ...) we must generate
+        // an address for each element (if the predicate is true for that
+        // element). This is because, if the predicate indicates that all
+        // elements are active, a single address and MemoryAccessTarget will be
+        // generated with a size of 4xVL. This could lead to issues for core
+        // models which have a maximum store bandwidth of 1xVL.
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            addresses.push_back({addr + (4 * i * 4), 4});
+            addresses.push_back({addr + (4 * i * 4) + 4, 4});
+            addresses.push_back({addr + (4 * i * 4) + 8, 4});
+            addresses.push_back({addr + (4 * i * 4) + 12, 4});
+          }
+        }
         setMemoryAddresses(std::move(addresses));
         break;
       }

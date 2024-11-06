@@ -7321,6 +7321,8 @@ TEST_P(InstSve, st4w) {
 
     st4w {z0.s - z3.s}, p0, [sp]
     st4w {z0.s - z3.s}, p1, [x6, #4, mul vl]
+    addvl x7, x7, #3
+    st4w {z0.s - z3.s}, p1, [x6, x7, lsl #2]
   )");
 
   for (uint64_t i = 0; i < (VL / 32); i++) {
@@ -7339,6 +7341,14 @@ TEST_P(InstSve, st4w) {
   }
 
   int index = 4 * (VL / 8);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4)), 3);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 4), 4);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 8), 5);
+    EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 12), 6);
+  }
+
+  index = 12 * (VL / 8);
   for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4)), 3);
     EXPECT_EQ(getMemoryValue<uint32_t>(300 + index + (4 * i * 4) + 4), 4);
