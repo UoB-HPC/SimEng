@@ -9145,13 +9145,26 @@ TEST_P(InstSve, zip) {
     zip1 z16.b, z12.b, z13.b
     zip2 z17.b, z14.b, z15.b
   )");
-
   CHECK_NEON(4, double, fillNeon<double>({0.5, -0.5}, VL / 8));
   CHECK_NEON(5, double, fillNeon<double>({0.75, -0.75}, VL / 8));
   CHECK_NEON(10, float, fillNeon<float>({0.5, -0.75}, VL / 8));
   CHECK_NEON(11, float, fillNeon<float>({-0.5, 0.75}, VL / 8));
   CHECK_NEON(16, int8_t, fillNeon<int8_t>({1, -2}, VL / 8));
   CHECK_NEON(17, int8_t, fillNeon<int8_t>({-1, 2}, VL / 8));
+
+  // Multi-vector
+  RUN_AARCH64(R"(
+    #32-bit
+    dup z0.s, #5
+    dup z1.s, #6
+    dup z2.s, #7
+    dup z3.s, #8
+    zip {z4.s - z7.s}, {z0.s - z3.s}
+  )");
+  CHECK_NEON(4, uint32_t, fillNeon<uint32_t>({5, 6, 7, 8}, VL / 8));
+  CHECK_NEON(5, uint32_t, fillNeon<uint32_t>({5, 6, 7, 8}, VL / 8));
+  CHECK_NEON(6, uint32_t, fillNeon<uint32_t>({5, 6, 7, 8}, VL / 8));
+  CHECK_NEON(7, uint32_t, fillNeon<uint32_t>({5, 6, 7, 8}, VL / 8));
 }
 
 TEST_P(InstSve, psel) {

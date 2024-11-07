@@ -7076,6 +7076,29 @@ void Instruction::execute() {
         results_[0] = vecZip<uint8_t, 8>(sourceValues_, true);
         break;
       }
+      case Opcode::AArch64_ZIP_VG4_4Z4Z_S: {  // zip {zd1.s - zd4.s}, {zn1.s -
+                                              // zn4.s}
+        const uint32_t* zn[4];
+        zn[0] = sourceValues_[0].getAsVector<uint32_t>();
+        zn[1] = sourceValues_[1].getAsVector<uint32_t>();
+        zn[2] = sourceValues_[2].getAsVector<uint32_t>();
+        zn[3] = sourceValues_[3].getAsVector<uint32_t>();
+
+        const uint16_t quads = VL_bits / (32 * 4);
+
+        uint32_t out[4][64] = {{0}, {0}, {0}, {0}};
+        for (int r = 0; r < 4; r++) {
+          const uint16_t base = r * quads;
+          for (int q = 0; q < quads; q++) {
+            out[r][4 * q] = zn[0][base + q];
+            out[r][4 * q + 1] = zn[1][base + q];
+            out[r][4 * q + 2] = zn[2][base + q];
+            out[r][4 * q + 3] = zn[3][base + q];
+          }
+          results_[r] = RegisterValue(out[r], 256);
+        }
+        break;
+      }
       case Opcode::AArch64_ZERO_M: {  // zero {mask}
         // SME
         // Not in right context mode. Raise exception
