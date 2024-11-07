@@ -254,7 +254,7 @@ void CoreInstance::createCore() {
       auto config_rs_ports = config_rs[i]["Port-Nums"];
       for (size_t j = 0; j < config_rs_ports.num_children(); j++) {
         uint16_t port = config_rs_ports[j].as<uint16_t>();
-        if (rsArrangement.size() < port + 1) {
+        if (static_cast<uint16_t>(rsArrangement.size()) < port + 1) {
           rsArrangement.resize(port + 1);
         }
         rsArrangement[port] = {i, config_rs[i]["Size"].as<uint64_t>()};
