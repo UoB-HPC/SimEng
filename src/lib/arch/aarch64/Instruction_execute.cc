@@ -6392,6 +6392,55 @@ void Instruction::execute() {
         results_[0] = {div_3ops<uint64_t>(sourceValues_), 8};
         break;
       }
+      case Opcode::AArch64_UDOT_VG4_M4Z4Z_BtoS: {  // udot za.s[wv, #off, vgx4],
+                                                   // {zn1.b - zn4.b}, {zm1.b -
+                                                   // zm4.b}
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 32;
+        // Get ZA stride between quarters and index into each ZA quarter
+        const uint16_t zaStride = zaRowCount / 4;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+
+        // Pre-set all ZA result rows as only 4 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        // Get base zn and zm register indexed in sourceValues
+        const uint16_t znBase = zaRowCount + 1;
+        const uint16_t zmBase = zaRowCount + 5;
+
+        // Loop over each source vector and destination vector (from the za
+        // single-vector group) pair
+        for (int r = 0; r < 4; r++) {
+          // For ZA single-vector groups of 4 vectors (vgx4), each vector is in
+          // a different quarter of ZA; indexed into it by Wv+off.
+          const uint32_t* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<uint32_t>();
+          const uint8_t* znr = sourceValues_[znBase + r].getAsVector<uint8_t>();
+          const uint8_t* zmr = sourceValues_[zmBase + r].getAsVector<uint8_t>();
+          uint32_t out[64] = {0};
+          // Loop over all 32-bit elements of output row vector `zaRow`
+          for (int e = 0; e < elemCount; e++) {
+            out[e] = zaRow[e];
+            // There are 4 8-bit elements per 32-bit element of `znr` and `zmr`
+            for (int i = 0; i < 4; i++) {
+              out[e] += static_cast<uint32_t>(znr[4 * e + i]) *
+                        static_cast<uint32_t>(zmr[4 * e + i]);
+            }
+          }
+          // Update results_ for completed row
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
       case Opcode::AArch64_UDOT_VG4_M4ZZI_BtoS: {  // udot za.s[wv, #off, vgx4],
                                                    // {zn1.b - zn4.b},
                                                    // zm.b[#index]
