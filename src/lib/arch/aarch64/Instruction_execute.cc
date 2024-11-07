@@ -328,6 +328,40 @@ void Instruction::execute() {
         results_[0] = vecAdd_3ops<uint8_t, 8>(sourceValues_);
         break;
       }
+      case Opcode::AArch64_ADD_VG2_M2Z_S: {  // add za.s[wv, off, vgx2], {zn1.s,
+                                             // zn2.s}
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t zaRowCount = VL_bits / 8;
+        const uint16_t elemCount = VL_bits / 32;
+
+        // Get ZA stride between halves and index into each ZA half
+        const uint16_t zaStride = zaRowCount / 2;
+        const uint32_t zaIndex = (sourceValues_[zaRowCount].get<uint32_t>() +
+                                  metadata_.operands[0].sme.slice_offset.imm) %
+                                 zaStride;
+
+        // Pre-set all ZA result rows as only 2 will be updated in loop below
+        for (int z = 0; z < zaRowCount; z++) {
+          results_[z] = sourceValues_[z];
+        }
+
+        for (int r = 0; r < 2; r++) {
+          const uint32_t* zaRow =
+              sourceValues_[(r * zaStride) + zaIndex].getAsVector<uint32_t>();
+          const uint32_t* znr =
+              sourceValues_[zaRowCount + 1 + r].getAsVector<uint32_t>();
+          uint32_t out[64] = {0};
+          for (int i = 0; i < elemCount; i++) {
+            out[i] = zaRow[i] + znr[i];
+          }
+          results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
+        }
+        break;
+      }
       case Opcode::AArch64_ADR: {  // adr xd, #imm
         results_[0] = instructionAddress_ + metadata_.operands[1].imm;
         break;

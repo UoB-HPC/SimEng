@@ -7,6 +7,51 @@ namespace {
 
 using InstSme = AArch64RegressionTest;
 
+TEST_P(InstSme, add) {
+  // uint32_T, vgx2, vecs with ZA
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z0.b, #8
+    dup z1.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z0.b, z1.b
+    umopa za1.s, p0/m, p1/m, z0.b, z1.b
+    umopa za2.s, p0/m, p1/m, z0.b, z1.b
+    umopa za3.s, p0/m, p1/m, z0.b, z1.b
+
+    # Set 2 of the za rows
+    mov w8, #1
+    dup z0.s, #8
+    dup z1.s, #3
+    add za.s[w8, #1, vgx2], {z0.s, z1.s}
+  )");
+  const uint16_t zaStride = (SVL / 8) / 2;
+  const uint16_t zaHalfIndex = 2;
+  for (uint64_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({104}, (SVL / 8)));
+    } else if (i == zaStride + zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({99}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, mova_tileToVec) {
   // 8-bit
   RUN_AARCH64(R"(
