@@ -3633,7 +3633,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          memcpy(out, row, partition_num * sizeof(uint64_t));
+          memcpy(out, row, partition_num * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
             out[sliceNum] = data[i];
