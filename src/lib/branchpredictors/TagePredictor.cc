@@ -1,7 +1,5 @@
 #include "simeng/branchpredictors/TagePredictor.hh"
 
-#include <iostream>
-
 namespace simeng {
 
 TagePredictor::TagePredictor(ryml::ConstNodeRef config)
@@ -44,7 +42,6 @@ TagePredictor::~TagePredictor() {
 
 BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
                                         int64_t knownOffset) {
-//  std::cout << "Predicting" << std::endl;
   BranchPrediction prediction;
   BranchPrediction altPrediction;
   uint8_t predTable;
@@ -96,7 +93,6 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
 void TagePredictor::update(uint64_t address, bool isTaken,
                            uint64_t targetAddress,
                            simeng::BranchType type, uint64_t instructionId) {
-//  std::cout << "Updating" << std::endl;
   // Make sure that this function is called in program order; and then update
   // the lastUpdatedInstructionId variable
   assert(instructionId >= lastUpdatedInstructionId &&
@@ -119,7 +115,6 @@ void TagePredictor::update(uint64_t address, bool isTaken,
 }
 
 void TagePredictor::flush(uint64_t address) {
-//  std::cout << "Flush" << std::endl;
   // If address interacted with RAS, rewind entry
   auto it = rasHistory_.find(address);
   if (it != rasHistory_.end()) {
@@ -151,22 +146,12 @@ void TagePredictor::flush(uint64_t address) {
 
 }
 
-BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
-//  std::cout << "Getting BTB" << std::endl;
-  // Get prediction from BTB
-  uint64_t index = (address >> 2) & ((1 << btbBits_) - 1);
-  bool direction = (btb_[index].first >= (1 << (satCntBits_ - 1)));
-  uint64_t target = btb_[index].second;
-  return {direction, target};
-}
-
 void TagePredictor::getTaggedPrediction(uint64_t address,
                                         BranchPrediction* prediction,
                                         BranchPrediction* altPrediction,
                                         uint8_t* predTable,
                                         std::vector<uint64_t>* indices,
                                         std::vector<uint64_t>* tags) {
-//  std::cout << "Getting Prediction" << std::endl;
   // Get a basic prediction from the btb
   BranchPrediction basePrediction = getBtbPrediction(address);
   prediction->isTaken = basePrediction.isTaken;
@@ -178,13 +163,11 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   // number, the longer global history it has access to.  Therefore, the
   // greater the table number, the better the prediction.
   for (uint8_t table = 0; table < numTageTables_; table++) {
-//    std::cout << "Checking table " << (table + 1) << std::endl;
     uint64_t index = getTaggedIndex(address, table);
     indices->push_back(index);
     uint64_t tag = getTag(address, table);
     tags->push_back(tag);
     if (tageTables_[table][index].tag == tag) {
-//      std::cout << "Tag match -- " << std::endl;
       altPrediction->isTaken = prediction->isTaken;
       altPrediction->target = prediction->target;
 
@@ -195,25 +178,27 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   }
 }
 
+BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
+  // Get prediction from BTB
+  uint64_t index = (address >> 2) & ((1 << btbBits_) - 1);
+  bool direction = (btb_[index].first >= (1 << (satCntBits_ - 1)));
+  uint64_t target = btb_[index].second;
+  return {direction, target};
+}
+
 uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
-//  std::cout << "getting Index" << std::endl;
   // Hash function here is pretty arbitrary.
   uint64_t h1 = (address >> 2);
   uint64_t h2 = globalHistory_.getFolded(1 << (table + 1),
                                          (1 << tageTableBits_) - 1);
-//  std::cout << "Index: h1=" << h1 << " h2=" << h2 << " final="
-//            << ((h1 ^ h2) & ((1 << tageTableBits_) - 1)) << std::endl;
   return (h1 ^ h2) & ((1 << tageTableBits_) - 1);
 }
 
 uint64_t TagePredictor::getTag(uint64_t address, uint8_t table) {
-//  std::cout << "getting Tag" << std::endl;
   // Hash function here is pretty arbitrary.
   uint64_t h1 = address;
   uint64_t h2 = globalHistory_.getFolded((1 << table),
                                          ((1 << tagLength_) - 1));
-//  std::cout << "Tag: h1=" << h1 << " h2=" << h2 << " final="
-//            << ((h1 ^ h2) & ((1 << tagLength_) - 1)) << std::endl;
   return (h1 ^ h2) & ((1 << tagLength_) - 1);
 }
 

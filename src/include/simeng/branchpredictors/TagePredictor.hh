@@ -59,12 +59,13 @@ class TagePredictor : public BranchPredictor {
   /** Returns a btb prediction for this branch */
   BranchPrediction getBtbPrediction(uint64_t address);
 
-  /** Todo */
   void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
                            BranchPrediction* altPrediction,
                            uint8_t* predTable,
                            std::vector<uint64_t>* indices,
                            std::vector<uint64_t>* tags);
+
+  BranchPrediction getBtbPrediction(uint64_t address);
 
   /** Get the index of a branch for a given address and table */
   uint64_t getTaggedIndex(uint64_t address, uint8_t table);

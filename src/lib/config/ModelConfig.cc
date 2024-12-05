@@ -546,6 +546,16 @@ void ModelConfig::setExpectations(bool isDefault) {
               .setValueSet(
                   std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
         }
+        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>()
+              == "Tage")) {
+          expectations_["Branch-Predictor"].addChild(
+              ExpectationNode::createExpectation<uint64_t>(
+                  12, "Tage-Table-Bits"));
+          expectations_["Branch-Predictor"]["Tage-Table-Bits"]
+            .setValueBounds<uint64_t>(1, UINT64_MAX);
+
+
+        }
       } else {
         std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
                      "\"Branch-Predictor:Type\" but it doesn't exist. "
