@@ -198,7 +198,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
   // Default Group for instruction that is not decoded
-  EXPECT_EQ(insn.getGroup(), InstructionGroups::NONE);
+  EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x44);
   EXPECT_EQ(insn.getInstructionId(), 13);
   EXPECT_EQ(insn.getKnownOffset(), 0);
@@ -264,7 +264,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
   // Default Group for instruction that is not decoded
-  EXPECT_EQ(insn.getGroup(), InstructionGroups::NONE);
+  EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x43);
   EXPECT_EQ(insn.getInstructionId(), 15);
   EXPECT_EQ(insn.getKnownOffset(), 0);
@@ -640,74 +640,6 @@ TEST_F(AArch64InstructionTest, setters) {
   EXPECT_FALSE(insn.isWaitingCommit());
   insn.setWaitingCommit();
   EXPECT_TRUE(insn.isWaitingCommit());
-}
-
-TEST_F(AArch64InstructionTest, checkStreamingGroupAndUpdate) {
-  EXPECT_FALSE(arch.isStreamingModeEnabled());
-  // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction SVE_insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
-  // insn is `cbz x2, #0x28`
-  Instruction nonSVE_insn =
-      Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  // insn is `psel	p4, p0, p2.s[w13, 0]`
-  Instruction PRED_insn = Instruction(arch, *pselMetadata.get(), MicroOpInfo());
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
-
-  // Without changing SVE Streaming Mode, calling checkStreamingGroupAndUpdate
-  // should have no effect
-  EXPECT_FALSE(arch.isStreamingModeEnabled());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
-  EXPECT_FALSE(SVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(nonSVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(PRED_insn.checkStreamingGroupAndUpdate());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
-
-  // Updating SVE Streaming Mode should mean calling
-  // checkStreamingGroupAndUpdate changes SVE and PRED groups
-  arch.setSVCRval(3);
-  EXPECT_TRUE(arch.isStreamingModeEnabled());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
-  EXPECT_TRUE(SVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(nonSVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_TRUE(PRED_insn.checkStreamingGroupAndUpdate());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
-
-  // Calling checkStreamingGroupAndUpdate again should have no effect on SVE and
-  // PRED groups, and should return false as a result
-  EXPECT_TRUE(arch.isStreamingModeEnabled());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
-  EXPECT_FALSE(SVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(nonSVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(PRED_insn.checkStreamingGroupAndUpdate());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
-
-  // Disabling SVE Streaming Mode should cause SVE and PRED groups to be updated
-  // again to non-STREAMING, and true returned as a result
-  arch.setSVCRval(0);
-  EXPECT_FALSE(arch.isStreamingModeEnabled());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::STREAMING_SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::STREAMING_PREDICATE);
-  EXPECT_TRUE(SVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_FALSE(nonSVE_insn.checkStreamingGroupAndUpdate());
-  EXPECT_TRUE(PRED_insn.checkStreamingGroupAndUpdate());
-  EXPECT_EQ(SVE_insn.getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
-  EXPECT_EQ(nonSVE_insn.getGroup(), InstructionGroups::BRANCH);
-  EXPECT_EQ(PRED_insn.getGroup(), InstructionGroups::PREDICATE);
 }
 
 }  // namespace aarch64

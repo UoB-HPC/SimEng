@@ -389,8 +389,7 @@ INSTANTIATE_TEST_SUITE_P(
             "{Core: {Vector-Length: 512, Streaming-Vector-Length: 1024}, "
             "LSQ-L1-Interface: {Load-Bandwidth: 256, Store-Bandwidth: 256}, "
             "Ports: {'0': {Portname: 0, Instruction-Group-Support: [INT, SVE, "
-            "STREAMING_SVE, PREDICATE, STREAMING_PREDICATE, LOAD, STORE, "
-            "BRANCH, SME]}}}")),
+            "PREDICATE, LOAD, STORE, BRANCH, SME]}}}")),
     paramToString);
 
 }  // namespace

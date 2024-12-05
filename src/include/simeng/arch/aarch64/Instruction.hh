@@ -391,12 +391,6 @@ class Instruction : public simeng::Instruction {
    * processing this instruction. */
   InstructionException getException() const;
 
-  /** Checks whether the current SVE Streaming Mode status is different to when
-   * this instruction was first decoded, and updates the instruction group
-   * accordingly if required.
-   * Returns TRUE if the group was updated, FALSE otherwise. */
-  bool checkStreamingGroupAndUpdate();
-
  private:
   /** Process the instruction's metadata to determine source/destination
    * registers. */
@@ -478,9 +472,6 @@ class Instruction : public simeng::Instruction {
    * the `InsnType` namespace allowing each bit to represent a unique
    * identifier such as `isLoad` or `isMultiply` etc. */
   uint32_t instructionIdentifier_ = 0;
-
-  /** The instruction group this instruction belongs to. */
-  uint16_t instructionGroup_ = InstructionGroups::NONE;
 };
 
 }  // namespace aarch64

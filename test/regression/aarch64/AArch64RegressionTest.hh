@@ -29,7 +29,7 @@
     },
   Ports:
     {
-      '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME, STREAMING_SVE, STREAMING_PREDICATE] },
+      '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME] },
     },
 }
 )YAML";
