@@ -145,16 +145,7 @@ jobs:
       #  in the actions interface
       #######################################
 
-      - if: ${{ contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
-        name: Checking out benchmark repository (v3)
-        uses: actions/checkout@v3
-        with:
-          repository: UoB-HPC/simeng-benchmarks
-          token: ${{ env.PAT }}
-          ref: makefile-build-system
-          path: simeng-benchmarks
-
-      - if: ${{ !contains(fromJson('["ubuntu:18.04"]'), matrix.OS) && inputs.SIMENG-MODE == 'Release' }}
+      - if: ${{ inputs.SIMENG-MODE == 'Release' }}
         name: Checking out benchmark repository (v4)
         uses: actions/checkout@v4
         with:
