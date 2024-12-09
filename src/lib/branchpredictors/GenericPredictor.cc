@@ -1,7 +1,5 @@
 #include "simeng/branchpredictors/GenericPredictor.hh"
 
-#include <iostream>
-
 namespace simeng {
 
 GenericPredictor::GenericPredictor(ryml::ConstNodeRef config)

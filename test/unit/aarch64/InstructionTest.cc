@@ -493,7 +493,7 @@ TEST_F(AArch64InstructionTest, earlyBranchMisprediction) {
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 }
 
-// Test that a correct prediction (branch isTaken) is handled correctly
+// Test that a correct prediction (branch taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_taken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -510,7 +510,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test a correct prediction where branch is isTaken is handled correctly
+  // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -522,7 +522,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), pred.target);
 }
 
-// Test that a correct prediction (branch not isTaken) is handled correctly
+// Test that a correct prediction (branch not taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -539,7 +539,7 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test a correct prediction where a branch isn't isTaken is handled correctly
+  // Test a correct prediction where a branch isn't taken is handled correctly
   pred = {false, 80 + 4};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
@@ -580,7 +580,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 100 + 0x28);
 }
 
-// Test that an incorrect prediction (wrong isTaken) is handled correctly
+// Test that an incorrect prediction (wrong taken) is handled correctly
 TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   // insn is `cbz x2, #0x28`
   Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
@@ -597,7 +597,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   std::tuple<bool, uint64_t> tup = {false, 0};
   EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
-  // Test an incorrect prediction is handled correctly - isTaken is wrong
+  // Test an incorrect prediction is handled correctly - taken is wrong
   pred = {true, 100 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);

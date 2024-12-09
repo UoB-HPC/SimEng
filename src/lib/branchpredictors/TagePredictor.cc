@@ -22,12 +22,10 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   uint8_t weaklyTaken = (uint8_t)1 << (satCntBits_ - 1);
   uint8_t satCntVal = (config["Branch-Predictor"]["Fallback-Static-Predictor"]
                            .as<std::string>() == "Always-Taken")
-                          ? weaklyTaken
-                          : (weaklyTaken - 1);
+                          ? weaklyTaken : (weaklyTaken - 1);
   // Create branch prediction structures
-  btb_ =
-      std::vector<std::pair<uint8_t, uint64_t>>(
-          (uint8_t)1 << btbBits_, {satCntVal, 0});
+  btb_ = std::vector<std::pair<uint8_t, uint64_t>>(
+      (uint8_t)1 << btbBits_, {satCntVal, 0});
 
   // Set up Tagged tables
   for (uint32_t i = 0; i < numTageTables_; i++) {
