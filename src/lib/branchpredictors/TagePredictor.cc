@@ -19,19 +19,20 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   // Calculate the saturation counter boundary between weakly taken and
   // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
   // value
-  uint8_t weaklyTaken = 1 << (satCntBits_ - 1);
+  uint8_t weaklyTaken = (uint8_t)1 << (satCntBits_ - 1);
   uint8_t satCntVal = (config["Branch-Predictor"]["Fallback-Static-Predictor"]
                            .as<std::string>() == "Always-Taken")
                           ? weaklyTaken
                           : (weaklyTaken - 1);
   // Create branch prediction structures
   btb_ =
-      std::vector<std::pair<uint8_t, uint64_t>>(1 << btbBits_, {satCntVal, 0});
+      std::vector<std::pair<uint8_t, uint64_t>>(
+          (uint8_t)1 << btbBits_, {satCntVal, 0});
 
   // Set up Tagged tables
   for (uint32_t i = 0; i < numTageTables_; i++) {
     std::vector<TageEntry> newTable;
-    for (uint32_t j = 0; j < (1 << tageTableBits_); j++) {
+    for (uint32_t j = 0; j < (1ul << tageTableBits_); j++) {
       TageEntry newEntry = {2, 0, 1, 0};
       newTable.push_back(newEntry);
     }
@@ -203,26 +204,26 @@ uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
 uint64_t TagePredictor::getTag(uint64_t address, uint8_t table) {
   // Hash function here is pretty arbitrary.
   uint64_t h1 = address;
-  uint64_t h2 = globalHistory_.getFolded((1 << table),
-                                         ((1 << tagLength_) - 1));
-  return (h1 ^ h2) & ((1 << tagLength_) - 1);
+  uint64_t h2 = globalHistory_.getFolded((1ull << table),
+                                         ((1ull << tagLength_) - 1));
+  return (h1 ^ h2) & ((1ull << tagLength_) - 1);
 }
 
 
 void TagePredictor::updateBtb(uint64_t address, bool isTaken,
                               uint64_t targetAddress) {
   // Calculate 2-bit saturating counter value
-  uint8_t satCntVal = btb_[((address >> 2) & ((1 << btbBits_) - 1))].first;
+  uint8_t satCntVal = btb_[((address >> 2) & ((1ull << btbBits_) - 1))].first;
   // Only alter value if it would transition to a valid state
-  if (!((satCntVal == (1 << satCntBits_) - 1) && isTaken) &&
+  if (!((satCntVal == (1ull << satCntBits_) - 1) && isTaken) &&
       !(satCntVal == 0 && !isTaken)) {
     satCntVal += isTaken ? 1 : -1;
   }
 
   // Update BTB entry
-  btb_[((address >> 2) & ((1 << btbBits_) - 1))].first = satCntVal;
+  btb_[((address >> 2) & ((1ull << btbBits_) - 1))].first = satCntVal;
   if (isTaken) {
-    btb_[((address >> 2) & ((1 << btbBits_) - 1))].second = targetAddress;
+    btb_[((address >> 2) & ((1ull << btbBits_) - 1))].second = targetAddress;
   }
 }
 
