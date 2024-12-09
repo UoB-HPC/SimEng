@@ -149,13 +149,13 @@ The Branch-Prediction section contains those options to parameterise the branch 
 The current options include:
 
 Type
-    The type of branch predictor that is used, the options are ``Generic``, and ``Perceptron``.  Both types of predictor use a branch target buffer with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` is a saturating counter, and in ``Perceptron`` it is a perceptron.
+    The type of branch predictor that is used, the options are ``Generic``, ``Perceptron``, and ``Tage``.  Each of these types of predictor use prediction tables with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` and ``TAGE`` is a saturating counter, and in ``Perceptron`` it is a perceptron.  ``TAGE`` also uses a series of further, tagged prediction tables to provide predictions informed by greater branch histories.
 
 BTB-Tag-Bits
     The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
 
 Saturating-Count-Bits
-    Only needed for a ``Generic`` predictor.  The number of bits used in the saturating counter value.
+    Only needed for ``Generic`` and ``Tage`` predictors.  The number of bits used in the saturating counter value.
 
 Global-History-Length
     The number of bits used to record the global history of branch directions. Each bit represents one branch direction.  For ``PerceptronPredictor``, this dictates the size of the perceptrons (with each perceptron having Global-History-Length + 1 weights).
@@ -164,7 +164,16 @@ RAS-entries
     The number of entries in the Return Address Stack (RAS).
 
 Fallback-Static-Predictor
-    Only needed for a ``Generic`` predictor.  The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
+    Only needed for ``Generic`` and ``Tage`` predictors.  The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
+
+Tage-Table-Bits
+    Only needed for a ``Tage`` predictor.  The number of bits used to index entries in the tagged tables.  The number of entries in each of the tagged tables is obtained from the calculation: 1 << ``bits``.  For examples, a ``bits`` value of 12 would result in tagged tables with 4096 entries.
+
+Num-Tage-Tables
+    Only needed for a ``Tage`` predictor.  The number of tagged tables used by the predictor, in addition to a default prediction table (i.e., the BTB).  Therefore, a value of 3 for ``Num-Tage-Tables`` would result in four total prediction tables: one BTB and three tagged tables.  If no tagged tables are desired, it is recommended to use the ``GenericPredictor`` instead.
+
+Tage-Length
+    Only needed for a ``Tage`` predictor.  The number of bits used to tage the entries of the tagged tables.
 
 .. _l1dcnf:
 
