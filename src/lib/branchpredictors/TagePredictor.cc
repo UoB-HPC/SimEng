@@ -108,7 +108,7 @@ void TagePredictor::update(uint64_t address, bool isTaken,
 
   updateBtb(address, isTaken, targetAddress);
 
-  updateTaggedTables(address, isTaken, targetAddress);
+  updateTaggedTables(isTaken, targetAddress);
 
   // Update global history if prediction was incorrect
   if (ftq_.front().prediction.isTaken != isTaken) {
@@ -215,6 +215,7 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[((address >> 2) & ((1ull << btbBits_) - 1))].first;
   // Only alter value if it would transition to a valid state
+  // (i.e., avoid overflow)
   if (!((satCntVal == (1ull << satCntBits_) - 1) && isTaken) &&
       !(satCntVal == 0 && !isTaken)) {
     satCntVal += isTaken ? 1 : -1;
@@ -228,9 +229,9 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
 }
 
 
-void TagePredictor::updateTaggedTables(uint64_t address, bool isTaken,
+void TagePredictor::updateTaggedTables(bool isTaken,
                                        uint64_t target) {
-  // Get stored information from the ftq
+  // Get stored information from the FTQ
   uint8_t predTable = ftq_.front().predTable;
   std::vector<uint64_t> indices = ftq_.front().indices;
   std::vector<uint64_t> tags = ftq_.front().tags;

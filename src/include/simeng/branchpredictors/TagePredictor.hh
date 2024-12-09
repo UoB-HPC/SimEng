@@ -105,7 +105,7 @@ class TagePredictor : public BranchPredictor {
   void updateBtb(uint64_t address, bool isTaken, uint64_t target);
 
   /** Updates the tagged tables on the basis of the outcome of a branch. */
-  void updateTaggedTables(uint64_t address, bool isTaken, uint64_t target);
+  void updateTaggedTables(bool isTaken, uint64_t target);
 
   /** The bitlength of the BTB (i.e., default prediction table) index; BTB
    * will have 2^bits entries. */
