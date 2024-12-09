@@ -12,7 +12,7 @@ namespace simeng {
 /** An abstract branch predictor interface. */
 class BranchPredictor {
  public:
-  virtual ~BranchPredictor(){};
+  virtual ~BranchPredictor() {};
 
   /** Generate a branch prediction for the supplied instruction address, a
    * branch type, and a known branch offset.  Returns a branch direction and

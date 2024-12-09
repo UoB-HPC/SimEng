@@ -1,13 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <deque>
 #include <map>
 #include <vector>
-#include <algorithm>
 
-#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/branchpredictors/BranchHistory.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 
 namespace simeng {
@@ -17,7 +17,7 @@ namespace simeng {
 struct TageEntry {
   uint8_t satCnt;
   uint64_t tag;
-  uint8_t u; // usefulness counter
+  uint8_t u;  // usefulness counter
   uint64_t target;
 };
 
@@ -86,8 +86,7 @@ class TagePredictor : public BranchPredictor {
    * alternative prediction.  This prediction info is determined from the
    * tagged tables for a branch with the provided address. */
   void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
-                           BranchPrediction* altPrediction,
-                           uint8_t* predTable,
+                           BranchPrediction* altPrediction, uint8_t* predTable,
                            std::vector<uint64_t>* indices,
                            std::vector<uint64_t>* tags);
 
@@ -96,8 +95,8 @@ class TagePredictor : public BranchPredictor {
   uint64_t getTaggedIndex(uint64_t address, uint8_t table);
 
   /** Returns a hash of the address and the global history that is then trimmed
-    * to the appropriate tag length.  The tag varies depending on the table
-    * that is being accessed. */
+   * to the appropriate tag length.  The tag varies depending on the table
+   * that is being accessed. */
   uint64_t getTag(uint64_t address, uint8_t table);
 
   /** Updates the default, untagged prediction table on the basis of the

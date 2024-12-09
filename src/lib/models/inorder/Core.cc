@@ -148,8 +148,10 @@ std::map<std::string, std::string> Core::getStats() const {
   ipcStr << std::setprecision(2) << ipc;
 
   return {
-    {"cycles", std::to_string(ticks_)}, {"retired", std::to_string(retired)},
-        {"ipc", ipcStr.str()}, {"flushes", std::to_string(flushes_)},
+      {"cycles", std::to_string(ticks_)},
+      {"retired", std::to_string(retired)},
+      {"ipc", ipcStr.str()},
+      {"flushes", std::to_string(flushes_)},
   };
 }
 

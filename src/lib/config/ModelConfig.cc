@@ -531,8 +531,9 @@ void ModelConfig::setExpectations(bool isDefault) {
       // associated YAML node
       if (configTree_["Branch-Predictor"].has_child(ryml::to_csubstr("Type"))) {
         if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-            "Generic") || (configTree_["Branch-Predictor"]["Type"]
-                        .as<std::string>() == "Tage")) {
+             "Generic") ||
+            (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+             "Tage")) {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(
                   2, "Saturating-Count-Bits"));
@@ -546,17 +547,17 @@ void ModelConfig::setExpectations(bool isDefault) {
               .setValueSet(
                   std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
         }
-        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>()
-              == "Tage")) {
+        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+             "Tage")) {
           expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(
-                  12, "Tage-Table-Bits"));
+              ExpectationNode::createExpectation<uint8_t>(12,
+                                                          "Tage-Table-Bits"));
           expectations_["Branch-Predictor"]["Tage-Table-Bits"]
-            .setValueBounds<uint8_t>(1, UINT8_MAX);
+              .setValueBounds<uint8_t>(1, UINT8_MAX);
 
           expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(
-                  6, "Num-Tage-Tables"));
+              ExpectationNode::createExpectation<uint8_t>(6,
+                                                          "Num-Tage-Tables"));
           expectations_["Branch-Predictor"]["Num-Tage-Tables"]
               .setValueBounds<uint8_t>(1, UINT8_MAX);
 

@@ -24,7 +24,8 @@ class BranchHistory {
    * integer. */
   uint64_t getHistory(uint8_t numBits) {
     assert(numBits <= 64 && "Cannot get more than 64 bits without rolling");
-    assert(numBits <= size_ && "Cannot get more bits of branch history than "
+    assert(numBits <= size_ &&
+           "Cannot get more bits of branch history than "
            "the size of the history");
     return (history_[0] & ((1 << numBits) - 1));
   }
@@ -33,7 +34,8 @@ class BranchHistory {
    * value of size 'length'.  The global history is folded by taking an
    * XOR hash with the overflowing bits to get an output of 'length' bits. */
   uint64_t getFolded(uint8_t numBits, uint8_t length) {
-    assert(numBits <= size_ && "Cannot get more bits of branch history than "
+    assert(numBits <= size_ &&
+           "Cannot get more bits of branch history than "
            "the size of the history");
     uint64_t output = 0;
 
@@ -105,4 +107,4 @@ class BranchHistory {
   std::vector<uint64_t> history_;
 };
 
-}
+}  // namespace simeng
