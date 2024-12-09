@@ -12,6 +12,8 @@
 
 namespace simeng {
 
+/** A data structure to store all of the information needed for a single entry
+ * in a tagged table. */
 struct TageEntry {
   uint8_t satCnt;
   uint64_t tag;
@@ -19,6 +21,8 @@ struct TageEntry {
   uint64_t target;
 };
 
+/** A data structure to store all of the information needed for a single entry
+ * in the Fetch Target Queue. */
 struct ftqEntry {
   uint8_t predTable;
   std::vector<uint64_t> indices;
@@ -27,7 +31,24 @@ struct ftqEntry {
   BranchPrediction altPrediction;
 };
 
-/** ToDo -- Explain TAGE */
+/**
+ * A TAGE branch predictor of the type described by Seznec and Michaud:
+ * https://inria.hal.science/hal-03408381/document.  A brief summary of the
+ * prediction mechanism is described below.
+ *
+ * This predictor uses a series of prediction tables (a user-defined number
+ * thereof), each of which uses a progressively larger global history to index
+ * it. The default prediction table does not use any global history.
+ *
+ * To access a prediction table, an XOR hash of the branch's address and the
+ * global history of the relevant length is used to index the table.  Then, a
+ * tag is determined by a hash of the address and the context of the branch is
+ * used to confirm that the entry belongs to the present branch.
+ *
+ * A prediction is made on the basis of the prediction table using the longest
+ * global history that has an entry corresponding to the present branch
+ * (matching tag).
+ * */
 
 class TagePredictor : public BranchPredictor {
  public:
@@ -36,10 +57,10 @@ class TagePredictor : public BranchPredictor {
   ~TagePredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
-   * branch type, and a known branch offset; defaults to 0 meaning offset is not
-   * known. Returns a branch direction and branch target address. */
+   * branch type, and a known branch offset.  Returns a branch direction and
+   * branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           int64_t knownOffset = 0) override;
+                           int64_t knownOffset) override;
 
   /** Updates appropriate predictor model objects based on the address, type and
    * outcome of the branch instruction.  Update must be called on
@@ -56,39 +77,55 @@ class TagePredictor : public BranchPredictor {
   void flush(uint64_t address) override;
 
  private:
-  /** Returns a btb prediction for this branch */
+  /** Returns a prediction for a branch at this address from the non-tagged BTB
+   * that is used for default predictions. */
   BranchPrediction getBtbPrediction(uint64_t address);
 
+  /** provides a prediction, alternative prediction, the table number that
+   * provided the prediction, and the indices and tags of the prediction and
+   * alternative prediction.  This prediction info is determined from the
+   * tagged tables for a branch with the provided address. */
   void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
                            BranchPrediction* altPrediction,
                            uint8_t* predTable,
                            std::vector<uint64_t>* indices,
                            std::vector<uint64_t>* tags);
 
-  BranchPrediction getBtbPrediction(uint64_t address);
-
-  /** Get the index of a branch for a given address and table */
+  /** Returns the index of a branch in a tagged table for a given address and
+   * table. */
   uint64_t getTaggedIndex(uint64_t address, uint8_t table);
 
-  /** Return a hash of the address and the global history that is then trimmed
-    * to the length of the tags.  The tag varies depending on
-    * the table that is being accessed */
+  /** Returns a hash of the address and the global history that is then trimmed
+    * to the appropriate tag length.  The tag varies depending on the table
+    * that is being accessed. */
   uint64_t getTag(uint64_t address, uint8_t table);
 
+  /** Updates the default, untagged prediction table on the basis of the
+   * outcome of a branch. */
   void updateBtb(uint64_t address, bool isTaken, uint64_t target);
 
+  /** Updates the tagged tables on the basis of the outcome of a branch. */
   void updateTaggedTables(uint64_t address, bool isTaken, uint64_t target);
 
-  /** The bitlength of the BTB index; BTB will have 2^bits entries. */
+  /** The bitlength of the BTB (i.e., default prediction table) index; BTB
+   * will have 2^bits entries. */
   uint8_t btbBits_;
 
   /** A 2^bits length vector of pairs containing a satCntBits_-bit saturating
-   * counter and a branch target. */
+   * counter and a branch target.  This is the untagged, default prediction
+   * table. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
-  uint64_t tageTableBits_ = 12;
-  uint8_t numTageTables_ = 6;
+  /** The bitlength of the Tagged tables' indices.
+   * Each tagged table with have 2^bits entries. */
+  uint8_t tageTableBits_;
 
+  /** The number of tagged tables in the TAGE scheme.
+   * In addition to the tagged tables, there will be a single untagged table
+   * (the BTB) from which default predictions will be made. */
+  uint8_t numTageTables_;
+
+  /** Data structure to store the tagged tables in. */
   std::vector<std::vector<TageEntry>> tageTables_;
 
   /** Fetch Target Queue containing the direction prediction and previous global
@@ -117,7 +154,9 @@ class TagePredictor : public BranchPredictor {
    * taken (0), with the most recent branch being the least-significant-bit */
   BranchHistory globalHistory_;
 
-  uint8_t tagLength_ = 8;
+  /** The size of the tags used in the tagged tables, where the units of
+   * size are bits. */
+  uint8_t tagLength_;
 
   // This variable is used only in debug mode -- therefore hide behind ifdef
 #ifndef NDEBUG

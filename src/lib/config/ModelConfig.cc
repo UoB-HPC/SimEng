@@ -549,12 +549,21 @@ void ModelConfig::setExpectations(bool isDefault) {
         if ((configTree_["Branch-Predictor"]["Type"].as<std::string>()
               == "Tage")) {
           expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint64_t>(
+              ExpectationNode::createExpectation<uint8_t>(
                   12, "Tage-Table-Bits"));
           expectations_["Branch-Predictor"]["Tage-Table-Bits"]
-            .setValueBounds<uint64_t>(1, UINT64_MAX);
+            .setValueBounds<uint8_t>(1, UINT8_MAX);
 
+          expectations_["Branch-Predictor"].addChild(
+              ExpectationNode::createExpectation<uint8_t>(
+                  6, "Num-Tage-Tables"));
+          expectations_["Branch-Predictor"]["Num-Tage-Tables"]
+              .setValueBounds<uint8_t>(1, UINT8_MAX);
 
+          expectations_["Branch-Predictor"].addChild(
+              ExpectationNode::createExpectation<uint8_t>(8, "Tag-Length"));
+          expectations_["Branch-Predictor"]["Tag-Length"]
+              .setValueBounds<uint8_t>(1, UINT8_MAX);
         }
       } else {
         std::cerr << "[SimEng:ModelConfig] Attempted to access config key "

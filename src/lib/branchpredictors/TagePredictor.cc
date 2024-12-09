@@ -4,12 +4,18 @@ namespace simeng {
 
 TagePredictor::TagePredictor(ryml::ConstNodeRef config)
     : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint8_t>()),
+      tageTableBits_(
+          config["Branch-Predictor"]["Tage-Table-Bits"].as<uint8_t>()),
+      numTageTables_(
+          config["Branch-Predictor"]["Num-Tage-Tables"].as<uint8_t>()),
       satCntBits_(
           config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint8_t>()),
       globalHistoryLength_(
           config["Branch-Predictor"]["Global-History-Length"].as<uint16_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()),
-      globalHistory_(1 << (numTageTables_ + 1)) {
+      globalHistory_(1 << (numTageTables_ + 1)),
+      tagLength_(config["Branch-Predictor"]["Tag-Length"].as<uint8_t>())
+    {
   // Calculate the saturation counter boundary between weakly taken and
   // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
   // value
