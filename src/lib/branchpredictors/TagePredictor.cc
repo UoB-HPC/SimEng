@@ -23,11 +23,12 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
                            .as<std::string>() == "Always-Taken")
                           ? weaklyTaken
                           : (weaklyTaken - 1);
-  // Create branch prediction structures
-  btb_ = std::vector<std::pair<uint8_t, uint64_t>>((uint8_t)1 << btbBits_,
+
+  // Set up non-tagged default prediction table
+  btb_ = std::vector<std::pair<uint8_t, uint64_t>>(1ul << btbBits_,
                                                    {satCntVal, 0});
 
-  // Set up Tagged tables
+  // Set up tagged prediction tables
   for (uint32_t i = 0; i < numTageTables_; i++) {
     std::vector<TageEntry> newTable;
     for (uint32_t j = 0; j < (1ul << tageTableBits_); j++) {
@@ -55,6 +56,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   getTaggedPrediction(address, &prediction, &altPrediction, &predTable,
                       &indices, &tags);
 
+  // If known offset then overwrite predicted target with this
   if (knownOffset != 0) prediction.target = address + knownOffset;
 
   // Amend prediction based on branch type
@@ -86,7 +88,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
     if (!prediction.isTaken) prediction.target = address + 4;
   }
 
-  // Store the hashed index for correct hashing in update()
+  // Store prediction data so that update() has the info it needs
   ftqEntry newEntry = {predTable, indices, tags, prediction, altPrediction};
   ftq_.push_back(newEntry);
 
@@ -110,12 +112,11 @@ void TagePredictor::update(uint64_t address, bool isTaken,
 
   // Update global history if prediction was incorrect
   if (ftq_.front().prediction.isTaken != isTaken) {
-    // Bit-flip the global history bit corresponding to this prediction
     // We know how many predictions there have since been by the size of the FTQ
     globalHistory_.updateHistory(isTaken, ftq_.size());
   }
 
-  // Pop ftq entry from ftq
+  // Pop used ftq entry from ftq
   ftq_.pop_front();
 }
 
@@ -167,10 +168,14 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   // number, the longer global history it has access to.  Therefore, the
   // greater the table number, the better the prediction.
   for (uint8_t table = 0; table < numTageTables_; table++) {
+    // Determine the index and tag for this table, as they vary depending on
+    // the length of global history
     uint64_t index = getTaggedIndex(address, table);
     indices->push_back(index);
     uint64_t tag = getTag(address, table);
     tags->push_back(tag);
+
+    // If tag matches, then use this prediction
     if (tageTables_[table][index].tag == tag) {
       altPrediction->isTaken = prediction->isTaken;
       altPrediction->target = prediction->target;
@@ -184,22 +189,23 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
 
 BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
   // Get prediction from BTB
-  uint64_t index = (address >> 2) & ((1 << btbBits_) - 1);
+  uint64_t index = (address >> 2) & ((1ull << btbBits_) - 1);
   bool direction = (btb_[index].first >= (1 << (satCntBits_ - 1)));
   uint64_t target = btb_[index].second;
   return {direction, target};
 }
 
 uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
-  // Hash function here is pretty arbitrary.
+  // Get the XOR of the address (sans two least-significant bits) and the
+  // global history (folded onto itself to make it of the correct size).
   uint64_t h1 = (address >> 2);
-  uint64_t h2 =
-      globalHistory_.getFolded(1 << (table + 1), (1 << tageTableBits_) - 1);
+  uint64_t h2 = globalHistory_.getFolded(1ull << (table + 1), tageTableBits_);
+  // Then truncat the XOR to make it fit thed esired size of an index
   return (h1 ^ h2) & ((1 << tageTableBits_) - 1);
 }
 
 uint64_t TagePredictor::getTag(uint64_t address, uint8_t table) {
-  // Hash function here is pretty arbitrary.
+  // Hash function here is pretty arbitrary
   uint64_t h1 = address;
   uint64_t h2 =
       globalHistory_.getFolded((1ull << table), ((1ull << tagLength_) - 1));
@@ -240,17 +246,17 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
     (tageTables_[predTable][predIndex].satCnt)--;
   }
 
-  // Allocate new entry if prediction wrong and possible -- Check higher order
-  // tagged predictor tables to see if there is a non-useful entry that can
-  // be replaced
+  // Allocate new entry if prediction was wrong and space for a new entry is
+  // available
+  // -- Check higher order tagged predictor tables to see if there is a
+  // non-useful entry that can be replaced
   if (isTaken != pred.isTaken || (isTaken && (target != pred.target))) {
-    bool allocated = false;
     for (uint8_t table = predTable + 1; table < numTageTables_; table++) {
-      if (!allocated && (tageTables_[table][indices[table]].u <= 1)) {
+      if (tageTables_[table][indices[table]].u <= 1) {
         tageTables_[table][indices[table]] = {
-            ((isTaken) ? (uint8_t)2 : (uint8_t)1), tags[table], (uint8_t)2,
+            (isTaken ? (uint8_t)2 : (uint8_t)1), tags[table], (uint8_t)2,
             target};
-        allocated = true;
+        break;
       }
     }
   }
@@ -260,6 +266,7 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
       (pred.isTaken && (pred.target != altPred.target))) {
     bool wasUseful = (pred.isTaken == isTaken);
     uint8_t currentU = tageTables_[predTable][indices[predTable]].u;
+    // Make sure that update is possible
     if (wasUseful && currentU < 3) {
       (tageTables_[predTable][indices[predTable]].u)++;
     }
