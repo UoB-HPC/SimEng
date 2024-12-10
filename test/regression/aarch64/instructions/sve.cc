@@ -1506,6 +1506,8 @@ TEST_P(InstSve, cmphs_vec) {
   )");
   CHECK_PREDICATE(1, uint64_t, fillPred(VL / 8, {1}, 8));
   EXPECT_EQ(getNZCV(), 0b1000);
+
+  EXPECT_GROUP(R"(cmphs p1.d, p0/z, z1.d, z0.d)", PREDICATE);
 }
 
 TEST_P(InstSve, cnt) {
@@ -1868,6 +1870,8 @@ TEST_P(InstSve, cpy) {
   CHECK_NEON(3, double, fillNeon<double>({static_cast<int16_t>(-16)}, VL / 16));
   CHECK_NEON(4, double, fillNeon<double>({12}, VL / 8));
   CHECK_NEON(5, double, fillNeon<double>({static_cast<int16_t>(-8)}, VL / 16));
+
+  EXPECT_GROUP(R"(cpy z3.d, p1/m, d9)", SVE_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, fcpy) {
@@ -3775,6 +3779,8 @@ TEST_P(InstSve, fdiv) {
   CHECK_NEON(1, double, fillNeon<double>(dresults, VL / 8));
   std::rotate(dsrcB.begin(), dsrcB.begin() + ((VL / 128) % 8), dsrcB.end());
   CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
+
+  EXPECT_GROUP(R"(fdiv z2.d, p0/m, z2.d, z0.d)", SVE_DIV_OR_SQRT);
 }
 
 TEST_P(InstSve, fnmls) {
@@ -5010,6 +5016,8 @@ TEST_P(InstSve, ftsmul) {
              fillNeon<float>({1.0f, 29.16f, 0.0f, 6115.24f, -4.41f, -698.0164f,
                               144.0f, 12.25f},
                              VL / 16));
+
+  EXPECT_GROUP(R"(ftsmul z3.s, z1.s, z0.s)", SVE_MUL);
 }
 
 TEST_P(InstSve, ftssel) {
@@ -5082,6 +5090,8 @@ TEST_P(InstSve, ftssel) {
   CHECK_NEON(2, uint32_t,
              fillNeon<uint32_t>({0x1234, 0x3f800000, 0x80F0FFFF, 0xBF800000},
                                 VL / 16));
+
+  EXPECT_GROUP(R"(ftssel z2.s, z0.s, z1.s)", SVE_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, ftmad) {
@@ -5160,6 +5170,8 @@ TEST_P(InstSve, ftmad) {
              fillNeon<float>(
                  {0.00833333f, 0.25833333f, -0.1583334f, 0.1916666f}, VL / 8));
   CHECK_NEON(4, float, fillNeon<float>({0.0f, 0.25f, -0.2f, 0.15f}, VL / 8));
+
+  EXPECT_GROUP(R"(ftmad z4.s, z4.s, z1.s, #7)", SVE_MUL);
 }
 
 TEST_P(InstSve, ld1rd) {
@@ -6217,6 +6229,8 @@ TEST_P(InstSve, pfirst) {
   CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 1));
   CHECK_PREDICATE(4, uint64_t, fillPred(1, {1}, 1));
   CHECK_PREDICATE(5, uint64_t, fillPred(VL / 8, {0}, 1));
+
+  EXPECT_GROUP(R"(pfirst p5.b, p1, p5.b)", PREDICATE);
 }
 
 TEST_P(InstSve, ptrue) {
@@ -6330,6 +6344,8 @@ TEST_P(InstSve, pnext) {
   CHECK_PREDICATE(1, uint64_t,
                   fillPredFromSource<uint64_t>({0x1, 0, 0, 0}, 32));
   EXPECT_EQ(getNZCV(), 0b1010);
+
+  EXPECT_GROUP(R"(pnext p1.d, p3, p1.d)", PREDICATE);
 }
 
 TEST_P(InstSve, punpk) {
@@ -6868,6 +6884,8 @@ TEST_P(InstSve, smax) {
              fillNeon<int8_t>({127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
                                127, 127, 127, 127, 127, 127},
                               VL / 8));
+
+  EXPECT_GROUP(R"(smax z5.b, z5.b, #127)", SVE_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, smin) {
@@ -7098,6 +7116,9 @@ TEST_P(InstSve, smin) {
       std::min_element(arrB8.begin(), arrB8.end() - (256 - VL / 8)))];
   CHECK_NEON(3, int8_t, {minElemA8, 0, 0, 0});
   CHECK_NEON(4, int8_t, {minElemB8, 0, 0, 0});
+
+  EXPECT_GROUP(R"(smin z2.b, p1/m, z2.b, z0.b)", SVE_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sminv b4, p0, z2.b)", SCALAR_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, smulh) {
@@ -7268,6 +7289,8 @@ TEST_P(InstSve, umaxv) {
   CHECK_NEON(11, uint8_t,
              {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
               0x00, 0x00, 0x00, 0x00, 0x00})
+
+  EXPECT_GROUP(R"(umaxv b11, v1.16b)", SCALAR_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, clastb) {
@@ -7370,6 +7393,8 @@ TEST_P(InstSve, clastb) {
     )");
   CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0xEF}, 8));
   CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
+
+  EXPECT_GROUP(R"(clastb b2, p0, b2, z3.b)", SCALAR_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, lastb) {
@@ -7474,6 +7499,8 @@ TEST_P(InstSve, lastb) {
     )");
   CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x01}, 8));
   CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x1F}, 8));
+
+  EXPECT_GROUP(R"(lastb b4, p0, z3.b)", SCALAR_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, splice) {
@@ -7516,6 +7543,8 @@ TEST_P(InstSve, splice) {
   )");
   CHECK_NEON(0, float, fillNeon<float>({1.5}, VL / 8));
   CHECK_NEON(2, float, fillNeonCombined<float>({1.5}, {-0.5}, VL / 8));
+
+  EXPECT_GROUP(R"(splice z2.s, p1, z2.s, z1.s)", SVE_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, st1b) {
@@ -9250,6 +9279,8 @@ TEST_P(InstSve, whilels) {
   )");
   CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 8));
   EXPECT_EQ(getNZCV(), 0b1000);
+
+  EXPECT_GROUP(R"(whilels p3.d, xzr, x0)", PREDICATE);
 }
 
 TEST_P(InstSve, whilelt) {

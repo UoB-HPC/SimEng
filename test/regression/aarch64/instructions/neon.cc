@@ -374,6 +374,8 @@ TEST_P(InstNeon, uaddlv) {
     uaddlv h1, v0.8b
   )");
   CHECK_NEON(1, uint16_t, {36});
+
+  EXPECT_GROUP(R"(uaddlv h1, v0.8b)", SCALAR_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstNeon, and) {
@@ -770,6 +772,8 @@ TEST_P(InstNeon, cmeq) {
     cmeq v2.4s, v0.4s, v1.4s
   )");
   CHECK_NEON(2, uint32_t, {0, 0xFFFFFFFFu, 0xFFFFFFFFu, 0});
+
+  EXPECT_GROUP(R"(cmeq v2.4s, v0.4s, v1.4s)", VECTOR_SIMPLE_CMP);
 }
 
 TEST_P(InstNeon, cmhs) {
@@ -883,6 +887,8 @@ TEST_P(InstNeon, cmhi) {
   )");
   CHECK_NEON(2, uint32_t, {0xFFFFFFFF, 0x0, 0xFFFFFFFF, 0x0});
   CHECK_NEON(3, uint32_t, {0x0, 0xFFFFFFFF, 0x0, 0x0});
+
+  EXPECT_GROUP(R"(cmhi v3.4s, v1.4s, v0.4s)", VECTOR_SIMPLE_CMP);
 }
 
 TEST_P(InstNeon, cnt) {
@@ -1109,6 +1115,8 @@ TEST_P(InstNeon, orn) {
     orn v2.8b, v0.8b, v1.8b
   )");
   CHECK_NEON(2, uint8_t, {254, 253, 254, 251, 254, 253, 254, 247});
+
+  EXPECT_GROUP(R"(orn v2.8b, v0.8b, v1.8b)", VECTOR_SIMPLE_LOGICAL_NOSHIFT);
 }
 
 TEST_P(InstNeon, ext) {

@@ -5176,8 +5176,6 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
-                                     // STORE
-        std::cout << "sv0: " << sourceValues_[0] << "\n";
         memoryData_[0] = sourceValues_[0];
         break;
       }

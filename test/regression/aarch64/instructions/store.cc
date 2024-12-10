@@ -3,6 +3,7 @@
 namespace {
 
 using InstStore = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstStore, stlr) {
   // stlrb
@@ -90,6 +91,8 @@ TEST_P(InstStore, stlxr) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
 
+  EXPECT_GROUP(R"(stlxrb w7, w3, [sp])", STORE_ADDRESS_INT);
+
   // stlxrh
   RUN_AARCH64(R"(
     mov w0, 0xABCD
@@ -119,6 +122,8 @@ TEST_P(InstStore, stlxr) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
 
+  EXPECT_GROUP(R"(stlxrh w7, w3, [sp])", STORE_ADDRESS_INT);
+
   // stlxr
   RUN_AARCH64(R"(
     mov w0, 0xABCD
@@ -147,6 +152,8 @@ TEST_P(InstStore, stlxr) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0);
+
+  EXPECT_GROUP(R"(stlxr w7, w3, [sp])", STORE_ADDRESS_INT);
 }
 
 TEST_P(InstStore, strb) {

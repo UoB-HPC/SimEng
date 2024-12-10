@@ -3,6 +3,7 @@
 namespace {
 
 using InstLoad = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstLoad, ld1r) {
   // 8-bit
@@ -755,6 +756,8 @@ TEST_P(InstLoad, ldaxrb) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 32);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 64);
+
+  EXPECT_GROUP(R"(ldaxrb w7, [sp])", LOAD_INT);
 }
 
 TEST_P(InstLoad, ldrb) {
@@ -1352,6 +1355,8 @@ TEST_P(InstLoad, ldrsw) {
   EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
   EXPECT_EQ(getGeneralRegister<int64_t>(5), -5);
+
+  EXPECT_GROUP(R"(ldrsw x4, [x0, x6, lsl #2])", LOAD_INT);
 
   // ldursw
   RUN_AARCH64(R"(
