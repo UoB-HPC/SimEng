@@ -306,9 +306,10 @@ std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
     for (int i = 0; i < elemsPerVec; i++) {
       // Move bit to next position based on element type
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
-      // If invert = 1, predElemCount dictates number of initial inactive
-      // elements.
-      // If invert = 0, it is number of initial active elements.
+      // If invert = True (invert bit = 1), predElemCount dictates number of
+      // initial inactive elements.
+      // If invert = False (invert bit = 0), it indicates the number of initial
+      // active elements.
       if ((r * elemsPerVec) + i < predElemCount) {
         out[r][i / (64 / sizeof(T))] |= (invert) ? 0 : shifted_active;
       } else {

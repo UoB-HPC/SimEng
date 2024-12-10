@@ -626,7 +626,7 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
   return {out, 256};
 }
 
-/** Helpfer function for SVE instructions with the format `faddv rd, pg, zn.
+/** Helper function for SVE instructions with the format `faddv rd, pg, zn.
  * D represents the source vector element type and the destination scalar
  * register type (i.e. for zn.s and sd, D = float).
  * Returns correctly formatted RegisterValue. */

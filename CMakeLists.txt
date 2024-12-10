@@ -157,8 +157,7 @@ if(SIMENG_ENABLE_TESTS)
       # Print message containing if the full test suite will run
     if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
       message(STATUS "LLVM version does not support AArch64 extensions SVE2, SVE2.1, SME, or SME2. Related tests will fail.")
-    endif()
-    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "18.0")
+    elseif (${LLVM_PACKAGE_VERSION} VERSION_LESS "18.0")
       message(STATUS "LLVM version does not support AArch64 extensions SME2 or SVE2.1. Related test will fail.")
     endif()
 
