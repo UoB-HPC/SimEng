@@ -54,6 +54,7 @@ class TagePredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
   TagePredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
+
   ~TagePredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
@@ -145,7 +146,7 @@ class TagePredictor : public BranchPredictor {
    * a branch-and-link instruction. */
   std::map<uint64_t, uint64_t> rasHistory_;
 
-  /** The size of the RAS. */
+  /** The size of the RAS.  I.e., the maximum capacity of the RAS. */
   uint16_t rasSize_;
 
   /** An n-bit history of previous branch directions where n is equal to

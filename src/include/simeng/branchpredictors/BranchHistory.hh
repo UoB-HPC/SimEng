@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 namespace simeng {
 /** A class for storing a branch history.  Needed for cases where a branch
@@ -14,11 +15,9 @@ namespace simeng {
 class BranchHistory {
  public:
   BranchHistory(uint64_t size) : size_(size) {
-    history_ = {0};
-    for (uint8_t i = 0; i < (size_ / 64); i++) {
-      history_.push_back(0);
-    }
+    history_ = std::make_unique<uint64_t[]>(size_);
   }
+
   ~BranchHistory() {};
 
   /** Returns the 'numBits' most recent bits of the branch history.  Maximum
@@ -104,12 +103,12 @@ class BranchHistory {
   /** The number of bits of branch history stored in this branch history */
   uint64_t size_;
 
-  /** A vector containing the bits of the branch history.  The bits are
+  /** An array containing the bits of the branch history.  The bits are
    * arranged such that the most recent branches are stored in uint64_t at
    * index 0 of the vector, then the next most recent at index 1 and so forth.
    * Within each uint64_t, the most recent branches are recorded in the
    * least-significant bits. */
-  std::vector<uint64_t> history_;
+  std::unique_ptr<uint64_t[]> history_;
 };
 
 }  // namespace simeng
