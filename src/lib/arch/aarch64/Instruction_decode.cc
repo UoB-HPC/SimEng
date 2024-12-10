@@ -1,3 +1,5 @@
+#include <unordered_set>
+
 #include "InstructionMetadata.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
@@ -8,6 +10,65 @@
 namespace simeng {
 namespace arch {
 namespace aarch64 {
+
+/**************************
+ * HELPER DATA STRUCTURES
+ **************************/
+
+static const std::unordered_set<std::string> logicalOps = {
+    "and", "bic", "bif", "bit", "bsl",  "bcax", "bmop",
+    "eor", "eon", "mvn", "not", "nand", "nbsl", "nor",
+    "rax", "xar", "orr", "orq", "orv",  "tst",  "orn"};
+
+static const std::unordered_set<std::string> cmpOps = {
+    "ccmn",   "cmn",   "cmp",   "cmpp",   "cmpeq", "cmpge", "cmpgt",
+    "cmphi",  "cmphs", "cmple", "cmplo",  "cmpls", "cmplt", "cmpne",
+    "cmptst", "ccmp",  "cmeq",  "cmge",   "cmgt",  "cmtst", "cmhi",
+    "cmhs",   "cmla",  "cmle",  "cmlt",   "fac",   "facge", "facgt",
+    "facle",  "faclt", "fccmp", "fccmpe", "fcmp",  "fcmpe", "fcmuo",
+    "fcmeq",  "fcmge", "fcmgt", "fcmle",  "fcmlt", "fcmne"};
+
+static const std::unordered_set<std::string> cvtOps = {
+    "bfcvt",   "bfcvtn",  "bfcvtnt",  "bf1cvt",  "bf1cvtl", "bf1cvtlt",
+    "bf2cvt",  "bf2cvtl", "bf2cvtlt", "fcvt",    "fcvtas",  "fcvtau",
+    "fcvtl",   "fcvtms",  "fcvtmu",   "fcvtn",   "fcvtns",  "fcvtnu",
+    "fcvtps",  "fcvtpu",  "fcvtxn",   "fcvtzs",  "fcvtzu",  "fcvtlt",
+    "fcvtnb",  "fcvtnt",  "fcvtx",    "fcvtxnt", "fcvtzs",  "fcvtzu",
+    "f1cvt",   "f1cvtl",  "f1cvtlt",  "f2cvt",   "f2cvtl",  "f2cvtlt",
+    "fjcvtzs", "scvtf",   "ucvtf"};
+
+static const std::unordered_set<std::string> divsqrtOps = {
+    "sdiv",   "sdivr",   "udiv",    "udivr", "fdiv",   "fdivr",
+    "frsqrt", "frsqrte", "frsqrts", "fsqrt", "ursqrte"};
+
+static const std::unordered_set<std::string> mulOps = {
+    "bfmmla",   "bfmul",     "bfml",     "bfmla",     "bfmlalb",   "bfmlalt",
+    "bfmlal",   "bfmls",     "bfmlslb",  "bfmlslt",   "bfmlsl",    "cmla",
+    "dot",      "bfdot",     "bfvdot",   "fdot",      "fvdot",     "fvdotb",
+    "fvdott",   "sdot",      "sudot",    "suvdot",    "udot",      "usdot",
+    "usvdot",   "uvdot",     "cdot",     "fmla",      "fmlal",     "fmlal2",
+    "fmlalb",   "fmlalt",    "fmlallbb", "fmlallbt",  "fmlalltb",  "fmlalltt",
+    "fmlall",   "fmls",      "fmlsl",    "fmlsl2",    "fmlslb",    "fmlslt",
+    "fmul",     "fmulx",     "fmad",     "fmadd",     "fmmla",     "fmsb",
+    "fmsub",    "ftmad",     "fcmla",    "fnm",       "fnmad",     "fnmla",
+    "fnmls",    "fnmsb",     "fnmadd",   "fnmsub",    "fnmul",     "madd",
+    "maddpt",   "mul",       "mla",      "mlapt",     "mls",       "mneg",
+    "msub",     "msubpt",    "mad",      "madpt",     "msb",       "mop",
+    "bfmopa",   "bfmops",    "bmopa",    "bmops",     "fmopa",     "fmops",
+    "smopa",    "smops",     "sumopa",   "sumops",    "umopa",     "umops",
+    "usmopa",   "usmops",    "pmul",     "pmull",     "pmull2",    "pmullb",
+    "pmullt",   "sml",       "smlalb",   "smlalt",    "smlslb",    "smlslt",
+    "smlal",    "smlal2",    "smlsl",    "smlsl2",    "smlall",    "smlsll",
+    "smmla",    "smul",      "smulh",    "smull",     "smull2",    "smullb",
+    "smullt",   "sqdm",      "sqdmlal",  "sqdmlal2",  "sqdmlsl",   "sqdmlsl2",
+    "sqdmulh",  "sqdmull",   "sqdmull2", "sqdmlalb",  "sqdmlalbt", "sqdmlalt",
+    "sqdmlslb", "sqdmlslbt", "sqdmlslt", "sqdmullb",  "sqdmullt",  "sqrd",
+    "sqrdmlah", "sqrdmlsh",  "sqrdmulh", "sqrdcmlah", "sumlall",   "smaddl",
+    "smnegl",   "smsubl",    "umul",     "umulh",     "umull",     "umull2",
+    "umullb",   "umullt",    "uml",      "umlal",     "umlal2",    "umlsl",
+    "umlsl2",   "umlslt",    "umlalb",   "umlalt",    "umlslb",    "umlall",
+    "umlsll",   "usmlall",   "usmmla",   "ummla",     "umaddl",    "umnegl",
+    "umsubl"};
 
 /********************
  * HELPER FUNCTIONS
@@ -504,77 +565,12 @@ void Instruction::decode() {
   }
 
   // Identify Logical (bitwise) instructions
-  // Opcode prefix-overlaps have been commented out but left in for clarity
-  // what is searched for.
-  if (metadata_.mnemonic.find("and") == 0 ||
-      metadata_.mnemonic.find("bic") == 0 ||
-      metadata_.mnemonic.find("bif") == 0 ||
-      metadata_.mnemonic.find("bit") == 0 ||
-      metadata_.mnemonic.find("bsl") == 0 ||
-      metadata_.mnemonic.find("bcax") == 0 ||
-      metadata_.mnemonic.find("bmop") == 0 ||
-      metadata_.mnemonic.find("eor") == 0 ||
-      metadata_.mnemonic.find("eon") == 0 ||
-      metadata_.mnemonic.find("mvn") == 0 ||
-      metadata_.mnemonic.find("not") == 0 ||
-      metadata_.mnemonic.find("nand") == 0 ||
-      metadata_.mnemonic.find("nbsl") == 0 ||
-      metadata_.mnemonic.find("nor") == 0 ||
-      metadata_.mnemonic.find("rax") == 0 ||
-      metadata_.mnemonic.find("xar") == 0 ||
-      metadata_.mnemonic.find("orr") == 0 ||
-      metadata_.mnemonic.find("orq") == 0 ||
-      metadata_.mnemonic.find("orv") == 0 ||
-      metadata_.mnemonic.find("tst") == 0 ||
-      metadata_.mnemonic.find("orn") == 0) {
+  if (logicalOps.find(metadata_.mnemonic) != logicalOps.end()) {
     setInstructionType(InsnType::isLogical);
   }
 
   // Identify comparison insturctions (excluding atomic LD-CMP-STR)
-  // Opcode prefix-overlaps have been commented out but left in for clarity
-  // what is searched for.
-  if (metadata_.mnemonic.find("ccmn") == 0 ||
-      metadata_.mnemonic.find("cmn") == 0 ||
-      metadata_.mnemonic.find("cmp") == 0 ||
-      // metadata_.mnemonic.find("cmpp") == 0 ||
-      // metadata_.mnemonic.find("cmpeq") == 0 ||
-      // metadata_.mnemonic.find("cmpge") == 0 ||
-      // metadata_.mnemonic.find("cmpgt") == 0 ||
-      // metadata_.mnemonic.find("cmphi") == 0 ||
-      // metadata_.mnemonic.find("cmphs") == 0 ||
-      // metadata_.mnemonic.find("cmple") == 0 ||
-      // metadata_.mnemonic.find("cmplo") == 0 ||
-      // metadata_.mnemonic.find("cmpls") == 0 ||
-      // metadata_.mnemonic.find("cmplt") == 0 ||
-      // metadata_.mnemonic.find("cmpne") == 0 ||
-      // metadata_.mnemonic.find("cmptst") == 0 ||
-      metadata_.mnemonic.find("ccmp") == 0 ||
-      metadata_.mnemonic.find("cmeq") == 0 ||
-      metadata_.mnemonic.find("cmge") == 0 ||
-      metadata_.mnemonic.find("cmgt") == 0 ||
-      metadata_.mnemonic.find("cmtst") == 0 ||
-      metadata_.mnemonic.find("cmhi") == 0 ||
-      metadata_.mnemonic.find("cmhs") == 0 ||
-      metadata_.mnemonic.find("cmla") == 0 ||
-      metadata_.mnemonic.find("cmle") == 0 ||
-      metadata_.mnemonic.find("cmlt") == 0 ||
-      // The non-complete opcode prefix `fac` only yields compare uops
-      metadata_.mnemonic.find("fac") == 0 ||
-      // metadata_.mnemonic.find("facge") == 0 ||
-      // metadata_.mnemonic.find("facgt") == 0 ||
-      // metadata_.mnemonic.find("facle") == 0 ||
-      // metadata_.mnemonic.find("faclt") == 0 ||
-      metadata_.mnemonic.find("fccmp") == 0 ||
-      // metadata_.mnemonic.find("fccmpe") == 0 ||
-      metadata_.mnemonic.find("fcmp") == 0 ||
-      // metadata_.mnemonic.find("fcmpe") == 0 ||
-      metadata_.mnemonic.find("fcmuo") == 0 ||
-      metadata_.mnemonic.find("fcmeq") == 0 ||
-      metadata_.mnemonic.find("fcmge") == 0 ||
-      metadata_.mnemonic.find("fcmgt") == 0 ||
-      metadata_.mnemonic.find("fcmle") == 0 ||
-      metadata_.mnemonic.find("fcmlt") == 0 ||
-      metadata_.mnemonic.find("fcmne") == 0) {
+  if (cmpOps.find(metadata_.mnemonic) != cmpOps.end()) {
     setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
@@ -588,47 +584,7 @@ void Instruction::decode() {
   }
 
   // Identify convert instructions
-  // Opcode prefix-overlaps have been commented out but left in for clarity
-  // what is searched for.
-  if (metadata_.mnemonic.find("bfcvt") == 0 ||
-      // metadata_.mnemonic.find("bfcvtn") == 0 ||
-      // metadata_.mnemonic.find("bfcvtnt") == 0 ||
-      metadata_.mnemonic.find("bf1cvt") == 0 ||
-      // metadata_.mnemonic.find("bf1cvtl") == 0 ||
-      // metadata_.mnemonic.find("bf1cvtlt") == 0 ||
-      metadata_.mnemonic.find("bf2cvt") == 0 ||
-      // metadata_.mnemonic.find("bf2cvtl") == 0 ||
-      // metadata_.mnemonic.find("bf2cvtlt") == 0 ||
-      metadata_.mnemonic.find("fcvt") == 0 ||
-      // metadata_.mnemonic.find("fcvtas") == 0 ||
-      // metadata_.mnemonic.find("fcvtau") == 0 ||
-      // metadata_.mnemonic.find("fcvtl") == 0 ||
-      // metadata_.mnemonic.find("fcvtms") == 0 ||
-      // metadata_.mnemonic.find("fcvtmu") == 0 ||
-      // metadata_.mnemonic.find("fcvtn") == 0 ||
-      // metadata_.mnemonic.find("fcvtns") == 0 ||
-      // metadata_.mnemonic.find("fcvtnu") == 0 ||
-      // metadata_.mnemonic.find("fcvtps") == 0 ||
-      // metadata_.mnemonic.find("fcvtpu") == 0 ||
-      // metadata_.mnemonic.find("fcvtxn") == 0 ||
-      // metadata_.mnemonic.find("fcvtzs") == 0 ||
-      // metadata_.mnemonic.find("fcvtzu") == 0 ||
-      // metadata_.mnemonic.find("fcvtlt") == 0 ||
-      // metadata_.mnemonic.find("fcvtnb") == 0 ||
-      // metadata_.mnemonic.find("fcvtnt") == 0 ||
-      // metadata_.mnemonic.find("fcvtx") == 0 ||
-      // metadata_.mnemonic.find("fcvtxnt") == 0 ||
-      // metadata_.mnemonic.find("fcvtzs") == 0 ||
-      // metadata_.mnemonic.find("fcvtzu") == 0 ||
-      metadata_.mnemonic.find("f1cvt") == 0 ||
-      // metadata_.mnemonic.find("f1cvtl") == 0 ||
-      // metadata_.mnemonic.find("f1cvtlt") == 0 ||
-      metadata_.mnemonic.find("f2cvt") == 0 ||
-      // metadata_.mnemonic.find("f2cvtl") == 0 ||
-      // metadata_.mnemonic.find("f2cvtlt") == 0 ||
-      metadata_.mnemonic.find("fjcvtzs") == 0 ||
-      metadata_.mnemonic.find("scvtf") == 0 ||
-      metadata_.mnemonic.find("ucvtf") == 0) {
+  if (cvtOps.find(metadata_.mnemonic) != cvtOps.end()) {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -640,193 +596,12 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  // Opcode prefix-overlaps have been commented out but left in for clarity
-  // what is searched for.
-  if (metadata_.mnemonic.find("sdiv") == 0 ||
-      // metadata_.mnemonic.find("sdivr") == 0 ||
-      metadata_.mnemonic.find("udiv") == 0 ||
-      // metadata_.mnemonic.find("udivr") == 0 ||
-      metadata_.mnemonic.find("fdiv") == 0 ||
-      // metadata_.mnemonic.find("fdivr") == 0 ||
-      // The non-complete opcode prefix `frsqrt` only yields divSqrt uops
-      metadata_.mnemonic.find("frsqrt") == 0 ||
-      // metadata_.mnemonic.find("frsqrte") == 0 ||
-      // metadata_.mnemonic.find("frsqrts") == 0 ||
-      metadata_.mnemonic.find("fsqrt") == 0 ||
-      metadata_.mnemonic.find("ursqrte") == 0) {
+  if (divsqrtOps.find(metadata_.mnemonic) != divsqrtOps.end()) {
     setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
-  // Opcode prefix-overlaps have been commented out but left in for clarity
-  // what is searched for.
-  if (metadata_.mnemonic.find("bfmmla") == 0 ||
-      metadata_.mnemonic.find("bfmul") == 0 ||
-      // The non-complete opcode prefix `bfml` only yields multiply uops
-      metadata_.mnemonic.find("bfml") == 0 ||
-      // metadata_.mnemonic.find("bfmla") == 0 ||
-      // metadata_.mnemonic.find("bfmlalb") == 0 ||
-      // metadata_.mnemonic.find("bfmlalt") == 0 ||
-      // metadata_.mnemonic.find("bfmlal") == 0 ||
-      // metadata_.mnemonic.find("bfmls") == 0 ||
-      // metadata_.mnemonic.find("bfmlslb") == 0 ||
-      // metadata_.mnemonic.find("bfmlslt") == 0 ||
-      // metadata_.mnemonic.find("bfmlsl") == 0 ||
-      metadata_.mnemonic.find("cmla") == 0 ||
-      // The substring `dot` only appears in dot-product opcodes
-      metadata_.mnemonic.find("dot") != std::string::npos ||
-      // metadata_.mnemonic.find("bfdot") == 0 ||
-      // metadata_.mnemonic.find("bfvdot") == 0 ||
-      // metadata_.mnemonic.find("fdot") == 0 ||
-      // metadata_.mnemonic.find("fvdot") == 0 ||
-      // metadata_.mnemonic.find("fvdotb") == 0 ||
-      // metadata_.mnemonic.find("fvdott") == 0 ||
-      // metadata_.mnemonic.find("sdot") == 0 ||
-      // metadata_.mnemonic.find("sudot") == 0 ||
-      // metadata_.mnemonic.find("suvdot") == 0 ||
-      // metadata_.mnemonic.find("udot") == 0 ||
-      // metadata_.mnemonic.find("usdot") == 0 ||
-      // metadata_.mnemonic.find("usvdot") == 0 ||
-      // metadata_.mnemonic.find("uvdot") == 0 ||
-      // metadata_.mnemonic.find("cdot") == 0 ||
-      metadata_.mnemonic.find("fmla") == 0 ||
-      // metadata_.mnemonic.find("fmlal") == 0 ||
-      // metadata_.mnemonic.find("fmlal2") == 0 ||
-      // metadata_.mnemonic.find("fmlalb") == 0 ||
-      // metadata_.mnemonic.find("fmlalt") == 0 ||
-      // metadata_.mnemonic.find("fmlallbb") == 0 ||
-      // metadata_.mnemonic.find("fmlallbt") == 0 ||
-      // metadata_.mnemonic.find("fmlalltb") == 0 ||
-      // metadata_.mnemonic.find("fmlalltt") == 0 ||
-      // metadata_.mnemonic.find("fmlall") == 0 ||
-      metadata_.mnemonic.find("fmls") == 0 ||
-      // metadata_.mnemonic.find("fmlsl") == 0 ||
-      // metadata_.mnemonic.find("fmlsl2") == 0 ||
-      // metadata_.mnemonic.find("fmlslb") == 0 ||
-      // metadata_.mnemonic.find("fmlslt") == 0 ||
-      metadata_.mnemonic.find("fmul") == 0 ||
-      // metadata_.mnemonic.find("fmulx") == 0 ||
-      metadata_.mnemonic.find("fmad") == 0 ||
-      // metadata_.mnemonic.find("fmadd") == 0 ||
-      metadata_.mnemonic.find("fmmla") == 0 ||
-      metadata_.mnemonic.find("fmsb") == 0 ||
-      metadata_.mnemonic.find("fmsub") == 0 ||
-      metadata_.mnemonic.find("ftmad") == 0 ||
-      metadata_.mnemonic.find("fcmla") == 0 ||
-      // The non-complete opcode prefix `fnm` only yields multiply uops
-      metadata_.mnemonic.find("fnm") == 0 ||
-      // metadata_.mnemonic.find("fnmad") == 0 ||
-      // metadata_.mnemonic.find("fnmla") == 0 ||
-      // metadata_.mnemonic.find("fnmls") == 0 ||
-      // metadata_.mnemonic.find("fnmsb") == 0 ||
-      // metadata_.mnemonic.find("fnmadd") == 0 ||
-      // metadata_.mnemonic.find("fnmsub") == 0 ||
-      // metadata_.mnemonic.find("fnmul") == 0 ||
-      metadata_.mnemonic.find("madd") == 0 ||
-      // metadata_.mnemonic.find("maddpt") == 0 ||
-      metadata_.mnemonic.find("mul") == 0 ||
-      metadata_.mnemonic.find("mla") == 0 ||
-      // metadata_.mnemonic.find("mlapt") == 0 ||
-      metadata_.mnemonic.find("mls") == 0 ||
-      metadata_.mnemonic.find("mneg") == 0 ||
-      metadata_.mnemonic.find("msub") == 0 ||
-      // metadata_.mnemonic.find("msubpt") == 0 ||
-      metadata_.mnemonic.find("mad") == 0 ||
-      // metadata_.mnemonic.find("madpt") == 0 ||
-      metadata_.mnemonic.find("msb") == 0 ||
-      // The substring `mop` only appears in outer-product opcodes
-      metadata_.mnemonic.find("mop") != std::string::npos ||
-      // metadata_.mnemonic.find("bfmopa") == 0 ||
-      // metadata_.mnemonic.find("bfmops") == 0 ||
-      // metadata_.mnemonic.find("bmopa") == 0 ||
-      // metadata_.mnemonic.find("bmops") == 0 ||
-      // metadata_.mnemonic.find("fmopa") == 0 ||
-      // metadata_.mnemonic.find("fmops") == 0 ||
-      // metadata_.mnemonic.find("smopa") == 0 ||
-      // metadata_.mnemonic.find("smops") == 0 ||
-      // metadata_.mnemonic.find("sumopa") == 0 ||
-      // metadata_.mnemonic.find("sumops") == 0 ||
-      // metadata_.mnemonic.find("umopa") == 0 ||
-      // metadata_.mnemonic.find("umops") == 0 ||
-      // metadata_.mnemonic.find("usmopa") == 0 ||
-      // metadata_.mnemonic.find("usmops") == 0
-      metadata_.mnemonic.find("pmul") == 0 ||
-      // metadata_.mnemonic.find("pmull") == 0 ||
-      // metadata_.mnemonic.find("pmull2") == 0 ||
-      // metadata_.mnemonic.find("pmullb") == 0 ||
-      // metadata_.mnemonic.find("pmullt") == 0 ||
-      // The non-complete opcode prefix `sml` only yields multiply uops
-      metadata_.mnemonic.find("sml") == 0 ||
-      // metadata_.mnemonic.find("smlalb") == 0 ||
-      // metadata_.mnemonic.find("smlalt") == 0 ||
-      // metadata_.mnemonic.find("smlslb") == 0 ||
-      // metadata_.mnemonic.find("smlslt") == 0 ||
-      // metadata_.mnemonic.find("smlal") == 0 ||
-      // metadata_.mnemonic.find("smlal2") == 0 ||
-      // metadata_.mnemonic.find("smlsl") == 0 ||
-      // metadata_.mnemonic.find("smlsl2") == 0 ||
-      // metadata_.mnemonic.find("smlall") == 0 ||
-      // metadata_.mnemonic.find("smlsll") == 0 ||
-      metadata_.mnemonic.find("smmla") == 0 ||
-      // The non-complete opcode prefix `smul` only yields multiply uops
-      metadata_.mnemonic.find("smul") == 0 ||
-      // metadata_.mnemonic.find("smulh") == 0 ||
-      // metadata_.mnemonic.find("smull") == 0 ||
-      // metadata_.mnemonic.find("smull2") == 0 ||
-      // metadata_.mnemonic.find("smullb") == 0 ||
-      // metadata_.mnemonic.find("smullt") == 0 ||
-      // The non-complete opcode prefix `sqdm` only yields multiply uops
-      metadata_.mnemonic.find("sqdm") == 0 ||
-      // metadata_.mnemonic.find("sqdmlal") == 0 ||
-      // metadata_.mnemonic.find("sqdmlal2") == 0 ||
-      // metadata_.mnemonic.find("sqdmlsl") == 0 ||
-      // metadata_.mnemonic.find("sqdmlsl2") == 0 ||
-      // metadata_.mnemonic.find("sqdmulh") == 0 ||
-      // metadata_.mnemonic.find("sqdmull") == 0 ||
-      // metadata_.mnemonic.find("sqdmull2") == 0 ||
-      // metadata_.mnemonic.find("sqdmlalb") == 0 ||
-      // metadata_.mnemonic.find("sqdmlalbt") == 0 ||
-      // metadata_.mnemonic.find("sqdmlalt") == 0 ||
-      // metadata_.mnemonic.find("sqdmlslb") == 0 ||
-      // metadata_.mnemonic.find("sqdmlslbt") == 0 ||
-      // metadata_.mnemonic.find("sqdmlslt") == 0 ||
-      // metadata_.mnemonic.find("sqdmullb") == 0 ||
-      // metadata_.mnemonic.find("sqdmullt") == 0 ||
-      // The non-complete opcode prefix `sqrd` only yields multiply uops
-      metadata_.mnemonic.find("sqrd") == 0 ||
-      // metadata_.mnemonic.find("sqrdmlah") == 0 ||
-      // metadata_.mnemonic.find("sqrdmlsh") == 0 ||
-      // metadata_.mnemonic.find("sqrdmulh") == 0 ||
-      // metadata_.mnemonic.find("sqrdcmlah") == 0 ||
-      metadata_.mnemonic.find("sumlall") == 0 ||
-      metadata_.mnemonic.find("smaddl") == 0 ||
-      metadata_.mnemonic.find("smnegl") == 0 ||
-      metadata_.mnemonic.find("smsubl") == 0 ||
-      // The non-complete opcode prefix `umul` only yields multiply uops
-      metadata_.mnemonic.find("umul") == 0 ||
-      // metadata_.mnemonic.find("umulh") == 0 ||
-      // metadata_.mnemonic.find("umull") == 0 ||
-      // metadata_.mnemonic.find("umull2") == 0 ||
-      // metadata_.mnemonic.find("umullb") == 0 ||
-      // metadata_.mnemonic.find("umullt") == 0 ||
-      // The non-complete opcode prefix `uml` only yields multiply uops
-      metadata_.mnemonic.find("uml") == 0 ||
-      // metadata_.mnemonic.find("umlal") == 0 ||
-      // metadata_.mnemonic.find("umlal2") == 0 ||
-      // metadata_.mnemonic.find("umlsl") == 0 ||
-      // metadata_.mnemonic.find("umlsl2") == 0 ||
-      // metadata_.mnemonic.find("umlslt") == 0 ||
-      // metadata_.mnemonic.find("umlalb") == 0 ||
-      // metadata_.mnemonic.find("umlalt") == 0 ||
-      // metadata_.mnemonic.find("umlslb") == 0 ||
-      // metadata_.mnemonic.find("umlall") == 0 ||
-      // metadata_.mnemonic.find("umlsll") == 0 ||
-      metadata_.mnemonic.find("usmlall") == 0 ||
-      metadata_.mnemonic.find("usmmla") == 0 ||
-      metadata_.mnemonic.find("ummla") == 0 ||
-      metadata_.mnemonic.find("umaddl") == 0 ||
-      metadata_.mnemonic.find("umnegl") == 0 ||
-      metadata_.mnemonic.find("umsubl") == 0) {
+  if (mulOps.find(metadata_.mnemonic) != mulOps.end()) {
     setInstructionType(InsnType::isMultiply);
   }
 
