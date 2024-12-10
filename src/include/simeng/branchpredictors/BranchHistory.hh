@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace simeng {
 /** A class for storing a branch history.  Needed for cases where a branch
  * history of more than 64 bits is required.  This class makes it easier to
@@ -27,7 +29,7 @@ class BranchHistory {
     assert(numBits <= size_ &&
            "Cannot get more bits of branch history than "
            "the size of the history");
-    return (history_[0] & ((1 << numBits) - 1));
+    return (history_[0] & ((1ull << numBits) - 1));
   }
 
   /** Returns 'numBits' of the global history folded over on itself to get a
@@ -44,7 +46,7 @@ class BranchHistory {
 
     while (startIndex <= numBits) {
       output ^= ((history_[startIndex / 64] >> startIndex) &
-                 ((1 << (numBits - startIndex)) - 1));
+                 ((1ull << (numBits - startIndex)) - 1));
 
       // Check to see if a second uint64_t value will need to be accessed
       if ((startIndex / 64) == (endIndex / 64)) {
@@ -67,7 +69,7 @@ class BranchHistory {
       if (i == 0) {
         history_[i] |= ((isTaken) ? 1 : 0);
       } else {
-        history_[i] |= (((history_[i - 1] & ((uint64_t)1 << 63)) > 0) ? 1 : 0);
+        history_[i] |= (((history_[i - 1] & (1ull << 63)) > 0) ? 1 : 0);
       }
     }
   }
@@ -81,7 +83,10 @@ class BranchHistory {
     if (position < size_) {
       uint8_t vectIndex = position / 64;
       uint8_t bitIndex = position % 64;
-      history_[vectIndex] ^= ((uint64_t)1 << bitIndex);
+      bool currentlyTaken = ((history_[vectIndex] & (1ull << bitIndex)) != 0);
+      if (currentlyTaken != isTaken) {
+        history_[vectIndex] ^= (1ull << bitIndex);
+      }
     }
   }
 
@@ -90,7 +95,7 @@ class BranchHistory {
     for (uint8_t i = 0; i <= (size_ / 64); i++) {
       history_[i] >>= 1;
       if (i < (size_ / 64)) {
-        history_[i] |= (((history_[i + 1] & 1) > 0) ? ((uint64_t)1 << 63) : 0);
+        history_[i] |= (((history_[i + 1] & 1) > 0) ? (1ull << 63) : 0);
       }
     }
   }
