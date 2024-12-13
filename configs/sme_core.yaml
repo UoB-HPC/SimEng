@@ -1,0 +1,451 @@
+# The following resources where utilised to create the config file and naming schemes:
+# https://github.com/fujitsu/A64FX
+
+Core:
+  Simulation-Mode: outoforder
+  ISA: AArch64
+  Clock-Frequency-GHz: 3.0
+  Timer-Frequency-MHz: 200
+  Micro-Operations: True
+  Vector-Length: 512
+  Streaming-Vector-Length: 512
+Fetch:
+  Fetch-Block-Size: 64
+  Loop-Buffer-Size: 256
+  Loop-Detection-Threshold: 2
+Process-Image:
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
+Register-Set:
+  GeneralPurpose-Count: 512
+  FloatingPoint/SVE-Count: 512
+  Predicate-Count: 256
+  Conditional-Count: 512
+  SME-Matrix-Count: 32
+  SME-Lookup-Table-Count: 1
+Pipeline-Widths:
+  Commit: 64
+  FrontEnd: 64
+  LSQ-Completion: 64
+Queue-Sizes:
+  ROB: 2048
+  Load: 512
+  Store: 512
+Branch-Predictor:
+  Type: "Perceptron"
+  BTB-Tag-Bits: 11
+  Global-History-Length: 19
+  RAS-entries: 8
+L1-Data-Memory:
+  Interface-Type: Fixed
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
+  Access-Latency: 4
+  Exclusive: False
+  Load-Bandwidth: 128
+  Store-Bandwidth: 128
+  Permitted-Requests-Per-Cycle: 2
+  Permitted-Loads-Per-Cycle: 2
+  Permitted-Stores-Per-Cycle: 2
+Ports:
+  0:
+    Portname: ALU0
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  1:
+    Portname: ALU1
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  2:
+    Portname: ALU2
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  3:
+    Portname: ALU3
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  4:
+    Portname: ALU4
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  5:
+    Portname: ALU5
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  6:
+    Portname: ALU6
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  7:
+    Portname: ALU7
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  8:
+    Portname: ALU8
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  9:
+    Portname: ALU9
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  10:
+    Portname: ALU10
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  11:
+    Portname: ALU11
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  12:
+    Portname: ALU12
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  13:
+    Portname: ALU13
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  14:
+    Portname: ALU14
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  15:
+    Portname: ALU15
+    Instruction-Group-Support:
+    - INT
+    - LOAD
+    - STORE
+  
+  16: 
+    Portname: BR0
+    Instruction-Group-Support:
+    - BRANCH
+  17: 
+    Portname: BR1
+    Instruction-Group-Support:
+    - BRANCH
+  18: 
+    Portname: BR2
+    Instruction-Group-Support:
+    - BRANCH
+  19: 
+    Portname: BR3
+    Instruction-Group-Support:
+    - BRANCH
+  20: 
+    Portname: BR4
+    Instruction-Group-Support:
+    - BRANCH 
+  21: 
+    Portname: BR5
+    Instruction-Group-Support:
+    - BRANCH
+  22: 
+    Portname: BR6
+    Instruction-Group-Support:
+    - BRANCH
+  23: 
+    Portname: BR7
+    Instruction-Group-Support:
+    - BRANCH  
+  
+  24:
+    Portname: SVE-FP0
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  25:
+    Portname: SVE-FP1
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  26:
+    Portname: SVE-FP2
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  27:
+    Portname: SVE-FP3
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  28:
+    Portname: SVE-FP4
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  29:
+    Portname: SVE-FP5
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  30:
+    Portname: SVE-FP6
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  31:
+    Portname: SVE-FP7
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  32:
+    Portname: SVE-FP8
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  33:
+    Portname: SVE-FP9
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  34:
+    Portname: SVE-FP10
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  35:
+    Portname: SVE-FP11
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  36:
+    Portname: SVE-FP12
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  37:
+    Portname: SVE-FP13
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  38:
+    Portname: SVE-FP14
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  39:
+    Portname: SVE-FP15
+    Instruction-Group-Support:
+    - FP
+    - SVE
+    - PREDICATE
+  40:
+    Portname: SME
+    Instruction-Group-Support:
+    - SME
+Reservation-Stations:
+  0:
+    Size: 1024
+    Dispatch-Rate: 16
+    Ports:
+    - ALU0
+    - ALU1
+    - ALU2
+    - ALU3
+    - ALU4
+    - ALU5
+    - ALU6
+    - ALU7
+    - ALU8
+    - ALU9
+    - ALU10
+    - ALU11
+    - ALU12
+    - ALU13
+    - ALU14
+    - ALU15
+  1:
+    Size: 1024
+    Dispatch-Rate: 8
+    Ports:
+    - BR0
+    - BR1
+    - BR2
+    - BR3
+    - BR4
+    - BR5
+    - BR6
+    - BR7
+  2:
+    Size: 1024
+    Dispatch-Rate: 16
+    Ports:
+    - SVE-FP0
+    - SVE-FP1
+    - SVE-FP2
+    - SVE-FP3
+    - SVE-FP4
+    - SVE-FP5
+    - SVE-FP6
+    - SVE-FP7
+    - SVE-FP8
+    - SVE-FP9
+    - SVE-FP10
+    - SVE-FP11
+    - SVE-FP12
+    - SVE-FP13
+    - SVE-FP14
+    - SVE-FP15
+  3:
+    Size: 1024
+    Dispatch-Rate: 1
+    Ports:
+    - SME
+Execution-Units:
+  0:
+    Pipelined: True
+  1:
+    Pipelined: True
+  2:
+    Pipelined: True
+  3:
+    Pipelined: True
+  4:
+    Pipelined: True
+  5:
+    Pipelined: True
+  6:
+    Pipelined: True
+  7:
+    Pipelined: True
+  8:
+    Pipelined: True
+  9:
+    Pipelined: True
+  10:
+    Pipelined: True
+  11:
+    Pipelined: True
+  12:
+    Pipelined: True
+  13:
+    Pipelined: True
+  14:
+    Pipelined: True
+  15:
+    Pipelined: True
+  16:
+    Pipelined: True
+  17:
+    Pipelined: True
+  18:
+    Pipelined: True
+  19:
+    Pipelined: True
+  20:
+    Pipelined: True
+  21:
+    Pipelined: True
+  22:
+    Pipelined: True
+  23:
+    Pipelined: True
+  24:
+    Pipelined: True
+  25:
+    Pipelined: True
+  26:
+    Pipelined: True
+  27:
+    Pipelined: True
+  28:
+    Pipelined: True
+  29:
+    Pipelined: True
+  30:
+    Pipelined: True
+  31:
+    Pipelined: True
+  32:
+    Pipelined: True
+  33:
+    Pipelined: True
+  34:
+    Pipelined: True
+  35:
+    Pipelined: True
+  36:
+    Pipelined: True
+  37:
+    Pipelined: True
+  38:
+    Pipelined: True
+  39:
+    Pipelined: True
+  40:
+    Pipelined: True
+Latencies:
+  0:
+    Instruction-Groups: 
+    - SME
+    Execution-Latency: 1
+    Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: True
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 200.00
+  Features: fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm fcma dcpop sve
+  CPU-Implementer: "0x46"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x001"
+  CPU-Revision: 0
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1
