@@ -4181,10 +4181,11 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LDRSBWpost: {  // ldrsb wt, [xn], #imm
         // LOAD
-        results_[1] = RegisterValue(
-            static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4);
-        results_[0] =
-            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm;
+        results_[1] =
+            RegisterValue(static_cast<int32_t>(memoryData_[0].get<int8_t>()), 4)
+                .zeroExtend(4, 8);
+        results_[0] = RegisterValue(
+            sourceValues_[0].get<uint64_t>() + metadata_.operands[2].imm, 8);
         break;
       }
       case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
