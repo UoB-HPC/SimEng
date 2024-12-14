@@ -82,7 +82,7 @@ class TagePredictor : public BranchPredictor {
    * that is used for default predictions. */
   BranchPrediction getBtbPrediction(uint64_t address);
 
-  /** provides a prediction, alternative prediction, the table number that
+  /** Provides a prediction, alternative prediction, the table number that
    * provided the prediction, and the indices and tags of the prediction and
    * alternative prediction.  This prediction info is determined from the
    * tagged tables for a branch with the provided address. */
