@@ -638,7 +638,7 @@ TEST_F(AArch64InstructionTest, predAsCounterToMasks_test) {
   // invert = 0, num active Elems = 24
   uint64_t pn =
       0b0000000000000000000000000000000000000000000000000000000000110001;
-  auto out = predAsCounterToMasks<uint8_t, 2>(pn, 128);
+  auto out = predAsCounterToMasks(pn, 128, 2);
   EXPECT_EQ(out[0][0], ref[0][0]);
   EXPECT_EQ(out[1][0], ref[1][0]);
 
@@ -649,7 +649,7 @@ TEST_F(AArch64InstructionTest, predAsCounterToMasks_test) {
   // Invert = 1, num inactive Elems = 56
   uint64_t pn2 =
       0b0000000000000000000000000000000000000000000000001000001110001000;
-  auto out2 = predAsCounterToMasks<uint64_t, 4>(pn2, 1024);
+  auto out2 = predAsCounterToMasks(pn2, 1024, 4);
   EXPECT_EQ(out2[0][0], ref2[0][0]);
   EXPECT_EQ(out2[0][1], ref2[0][1]);
   EXPECT_EQ(out2[1][0], ref2[1][0]);

@@ -49,6 +49,12 @@ void generatePredicatedContiguousAddressBlocks(
 span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
   assert((isLoad() || isStoreAddress()) &&
          "generateAddresses called on non-load-or-store instruction");
+  // 0th bit of SVCR register determines if streaming-mode is enabled.
+  const bool SMenabled = architecture_.getSVCRval() & 1;
+  // When streaming mode is enabled, the architectural vector length goes from
+  // SVE's VL to SME's SVL.
+  const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
+                                     : architecture_.getVectorLength();
   if (isMicroOp_) {
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {
@@ -69,19 +75,33 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
+      case MicroOpcode::LD1_MULVEC_ADDR: {
+        const uint16_t VL_bytes = VL_bits / 8;
+        uint64_t offset;
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+
+        if (metadata_.operands[2].mem.index != AARCH64_REG_INVALID) {
+          // Using register offset
+          offset = (sourceValues_[2].get<uint64_t>() * dataSize_) +
+                   (VL_bytes * (microOpIndex_ - 1));
+
+        } else {
+          // Using imm offset
+          offset = (metadata_.operands[2].mem.disp * VL_bytes) +
+                   (VL_bytes * (microOpIndex_ - 1));
+        }
+        addresses.push_back(
+            {sourceValues_[1].get<uint64_t>() + offset, VL_bytes});
+
+        setMemoryAddresses(addresses);
+        break;
+      }
       default:
         exceptionEncountered_ = true;
         exception_ = InstructionException::ExecutionNotYetImplemented;
         break;
     }
   } else {
-    // 0th bit of SVCR register determines if streaming-mode is enabled.
-    const bool SMenabled = architecture_.getSVCRval() & 1;
-    // When streaming mode is enabled, the architectural vector length goes from
-    // SVE's VL to SME's SVL.
-    const uint16_t VL_bits = SMenabled
-                                 ? architecture_.getStreamingVectorLength()
-                                 : architecture_.getVectorLength();
     switch (metadata_.opcode) {
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         setMemoryAddresses({{sourceValues_[2].get<uint64_t>(), 4}});
@@ -1237,7 +1257,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1D_2Z: {  // st1d {zt1.d, zt2.d}, png, [xn, xm, lsl
                                        // #3]
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
         const uint16_t partition_num = VL_bits / 64;
 
         const uint64_t base = sourceValues_[3].get<uint64_t>();
@@ -1257,7 +1277,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1D_2Z_IMM: {  // st1d {zt1.d, zt2.d}, png, [xn{,
                                            // #imm, mul vl}]
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
         const uint16_t partition_num = VL_bits / 64;
 
         const uint64_t base = sourceValues_[3].get<uint64_t>();
@@ -1278,7 +1298,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1D_4Z_IMM: {  // st1d {zt1.d - zt4.d}, png, [xn{,
                                            // #imm, mul vl}]
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint64_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
         const uint16_t partition_num = VL_bits / 64;
 
         const uint64_t base = sourceValues_[5].get<uint64_t>();
@@ -1490,7 +1510,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1W_2Z: {  // st1w {zt1.s, zt2.s}, png, [xn, xm, lsl
                                        // #2]
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
         const uint16_t partition_num = VL_bits / 32;
 
         const uint64_t base = sourceValues_[3].get<uint64_t>();
@@ -1510,7 +1530,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1W_2Z_IMM: {  // st1w {zt1.s, zt2.s}, png, [xn{,
                                            // #imm, mul vl}]
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
         const uint16_t partition_num = VL_bits / 32;
 
         const uint64_t base = sourceValues_[3].get<uint64_t>();
@@ -1531,7 +1551,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
       case Opcode::AArch64_ST1W_4Z_IMM: {  // st1w {zt1.s - zt4.s}, png, [xn{,
                                            // #imm, mul vl}]
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
-        auto preds = predAsCounterToMasks<uint32_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
         const uint16_t partition_num = VL_bits / 32;
 
         const uint64_t base = sourceValues_[5].get<uint64_t>();

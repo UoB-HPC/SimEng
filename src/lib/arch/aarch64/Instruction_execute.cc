@@ -103,6 +103,30 @@ void Instruction::execute() {
         memoryData_[0] = sourceValues_[0];
         break;
       }
+      case MicroOpcode::LD1_MULVEC_ADDR: {
+        // Uop format ld1x zt.x, png/`, [xn...]
+        const uint8_t myIndex = microOpIndex_ - 1;
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
+        const int numVecs = std::stoi(metadata_.operandStr);
+        auto pred = predAsCounterToMasks(pn, VL_bits, numVecs)[myIndex];
+
+        // Regardless of datatype, work in uint8_t
+        uint8_t out[256] = {0};
+        const uint16_t partition_num = VL_bits / dataSize_;
+        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull
+                                    << ((i % (64 / dataSize_)) * dataSize_);
+          if (pred[i / (64 / dataSize_)] & shifted_active) {
+            for (int j = 0; j < dataSize_; j++) {
+              out[i * dataSize_ + j] = data[i * dataSize_ + j];
+            }
+          }
+        }
+        results_[0] = {out, 256};
+        break;
+      }
       default:
         return executionNYI();
     }
@@ -3156,7 +3180,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint8_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         uint8_t out[2][256] = {{0}, {0}};
         const uint16_t partition_num = VL_bits / 8;
@@ -3191,7 +3215,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint8_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
 
         uint8_t out[4][256] = {{0}, {0}, {0}, {0}};
         const uint16_t partition_num = VL_bits / 8;
@@ -3235,7 +3259,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         uint64_t out[2][32] = {{0}, {0}};
         const uint16_t partition_num = VL_bits / 64;
@@ -3262,7 +3286,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint64_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
 
         uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
         const uint16_t partition_num = VL_bits / 64;
@@ -3334,7 +3358,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint16_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         uint16_t out[2][128] = {{0}, {0}};
         const uint16_t partition_num = VL_bits / 16;
@@ -3775,7 +3799,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         uint32_t out[2][64] = {{0}, {0}};
         const uint16_t partition_num = VL_bits / 32;
@@ -3802,7 +3826,7 @@ void Instruction::execute() {
         // LOAD
         const uint64_t pn = sourceValues_[0].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint32_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
 
         uint32_t out[4][64] = {{0}, {0}, {0}, {0}};
         const uint16_t partition_num = VL_bits / 32;
@@ -5394,7 +5418,7 @@ void Instruction::execute() {
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint64_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         memoryData_ =
             sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
@@ -5412,7 +5436,7 @@ void Instruction::execute() {
         const uint64_t* t4 = sourceValues_[3].getAsVector<uint64_t>();
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint64_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
 
         memoryData_ =
             sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
@@ -5642,7 +5666,7 @@ void Instruction::execute() {
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
         const uint64_t pn = sourceValues_[2].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint32_t, 2>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
         memoryData_ =
             sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
@@ -5660,7 +5684,7 @@ void Instruction::execute() {
         const uint32_t* t4 = sourceValues_[3].getAsVector<uint32_t>();
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
 
-        auto preds = predAsCounterToMasks<uint32_t, 4>(pn, VL_bits);
+        auto preds = predAsCounterToMasks(pn, VL_bits, 4);
 
         memoryData_ =
             sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);

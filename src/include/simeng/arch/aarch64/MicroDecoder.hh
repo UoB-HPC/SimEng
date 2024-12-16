@@ -68,6 +68,12 @@ class MicroDecoder {
                            csh capstoneHandle, bool lastMicroOp = false,
                            int microOpIndex = 0, uint8_t dataSize = 0);
 
+  Instruction createLd1MulVecUop(const Architecture& architecture,
+                                 aarch64_reg dest, aarch64_op_pred pred,
+                                 aarch64_op_mem mem, csh capstoneHandle,
+                                 bool lastMicroOp, int microOpIndex,
+                                 uint8_t dataSize, uint8_t numVecs);
+
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;
 

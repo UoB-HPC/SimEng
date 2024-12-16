@@ -71,6 +71,7 @@ const uint8_t OFFSET_REG = 1;
 const uint8_t LDR_ADDR = 2;
 const uint8_t STR_ADDR = 3;
 const uint8_t STR_DATA = 4;
+const uint8_t LD1_MULVEC_ADDR = 5;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode
@@ -284,33 +285,40 @@ enum class InsnType : uint32_t {
 };
 
 /** Convert Predicate-as-Counter to Predicate-as-Masks.
- * T represents the element type (i.e. for pg.s, T = uint32_t).
  * V represents the number of vectors the predicate-as-counter is being used
  * for. */
-template <typename T, int V>
-std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
-    const uint64_t predAsCounter, const uint16_t VL_bits) {
+inline std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
+    const uint64_t predAsCounter, const uint16_t VL_bits, const uint8_t V) {
   std::vector<std::array<uint64_t, 4>> out(V, {0, 0, 0, 0});
 
-  const uint16_t elemsPerVec = VL_bits / (sizeof(T) * 8);
+  // Get size of elements
+  uint16_t elemSize = 1;
+  if ((predAsCounter & 0b10) == 0b10)
+    elemSize = 2;
+  else if ((predAsCounter & 0b100) == 0b100)
+    elemSize = 4;
+  else if ((predAsCounter & 0b1000) == 0b1000)
+    elemSize = 8;
+
+  const uint16_t elemsPerVec = VL_bits / (elemSize * 8);
   // Get predicate-as-counter information
   const bool invert = (predAsCounter & 0b1000000000000000) != 0;
   const uint64_t predElemCount =
       (predAsCounter & static_cast<uint64_t>(0b0111111111111111)) >>
-      static_cast<uint8_t>(std::log2f(sizeof(T)) + 1);
+      static_cast<uint8_t>(std::log2f(elemSize) + 1);
 
-  for (int r = 0; r < V; r++) {
+  for (uint8_t r = 0; r < V; r++) {
     for (uint16_t i = 0; i < elemsPerVec; i++) {
       // Move bit to next position based on element type
-      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      uint64_t shifted_active = 1ull << ((i % (64 / elemSize)) * elemSize);
       // If invert = True (invert bit = 1), predElemCount dictates number of
       // initial inactive elements.
-      // If invert = False (invert bit = 0), it indicates the number of initial
-      // active elements.
+      // If invert = False (invert bit = 0), it indicates the number of
+      // initial active elements.
       if (static_cast<uint64_t>(r * elemsPerVec) + i < predElemCount) {
-        out[r][i / (64 / sizeof(T))] |= (invert) ? 0 : shifted_active;
+        out[r][i / (64 / elemSize)] |= (invert) ? 0 : shifted_active;
       } else {
-        out[r][i / (64 / sizeof(T))] |= (invert) ? shifted_active : 0;
+        out[r][i / (64 / elemSize)] |= (invert) ? shifted_active : 0;
       }
     }
   }

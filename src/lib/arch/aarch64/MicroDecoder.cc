@@ -606,6 +606,113 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
+        case Opcode::AArch64_LD1B_2Z_IMM:
+        case Opcode::AArch64_LD1B_2Z: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, false, 1, 1, 2));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, true, 2, 1, 2));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1D_2Z_IMM: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, false, 1, 8, 2));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, true, 2, 8, 2));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1W_2Z_IMM:
+        case Opcode::AArch64_LD1W_2Z: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, false, 1, 4, 2));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[2].pred,
+              metadata.operands[3].mem, capstoneHandle, true, 2, 4, 2));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1B_4Z_IMM:
+        case Opcode::AArch64_LD1B_4Z: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 1, 1, 4));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 2, 1, 4));
+          // ld1 uop 2
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[2].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 3, 1, 4));
+          // ld1 uop 3
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[3].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, true, 4, 1, 4));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1D_4Z_IMM:
+        case Opcode::AArch64_LD1D_4Z: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 1, 8, 4));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 2, 8, 4));
+          // ld1 uop 2
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[2].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 3, 8, 4));
+          // ld1 uop 3
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[3].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, true, 4, 8, 4));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1W_4Z_IMM:
+        case Opcode::AArch64_LD1W_4Z: {
+          // ld1 uop 0
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[0].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 1, 4, 4));
+          // ld1 uop 1
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[1].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 2, 4, 4));
+          // ld1 uop 2
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[2].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, false, 3, 4, 4));
+          // ld1 uop 3
+          cacheVector.push_back(createLd1MulVecUop(
+              architecture, metadata.operands[3].reg, metadata.operands[4].pred,
+              metadata.operands[5].mem, capstoneHandle, true, 4, 4, 4));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
         default: {
           // No supported splitting for this Instruction so return
           // macro-operation
@@ -639,6 +746,8 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
         info.operands[op].reg = AARCH64_REG_INVALID;
         if (opTypes[op].isDestination) {
           info.operands[op].access = CS_AC_WRITE;
+        } else {
+          info.operands[op].access = CS_AC_READ;
         }
         break;
       }
@@ -650,6 +759,12 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
       case aarch64_op_type::AARCH64_OP_MEM: {
         info.operands[op].type = AARCH64_OP_MEM;
         info.operands[op].mem = {AARCH64_REG_INVALID, AARCH64_REG_INVALID, 0};
+        break;
+      }
+      case aarch64_op_type::AARCH64_OP_PRED: {
+        info.operands[op].type = AARCH64_OP_PRED;
+        info.operands[op].pred = {AARCH64_REG_INVALID, AARCH64_REG_INVALID, 0};
+        info.operands[op].access = CS_AC_READ;
         break;
       }
       case aarch64_op_type::AARCH64_OP_INVALID:
@@ -715,8 +830,6 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
       case aarch64_op_type::AARCH64_OP_SYSIMM:
         [[fallthrough]];
       case aarch64_op_type::AARCH64_OP_SYSALIAS:
-        [[fallthrough]];
-      case aarch64_op_type::AARCH64_OP_PRED:
         break;
     }
   }
@@ -863,6 +976,37 @@ Instruction MicroDecoder::createStrUop(const Architecture& architecture,
                                lastMicroOp, microOpIndex}));
   str.setExecutionInfo(architecture.getExecutionInfo(str));
   return str;
+}
+
+Instruction MicroDecoder::createLd1MulVecUop(
+    const Architecture& architecture, aarch64_reg dest, aarch64_op_pred pred,
+    aarch64_op_mem mem, csh capstoneHandle, bool lastMicroOp, int microOpIndex,
+    uint8_t dataSize, uint8_t numVecs) {
+  cs_detail ldr_detail = createDefaultDetail(
+      {{AARCH64_OP_REG, 1}, {AARCH64_OP_PRED}, {AARCH64_OP_MEM}});
+  ldr_detail.aarch64.operands[0].reg = dest;
+  ldr_detail.aarch64.operands[1].pred = pred;
+  ldr_detail.aarch64.operands[2].mem = mem;
+  cs_insn ldr_cs = {aarch64_insn::AARCH64_INS_LD1,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_ld1MulVec",
+                    "",
+                    false,
+                    false,
+                    &ldr_detail,
+                    MicroOpcode::LD1_MULVEC_ADDR};
+  // hijack op_str as number of vecs from original multi-vec load
+  ldr_cs.op_str[0] = ('0' + numVecs);
+  InstructionMetadata ldr_metadata(ldr_cs);
+  microMetadataCache_.emplace_front(ldr_metadata);
+  Instruction ldr(architecture, microMetadataCache_.front(),
+                  MicroOpInfo({true, MicroOpcode::LD1_MULVEC_ADDR, dataSize,
+                               lastMicroOp, microOpIndex}));
+  ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
+  return ldr;
 }
 
 }  // namespace aarch64
