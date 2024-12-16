@@ -118,7 +118,9 @@ l1cache.addParams({
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT
+      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
+      "tag_access_latency_cycles": 1,
+      "mshr_latency_cycles": 1,
 })
 # Set MESI L1 coherence controller to the "coherence" slot
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
@@ -151,16 +153,18 @@ l2cache.addParams({
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
+      "tag_access_latency_cycles": 1,
+      "mshr_latency_cycles": 1,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
-prefetcher_l2 = l2cache.setSubComponent("prefetcher", PREFETCHER)
+prefetcher_l2 = l2cache.setSubComponent("prefetcher", "cassini.NextBlockPrefetcher")
 prefetcher_l2.addParams({
       "cache_line_size": A64FX_CLW,
-      "aggressiveness": AGGRESSIVENESS,
+      "aggressiveness": 2,
 })
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
