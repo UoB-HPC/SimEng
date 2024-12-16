@@ -222,6 +222,8 @@ void CoreInstance::createCore() {
     predictor_ = std::make_unique<GenericPredictor>();
   } else if (predictorType == "Perceptron") {
     predictor_ = std::make_unique<PerceptronPredictor>();
+  } else if (predictorType == "Tage") {
+    predictor_ = std::make_unique<TagePredictor>();
   }
 
   // Extract the port arrangement from the config file

@@ -30,7 +30,7 @@ struct ExceptionResult {
  * cycle until complete. */
 class ExceptionHandler {
  public:
-  virtual ~ExceptionHandler(){};
+  virtual ~ExceptionHandler() {};
   /** Tick the exception handler to progress handling of the exception. Should
    * return `false` if the exception requires further handling, or `true` once
    * complete. */
@@ -46,7 +46,7 @@ class Architecture {
  public:
   Architecture(kernel::Linux& kernel) : linux_(kernel) {}
 
-  virtual ~Architecture(){};
+  virtual ~Architecture() {};
 
   /** Attempt to pre-decode from `bytesAvailable` bytes of instruction memory.
    * Writes into the supplied macro-op vector, and returns the number of bytes

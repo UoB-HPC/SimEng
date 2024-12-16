@@ -147,10 +147,12 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)}};
+  return {
+      {"cycles", std::to_string(ticks_)},
+      {"retired", std::to_string(retired)},
+      {"ipc", ipcStr.str()},
+      {"flushes", std::to_string(flushes_)},
+  };
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
