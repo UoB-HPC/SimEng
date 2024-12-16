@@ -1459,9 +1459,9 @@ TEST_P(InstFloat, ucvtf) {
   // representation error to ensure tests pass
   initialHeapData_.resize(12);
   heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-  heap32[0] = 0x000001EE;
-  heap32[1] = 0x00021F3B;
-  heap32[2] = 0x32FE6B75;
+  heap32[0] = 0x000001EE;  // 123.5 (2 fraction bits)
+  heap32[1] = 0x00021F3B;  // 543.23 (8 fraction bits)
+  heap32[2] = 0x32FE6B75;  // 101.987654321 (23 fraction bits)
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0

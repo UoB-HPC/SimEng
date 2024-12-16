@@ -283,9 +283,6 @@ enum class InsnType : uint32_t {
   isBranch = 1 << 14
 };
 
-/** Predefined shift values for converting pred-as-counter to pred-as-mask. */
-const uint64_t predCountShiftVals[9] = {0, 1, 2, 0, 3, 0, 0, 0, 4};
-
 /** Convert Predicate-as-Counter to Predicate-as-Masks.
  * T represents the element type (i.e. for pg.s, T = uint32_t).
  * V represents the number of vectors the predicate-as-counter is being used
@@ -300,7 +297,7 @@ std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
   const bool invert = (predAsCounter & 0b1000000000000000) != 0;
   const uint64_t predElemCount =
       (predAsCounter & static_cast<uint64_t>(0b0111111111111111)) >>
-      predCountShiftVals[sizeof(T)];
+      static_cast<uint8_t>(std::log2f(sizeof(T)) + 1);
 
   for (int r = 0; r < V; r++) {
     for (int i = 0; i < elemsPerVec; i++) {

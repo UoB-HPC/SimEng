@@ -520,10 +520,10 @@ void Instruction::execute() {
         branchAddress_ = instructionAddress_ + metadata_.operands[0].imm;
         break;
       }
+#if SIMENG_ENABLE_BF16 == 1
       case Opcode::AArch64_BF16DOTlanev8bf16: {  // bfdot vd.4s, vn.8h,
                                                  // vm.2h[index]
         // BF16 -- EXPERIMENTAL
-        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
         // Must be enabled at SimEng compile time
         // Not verified to be working for all compilers or OSs.
         // No Tests written
@@ -545,7 +545,6 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_BFDOT_ZZI: {  // bfdot zd.s, zn.h, zm.h[index]
         // BF16 -- EXPERIMENTAL
-        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
         // Must be enabled at SimEng compile time
         // Not verified to be working for all compilers or OSs.
         // No Tests written
@@ -580,6 +579,7 @@ void Instruction::execute() {
         results_[0] = RegisterValue(out, 256);
         break;
       }
+#endif
       case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
         results_[0] = {
             bfm_2imms<uint32_t>(sourceValues_, metadata_, false, false), 8};
@@ -2252,11 +2252,11 @@ void Instruction::execute() {
         results_[0] = vecFmlsIndexed_3vecs<float, 4>(sourceValues_, metadata_);
         break;
       }
+#if SIMENG_ENABLE_BF16 == 1
       case Opcode::AArch64_BFMOPA_MPPZZ: {  // bfmopa zada.s, pn/m, pm/m, zn.h,
                                             // zm.h
         // SME
         // BF16 -- EXPERIMENTAL
-        if (std::string(SIMENG_ENABLE_BF16) == "OFF") return executionNYI();
         // Must be enabled at SimEng compile time
         // Not verified to be working for all compilers or OSs.
         // No Tests written
@@ -2308,6 +2308,7 @@ void Instruction::execute() {
         }
         break;
       }
+#endif
       case Opcode::AArch64_FMOPA_MPPZZ_D: {  // fmopa zada.d, pn/m, pm/m, zn.d,
                                              // zm.d
         // SME

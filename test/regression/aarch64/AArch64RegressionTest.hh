@@ -192,20 +192,19 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
 
 /** Check each element of the Lookup Table register ZT0 against expected values.
  *
- * The `tag` argument is the register index (must be 0), and the `type` argument
- * is the C++ data type to use for value comparisons. The third argument should
- * be an initializer list containing one value for each register element (for a
- * total of `(64 / sizeof(type))` values).
+ * The `type` argument is the C++ data type to use for value comparisons. The
+ * third argument should be an initializer list containing one value for each
+ * register element (for a total of `(64 / sizeof(type))` values).
  *
  * For example:
  *
  *     // Compare zt0 to some expected 32-bit uint64 values.
  *     CHECK_TABLE(0, uint32_t, {1, 2, 3, 4, ..., 16});
  */
-#define CHECK_TABLE(tag, type, ...)             \
-  {                                             \
-    SCOPED_TRACE("<<== error generated here");  \
-    checkTableRegister<type>(tag, __VA_ARGS__); \
+#define CHECK_TABLE(type, ...)                 \
+  {                                            \
+    SCOPED_TRACE("<<== error generated here"); \
+    checkTableRegister<type>(__VA_ARGS__);     \
   }
 
 /** A helper macro to predecode the first instruction in a snippet of Armv9.2-a
@@ -385,11 +384,9 @@ class AArch64RegressionTest : public RegressionTest {
    * better diagnostic messages, rather than called directly from test code.
    */
   template <typename T>
-  void checkTableRegister(uint8_t tag,
-                          const std::array<T, (64 / sizeof(T))>& values) const {
-    assert(tag == 0 && "Only a tag of value 0 is valid for Table registers");
+  void checkTableRegister(const std::array<T, (64 / sizeof(T))>& values) const {
     const T* data = RegressionTest::getVectorRegister<T>(
-        {simeng::arch::aarch64::RegisterType::TABLE, tag});
+        {simeng::arch::aarch64::RegisterType::TABLE, 0});
     for (unsigned i = 0; i < (64 / sizeof(T)); i++) {
       EXPECT_NEAR(data[i], values[i], 0.0005)
           << "Mismatch for element " << i << ".";
