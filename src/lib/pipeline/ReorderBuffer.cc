@@ -81,23 +81,21 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
-    if (uop->getInstructionAddress() == last_inst_addr) {
-      inst_repeat_counter++;
-    } else {
-      inst_repeat_counter = 0;
-    }
-    if (inst_repeat_counter > 10000000) {
-      std::cout
-          << "Infinite loop detected in rob commit at instruction address "
-          << std::hex << uop->getInstructionAddress() << std::dec << " ("
-          << uop->getMicroOpIndex() << "). Killing.\n";
-      exit(1);
-    }
-    last_inst_addr = uop->getInstructionAddress();
 
     if (!uop->canCommit()) {
+      // If an instruction has been stuck at the head of the rob for
+      // sufficiently long, assume an error in SimEng has occured.
+      robHeadRepeatCounter_++;
+      if (robHeadRepeatCounter_ > 10000000) {
+        std::cerr << "[SimEng:ReorderBuffer] Infinite loop detected in rob "
+                     "commit at instruction address "
+                  << std::hex << uop->getInstructionAddress() << std::dec
+                  << " (" << uop->getMicroOpIndex() << ")." << std::endl;
+        exit(1);
+      }
       break;
     }
+    robHeadRepeatCounter_ = 0;
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
