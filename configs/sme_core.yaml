@@ -21,7 +21,7 @@ Register-Set:
   FloatingPoint/SVE-Count: 512
   Predicate-Count: 256
   Conditional-Count: 512
-  SME-Matrix-Count: 32
+  SME-Matrix-Count: 64
   SME-Lookup-Table-Count: 1
 Pipeline-Widths:
   Commit: 64
@@ -32,10 +32,15 @@ Queue-Sizes:
   Load: 512
   Store: 512
 Branch-Predictor:
-  Type: "Perceptron"
+  Type: "Tage"
   BTB-Tag-Bits: 11
+  Saturating-Count-Bits: 2
   Global-History-Length: 19
   RAS-entries: 8
+  Fallback-Static-Predictor: "Always-Taken"
+  Tage-Table-Bits: 12
+  Num-Tage-Tables: 6
+  Tag-Length: 8
 L1-Data-Memory:
   Interface-Type: Fixed
 L1-Instruction-Memory:
@@ -43,11 +48,11 @@ L1-Instruction-Memory:
 LSQ-L1-Interface:
   Access-Latency: 4
   Exclusive: False
-  Load-Bandwidth: 128
-  Store-Bandwidth: 128
-  Permitted-Requests-Per-Cycle: 2
-  Permitted-Loads-Per-Cycle: 2
-  Permitted-Stores-Per-Cycle: 2
+  Load-Bandwidth: 512
+  Store-Bandwidth: 512
+  Permitted-Requests-Per-Cycle: 16
+  Permitted-Loads-Per-Cycle: 8
+  Permitted-Stores-Per-Cycle: 8
 Ports:
   0:
     Portname: ALU0
