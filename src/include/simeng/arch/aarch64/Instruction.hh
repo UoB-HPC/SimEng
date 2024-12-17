@@ -72,6 +72,8 @@ const uint8_t LDR_ADDR = 2;
 const uint8_t STR_ADDR = 3;
 const uint8_t STR_DATA = 4;
 const uint8_t LD1_MULVEC_ADDR = 5;
+const uint8_t ST1_MULVEC_ADDR = 6;
+const uint8_t ST1_MULVEC_DATA = 7;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode

@@ -513,10 +513,12 @@ void Instruction::decode() {
         setInstructionType(InsnType::isLoad);
       }
     } else {
-      if (microOpcode_ != MicroOpcode::STR_DATA) {
+      if ((microOpcode_ != MicroOpcode::STR_DATA) &&
+          (microOpcode_ != MicroOpcode::ST1_MULVEC_DATA)) {
         setInstructionType(InsnType::isStoreAddress);
       }
-      if (microOpcode_ != MicroOpcode::STR_ADDR) {
+      if ((microOpcode_ != MicroOpcode::STR_ADDR) &&
+          (microOpcode_ != MicroOpcode::ST1_MULVEC_ADDR)) {
         setInstructionType(InsnType::isStoreData);
       }
     }
@@ -554,7 +556,8 @@ void Instruction::decode() {
         setInstructionType(InsnType::isSMEData);
       }
     }
-  } else if (microOpcode_ == MicroOpcode::STR_DATA) {
+  } else if ((microOpcode_ == MicroOpcode::STR_DATA) ||
+             (microOpcode_ == MicroOpcode::ST1_MULVEC_DATA)) {
     // Edge case for identifying store data micro-operation
     setInstructionType(InsnType::isStoreData);
   }

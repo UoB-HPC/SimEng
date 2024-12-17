@@ -713,6 +713,60 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
+        case Opcode::AArch64_ST1D_2Z:
+        case Opcode::AArch64_ST1D_2Z_IMM: {
+          // st1d splits into two store address and two store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1 and 2
+
+          // store0 address uop
+          cacheVector.push_back(createSt1MulVecAddrUop(
+              architecture, metadata.operands[2].pred, metadata.operands[3].mem,
+              capstoneHandle, false, 1, 8, 2));
+          // store0 data uop
+          cacheVector.push_back(createSt1MulVecDataUop(
+              architecture, metadata.operands[0].reg, metadata.operands[2].pred,
+              capstoneHandle, false, 1, 8, 2));
+
+          // store1 address uop
+          cacheVector.push_back(createSt1MulVecAddrUop(
+              architecture, metadata.operands[2].pred, metadata.operands[3].mem,
+              capstoneHandle, false, 2, 8, 2));
+          // store1 data uop
+          cacheVector.push_back(createSt1MulVecDataUop(
+              architecture, metadata.operands[1].reg, metadata.operands[2].pred,
+              capstoneHandle, true, 2, 8, 2));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_ST1W_2Z:
+        case Opcode::AArch64_ST1W_2Z_IMM: {
+          // st1d splits into two store address and two store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1 and 2
+
+          // store0 address uop
+          cacheVector.push_back(createSt1MulVecAddrUop(
+              architecture, metadata.operands[2].pred, metadata.operands[3].mem,
+              capstoneHandle, false, 1, 4, 2));
+          // store0 data uop
+          cacheVector.push_back(createSt1MulVecDataUop(
+              architecture, metadata.operands[0].reg, metadata.operands[2].pred,
+              capstoneHandle, false, 1, 4, 2));
+
+          // store1 address uop
+          cacheVector.push_back(createSt1MulVecAddrUop(
+              architecture, metadata.operands[2].pred, metadata.operands[3].mem,
+              capstoneHandle, false, 2, 4, 2));
+          // store1 data uop
+          cacheVector.push_back(createSt1MulVecDataUop(
+              architecture, metadata.operands[1].reg, metadata.operands[2].pred,
+              capstoneHandle, true, 2, 4, 2));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
         default: {
           // No supported splitting for this Instruction so return
           // macro-operation
@@ -746,8 +800,6 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
         info.operands[op].reg = AARCH64_REG_INVALID;
         if (opTypes[op].isDestination) {
           info.operands[op].access = CS_AC_WRITE;
-        } else {
-          info.operands[op].access = CS_AC_READ;
         }
         break;
       }
@@ -764,7 +816,6 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
       case aarch64_op_type::AARCH64_OP_PRED: {
         info.operands[op].type = AARCH64_OP_PRED;
         info.operands[op].pred = {AARCH64_REG_INVALID, AARCH64_REG_INVALID, 0};
-        info.operands[op].access = CS_AC_READ;
         break;
       }
       case aarch64_op_type::AARCH64_OP_INVALID:
@@ -998,7 +1049,8 @@ Instruction MicroDecoder::createLd1MulVecUop(
                     false,
                     &ldr_detail,
                     MicroOpcode::LD1_MULVEC_ADDR};
-  // hijack op_str as number of vecs from original multi-vec load
+  // hijack op_str as number of vecs from original multi-vec load (needed for
+  // decoding of predicate-as-counter)
   ldr_cs.op_str[0] = ('0' + numVecs);
   InstructionMetadata ldr_metadata(ldr_cs);
   microMetadataCache_.emplace_front(ldr_metadata);
@@ -1007,6 +1059,68 @@ Instruction MicroDecoder::createLd1MulVecUop(
                                lastMicroOp, microOpIndex}));
   ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
   return ldr;
+}
+
+Instruction MicroDecoder::createSt1MulVecDataUop(
+    const Architecture& architecture, aarch64_reg src, aarch64_op_pred pred,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize,
+    uint8_t numVecs) {
+  cs_detail sd_detail =
+      createDefaultDetail({{AARCH64_OP_REG}, {AARCH64_OP_PRED}});
+  sd_detail.aarch64.operands[0].reg = src;
+  sd_detail.aarch64.operands[1].pred = pred;
+  cs_insn sd_cs = {aarch64_insn::AARCH64_INS_ST1,
+                   aarch64_insn::AARCH64_INS_INVALID,
+                   0x0,
+                   4,
+                   "",
+                   "micro_st1MulVecData",
+                   "",
+                   false,
+                   false,
+                   &sd_detail,
+                   MicroOpcode::ST1_MULVEC_DATA};
+  // hijack op_str as number of vecs from original multi-vec store (needed for
+  // decoding of predicate-as-counter)
+  sd_cs.op_str[0] = ('0' + numVecs);
+  InstructionMetadata sd_metadata(sd_cs);
+  microMetadataCache_.emplace_front(sd_metadata);
+  Instruction sd(architecture, microMetadataCache_.front(),
+                 MicroOpInfo({true, MicroOpcode::ST1_MULVEC_DATA, dataSize,
+                              lastMicroOp, microOpIndex}));
+  sd.setExecutionInfo(architecture.getExecutionInfo(sd));
+  return sd;
+}
+
+Instruction MicroDecoder::createSt1MulVecAddrUop(
+    const Architecture& architecture, aarch64_op_pred pred, aarch64_op_mem mem,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize,
+    uint8_t numVecs) {
+  cs_detail str_detail =
+      createDefaultDetail({{AARCH64_OP_PRED}, {AARCH64_OP_MEM}});
+  str_detail.aarch64.operands[0].pred = pred;
+  str_detail.aarch64.operands[1].mem = mem;
+  cs_insn str_cs = {aarch64_insn::AARCH64_INS_ST1,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_st1MulVecAddr",
+                    "",
+                    false,
+                    false,
+                    &str_detail,
+                    MicroOpcode::ST1_MULVEC_ADDR};
+  // hijack op_str as number of vecs from original multi-vec store (needed for
+  // decoding of predicate-as-counter)
+  str_cs.op_str[0] = ('0' + numVecs);
+  InstructionMetadata str_metadata(str_cs);
+  microMetadataCache_.emplace_front(str_metadata);
+  Instruction str(architecture, microMetadataCache_.front(),
+                  MicroOpInfo({true, MicroOpcode::ST1_MULVEC_ADDR, dataSize,
+                               lastMicroOp, microOpIndex}));
+  str.setExecutionInfo(architecture.getExecutionInfo(str));
+  return str;
 }
 
 }  // namespace aarch64

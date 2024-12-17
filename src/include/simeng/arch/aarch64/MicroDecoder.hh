@@ -68,11 +68,32 @@ class MicroDecoder {
                            csh capstoneHandle, bool lastMicroOp = false,
                            int microOpIndex = 0, uint8_t dataSize = 0);
 
+  /** Create a load uop for a SVE2/SME multi-vector LD1X instruction with
+   * predicate-as-counter predication from a destination register, a capstone
+   * predicate operand, and a capstone memory operand. */
   Instruction createLd1MulVecUop(const Architecture& architecture,
                                  aarch64_reg dest, aarch64_op_pred pred,
                                  aarch64_op_mem mem, csh capstoneHandle,
                                  bool lastMicroOp, int microOpIndex,
                                  uint8_t dataSize, uint8_t numVecs);
+
+  /** Create a store data uop for a SVE2/SME multi-vector ST1X instruction with
+   * predicate-as-counter predication from a source register and a capstone
+   * predicate operand. */
+  Instruction createSt1MulVecDataUop(const Architecture& architecture,
+                                     aarch64_reg src, aarch64_op_pred pred,
+                                     csh capstoneHandle, bool lastMicroOp,
+                                     int microOpIndex, uint8_t dataSize,
+                                     uint8_t numVecs);
+
+  /** Create a store address uop for a SVE2/SME multi-vector ST1X instruction
+   * with predicate-as-counter predication from a capstone predicate operand and
+   * a capstone memory operand. */
+  Instruction createSt1MulVecAddrUop(const Architecture& architecture,
+                                     aarch64_op_pred pred, aarch64_op_mem mem,
+                                     csh capstoneHandle, bool lastMicroOp,
+                                     int microOpIndex, uint8_t dataSize,
+                                     uint8_t numVecs);
 
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;

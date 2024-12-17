@@ -112,7 +112,7 @@ void Instruction::execute() {
 
         // Regardless of datatype, work in uint8_t
         uint8_t out[256] = {0};
-        const uint16_t partition_num = VL_bits / dataSize_;
+        const uint16_t partition_num = VL_bits / (8 * dataSize_);
         const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
@@ -125,6 +125,41 @@ void Instruction::execute() {
           }
         }
         results_[0] = {out, 256};
+        break;
+      }
+      case MicroOpcode::ST1_MULVEC_DATA: {
+        // Uop format st1x zn.x, png/`
+        const uint8_t myIndex = microOpIndex_ - 1;
+        const int numVecs = std::stoi(metadata_.operandStr);
+        const uint64_t pn = sourceValues_[1].get<uint64_t>();
+        auto pred = predAsCounterToMasks(pn, VL_bits, numVecs)[myIndex];
+
+        // Given unknown data type, work in uint8
+        const uint8_t* t1 = sourceValues_[0].getAsVector<uint8_t>();
+        const uint16_t partition_num = VL_bits / (8 * dataSize_);
+        std::array<uint8_t, 256> mdata;
+        uint16_t md_size = 0;
+
+        for (uint16_t i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull
+                                    << ((i % (64 / dataSize_)) * dataSize_);
+          if (pred[i / (64 / dataSize_)] & shifted_active) {
+            // For number of uint8 in dataSize_, add to mdata
+            for (uint8_t j = 0; j < dataSize_; j++) {
+              mdata[md_size] = t1[i * dataSize_ + j];
+              md_size++;
+            }
+          } else if (md_size) {
+            memoryData_.push_back(RegisterValue((char*)mdata.data(), md_size));
+            md_size = 0;
+          }
+        }
+        if (md_size) {
+          memoryData_.push_back(RegisterValue((char*)mdata.data(), md_size));
+        }
+        // Set false addresses after memoryData has been filled
+        setMemoryAddresses(std::vector<memory::MemoryAccessTarget>(
+            memoryData_.size(), {0, 0}));
         break;
       }
       default:

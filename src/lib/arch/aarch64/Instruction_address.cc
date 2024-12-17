@@ -76,6 +76,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case MicroOpcode::LD1_MULVEC_ADDR: {
+        // Uop format ld1x zt.x, png/`, [xn{, <xn|imm>}]
         const uint16_t VL_bytes = VL_bits / 8;
         uint64_t offset;
         std::vector<simeng::memory::MemoryAccessTarget> addresses;
@@ -94,6 +95,34 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
             {sourceValues_[1].get<uint64_t>() + offset, VL_bytes});
 
         setMemoryAddresses(addresses);
+        break;
+      }
+      case MicroOpcode::ST1_MULVEC_ADDR: {
+        // Uop format st1x png/`, [xn{, <xn|imm>}]
+        const uint8_t myIndex = microOpIndex_ - 1;
+        const int numVecs = std::stoi(metadata_.operandStr);
+        const uint64_t pn = sourceValues_[0].get<uint64_t>();
+        auto pred = predAsCounterToMasks(pn, VL_bits, numVecs)[myIndex];
+
+        const uint16_t VL_bytes = VL_bits / 8;
+        uint64_t offset;
+        if (metadata_.operands[1].mem.index != AARCH64_REG_INVALID) {
+          // Using register offset
+          offset = (sourceValues_[2].get<uint64_t>() * dataSize_) +
+                   (VL_bytes * myIndex);
+
+        } else {
+          // Using imm offset
+          offset = (metadata_.operands[1].mem.disp * VL_bytes) +
+                   (VL_bytes * myIndex);
+        }
+        uint64_t addr = sourceValues_[1].get<uint64_t>() + offset;
+
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        generatePredicatedContiguousAddressBlocks(addr, (VL_bytes / dataSize_),
+                                                  dataSize_, dataSize_,
+                                                  pred.data(), addresses);
+        setMemoryAddresses(std::move(addresses));
         break;
       }
       default:
