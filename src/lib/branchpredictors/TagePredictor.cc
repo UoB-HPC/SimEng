@@ -32,7 +32,7 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
   for (uint32_t i = 0; i < numTageTables_; i++) {
     std::vector<TageEntry> newTable;
     for (uint32_t j = 0; j < (1ul << tageTableBits_); j++) {
-      TageEntry newEntry = {2, 0, 1, 0};
+      TageEntry newEntry = {satCntVal, 0, 1, 0};
       newTable.push_back(newEntry);
     }
     tageTables_.push_back(newTable);
@@ -201,7 +201,7 @@ uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
   // global history (folded onto itself to make it of the correct size).
   uint64_t h1 = (address >> 2);
   uint64_t h2 = globalHistory_.getFolded(1ull << (table + 1), tageTableBits_);
-  // Then truncat the XOR to make it fit thed esired size of an index
+  // Then truncate the XOR to make it fit the desired size of an index
   return (h1 ^ h2) & ((1 << tageTableBits_) - 1);
 }
 
