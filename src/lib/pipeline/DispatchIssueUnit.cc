@@ -67,30 +67,41 @@ void DispatchIssueUnit::tick() {
       continue;
     }
 
-    const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
+    std::vector<uint16_t> supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
       // Exception; mark as ready to commit, and remove from pipeline
       uop->setCommitReady();
       input_.getHeadSlots()[slot] = nullptr;
       continue;
     }
-    // Allocate issue port to uop
+
+    // Loop through all ports and remove any who's RS is at capacity or dispatch
+    // rate has been met
+    auto portIt = supportedPorts.begin();
+    while (portIt != supportedPorts.end()) {
+      uint16_t RS_Index = portMapping_[*portIt].first;
+      ReservationStation* rs = &reservationStations_[RS_Index];
+      if (rs->currentSize == rs->capacity ||
+          dispatches_[RS_Index] == rs->dispatchRate) {
+        portIt = supportedPorts.erase(portIt);
+      } else {
+        portIt++;
+      }
+    }
+    // If no ports left, stall and return
+    if (supportedPorts.size() == 0) {
+      input_.stall(true);
+      rsStalls_++;
+      return;
+    }
+
+    // Find an available RS
     uint16_t port = portAllocator_.allocate(supportedPorts);
     uint16_t RS_Index = portMapping_[port].first;
     uint16_t RS_Port = portMapping_[port].second;
     assert(RS_Index < reservationStations_.size() &&
            "Allocated port inaccessible");
-    ReservationStation& rs = reservationStations_[RS_Index];
-
-    // When appropriate, stall uop or input buffer if stall buffer full
-    if (rs.currentSize == rs.capacity ||
-        dispatches_[RS_Index] == rs.dispatchRate) {
-      // Deallocate port given
-      portAllocator_.deallocate(port);
-      input_.stall(true);
-      rsStalls_++;
-      return;
-    }
+    ReservationStation* rs = &reservationStations_[RS_Index];
 
     // Assume the uop will be ready
     bool ready = true;
@@ -123,10 +134,10 @@ void DispatchIssueUnit::tick() {
 
     // Increment dispatches made and RS occupied entries size
     dispatches_[RS_Index]++;
-    rs.currentSize++;
+    rs->currentSize++;
 
     if (ready) {
-      rs.ports[RS_Port].ready.push_back(std::move(uop));
+      rs->ports[RS_Port].ready.push_back(std::move(uop));
     }
 
     input_.getHeadSlots()[slot] = nullptr;

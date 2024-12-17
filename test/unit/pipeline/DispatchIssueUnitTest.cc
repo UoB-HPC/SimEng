@@ -9,6 +9,7 @@
 namespace simeng {
 namespace pipeline {
 
+using ::testing::_;
 using ::testing::Return;
 using ::testing::ReturnRef;
 
@@ -269,8 +270,7 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr_rsFull) {
   // All expected calls to instruction during tick()
   EXPECT_CALL(*uop, getSupportedPorts()).WillOnce(ReturnRef(suppPorts));
   // All expected calls to portAllocator during tick()
-  EXPECT_CALL(portAlloc, allocate(suppPorts)).WillOnce(Return(EAGA));
-  EXPECT_CALL(portAlloc, deallocate(EAGA));
+  EXPECT_CALL(portAlloc, allocate(_)).Times(0);
   input.getHeadSlots()[0] = uopPtr;
   diUnit.tick();
   // Ensure Reservation station sizes have stayed the same
