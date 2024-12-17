@@ -51,10 +51,10 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   BranchPrediction prediction;
   BranchPrediction altPrediction;
   uint8_t predTable;
-  std::vector<uint64_t> indices;
-  std::vector<uint64_t> tags;
+  std::shared_ptr<uint64_t[]> indices(new uint64_t[numTageTables_]);
+  std::shared_ptr<uint64_t[]> tags(new uint64_t[numTageTables_]);
   getTaggedPrediction(address, &prediction, &altPrediction, &predTable,
-                      &indices, &tags);
+                      indices, tags);
 
   // If known offset then overwrite predicted target with this
   if (knownOffset != 0) prediction.target = address + knownOffset;
@@ -89,7 +89,8 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   }
 
   // Store prediction data so that update() has the info it needs
-  ftqEntry newEntry = {predTable, indices, tags, prediction, altPrediction};
+  ftqEntry newEntry = {predTable, indices, tags,
+                       prediction, altPrediction};
   ftq_.push_back(newEntry);
 
   // Speculatively update the global history
@@ -155,8 +156,8 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
                                         BranchPrediction* prediction,
                                         BranchPrediction* altPrediction,
                                         uint8_t* predTable,
-                                        std::vector<uint64_t>* indices,
-                                        std::vector<uint64_t>* tags) {
+                                        std::shared_ptr<uint64_t[]> indices,
+                                        std::shared_ptr<uint64_t[]> tags) {
   // Get a basic prediction from the btb
   BranchPrediction basePrediction = getBtbPrediction(address);
   prediction->isTaken = basePrediction.isTaken;
@@ -171,9 +172,9 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
     // Determine the index and tag for this table, as they vary depending on
     // the length of global history
     uint64_t index = getTaggedIndex(address, table);
-    indices->push_back(index);
+    indices.get()[table] = index;
     uint64_t tag = getTag(address, table);
-    tags->push_back(tag);
+    tags.get()[table] = tag;
 
     // If tag matches, then use this prediction
     if (tageTables_[table][index].tag == tag) {
@@ -233,13 +234,13 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
 void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // Get stored information from the FTQ
   uint8_t predTable = ftq_.front().predTable;
-  std::vector<uint64_t> indices = ftq_.front().indices;
-  std::vector<uint64_t> tags = ftq_.front().tags;
+  std::shared_ptr<uint64_t[]> indices = ftq_.front().indices;
+  std::shared_ptr<uint64_t[]> tags = ftq_.front().tags;
   BranchPrediction pred = ftq_.front().prediction;
   BranchPrediction altPred = ftq_.front().altPrediction;
 
   // Update the prediction counter
-  uint64_t predIndex = indices[predTable];
+  uint64_t predIndex = indices.get()[predTable];
   if (isTaken && (tageTables_[predTable][predIndex].satCnt < 3)) {
     (tageTables_[predTable][predIndex].satCnt)++;
   } else if (!isTaken && (tageTables_[predTable][predIndex].satCnt > 0)) {
@@ -252,9 +253,9 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // non-useful entry that can be replaced
   if (isTaken != pred.isTaken || (isTaken && (target != pred.target))) {
     for (uint8_t table = predTable + 1; table < numTageTables_; table++) {
-      if (tageTables_[table][indices[table]].u <= 1) {
-        tageTables_[table][indices[table]] = {
-            (isTaken ? (uint8_t)2 : (uint8_t)1), tags[table], (uint8_t)2,
+      if (tageTables_[table][indices.get()[table]].u <= 1) {
+        tageTables_[table][indices.get()[table]] = {
+            (isTaken ? (uint8_t)2 : (uint8_t)1), tags.get()[table], (uint8_t)2,
             target};
         break;
       }
@@ -265,13 +266,13 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   if (pred.isTaken != altPred.isTaken ||
       (pred.isTaken && (pred.target != altPred.target))) {
     bool wasUseful = (pred.isTaken == isTaken);
-    uint8_t currentU = tageTables_[predTable][indices[predTable]].u;
+    uint8_t currentU = tageTables_[predTable][indices.get()[predTable]].u;
     // Make sure that update is possible
     if (wasUseful && currentU < 3) {
-      (tageTables_[predTable][indices[predTable]].u)++;
+      (tageTables_[predTable][indices.get()[predTable]].u)++;
     }
     if (!wasUseful && currentU > 0) {
-      (tageTables_[predTable][indices[predTable]].u)--;
+      (tageTables_[predTable][indices.get()[predTable]].u)--;
     }
   }
 }

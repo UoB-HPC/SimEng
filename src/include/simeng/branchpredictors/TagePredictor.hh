@@ -5,6 +5,7 @@
 #include <deque>
 #include <map>
 #include <vector>
+#include <memory>
 
 #include "simeng/branchpredictors/BranchHistory.hh"
 #include "simeng/branchpredictors/BranchPredictor.hh"
@@ -25,8 +26,8 @@ struct TageEntry {
  * in the Fetch Target Queue. */
 struct ftqEntry {
   uint8_t predTable;
-  std::vector<uint64_t> indices;
-  std::vector<uint64_t> tags;
+  std::shared_ptr<uint64_t[]> indices;
+  std::shared_ptr<uint64_t[]> tags;
   BranchPrediction prediction;
   BranchPrediction altPrediction;
 };
@@ -88,8 +89,8 @@ class TagePredictor : public BranchPredictor {
    * tagged tables for a branch with the provided address. */
   void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
                            BranchPrediction* altPrediction, uint8_t* predTable,
-                           std::vector<uint64_t>* indices,
-                           std::vector<uint64_t>* tags);
+                           std::shared_ptr<uint64_t[]> indices,
+                           std::shared_ptr<uint64_t[]> tags);
 
   /** Returns the index of a branch in a tagged table for a given address and
    * table. */
