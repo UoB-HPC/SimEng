@@ -7,7 +7,7 @@ Core:
   Clock-Frequency-GHz: 3.0
   Timer-Frequency-MHz: 200
   Micro-Operations: True
-  Vector-Length: 512
+  Vector-Length: 128
   Streaming-Vector-Length: 512
 Fetch:
   Fetch-Block-Size: 64
@@ -25,7 +25,7 @@ Register-Set:
   SME-Lookup-Table-Count: 1
 Pipeline-Widths:
   Commit: 64
-  FrontEnd: 64
+  FrontEnd: 16
   LSQ-Completion: 64
 Queue-Sizes:
   ROB: 2048
