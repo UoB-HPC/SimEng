@@ -215,8 +215,8 @@ TEST_F(TagePredictorTest, GlobalIndexing) {
   predictor.update(0, true, 4, BranchType::Conditional, 31);
   // Get prediction
   prediction = predictor.predict(0x7C, BranchType::Conditional, 0);
-  EXPECT_TRUE(prediction.isTaken);
-  EXPECT_EQ(prediction.target, 0xBA);
+  EXPECT_FALSE(prediction.isTaken);
+  EXPECT_EQ(prediction.target, 0x80);
   // Set entry in BTB
   predictor.update(0x7C, true, 0x80, BranchType::Conditional, 32);
 

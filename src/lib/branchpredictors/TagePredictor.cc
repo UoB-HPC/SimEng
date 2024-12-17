@@ -168,7 +168,7 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   // branch.  If found, update the best prediction.  The greater the table
   // number, the longer global history it has access to.  Therefore, the
   // greater the table number, the better the prediction.
-  for (uint8_t table = 0; table < numTageTables_; table++) {
+  for (int8_t table = 0; table < numTageTables_; table++) {
     // Determine the index and tag for this table, as they vary depending on
     // the length of global history
     uint64_t index = getTaggedIndex(address, table);
