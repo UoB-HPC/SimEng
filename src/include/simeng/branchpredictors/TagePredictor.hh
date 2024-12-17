@@ -25,7 +25,7 @@ struct TageEntry {
 /** A data structure to store all of the information needed for a single entry
  * in the Fetch Target Queue. */
 struct ftqEntry {
-  uint8_t predTable;
+  int8_t predTable;
   std::shared_ptr<uint64_t[]> indices;
   std::shared_ptr<uint64_t[]> tags;
   BranchPrediction prediction;
@@ -88,7 +88,7 @@ class TagePredictor : public BranchPredictor {
    * alternative prediction.  This prediction info is determined from the
    * tagged tables for a branch with the provided address. */
   void getTaggedPrediction(uint64_t address, BranchPrediction* prediction,
-                           BranchPrediction* altPrediction, uint8_t* predTable,
+                           BranchPrediction* altPrediction, int8_t* predTable,
                            std::shared_ptr<uint64_t[]> indices,
                            std::shared_ptr<uint64_t[]> tags);
 

@@ -50,7 +50,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
                                         int64_t knownOffset) {
   BranchPrediction prediction;
   BranchPrediction altPrediction;
-  uint8_t predTable;
+  int8_t predTable;
   std::shared_ptr<uint64_t[]> indices(new uint64_t[numTageTables_]);
   std::shared_ptr<uint64_t[]> tags(new uint64_t[numTageTables_]);
   getTaggedPrediction(address, &prediction, &altPrediction, &predTable,
@@ -155,7 +155,7 @@ void TagePredictor::flush(uint64_t address) {
 void TagePredictor::getTaggedPrediction(uint64_t address,
                                         BranchPrediction* prediction,
                                         BranchPrediction* altPrediction,
-                                        uint8_t* predTable,
+                                        int8_t* predTable,
                                         std::shared_ptr<uint64_t[]> indices,
                                         std::shared_ptr<uint64_t[]> tags) {
   // Get a basic prediction from the btb
