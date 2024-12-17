@@ -149,7 +149,7 @@ The Branch-Prediction section contains those options to parameterise the branch 
 The current options include:
 
 Type
-    The type of branch predictor that is used, the options are ``Generic``, ``Perceptron``, and ``Tage``.  Each of these types of predictor use prediction tables with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` and ``TAGE`` is a saturating counter, and in ``Perceptron`` it is a perceptron.  ``TAGE`` also uses a series of further, tagged prediction tables to provide predictions informed by greater branch histories.
+    The type of branch predictor that is used, the options are ``Generic``, ``Perceptron``, and ``Tage``.  Each of these types of predictor use prediction tables with each entry containing a direction prediction mechanism and a target address.  The direction predictor used in ``Generic`` and ``Tage`` is a saturating counter, and in ``Perceptron`` it is a perceptron.  ``Tage`` also uses a series of further, tagged prediction tables to provide predictions informed by greater branch histories.
 
 BTB-Tag-Bits
     The number of bits used to index the entries in the Branch Target Buffer (BTB). The number of entries in the BTB is obtained from the calculation: 1 << ``bits``. For example, a ``bits`` value of 12 would result in a BTB with 4096 entries.
