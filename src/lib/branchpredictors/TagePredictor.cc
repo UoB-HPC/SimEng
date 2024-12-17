@@ -62,7 +62,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
     prediction.isTaken = true;
-    predTable = 0;
+    predTable = -1;
   } else if (type == BranchType::Return) {
     prediction.isTaken = true;
     // Return branches can use the RAS if an entry is available
@@ -72,7 +72,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
       rasHistory_[address] = ras_.back();
       ras_.pop_back();
     }
-    predTable = 0;
+    predTable = -1;
   } else if (type == BranchType::SubroutineCall) {
     prediction.isTaken = true;
     // Subroutine call branches must push their associated return address to RAS
@@ -82,7 +82,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
     ras_.push_back(address + 4);
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
-    predTable = 0;
+    predTable = -1;
   } else if (type == BranchType::Conditional ||
              type == BranchType::LoopClosing) {
     if (!prediction.isTaken) prediction.target = address + 4;
@@ -162,7 +162,7 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   BranchPrediction basePrediction = getBtbPrediction(address);
   prediction->isTaken = basePrediction.isTaken;
   prediction->target = basePrediction.target;
-  *predTable = 0;
+  *predTable = -1;
 
   // Check each of the tagged predictor tables for an entry matching this
   // branch.  If found, update the best prediction.  The greater the table
@@ -233,18 +233,20 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
 
 void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // Get stored information from the FTQ
-  uint8_t predTable = ftq_.front().predTable;
+  int8_t predTable = ftq_.front().predTable;
   std::shared_ptr<uint64_t[]> indices = ftq_.front().indices;
   std::shared_ptr<uint64_t[]> tags = ftq_.front().tags;
   BranchPrediction pred = ftq_.front().prediction;
   BranchPrediction altPred = ftq_.front().altPrediction;
 
-  // Update the prediction counter
-  uint64_t predIndex = indices.get()[predTable];
-  if (isTaken && (tageTables_[predTable][predIndex].satCnt < 3)) {
-    (tageTables_[predTable][predIndex].satCnt)++;
-  } else if (!isTaken && (tageTables_[predTable][predIndex].satCnt > 0)) {
-    (tageTables_[predTable][predIndex].satCnt)--;
+  // Update the prediction counter if tagged prediction table was used
+  if (predTable != -1) {
+    uint64_t predIndex = indices.get()[predTable];
+    if (isTaken && (tageTables_[predTable][predIndex].satCnt < 3)) {
+      (tageTables_[predTable][predIndex].satCnt)++;
+    } else if (!isTaken && (tageTables_[predTable][predIndex].satCnt > 0)) {
+      (tageTables_[predTable][predIndex].satCnt)--;
+    }
   }
 
   // Allocate new entry if prediction was wrong and space for a new entry is
@@ -262,9 +264,10 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
     }
   }
 
-  // Update the usefulness counters if prediction differs from alt-prediction
-  if (pred.isTaken != altPred.isTaken ||
-      (pred.isTaken && (pred.target != altPred.target))) {
+  // Update the usefulness counters if prediction is from a tagged prediction
+  // table and differs from alt-prediction
+  if ((predTable != -1) && (pred.isTaken != altPred.isTaken ||
+      (pred.isTaken && (pred.target != altPred.target)))) {
     bool wasUseful = (pred.isTaken == isTaken);
     uint8_t currentU = tageTables_[predTable][indices.get()[predTable]].u;
     // Make sure that update is possible
