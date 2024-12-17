@@ -4,8 +4,8 @@
 #include <cassert>
 #include <deque>
 #include <map>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "simeng/branchpredictors/BranchHistory.hh"
 #include "simeng/branchpredictors/BranchPredictor.hh"

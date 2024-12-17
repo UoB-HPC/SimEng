@@ -53,8 +53,8 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   int8_t predTable;
   std::shared_ptr<uint64_t[]> indices(new uint64_t[numTageTables_]);
   std::shared_ptr<uint64_t[]> tags(new uint64_t[numTageTables_]);
-  getTaggedPrediction(address, &prediction, &altPrediction, &predTable,
-                      indices, tags);
+  getTaggedPrediction(address, &prediction, &altPrediction, &predTable, indices,
+                      tags);
 
   // If known offset then overwrite predicted target with this
   if (knownOffset != 0) prediction.target = address + knownOffset;
@@ -89,8 +89,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   }
 
   // Store prediction data so that update() has the info it needs
-  ftqEntry newEntry = {predTable, indices, tags,
-                       prediction, altPrediction};
+  ftqEntry newEntry = {predTable, indices, tags, prediction, altPrediction};
   ftq_.push_back(newEntry);
 
   // Speculatively update the global history
@@ -266,8 +265,9 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
 
   // Update the usefulness counters if prediction is from a tagged prediction
   // table and differs from alt-prediction
-  if ((predTable != -1) && (pred.isTaken != altPred.isTaken ||
-      (pred.isTaken && (pred.target != altPred.target)))) {
+  if ((predTable != -1) &&
+      (pred.isTaken != altPred.isTaken ||
+       (pred.isTaken && (pred.target != altPred.target)))) {
     bool wasUseful = (pred.isTaken == isTaken);
     uint8_t currentU = tageTables_[predTable][indices.get()[predTable]].u;
     // Make sure that update is possible
