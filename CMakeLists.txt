@@ -203,7 +203,7 @@ if(SIMENG_ENABLE_TESTS)
                 ${COMMAND_ECHO_OPTION}
                 RESULT_VARIABLE SUCCESS)
 
-        # XXX replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        # TODO: replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
         if (NOT SUCCESS EQUAL "0")
             message(FATAL_ERROR "LLVM configure did not succeed")
         else ()
@@ -227,7 +227,7 @@ if(SIMENG_ENABLE_TESTS)
                 ${COMMAND_ECHO_OPTION}
                 RESULT_VARIABLE SUCCESS)
 
-        # XXX replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        # TODO: replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
         if (NOT SUCCESS EQUAL "0")
             message(FATAL_ERROR "LLVM build did not succeed")
         endif ()
