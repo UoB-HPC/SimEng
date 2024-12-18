@@ -52,7 +52,7 @@ LSQ-L1-Interface:
   Exclusive: False
   Load-Bandwidth: 1024
   Store-Bandwidth: 1024
-  Permitted-Requests-Per-Cycle: 32
+  Permitted-Requests-Per-Cycle: 16
   Permitted-Loads-Per-Cycle: 16
   Permitted-Stores-Per-Cycle: 16
 Ports:

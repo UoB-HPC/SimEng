@@ -37,37 +37,42 @@ def getMemoryProps(memory_size: int, si: str):
 # Reference: https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf
 
 # Cache line size of L1 & L2 in A64FX in bytes.
-A64FX_CLW = 256
+A64FX_CLW = 1024
 # Clock Frequency of A64FX.
 A64FX_CLOCK = "3.0GHz"
 # Size of L1 cache in A64fx.
-A64FX_L1_SIZE = "128KiB"
+A64FX_L1_SIZE = "8MiB"
 # Size of L2 cache in A64fx.
-A64FX_L2_SIZE = "1MiB"
+A64FX_L2_SIZE = "1GiB"
 # Set associativity of A64FX L1
 A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 8
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 2 # 4 but -2 for Simeng overhead
+A64FX_HL_L1 = 4 # 4 but -2 for Simeng overhead
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 8 # 10 but -2 for SimEng overhead
+A64FX_HL_L2 = 10 # 10 but -2 for SimEng overhead
 # Coherence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
 A64FX_CACHE_TYPE = "inclusive"
 # Throughput of L1 to L2 per core in A64FX. (bytes per cycle)
-A64FX_L1TOL2_PC_TPUT = "32B"
+A64FX_L1TOL2_PC_TPUT = "16384B"
 # Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
-A64FX_L1TOCPU_PC_TPUT = "128B"
+A64FX_L1TOCPU_PC_TPUT = "1024B"
 # Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
-A64FX_L2TOMEM_PCMG_TPUT = "64B"
+A64FX_L2TOMEM_PCMG_TPUT = "2048B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
-A64FX_L2TOL1_PC_TPUT = "64B"
+A64FX_L2TOL1_PC_TPUT = "16384B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
-A64FX_MEMTOL2_PCMG_TPUT = 128
+A64FX_MEMTOL2_PCMG_TPUT = "2048B"
 # A64FX Memory access time.
 A64FX_MEM_ACCESS = "200ns"
+
+L1_BANKS = 16
+L2_BANKS = 16
+L1_REQ_PER_CYCLE = 16
+L2_REQ_PER_CYCLE = 16
 
 # Prefetcher to use
 PREFETCHER = "cassini.NextBlockPrefetcher"
@@ -89,7 +94,7 @@ memprops = getMemoryProps(8, "GiB")
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/Users/fw17231/Documents/SimEng/SimEng/configs/sme_core.yaml",
-    "executable_path": "/Users/fw17231/OneDrive - University of Bristol/SME_Memory_subsystem_study/Binaries/loop_201_FP64_GEMM_L1.elf",
+    "executable_path": "/Users/fw17231/OneDrive - University of Bristol/SME_Memory_subsystem_study/Binaries/loop_201_FP64_GEMM_200i.elf",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
@@ -121,6 +126,8 @@ l1cache.addParams({
       "response_link_width": A64FX_L1TOCPU_PC_TPUT,
       "tag_access_latency_cycles": 1,
       "mshr_latency_cycles": 1,
+      "banks": L1_BANKS,
+      "max_requests_per_cycle": L1_REQ_PER_CYCLE,
 })
 # Set MESI L1 coherence controller to the "coherence" slot
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
@@ -155,6 +162,8 @@ l2cache.addParams({
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
       "tag_access_latency_cycles": 1,
       "mshr_latency_cycles": 1,
+      "banks": L2_BANKS,
+      "max_requests_per_cycle": L2_REQ_PER_CYCLE,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
@@ -203,3 +212,9 @@ link_mem_bus = sst.Link("link_mem_bus_link")
 link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
 
 # ---------------------------------------------- Links ------------------------------------------------
+
+
+sst.setStatisticLoadLevel(7)
+sst.setStatisticOutput("sst.statOutputConsole")
+sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
