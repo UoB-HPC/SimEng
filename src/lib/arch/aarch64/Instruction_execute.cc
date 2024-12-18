@@ -206,7 +206,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UADDLVv8i8v: {  // uaddlv hd, vn.8b
-        results_[0] = sveAddlv<uint32_t, uint8_t, 8>(sourceValues_);
+        results_[0] = vecAddlv<uint32_t, uint8_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
@@ -4154,7 +4154,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PFIRST_B: {  // pfirst pdn.b, pg, pdn.b
-        results_[0] = svePfirst(sourceValues_, VL_bits);
+        auto [result, nzcv] = svePfirst(sourceValues_, VL_bits);
+        results_[0] = nzcv;
+        results_[1] = result;
         break;
       }
       case Opcode::AArch64_PNEXT_B: {  // pnext pdn.b, pv, pdn.b
@@ -5176,6 +5178,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_STLRW:    // stlr wt, [xn]
       case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
+        // STORE
         memoryData_[0] = sourceValues_[0];
         break;
       }
@@ -5805,23 +5808,23 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UMAXVv16i8v: {  // umaxv bd, vn.16b
-        results_[0] = sveUMaxV<uint8_t, 16>(sourceValues_);
+        results_[0] = vecUMaxV<uint8_t, 16>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMAXVv4i16v: {  // umaxv hd, vn.4h
-        results_[0] = sveUMaxV<uint16_t, 4>(sourceValues_);
+        results_[0] = vecUMaxV<uint16_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMAXVv4i32v: {  // umaxv sd, vn.4s
-        results_[0] = sveUMaxV<uint32_t, 4>(sourceValues_);
+        results_[0] = vecUMaxV<uint32_t, 4>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMAXVv8i16v: {  // umaxv hd, vn.8h
-        results_[0] = sveUMaxV<uint16_t, 8>(sourceValues_);
+        results_[0] = vecUMaxV<uint16_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMAXVv8i8v: {  // umaxv bd, vn.8b
-        results_[0] = sveUMaxV<uint8_t, 8>(sourceValues_);
+        results_[0] = vecUMaxV<uint8_t, 8>(sourceValues_);
         break;
       }
       case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]

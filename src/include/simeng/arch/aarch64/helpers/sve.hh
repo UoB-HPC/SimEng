@@ -114,33 +114,6 @@ RegisterValue sveAddvPredicated(srcValContainer& sourceValues,
   return {out, 256};
 }
 
-/** Helper function for NEON instructions with the format `uaddlv Vd, Vn.T`.
- * T represents the type of the destination register (e.g. for h0, T =
- * uint32_t). U represents the type of the sourceValues[0] (e.g. for v0.8b, U =
- * uint8_t) Returns correctly formatted RegisterValue. */
-template <typename T, typename U, int I>
-RegisterValue sveAddlv(srcValContainer& sourceValues) {
-  const U* n = sourceValues[0].getAsVector<U>();
-  T out = 0;
-  for (int i = 0; i < I; i++) {
-    out += n[i];
-  }
-  return {out, 256};
-}
-
-/** Helper function for NEON instructions with the format `umaxv Vd, Vn.T`.
- * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
- * Returns correctly formatted RegisterValue. */
-template <typename T, int I>
-RegisterValue sveUMaxV(srcValContainer& sourceValues) {
-  const T* n = sourceValues[0].getAsVector<T>();
-  T out = n[0];
-  for (int i = 1; i < I; i++) {
-    out = std::max(n[i], out);
-  }
-  return {out, 256};
-}
-
 /** Helper function for SVE instructions with the format `adr zd, [zn, zm{,
  * lsl #<1,2,3>}]`.
  * T represents the type of sourceValues (e.g. for zn.d, T = uint64_t).
@@ -284,7 +257,7 @@ RegisterValue sveCpy_imm(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `cpy zd, pg/m, vn
+/** Helper function for SVE instructions with the format `cpy zd, pg/m, rn
  * T represents the type of sourceValues (e.g. for zd.d, T = int64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
@@ -294,7 +267,7 @@ RegisterValue sveCpy_Scalar(
     const uint16_t VL_bits) {
   const T* zd = sourceValues[0].getAsVector<T>();
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const T vn = sourceValues[2].get<T>();
+  const T rn = sourceValues[2].get<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -302,7 +275,7 @@ RegisterValue sveCpy_Scalar(
   for (int i = 0; i < partition_num; i++) {
     uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
     if (p[i / (64 / sizeof(T))] & shifted_active) {
-      out[i] = vn;
+      out[i] = rn;
     } else {
       out[i] = zd[i];
     }
@@ -956,7 +929,8 @@ RegisterValue sveFTrigSSel(srcValContainer& sourceValues,
 }
 
 /** Helper function for SVE instructions with the format `ftmad zd, zn, zm,
- * #imm`. T represents the type of sourceValues (e.g. for zn.d, T = double).
+ * #imm`.
+ * T represents the type of sourceValues (e.g. for zn.d, T = double).
  * Returns correctly formatted RegisterValue. **/
 template <typename T>
 RegisterValue sveFTrigMad(
@@ -1112,15 +1086,14 @@ RegisterValue sveIndex(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `lastb vd, pg, zn`.
+/** Helper function for SVE instructions with the format `lastb rd, pg, zn`.
  * T represents the vector register type (e.g. zd.d would be uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveLastBScalar(srcValContainer& sourceValues,
                              const uint16_t VL_bits) {
-  // sourceValues are wrong and the correct value is in the previous index.
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const T* n = sourceValues[2].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out;
@@ -1141,15 +1114,15 @@ RegisterValue sveLastBScalar(srcValContainer& sourceValues,
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `clastb vd, pg, vd,
- * zn`. T represents the vector register type (e.g. zd.d would be uint64_t).
+/** Helper function for SVE instructions with the format `clastb rd, pg, rd,
+ * zn`.
+ * T represents the vector register type (e.g. zd.d would be uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
 RegisterValue sveCLastBScalar(srcValContainer& sourceValues,
                               const uint16_t VL_bits) {
-  // sourceValues are wrong and the correct value is in the previous index.
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const uint64_t* m = sourceValues[2].getAsVector<uint64_t>();
+  const uint64_t m = sourceValues[2].get<T>();
   const T* n = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1166,9 +1139,9 @@ RegisterValue sveCLastBScalar(srcValContainer& sourceValues,
   }
 
   if (lastElem < 0) {
-    out = static_cast<uint64_t>(static_cast<T>(m[0]));
+    out = m;
   } else {
-    out = static_cast<uint64_t>(static_cast<T>(n[lastElem]));
+    out = n[lastElem];
   }
   return {out, 256};
 }
@@ -1505,7 +1478,8 @@ RegisterValue sveOrr_3vecs(srcValContainer& sourceValues,
 /** Helper function for SVE2 instructions with the format `psel pd, pn,
  * pm.t[wa, #imm]`.
  * T represents the type of sourceValues (e.g. for pm.d, T =
- * uint64_t). Returns an array of 4 uint64_t elements. */
+ * uint64_t).
+ * Returns an array of 4 uint64_t elements. */
 template <typename T>
 std::array<uint64_t, 4> svePsel(
     srcValContainer& sourceValues,
@@ -1530,12 +1504,13 @@ std::array<uint64_t, 4> svePsel(
   return out;
 }
 
-/** Helper function for SVE instructions with the format `pfirst pdn, pg, pdn`.
- * Returns an array of 4 uint64_t elements. */
-std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
-                                  const uint16_t VL_bits) {
+/** Helper function for SVE instructions with the format `pfirst pdn.b, pg,
+ * pdn.b`.
+ * Returns an array of 4 uint64_t elements, and updates the NZCV flags.
+ */
+std::tuple<std::array<uint64_t, 4>, uint8_t> svePfirst(
+    srcValContainer& sourceValues, const uint16_t VL_bits) {
   const uint16_t partition_num = VL_bits / 8;
-  // sourceValues are wrong and the correct value is in the previous index.
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
   const uint64_t* dn = sourceValues[2].getAsVector<uint64_t>();
   // Set destination d as source n to copy all false lanes and the active lanes
@@ -1549,10 +1524,11 @@ std::array<uint64_t, 4> svePfirst(srcValContainer& sourceValues,
       break;
     }
   }
-  return out;
+  return {out, getNZCVfromPred(out, VL_bits, 1)};
 }
 
 /** Helper function for SVE instructions with the format `pnext pdn, pv, pdn`.
+ * T represents the type of sourceValues (e.g. for pdn.d, T = uint64_t).
  * Returns an array of 4 uint64_t elements, and updates the NZCV flags. */
 template <typename T>
 std::tuple<std::array<uint64_t, 4>, uint8_t> svePnext(
@@ -1565,21 +1541,13 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> svePnext(
   // Set destination elements to 0
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
-  // Get pattern
-  const uint16_t count =
-      sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
-
-  // Exit early if count == 0
-  if (count == 0) return {out, getNZCVfromPred(out, VL_bits, sizeof(T))};
   // Get last active element of dn.pattern
   int lastElem = -1;
   for (int i = partition_num - 1; i >= 0; i--) {
-    if (i < count) {
-      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
-      if (dn[i / (64 / sizeof(T))] & shifted_active) {
-        lastElem = i;
-        break;
-      }
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+    if (dn[i / (64 / sizeof(T))] & shifted_active) {
+      lastElem = i;
+      break;
     }
   }
   // Get next active element of p, starting from last of dn.pattern

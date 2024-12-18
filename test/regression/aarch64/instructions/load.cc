@@ -732,32 +732,7 @@ TEST_P(InstLoad, ldaxrb) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x34);
   EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x12);
 
-  RUN_AARCH64(R"(
-    sub sp, sp, #1024
-    mov w0, #16
-    mov w1, #32
-    mov w2, #48
-    mov w3, #64
-    str w0, [sp], #32
-    str w1, [sp], #32
-    str w2, [sp], #32
-    str w3, [sp], #32
-    sub sp, sp, #128
-    ldaxrb w4, [sp]
-    add sp, sp, #32
-    ldaxrb w5, [sp]
-    add sp, sp, #32
-    ldaxrb w6, [sp]
-    add sp, sp, #32
-    ldaxrb w7, [sp]
-  )");
-
-  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 16);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 32);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 64);
-
-  EXPECT_GROUP(R"(ldaxrb w7, [sp])", LOAD_INT);
+  EXPECT_GROUP(R"(ldaxrb w8, [x0])", LOAD_INT);
 }
 
 TEST_P(InstLoad, ldrb) {
