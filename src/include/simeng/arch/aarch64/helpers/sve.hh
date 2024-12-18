@@ -877,8 +877,9 @@ RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& sourceValues,
 
 /** Helper function for SVE instructions with the format `ftsmul zd, zn, zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = double).
- * Returns correctly formatted RegisterValue. U represents the same precision as
- * T, but as an integer type for the second source register. */
+ * U represents the same precision as T, but as an integer type for the second
+ * source register.
+ * Returns correctly formatted RegisterValue. */
 template <typename T, typename U>
 RegisterValue sveFTrigSMul(srcValContainer& sourceValues,
                            const uint16_t VL_bits) {
@@ -903,8 +904,9 @@ RegisterValue sveFTrigSMul(srcValContainer& sourceValues,
 
 /** Helper function for SVE instructions with the format `ftssel zd, zn, zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = double).
- * Returns correctly formatted RegisterValue. U represents the same precision as
- * T, but as an integer type for the second source register. */
+ * U represents the same precision as T, but as an integer type for the second
+ * source register.
+ * Returns correctly formatted RegisterValue. */
 template <typename T, typename U>
 RegisterValue sveFTrigSSel(srcValContainer& sourceValues,
                            const uint16_t VL_bits) {
@@ -1096,7 +1098,6 @@ RegisterValue sveLastBScalar(srcValContainer& sourceValues,
   const T* n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-  T out;
 
   // Get last active element
   int lastElem = 0;
@@ -1109,20 +1110,18 @@ RegisterValue sveLastBScalar(srcValContainer& sourceValues,
     // If no active lane has been found, select highest element instead
     if (i == 0) lastElem = partition_num - 1;
   }
-
-  out = n[lastElem];
-  return {out, 256};
+  return {n[lastElem], 256};
 }
 
-/** Helper function for SVE instructions with the format `clastb rd, pg, rd,
+/** Helper function for SVE instructions with the format `clastb zd, pg, zd,
  * zn`.
  * T represents the vector register type (e.g. zd.d would be uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveCLastBScalar(srcValContainer& sourceValues,
-                              const uint16_t VL_bits) {
+RegisterValue sveCLastBSimdScalar(srcValContainer& sourceValues,
+                                  const uint16_t VL_bits) {
   const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const uint64_t m = sourceValues[2].get<T>();
+  const T* m = sourceValues[2].getAsVector<T>();
   const T* n = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1139,7 +1138,7 @@ RegisterValue sveCLastBScalar(srcValContainer& sourceValues,
   }
 
   if (lastElem < 0) {
-    out = m;
+    out = m[0];
   } else {
     out = n[lastElem];
   }

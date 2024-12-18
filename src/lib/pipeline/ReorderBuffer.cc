@@ -87,10 +87,17 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       // sufficiently long, assume an error in SimEng has occured.
       robHeadRepeatCounter_++;
       if (robHeadRepeatCounter_ > 10000000) {
-        std::cerr << "[SimEng:ReorderBuffer] Infinite loop detected in rob "
-                     "commit at instruction address "
+        std::cerr << "[SimEng:ReorderBuffer] Instruction stuck unable to "
+                     "commit at the head of ROB for a very long time at "
+                     "instruction address 0x"
                   << std::hex << uop->getInstructionAddress() << std::dec
-                  << " (" << uop->getMicroOpIndex() << ")." << std::endl;
+                  << " (MicroOp Index: " << uop->getMicroOpIndex()
+                  << "). This is unexpected behaviour for most valid core "
+                     "configurations, though may arise in designs with very "
+                     "high latencies or bottlenecks. If this is not the case, "
+                     "please try re-running. Please raise an issue on GitHub "
+                     "if the problem persists."
+                  << std::endl;
         exit(1);
       }
       break;

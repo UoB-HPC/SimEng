@@ -558,11 +558,13 @@ RegisterValue vecLogicOp_3vecs(srcValContainer& sourceValues,
   return {out, 256};
 }
 
-/** Helper function for NEON instructions with the format `uaddlv zd, zn.T`.
+/** Helper function for NEON instructions with the format `uaddlv rd, Vn.T`.
  * T represents the type of the destination register (e.g. for h0, T =
  * uint32_t).
  * U represents the type of the sourceValues[0] (e.g. for v0.8b, U =
  * uint8_t)
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, typename U, int I>
 RegisterValue vecAddlv(srcValContainer& sourceValues) {
@@ -574,8 +576,10 @@ RegisterValue vecAddlv(srcValContainer& sourceValues) {
   return {out, 256};
 }
 
-/** Helper function for NEON instructions with the format `umaxv Vd, Vn.T`.
+/** Helper function for NEON instructions with the format `umaxv rd, Vn.T`.
  * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecUMaxV(srcValContainer& sourceValues) {
