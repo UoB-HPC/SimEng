@@ -24,7 +24,7 @@ class M1PortAllocatorTest : public testing::Test {
       {0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}};
   // Representation of the M1 Firestorm Reservation Station Arrangement
   // std::pair<uint8_t, uint64_t> = <rsIndex, rsSize>
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
+  std::vector<std::pair<uint16_t, uint64_t>> rsArrangement = {
       {0, 24}, {1, 26}, {2, 16}, {3, 12},  {4, 28},  {5, 28},  {6, 12},
       {7, 12}, {8, 12}, {9, 12}, {10, 36}, {11, 36}, {12, 36}, {13, 36}};
 

@@ -26,6 +26,8 @@ Queue-Sizes:
   ROB: 180
   Load: 64
   Store: 36
+Port-Allocator:
+  Type: Balanced
 Branch-Predictor:
   Type: "Tage"
   BTB-Tag-Bits: 11

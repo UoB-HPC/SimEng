@@ -24,6 +24,8 @@ Queue-Sizes:
   ROB: 630
   Load: 130
   Store: 60
+Port-Allocator:
+  Type: M1
 Branch-Predictor:
   Type: "Perceptron"
   BTB-Tag-Bits: 11
