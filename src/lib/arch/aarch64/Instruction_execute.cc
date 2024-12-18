@@ -2650,19 +2650,19 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LASTB_VPZ_D: {  // lastb dd, pg, zn.d
-        results_[0] = sveLastBScalar<uint64_t>(sourceValues_, VL_bits);
+        results_[0] = sveLastBSimdScalar<uint64_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_LASTB_VPZ_S: {  // lastb sd, pg, zn.s
-        results_[0] = sveLastBScalar<uint32_t>(sourceValues_, VL_bits);
+        results_[0] = sveLastBSimdScalar<uint32_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_LASTB_VPZ_H: {  // lastb hd, pg, zn.h
-        results_[0] = sveLastBScalar<uint16_t>(sourceValues_, VL_bits);
+        results_[0] = sveLastBSimdScalar<uint16_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_LASTB_VPZ_B: {  // lastb bd, pg, zn.b
-        results_[0] = sveLastBScalar<uint8_t>(sourceValues_, VL_bits);
+        results_[0] = sveLastBSimdScalar<uint8_t>(sourceValues_, VL_bits);
         break;
       }
       case Opcode::AArch64_CLASTB_VPZ_D: {  // clastb dd, pg, dn, zn.d

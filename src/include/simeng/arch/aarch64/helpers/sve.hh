@@ -1088,12 +1088,12 @@ RegisterValue sveIndex(
   return {out, 256};
 }
 
-/** Helper function for SVE instructions with the format `lastb rd, pg, zn`.
+/** Helper function for SVE instructions with the format `lastb zd, pg, zn`.
  * T represents the vector register type (e.g. zd.d would be uint64_t).
  * Returns correctly formatted RegisterValue. */
 template <typename T>
-RegisterValue sveLastBScalar(srcValContainer& sourceValues,
-                             const uint16_t VL_bits) {
+RegisterValue sveLastBSimdScalar(srcValContainer& sourceValues,
+                                 const uint16_t VL_bits) {
   const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
   const T* n = sourceValues[1].getAsVector<T>();
 
