@@ -31,6 +31,8 @@ Queue-Sizes:
   ROB: 2048
   Load: 512
   Store: 512
+Port-Allocator:
+  Type: Balanced
 Branch-Predictor:
   Type: "Tage"
   BTB-Tag-Bits: 11
@@ -48,11 +50,11 @@ L1-Instruction-Memory:
 LSQ-L1-Interface:
   Access-Latency: 4
   Exclusive: False
-  Load-Bandwidth: 512
-  Store-Bandwidth: 512
-  Permitted-Requests-Per-Cycle: 16
-  Permitted-Loads-Per-Cycle: 8
-  Permitted-Stores-Per-Cycle: 8
+  Load-Bandwidth: 1024
+  Store-Bandwidth: 1024
+  Permitted-Requests-Per-Cycle: 32
+  Permitted-Loads-Per-Cycle: 16
+  Permitted-Stores-Per-Cycle: 16
 Ports:
   0:
     Portname: ALU0

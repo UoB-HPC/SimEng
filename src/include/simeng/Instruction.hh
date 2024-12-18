@@ -29,7 +29,7 @@ struct ExecutionInfo {
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {
  public:
-  virtual ~Instruction() {};
+  virtual ~Instruction(){};
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
@@ -210,6 +210,13 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const { return microOpIndex_; }
 
+  /** Get the number of mathematical operations performed by this instruction.
+   */
+  uint64_t getOps() const { return ops_; }
+
+  /** Get the number of bytes loaded or stored by this instruction. */
+  uint64_t getBytesMoved() const { return bytesMoved_; }
+
  protected:
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
@@ -321,6 +328,12 @@ class Instruction {
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
   int microOpIndex_ = 0;
+
+  /** The number of mathematical operations performed by this instruction. */
+  uint64_t ops_ = 0;
+
+  /** The number of bytes loaded or stored to memory by this instruction. */
+  uint64_t bytesMoved_ = 0;
 };
 
 }  // namespace simeng

@@ -98,6 +98,9 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       rat_.commit(destinations[i]);
     }
 
+    totalBytesMoved_ += uop->getBytesMoved();
+    totalOps_ += uop->getOps();
+
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);

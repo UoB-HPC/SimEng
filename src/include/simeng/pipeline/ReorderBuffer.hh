@@ -92,6 +92,12 @@ class ReorderBuffer {
   /** Retrieve the number of retired brancehs. */
   uint64_t getRetiredBranchesCount() const;
 
+  /** The total number of operations performed by committed instructions. */
+  uint64_t totalOps_ = 0;
+
+  /** The total number of bytes loaded / stored by committed instructions. */
+  uint64_t totalBytesMoved_ = 0;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;

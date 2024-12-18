@@ -122,6 +122,7 @@ void Instruction::execute() {
             for (int j = 0; j < dataSize_; j++) {
               out[i * dataSize_ + j] = data[i * dataSize_ + j];
             }
+            bytesMoved_ += dataSize_;
           }
         }
         results_[0] = {out, 256};
@@ -149,6 +150,7 @@ void Instruction::execute() {
               mdata[md_size] = t1[i * dataSize_ + j];
               md_size++;
             }
+            bytesMoved_ += dataSize_;
           } else if (md_size) {
             memoryData_.push_back(RegisterValue((char*)mdata.data(), md_size));
             md_size = 0;
@@ -353,6 +355,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ADD_ZZZ_S: {  // add zd.s, zn.s, zm.s
         results_[0] = sveAdd_3ops<uint32_t>(sourceValues_, VL_bits);
+        ops_ += (VL_bits / 32);
         break;
       }
       case Opcode::AArch64_ADDv16i8: {  // add vd.16b, vn.16b, vm.16b
@@ -416,6 +419,7 @@ void Instruction::execute() {
           uint32_t out[64] = {0};
           for (int i = 0; i < elemCount; i++) {
             out[i] = zaRow[i] + znr[i];
+            ops_ += 1;
           }
           results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
         }
@@ -1535,6 +1539,7 @@ void Instruction::execute() {
           // Loop over all elements and destructively add
           for (int e = 0; e < elemCount; e++) {
             out[e] = zaRow[e] + znr[e];
+            ops_ += 1;
           }
           results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
         }
@@ -1572,6 +1577,7 @@ void Instruction::execute() {
           // Loop over all elements and destructively add
           for (int e = 0; e < elemCount; e++) {
             out[e] = zaRow[e] + znr[e];
+            ops_ += 1;
           }
           results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
         }
@@ -1597,10 +1603,12 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FADD_ZZZ_D: {  // fadd zd.d, zn.d, zm.d
         results_[0] = sveAdd_3ops<double>(sourceValues_, VL_bits);
+        ops_ += (VL_bits / 64);
         break;
       }
       case Opcode::AArch64_FADD_ZZZ_S: {  // fadd zd.s, zn.s, zm.s
         results_[0] = sveAdd_3ops<float>(sourceValues_, VL_bits);
+        ops_ += (VL_bits / 32);
         break;
       }
       case Opcode::AArch64_FADDv2f32: {  // fadd vd.2s, vn.2s, vm.2s
@@ -1616,13 +1624,25 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FADDV_VPZ_D: {  // faddv dd, p0, zn.d
-
         results_[0] = sveFaddv_predicated<double>(sourceValues_, VL_bits);
+
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) ops_ += 1;
+        }
         break;
       }
       case Opcode::AArch64_FADDV_VPZ_S: {  // faddv sd, p0, zn.s
-
         results_[0] = sveFaddv_predicated<float>(sourceValues_, VL_bits);
+
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) ops_ += 1;
+        }
         break;
       }
       case Opcode::AArch64_FCADD_ZPmZ_D: {  // fcadd zdn.d, pg/m, zdn.d, zm.d,
@@ -2088,6 +2108,7 @@ void Instruction::execute() {
           double out[32] = {0.0};
           for (int e = 0; e < elemCount; e++) {
             out[e] = zaRow[e] + (zn[e] * zm[e]);
+            ops_ += 2;
           }
           results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
         }
@@ -2130,6 +2151,7 @@ void Instruction::execute() {
           float out[64] = {0.0f};
           for (int e = 0; e < elemCount; e++) {
             out[e] = zaRow[e] + (zn[e] * zm[e]);
+            ops_ += 2;
           }
           results_[(r * zaStride) + zaIndex] = RegisterValue(out, 256);
         }
@@ -2391,9 +2413,10 @@ void Instruction::execute() {
             double zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 8) * 8);
             if ((pm[col / 8] & shifted_active_col) &&
-                (pn[row / 8] & shifted_active_row))
+                (pn[row / 8] & shifted_active_row)) {
               outRow[col] = zadaElem + (zn[row] * zm[col]);
-            else
+              ops_ += 2;
+            } else
               outRow[col] = zadaElem;
           }
           results_[row] = {outRow, 256};
@@ -2423,9 +2446,10 @@ void Instruction::execute() {
             float zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
             if ((pm[col / 16] & shifted_active_col) &&
-                (pn[row / 16] & shifted_active_row))
+                (pn[row / 16] & shifted_active_row)) {
               outRow[col] = zadaElem + (zn[row] * zm[col]);
-            else
+              ops_ += 2;
+            } else
               outRow[col] = zadaElem;
           }
           results_[row] = {outRow, 256};
@@ -3226,6 +3250,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << (i % 64);
             if (preds[r][i / 64] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 1;
             }
           }
         }
@@ -3261,6 +3286,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << (i % 64);
             if (preds[r][i / 64] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 1;
             }
           }
         }
@@ -3305,6 +3331,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << ((i % 8) * 8);
             if (preds[r][i / 8] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 8;
             }
           }
         }
@@ -3332,6 +3359,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << ((i % 8) * 8);
             if (preds[r][i / 8] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 8;
             }
           }
         }
@@ -3845,6 +3873,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << ((i % 16) * 4);
             if (preds[r][i / 16] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 4;
             }
           }
         }
@@ -3872,6 +3901,7 @@ void Instruction::execute() {
             uint64_t shifted_active = 1ull << ((i % 16) * 4);
             if (preds[r][i / 16] & shifted_active) {
               out[r][i] = data[i];
+              bytesMoved_ += 4;
             }
           }
         }
@@ -5455,6 +5485,15 @@ void Instruction::execute() {
 
         auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
+        for (auto pred : preds) {
+          for (int i = 0; i < (VL_bits / 64); i++) {
+            uint64_t shifted_active = 1ull << ((i % 8) * 8);
+            if (pred[i / 8] & shifted_active) {
+              bytesMoved_ += 8;
+            }
+          }
+        }
+
         memoryData_ =
             sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
         std::vector<RegisterValue> out2 =
@@ -5472,6 +5511,15 @@ void Instruction::execute() {
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
 
         auto preds = predAsCounterToMasks(pn, VL_bits, 4);
+
+        for (auto pred : preds) {
+          for (int i = 0; i < (VL_bits / 64); i++) {
+            uint64_t shifted_active = 1ull << ((i % 8) * 8);
+            if (pred[i / 8] & shifted_active) {
+              bytesMoved_ += 8;
+            }
+          }
+        }
 
         memoryData_ =
             sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
@@ -5671,6 +5719,13 @@ void Instruction::execute() {
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
+        for (int i = 0; i < (VL_bits / 32); i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            bytesMoved_ += 4;
+          }
+        }
+
         memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
         break;
       }
@@ -5703,6 +5758,15 @@ void Instruction::execute() {
 
         auto preds = predAsCounterToMasks(pn, VL_bits, 2);
 
+        for (auto pred : preds) {
+          for (int i = 0; i < (VL_bits / 32); i++) {
+            uint64_t shifted_active = 1ull << ((i % 16) * 4);
+            if (pred[i / 16] & shifted_active) {
+              bytesMoved_ += 4;
+            }
+          }
+        }
+
         memoryData_ =
             sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
         std::vector<RegisterValue> out2 =
@@ -5720,6 +5784,15 @@ void Instruction::execute() {
         const uint64_t pn = sourceValues_[4].get<uint64_t>();
 
         auto preds = predAsCounterToMasks(pn, VL_bits, 4);
+
+        for (auto pred : preds) {
+          for (int i = 0; i < (VL_bits / 32); i++) {
+            uint64_t shifted_active = 1ull << ((i % 16) * 4);
+            if (pred[i / 16] & shifted_active) {
+              bytesMoved_ += 4;
+            }
+          }
+        }
 
         memoryData_ =
             sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
@@ -5899,6 +5972,12 @@ void Instruction::execute() {
       case Opcode::AArch64_STPSpost:    // stp st1, st2, [xn], #imm
       case Opcode::AArch64_STPWpost:    // stp wt1, wt2, [xn], #imm
       case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
+
+        if (metadata_.opcode == Opcode::AArch64_STPSpost)
+          bytesMoved_ += (4 + 4);
+        else if (metadata_.opcode == Opcode::AArch64_STPDpost)
+          bytesMoved_ += (8 + 8);
+
         memoryData_[0] = sourceValues_[0];
         memoryData_[1] = sourceValues_[1];
         results_[0] =
@@ -6438,6 +6517,12 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UADDV_VPZ_S: {  // uaddv dd, pg, zn.s
         results_[0] = sveAddvPredicated<uint32_t>(sourceValues_, VL_bits);
+
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+        for (int i = 0; i < (VL_bits / 32); i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) ops_ += 1;
+        }
         break;
       }
       case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
@@ -6535,6 +6620,7 @@ void Instruction::execute() {
             for (int i = 0; i < 4; i++) {
               out[e] += static_cast<uint32_t>(znr[4 * e + i]) *
                         static_cast<uint32_t>(zmr[4 * e + i]);
+              ops_ += 2;
             }
           }
           // Update results_ for completed row
@@ -6756,6 +6842,7 @@ void Instruction::execute() {
                   (pm[zmIndex / 64] & shifted_active_zm))
                 sum += (static_cast<uint32_t>(zn[znIndex]) *
                         static_cast<uint32_t>(zm[zmIndex]));
+              ops_ += 2;
             }
             outRow[col] = sum;
           }
