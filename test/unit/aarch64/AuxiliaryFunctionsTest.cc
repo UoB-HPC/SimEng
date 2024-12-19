@@ -71,10 +71,11 @@ TEST(AArch64AuxiliaryFunctionTest, BitfieldManipulate) {
       { bitfieldManipulate<uint16_t>(0, 0, 16, 0, false); },
       "Attempted to use a rotate amount of 16 in bitfieldManipulate which is "
       "greater than or equal to the data type size of 16b in use");
-  ASSERT_DEATH({ bitfieldManipulate<uint16_t>(0, 0, 0, 16, false); },
-               "Attempted to use a source bit position value of 16 in "
-               "bitfieldManipulate which is greater than or equal to the data "
-               "type size of 16b in use");
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint16_t>(0, 0, 0, 16, false); },
+      "Attempted to use a source bit position value of 16 in "
+      "bitfieldManipulate which is greater than or equal to the data "
+      "type size of 16b in use");
 
   // uint32
   EXPECT_EQ(bitfieldManipulate<uint32_t>(0x0000FFFF, 0xFFFF0000, 0, 0, false),
@@ -104,10 +105,11 @@ TEST(AArch64AuxiliaryFunctionTest, BitfieldManipulate) {
       { bitfieldManipulate<uint32_t>(0, 0, 32, 0, false); },
       "Attempted to use a rotate amount of 32 in bitfieldManipulate which is "
       "greater than or equal to the data type size of 32b in use");
-  ASSERT_DEATH({ bitfieldManipulate<uint32_t>(0, 0, 0, 32, false); },
-               "Attempted to use a source bit position value of 32 in "
-               "bitfieldManipulate which is greater than or equal to the data "
-               "type size of 32b in use");
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint32_t>(0, 0, 0, 32, false); },
+      "Attempted to use a source bit position value of 32 in "
+      "bitfieldManipulate which is greater than or equal to the data "
+      "type size of 32b in use");
 
   // uint64
   EXPECT_EQ(bitfieldManipulate<uint64_t>(0x00000000FFFFFFFF, 0xFFFFFFFF00000000,
@@ -147,10 +149,11 @@ TEST(AArch64AuxiliaryFunctionTest, BitfieldManipulate) {
       { bitfieldManipulate<uint64_t>(0, 0, 64, 0, false); },
       "Attempted to use a rotate amount of 64 in bitfieldManipulate which is "
       "greater than or equal to the data type size of 64b in use");
-  ASSERT_DEATH({ bitfieldManipulate<uint64_t>(0, 0, 0, 64, false); },
-               "Attempted to use a source bit position value of 64 in "
-               "bitfieldManipulate which is greater than or equal to the data "
-               "type size of 64b in use");
+  ASSERT_DEATH(
+      { bitfieldManipulate<uint64_t>(0, 0, 0, 64, false); },
+      "Attempted to use a source bit position value of 64 in "
+      "bitfieldManipulate which is greater than or equal to the data "
+      "type size of 64b in use");
 }
 
 /** `conditionHolds` Tests */
