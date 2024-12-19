@@ -95,21 +95,6 @@ span<const RegisterValue> Instruction::getData() const {
   return {memoryData_.data(), memoryData_.size()};
 }
 
-std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
-  assert(
-      !executed_ &&
-      "Early branch misprediction check shouldn't be called after execution");
-
-  if (!isBranch()) {
-    // Instruction isn't a branch; if predicted as taken, it will require a
-    // flush
-    return {prediction_.isTaken, instructionAddress_ + 4};
-  }
-
-  // Not enough information to determine this was a misprediction
-  return {false, 0};
-}
-
 BranchType Instruction::getBranchType() const { return branchType_; }
 
 int64_t Instruction::getKnownOffset() const { return knownOffset_; }
