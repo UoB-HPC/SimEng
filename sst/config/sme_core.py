@@ -216,5 +216,5 @@ link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "di
 
 sst.setStatisticLoadLevel(7)
 sst.setStatisticOutput("sst.statOutputConsole")
-sst.enableStatisticsForComponentName("a64fx.l1cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
-sst.enableStatisticsForComponentName("a64fx.l2cache", ["TotalEventsReceived","CacheHits", "CacheMisses", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"])
+sst.enableStatisticsForComponentName("a64fx.l1cache", ["CacheHits", "CacheMisses", "Prefetch_requests", "Prefetch_drops", "prefetches_issued", "pfq_evictions","cancelled_by_history", "miss_events_processed","hit_events_processed", "prefetches_canceled_by_page_boundary", "prefetches_canceled_by_history", "prefetch_opportunities", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"], {}, True)
+sst.enableStatisticsForComponentName("a64fx.l2cache", ["CacheHits", "CacheMisses", "Prefetch_requests", "Prefetch_drops", "prefetches_issued", "pfq_evictions","cancelled_by_history", "miss_events_processed","hit_events_processed", "prefetches_canceled_by_page_boundary", "prefetches_canceled_by_history", "prefetch_opportunities", "prefetch_useful", "prefetch_evict", "prefetch_inv", "prefetch_coherence_miss", "prefetch_redundant"], {}, True)
