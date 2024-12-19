@@ -1120,9 +1120,9 @@ RegisterValue sveLastBSimdScalar(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveCLastBSimdScalar(srcValContainer& sourceValues,
                                   const uint16_t VL_bits) {
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const T* m = sourceValues[2].getAsVector<T>();
-  const T* n = sourceValues[3].getAsVector<T>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const T* m = sourceValues[1].getAsVector<T>();
+  const T* n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out;
@@ -1510,8 +1510,8 @@ std::array<uint64_t, 4> svePsel(
 std::tuple<std::array<uint64_t, 4>, uint8_t> svePfirst(
     srcValContainer& sourceValues, const uint16_t VL_bits) {
   const uint16_t partition_num = VL_bits / 8;
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const uint64_t* dn = sourceValues[2].getAsVector<uint64_t>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
   // Set destination d as source n to copy all false lanes and the active lanes
   // beyond the first
   std::array<uint64_t, 4> out = {dn[0], dn[1], dn[2], dn[3]};
@@ -1535,8 +1535,8 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> svePnext(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-  const uint64_t* p = sourceValues[1].getAsVector<uint64_t>();
-  const uint64_t* dn = sourceValues[2].getAsVector<uint64_t>();
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const uint64_t* dn = sourceValues[1].getAsVector<uint64_t>();
   // Set destination elements to 0
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
 

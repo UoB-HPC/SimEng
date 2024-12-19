@@ -5017,7 +5017,7 @@ TEST_P(InstSve, ftsmul) {
                               144.0f, 12.25f},
                              VL / 16));
 
-  EXPECT_GROUP(R"(ftsmul z3.s, z1.s, z0.s)", SVE_MUL);
+  EXPECT_GROUP(R"(ftsmul z3.s, z1.s, z0.s)", SVE_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstSve, ftssel) {

@@ -89,14 +89,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_SMAX_ZI_B:
       [[fallthrough]];
-    case Opcode::AArch64_FTSMUL_ZZZ_D:
-      [[fallthrough]];
-    case Opcode::AArch64_FTSMUL_ZZZ_S:
-      [[fallthrough]];
-    case Opcode::AArch64_FTSSEL_ZZZ_D:
-      [[fallthrough]];
-    case Opcode::AArch64_FTSSEL_ZZZ_S:
-      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_D:
       [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_H:
@@ -108,6 +100,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FTSMUL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSMUL_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSSEL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTSSEL_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmI_H:
@@ -131,6 +131,41 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_FTMAD_ZZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FTMAD_ZZI_S: {
+      // Incorrect access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_PFIRST_B:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_D:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_S:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_H:
+      [[fallthrough]];
+    case Opcode::AArch64_PNEXT_B: {
+      // Incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = AARCH64_REG_NZCV;
+      break;
+    }
+    case Opcode::AArch64_CLASTB_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CLASTB_VPZ_B:
+      [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_D:  // Example bytecode - 4901da04
       [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_H:
@@ -162,6 +197,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_SMAX_ZPmZ_H:
       [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_S:  // Example bytecode - 01008804
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SPLICE_ZPZ_S:
       [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_B:  // Example bytecode - 40001004
       [[fallthrough]];
