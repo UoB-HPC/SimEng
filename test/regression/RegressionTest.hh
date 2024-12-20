@@ -44,6 +44,7 @@
 #if SIMENG_LLVM_VERSION < 14
 #include "llvm/Support/TargetRegistry.h"
 #else
+#include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"
 #endif
 

@@ -16,14 +16,14 @@ class AArch64ArchInfoTest : public ::testing::Test {
 
  protected:
   const std::vector<uint64_t> sysRegisterEnums = {
-      arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
-      arm64_sysreg::ARM64_SYSREG_FPCR,
-      arm64_sysreg::ARM64_SYSREG_FPSR,
-      arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
-      arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
-      arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
-      arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
-      arm64_sysreg::ARM64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_DCZID_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_FPCR,
+      aarch64_sysreg::AARCH64_SYSREG_FPSR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
+      aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
+      aarch64_sysreg::AARCH64_SYSREG_SVCR};
 
   const std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
@@ -31,7 +31,8 @@ class AArch64ArchInfoTest : public ::testing::Test {
       {32, 17},
       {1, 1},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 64}};
+      {256, 64},
+      {64, 1}};
 
   const std::vector<simeng::RegisterFileStructure> physRegStruct = {
       {8, 96},
@@ -39,10 +40,11 @@ class AArch64ArchInfoTest : public ::testing::Test {
       {32, 48},
       {1, 128},
       {8, static_cast<uint16_t>(sysRegisterEnums.size())},
-      {256, 128}};
+      {256, 128},
+      {64, 8}};
 
   const std::vector<uint16_t> physRegQuants = {
-      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128};
+      96, 128, 48, 128, static_cast<uint16_t>(sysRegisterEnums.size()), 128, 8};
 };
 
 // Test for the getSysRegEnums() function
