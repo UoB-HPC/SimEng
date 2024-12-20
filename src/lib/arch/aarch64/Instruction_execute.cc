@@ -1410,7 +1410,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* zaRow =
             sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
@@ -1438,7 +1439,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
         const uint16_t* zaRow =
             sourceValues_[2 + sliceNum].getAsVector<uint16_t>();
@@ -1500,7 +1502,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
         const uint32_t* zaRow =
             sourceValues_[2 + sliceNum].getAsVector<uint32_t>();
@@ -1528,7 +1531,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
 
         uint8_t out[256] = {0};
@@ -1555,7 +1559,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
 
         uint64_t out[32] = {0};
@@ -1582,7 +1587,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
 
         uint16_t out[128] = {0};
@@ -1642,7 +1648,8 @@ void Instruction::execute() {
         const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[2].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
 
         uint32_t out[64] = {0};
@@ -3004,7 +3011,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 8;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint8_t* zaRow = sourceValues_[sliceNum].getAsVector<uint8_t>();
         const uint64_t* pg =
@@ -3036,7 +3044,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 64;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
         const uint64_t* pg =
@@ -3069,7 +3078,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 16;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint16_t* zaRow = sourceValues_[sliceNum].getAsVector<uint16_t>();
         const uint64_t* pg =
@@ -3142,7 +3152,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 32;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint32_t* zaRow = sourceValues_[sliceNum].getAsVector<uint32_t>();
         const uint64_t* pg =
@@ -3175,7 +3186,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 8;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* pg =
             sourceValues_[rowCount + 1].getAsVector<uint64_t>();
@@ -3201,7 +3213,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 64;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* pg =
             sourceValues_[rowCount + 1].getAsVector<uint64_t>();
@@ -3228,7 +3241,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 16;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* pg =
             sourceValues_[rowCount + 1].getAsVector<uint64_t>();
@@ -3287,7 +3301,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 32;
         const uint32_t sliceNum =
             (sourceValues_[rowCount].get<uint32_t>() +
-             static_cast<uint32_t>(metadata_.operands[0].sme_index.disp)) %
+             static_cast<uint32_t>(
+                 metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
         const uint64_t* pg =
             sourceValues_[rowCount + 1].getAsVector<uint64_t>();
@@ -3344,7 +3359,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint16_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
         const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
@@ -3514,7 +3529,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
         const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
@@ -3541,7 +3556,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
         const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
 
         for (int i = 0; i < partition_num; i++) {
@@ -3568,7 +3583,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
         const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
 
         for (int i = 0; i < partition_num; i++) {
@@ -4637,7 +4652,8 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 8;
         const uint32_t wn = sourceValues_[rowCount].get<uint32_t>();
         const uint32_t sliceNum =
-            wn + static_cast<uint32_t>(metadata_.operands[0].sme_index.disp);
+            wn +
+            static_cast<uint32_t>(metadata_.operands[0].sme.slice_offset.imm);
 
         const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
@@ -5588,7 +5604,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         const uint8_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint8_t>();
@@ -5626,7 +5642,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         const uint16_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint16_t>();
@@ -5688,7 +5704,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         const uint32_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint32_t>();
@@ -5707,7 +5723,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         std::vector<uint8_t> memData;
         uint16_t index = 0;
@@ -5779,7 +5795,7 @@ void Instruction::execute() {
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
-            (ws + metadata_.operands[0].sme_index.disp) % partition_num;
+            (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
         std::vector<uint16_t> memData;
         uint16_t index = 0;
@@ -6468,7 +6484,7 @@ void Instruction::execute() {
 
         const uint16_t zaRowCount = VL_bits / 8;
         const uint32_t wv = sourceValues_[zaRowCount].get<uint32_t>();
-        const uint32_t imm = metadata_.operands[0].sme_index.disp;
+        const uint32_t imm = metadata_.operands[0].sme.slice_offset.imm;
 
         const uint8_t* zaRow =
             sourceValues_[(wv + imm) % zaRowCount].getAsVector<uint8_t>();

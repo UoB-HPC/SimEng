@@ -48,26 +48,26 @@ TEST_P(InstSme, addha) {
 
   for (uint32_t i = 0; i < (SVL / 32); i++) {
     // All rows, all elems
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>(index32, (SVL / 8)));
-    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({i}, (SVL / 8)));
     // All rows, even elements
-    CHECK_MAT_ROW(ARM64_REG_ZAS1, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS1, i, uint32_t,
                   fillNeon<uint32_t>(inter32, (SVL / 8)));
     if (i % 2 == 0) {
       // Even rows, all elements
-      CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(index32, (SVL / 8)));
       // Even rows, even elements
-      CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(inter32, (SVL / 8)));
     } else {
       // Even rows, all elements
-      CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
       // Even rows, even elements
-      CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
     }
   }
@@ -111,26 +111,26 @@ TEST_P(InstSme, addha) {
 
   for (uint64_t i = 0; i < (SVL / 64); i++) {
     // All rows, all elems
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>(index64, (SVL / 8)));
-    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({i}, (SVL / 8)));
     // All rows, even elements
-    CHECK_MAT_ROW(ARM64_REG_ZAD1, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD1, i, uint64_t,
                   fillNeon<uint64_t>(inter64, (SVL / 8)));
     if (i % 2 == 0) {
       // Even rows, all elements
-      CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(index64, (SVL / 8)));
       // Even rows, even elements
-      CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(inter64, (SVL / 8)));
     } else {
       // Even rows, all elements
-      CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
       // Even rows, even elements
-      CHECK_MAT_ROW(ARM64_REG_ZAD3, i, uint64_t,
+      CHECK_MAT_ROW(AARCH64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
     }
   }
@@ -176,26 +176,26 @@ TEST_P(InstSme, addva) {
 
   for (uint32_t i = 0; i < (SVL / 32); i++) {
     // All cols, all elems
-    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>(index32, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({i}, (SVL / 8)));
     // All cols, even elements
-    CHECK_MAT_COL(ARM64_REG_ZAS1, i, uint32_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAS1, i, uint32_t,
                   fillNeon<uint32_t>(inter32, (SVL / 8)));
     if (i % 2 == 0) {
       // Even cols, all elements
-      CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(index32, (SVL / 8)));
       // Even cols, even elements
-      CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(inter32, (SVL / 8)));
     } else {
       // Even cols, all elements
-      CHECK_MAT_COL(ARM64_REG_ZAS2, i, uint32_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAS2, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
       // Even cols, even elements
-      CHECK_MAT_COL(ARM64_REG_ZAS3, i, uint32_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAS3, i, uint32_t,
                     fillNeon<uint32_t>(full32, (SVL / 8)));
     }
   }
@@ -239,26 +239,26 @@ TEST_P(InstSme, addva) {
 
   for (uint64_t i = 0; i < (SVL / 64); i++) {
     // All cols, all elems
-    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>(index64, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({i}, (SVL / 8)));
     // All cols, even elements
-    CHECK_MAT_COL(ARM64_REG_ZAD1, i, uint64_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAD1, i, uint64_t,
                   fillNeon<uint64_t>(inter64, (SVL / 8)));
     if (i % 2 == 0) {
       // Even cols, all elements
-      CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(index64, (SVL / 8)));
       // Even cols, even elements
-      CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(inter64, (SVL / 8)));
     } else {
       // Even cols, all elements
-      CHECK_MAT_COL(ARM64_REG_ZAD2, i, uint64_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAD2, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
       // Even cols, even elements
-      CHECK_MAT_COL(ARM64_REG_ZAD3, i, uint64_t,
+      CHECK_MAT_COL(AARCH64_REG_ZAD3, i, uint64_t,
                     fillNeon<uint64_t>(full64, (SVL / 8)));
     }
   }
@@ -646,11 +646,12 @@ TEST_P(InstSme, mova_b_vecToTile) {
     mova za0h.b[w12, #0], p0/m, z0.b
     mova za0h.b[w12, #1], p1/m, z1.b
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 0, uint8_t,
+                fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 1, uint8_t,
                 fillNeon<uint8_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 8; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAB0, i, uint8_t,
                   fillNeon<uint8_t>({0}, (SVL / 8)));
   }
 
@@ -671,11 +672,12 @@ TEST_P(InstSme, mova_b_vecToTile) {
     mov za0h.b[w12, #0], p0/m, z0.b
     mov za0h.b[w12, #1], p1/m, z1.b
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 0, uint8_t,
+                fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 1, uint8_t,
                 fillNeon<uint8_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 8; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAB0, i, uint8_t,
                   fillNeon<uint8_t>({0}, (SVL / 8)));
   }
 
@@ -696,11 +698,12 @@ TEST_P(InstSme, mova_b_vecToTile) {
     mova za0v.b[w12, #0], p0/m, z0.b
     mova za0v.b[w12, #1], p1/m, z1.b
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAB0, 1, uint8_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAB0, 0, uint8_t,
+                fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(AARCH64_REG_ZAB0, 1, uint8_t,
                 fillNeon<uint8_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 8; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAB0, i, uint8_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAB0, i, uint8_t,
                   fillNeon<uint8_t>({0}, (SVL / 8)));
   }
 
@@ -721,11 +724,12 @@ TEST_P(InstSme, mova_b_vecToTile) {
     mov za0v.b[w12, #0], p0/m, z0.b
     mov za0v.b[w12, #1], p1/m, z1.b
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAB0, 0, uint8_t, fillNeon<uint8_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAB0, 1, uint8_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAB0, 0, uint8_t,
+                fillNeon<uint8_t>({1}, (SVL / 8)));
+  CHECK_MAT_COL(AARCH64_REG_ZAB0, 1, uint8_t,
                 fillNeon<uint8_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 8; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAB0, i, uint8_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAB0, i, uint8_t,
                   fillNeon<uint8_t>({0}, (SVL / 8)));
   }
 }
@@ -749,12 +753,12 @@ TEST_P(InstSme, mova_h_vecToTile) {
     mova za0h.h[w12, #0], p0/m, z0.h
     mova za0h.h[w12, #1], p1/m, z1.h
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 0, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 0, uint16_t,
                 fillNeon<uint16_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 16; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAH0, i, uint16_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAH0, i, uint16_t,
                   fillNeon<uint16_t>({0}, (SVL / 8)));
   }
 
@@ -775,12 +779,12 @@ TEST_P(InstSme, mova_h_vecToTile) {
     mov za0h.h[w12, #0], p0/m, z0.h
     mov za0h.h[w12, #1], p1/m, z1.h
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 0, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 0, uint16_t,
                 fillNeon<uint16_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 16; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAH0, i, uint16_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAH0, i, uint16_t,
                   fillNeon<uint16_t>({0}, (SVL / 8)));
   }
 
@@ -801,12 +805,12 @@ TEST_P(InstSme, mova_h_vecToTile) {
     mova za0v.h[w12, #0], p0/m, z0.h
     mova za0v.h[w12, #1], p1/m, z1.h
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 0, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 0, uint16_t,
                 fillNeon<uint16_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 16; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAH0, i, uint16_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAH0, i, uint16_t,
                   fillNeon<uint16_t>({0}, (SVL / 8)));
   }
 
@@ -827,12 +831,12 @@ TEST_P(InstSme, mova_h_vecToTile) {
     mov za0v.h[w12, #0], p0/m, z0.h
     mov za0v.h[w12, #1], p1/m, z1.h
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 0, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 0, uint16_t,
                 fillNeon<uint16_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 16; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAH0, i, uint16_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAH0, i, uint16_t,
                   fillNeon<uint16_t>({0}, (SVL / 8)));
   }
 }
@@ -856,12 +860,12 @@ TEST_P(InstSme, mova_s_vecToTile) {
     mova za0h.s[w12, #0], p0/m, z0.s
     mova za0h.s[w12, #1], p1/m, z1.s
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAS0, 0, uint32_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 0, uint32_t,
                 fillNeon<uint32_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAS0, 1, uint32_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 1, uint32_t,
                 fillNeon<uint32_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 32; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
   }
 
@@ -882,12 +886,12 @@ TEST_P(InstSme, mova_s_vecToTile) {
     mov za0h.s[w12, #0], p0/m, z0.s
     mov za0h.s[w12, #1], p1/m, z1.s
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAS0, 0, uint32_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 0, uint32_t,
                 fillNeon<uint32_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAS0, 1, uint32_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAS0, 1, uint32_t,
                 fillNeon<uint32_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 32; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
   }
 
@@ -908,12 +912,12 @@ TEST_P(InstSme, mova_s_vecToTile) {
     mova za0v.s[w12, #0], p0/m, z0.s
     mova za0v.s[w12, #1], p1/m, z1.s
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAS0, 0, uint32_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAS0, 0, uint32_t,
                 fillNeon<uint32_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAS0, 1, uint32_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAS0, 1, uint32_t,
                 fillNeon<uint32_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 32; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
   }
 
@@ -934,12 +938,12 @@ TEST_P(InstSme, mova_s_vecToTile) {
     mov za0v.s[w12, #0], p0/m, z0.s
     mov za0v.s[w12, #1], p1/m, z1.s
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAS0, 0, uint32_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAS0, 0, uint32_t,
                 fillNeon<uint32_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAS0, 1, uint32_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAS0, 1, uint32_t,
                 fillNeon<uint32_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 32; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
   }
 }
@@ -963,12 +967,12 @@ TEST_P(InstSme, mova_d_vecToTile) {
     mova za0h.d[w12, #0], p0/m, z0.d
     mova za0h.d[w12, #1], p1/m, z1.d
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAD0, 0, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAD0, 0, uint64_t,
                 fillNeon<uint64_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAD0, 1, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAD0, 1, uint64_t,
                 fillNeon<uint64_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 64; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 
@@ -989,12 +993,12 @@ TEST_P(InstSme, mova_d_vecToTile) {
     mov za0h.d[w12, #0], p0/m, z0.d
     mov za0h.d[w12, #1], p1/m, z1.d
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAD0, 0, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAD0, 0, uint64_t,
                 fillNeon<uint64_t>({1}, (SVL / 8)));
-  CHECK_MAT_ROW(ARM64_REG_ZAD0, 1, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAD0, 1, uint64_t,
                 fillNeon<uint64_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 64; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 
@@ -1015,12 +1019,12 @@ TEST_P(InstSme, mova_d_vecToTile) {
     mova za0v.d[w12, #0], p0/m, z0.d
     mova za0v.d[w12, #1], p1/m, z1.d
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAD0, 0, uint64_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAD0, 0, uint64_t,
                 fillNeon<uint64_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAD0, 1, uint64_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAD0, 1, uint64_t,
                 fillNeon<uint64_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 64; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 
@@ -1041,12 +1045,12 @@ TEST_P(InstSme, mova_d_vecToTile) {
     mov za0v.d[w12, #0], p0/m, z0.d
     mov za0v.d[w12, #1], p1/m, z1.d
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAD0, 0, uint64_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAD0, 0, uint64_t,
                 fillNeon<uint64_t>({1}, (SVL / 8)));
-  CHECK_MAT_COL(ARM64_REG_ZAD0, 1, uint64_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAD0, 1, uint64_t,
                 fillNeon<uint64_t>({2, 0}, (SVL / 8)));
   for (uint16_t i = 2; i < SVL / 64; i++) {
-    CHECK_MAT_COL(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_COL(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 }
@@ -1072,10 +1076,10 @@ TEST_P(InstSme, mova_q_vecToTile) {
     mova za0h.q[w12, #0], p0/m, z0.q
     mova za0h.q[w12, #0], p1/m, z1.q
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAQ0, 0, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAQ0, 0, uint64_t,
                 fillNeon<uint64_t>({2, 2, 1, 1}, (SVL / 8)));
   for (uint16_t i = 1; i < SVL / 128; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 
@@ -1098,10 +1102,10 @@ TEST_P(InstSme, mova_q_vecToTile) {
     mov za0h.q[w12, #0], p0/m, z0.q
     mov za0h.q[w12, #0], p1/m, z1.q
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAQ0, 0, uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAQ0, 0, uint64_t,
                 fillNeon<uint64_t>({2, 2, 1, 1}, (SVL / 8)));
   for (uint16_t i = 1; i < SVL / 128; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t,
                   fillNeon<uint64_t>({0}, (SVL / 8)));
   }
 
@@ -1132,9 +1136,9 @@ TEST_P(InstSme, mova_q_vecToTile) {
   offRow[1] = 1;
   for (uint16_t i = 0; i < SVL / 128; i++) {
     if (i % 2 == 0) {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, onRow);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, onRow);
     } else {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, offRow);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, offRow);
     }
   }
 
@@ -1159,9 +1163,9 @@ TEST_P(InstSme, mova_q_vecToTile) {
   )");
   for (uint16_t i = 0; i < SVL / 128; i++) {
     if (i % 2 == 0) {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, onRow);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, onRow);
     } else {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, offRow);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, offRow);
     }
   }
 }
@@ -1253,9 +1257,9 @@ TEST_P(InstSme, fmops) {
     fmops za2.s, p0/m, p2/m, z3.s, z4.s
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, float,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, float,
                   fillNeon<float>({-10.0f}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, float,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, float,
                   fillNeon<float>({-24.0f}, (SVL / 16)));
   }
 
@@ -1283,9 +1287,9 @@ TEST_P(InstSme, fmops) {
     fmops za2.d, p0/m, p2/m, z3.d, z4.d
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, double,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, double,
                   fillNeon<double>({-10.0}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, double,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, double,
                   fillNeon<double>({-24.0}, (SVL / 16)));
   }
 }
@@ -1326,16 +1330,16 @@ TEST_P(InstSme, ld1b) {
     ld1b {za0h.b[w12, 0]}, p1/z, [x0, x2]
   )");
   CHECK_MAT_ROW(
-      ARM64_REG_ZAB0, 1, uint8_t,
+      AARCH64_REG_ZAB0, 1, uint8_t,
       fillNeon<uint8_t>({0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
                          0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01, 0xDE},
                         SVL / 8));
   CHECK_MAT_ROW(
-      ARM64_REG_ZAB0, 3, uint8_t,
+      AARCH64_REG_ZAB0, 3, uint8_t,
       fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
                          0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
                         SVL / 8));
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 15, uint8_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 15, uint8_t,
                 fillNeonCombined<uint8_t>(
                     {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
                      0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
@@ -1377,16 +1381,16 @@ TEST_P(InstSme, ld1b) {
     ld1b {za0v.b[w12, 0]}, p1/z, [x0, x2]
   )");
   CHECK_MAT_COL(
-      ARM64_REG_ZAB0, 1, uint8_t,
+      AARCH64_REG_ZAB0, 1, uint8_t,
       fillNeon<uint8_t>({0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
                          0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01, 0xDE},
                         SVL / 8));
   CHECK_MAT_COL(
-      ARM64_REG_ZAB0, 3, uint8_t,
+      AARCH64_REG_ZAB0, 3, uint8_t,
       fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
                          0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
                         SVL / 8));
-  CHECK_MAT_COL(ARM64_REG_ZAB0, 15, uint8_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAB0, 15, uint8_t,
                 fillNeonCombined<uint8_t>(
                     {0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98, 0x76,
                      0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
@@ -1513,15 +1517,15 @@ TEST_P(InstSme, ld1h) {
     whilelo p1.h, xzr, x1
     ld1h {za1h.h[w12, 0]}, p1/z, [x0, x2, lsl #1]
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
                                     0xABCD, 0xEF01, 0xDEAD},
                                    SVL / 8));
-  CHECK_MAT_ROW(ARM64_REG_ZAH0, 3, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH0, 3, uint16_t,
                 fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
                                     0x5432, 0xABCD, 0xEF01},
                                    SVL / 8));
-  CHECK_MAT_ROW(ARM64_REG_ZAH1, 1, uint16_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAH1, 1, uint16_t,
                 fillNeonCombined<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678,
                                             0x9876, 0x5432, 0xABCD, 0xEF01},
                                            {0}, SVL / 8));
@@ -1559,15 +1563,15 @@ TEST_P(InstSme, ld1h) {
     whilelo p1.h, xzr, x1
     ld1h {za1v.h[w12, 0]}, p1/z, [x0, x2, lsl #1]
   )");
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 1, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 1, uint16_t,
                 fillNeon<uint16_t>({0xBEEF, 0x1234, 0x5678, 0x9876, 0x5432,
                                     0xABCD, 0xEF01, 0xDEAD},
                                    SVL / 8));
-  CHECK_MAT_COL(ARM64_REG_ZAH0, 3, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH0, 3, uint16_t,
                 fillNeon<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678, 0x9876,
                                     0x5432, 0xABCD, 0xEF01},
                                    SVL / 8));
-  CHECK_MAT_COL(ARM64_REG_ZAH1, 1, uint16_t,
+  CHECK_MAT_COL(AARCH64_REG_ZAH1, 1, uint16_t,
                 fillNeonCombined<uint16_t>({0xDEAD, 0xBEEF, 0x1234, 0x5678,
                                             0x9876, 0x5432, 0xABCD, 0xEF01},
                                            {0}, SVL / 8));
@@ -1602,11 +1606,11 @@ TEST_P(InstSme, ld1q) {
     zip1 p0.d, p0.d, p0.d
     ld1q {za15h.q[w12, 0]}, p0/z, [x0]
   )");
-  CHECK_MAT_ROW(ARM64_REG_ZAQ0, 1 % (SVL / 128), uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAQ0, 1 % (SVL / 128), uint64_t,
                 fillNeon<uint64_t>({0x98765432ABCDEF01, 0xDEADBEEF12345678,
                                     0xDEADBEEF12345678, 0x98765432ABCDEF01},
                                    SVL / 8));
-  CHECK_MAT_ROW(ARM64_REG_ZAQ15, 1 % (SVL / 128), uint64_t,
+  CHECK_MAT_ROW(AARCH64_REG_ZAQ15, 1 % (SVL / 128), uint64_t,
                 fillNeon<uint64_t>(
                     {0xDEADBEEF12345678, 0x98765432ABCDEF01, 0, 0}, SVL / 8));
 
@@ -1650,11 +1654,11 @@ TEST_P(InstSme, ld1q) {
   row1[3 % (SVL / 64)] = 0x98765432ABCDEF01;
   for (uint16_t i = 0; i < SVL / 128; i++) {
     if (i % 2 == 0) {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, row0);
-      CHECK_MAT_ROW(ARM64_REG_ZAQ15, i, uint64_t, row1);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, row0);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ15, i, uint64_t, row1);
     } else {
-      CHECK_MAT_ROW(ARM64_REG_ZAQ0, i, uint64_t, row1);
-      CHECK_MAT_ROW(ARM64_REG_ZAQ15, i, uint64_t, zeroRow);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, row1);
+      CHECK_MAT_ROW(AARCH64_REG_ZAQ15, i, uint64_t, zeroRow);
     }
   }
 }
@@ -1771,19 +1775,20 @@ TEST_P(InstSme, ldr) {
     ldr za[w12, 2], [x0, #2, mul vl]
   )");
   CHECK_MAT_ROW(
-      ARM64_REG_ZAB0, 0, uint8_t,
+      AARCH64_REG_ZAB0, 0, uint8_t,
       fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
                          0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
                         SVL / 8));
-  CHECK_MAT_ROW(ARM64_REG_ZAB0, 1, uint8_t, fillNeon<uint8_t>({0}, SVL / 8));
+  CHECK_MAT_ROW(AARCH64_REG_ZAB0, 1, uint8_t, fillNeon<uint8_t>({0}, SVL / 8));
   CHECK_MAT_ROW(
-      ARM64_REG_ZAB0, 2, uint8_t,
+      AARCH64_REG_ZAB0, 2, uint8_t,
       fillNeon<uint8_t>({0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x98,
                          0x76, 0x54, 0x32, 0xAB, 0xCD, 0xEF, 0x01},
                         SVL / 8));
 
   for (uint16_t i = 3; i < SVL / 8; i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAB0, i, uint8_t, fillNeon<uint8_t>({0}, SVL / 8));
+    CHECK_MAT_ROW(AARCH64_REG_ZAB0, i, uint8_t,
+                  fillNeon<uint8_t>({0}, SVL / 8));
   }
 }
 
@@ -1812,9 +1817,9 @@ TEST_P(InstSme, smopa) {
     smopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({112}, (SVL / 16)));
   }
 
@@ -1842,9 +1847,9 @@ TEST_P(InstSme, smopa) {
     smopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({112}, (SVL / 16)));
   }
 }
@@ -1874,9 +1879,9 @@ TEST_P(InstSme, smops) {
     smops za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({-112}, (SVL / 16)));
   }
 
@@ -1904,9 +1909,9 @@ TEST_P(InstSme, smops) {
     smops za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({-112}, (SVL / 16)));
   }
 }
@@ -2756,13 +2761,13 @@ TEST_P(InstSme, str) {
     str za[w12, #0], [x2]
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({40}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS1, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS1, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
                   fillNeon<uint32_t>({20}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS3, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS3, i, uint32_t,
                   fillNeon<uint32_t>({0}, (SVL / 8)));
   }
   const uint64_t SVL_bytes = SVL / 8;
@@ -2802,9 +2807,9 @@ TEST_P(InstSme, sumopa) {
     sumopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({-112}, (SVL / 16)));
   }
 
@@ -2833,9 +2838,9 @@ TEST_P(InstSme, sumopa) {
     sumopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({3060}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({7112}, (SVL / 16)));
   }
 
@@ -2863,9 +2868,9 @@ TEST_P(InstSme, sumopa) {
     sumopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({-112}, (SVL / 16)));
   }
 
@@ -2894,9 +2899,9 @@ TEST_P(InstSme, sumopa) {
     sumopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({786420}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({1834952}, (SVL / 16)));
   }
 }
@@ -2926,9 +2931,9 @@ TEST_P(InstSme, sumops) {
     sumops za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({112}, (SVL / 16)));
   }
 
@@ -2957,9 +2962,9 @@ TEST_P(InstSme, sumops) {
     sumops za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({-3060}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({-7112}, (SVL / 16)));
   }
 
@@ -2987,9 +2992,9 @@ TEST_P(InstSme, sumops) {
     sumops za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({112}, (SVL / 16)));
   }
 
@@ -3018,9 +3023,9 @@ TEST_P(InstSme, sumops) {
     sumops za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({-786420}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({-1834952}, (SVL / 16)));
   }
 }
@@ -3050,9 +3055,9 @@ TEST_P(InstSme, umopa) {
     umopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
                   fillNeon<uint32_t>({112}, (SVL / 16)));
   }
 
@@ -3080,9 +3085,9 @@ TEST_P(InstSme, umopa) {
     umopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, uint64_t,
                   fillNeon<uint64_t>({112}, (SVL / 16)));
   }
 }
@@ -3116,9 +3121,9 @@ TEST_P(InstSme, umops) {
     umops za2.s, p0/m, p2/m, z3.b, z5.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({32}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, uint32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
                   fillNeon<uint32_t>({28}, (SVL / 16)));
   }
 
@@ -3150,9 +3155,9 @@ TEST_P(InstSme, umops) {
     umops za2.d, p0/m, p2/m, z3.h, z5.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, uint64_t,
                   fillNeon<uint64_t>({32}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, uint64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, uint64_t,
                   fillNeon<uint64_t>({28}, (SVL / 16)));
   }
 }
@@ -3182,9 +3187,9 @@ TEST_P(InstSme, usmopa) {
     usmopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({-112}, (SVL / 16)));
   }
 
@@ -3213,9 +3218,9 @@ TEST_P(InstSme, usmopa) {
     usmopa za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({2024}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({7112}, (SVL / 16)));
   }
 
@@ -3243,9 +3248,9 @@ TEST_P(InstSme, usmopa) {
     usmopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({-96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({-112}, (SVL / 16)));
   }
 
@@ -3274,9 +3279,9 @@ TEST_P(InstSme, usmopa) {
     usmopa za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({524264}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({1834952}, (SVL / 16)));
   }
 }
@@ -3306,9 +3311,9 @@ TEST_P(InstSme, usmops) {
     usmops za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({112}, (SVL / 16)));
   }
 
@@ -3337,9 +3342,9 @@ TEST_P(InstSme, usmops) {
     usmops za2.s, p0/m, p2/m, z3.b, z4.b
   )");
   for (uint64_t i = 0; i < (SVL / 32); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, int32_t,
                   fillNeon<int32_t>({-2024}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, int32_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, int32_t,
                   fillNeon<int32_t>({-7112}, (SVL / 16)));
   }
 
@@ -3367,9 +3372,9 @@ TEST_P(InstSme, usmops) {
     usmops za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({96}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({112}, (SVL / 16)));
   }
 
@@ -3398,9 +3403,9 @@ TEST_P(InstSme, usmops) {
     usmops za2.d, p0/m, p2/m, z3.h, z4.h
   )");
   for (uint64_t i = 0; i < (SVL / 64); i++) {
-    CHECK_MAT_ROW(ARM64_REG_ZAD0, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD0, i, int64_t,
                   fillNeon<int64_t>({-524264}, (SVL / 8)));
-    CHECK_MAT_ROW(ARM64_REG_ZAD2, i, int64_t,
+    CHECK_MAT_ROW(AARCH64_REG_ZAD2, i, int64_t,
                   fillNeon<int64_t>({-1834952}, (SVL / 16)));
   }
 }
