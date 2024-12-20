@@ -658,8 +658,17 @@ bool ExceptionHandler::init() {
     if (metadata.opcode == Opcode::AArch64_MSR) {
       newSVCR = instruction_.getSourceOperands()[0].get<uint64_t>();
     } else if (metadata.opcode == Opcode::AArch64_MSRpstatesvcrImm1) {
+      // Ensure operand metadata is as expected
+      assert(metadata.operands[0].type == AARCH64_OP_SYSALIAS);
+      assert(metadata.operands[0].sysop.sub_type == AARCH64_OP_SVCR);
+      // extract SVCR bits
       const uint64_t svcrBits =
-          static_cast<uint64_t>(metadata.operands[0].svcr);
+          static_cast<uint64_t>(metadata.operands[0].sysop.alias.svcr);
+      // Ensure SVCR Bits are valid
+      assert(svcrBits == AARCH64_SVCR_SVCRSM ||
+             svcrBits == AARCH64_SVCR_SVCRZA ||
+             svcrBits == AARCH64_SVCR_SVCRSMZA);
+
       const uint64_t imm = metadata.operands[1].imm;
       assert((imm == 0 || imm == 1) &&
              "[SimEng:ExceptionHandler] SVCR Instruction invalid - Imm value "
@@ -680,20 +689,22 @@ bool ExceptionHandler::init() {
     std::vector<Register> regs;
     std::vector<RegisterValue> regValues;
 
-    // If SVCR.ZA has changed state then zero out ZA register, else don't
+    // If SVCR.ZA has changed state then zero out ZA and ZT0 registers
     if (exception != InstructionException::StreamingModeUpdate) {
-      if ((newSVCR & ARM64_SVCR_SVCRZA) != (currSVCR & ARM64_SVCR_SVCRZA)) {
+      if ((newSVCR & AARCH64_SVCR_SVCRZA) != (currSVCR & AARCH64_SVCR_SVCRZA)) {
         for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
              i++) {
           regs.push_back({RegisterType::MATRIX, i});
           regValues.push_back(RegisterValue(0, 256));
         }
+        regs.push_back({RegisterType::TABLE, 0});
+        regValues.push_back(RegisterValue(0, 64));
       }
     }
     // If SVCR.SM has changed state then zero out SVE, NEON, Predicate
     // registers, else don't
     if (exception != InstructionException::ZAregisterStatusUpdate) {
-      if ((newSVCR & ARM64_SVCR_SVCRSM) != (currSVCR & ARM64_SVCR_SVCRSM)) {
+      if ((newSVCR & AARCH64_SVCR_SVCRSM) != (currSVCR & AARCH64_SVCR_SVCRSM)) {
         for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
              i++) {
           regs.push_back({RegisterType::VECTOR, i});
@@ -707,9 +718,9 @@ bool ExceptionHandler::init() {
     }
 
     // Update SVCR system register in regFile
-    regs.push_back(
-        {RegisterType::SYSTEM,
-         static_cast<uint16_t>(arch.getSystemRegisterTag(ARM64_SYSREG_SVCR))});
+    regs.push_back({RegisterType::SYSTEM,
+                    static_cast<uint16_t>(
+                        arch.getSystemRegisterTag(AARCH64_SYSREG_SVCR))});
     regValues.push_back(RegisterValue(newSVCR, 8));
 
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
@@ -876,9 +887,6 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
-      break;
-    case InstructionException::AliasNotYetImplemented:
-      std::cout << "alias not-yet-implemented";
       break;
     case InstructionException::MisalignedPC:
       std::cout << "misaligned program counter";
