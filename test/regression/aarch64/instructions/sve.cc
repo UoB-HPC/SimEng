@@ -2884,7 +2884,7 @@ TEST_P(InstSve, faddv) {
   )");
   float s3 = 0.0f;
   float s4 = 0.0f;
-  for (int i = 0; i < VL / 32; i++) {
+  for (uint64_t i = 0; i < VL / 32; i++) {
     s3 += fsrc[i % (fsrc.size())];
     if (i < (VL / 64)) s4 += fsrc[i % (fsrc.size())];
   }
@@ -2922,7 +2922,7 @@ TEST_P(InstSve, faddv) {
   )");
   double d3 = 0.0;
   double d4 = 0.0;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     d3 += dsrc[i % (dsrc.size())];
     if (i < (VL / 128)) d4 += dsrc[i % (dsrc.size())];
   }
