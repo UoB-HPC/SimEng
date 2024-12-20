@@ -16,7 +16,7 @@ const uint8_t OPTIONAL = 1;
 /** An abstract execution port allocator interface. */
 class PortAllocator {
  public:
-  virtual ~PortAllocator() {};
+  virtual ~PortAllocator(){};
 
   /** Allocate a port for the specified instruction group; returns the allocated
    * port. */

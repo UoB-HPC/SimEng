@@ -2546,7 +2546,7 @@ TEST_P(InstNeon, mvni) {
               ~((32u << 8) | 255)});
 }
 
-TEST_P(InstNeon, not) {
+TEST_P(InstNeon, not ) {
   initialHeapData_.resize(128);
   uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   heap[0] = 0b11111111;

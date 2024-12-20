@@ -304,7 +304,9 @@ TEST(ConfigTest, invalidTypeOnSetBounds) {
       simeng::config::ExpectationNode::createExpectation<std::string>("DEFAULT",
                                                                       "CHILD"));
   ASSERT_DEATH(
-      { expectations["HEAD"]["CHILD"].setValueSet<int32_t>({0, 1, 2}); },
+      {
+        expectations["HEAD"]["CHILD"].setValueSet<int32_t>({0, 1, 2});
+      },
       "The data type of the passed vector used in setValueSet\\() "
       "does not match that held within the ExpectationNode with key "
       "HEAD:CHILD. Passed vector elements are of type 32-bit integer and the "
@@ -322,7 +324,9 @@ TEST(ConfigTest, alreadyDefinedBounds) {
       simeng::config::ExpectationNode::createExpectation<uint64_t>(0, "CHILD"));
   expectations["HEAD"]["CHILD"].setValueBounds<uint64_t>(0, 10);
   ASSERT_DEATH(
-      { expectations["HEAD"]["CHILD"].setValueSet<uint64_t>({1, 2, 3}); },
+      {
+        expectations["HEAD"]["CHILD"].setValueSet<uint64_t>({1, 2, 3});
+      },
       "Invalid call of setValueSet\\() for the ExpectationNode with key "
       "HEAD:CHILD as value bounds have already been defined.");
 }

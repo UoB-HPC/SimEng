@@ -134,9 +134,9 @@ class ExpectationNode {
 
   /** Default constructor. Used primarily to provide a root node for populated
    * ExpectationNode instances to be added to. */
-  ExpectationNode() {};
+  ExpectationNode(){};
 
-  ~ExpectationNode() {};
+  ~ExpectationNode(){};
 
   /** A getter function to retrieve the key of a node. */
   std::string getKey() const { return nodeKey_; }
