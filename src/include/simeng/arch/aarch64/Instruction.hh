@@ -300,14 +300,14 @@ std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
       static_cast<uint8_t>(std::log2f(sizeof(T)) + 1);
 
   for (int r = 0; r < V; r++) {
-    for (int i = 0; i < elemsPerVec; i++) {
+    for (uint16_t i = 0; i < elemsPerVec; i++) {
       // Move bit to next position based on element type
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       // If invert = True (invert bit = 1), predElemCount dictates number of
       // initial inactive elements.
       // If invert = False (invert bit = 0), it indicates the number of initial
       // active elements.
-      if ((r * elemsPerVec) + i < predElemCount) {
+      if (static_cast<uint64_t>(r * elemsPerVec) + i < predElemCount) {
         out[r][i / (64 / sizeof(T))] |= (invert) ? 0 : shifted_active;
       } else {
         out[r][i / (64 / sizeof(T))] |= (invert) ? shifted_active : 0;

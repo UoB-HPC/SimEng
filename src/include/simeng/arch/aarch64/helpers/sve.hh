@@ -1636,7 +1636,7 @@ RegisterValue sveUdot(
   const N* zm = sourceValues[2].getAsVector<N>();
 
   D out[256 / sizeof(D)] = {0};
-  for (int i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
+  for (size_t i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
     out[i] = zd[i];
     for (int j = 0; j < W; j++) {
       out[i] +=
@@ -1666,7 +1666,7 @@ RegisterValue sveUdot_indexed(
   const int index = metadata.operands[2].vector_index;
 
   D out[256 / sizeof(D)] = {0};
-  for (int i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
+  for (size_t i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
     D acc = zd[i];
     // Index into zm selects which D-type element within each 128-bit vector
     // segment to use
