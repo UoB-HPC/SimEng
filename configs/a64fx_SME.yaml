@@ -21,7 +21,8 @@ Register-Set:
   FloatingPoint/SVE-Count: 128
   Predicate-Count: 48
   Conditional-Count: 128
-  Matrix-Count: 2
+  SME-Matrix-Count: 2
+  SME-Lookup-Table-Count: 8
 Pipeline-Widths:
   Commit: 4
   FrontEnd: 4

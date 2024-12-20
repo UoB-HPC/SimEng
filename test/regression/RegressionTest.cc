@@ -239,8 +239,13 @@ void RegressionTest::assemble(const char* source, const char* triple,
   ASSERT_NE(asmBackend, nullptr) << "Failed to create LLVM asm backend";
 
   // Create MC code emitter
+#if SIMENG_LLVM_VERSION < 15
   std::unique_ptr<llvm::MCCodeEmitter> codeEmitter(
       target->createMCCodeEmitter(*instrInfo, *regInfo, context));
+#else
+  std::unique_ptr<llvm::MCCodeEmitter> codeEmitter(
+      target->createMCCodeEmitter(*instrInfo, context));
+#endif
   ASSERT_NE(codeEmitter, nullptr) << "Failed to create LLVM code emitter";
 
   // Create MC object writer
@@ -275,8 +280,14 @@ void RegressionTest::assemble(const char* source, const char* triple,
 
   // Create ELF object from output
   llvm::StringRef objectData = objectStream.str();
+#if SIMENG_LLVM_VERSION < 15
   auto elfOrErr = llvm::object::ELFFile<
       llvm::object::ELFType<llvm::support::little, true>>::create(objectData);
+#else
+  auto elfOrErr =
+      llvm::object::ELFFile<llvm::object::ELFType<llvm::endianness::little,
+                                                  true>>::create(objectData);
+#endif
   ASSERT_FALSE(elfOrErr.takeError()) << "Failed to load ELF object";
   auto& elf = *elfOrErr;
 
