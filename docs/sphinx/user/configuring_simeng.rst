@@ -183,7 +183,7 @@ Num-Tage-Tables
     Only needed for a ``Tage`` predictor.  The number of tagged tables used by the predictor, in addition to a default prediction table (i.e., the BTB).  Therefore, a value of 3 for ``Num-Tage-Tables`` would result in four total prediction tables: one BTB and three tagged tables.  If no tagged tables are desired, it is recommended to use the ``GenericPredictor`` instead.
 
 Tage-Length
-    Only needed for a ``Tage`` predictor.  The number of bits used to tage the entries of the tagged tables.
+    Only needed for a ``Tage`` predictor.  The number of bits used to tag the entries of the tagged tables.
 
 .. _l1dcnf:
 

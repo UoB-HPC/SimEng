@@ -118,7 +118,7 @@ class TagePredictor : public BranchPredictor {
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
   /** The bitlength of the Tagged tables' indices.
-   * Each tagged table with have 2^bits entries. */
+   * Each tagged table will have 2^bits entries. */
   uint8_t tageTableBits_;
 
   /** The number of tagged tables in the TAGE scheme.

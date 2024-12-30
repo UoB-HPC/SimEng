@@ -9,7 +9,7 @@ namespace simeng {
  * access and manipulate large branch histories, as are needed in
  * sophisticated branch predictors.
  *
- * The bits of the branch history are stored in a vector of uint64_t values,
+ * The bits of the branch history are stored in an array of uint64_t values,
  * and their access/manipulation is facilitated by the public functions. */
 
 class BranchHistory {
