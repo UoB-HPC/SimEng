@@ -558,6 +558,39 @@ RegisterValue vecLogicOp_3vecs(srcValContainer& sourceValues,
   return {out, 256};
 }
 
+/** Helper function for NEON instructions with the format `uaddlv rd, Vn.T`.
+ * T represents the type of the destination register (e.g. for h0, T =
+ * uint32_t).
+ * U represents the type of the sourceValues[0] (e.g. for v0.8b, U =
+ * uint8_t)
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, typename U, int I>
+RegisterValue vecAddlv(srcValContainer& sourceValues) {
+  const U* n = sourceValues[0].getAsVector<U>();
+  T out = 0;
+  for (int i = 0; i < I; i++) {
+    out += n[i];
+  }
+  return {out, 256};
+}
+
+/** Helper function for NEON instructions with the format `umaxv rd, Vn.T`.
+ * T represents the type of sourceValues (e.g. for vn.s, T = uint32_t).
+ * I represents the number of elements in the output array to be updated (e.g.
+ * for vd.8b I = 8).
+ * Returns correctly formatted RegisterValue. */
+template <typename T, int I>
+RegisterValue vecUMaxV(srcValContainer& sourceValues) {
+  const T* n = sourceValues[0].getAsVector<T>();
+  T out = n[0];
+  for (int i = 1; i < I; i++) {
+    out = std::max(n[i], out);
+  }
+  return {out, 256};
+}
+
 /** Helper function for NEON instructions with the format `umaxp vd, vn, vm`.
  * T represents the type of sourceValues (e.g. for vn.2d, T = uint64_t).
  * I represents the number of elements in the output array to be updated (e.g.

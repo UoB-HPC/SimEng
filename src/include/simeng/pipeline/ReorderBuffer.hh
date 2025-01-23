@@ -125,6 +125,14 @@ class ReorderBuffer {
    */
   uint64_t pc_;
 
+  /** A counter for how many cycles the same instruction has been at the head of
+   * the ROB */
+  uint64_t robHeadRepeatCounter_ = 0;
+
+  /** A limit for the counter of how long an instruction can be stuck at the
+   * head of the ROB before SimEng exits with an exception. */
+  uint64_t robHeadRepeatLimit_ = 10000000;
+
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
   uint64_t flushAfter_;

@@ -3,6 +3,7 @@
 namespace {
 
 using InstLoad = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstLoad, ld1r) {
   // 8-bit
@@ -695,6 +696,45 @@ TEST_P(InstLoad, ldarb) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 64);
 }
 
+TEST_P(InstLoad, ldaxrb) {
+  initialHeapData_.resize(8);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    ldaxrb w1, [x0]
+    add x0, x0, #1
+    ldaxrb w2, [x0]
+    add x0, x0, #1
+    ldaxrb w3, [x0]
+    add x0, x0, #1
+    ldaxrb w4, [x0]
+    add x0, x0, #1
+    ldaxrb w5, [x0]
+    add x0, x0, #1
+    ldaxrb w6, [x0]
+    add x0, x0, #1
+    ldaxrb w7, [x0]
+    add x0, x0, #1
+    ldaxrb w8, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xBE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xAD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xDE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0x78);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x56);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x34);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x12);
+
+  EXPECT_GROUP(R"(ldaxrb w8, [x0])", LOAD_INT);
+}
+
 TEST_P(InstLoad, ldrb) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -1277,17 +1317,21 @@ TEST_P(InstLoad, ldrsw) {
     mov x0, 0
     mov x8, 214
     svc #0
-    mov x5, 1
+    mov x6, 1
     # Load 32-bit values from heap and sign-extend to 64-bits
     ldrsw x1, [x0, #4]
     ldrsw x2, [x0], #4
     ldrsw x3, [x0]
-    ldrsw x4, [x0, x5, lsl #2]
+    ldrsw x4, [x0, x6, lsl #2]
+    ldrsw x5, [x0, w6, uxtw #2]
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(1), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), -5);
+
+  EXPECT_GROUP(R"(ldrsw x4, [x0, x6, lsl #2])", LOAD_INT);
 
   // ldursw
   RUN_AARCH64(R"(
