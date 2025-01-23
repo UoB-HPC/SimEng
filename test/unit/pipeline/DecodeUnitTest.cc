@@ -53,9 +53,6 @@ TEST_F(PipelineDecodeUnitTest, TickEmpty) {
 TEST_F(PipelineDecodeUnitTest, Tick) {
   input.getHeadSlots()[0] = {uopPtr};
 
-  EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
-      .WillOnce(Return(std::tuple<bool, uint64_t>(false, 0)));
-
   decodeUnit.tick();
 
   // Check result uop is the same as the one provided
@@ -65,32 +62,6 @@ TEST_F(PipelineDecodeUnitTest, Tick) {
   // Check no flush was requested
   EXPECT_EQ(decodeUnit.shouldFlush(), false);
   EXPECT_EQ(decodeUnit.getEarlyFlushes(), 0);
-}
-
-// Tests that the decode unit requests a flush when a non-branch is mispredicted
-TEST_F(PipelineDecodeUnitTest, Flush) {
-  input.getHeadSlots()[0] = {uopPtr};
-
-  uop->setInstructionAddress(2);
-
-  // Return branch type as unconditional by default
-  ON_CALL(*uop, getBranchType())
-      .WillByDefault(Return(BranchType::Unconditional));
-
-  EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
-      .WillOnce(Return(std::tuple<bool, uint64_t>(true, 1)));
-  EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
-
-  // Check the predictor is updated with the correct instruction address and PC
-  EXPECT_CALL(predictor, update(2, false, 1, BranchType::Unconditional,
-                                uop->getInstructionId()));
-
-  decodeUnit.tick();
-
-  // Check that a flush was correctly requested
-  EXPECT_EQ(decodeUnit.shouldFlush(), true);
-  EXPECT_EQ(decodeUnit.getFlushAddress(), 1);
-  EXPECT_EQ(decodeUnit.getEarlyFlushes(), 1);
 }
 
 // Tests that PurgeFlushed empties the microOps queue
