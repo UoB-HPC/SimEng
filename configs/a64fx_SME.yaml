@@ -34,7 +34,7 @@ Queue-Sizes:
 Port-Allocator:
   Type: A64FX
 Branch-Predictor:
-  Type: "Tage"
+  Type: "TAGE"
   BTB-Tag-Bits: 11
   Saturating-Count-Bits: 2
   Global-History-Length: 19
