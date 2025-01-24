@@ -176,13 +176,13 @@ RAS-entries
 Fallback-Static-Predictor
     Only needed for ``Generic`` and ``TAGE`` predictors.  The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
-Tage-Table-Bits
+TAGE-Table-Bits
     Only needed for a ``TAGE`` predictor.  The number of bits used to index entries in the tagged tables.  The number of entries in each of the tagged tables is obtained from the calculation: 1 << ``bits``.  For examples, a ``bits`` value of 12 would result in tagged tables with 4096 entries.
 
-Num-Tage-Tables
-    Only needed for a ``TAGE`` predictor.  The number of tagged tables used by the predictor, in addition to a default prediction table (i.e., the BTB).  Therefore, a value of 3 for ``Num-Tage-Tables`` would result in four total prediction tables: one BTB and three tagged tables.  If no tagged tables are desired, it is recommended to use the ``GenericPredictor`` instead.
+Num-TAGE-Tables
+    Only needed for a ``TAGE`` predictor.  The number of tagged tables used by the predictor, in addition to a default prediction table (i.e., the BTB).  Therefore, a value of 3 for ``Num-TAGE-Tables`` would result in four total prediction tables: one BTB and three tagged tables.  If no tagged tables are desired, it is recommended to use the ``GenericPredictor`` instead.
 
-Tage-Length
+Tag-Length
     Only needed for a ``TAGE`` predictor.  The number of bits used to tag the entries of the tagged tables.
 
 .. _l1dcnf:

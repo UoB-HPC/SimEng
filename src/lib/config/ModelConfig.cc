@@ -518,7 +518,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
   expectations_["Branch-Predictor"]["Type"].setValueSet(
-      std::vector<std::string>{"Generic", "Perceptron", "Tage"});
+      std::vector<std::string>{"Generic", "Perceptron", "TAGE"});
 
   expectations_["Branch-Predictor"].addChild(
       ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
@@ -547,7 +547,7 @@ void ModelConfig::setExpectations(bool isDefault) {
         if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
              "Generic") ||
             (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-             "Tage")) {
+             "TAGE")) {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(
                   2, "Saturating-Count-Bits"));
@@ -562,17 +562,17 @@ void ModelConfig::setExpectations(bool isDefault) {
                   std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
         }
         if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-             "Tage")) {
+             "TAGE")) {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(12,
-                                                          "Tage-Table-Bits"));
-          expectations_["Branch-Predictor"]["Tage-Table-Bits"]
+                                                          "TAGE-Table-Bits"));
+          expectations_["Branch-Predictor"]["TAGE-Table-Bits"]
               .setValueBounds<uint8_t>(1, UINT8_MAX);
 
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(6,
-                                                          "Num-Tage-Tables"));
-          expectations_["Branch-Predictor"]["Num-Tage-Tables"]
+                                                          "Num-TAGE-Tables"));
+          expectations_["Branch-Predictor"]["Num-TAGE-Tables"]
               .setValueBounds<uint8_t>(1, UINT8_MAX);
 
           expectations_["Branch-Predictor"].addChild(

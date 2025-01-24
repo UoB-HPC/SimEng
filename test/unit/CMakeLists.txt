@@ -35,7 +35,7 @@ set(TEST_SOURCES
     RegisterValueTest.cc
     PerceptronPredictorTest.cc
     SpecialFileDirGenTest.cc
-    TagePredictorTest.cc
+        TAGEPredictorTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})

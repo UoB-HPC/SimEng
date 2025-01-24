@@ -56,7 +56,7 @@ Return Address Stack (RAS)
 
 TAGE Predictor
 --------------------
-The ``TagePredictor`` is a TAGE predictor of the type described in https://inria.hal.science/hal-03408381/document.  Unlike ``GenericPredictor`` and ``PerceptronPredictor``, this predictor uses a series of prediction tables, each of which uses an increasing global history size.  E.g., the default prediction table will be indexed by the address itself, then the following tables will use global histories of length 2, 4, 8, 16, ....
+The ``TAGEPredictor`` is a TAGE predictor of the type described in https://inria.hal.science/hal-03408381/document.  Unlike ``GenericPredictor`` and ``PerceptronPredictor``, this predictor uses a series of prediction tables, each of which uses an increasing global history size.  E.g., the default prediction table will be indexed by the address itself, then the following tables will use global histories of length 2, 4, 8, 16, ....
 
 Tagged prediction tables
     The prediction returned from this branch predictor will be that determined by the table with the largest global history that has an entry corresponding to the given branch.  To determine whether or not a table entry corresponds to the present branch or not, a hash is made from the branch's address and the global history.  Each table entry has a usefulness counter which is updated when the prediction differs from the next-best prediction.  On incorrect prediction, if possible, replace a non-useful entry in a table with more global history.
@@ -65,7 +65,7 @@ Default prediction table
     In addition to the tagged tables, there is a non-tagged default prediction table that is used as a fall-back in the event that none of the tagged tables have an entry corresponding to a given branch.  This table is much like the BTB in the ``GenericPredictor``, except that the index is determined from the truncated address only (i.e., it does not depend on the global history at all).
 
 Global History
-    To accomodate larger numbers of tagged tables, global histories of greater than 64 bits are needed.  Therefore, ``TagePredictor`` incorporates a new ``BranchHistory`` structure that allows global histories of unlimited size to be kept and accessed.
+    To accomodate larger numbers of tagged tables, global histories of greater than 64 bits are needed.  Therefore, ``TAGEPredictor`` incorporates a new ``BranchHistory`` structure that allows global histories of unlimited size to be kept and accessed.
 
 Return Address Stack (RAS)
     Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for later use by the Branch-and-Link instruction's corresponding Return instruction.

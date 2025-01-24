@@ -15,7 +15,7 @@ namespace simeng {
 
 /** A data structure to store all of the information needed for a single entry
  * in a tagged table. */
-struct TageEntry {
+struct TAGEEntry {
   uint8_t satCnt;
   uint64_t tag;
   uint8_t u;  // usefulness counter
@@ -51,12 +51,12 @@ struct ftqEntry {
  * (matching tag).
  * */
 
-class TagePredictor : public BranchPredictor {
+class TAGEPredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
-  TagePredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
+  TAGEPredictor(ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
-  ~TagePredictor();
+  ~TAGEPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
    * branch type, and a known branch offset.  Returns a branch direction and
@@ -119,15 +119,15 @@ class TagePredictor : public BranchPredictor {
 
   /** The bitlength of the Tagged tables' indices.
    * Each tagged table will have 2^bits entries. */
-  uint8_t tageTableBits_;
+  uint8_t TAGETableBits_;
 
   /** The number of tagged tables in the TAGE scheme.
    * In addition to the tagged tables, there will be a single untagged table
    * (the BTB) from which default predictions will be made. */
-  uint8_t numTageTables_;
+  uint8_t numTAGETables_;
 
   /** Data structure to store the tagged tables in. */
-  std::vector<std::vector<TageEntry>> tageTables_;
+  std::vector<std::vector<TAGEEntry>> TAGETables_;
 
   /** Fetch Target Queue containing the direction prediction and previous global
    * history state of branches that are currently unresolved */

@@ -1,12 +1,12 @@
 #include "MockInstruction.hh"
 #include "gtest/gtest.h"
-#include "simeng/branchpredictors/TagePredictor.hh"
+#include "simeng/branchpredictors/TAGEPredictor.hh"
 
 namespace simeng {
 
-class TagePredictorTest : public testing::Test {
+class TAGEPredictorTest : public testing::Test {
  public:
-  TagePredictorTest() : uop(new MockInstruction), uopPtr(uop) {
+  TAGEPredictorTest() : uop(new MockInstruction), uopPtr(uop) {
     uop->setInstructionAddress(0);
   }
 
@@ -15,44 +15,44 @@ class TagePredictorTest : public testing::Test {
   std::shared_ptr<Instruction> uopPtr;
 };
 
-// Tests that TagePredictor will predict the correct direction on a miss
-TEST_F(TagePredictorTest, Miss) {
+// Tests that TAGEPredictor will predict the correct direction on a miss
+TEST_F(TAGEPredictorTest, Miss) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: "
-      "   {Type: Tage, "
+      "   {Type: TAGE, "
       "    BTB-Tag-Bits: 11, "
       "    Saturating-Count-Bits: 2, "
       "    Global-History-Length: 10, "
       "    RAS-entries: 5,"
       "    Fallback-Static-Predictor: Always-Taken,"
-      "    Tage-Table-Bits: 12,"
-      "    Num-Tage-Tables: 6,"
+      "    TAGE-Table-Bits: 12,"
+      "    Num-TAGE-Tables: 6,"
       "    Tag-Length: 8"
       "   }"
       "}");
-  auto predictor = simeng::TagePredictor();
+  auto predictor = simeng::TAGEPredictor();
   auto prediction = predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.isTaken);
   prediction = predictor.predict(8, BranchType::Unconditional, 0);
   EXPECT_TRUE(prediction.isTaken);
 }
 
-// Tests that TagePredictor will predict branch-and-link return pairs correctly
-TEST_F(TagePredictorTest, RAS) {
+// Tests that TAGEPredictor will predict branch-and-link return pairs correctly
+TEST_F(TAGEPredictorTest, RAS) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: "
-      "   {Type: Tage, "
+      "   {Type: TAGE, "
       "    BTB-Tag-Bits: 11, "
       "    Saturating-Count-Bits: 2, "
       "    Global-History-Length: 10, "
       "    RAS-entries: 5,"
       "    Fallback-Static-Predictor: Always-Taken,"
-      "    Tage-Table-Bits: 12,"
-      "    Num-Tage-Tables: 6,"
+      "    TAGE-Table-Bits: 12,"
+      "    Num-TAGE-Tables: 6,"
       "    Tag-Length: 8"
       "   }"
       "}");
-  auto predictor = simeng::TagePredictor();
+  auto predictor = simeng::TAGEPredictor();
   auto prediction = predictor.predict(8, BranchType::SubroutineCall, 8);
   EXPECT_TRUE(prediction.isTaken);
   EXPECT_EQ(prediction.target, 16);
@@ -86,23 +86,23 @@ TEST_F(TagePredictorTest, RAS) {
   EXPECT_EQ(prediction.target, 12);
 }
 
-// Tests that TagePredictor will predict a previously encountered
+// Tests that TAGEPredictor will predict a previously encountered
 // branch correctly, when no address aliasing has occurred
-TEST_F(TagePredictorTest, Hit) {
+TEST_F(TAGEPredictorTest, Hit) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: "
-      "   {Type: Tage, "
+      "   {Type: TAGE, "
       "    BTB-Tag-Bits: 11, "
       "    Saturating-Count-Bits: 2, "
       "    Global-History-Length: 10, "
       "    RAS-entries: 5,"
       "    Fallback-Static-Predictor: Always-Taken,"
-      "    Tage-Table-Bits: 12,"
-      "    Num-Tage-Tables: 6,"
+      "    TAGE-Table-Bits: 12,"
+      "    Num-TAGE-Tables: 6,"
       "    Tag-Length: 8"
       "   }"
       "}");
-  auto predictor = simeng::TagePredictor();
+  auto predictor = simeng::TAGEPredictor();
   predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 16, BranchType::Conditional, 0);
   predictor.predict(0, BranchType::Conditional, 0);
@@ -119,23 +119,23 @@ TEST_F(TagePredictorTest, Hit) {
   EXPECT_EQ(prediction.target, 16);
 }
 
-// Tests that TagePredictor will predict correctly for two different
+// Tests that TAGEPredictor will predict correctly for two different
 // behaviours of the same branch but in different states of the program
-TEST_F(TagePredictorTest, GlobalIndexing) {
+TEST_F(TAGEPredictorTest, GlobalIndexing) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: "
-      "   {Type: Tage, "
+      "   {Type: TAGE, "
       "    BTB-Tag-Bits: 11, "
       "    Saturating-Count-Bits: 2, "
       "    Global-History-Length: 10, "
       "    RAS-entries: 5,"
       "    Fallback-Static-Predictor: Always-Taken,"
-      "    Tage-Table-Bits: 5,"
-      "    Num-Tage-Tables: 1,"
+      "    TAGE-Table-Bits: 5,"
+      "    Num-TAGE-Tables: 1,"
       "    Tag-Length: 8"
       "   }"
       "}");
-  auto predictor = simeng::TagePredictor();
+  auto predictor = simeng::TAGEPredictor();
   // Spool up first global history pattern
   predictor.predict(0, BranchType::Conditional, 0);
   predictor.update(0, true, 4, BranchType::Conditional, 0);
@@ -249,21 +249,21 @@ TEST_F(TagePredictorTest, GlobalIndexing) {
 }
 
 // Test Flush of RAS functionality
-TEST_F(TagePredictorTest, flush) {
+TEST_F(TAGEPredictorTest, flush) {
   simeng::config::SimInfo::addToConfig(
       "{Branch-Predictor: "
-      "   {Type: Tage, "
+      "   {Type: TAGE, "
       "    BTB-Tag-Bits: 11, "
       "    Saturating-Count-Bits: 2, "
       "    Global-History-Length: 10, "
       "    RAS-entries: 5,"
       "    Fallback-Static-Predictor: Always-Taken,"
-      "    Tage-Table-Bits: 12,"
-      "    Num-Tage-Tables: 1,"
+      "    TAGE-Table-Bits: 12,"
+      "    Num-TAGE-Tables: 1,"
       "    Tag-Length: 8"
       "   }"
       "}");
-  auto predictor = simeng::TagePredictor();
+  auto predictor = simeng::TAGEPredictor();
   // Add some entries to the RAS
   auto prediction = predictor.predict(8, BranchType::SubroutineCall, 8);
   EXPECT_TRUE(prediction.isTaken);

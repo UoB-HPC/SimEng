@@ -1,19 +1,19 @@
-#include "simeng/branchpredictors/TagePredictor.hh"
+#include "simeng/branchpredictors/TAGEPredictor.hh"
 
 namespace simeng {
 
-TagePredictor::TagePredictor(ryml::ConstNodeRef config)
+TAGEPredictor::TAGEPredictor(ryml::ConstNodeRef config)
     : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint8_t>()),
-      tageTableBits_(
-          config["Branch-Predictor"]["Tage-Table-Bits"].as<uint8_t>()),
-      numTageTables_(
-          config["Branch-Predictor"]["Num-Tage-Tables"].as<uint8_t>()),
+      TAGETableBits_(
+          config["Branch-Predictor"]["TAGE-Table-Bits"].as<uint8_t>()),
+      numTAGETables_(
+          config["Branch-Predictor"]["Num-TAGE-Tables"].as<uint8_t>()),
       satCntBits_(
           config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint8_t>()),
       globalHistoryLength_(
           config["Branch-Predictor"]["Global-History-Length"].as<uint16_t>()),
       rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint16_t>()),
-      globalHistory_(1 << (numTageTables_ + 1)),
+      globalHistory_(1 << (numTAGETables_ + 1)),
       tagLength_(config["Branch-Predictor"]["Tag-Length"].as<uint8_t>()) {
   // Calculate the saturation counter boundary between weakly taken and
   // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
@@ -29,30 +29,30 @@ TagePredictor::TagePredictor(ryml::ConstNodeRef config)
                                                    {satCntVal, 0});
 
   // Set up tagged prediction tables
-  for (uint32_t i = 0; i < numTageTables_; i++) {
-    std::vector<TageEntry> newTable;
-    for (uint32_t j = 0; j < (1ul << tageTableBits_); j++) {
-      TageEntry newEntry = {satCntVal, 0, 1, 0};
+  for (uint32_t i = 0; i < numTAGETables_; i++) {
+    std::vector<TAGEEntry> newTable;
+    for (uint32_t j = 0; j < (1ul << TAGETableBits_); j++) {
+      TAGEEntry newEntry = {satCntVal, 0, 1, 0};
       newTable.push_back(newEntry);
     }
-    tageTables_.push_back(newTable);
+    TAGETables_.push_back(newTable);
   }
 }
 
-TagePredictor::~TagePredictor() {
+TAGEPredictor::~TAGEPredictor() {
   btb_.clear();
   ras_.clear();
   rasHistory_.clear();
   ftq_.clear();
 }
 
-BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
+BranchPrediction TAGEPredictor::predict(uint64_t address, BranchType type,
                                         int64_t knownOffset) {
   BranchPrediction prediction;
   BranchPrediction altPrediction;
   int8_t predTable;
-  std::shared_ptr<uint64_t[]> indices(new uint64_t[numTageTables_]);
-  std::shared_ptr<uint64_t[]> tags(new uint64_t[numTageTables_]);
+  std::shared_ptr<uint64_t[]> indices(new uint64_t[numTAGETables_]);
+  std::shared_ptr<uint64_t[]> tags(new uint64_t[numTAGETables_]);
   getTaggedPrediction(address, &prediction, &altPrediction, &predTable, indices,
                       tags);
 
@@ -97,7 +97,7 @@ BranchPrediction TagePredictor::predict(uint64_t address, BranchType type,
   return prediction;
 }
 
-void TagePredictor::update(uint64_t address, bool isTaken,
+void TAGEPredictor::update(uint64_t address, bool isTaken,
                            uint64_t targetAddress, simeng::BranchType type,
                            uint64_t instructionId) {
   // Make sure that this function is called in program order; and then update
@@ -120,7 +120,7 @@ void TagePredictor::update(uint64_t address, bool isTaken,
   ftq_.pop_front();
 }
 
-void TagePredictor::flush(uint64_t address) {
+void TAGEPredictor::flush(uint64_t address) {
   // If address interacted with RAS, rewind entry
   auto it = rasHistory_.find(address);
   if (it != rasHistory_.end()) {
@@ -151,7 +151,7 @@ void TagePredictor::flush(uint64_t address) {
   globalHistory_.rollBack();
 }
 
-void TagePredictor::getTaggedPrediction(uint64_t address,
+void TAGEPredictor::getTaggedPrediction(uint64_t address,
                                         BranchPrediction* prediction,
                                         BranchPrediction* altPrediction,
                                         int8_t* predTable,
@@ -167,7 +167,7 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
   // branch.  If found, update the best prediction.  The greater the table
   // number, the longer global history it has access to.  Therefore, the
   // greater the table number, the better the prediction.
-  for (int8_t table = 0; table < numTageTables_; table++) {
+  for (int8_t table = 0; table < numTAGETables_; table++) {
     // Determine the index and tag for this table, as they vary depending on
     // the length of global history
     uint64_t index = getTaggedIndex(address, table);
@@ -176,18 +176,18 @@ void TagePredictor::getTaggedPrediction(uint64_t address,
     tags.get()[table] = tag;
 
     // If tag matches, then use this prediction
-    if (tageTables_[table][index].tag == tag) {
+    if (TAGETables_[table][index].tag == tag) {
       altPrediction->isTaken = prediction->isTaken;
       altPrediction->target = prediction->target;
 
-      prediction->isTaken = (tageTables_[table][index].satCnt >= 2);
-      prediction->target = tageTables_[table][index].target;
+      prediction->isTaken = (TAGETables_[table][index].satCnt >= 2);
+      prediction->target = TAGETables_[table][index].target;
       *predTable = table;
     }
   }
 }
 
-BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
+BranchPrediction TAGEPredictor::getBtbPrediction(uint64_t address) {
   // Get prediction from BTB
   uint64_t index = (address >> 2) & ((1ull << btbBits_) - 1);
   bool direction = (btb_[index].first >= (1 << (satCntBits_ - 1)));
@@ -195,16 +195,16 @@ BranchPrediction TagePredictor::getBtbPrediction(uint64_t address) {
   return {direction, target};
 }
 
-uint64_t TagePredictor::getTaggedIndex(uint64_t address, uint8_t table) {
+uint64_t TAGEPredictor::getTaggedIndex(uint64_t address, uint8_t table) {
   // Get the XOR of the address (sans two least-significant bits) and the
   // global history (folded onto itself to make it of the correct size).
   uint64_t h1 = (address >> 2);
-  uint64_t h2 = globalHistory_.getFolded(1ull << (table + 1), tageTableBits_);
+  uint64_t h2 = globalHistory_.getFolded(1ull << (table + 1), TAGETableBits_);
   // Then truncate the XOR to make it fit the desired size of an index
-  return (h1 ^ h2) & ((1 << tageTableBits_) - 1);
+  return (h1 ^ h2) & ((1 << TAGETableBits_) - 1);
 }
 
-uint64_t TagePredictor::getTag(uint64_t address, uint8_t table) {
+uint64_t TAGEPredictor::getTag(uint64_t address, uint8_t table) {
   // Hash function here is pretty arbitrary
   uint64_t h1 = address;
   uint64_t h2 =
@@ -212,7 +212,7 @@ uint64_t TagePredictor::getTag(uint64_t address, uint8_t table) {
   return (h1 ^ h2) & ((1ull << tagLength_) - 1);
 }
 
-void TagePredictor::updateBtb(uint64_t address, bool isTaken,
+void TAGEPredictor::updateBtb(uint64_t address, bool isTaken,
                               uint64_t targetAddress) {
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[((address >> 2) & ((1ull << btbBits_) - 1))].first;
@@ -230,7 +230,7 @@ void TagePredictor::updateBtb(uint64_t address, bool isTaken,
   }
 }
 
-void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
+void TAGEPredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // Get stored information from the FTQ
   int8_t predTable = ftq_.front().predTable;
   std::shared_ptr<uint64_t[]> indices = ftq_.front().indices;
@@ -241,10 +241,10 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // Update the prediction counter if tagged prediction table was used
   if (predTable != -1) {
     uint64_t predIndex = indices.get()[predTable];
-    if (isTaken && (tageTables_[predTable][predIndex].satCnt < 3)) {
-      (tageTables_[predTable][predIndex].satCnt)++;
-    } else if (!isTaken && (tageTables_[predTable][predIndex].satCnt > 0)) {
-      (tageTables_[predTable][predIndex].satCnt)--;
+    if (isTaken && (TAGETables_[predTable][predIndex].satCnt < 3)) {
+      (TAGETables_[predTable][predIndex].satCnt)++;
+    } else if (!isTaken && (TAGETables_[predTable][predIndex].satCnt > 0)) {
+      (TAGETables_[predTable][predIndex].satCnt)--;
     }
   }
 
@@ -253,9 +253,9 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
   // -- Check higher order tagged predictor tables to see if there is a
   // non-useful entry that can be replaced
   if (isTaken != pred.isTaken || (isTaken && (target != pred.target))) {
-    for (uint8_t table = predTable + 1; table < numTageTables_; table++) {
-      if (tageTables_[table][indices.get()[table]].u <= 1) {
-        tageTables_[table][indices.get()[table]] = {
+    for (uint8_t table = predTable + 1; table < numTAGETables_; table++) {
+      if (TAGETables_[table][indices.get()[table]].u <= 1) {
+        TAGETables_[table][indices.get()[table]] = {
             (isTaken ? (uint8_t)2 : (uint8_t)1), tags.get()[table], (uint8_t)2,
             target};
         break;
@@ -269,13 +269,13 @@ void TagePredictor::updateTaggedTables(bool isTaken, uint64_t target) {
       (pred.isTaken != altPred.isTaken ||
        (pred.isTaken && (pred.target != altPred.target)))) {
     bool wasUseful = (pred.isTaken == isTaken);
-    uint8_t currentU = tageTables_[predTable][indices.get()[predTable]].u;
+    uint8_t currentU = TAGETables_[predTable][indices.get()[predTable]].u;
     // Make sure that update is possible
     if (wasUseful && currentU < 3) {
-      (tageTables_[predTable][indices.get()[predTable]].u)++;
+      (TAGETables_[predTable][indices.get()[predTable]].u)++;
     }
     if (!wasUseful && currentU > 0) {
-      (tageTables_[predTable][indices.get()[predTable]].u)--;
+      (TAGETables_[predTable][indices.get()[predTable]].u)--;
     }
   }
 }
