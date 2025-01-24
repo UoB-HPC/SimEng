@@ -461,38 +461,6 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   EXPECT_EQ(insn.getException(), InstructionException::DataAbort);
 }
 
-// Test to check logic around early branch misprediction logic
-TEST_F(AArch64InstructionTest, earlyBranchMisprediction) {
-  // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  insn.setInstructionAddress(64);
-
-  // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  EXPECT_FALSE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-
-  // Set prediction and ensure expected state changes / outcomes are seen
-  pred = {true, 0x4848};
-  insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  // Check logic of `checkEarlyBranchMisprediction` which is different for
-  // non-branch instructions
-  EXPECT_FALSE(insn.isBranch());
-  tup = {true, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-}
-
 // Test that a correct prediction (branch taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_taken) {
   // insn is `cbz x2, #0x28`
@@ -507,8 +475,6 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 80 + 0x28};
@@ -536,8 +502,6 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where a branch isn't taken is handled correctly
   pred = {false, 80 + 4};
@@ -565,8 +529,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - target is wrong
   pred = {true, 80 + 0x28};
@@ -594,8 +556,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - taken is wrong
   pred = {true, 100 + 0x28};
