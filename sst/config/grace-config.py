@@ -49,7 +49,7 @@ GRACE_CLOCK = "3.4GHz" # Peak boost
 # Size of L1 cache in Grace.
 GRACE_L1_SIZE = "64KiB"
 # Size of L2 cache in Grace.
-GRACE_L2_SIZE = "1MiB"
+GRACE_L2_SIZE = "2MiB"
 # Size of L3 cache in Grace.
 GRACE_L3_SIZE = "114MiB"
 # Set associativity of Grace L1
