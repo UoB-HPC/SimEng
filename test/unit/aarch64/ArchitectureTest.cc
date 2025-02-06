@@ -117,6 +117,7 @@ TEST_F(AArch64ArchitectureTest, predecode) {
   EXPECT_EQ(result, 4);
   EXPECT_EQ(output[0]->getInstructionAddress(), 0x4);
   EXPECT_EQ(output[0]->exceptionEncountered(), false);
+  EXPECT_EQ(output[0]->getGroup(), InstructionGroups::SVE_DIV_OR_SQRT);
 }
 
 TEST_F(AArch64ArchitectureTest, getSystemRegisterTag) {
@@ -237,6 +238,23 @@ TEST_F(AArch64ArchitectureTest, get_set_SVCRVal) {
   EXPECT_EQ(arch->getSVCRval(), 0);
   arch->setSVCRval(3);
   EXPECT_EQ(arch->getSVCRval(), 3);
+}
+
+TEST_F(AArch64ArchitectureTest, isSM_ZA_enabled) {
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
+  arch->setSVCRval(1);
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
+  arch->setSVCRval(2);
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_TRUE(arch->isZARegisterEnabled());
+  arch->setSVCRval(3);
+  EXPECT_TRUE(arch->isStreamingModeEnabled());
+  EXPECT_TRUE(arch->isZARegisterEnabled());
+  arch->setSVCRval(0);
+  EXPECT_FALSE(arch->isStreamingModeEnabled());
+  EXPECT_FALSE(arch->isZARegisterEnabled());
 }
 
 }  // namespace aarch64

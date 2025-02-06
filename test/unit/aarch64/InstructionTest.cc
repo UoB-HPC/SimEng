@@ -58,6 +58,18 @@ class AArch64InstructionTest : public testing::Test {
                    &rawInsn_cbz);
     cbzMetadata = std::make_unique<InstructionMetadata>(rawInsn_cbz);
 
+    // psel
+    cs_insn rawInsn_psel;
+    cs_detail rawDetail_psel;
+    rawInsn_psel.detail = &rawDetail_psel;
+    size_t size_psel = 4;
+    uint64_t address_psel = 0;
+    const uint8_t* encoding_psel =
+        reinterpret_cast<const uint8_t*>(pselInstrBytes.data());
+    cs_disasm_iter(capstoneHandle, &encoding_psel, &size_psel, &address_psel,
+                   &rawInsn_psel);
+    pselMetadata = std::make_unique<InstructionMetadata>(rawInsn_psel);
+
     const uint8_t* badEncoding =
         reinterpret_cast<const uint8_t*>(invalidInstrBytes.data());
     invalidMetadata = std::make_unique<InstructionMetadata>(badEncoding);
@@ -74,6 +86,8 @@ class AArch64InstructionTest : public testing::Test {
   std::array<uint8_t, 4> ldpInstrBytes = {0x61, 0x08, 0x40, 0xA9};
   // cbz x2, #0x28
   std::array<uint8_t, 4> cbzInstrBytes = {0x42, 0x01, 0x00, 0xB4};
+  // psel	p4, p0, p2.s[w13, 0]
+  std::array<uint8_t, 4> pselInstrBytes = {0x44, 0x40, 0x31, 0x25};
   std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
   // A Capstone decoding library handle, for decoding instructions.
@@ -85,6 +99,7 @@ class AArch64InstructionTest : public testing::Test {
   std::unique_ptr<InstructionMetadata> fdivMetadata;
   std::unique_ptr<InstructionMetadata> ldpMetadata;
   std::unique_ptr<InstructionMetadata> cbzMetadata;
+  std::unique_ptr<InstructionMetadata> pselMetadata;
   std::unique_ptr<InstructionMetadata> invalidMetadata;
   std::unique_ptr<MicroOpInfo> uopInfo;
   InstructionException exception;
@@ -182,7 +197,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x44);
   EXPECT_EQ(insn.getInstructionId(), 13);
@@ -248,7 +263,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x43);
   EXPECT_EQ(insn.getInstructionId(), 15);
