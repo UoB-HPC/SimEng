@@ -538,8 +538,7 @@ void Instruction::decode() {
     if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
       if ((AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
-           metadata_.operands[0].reg <= AARCH64_REG_Z31) ||
-          metadata_.operands[0].reg == AARCH64_REG_ZT0) {
+           metadata_.operands[0].reg <= AARCH64_REG_Z31)) {
         setInstructionType(InsnType::isSVEData);
       } else if ((metadata_.operands[0].reg <= AARCH64_REG_S31 &&
                   metadata_.operands[0].reg >= AARCH64_REG_Q0) ||
@@ -549,7 +548,7 @@ void Instruction::decode() {
       } else if (metadata_.operands[0].is_vreg) {
         setInstructionType(InsnType::isVectorData);
       } else if ((metadata_.operands[0].reg >= AARCH64_REG_ZAB0 &&
-                  metadata_.operands[0].reg < AARCH64_REG_ZT0) ||
+                  metadata_.operands[0].reg <= AARCH64_REG_ZT0) ||
                  metadata_.operands[0].reg == AARCH64_REG_ZA) {
         setInstructionType(InsnType::isSMEData);
       }

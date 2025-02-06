@@ -1346,8 +1346,8 @@ std::array<uint64_t, 4> svePtrue(
 template <typename T>
 std::array<uint64_t, 4> svePtrue_counter(const uint16_t VL_bits) {
   // Predicate as counter is 16-bits and has the following encoding:
-  //    - Up to first 4 bits encode the element size (0b1, 0b10, 0b100, 0b1000
-  //    for b h s d respectively)
+  //    - Up to first 4 bits (named LSZ) encode the element size (0b1, 0b10,
+  //    0b100, 0b1000 for b h s d respectively)
   //            - bits 0->LSZ
   //    - Bits LSZ -> 14 represent a uint of the number of consecutive elements
   //    from element 0 that are active / inactive
@@ -1356,8 +1356,8 @@ std::array<uint64_t, 4> svePtrue_counter(const uint16_t VL_bits) {
   //    - Bit 15 represents the invert bit
   std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
-  // Set invert bit to 1 and count to 0
-  // (The first 0 elements are FALSE)
+  // Set invert bit to 1 and count to 0 so that the first 0 elements are FALSE.
+  // This is how the spec defines all true to be encoded.
   out[0] |= 0b1000000000000000;
 
   // Set Element size field
