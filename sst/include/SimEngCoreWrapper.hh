@@ -211,6 +211,17 @@ class SimEngCoreWrapper : public SST::Component {
   /** Number of clock iterations. */
   int iterations_;
 
+  int probeIndex;
+  uint64_t probeCycle;
+  int start;
+  std::string traceWriteOut;
+  char* traceStr;
+  std::string probeWriteOut;
+  char* probeStr;
+
+  std::ofstream traceOut;
+  std::ofstream probeOut;
+
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;
 

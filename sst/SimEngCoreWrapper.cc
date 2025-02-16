@@ -45,6 +45,14 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
   iterations_ = 0;
 
+  probeIndex = 1;
+  probeCycle = 0;
+  start = 1;
+  traceWriteOut = "";
+  traceStr = (char*)malloc(1000 * sizeof(char));
+  probeWriteOut = "";
+  probeStr = (char*)malloc(5 * sizeof(char));
+
   // Instantiate the StandardMem Interface defined in config.py
   sstMem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
       "memory", ComponentInfo::SHARE_NONE, clock_,
@@ -64,6 +72,10 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 SimEngCoreWrapper::~SimEngCoreWrapper() {}
 
 void SimEngCoreWrapper::setup() {
+  // Initialise trace/probe objects
+  traceOut.open("trace.out", std::ofstream::binary | std::ofstream::trunc);
+  probeOut.open("probe.out", std::ofstream::binary | std::ofstream::trunc);
+
   sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
   // Run Simulation
@@ -98,6 +110,9 @@ void SimEngCoreWrapper::finish() {
   std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
+
+  traceOut.close();
+  probeOut.close();
 }
 
 void SimEngCoreWrapper::init(unsigned int phase) {
@@ -120,10 +135,67 @@ bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
     // Tick the instruction memory.
     instructionMemory_->tick();
 
+    // Write out trace data
+    std::map<uint64_t, simeng::Trace*>::iterator itM = traceMap.begin();
+    // loop through tracing map and write out the finished instructions
+    while (itM != traceMap.end()) {
+      int success =
+          itM->second->writeCycleOut(traceStr, itM->first, "outoforder");
+      // If written out remove instruction from map
+      if (success) {
+        delete itM->second;
+        itM = traceMap.erase(itM);
+        traceWriteOut += traceStr;
+        if (traceWriteOut.length() > 8196) {
+          traceOut << traceWriteOut;
+          traceWriteOut = "";
+        }
+      } else
+        break;
+    }
+    // Write out probe data
+    std::list<simeng::Trace*>::iterator itL = probeList.begin();
+    int newline = 0;
+    while (itL != probeList.end()) {
+      simeng::probeTrace pt = (*itL)->getProbeTraces();
+      if (pt.cycle == probeCycle)
+        newline = 0;
+      else {
+        newline = 1;
+        for (uint64_t i = 0; i < std::min((pt.cycle - probeCycle - 1),
+                                          static_cast<uint64_t>(0));
+             i++) {
+          probeWriteOut += "\n-";
+        }
+        probeCycle = pt.cycle;
+      }
+      int success = (*itL)->writeProbeOut(probeStr, probeIndex, newline, start);
+      // Increment probe counter
+      probeIndex++;
+      // If written out remove probe from list
+      if (success) {
+        start = 0;
+        delete (*itL);
+        itL = probeList.erase(itL);
+        probeWriteOut += probeStr;
+        if (probeWriteOut.length() > 8196) {
+          probeOut << probeWriteOut;
+          probeWriteOut = "";
+        }
+      } else
+        itL++;
+    }
     iterations_++;
+    trace_cycle = iterations_;
 
     return false;
   } else {
+    if (traceWriteOut != "") {
+      traceOut << traceWriteOut;
+    }
+    if (probeWriteOut != "") {
+      probeOut << probeWriteOut;
+    }
     // Protected method from SST::Component used to end SST simulation
     primaryComponentOKToEndSim();
     return true;
