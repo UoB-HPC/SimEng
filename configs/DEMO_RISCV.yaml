@@ -1,17 +1,17 @@
----
 # This file is based off of the current tx2.yaml config and serves as an example configuration for RISC-V cores.
 # The following resources where utilised to create the config file and naming schemes:
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 
 Core:
   ISA: rv64
+  Compressed: True
   Simulation-Mode: outoforder
-  Clock-Frequency: 2.5
-  Fetch-Block-Size: 32
+  Clock-Frequency-GHz: 2.5
+  Timer-Frequency-MHz: 200
 Fetch:
   Fetch-Block-Size: 32
-  Loop-Buffer-Size: 0
-  Loop-Detection-Threshold: 0
+  Loop-Buffer-Size: 64
+  Loop-Detection-Threshold: 4
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
@@ -20,21 +20,19 @@ Register-Set:
   FloatingPoint-Count: 90
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 4
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
   ROB: 180
   Load: 64
   Store: 36
+Port-Allocator:
+  Type: Balanced
 Branch-Predictor:
+  Type: "Perceptron"
   BTB-Tag-Bits: 11
-  Saturating-Count-Bits: 2
-  Global-History-Length: 10
+  Global-History-Length: 19
   RAS-entries: 1
-  Fallback-Static-Predictor: "Always-Taken"
-  Branch-Predictor:
-  BTB-bitlength: 16
 L1-Data-Memory:
   Interface-Type: Fixed
 L1-Instruction-Memory:
@@ -50,30 +48,32 @@ LSQ-L1-Interface:
 Ports:
   0:
     Portname: Port 0
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - INT_MUL
+      - FLOAT
   1:
     Portname: Port 1
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT
+      - FLOAT
   2:
     Portname: Port 2
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - INT_MUL
       - BRANCH
   3:
     Portname: Port 4
-    Instruction-Support:
+    Instruction-Group-Support:
       - LOAD
   4:
     Portname: Port 5
-    Instruction-Support:
+    Instruction-Group-Support:
       - LOAD
   5:
     Portname: Port 3
-    Instruction-Support:
+    Instruction-Group-Support:
       - STORE
 Reservation-Stations:
   0:
@@ -113,20 +113,40 @@ Latencies:
     Execution-Throughput: 1
   2:
     Instruction-Groups:
-      - INT_DIV
+      - INT_DIV_OR_SQRT
     Execution-Latency: 39
     Execution-Throughput: 39
+  3:
+    Instruction-Groups:
+      - FLOAT_SIMPLE_CMP
+    Execution-Latency: 5
+    Execution-Throughput: 1
+  4:
+    Instruction-Groups:
+      - FLOAT_MUL
+    Execution-Latency: 6
+    Execution-Throughput: 1
+  5:
+    Instruction-Groups:
+      - FLOAT_SIMPLE_CVT
+    Execution-Latency: 7
+    Execution-Throughput: 1
+  6:
+    Instruction-Groups:
+      - FLOAT_DIV_OR_SQRT
+    Execution-Latency: 16
+    Execution-Throughput: 16
 # CPU-Info mainly used to generate a replica of the special (or system) file directory
 # structure
 CPU-Info:
   # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: true
+  Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
   Socket-Count: 1
-  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (TX2 true value is 4)
+  # SMT MUST be 1 as Simultaneous-Multi-Threading is not supported at this time. (TX2 true value is 4)
   SMT: 1
   # Below are the values needed to generate /proc/cpuinfo
   BogoMIPS: 400.00

@@ -54,7 +54,7 @@ class RegisterValue {
    */
   RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
       : bytes(capacity) {
-    assert(capacity >= bytes && "Capacity is less then requested bytes");
+    assert(capacity >= bytes && "Capacity is less than requested bytes");
     char* dest;
     if (isLocal()) {
       dest = this->value;
@@ -90,7 +90,7 @@ class RegisterValue {
    * the specified datatype. */
   template <class T>
   const T* getAsVector() const {
-    static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guranteed");
+    static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guaranteed");
     assert(bytes > 0 && "Attempted to access an uninitialised RegisterValue");
     assert(sizeof(T) <= bytes &&
            "Attempted to access a RegisterValue as a datatype larger than the "
@@ -130,5 +130,17 @@ class RegisterValue {
    * potential alignment issue when casting. */
   alignas(8) char value[MAX_LOCAL_BYTES];
 };
+
+inline bool operator==(const RegisterValue& lhs, const RegisterValue& rhs) {
+  if (lhs.size() == rhs.size()) {
+    auto lhV = lhs.getAsVector<char>();
+    auto rhV = rhs.getAsVector<char>();
+    for (size_t i = 0; i < lhs.size(); i++) {
+      if (lhV[i] != rhV[i]) return false;
+    }
+    return true;
+  }
+  return false;
+}
 
 }  // namespace simeng

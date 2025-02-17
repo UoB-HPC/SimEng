@@ -3,161 +3,27 @@
 #include <array>
 #include <unordered_map>
 
-#include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/aarch64/InstructionGroups.hh"
+#include "simeng/arch/aarch64/operandContainer.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 
-struct cs_arm64_op;
+struct cs_aarch64_op;
 
 namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/** Apply the shift specified by `shiftType` to the unsigned integer `value`,
- * shifting by `amount`. */
-template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount) {
-  switch (shiftType) {
-    case ARM64_SFT_LSL:
-      return value << amount;
-    case ARM64_SFT_LSR:
-      return value >> amount;
-    case ARM64_SFT_ASR:
-      return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
-      // Assuming sizeof(T) is a power of 2.
-      const auto mask = sizeof(T) * 8 - 1;
-      assert((amount <= mask) && "Rotate amount exceeds type width");
-      amount &= mask;
-      return (value >> amount) | (value << ((-amount) & mask));
-    }
-    case ARM64_SFT_MSL: {
-      // pad in with ones instead of zeros
-      const auto mask = (1 << amount) - 1;
-      return (value << amount) | mask;
-    }
-    case ARM64_SFT_INVALID:
-      return value;
-    default:
-      assert(false && "Unknown shift type");
-      return 0;
-  }
-}
-
-/** Get the size of the data to be accessed from/to memory. */
-inline uint8_t getDataSize(cs_arm64_op op) {
-  // Check from top of the range downwards
-
-  // ARM64_REG_V0 -> {end} are vector registers
-  if (op.reg >= ARM64_REG_V0) {
-    // Data size for vector registers relies on opcode thus return 0
-    return 0;
-  }
-
-  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
-  if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-    // Data size for tile registers relies on opcode thus return 0
-    return 0;
-  }
-
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z)
-  if (op.reg >= ARM64_REG_Z0) {
-    // Data size for vector registers relies on opcode thus return 0
-    return 0;
-  }
-
-  // ARM64_REG_X0 -> +28 are 64-bit (X) registers
-  if (op.reg >= ARM64_REG_X0) {
-    return 8;
-  }
-
-  // ARM64_REG_W0 -> +30 are 32-bit (W) registers
-  if (op.reg >= ARM64_REG_W0) {
-    return 4;
-  }
-
-  // ARM64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
-  if (op.reg >= ARM64_REG_S0) {
-    return 4;
-  }
-
-  // ARM64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
-  if (op.reg >= ARM64_REG_Q0) {
-    return 16;
-  }
-
-  // ARM64_REG_P0 -> +15 are 256-bit (P) registers
-  if (op.reg >= ARM64_REG_P0) {
-    return 1;
-  }
-
-  // ARM64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
-  if (op.reg >= ARM64_REG_H0) {
-    return 2;
-  }
-
-  // ARM64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
-  if (op.reg >= ARM64_REG_D0) {
-    return 8;
-  }
-
-  // ARM64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
-  if (op.reg >= ARM64_REG_B0) {
-    return 1;
-  }
-
-  // ARM64_REG_XZR is the 64-bit zero register
-  if (op.reg == ARM64_REG_XZR) {
-    return 8;
-  }
-
-  // ARM64_REG_WZR is the 32-bit zero register
-  if (op.reg == ARM64_REG_WZR) {
-    return 4;
-  }
-
-  // ARM64_REG_WSP (w31) is the 32-bit stack pointer register
-  if (op.reg == ARM64_REG_WSP) {
-    return 4;
-  }
-
-  // ARM64_REG_SP (x31) is the 64-bit stack pointer register
-  if (op.reg == ARM64_REG_SP) {
-    return 8;
-  }
-
-  // ARM64_REG_NZCV is the NZCV flag register
-  if (op.reg == ARM64_REG_NZCV) {
-    return 1;
-  }
-
-  // ARM64_REG_X30 is the 64-bit link register
-  if (op.reg == ARM64_REG_X30) {
-    return 8;
-  }
-
-  // ARM64_REG_X29 is the 64-bit frame pointer
-  if (op.reg == ARM64_REG_X29) {
-    return 8;
-  }
-
-  // ARM64_REG_FFR (p15) is a special purpose predicate register
-  if (op.reg == ARM64_REG_FFR) {
-    return 1;
-  }
-
-  // ARM64_REG_INVALID is an invalid capstone register so return 0 bytes as size
-  if (op.reg == ARM64_REG_INVALID) {
-    return 0;
-  }
-
-  assert(false && "Failed to find register in macroOp metadata");
-  return 0;
-}
-
 class Architecture;
 struct InstructionMetadata;
+
+// operandContainer type aliases - used to improve readability of source and
+// destination operand containers.
+using srcRegContainer = operandContainer<Register, MAX_SOURCE_REGISTERS>;
+using srcValContainer = operandContainer<RegisterValue, MAX_SOURCE_REGISTERS>;
+using destRegContainer = operandContainer<Register, MAX_DESTINATION_REGISTERS>;
+using destValContainer =
+    operandContainer<RegisterValue, MAX_DESTINATION_REGISTERS>;
 
 namespace RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
@@ -172,26 +38,17 @@ const uint8_t NZCV = 3;
 const uint8_t SYSTEM = 4;
 /** The [256-byte x (SVL / 8)] SME matrix register za. */
 const uint8_t MATRIX = 5;
+/** The fixed width (512-bit) SME ZT0 table register. */
+const uint8_t TABLE = 6;
+
+/** A special register value representing the zero register. */
+const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
 }  // namespace RegisterType
-
-/** A struct holding user-defined execution information for a aarch64
- * instruction. */
-struct ExecutionInfo {
-  /** The latency for the instruction. */
-  uint16_t latency = 1;
-
-  /** The execution throughput for the instruction. */
-  uint16_t stallCycles = 1;
-
-  /** The ports that support the instruction. */
-  std::vector<uint16_t> ports = {};
-};
 
 /** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
-  EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
   MisalignedPC,
   DataAbort,
@@ -227,6 +84,205 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
+/** Get the size of the data to be accessed from/to memory. */
+inline uint8_t getDataSize(cs_aarch64_op op) {
+  // No V-register enum identifiers exist. Instead, depending on whether a full
+  // or half vector is accessed, a Q or D register is used instead.
+  // A `is_vreg` bool in `op` defines if we are using v-vector registers.
+  if (op.is_vreg && ((AARCH64_REG_D0 <= op.reg && op.reg <= AARCH64_REG_D31) ||
+                     (AARCH64_REG_Q0 <= op.reg && op.reg <= AARCH64_REG_Q31))) {
+    AArch64Layout_VectorLayout vas = op.vas;
+    assert(vas != AARCH64LAYOUT_INVALID && "Invalid VAS type");
+    switch (vas) {
+      case AARCH64LAYOUT_VL_16B:
+      case AARCH64LAYOUT_VL_8H:
+      case AARCH64LAYOUT_VL_4S:
+      case AARCH64LAYOUT_VL_2D:
+      case AARCH64LAYOUT_VL_1Q:
+      case AARCH64LAYOUT_VL_Q:
+        return 16;
+      case AARCH64LAYOUT_VL_8B:
+      case AARCH64LAYOUT_VL_4H:
+      case AARCH64LAYOUT_VL_2S:
+      case AARCH64LAYOUT_VL_1D:
+      case AARCH64LAYOUT_VL_D:
+        return 8;
+      case AARCH64LAYOUT_VL_4B:
+      case AARCH64LAYOUT_VL_2H:
+      case AARCH64LAYOUT_VL_1S:
+      case AARCH64LAYOUT_VL_S:
+        return 4;
+      case AARCH64LAYOUT_VL_H:
+        return 2;
+      case AARCH64LAYOUT_VL_B:
+        return 1;
+      default:
+        std::cerr << "[SimEng] Cannot determine size of Arm V vector register "
+                     "elements with `reg` value "
+                  << op.reg << " and `vas` value of " << vas << ". Exiting..."
+                  << std::endl;
+        exit(1);
+        break;
+    }
+  }
+
+  // SME ZA Tiles, SVE Z registers, and SVE P predicates also have Vector
+  // Arrangement Specifier set
+  /** TODO: When SME, SVE instruction splitting is supported / implemented,
+   * update the data size returned based on VAS. */
+
+  // Work top down through register enums (highest value -> lowest value)
+  if (op.reg >= AARCH64_REG_D0_D1) {
+    // Multi-register currently not supported. Return 0.
+    return 0;
+  }
+
+  // AARCH64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
+  // AARCH64_REG_ZT0 is new 512-bit register from SME2
+  if (op.reg >= AARCH64_REG_ZAB0 || op.reg == AARCH64_REG_ZA ||
+      op.reg == AARCH64_REG_ZT0) {
+    // Data size for tile registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // AARCH64_REG_Z0 -> +31 are scalable vector registers (Z)
+  if (op.reg >= AARCH64_REG_Z0) {
+    // Data size for vector registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // AARCH64_REG_X0 -> +28 are 64-bit (X) registers
+  if (op.reg >= AARCH64_REG_X0) {
+    return 8;
+  }
+
+  // AARCH64_REG_W0 -> +30 are 32-bit (W) registers
+  if (op.reg >= AARCH64_REG_W0) {
+    return 4;
+  }
+
+  // AARCH64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
+  if (op.reg >= AARCH64_REG_S0) {
+    return 4;
+  }
+
+  // AARCH64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
+  if (op.reg >= AARCH64_REG_Q0) {
+    return 16;
+  }
+
+  // ARCH64_REG_PN0 -> +15 are 256-bit (P) registers
+  if (op.reg >= AARCH64_REG_PN0) {
+    return 32;
+  }
+
+  // AARCH64_REG_P0 -> +15 are 256-bit (P) registers
+  if (op.reg >= AARCH64_REG_P0) {
+    return 32;
+  }
+
+  // AARCH64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
+  if (op.reg >= AARCH64_REG_H0) {
+    return 2;
+  }
+
+  // AARCH64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
+  if (op.reg >= AARCH64_REG_D0) {
+    return 8;
+  }
+
+  // AARCH64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
+  if (op.reg >= AARCH64_REG_B0) {
+    return 1;
+  }
+
+  // AARCH64_REG_XZR is the 64-bit zero register
+  if (op.reg == AARCH64_REG_XZR) {
+    return 8;
+  }
+
+  // AARCH64_REG_WZR is the 32-bit zero register
+  if (op.reg == AARCH64_REG_WZR) {
+    return 4;
+  }
+
+  // AARCH64_REG_WSP (w31) is the 32-bit stack pointer register
+  if (op.reg == AARCH64_REG_WSP) {
+    return 4;
+  }
+
+  // AARCH64_REG_SP (x31) is the 64-bit stack pointer register
+  if (op.reg == AARCH64_REG_SP) {
+    return 8;
+  }
+
+  // AARCH64_REG_NZCV is the NZCV flag register
+  if (op.reg == AARCH64_REG_NZCV) {
+    return 1;
+  }
+
+  // AARCH64_REG_X30 is the 64-bit link register
+  if (op.reg == AARCH64_REG_X30) {
+    return 8;
+  }
+
+  // AARCH64_REG_X29 is the 64-bit frame pointer
+  if (op.reg == AARCH64_REG_X29) {
+    return 8;
+  }
+
+  // AARCH64_REG_FFR (p15) is a special purpose predicate register
+  if (op.reg == AARCH64_REG_FFR) {
+    return 1;
+  }
+
+  // AARCH64_REG_INVALID is an invalid capstone register so return 0 bytes as
+  // size
+  if (op.reg == AARCH64_REG_INVALID) {
+    return 0;
+  }
+
+  assert(false && "Failed to find register in macroOp metadata");
+  return 0;
+}
+
+// AArch64 Instruction Identifier Masks
+enum class InsnType : uint32_t {
+  /** Writes scalar values to one or more registers and/or memory locations. */
+  isScalarData = 1 << 0,
+  /** Writes NEON vector values to one or more registers and/or memory
+     locations. */
+  isVectorData = 1 << 1,
+  /** Writes SVE vector values to one or more registers and/or memory locations.
+   */
+  isSVEData = 1 << 2,
+  /** Writes SME matrix values to one or more registers and/or memory locations.
+   */
+  isSMEData = 1 << 3,
+  /** Has a shift operand. */
+  isShift = 1 << 4,
+  /** Is a logical operation. */
+  isLogical = 1 << 5,
+  /** Is a compare operation. */
+  isCompare = 1 << 6,
+  /** Is a convert operation. */
+  isConvert = 1 << 7,
+  /** Is a multiply operation. */
+  isMultiply = 1 << 8,
+  /** Is a divide or square root operation */
+  isDivideOrSqrt = 1 << 9,
+  /** Writes to a predicate register */
+  isPredicate = 1 << 10,
+  /** Is a load operation. */
+  isLoad = 1 << 11,
+  /** Is a store address operation. */
+  isStoreAddress = 1 << 12,
+  /** Is a store data operation. */
+  isStoreData = 1 << 13,
+  /** Is a branch operation. */
+  isBranch = 1 << 14
+};
+
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
@@ -241,58 +297,46 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
-  /** Retrieve the identifier for the first exception that occurred during
-   * processing this instruction. */
-  virtual InstructionException getException() const;
-
   /** Retrieve the source registers this instruction reads. */
-  const span<Register> getOperandRegisters() const override;
+  const span<Register> getSourceRegisters() const override;
+
+  /** Retrieve the data contained in the source registers this instruction
+   * reads.*/
+  const span<RegisterValue> getSourceOperands() const override;
 
   /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
   const span<Register> getDestinationRegisters() const override;
 
-  /** Check whether the operand at index `i` has had a value supplied. */
-  bool isOperandReady(int index) const override;
-
   /** Override the specified source register with a renamed physical register.
    */
-  void renameSource(uint8_t i, Register renamed) override;
+  void renameSource(uint16_t i, Register renamed) override;
 
   /** Override the specified destination register with a renamed physical
    * register. */
-  void renameDestination(uint8_t i, Register renamed) override;
+  void renameDestination(uint16_t i, Register renamed) override;
 
   /** Provide a value for the operand at the specified index. */
-  virtual void supplyOperand(uint8_t i, const RegisterValue& value) override;
+  void supplyOperand(uint16_t i, const RegisterValue& value) override;
 
-  /** Check whether all operand values have been supplied, and the instruction
-   * is ready to execute. */
-  bool canExecute() const override;
-
-  /** Execute the instruction. */
-  void execute() override;
+  /** Check whether the operand at index `i` has had a value supplied. */
+  bool isOperandReady(int index) const override;
 
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
 
   /** Generate memory addresses this instruction wishes to access. */
-  span<const MemoryAccessTarget> generateAddresses() override;
+  span<const memory::MemoryAccessTarget> generateAddresses() override;
 
   /** Retrieve previously generated memory addresses. */
-  span<const MemoryAccessTarget> getGeneratedAddresses() const override;
+  span<const memory::MemoryAccessTarget> getGeneratedAddresses() const override;
 
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
 
   /** Retrieve supplied memory data. */
   span<const RegisterValue> getData() const override;
-
-  /** Early misprediction check; see if it's possible to determine whether the
-   * next instruction address was mispredicted without executing the
-   * instruction. */
-  std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
@@ -317,12 +361,19 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
-  /** Set this instruction's execution information including it's execution
-   * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const ExecutionInfo& info);
+  /** Check whether all operand values have been supplied, and the instruction
+   * is ready to execute. */
+  bool canExecute() const override;
+
+  /** Execute the instruction. */
+  void execute() override;
 
   /** Get this instruction's supported set of ports. */
   const std::vector<uint16_t>& getSupportedPorts() override;
+
+  /** Set this instruction's execution information including it's execution
+   * latency and throughput, and the set of ports which support it. */
+  void setExecutionInfo(const ExecutionInfo& info) override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -330,147 +381,91 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's associated architecture. */
   const Architecture& getArchitecture() const;
 
-  /** A special register value representing the zero register. If passed to
-   * `setSourceRegisters`/`setDestinationRegisters`, the value will be
-   * automatically supplied as zero. */
-  static const Register ZERO_REGISTER;
+  /** Retrieve the identifier for the first exception that occurred during
+   * processing this instruction. */
+  InstructionException getException() const;
 
  private:
-  /** A reference to the ISA instance this instruction belongs to. */
-  const Architecture& architecture_;
-
-  /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata;
-
-  /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
-  /** The number of source registers this instruction reads from. */
-  uint16_t sourceRegisterCount = 0;
-
-  /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
-  /** The number of destination registers this instruction writes to. */
-  uint16_t destinationRegisterCount = 0;
-
-  /** A vector of provided operand values. Each entry corresponds to a
-   * `sourceRegisters` entry. */
-  std::vector<RegisterValue> operands;
-
-  /** A vector of generated output results. Each entry corresponds to a
-   * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results;
-
-  /** The current exception state of this instruction. */
-  InstructionException exception_ = InstructionException::None;
-
-  // Decoding
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
 
-  /** Set the source registers of the instruction, and create a corresponding
-   * operands vector. Zero register references will be pre-supplied with a value
-   * of 0. */
-  void setSourceRegisters(const std::vector<Register>& registers);
+  /** Update the instruction's identifier with an additional field. */
+  constexpr void setInstructionType(InsnType identifier) {
+    instructionIdentifier_ |=
+        static_cast<std::underlying_type_t<InsnType>>(identifier);
+  }
 
-  /** Set the destination registers for the instruction, and create a
-   * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register>& registers);
+  /** Tests whether this instruction has the given identifier set. */
+  constexpr bool isInstruction(InsnType identifier) const {
+    return (instructionIdentifier_ &
+            static_cast<std::underlying_type_t<InsnType>>(identifier));
+  }
 
-  // Scheduling
-  /** The number of operands that have not yet had values supplied. Used to
-   * determine execution readiness. */
-  short operandsPending = 0;
-
-  // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
-  // Execution
   /** Generate an EncodingUnallocated exception. */
   void executionINV();
 
-  // Execution
   /** Generate an StreamingModeUpdate exception. */
   void streamingModeUpdated();
 
-  // Execution
   /** Generate an ZAregisterStatusUpdate exception. */
   void zaRegisterStatusUpdated();
 
-  // Execution
   /** Generate an SMZAupdate exception. */
   void SMZAupdated();
 
-  // Execution
   /** Generate a ZAdisabled exception. */
   void ZAdisabled();
 
-  // Execution
   /** Generate a SMdisabled exception. */
   void SMdisabled();
 
-  // Instruction Identifiers
-  /** Operates on scalar values */
-  bool isScalarData_ = false;
-  /** Operates on vector values. */
-  bool isVectorData_ = false;
-  /** Uses Z registers as source and/or destination operands. */
-  bool isSVEData_ = false;
-  /** Uses ZA register or tiles of ZA as destination. */
-  bool isSMEData_ = false;
-  /** Doesn't have a shift operand. */
-  bool isNoShift_ = true;
-  /** Is a logical operation. */
-  bool isLogical_ = false;
-  /** Is a compare operation. */
-  bool isCompare_ = false;
-  /** Is a convert operation. */
-  bool isConvert_ = false;
-  /** Is a multiply operation. */
-  bool isMultiply_ = false;
-  /** Is a divide or square root operation */
-  bool isDivideOrSqrt_ = false;
-  /** Writes to a predicate register */
-  bool isPredicate_ = false;
-  /** Is a load operation. */
-  bool isLoad_ = false;
-  /** Is a store address operation. */
-  bool isStoreAddress_ = false;
-  /** Is a store data operation. */
-  bool isStoreData_ = false;
-  /** Is a branch operation. */
-  bool isBranch_ = false;
+  /** A reference to the ISA instance this instruction belongs to. */
+  const Architecture& architecture_;
+
+  /** A reference to the decoding metadata for this instruction. */
+  const InstructionMetadata& metadata_;
+
+  /** An operandContainer of source registers. */
+  srcRegContainer sourceRegisters_;
+
+  /** The number of source registers this instruction reads from. */
+  uint16_t sourceRegisterCount_ = 0;
+
+  /** An operandContainer of destination registers. */
+  destRegContainer destinationRegisters_;
+
+  /** The number of destination registers this instruction writes to. */
+  uint16_t destinationRegisterCount_ = 0;
+
+  /** An operandContainer of provided operand values. Each entry corresponds to
+   * a `sourceRegisters` entry. */
+  srcValContainer sourceValues_;
+
+  /** An operandContainer of generated output results. Each entry corresponds to
+   * a `destinationRegisters` entry. */
+  destValContainer results_;
+
+  /** The current exception state of this instruction. */
+  InstructionException exception_ = InstructionException::None;
+
+  /** The number of source operands that have not yet had values supplied. Used
+   * to determine execution readiness. */
+  uint16_t sourceOperandsPending_ = 0;
+
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
+
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t dataSize_ = 0;
 
-  // Memory
-  /** Set the accessed memory addresses, and create a corresponding memory data
-   * vector. */
-  void setMemoryAddresses(const std::vector<MemoryAccessTarget>& addresses);
-
-  void setMemoryAddresses(std::vector<MemoryAccessTarget>&& addresses);
-
-  void setMemoryAddresses(MemoryAccessTarget address);
-
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  std::vector<MemoryAccessTarget> memoryAddresses;
-
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
-
-  // Execution helpers
-  /** Extend `value` according to `extendType`, and left-shift the result by
-   * `shift` */
-  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
-
-  /** Extend `value` using extension/shifting rules defined in `op`. */
-  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
+  /** Used to denote what type of instruction this is. Utilises the constants in
+   * the `InsnType` namespace allowing each bit to represent a unique
+   * identifier such as `isLoad` or `isMultiply` etc. */
+  uint32_t instructionIdentifier_ = 0;
 };
 
 }  // namespace aarch64

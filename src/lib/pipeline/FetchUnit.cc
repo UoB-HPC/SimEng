@@ -4,9 +4,9 @@ namespace simeng {
 namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
-                     MemoryInterface& instructionMemory,
+                     memory::MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
-                     uint8_t blockSize, const arch::Architecture& isa,
+                     uint16_t blockSize, const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
       pc_(entryPoint),
@@ -40,14 +40,30 @@ void FetchUnit::tick() {
       auto& macroOp = outputSlots[slot];
       std::string disasm;
       auto bytesRead = isa_.predecode(
-          &(loopBuffer_.front().encoding), loopBuffer_.front().instructionSize,
-          loopBuffer_.front().address, macroOp, disasm);
+          reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
+          loopBuffer_.front().instructionSize, loopBuffer_.front().address,
+          macroOp);
 
-      assert(bytesRead != 0 && "predecode failure for loop buffer entry");
+      if (bytesRead == 0) {
+        std::cout << "[SimEng:FetchUnit] Predecode returned 0 bytes while loop "
+                     "buffer supplying"
+                  << std::endl;
+        exit(1);
+      }
 
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
+        // Calling predict() in order to log the branch in the branch
+        // predictor. The branch needs to be logged in the branch predictor
+        // so that the branch predictor has the information needed to update
+        // itself when the branch instruction is retired. However, we are
+        // reusing the prediction from the loop buffer, thus we do not
+        // use the return value from predict().
+        branchPredictor_.predict(macroOp[0]->getInstructionAddress(),
+                                 macroOp[0]->getBranchType(),
+                                 macroOp[0]->getKnownOffset());
+        branchesFetched_++;
       }
 
       // Create map element for new fetch
@@ -72,9 +88,9 @@ void FetchUnit::tick() {
     return;
   }
 
-  // Pointer to the instruction data to decode from
+  // Const pointer to the instruction data to decode from
   const uint8_t* buffer;
-  uint8_t bufferOffset;
+  uint16_t bufferOffset;
 
   // Check if more instruction data is required
   if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
@@ -100,28 +116,39 @@ void FetchUnit::tick() {
         break;
       }
     }
-    if (fetchIndex == fetched.size()) {
-      // Need to wait for fetched instructions
+    // Decide how to progress based on status of fetched data and buffer. Allow
+    // progression if minimal data is in the buffer no matter state of fetched
+    // data
+    if (fetchIndex == fetched.size() &&
+        bufferedBytes_ < isa_.getMinInstructionSize()) {
       // Stalled.fetch.instructionFetch
       probeTrace newProbe = {0, trace_cycle, 0};
       Trace* newTrace = new Trace;
       newTrace->setProbeTraces(newProbe);
       probeList.push_back(newTrace);
+      // Relevant data has not been fetched and not enough data already in the
+      // buffer. Need to wait for fetched instructions
       return;
+    } else if (fetchIndex != fetched.size()) {
+      // Data has been successfully read, move into fetch buffer
+      // TODO: Handle memory faults
+      assert(fetched[fetchIndex].data && "Memory read failed");
+      const uint8_t* fetchData =
+          fetched[fetchIndex].data.getAsVector<uint8_t>();
+
+      // Copy fetched data to fetch buffer after existing data
+      std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
+                  blockSize_ - bufferOffset);
+
+      bufferedBytes_ += blockSize_ - bufferOffset;
+      buffer = fetchBuffer_;
+      // Decoding should start from the beginning of the fetchBuffer_.
+      bufferOffset = 0;
+    } else {
+      // There is already enough data in the fetch buffer, so use that
+      buffer = fetchBuffer_;
+      bufferOffset = 0;
     }
-
-    // TODO: Handle memory faults
-    assert(fetched[fetchIndex].data && "Memory read failed");
-    const uint8_t* fetchData = fetched[fetchIndex].data.getAsVector<uint8_t>();
-
-    // Copy fetched data to fetch buffer after existing data
-    std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
-                blockSize_ - bufferOffset);
-
-    bufferedBytes_ += blockSize_ - bufferOffset;
-    buffer = fetchBuffer_;
-    // Decoding should start from the beginning of the fetchBuffer_.
-    bufferOffset = 0;
   } else {
     // There is already enough data in the fetch buffer, so use that
     buffer = fetchBuffer_;
@@ -129,7 +156,7 @@ void FetchUnit::tick() {
   }
 
   // Check we have enough data to begin decoding
-  if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
+  if (bufferedBytes_ < isa_.getMinInstructionSize()) {
     // Stalled.fetch.instructionDecode
     probeTrace newProbe = {1, trace_cycle, 0};
     Trace* newTrace = new Trace;
@@ -153,12 +180,13 @@ void FetchUnit::tick() {
       break;
     }
 
-    // Create branch prediction after identifing instruction type
+    // Create branch prediction after identifying instruction type
     // (e.g. RET, BL, etc).
     BranchPrediction prediction = {false, 0};
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                             macroOp[0]->getKnownOffset());
+      branchesFetched_++;
       macroOp[0]->setBranchPrediction(prediction);
     }
 
@@ -185,7 +213,7 @@ void FetchUnit::tick() {
 
       if (pc_ == loopBoundaryAddress_) {
         if (macroOp[0]->isBranch() &&
-            !macroOp[0]->getBranchPrediction().taken) {
+            !macroOp[0]->getBranchPrediction().isTaken) {
           // loopBoundaryAddress_ has been fetched whilst filling the loop
           // buffer BUT this is a branch, predicted to branch out of the loop
           // being buffered. Stop filling the loop buffer and don't supply to
@@ -202,8 +230,18 @@ void FetchUnit::tick() {
       }
     } else if (loopBufferState_ == LoopBufferState::WAITING &&
                pc_ == loopBoundaryAddress_) {
-      // Once set loopBoundaryAddress_ is fetched, start to fill loop buffer
-      loopBufferState_ = LoopBufferState::FILLING;
+      // loopBoundaryAddress_ has been fetched whilst loop buffer is waiting,
+      // start filling Loop Buffer if the branch predictor tells us to
+      // reenter the detected loop
+      if (macroOp[0]->isBranch() &&
+          !macroOp[0]->getBranchPrediction().isTaken) {
+        // If branch is not taken then we aren't re-entering the detected
+        // loop, therefore Loop Buffer stays idle
+        loopBufferState_ = LoopBufferState::IDLE;
+      } else {
+        // Otherwise, start to fill Loop Buffer
+        loopBufferState_ = LoopBufferState::FILLING;
+      }
     }
 
     assert(bytesRead <= bufferedBytes_ &&
@@ -213,12 +251,12 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
-    if (!prediction.taken) {
-      // Predicted as not taken; increment PC to next instruction
-      pc_ += bytesRead;
-    } else {
+    if (prediction.isTaken) {
       // Predicted as taken; set PC to predicted target address
       pc_ = prediction.target;
+    } else {
+      // Predicted as not taken; increment PC to next instruction
+      pc_ += bytesRead;
     }
 
     if (pc_ >= programByteLength_) {
@@ -232,7 +270,7 @@ void FetchUnit::tick() {
       break;
     }
 
-    if (prediction.taken) {
+    if (prediction.isTaken) {
       if (slot + 1 < output_.getWidth()) {
         // Branch.fetch.stalled
         probeTrace newProbe = {12, trace_cycle, macroOp[0]->getTraceId()};
@@ -278,6 +316,9 @@ void FetchUnit::updatePC(uint64_t address) {
 }
 
 void FetchUnit::requestFromPC() {
+  // Do nothing if supplying fetch stream from loop buffer
+  if (loopBufferState_ == LoopBufferState::SUPPLYING) return;
+
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
 
@@ -305,6 +346,8 @@ void FetchUnit::flushLoopBuffer() {
   loopBufferState_ = LoopBufferState::IDLE;
   loopBoundaryAddress_ = 0;
 }
+
+uint64_t FetchUnit::getBranchFetchedCount() const { return branchesFetched_; }
 
 }  // namespace pipeline
 }  // namespace simeng

@@ -17,7 +17,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           YAML::Node config)
+                           ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
       commandLine_(commandLine) {
@@ -62,11 +62,13 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
+LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
+                           ryml::ConstNodeRef config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
-  // Leave program command string empty
-  commandLine_.push_back("\0");
+  // Set program command string to the full path of the default program even
+  // though these aren't the instructions being executed
+  commandLine_.push_back(SIMENG_SOURCE_DIR "/SimEngDefaultProgram\0");
 
   isValid_ = true;
 
@@ -79,7 +81,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  char* unwrappedProcImgPtr = (char*)malloc(size_ * sizeof(char));
+  char* unwrappedProcImgPtr = (char*)calloc(size_, sizeof(char));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
 
   createStack(&unwrappedProcImgPtr);
@@ -108,7 +110,7 @@ uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
-uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
+uint64_t LinuxProcess::getInitialStackPointer() const { return stackPointer_; }
 
 void LinuxProcess::createStack(char** processImage) {
   // Decrement the stack pointer and populate with initial stack state
@@ -127,7 +129,7 @@ void LinuxProcess::createStack(char** processImage) {
   initialStackFrame.push_back(commandLine_.size());  // argc
   for (size_t i = 0; i < commandLine_.size(); i++) {
     char* argvi = commandLine_[i].data();
-    for (int j = 0; j < commandLine_[i].size(); j++) {
+    for (size_t j = 0; j < commandLine_[i].size(); j++) {
       stringBytes.push_back(argvi[j]);
     }
     stringBytes.push_back(0);
@@ -135,10 +137,10 @@ void LinuxProcess::createStack(char** processImage) {
   // Environment strings
   std::vector<std::string> envStrings = {"OMP_NUM_THREADS=1"};
   for (std::string& env : envStrings) {
-    for (int i = 0; i < env.size(); i++) {
+    for (size_t i = 0; i < env.size(); i++) {
       stringBytes.push_back(env.c_str()[i]);
     }
-    // Null entry to seperate strings
+    // Null entry to separate strings
     stringBytes.push_back(0);
   }
 
@@ -147,9 +149,9 @@ void LinuxProcess::createStack(char** processImage) {
   stackPointer_ -= alignToBoundary(stringBytes.size() + 1, 32);
   uint16_t ptrCount = 1;
   initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
-  for (int i = 0; i < stringBytes.size(); i++) {
+  for (size_t i = 0; i < stringBytes.size(); i++) {
     if (ptrCount == commandLine_.size()) {
-      // null terminator to seperate argv and env strings
+      // null terminator to separate argv and env strings
       initialStackFrame.push_back(0);
       ptrCount++;
     }
@@ -162,8 +164,8 @@ void LinuxProcess::createStack(char** processImage) {
 
   initialStackFrame.push_back(0);  // null terminator
 
-  // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
-  // TODO: populate remaining auxillary vector entries
+  // ELF auxiliary vector, keys defined in `uapi/linux/auxvec.h`
+  // TODO: populate remaining auxiliary vector entries
   initialStackFrame.push_back(auxVec::AT_PHDR);  // AT_PHDR
   initialStackFrame.push_back(progHeaderTableAddress_);
 

@@ -9,22 +9,20 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
-// TODO: Replace with config options
-const unsigned int blockSize = 16;
-const unsigned int clockFrequency = 2.5 * 1e9;
-
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
-    : dataMemory_(dataMemory),
-      isa_(isa),
-      registerFileSet_(isa.getRegisterFileStructures()),
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const arch::Architecture& isa,
+           BranchPredictor& branchPredictor)
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, blockSize, isa, branchPredictor),
+                 entryPoint,
+                 config::SimInfo::getConfig()["Fetch"]["Fetch-Block-Size"]
+                     .as<uint16_t>(),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -32,18 +30,18 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) { forwardOperands(regs, values); },
           [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
-          [this](auto instruction) { raiseException(instruction); },
-          branchPredictor, false),
+          [this](auto instruction) { raiseException(instruction); }, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-};
+}
 
 void Core::tick() {
-  ticks_++;
-
   if (hasHalted_) return;
+
+  ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -112,7 +110,6 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const {
@@ -150,34 +147,16 @@ uint64_t Core::getInstructionsRetiredCount() const {
   return writebackUnit_.getInstructionsWrittenCount();
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
-}
-
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
 
-  // Sum up the branch stats reported across the execution units.
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-  totalBranchesExecuted += executeUnit_.getBranchExecutedCount();
-  totalBranchMispredicts += executeUnit_.getBranchMispredictedCount();
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
-
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"flushes", std::to_string(flushes_)}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -232,6 +211,19 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
+void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
+  loadData(instruction);
+  if (instruction->exceptionEncountered()) {
+    raiseException(instruction);
+    return;
+  }
+
+  forwardOperands(instruction->getDestinationRegisters(),
+                  instruction->getResults());
+  // Manually add the instruction to the writeback input buffer
+  completionSlots_[0].getTailSlots()[0] = instruction;
+}
+
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& target : addresses) {
@@ -280,7 +272,7 @@ void Core::forwardOperands(const span<Register>& registers,
     return;
   }
 
-  auto sourceRegisters = uop->getOperandRegisters();
+  auto sourceRegisters = uop->getSourceRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     // Check each forwarded register vs source operands and supply for each
     // match
@@ -309,78 +301,13 @@ void Core::readRegisters() {
 
   // Register read
   // Identify missing registers and supply values
-  const auto& sourceRegisters = uop->getOperandRegisters();
+  const auto& sourceRegisters = uop->getSourceRegisters();
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
       uop->supplyOperand(i, registerFileSet_.get(reg));
     }
   }
-}
-
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accoradance with the ProcessStateChange type
-  switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    case arch::ChangeType::DECREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    default: {  // arch::ChangeType::REPLACEMENT
-      // If type is ChangeType::REPLACEMENT, set new values
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(change.modifiedRegisters[i],
-                             change.modifiedRegisterValues[i]);
-      }
-      break;
-    }
-  }
-
-  // Update memory
-  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
-  // required for memory changes
-  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
-  }
-}
-
-void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
-  loadData(instruction);
-  if (instruction->exceptionEncountered()) {
-    raiseException(instruction);
-    return;
-  }
-
-  if (instruction->getTraceId() != 0) {
-    std::map<uint64_t, Trace*>::iterator it =
-        traceMap.find(instruction->getTraceId());
-    if (it != traceMap.end()) {
-      cycleTrace tr = it->second->getCycleTraces();
-      if (tr.finished != 1) {
-        tr.complete = trace_cycle;
-        it->second->setCycleTraces(tr);
-      }
-    }
-  }
-
-  forwardOperands(instruction->getDestinationRegisters(),
-                  instruction->getResults());
-  // Manually add the instruction to the writeback input buffer
-  completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
 void Core::flushTraces(const bool atDecode) {

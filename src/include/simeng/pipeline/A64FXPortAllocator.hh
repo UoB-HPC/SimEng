@@ -21,39 +21,46 @@ const uint8_t BR = 5;
  * described in the A64FX Microarchitecture manual. */
 class A64FXPortAllocator : public PortAllocator {
  public:
+  /** Constructor for the A64FXPortAllocator object. */
   A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
+  /** Allocate a port for the specified instruction group; returns the allocated
+   * port. */
   uint16_t allocate(const std::vector<uint16_t>& ports) override;
 
+  /** Inform the allocator that an instruction was issued to the specified port.
+   */
   void issued(uint16_t port) override;
 
+  /** Inform the allocator that an instruction will not issue to its
+   * allocated port. */
   void deallocate(uint16_t port) override;
-
-  /** A mapping from issye ports to instruction attribute */
-  uint8_t attributeMapping(const std::vector<uint16_t>& ports);
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
   void setRSSizeGetter(
-      std::function<void(std::vector<uint64_t>&)> rsSizes) override;
+      std::function<void(std::vector<uint32_t>&)> rsSizes) override;
 
   /** Tick the port allocator to allow it to process internal tasks. */
   void tick() override;
 
  private:
+  /** A mapping from issue ports to instruction attribute */
+  uint8_t attributeMapping(const std::vector<uint16_t>& ports);
+
   /** An approximate estimation of the index of an instruction within the input
    * buffer of the dispatch unit. Increments slot at each allocation thus cannot
    * account for nullptr entries in buffer.*/
   uint8_t dispatchSlot_;
 
   /** Get the current sizes an capacity of the reservation stations. */
-  std::function<void(std::vector<uint64_t>&)> rsSizes_;
+  std::function<void(std::vector<uint32_t>&)> rsSizes_;
 
   /** Mapping from reservation station to ports. */
   std::vector<std::vector<uint16_t>> rsToPort_;
 
-  /** Vector of free entires across all reservation stations. */
-  std::vector<uint64_t> freeEntries_;
+  /** Vector of free entries across all reservation stations. */
+  std::vector<uint32_t> freeEntries_;
 
   /** Reservation station classifications as detailed in manual. */
   /** RSE with most free entries. */

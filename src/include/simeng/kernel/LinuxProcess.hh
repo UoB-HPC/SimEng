@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "simeng/Elf.hh"
-#include "yaml-cpp/yaml.h"
+#include "simeng/config/SimInfo.hh"
 
 namespace simeng {
 namespace kernel {
@@ -40,7 +40,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  *
  * The constructed process follows a typical layout:
  *
- * |---------------| <- start of stack
+ * |---------------| <- start/bottom of stack
  * |     Stack     |    stack grows downwards
  * |-v-----------v-|
  * |               |
@@ -63,18 +63,21 @@ class LinuxProcess {
   /** Construct a Linux process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  LinuxProcess(const std::vector<std::string>& commandLine, YAML::Node config);
+  LinuxProcess(const std::vector<std::string>& commandLine,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   /** Construct a Linux process from region of instruction memory, with the
-   * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions, YAML::Node config);
+   * entry point fixed at 0 and source directory set to the default programs'.
+   * For use in test suites. */
+  LinuxProcess(span<const uint8_t> instructions,
+               ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
   ~LinuxProcess();
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
 
-  /** Get the address of the top of the stack. */
+  /** Get the address of the bottom of the stack. */
   uint64_t getStackStart() const;
 
   /** Get the address of the start of the mmap region. */
@@ -92,8 +95,8 @@ class LinuxProcess {
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
 
-  /** Get the initial stack pointer address. */
-  uint64_t getStackPointer() const;
+  /** Get the initial stack pointer. */
+  uint64_t getInitialStackPointer() const;
 
   /** Get the path of the executable. */
   std::string getPath() const;
@@ -132,7 +135,7 @@ class LinuxProcess {
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
 
-  /** The address of the stack pointer. */
+  /** The address of the head/top of the stack */
   uint64_t stackPointer_;
 
   /** The process image size. */

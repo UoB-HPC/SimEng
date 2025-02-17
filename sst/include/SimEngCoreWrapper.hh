@@ -19,7 +19,6 @@
 #include "SimEngMemInterface.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
 
@@ -204,7 +203,7 @@ class SimEngCoreWrapper : public SST::Component {
   std::shared_ptr<char> processMemory_;
 
   /** Reference to SimEng instruction memory. */
-  std::shared_ptr<simeng::MemoryInterface> instructionMemory_;
+  std::shared_ptr<simeng::memory::MemoryInterface> instructionMemory_;
 
   /** Reference to SimEngMemInterface used for interfacing with SST. */
   std::shared_ptr<SimEngMemInterface> dataMemory_;

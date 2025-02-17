@@ -6,21 +6,28 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-// TODO: Expose as config option
 /** The number of bytes fetched each cycle. */
 const uint8_t FETCH_SIZE = 4;
-const unsigned int clockFrequency = 2.5 * 1e9;
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa)
-    : instructionMemory_(instructionMemory),
-      dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
-      isa_(isa),
+Core::Core(memory::MemoryInterface& instructionMemory,
+           memory::MemoryInterface& dataMemory, uint64_t entryPoint,
+           uint64_t programByteLength, const arch::Architecture& isa)
+    : simeng::Core(dataMemory, isa, config::SimInfo::getArchRegStruct()),
+      instructionMemory_(instructionMemory),
+      architecturalRegisterFileSet_(registerFileSet_),
       pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {
+      programByteLength_(programByteLength) {
+  // Ensure both interface types are flat
+  assert(
+      (config::SimInfo::getConfig()["L1-Data-Memory"]["Interface-Type"]
+           .as<std::string>() == "Flat") &&
+      "Emulation core is only compatable with a Flat Data Memory Interface.");
+  assert(
+      (config::SimInfo::getConfig()["L1-Instruction-Memory"]["Interface-Type"]
+           .as<std::string>() == "Flat") &&
+      "Emulation core is only compatable with a Flat Instruction Memory "
+      "Interface.");
+
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
@@ -30,8 +37,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 }
 
 void Core::tick() {
-  ticks_++;
-
   if (hasHalted_) return;
 
   if (pc_ >= programByteLength_) {
@@ -39,128 +44,113 @@ void Core::tick() {
     return;
   }
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
-    return;
-  }
+  ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (pendingReads_ > 0) {
-    // Handle pending reads to a uop
-    auto& uop = microOps_.front();
+  // Fetch & Decode
+  assert(macroOp_.empty() &&
+         "Cannot begin emulation tick with un-executed micro-ops.");
+  // We only fetch one instruction at a time, so only ever one result in
+  // complete reads
+  const auto& instructionBytes = instructionMemory_.getCompletedReads()[0].data;
+  // Predecode fetched data
+  std::string disasm;
+  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
+                                  FETCH_SIZE, pc_, macroOp_);
+  // Clear the fetched data
+  instructionMemory_.clearCompletedReads();
 
-    const auto& completedReads = dataMemory_.getCompletedReads();
-    for (const auto& response : completedReads) {
-      assert(pendingReads_ > 0);
-      uop->supplyData(response.target.address, response.data);
-      pendingReads_--;
-    }
-    dataMemory_.clearCompletedReads();
+  pc_ += bytesRead;
 
-    if (pendingReads_ == 0) {
-      // Load complete: resume execution
-      execute(uop);
-    }
+  // Loop over all micro-ops and execute one by one
+  while (!macroOp_.empty()) {
+    auto& uop = macroOp_.front();
 
-    // More data pending, end cycle early
-    return;
-  }
-
-  // Fetch
-
-  // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
-    // Find fetched memory that matches the current PC
-    const auto& fetched = instructionMemory_.getCompletedReads();
-    size_t fetchIndex;
-    for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == pc_) {
-        break;
-      }
-    }
-    if (fetchIndex == fetched.size()) {
-      // Need to wait for fetched instructions
-      return;
-    }
-
-    const auto& instructionBytes = fetched[fetchIndex].data;
-    std::string disasm;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
-                                    FETCH_SIZE, pc_, macroOp_, disasm);
-
-    // Clear the fetched data
-    instructionMemory_.clearCompletedReads();
-
-    pc_ += bytesRead;
-
-    // Decode
-    for (size_t index = 0; index < macroOp_.size(); index++) {
-      microOps_.push(std::move(macroOp_[index]));
-    }
-  }
-
-  auto& uop = microOps_.front();
-
-  if (uop->exceptionEncountered()) {
-    handleException(uop);
-    return;
-  }
-
-  // Issue
-  auto registers = uop->getOperandRegisters();
-  for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
-    if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(i, registerFileSet_.get(reg));
-    }
-  }
-
-  // Execute
-  if (uop->isLoad()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
     if (uop->exceptionEncountered()) {
       handleException(uop);
-      return;
+      // If fatal, return
+      if (hasHalted_) return;
     }
-    if (addresses.size() > 0) {
-      // Memory reads are required; request them, set `pendingReads_`
-      // accordingly, and end the cycle early
+
+    // Issue
+    auto registers = uop->getSourceRegisters();
+    for (size_t i = 0; i < registers.size(); i++) {
+      auto reg = registers[i];
+      if (!uop->isOperandReady(i)) {
+        uop->supplyOperand(i, registerFileSet_.get(reg));
+      }
+    }
+
+    // Execute & Write-back
+    if (uop->isLoad()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        // If fatal, return
+        if (hasHalted_) return;
+      }
+      if (addresses.size() > 0) {
+        // Memory reads required; request them
+        for (auto const& target : addresses) {
+          dataMemory_.requestRead(target);
+          // Save addresses for use by instructions that perform a LD and STR
+          // (i.e. single instruction atomics)
+          previousAddresses_.push_back(target);
+        }
+        // Emulation core can only be used with a Flat memory interface, so data
+        // is ready immediately
+        const auto& completedReads = dataMemory_.getCompletedReads();
+        assert(
+            completedReads.size() == addresses.size() &&
+            "Number of completed reads does not match the number of requested "
+            "reads.");
+        for (const auto& response : completedReads) {
+          uop->supplyData(response.target.address, response.data);
+        }
+        dataMemory_.clearCompletedReads();
+      }
+    } else if (uop->isStoreAddress()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        // If fatal, return
+        if (hasHalted_) return;
+      }
+      // Store addresses for use by next store data operation in `execute()`
       for (auto const& target : addresses) {
-        dataMemory_.requestRead(target);
-        // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }
-      pendingReads_ = addresses.size();
-      return;
-    } else {
-      // Early execution due to lacking addresses
-      execute(uop);
-      return;
+      if (!uop->isStoreData()) {
+        // No further action needed, move onto next micro-op
+        macroOp_.erase(macroOp_.begin());
+        continue;
+      }
     }
-  } else if (uop->isStoreAddress()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
-    if (uop->exceptionEncountered()) {
-      handleException(uop);
-      return;
-    }
-    // Store addresses for use by next store data operation
-    for (auto const& target : addresses) {
-      previousAddresses_.push_back(target);
-    }
-    if (uop->isStoreData()) {
-      execute(uop);
-    } else {
-      // Fetch memory for next cycle
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
-      microOps_.pop();
-    }
-
-    return;
+    execute(uop);
+    macroOp_.erase(macroOp_.begin());
   }
+  instructionsExecuted_++;
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
+}
 
-  execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+bool Core::hasHalted() const { return hasHalted_; }
+
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return architecturalRegisterFileSet_;
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
+}
+
+std::map<std::string, std::string> Core::getStats() const {
+  return {{"cycles", std::to_string(ticks_)},
+          {"retired", std::to_string(instructionsExecuted_)},
+          {"branch.executed", std::to_string(branchesExecuted_)}};
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
@@ -172,8 +162,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
@@ -184,25 +172,12 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   // Writeback
-  auto results = uop->getResults();
-  auto destinations = uop->getDestinationRegisters();
-  if (uop->isStoreData()) {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
-  } else {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
+  const auto& results = uop->getResults();
+  const auto& destinations = uop->getDestinationRegisters();
+  for (size_t i = 0; i < results.size(); i++) {
+    auto reg = destinations[i];
+    registerFileSet_.set(reg, results[i]);
   }
-
-  if (uop->isLastMicroOp()) instructionsExecuted_++;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
@@ -213,16 +188,9 @@ void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
-  if (dataMemory_.hasPendingRequests()) {
-    // Must wait for all memory requests to complete before processing the
-    // exception
-    return;
-  }
 
-  bool success = exceptionHandler_->tick();
-  if (!success) {
-    // Handler needs further ticks to complete
-    return;
+  // Tick until true is returned, signifying completion
+  while (exceptionHandler_->tick() == false) {
   }
 
   const auto& result = exceptionHandler_->getResult();
@@ -238,71 +206,7 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
-
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers in accoradance with the ProcessStateChange type
-  switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    case arch::ChangeType::DECREMENT: {
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(
-            change.modifiedRegisters[i],
-            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
-                change.modifiedRegisterValues[i].get<uint64_t>());
-      }
-      break;
-    }
-    default: {  // arch::ChangeType::REPLACEMENT
-      // If type is ChangeType::REPLACEMENT, set new values
-      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-        registerFileSet_.set(change.modifiedRegisters[i],
-                             change.modifiedRegisterValues[i]);
-      }
-      break;
-    }
-  }
-
-  // Update memory
-  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
-  // required for memory changes
-  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
-  }
-}
-
-bool Core::hasHalted() const { return hasHalted_; }
-
-const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
-    const {
-  return architecturalRegisterFileSet_;
-}
-
-uint64_t Core::getInstructionsRetiredCount() const {
-  return instructionsExecuted_;
-}
-
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency / 1e9);
-}
-
-std::map<std::string, std::string> Core::getStats() const {
-  return {{"instructions", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-};
 
 }  // namespace emulation
 }  // namespace models

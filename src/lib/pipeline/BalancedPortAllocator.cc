@@ -35,10 +35,10 @@ void BalancedPortAllocator::issued(uint16_t port) {
   assert(weights[port] > 0);
   weights[port]--;
 }
-void BalancedPortAllocator::deallocate(uint16_t port) { issued(port); };
+void BalancedPortAllocator::deallocate(uint16_t port) { issued(port); }
 
 void BalancedPortAllocator::setRSSizeGetter(
-    std::function<void(std::vector<uint64_t>&)> rsSizes) {
+    std::function<void(std::vector<uint32_t>&)> rsSizes) {
   rsSizes_ = rsSizes;
 }
 

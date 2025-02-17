@@ -195,5 +195,5 @@ void Assembler::assemble(const char* source, const char* triple) {
 }
 #endif
 
-char* Assembler::getAssembledSource() { return reinterpret_cast<char*>(code_); }
+uint8_t* Assembler::getAssembledSource() { return code_; }
 size_t Assembler::getAssembledSourceSize() { return codeSize_; }

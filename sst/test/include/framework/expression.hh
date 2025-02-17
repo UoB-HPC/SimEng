@@ -158,7 +158,7 @@ class LhsExpr : public BaseExpr {
 
 /**
  * ExprBuilder struct exposes a operator which is used to instantiate an
- * LhsExpr of type T without having to explictly define the template argument.
+ * LhsExpr of type T without having to explicitly define the template argument.
  */
 struct ExprBuilder {
   template <typename T, typename = IsFundamentalType<T>>

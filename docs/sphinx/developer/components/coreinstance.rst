@@ -9,7 +9,7 @@ Process the config file
     Either the passed configuration file path, or default configuration string, is used to generate the model configuration class. All subsequent parameterised instantiations of simulation objects utilise this configuration class.
 
 Create the image process
-    From the passed workload path, or default set of instructions, a process image is created. A region of host memory is populated with workload data (e.g. instructions), a region for the HEAP, and an initial stack frame. References to it are then passed between various simulation objects to serve as the underlying process memory space.
+    From the passed workload path, or default binary, a process image is created. A region of host memory is populated with workload data (e.g. instructions), a region for the HEAP, and an initial stack frame. References to it are then passed between various simulation objects to serve as the underlying process memory space.
 
 Construct on-chip cache interfaces
     Based on the supplied configuration options, the on-chip cache interfaces are constructed. These interfaces sit on top of a reference to the process memory space constructed prior. Currently, only L1 instruction and data caches are supported and the interfaces are defined under the :ref:`L1-Data-Memory <l1dcnf>` and  :ref:`L1-Instruction-Memory <l1icnf>` config options.

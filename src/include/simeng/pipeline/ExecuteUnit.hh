@@ -3,7 +3,6 @@
 #include <deque>
 #include <functional>
 
-#include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/control.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
@@ -35,8 +34,7 @@ class ExecuteUnit {
       std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-      BranchPredictor& predictor, bool pipelined = true,
-      const std::vector<uint16_t>& blockingGroups = {});
+      bool pipelined = true, const std::vector<uint16_t>& blockingGroups = {});
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -50,19 +48,13 @@ class ExecuteUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
+  /** Retrieve the instruction ID associated with the most recently discovered
    * misprediction. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Purge flushed instructions from the internal pipeline and clear any active
    * stall, if applicable. */
   void purgeFlushed();
-
-  /** Retrieve the number of branch instructions that have been executed. */
-  uint64_t getBranchExecutedCount() const;
-
-  /** Retrieve the number of branch mispredictions. */
-  uint64_t getBranchMispredictedCount() const;
 
   /** Retrieve the number of active execution cycles. */
   uint64_t getCycles() const;
@@ -92,10 +84,6 @@ class ExecuteUnit {
 
   /** A function handle called upon exception generation. */
   std::function<void(const std::shared_ptr<Instruction>&)> raiseException_;
-
-  /** A reference to the branch predictor, for updating with prediction results.
-   */
-  BranchPredictor& predictor_;
 
   /** Whether this unit is pipelined, or if all instructions should stall until
    * complete. */
@@ -130,12 +118,6 @@ class ExecuteUnit {
 
   /** The cycle this unit will become unstalled. */
   uint64_t stallUntil_ = 0;
-
-  /** The number of branch instructions that were executed. */
-  uint64_t branchesExecuted_ = 0;
-
-  /** The number of branch mispredictions that were observed. */
-  uint64_t branchMispredicts_ = 0;
 
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;

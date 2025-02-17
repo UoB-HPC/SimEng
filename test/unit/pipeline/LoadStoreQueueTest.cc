@@ -17,6 +17,10 @@ const uint8_t MAX_LOADS = 32;
 const uint8_t MAX_STORES = 32;
 const uint8_t MAX_COMBINED = 64;
 
+// TODO: When the associated requestWrite(...) gets moved into the LSQ's tick()
+// functionality, we need to check the state of requestStoreQueue_ and calling
+// of requestWrite(...) in a vareity of tests
+
 class MockForwardOperandsHandler {
  public:
   MOCK_METHOD2(forwardOperands,
@@ -36,10 +40,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         loadUop2(new MockInstruction),
         storeUop(new MockInstruction),
         storeUop2(new MockInstruction),
+        loadStoreUop(new MockInstruction),
         loadUopPtr(loadUop),
         loadUopPtr2(loadUop2),
         storeUopPtr(storeUop),
-        storeUopPtr2(storeUop2) {
+        storeUopPtr2(storeUop2),
+        loadStoreUopPtr(loadStoreUop) {
     // Set up sensible return values for the load uop
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
     ON_CALL(*loadUop, getGeneratedAddresses())
@@ -54,23 +60,32 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   }
 
  protected:
-  LoadStoreQueue getQueue() {
+  LoadStoreQueue getQueue(bool exclusive = false,
+                          uint16_t loadBandwidth = UINT16_MAX,
+                          uint16_t storeBandwidth = UINT16_MAX,
+                          uint16_t permittedRequests = UINT16_MAX,
+                          uint16_t permittedLoads = UINT16_MAX,
+                          uint16_t permittedStores = UINT16_MAX) {
     if (GetParam()) {
       // Combined queue
-      return LoadStoreQueue(MAX_COMBINED, dataMemory,
-                            {completionSlots.data(), completionSlots.size()},
-                            [this](auto registers, auto values) {
-                              forwardOperandsHandler.forwardOperands(registers,
-                                                                     values);
-                            });
+      return LoadStoreQueue(
+          MAX_COMBINED, dataMemory,
+          {completionSlots.data(), completionSlots.size()},
+          [this](auto registers, auto values) {
+            forwardOperandsHandler.forwardOperands(registers, values);
+          },
+          [](auto uop) {}, exclusive, loadBandwidth, storeBandwidth,
+          permittedRequests, permittedLoads, permittedStores);
     } else {
       // Split queue
-      return LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory,
-                            {completionSlots.data(), completionSlots.size()},
-                            [this](auto registers, auto values) {
-                              forwardOperandsHandler.forwardOperands(registers,
-                                                                     values);
-                            });
+      return LoadStoreQueue(
+          MAX_LOADS, MAX_STORES, dataMemory,
+          {completionSlots.data(), completionSlots.size()},
+          [this](auto registers, auto values) {
+            forwardOperandsHandler.forwardOperands(registers, values);
+          },
+          [](auto uop) {}, exclusive, loadBandwidth, storeBandwidth,
+          permittedRequests, permittedLoads, permittedStores);
     }
   }
 
@@ -108,8 +123,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots;
 
-  std::vector<MemoryAccessTarget> addresses;
-  span<const MemoryAccessTarget> addressesSpan;
+  std::vector<memory::MemoryAccessTarget> addresses;
+  span<const memory::MemoryAccessTarget> addressesSpan;
 
   std::vector<RegisterValue> data;
   span<const RegisterValue> dataSpan;
@@ -120,11 +135,13 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   MockInstruction* loadUop2;
   MockInstruction* storeUop;
   MockInstruction* storeUop2;
+  MockInstruction* loadStoreUop;
 
   std::shared_ptr<Instruction> loadUopPtr;
   std::shared_ptr<Instruction> loadUopPtr2;
   std::shared_ptr<MockInstruction> storeUopPtr;
   std::shared_ptr<MockInstruction> storeUopPtr2;
+  std::shared_ptr<MockInstruction> loadStoreUopPtr;
 
   MockForwardOperandsHandler forwardOperandsHandler;
 
@@ -133,9 +150,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
 
 // Test that a split queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, SplitQueue) {
-  LoadStoreQueue queue =
-      LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory, {nullptr, 0},
-                     [](auto registers, auto values) {});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_LOADS, MAX_STORES, dataMemory, {nullptr, 0},
+      [](auto registers, auto values) {}, [](auto uop) {});
 
   EXPECT_EQ(queue.isCombined(), false);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_LOADS);
@@ -145,8 +162,9 @@ TEST_F(LoadStoreQueueTest, SplitQueue) {
 
 // Test that a combined queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, CombinedQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, dataMemory, {nullptr, 0},
-                                        [](auto registers, auto values) {});
+  LoadStoreQueue queue = LoadStoreQueue(
+      MAX_COMBINED, dataMemory, {nullptr, 0},
+      [](auto registers, auto values) {}, [](auto uop) {});
 
   EXPECT_EQ(queue.isCombined(), true);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_COMBINED);
@@ -200,11 +218,49 @@ TEST_P(LoadStoreQueueTest, AddStore) {
 TEST_P(LoadStoreQueueTest, PurgeFlushedLoad) {
   auto queue = getQueue();
   auto initialLoadSpace = queue.getLoadQueueSpace();
-  queue.addLoad(loadUopPtr);
+  memory::MemoryReadResult completedRead = {addresses[0], data[0], 1};
+  span<memory::MemoryReadResult> completedReads = {&completedRead, 1};
 
+  // Set load instruction attributes
+  loadUop->setSequenceId(0);
+  loadUop->setInstructionId(0);
+  loadUop2->setSequenceId(1);
+  loadUop2->setInstructionId(1);
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(addressesSpan));
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(addressesSpan));
+
+  // Add loads to LSQ
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+
+  // Start the first load so that its accesses can be added to
+  // requestLoadQueue_/requestedLoads_ and expect a memory access to be
+  // performed
+  queue.startLoad(loadUopPtr);
+  EXPECT_CALL(dataMemory, requestRead(addresses[0], 0)).Times(1);
+  queue.tick();
+
+  // Start the second load so that its accesses can be added to
+  // requestLoadQueue_/requestedLoads_ but flush it before it can perform a
+  // memory access
+  queue.startLoad(loadUopPtr2);
   loadUop->setFlushed();
+  loadUop2->setFlushed();
   queue.purgeFlushed();
 
+  // Expect no activity regarding memory accesses or the passing of the load
+  // instruction to the output buffer
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  EXPECT_CALL(dataMemory, getCompletedReads())
+      .WillRepeatedly(Return(completedReads));
+  queue.tick();
+
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0], nullptr);
   EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
 }
 
@@ -225,14 +281,24 @@ TEST_P(LoadStoreQueueTest, Load) {
   loadUop->setSequenceId(1);
   auto queue = getQueue();
 
-  MemoryReadResult completedRead = {addresses[0], data[0], 1};
-  span<MemoryReadResult> completedReads = {&completedRead, 1};
+  memory::MemoryReadResult completedRead = {addresses[0], data[0], 1};
+  span<memory::MemoryReadResult> completedReads = {&completedRead, 1};
 
-  EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
+  // Set load instruction attributes
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(addressesSpan));
+  loadUop->setLSQLatency(3);
 
-  loadUop->setDataPending(addresses.size());
-
+  // Begin load in LSQ
   queue.addLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr);
+
+  // Given 3 cycle latency, no requests should occur in the first two ticks of
+  // the LSQ
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  queue.tick();
+  queue.tick();
 
   // Check that a read request is made to the memory interface
   EXPECT_CALL(dataMemory, requestRead(addresses[0], _)).Times(1);
@@ -242,15 +308,40 @@ TEST_P(LoadStoreQueueTest, Load) {
       .WillRepeatedly(Return(completedReads));
 
   // Check that the LSQ supplies the right data to the instruction
-  // TODO: Replace with check for call over memory interface in future?
   EXPECT_CALL(*loadUop,
-              supplyData(0, Property(&RegisterValue::get<uint8_t>, data[0])))
+              supplyData(addresses[0].address,
+                         Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
 
+  // Tick the queue to complete the load
+  queue.tick();
+
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0].get(), loadUop);
+}
+
+// Tests that a queue can perform a load with no addresses
+TEST_P(LoadStoreQueueTest, LoadWithNoAddresses) {
+  loadUop->setSequenceId(1);
+  auto queue = getQueue();
+
+  span<const memory::MemoryAccessTarget> emptyAddressesSpan = {};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(emptyAddressesSpan));
+
+  // Check that a read request isn't made to the memory interface but the load
+  // completes in the LSQ
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  EXPECT_CALL(*loadUop, execute()).Times(1);
+
+  queue.addLoad(loadUopPtr);
   queue.startLoad(loadUopPtr);
 
   // Tick the queue to complete the load
   queue.tick();
+
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0].get(), loadUop);
 }
 
 // Tests that a queue can commit a load
@@ -272,14 +363,18 @@ TEST_P(LoadStoreQueueTest, Store) {
   auto queue = getQueue();
   auto initialStoreSpace = queue.getStoreQueueSpace();
 
-  EXPECT_CALL(*storeUop, getGeneratedAddresses()).Times(AtLeast(1));
-  EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
-
+  // Set store instruction attributes
   storeUop->setSequenceId(1);
   storeUop->setInstructionId(1);
 
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(addressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(dataSpan));
+
   queue.addStore(storeUopPtr);
-  storeUopPtr->setCommitReady();
   queue.supplyStoreData(storeUopPtr);
 
   // Check that a write request is sent to the memory interface
@@ -294,6 +389,298 @@ TEST_P(LoadStoreQueueTest, Store) {
 
   // Check the store was removed
   EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
+}
+
+// Tests that a queue can perform a load-store operation
+TEST_P(LoadStoreQueueTest, LoadStore) {
+  auto queue = getQueue();
+  auto initialLoadSpace = queue.getLoadQueueSpace();
+  auto initialStoreSpace = queue.getStoreQueueSpace();
+
+  memory::MemoryReadResult completedRead = {addresses[0], data[0], 1};
+  span<memory::MemoryReadResult> completedReads = {&completedRead, 1};
+
+  // Set load-store instruction attributes
+  loadStoreUop->setSequenceId(1);
+  loadStoreUop->setInstructionId(1);
+
+  EXPECT_CALL(*loadStoreUop, isLoad())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*loadStoreUop, isStoreData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*loadStoreUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(addressesSpan));
+  EXPECT_CALL(*loadStoreUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(dataSpan));
+
+  // Register load-store operation and start load portion
+  queue.addLoad(loadStoreUopPtr);
+  queue.addStore(loadStoreUopPtr);
+  queue.startLoad(loadStoreUopPtr);
+
+  // Check that a read request is made to the memory interface
+  EXPECT_CALL(dataMemory, requestRead(addresses[0], _)).Times(1);
+
+  // Expect a check against finished reads and return the result
+  EXPECT_CALL(dataMemory, getCompletedReads())
+      .WillRepeatedly(Return(completedReads));
+
+  // Check that the LSQ supplies the right data to the instruction
+  EXPECT_CALL(*loadStoreUop,
+              supplyData(addresses[0].address,
+                         Property(&RegisterValue::get<uint8_t>, data[0])))
+      .Times(1);
+
+  // Tick the queue to complete the load portion of the load-store
+  queue.tick();
+  EXPECT_EQ(completionSlots[0].getTailSlots()[0].get(), loadStoreUop);
+
+  // Check that a write request is sent to the memory interface
+  EXPECT_CALL(dataMemory,
+              requestWrite(addresses[0],
+                           Property(&RegisterValue::get<uint8_t>, data[0])))
+      .Times(1);
+
+  // Commit both potions of the load-store
+  queue.commitLoad(loadStoreUopPtr);
+  queue.commitStore(loadStoreUopPtr);
+
+  // Check the load-store was removed
+  EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
+  EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
+}
+
+// Tests that bandwidth restrictions are adhered to in a non-exclusive LSQ
+TEST_P(LoadStoreQueueTest, NonExclusiveBandwidthRestriction) {
+  auto queue = getQueue(false, 3, 3);
+
+  // Set instruction attributes
+  loadUop->setSequenceId(0);
+  loadUop->setInstructionId(0);
+  storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
+  loadUop2->setSequenceId(2);
+  loadUop2->setInstructionId(2);
+
+  std::vector<memory::MemoryAccessTarget> multipleAddresses = {{1, 2}, {2, 2}};
+  span<const memory::MemoryAccessTarget> multipleAddressesSpan = {
+      multipleAddresses.data(), multipleAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Add instructions to LSQ and register their accesses to be processed in the
+  // tick() function
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  queue.commitStore(storeUopPtr);
+
+  // Set expectations for tick logic based on set restrictions. Only 2 bytes of
+  // read and 2 bytes of write accesses should be processed per cycle (in this
+  // case that translates to one of the two addresses each uop has to handle).
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(1);
+  queue.tick();
+}
+
+// Tests that bandwidth restrictions are adhered to in an exclusive LSQ
+TEST_P(LoadStoreQueueTest, ExclusiveBandwidthRestriction) {
+  auto queue = getQueue(true, 3, 3);
+
+  // Set instruction attributes
+  loadUop->setSequenceId(0);
+  loadUop->setInstructionId(0);
+  storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
+  loadUop2->setSequenceId(2);
+  loadUop2->setInstructionId(2);
+
+  std::vector<memory::MemoryAccessTarget> multipleAddresses = {{1, 2}, {2, 2}};
+  span<const memory::MemoryAccessTarget> multipleAddressesSpan = {
+      multipleAddresses.data(), multipleAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Add instructions to LSQ and register their accesses to be processed in the
+  // tick() function
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  queue.commitStore(storeUopPtr);
+
+  // Set expectations for tick logic based on set restrictions. Only 2 bytes of
+  // read and 2 bytes of write accesses should be processed per cycle (in this
+  // case that translates to one of the two addresses each uop has to handle).
+  // However, there cannot be an overlap between load and store bandwidth usage
+  // per cycle due to the LSQ being exclusive
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(1);
+  queue.tick();
+}
+
+// Tests that request restrictions are adhered to in a non-exclusive LSQ
+TEST_P(LoadStoreQueueTest, NonExclusiveRequestsRestriction) {
+  auto queue = getQueue(false, UINT16_MAX, UINT16_MAX, 2, 2, 1);
+
+  // Set instruction attributes
+  loadUop->setSequenceId(0);
+  loadUop->setInstructionId(0);
+  storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
+  loadUop2->setSequenceId(2);
+  loadUop2->setInstructionId(2);
+
+  std::vector<memory::MemoryAccessTarget> multipleAddresses = {{1, 2}, {2, 2}};
+  span<const memory::MemoryAccessTarget> multipleAddressesSpan = {
+      multipleAddresses.data(), multipleAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Add instructions to LSQ and register their accesses to be processed in the
+  // tick() function
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  queue.commitStore(storeUopPtr);
+
+  // Set expectations for tick logic based on set restrictions. Either 2 reads
+  // or 1 read and 1 write should be processed per cycle
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(1);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(2);
+  queue.tick();
+}
+
+// Tests that request restrictions are adhered to in an exclusive LSQ
+TEST_P(LoadStoreQueueTest, ExclusiveRequestsRestriction) {
+  auto queue = getQueue(true, UINT16_MAX, UINT16_MAX, 3, 2, 1);
+
+  // Set instruction attributes
+  loadUop->setSequenceId(0);
+  loadUop->setInstructionId(0);
+  storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
+  loadUop2->setSequenceId(2);
+  loadUop2->setInstructionId(2);
+
+  std::vector<memory::MemoryAccessTarget> multipleAddresses = {{1, 2}, {2, 2}};
+  span<const memory::MemoryAccessTarget> multipleAddressesSpan = {
+      multipleAddresses.data(), multipleAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(multipleAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Add instructions to LSQ and register their accesses to be processed in the
+  // tick() function
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  queue.commitStore(storeUopPtr);
+
+  // Set expectations for tick logic based on set restrictions. Only 2 reads and
+  // 1 write should be processed per cycle. However, there cannot be an overlap
+  // between load and store requests being processed in a single cycle due to
+  // the LSQ being exclusive.
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 0)).Times(2);
+  queue.tick();
+  EXPECT_CALL(dataMemory, requestRead(_, 2)).Times(2);
+  queue.tick();
 }
 
 // Tests that committing a store will correctly detect a direct memory order
@@ -335,19 +722,19 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
   auto queue = getQueue();
 
   // The store will write the byte `0x01` at addresses 0 and 1
-  std::vector<MemoryAccessTarget> storeAddresses = {{0, 2}};
+  std::vector<memory::MemoryAccessTarget> storeAddresses = {{0, 2}};
   std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
 
-  span<const MemoryAccessTarget> storeAddressesSpan = {storeAddresses.data(),
-                                                       storeAddresses.size()};
+  span<const memory::MemoryAccessTarget> storeAddressesSpan = {
+      storeAddresses.data(), storeAddresses.size()};
   span<const RegisterValue> storeDataSpan = {storeData.data(),
                                              storeData.size()};
 
   // The load will read two bytes, at addresses 1 and 2; this will overlap with
   // the written data at address 1
-  std::vector<MemoryAccessTarget> loadAddresses = {{1, 2}};
-  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
-                                                      loadAddresses.size()};
+  std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 2}};
+  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
@@ -372,9 +759,9 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
   auto queue = getQueue();
 
   // A different address to the one being stored to
-  std::vector<MemoryAccessTarget> loadAddresses = {{1, 1}};
-  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
-                                                      loadAddresses.size()};
+  std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 1}};
+  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
@@ -399,9 +786,9 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
   loadUop2->setFlushed();
 
   // Set store addresses and data
-  std::vector<MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
-  span<const MemoryAccessTarget> storeAddressesSpan = {storeAddresses.data(),
-                                                       storeAddresses.size()};
+  std::vector<memory::MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
+  span<const memory::MemoryAccessTarget> storeAddressesSpan = {
+      storeAddresses.data(), storeAddresses.size()};
   std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
                                           static_cast<uint8_t>(0x10)};
   span<const RegisterValue> storeDataSpan = {storeData.data(),
@@ -414,17 +801,17 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
       .WillRepeatedly(Return(storeDataSpan));
 
   // Set load address which overlaps on first store address
-  std::vector<MemoryAccessTarget> loadAddresses = {{1, 1}};
-  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
-                                                      loadAddresses.size()};
+  std::vector<memory::MemoryAccessTarget> loadAddresses = {{1, 1}};
+  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(loadAddressesSpan));
 
   // Set load address which overlaps on second store address
-  std::vector<MemoryAccessTarget> loadAddresses2 = {{2, 1}};
-  span<const MemoryAccessTarget> loadAddressesSpan2 = {loadAddresses2.data(),
-                                                       loadAddresses2.size()};
+  std::vector<memory::MemoryAccessTarget> loadAddresses2 = {{2, 1}};
+  span<const memory::MemoryAccessTarget> loadAddressesSpan2 = {
+      loadAddresses2.data(), loadAddresses2.size()};
   EXPECT_CALL(*loadUop2, getGeneratedAddresses())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(loadAddressesSpan2));
@@ -451,6 +838,67 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
   EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
 
   queue.tick();
+}
+
+// Test that a load access exactly conflicting on a store access (matching
+// address and access size no larger) gets its data supplied when the store
+// commits
+TEST_P(LoadStoreQueueTest, SupplyDataToConfliction) {
+  auto queue = getQueue();
+
+  // Set instruction attributes
+  storeUop->setSequenceId(0);
+  storeUop->setInstructionId(0);
+  loadUop->setSequenceId(1);
+  loadUop->setInstructionId(1);
+
+  std::vector<memory::MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
+  span<const memory::MemoryAccessTarget> storeAddressesSpan = {
+      storeAddresses.data(), storeAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Set load addresses which exactly and partially overlaps on first and second
+  // store addresses respectively
+  std::vector<memory::MemoryAccessTarget> loadAddresses = {
+      {1, 1}, {2, 2}, {3, 1}};
+  span<const memory::MemoryAccessTarget> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddressesSpan));
+
+  // Add instructions to LSQ
+  queue.addStore(storeUopPtr);
+  queue.addLoad(loadUopPtr);
+
+  // Supply store data so the store can commit
+  queue.supplyStoreData(storeUopPtr);
+
+  // Start the load so the confliction can be registered
+  queue.startLoad(loadUopPtr);
+
+  // Two of the accesses don't exactly conflict so they should generate memory
+  // accesses
+  EXPECT_CALL(dataMemory, requestRead(loadAddresses[1], 1)).Times(1);
+  EXPECT_CALL(dataMemory, requestRead(loadAddresses[2], 1)).Times(1);
+  queue.tick();
+
+  // The one access which does exactly conflict with a store access should get
+  // its data supplied on the store's commitment
+  EXPECT_CALL(*loadUop,
+              supplyData(loadAddresses[0].address,
+                         Property(&RegisterValue::get<uint8_t>, storeData[0])))
+      .Times(1);
+  queue.commitStore(storeUopPtr);
 }
 
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,

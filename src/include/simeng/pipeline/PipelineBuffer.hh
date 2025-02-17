@@ -18,7 +18,7 @@ class PipelineBuffer {
  public:
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
-  PipelineBuffer(int width, const T& initialValue)
+  PipelineBuffer(uint16_t width, const T& initialValue)
       : width(width), buffer(width * length, initialValue) {}
 
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
@@ -71,11 +71,11 @@ class PipelineBuffer {
   void fill(const T& value) { std::fill(buffer.begin(), buffer.end(), value); }
 
   /** Get the width of the buffer slots. */
-  unsigned short getWidth() const { return width; }
+  uint16_t getWidth() const { return width; }
 
  private:
   /** The width of each row of slots. */
-  unsigned short width;
+  uint16_t width;
 
   /** The buffer. */
   std::vector<T> buffer;

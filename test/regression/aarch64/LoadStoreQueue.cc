@@ -23,7 +23,7 @@ TEST_P(LoadStoreQueue, RAW) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 42u);
 }
 
-// Test multiple simulteneous RAW violations are flushed correctly.
+// Test multiple simultaneous RAW violations are flushed correctly.
 TEST_P(LoadStoreQueue, RAWx2) {
   initialHeapData_.resize(8);
   reinterpret_cast<uint64_t*>(initialHeapData_.data())[0] = -1;
@@ -91,8 +91,7 @@ TEST_P(LoadStoreQueue, SpeculativeInvalidLoad) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, LoadStoreQueue,
-                         ::testing::Values(std::make_tuple(OUTOFORDER,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(OUTOFORDER, "{}")),
                          paramToString);
 
 }  // namespace
