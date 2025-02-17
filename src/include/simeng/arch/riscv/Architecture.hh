@@ -64,7 +64,7 @@ class Architecture : public arch::Architecture {
    * reduce the overhead of future decoding. */
   mutable std::unordered_map<uint32_t, Instruction> decodeCache_;
 
-  std::unordered_map<uint32_t, std::string> disasmCache;
+  mutable std::unordered_map<uint32_t, std::string> disasmCache;
 
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's

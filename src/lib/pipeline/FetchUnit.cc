@@ -42,7 +42,7 @@ void FetchUnit::tick() {
       auto bytesRead = isa_.predecode(
           reinterpret_cast<const uint8_t*>(&(loopBuffer_.front().encoding)),
           loopBuffer_.front().instructionSize, loopBuffer_.front().address,
-          macroOp);
+          macroOp, disasm);
 
       if (bytesRead == 0) {
         std::cout << "[SimEng:FetchUnit] Predecode returned 0 bytes while loop "
