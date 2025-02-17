@@ -34,7 +34,7 @@ class BalancedPortAllocator : public PortAllocator {
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
   void setRSSizeGetter(
-      std::function<void(std::vector<uint64_t>&)> rsSizes) override;
+      std::function<void(std::vector<uint32_t>&)> rsSizes) override;
 
   /** Tick the port allocator to allow it to process internal tasks. */
   void tick() override;
@@ -50,7 +50,7 @@ class BalancedPortAllocator : public PortAllocator {
   std::vector<uint16_t> weights;
 
   /** Get the current sizes an capacity of the reservation stations */
-  std::function<void(std::vector<uint64_t>&)> rsSizes_;
+  std::function<void(std::vector<uint32_t>&)> rsSizes_;
 };
 
 }  // namespace pipeline

@@ -9,7 +9,7 @@ namespace pipeline {
 
 M1PortAllocator::M1PortAllocator(
     const std::vector<std::vector<uint16_t>>& portArrangement,
-    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
+    std::vector<std::pair<uint16_t, uint64_t>> rsArrangement)
     : weights(portArrangement.size(), 0), rsArrangement_(rsArrangement) {}
 
 uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
@@ -20,11 +20,12 @@ uint16_t M1PortAllocator::allocate(const std::vector<uint16_t>& ports) {
   uint16_t bestWeight = 0xFFFF;
 
   uint16_t bestRSQueueSize = 0xFFFF;
-  bool foundRS = false;
+  // Only used in assertions so produces warning in release mode
+  [[maybe_unused]] bool foundRS = false;
 
-  // Update the the reference for number of free spaces in the reservation
+  // Update the reference for number of free spaces in the reservation
   // stations
-  std::vector<uint64_t> rsFreeSpaces;
+  rsFreeSpaces.clear();
   rsSizes_(rsFreeSpaces);
 
   for (const auto& portIndex : ports) {
@@ -58,10 +59,10 @@ void M1PortAllocator::issued(uint16_t port) {
   weights[port]--;
 }
 
-void M1PortAllocator::deallocate(uint16_t port) { issued(port); };
+void M1PortAllocator::deallocate(uint16_t port) { issued(port); }
 
 void M1PortAllocator::setRSSizeGetter(
-    std::function<void(std::vector<uint64_t>&)> rsSizes) {
+    std::function<void(std::vector<uint32_t>&)> rsSizes) {
   rsSizes_ = rsSizes;
 }
 

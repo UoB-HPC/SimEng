@@ -14,26 +14,26 @@ namespace kernel {
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
-  uint64_t dev;        // offset =   0
-  uint64_t ino;        // offset =   8
-  uint32_t mode;       // offset =  16
-  uint32_t nlink;      // offset =  20
-  uint32_t uid;        // offset =  24
-  uint32_t gid;        // offset =  28
-  uint64_t rdev;       // offset =  32
-  uint64_t padding1;   // offset =  40
-  int64_t size;        // offset =  48
-  int32_t blksize;     // offset =  56
-  uint32_t padding2;   // offset =  60
-  int64_t blocks;      // offset =  64
-  int64_t atime;       // offset =  72
-  uint64_t atimensec;  // offset =  80
-  int64_t mtime;       // offset =  88
-  uint64_t mtimensec;  // offset =  96
-  int64_t ctime;       // offset = 104
-  uint64_t ctimensec;  // offset = 112
-  uint32_t padding3;   // offset = 116
-  uint32_t padding4;   // offset = 124
+  uint64_t dev = 0;        // offset =   0
+  uint64_t ino = 0;        // offset =   8
+  uint32_t mode = 0;       // offset =  16
+  uint32_t nlink = 0;      // offset =  20
+  uint32_t uid = 0;        // offset =  24
+  uint32_t gid = 0;        // offset =  28
+  uint64_t rdev = 0;       // offset =  32
+  uint64_t padding1 = 0;   // offset =  40
+  int64_t size = 0;        // offset =  48
+  int32_t blksize = 0;     // offset =  56
+  uint32_t padding2 = 0;   // offset =  60
+  int64_t blocks = 0;      // offset =  64
+  int64_t atime = 0;       // offset =  72
+  uint64_t atimensec = 0;  // offset =  80
+  int64_t mtime = 0;       // offset =  88
+  uint64_t mtimensec = 0;  // offset =  96
+  int64_t ctime = 0;       // offset = 104
+  uint64_t ctimensec = 0;  // offset = 112
+  uint32_t padding3 = 0;   // offset = 116
+  uint32_t padding4 = 0;   // offset = 124
 };
 
 /** Fixed-width definition of `termios`.
@@ -89,7 +89,8 @@ struct LinuxProcessState {
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
 
-  /** The virtual file descriptor mapping table. */
+  /** The virtual file descriptor mapping table. Maps virtual file descriptors
+   * to host file descriptors */
   std::vector<int64_t> fileDescriptorTable;
   /** Set of deallocated virtual file descriptors available for reuse. */
   std::set<int64_t> freeFileDescriptors;
@@ -130,6 +131,9 @@ struct linux_dirent64 {
    to Linux system calls. */
 class Linux {
  public:
+  Linux(const std::string specialFiledirPath)
+      : specialFilesDir_(specialFiledirPath) {}
+
   /** Create a new Linux process running above this kernel. */
   void createProcess(const LinuxProcess& process);
 
@@ -156,7 +160,7 @@ class Linux {
                     int64_t flag);
 
   /** close syscall: close a file descriptor. */
-  int64_t close(int64_t fd);
+  int64_t close(int64_t vfd);
 
   /** newfstatat syscall: get file status; AKA fstatat. */
   int64_t newfstatat(int64_t dfd, const std::string& filename, stat& out,
@@ -201,7 +205,7 @@ class Linux {
                 off_t offset);
 
   /** openat syscall: open/create a file. */
-  int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
+  int64_t openat(int64_t vdfd, const std::string& pathname, int64_t flags,
                  uint16_t mode);
 
   /** readlinkat syscall: read value of a symbolic link. */
@@ -237,9 +241,11 @@ class Linux {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
-  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
-   * syscall. */
-  uint64_t getDirFd(int64_t dfd, std::string pathname);
+  /** Return the host directory file descriptor mapped to by the virtual dfd
+   * given to syscall. If vdfd is Linux::AT_FDCWD (-100) then Host::AT_FDCWD is
+   * returned
+   */
+  int64_t getHostDirFD(int64_t vdfd);
 
   /** If the given filepath points to a special file, the filepath is replaced
    * to point to the SimEng equivalent. */
@@ -252,7 +258,7 @@ class Linux {
   std::unordered_map<std::string, const std::string> specialPathTranslations_;
 
   /** Path to the root of the replacement special files. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
+  const std::string specialFilesDir_;
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;

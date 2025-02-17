@@ -6,6 +6,7 @@
 namespace {
 
 using InstSve = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstSve, addvl) {
   // 64-bits
@@ -1883,12 +1884,14 @@ TEST_P(InstSve, eor) {
   CHECK_PREDICATE(2, uint64_t, res_p2);
   CHECK_PREDICATE(3, uint64_t, {0, 0, 0, 0});
   auto res_p4 = fillPred(VL / 8, {0}, 1);
-  for (int i = 0; i < (VL / 8); i++) {
+  for (uint64_t i = 0; i < (VL / 8); i++) {
     uint64_t shifted_active = 1ull << (i % 64);
     res_p4[i / 64] |=
         (p1[i / 64] & shifted_active) == shifted_active ? 0 : shifted_active;
   }
   CHECK_PREDICATE(4, uint64_t, res_p4);
+
+  EXPECT_GROUP(R"(not p4.b, p0/z, p1.b)", PREDICATE);
 
   // Vectors, Predicated
   RUN_AARCH64(R"(
@@ -1954,7 +1957,7 @@ TEST_P(InstSve, eor) {
   )");
   auto res_0 = fillNeon<uint8_t>({0}, VL / 8);
   int val = 8;
-  for (int i = 0; i < (VL / 8); i++) {
+  for (uint64_t i = 0; i < (VL / 8); i++) {
     res_0[i] = val ^ 15;
     val += 2;
   }
@@ -1963,7 +1966,7 @@ TEST_P(InstSve, eor) {
 
   auto res_3 = fillNeon<uint16_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 16); i++) {
+  for (uint64_t i = 0; i < (VL / 16); i++) {
     res_3[i] = val ^ 15;
     val += 2;
   }
@@ -1972,7 +1975,7 @@ TEST_P(InstSve, eor) {
 
   auto res_6 = fillNeon<uint32_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 32); i++) {
+  for (uint64_t i = 0; i < (VL / 32); i++) {
     res_6[i] = val ^ 15;
     val += 2;
   }
@@ -1981,12 +1984,22 @@ TEST_P(InstSve, eor) {
 
   auto res_9 = fillNeon<uint64_t>({0}, VL / 8);
   val = 8;
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     res_9[i] = val ^ 15;
     val += 2;
   }
   CHECK_NEON(9, uint64_t, res_9);
   CHECK_NEON(10, uint64_t, fillNeonCombined<uint64_t>({12}, {15}, VL / 8));
+
+  // Vectors, Unpredicated
+  RUN_AARCH64(R"(
+    # 64-bit
+    dup z1.d, #15
+    dup z2.d, #3
+
+    eor z0.d, z1.d, z2.d
+  )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({12}, VL / 8));
 }
 
 TEST_P(InstSve, inc) {
@@ -2231,6 +2244,36 @@ TEST_P(InstSve, add) {
   CHECK_NEON(1, uint16_t, fillNeon<uint16_t>({14}, VL / 8));
   CHECK_NEON(2, uint32_t, fillNeon<uint32_t>({12}, VL / 8));
   CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({10}, VL / 8));
+
+  // Immediate
+  RUN_AARCH64(R"(
+    dup z0.b, #8
+    dup z1.h, #7
+    dup z2.s, #6
+    dup z3.d, #5
+    dup z4.b, #8
+    dup z5.h, #7
+    dup z6.s, #6
+    dup z7.d, #5
+
+    add z0.b, z0.b, #8
+    add z1.h, z1.h, #0x7
+    add z2.s, z2.s, #128
+    add z3.d, z3.d, #0x5
+
+    add z4.b, z4.b, #0x8, LSL #0
+    add z5.h, z5.h, #7, LSL #8
+    add z6.s, z6.s, #0x80, LSL #8
+    add z7.d, z7.d, #5, LSL #8
+  )");
+  CHECK_NEON(0, uint8_t, fillNeon<uint8_t>({16}, VL / 8));
+  CHECK_NEON(1, uint16_t, fillNeon<uint16_t>({14}, VL / 8));
+  CHECK_NEON(2, uint32_t, fillNeon<uint32_t>({134}, VL / 8));
+  CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({10}, VL / 8));
+  CHECK_NEON(4, uint8_t, fillNeon<uint8_t>({16}, VL / 8));
+  CHECK_NEON(5, uint16_t, fillNeon<uint16_t>({1799}, VL / 8));
+  CHECK_NEON(6, uint32_t, fillNeon<uint32_t>({32774}, VL / 8));
+  CHECK_NEON(7, uint64_t, fillNeon<uint64_t>({1285}, VL / 8));
 
   // Predicated
   RUN_AARCH64(R"(
@@ -2762,7 +2805,7 @@ TEST_P(InstSve, fadda) {
   )");
   float fresultA = 2.75f;
   float fresultB = 2.75f;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     fresultA += fsrc[i % 8];
     fresultB += fsrc[(i + VL / 64) % 8];
   }
@@ -2801,7 +2844,7 @@ TEST_P(InstSve, fadda) {
   )");
   double resultA = 2.75;
   double resultB = 2.75;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     resultA += dsrc[i % 8];
     resultB += dsrc[(i + VL / 128) % 8];
   }
@@ -3760,8 +3803,9 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<float> resultsA;
   std::vector<float> resultsB;
-  float itemA;
-  float itemB;
+  // Redundant initialisation to prevent warnings
+  float itemA = 0.f;
+  float itemB = 0.f;
   for (size_t i = 0; i < (VL / 32); i++) {
     if (i % 4 == 0) {
       itemA = 5.0f + (5.0f * static_cast<float>(i + 1));
@@ -3789,8 +3833,9 @@ TEST_P(InstSve, fmla_indexed) {
   )");
   std::vector<double> resultsC;
   std::vector<double> resultsD;
-  double itemC;
-  double itemD;
+  // Redundant initialisation to prevent warnings
+  double itemC = 0.f;
+  double itemD = 0.f;
   for (size_t i = 0; i < (VL / 64); i++) {
     if (i % 2 == 0) {
       itemC = 5.0 + (5.0 * static_cast<double>(i));
@@ -4025,7 +4070,7 @@ TEST_P(InstSve, frintn) {
   initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   std::vector<float> fsrcA = {1.0f,  -42.5f,   -0.125f, 0.0f,
-                              40.5f, -684.72f, -0.15f,  107.86f};
+                              41.5f, -684.72f, -0.15f,  107.86f};
   std::vector<float> fsrcB = {-34.5f,  -0.917f, 0.0f,    80.72f,
                               -125.5f, -0.01f,  701.90f, 7.5f};
   fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
@@ -4044,18 +4089,19 @@ TEST_P(InstSve, frintn) {
     ptrue p0.s
     whilelo p1.s, xzr, x2
 
-    dup z0.s, #15
-    dup z1.s, #13
+    fdup z0.s, #2.0
+    fdup z1.s, #3.0
     ld1w {z2.s}, p0/z, [x0, x1, lsl #2]
 
     frintn z0.s, p0/m, z2.s
     frintn z1.s, p1/m, z2.s
   )");
-  std::vector<int32_t> results32A = {1, -42, 0, 0, 40, -685, 0, 108};
-  std::vector<int32_t> results32B = {-34, -1, 0, 81, -126, 0, 702, 8};
-  CHECK_NEON(0, int32_t,
-             fillNeonCombined<int32_t>(results32A, results32B, VL / 8));
-  CHECK_NEON(1, int32_t, fillNeonCombined<int32_t>(results32A, {13}, VL / 8));
+  std::vector<float> results32A = {1.0f,  -42.0f,  0.0f, 0.0f,
+                                   42.0f, -685.0f, 0.0f, 108.0f};
+  std::vector<float> results32B = {-34.0f,  -1.0f, 0.0f,   81.0f,
+                                   -126.0f, 0.0f,  702.0f, 8.0f};
+  CHECK_NEON(0, float, fillNeonCombined<float>(results32A, results32B, VL / 8));
+  CHECK_NEON(1, float, fillNeonCombined<float>(results32A, {3.0}, VL / 8));
 
   // 64-bit
   initialHeapData_.resize(VL / 8);
@@ -4078,18 +4124,18 @@ TEST_P(InstSve, frintn) {
     ptrue p0.d
     whilelo p1.d, xzr, x2
 
-    dup z0.d, #15
-    dup z1.d, #13
+    fdup z0.d, #2.0
+    fdup z1.d, #3.0
     ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
 
     frintn z0.d, p0/m, z2.d
     frintn z1.d, p1/m, z2.d
   )");
-  std::vector<int64_t> results64A = {1, -42, 0, 0};
-  std::vector<int64_t> results64B = {40, -685, -4, 108};
-  CHECK_NEON(0, int64_t,
-             fillNeonCombined<int64_t>(results64A, results64B, VL / 8));
-  CHECK_NEON(1, int64_t, fillNeonCombined<int64_t>(results64A, {13}, VL / 8));
+  std::vector<double> results64A = {1.0, -42.0, 0.0, 0.0};
+  std::vector<double> results64B = {40.0, -685.0, -4.0, 108.0};
+  CHECK_NEON(0, double,
+             fillNeonCombined<double>(results64A, results64B, VL / 8));
+  CHECK_NEON(1, double, fillNeonCombined<double>(results64A, {3.0}, VL / 8));
 }
 
 TEST_P(InstSve, fsqrt) {
@@ -4639,8 +4685,9 @@ TEST_P(InstSve, ld1rqw) {
     # Load and broadcast values from heap
     ptrue p0.s
     add x1, x0, #-8
+    mov x3, #4
     ld1rqw {z0.s}, p0/z, [x0]
-    ld1rqw {z1.s}, p0/z, [x1, #16]
+    ld1rqw {z1.s}, p0/z, [x1, x3, lsl #2]
 
     # Test for inactive lanes
     ptrue p1.s, vl1
@@ -4690,12 +4737,11 @@ TEST_P(InstSve, ld1rw) {
 }
 
 TEST_P(InstSve, ld1b) {
-  initialHeapData_.resize(VL / 8);
+  initialHeapData_.resize(VL / 4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
-  fillHeap<uint8_t>(heap8,
-                    {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12, 0x32, 0x54,
-                     0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB},
-                    VL / 8);
+  std::vector<uint8_t> src = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
+                              0x32, 0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB};
+  fillHeap<uint8_t>(heap8, src, VL / 4);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -4716,6 +4762,7 @@ TEST_P(InstSve, ld1b) {
     mov x2, #0
     whilelo p1.b, xzr, x1
     ld1b {z1.b}, p1/z, [x0, x2]
+    ld1b {z2.b}, p1/z, [x0, #1, mul vl]
   )");
   CHECK_NEON(0, uint8_t,
              fillNeon<uint8_t>({0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
@@ -4725,6 +4772,8 @@ TEST_P(InstSve, ld1b) {
              fillNeon<uint8_t>({0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
                                 0x32, 0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB},
                                VL / 16));
+  std::rotate(src.begin(), src.begin() + ((VL / 8) % 16), src.end());
+  CHECK_NEON(2, uint8_t, fillNeon<uint8_t>(src, VL / 16));
 }
 
 TEST_P(InstSve, ld1sw_gather) {
@@ -4755,27 +4804,55 @@ TEST_P(InstSve, ld1sw_gather) {
 }
 
 TEST_P(InstSve, ld1w_gather) {
+  initialHeapData_.resize(VL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src, VL / 32);
+
   // Scalar plus vector
   // 64-bit
   RUN_AARCH64(R"(
-    mov x0, #800
-    index z1.d, x0, #8
-    dup z2.d, #8
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-    ptrue p0.d
+    ptrue p0.s
+    ptrue p1.d
+    
     mov x1, #0
-    mov x2, #16
+    mov x3, #8
     addvl x1, x1, #1
-    udiv x1, x1, x2
-    whilelo p1.d, xzr, x1
+    udiv x1, x1, x3
+    whilelo p2.s, xzr, x1
+    
+    mov x1, #0
+    mov x3, #16
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    whilelo p3.d, xzr, x1
 
-    # Put data into memory so we have something to load
-    st1d {z2.d}, p0, [z1.d]  
-
-    index z4.d, #0, #2
-    ld1w {z5.d}, p1/z, [x0, z4.d, lsl #2]
+    index z3.s, #0, #4
+    index z4.d, #0, #1
+    ld1w {z5.s}, p0/z, [x0, z3.s, sxtw]
+    ld1w {z6.d}, p1/z, [x0, z4.d, lsl #2]
+    ld1w {z7.s}, p2/z, [x0, z3.s, sxtw]
+    ld1w {z8.d}, p3/z, [x0, z4.d, lsl #2]
   )");
-  CHECK_NEON(5, uint64_t, fillNeonCombined<uint64_t>({8}, {0}, VL / 8));
+  CHECK_NEON(5, uint32_t,
+             fillNeon<uint32_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, VL / 8));
+  CHECK_NEON(6, uint64_t,
+             fillNeon<uint64_t>(
+                 {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, VL / 8));
+  CHECK_NEON(
+      7, uint32_t,
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, VL / 8));
+  CHECK_NEON(
+      8, uint64_t,
+      fillNeonCombined<uint64_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, VL / 8));
 }
 
 TEST_P(InstSve, ld1d_gather) {
@@ -6088,11 +6165,11 @@ TEST_P(InstSve, smulh) {
 }
 
 TEST_P(InstSve, st1b) {
-  initialHeapData_.resize(VL / 8);
+  initialHeapData_.resize(VL / 4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   std::vector<uint8_t> src = {0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12,
                               0x32, 0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB};
-  fillHeap<uint8_t>(heap8, src, VL / 8);
+  fillHeap<uint8_t>(heap8, src, VL / 4);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -6101,11 +6178,13 @@ TEST_P(InstSve, st1b) {
     svc #0
 
     sub sp, sp, #4095
+    mov x10, sp
+    sub sp, sp, #4095
     mov x1, #0
     ptrue p0.b
 
     ld1b {z0.b}, p0/z, [x0, x1]
-    st1b {z0.b}, p0, [sp, x1]
+    st1b {z0.b}, p0, [x10, x1]
 
     mov x2, #0
     mov x4, #2
@@ -6114,16 +6193,25 @@ TEST_P(InstSve, st1b) {
     mov x3, #0
     whilelo p1.b, xzr, x2
 
+    mov x5, #4
+    mul x2, x2, x5
+
     ld1b {z1.b}, p1/z, [x0, x3]
     st1b {z1.b}, p1, [x2, x3]
+    st1b {z1.b}, p1, [sp, #4, mul vl]
   )");
 
-  for (int i = 0; i < (VL / 8); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4095 + i),
-              src[i % 16]);
+  for (uint64_t i = 0; i < (VL / 8); i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 4095 + i),
+        src[i % 16]);
   }
-  for (int i = 0; i < (VL / 16); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>((VL / 16) + i), src[i % 16]);
+  for (uint64_t i = 0; i < (VL / 16); i++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(4 * (VL / 16) + i), src[i % 16]);
+  }
+  uint64_t base = process_->getInitialStackPointer() - 8190 + 4 * (VL / 8);
+  for (uint64_t i = 0; i < (VL / 16); i++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(base + i), src[i % 16]);
   }
 }
 
@@ -6160,8 +6248,9 @@ TEST_P(InstSve, st1b_scatter) {
   )");
 
   for (uint64_t i = 0; i < VL / 64; i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - (3 * i)),
-              src[(8 * i) % 16]);
+    EXPECT_EQ(
+        getMemoryValue<uint8_t>(process_->getInitialStackPointer() - (3 * i)),
+        src[(8 * i) % 16]);
   }
 
   for (uint64_t i = 0; i < VL / 128; i++) {
@@ -6278,19 +6367,19 @@ TEST_P(InstSve, st1d) {
     st1d {z1.d}, p1, [x2, x3, lsl #3]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(
-        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
-        src[i % 4]);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 8)),
+              src[i % 4]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (i * 8)), src[i % 4]);
   }
   std::rotate(src.begin(), src.begin() + 2, src.end());
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 128) + 16 + (i * 8)), src[i % 4]);
   }
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 128) + (VL / 2) + (i * 8)),
               src[i % 4]);
   }
@@ -6318,17 +6407,17 @@ TEST_P(InstSve, st2d) {
     st2d {z2.d, z3.d}, p1, [x6, #4, mul vl]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 +
-                                       (2 * i * 8)),
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + (2 * i * 8)),
               3);
-    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 +
-                                       (2 * i * 8) + 8),
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + (2 * i * 8) + 8),
               4);
   }
 
   int index = 4 * (VL / 64) * 8;
-  for (int i = 0; i < (VL / 128); i++) {
+  for (uint64_t i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8)), 5);
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8) + 8), 6);
   }
@@ -6423,12 +6512,12 @@ TEST_P(InstSve, st1w) {
     st1w {z2.s}, p0, [x4]
   )");
 
-  for (int i = 0; i < (VL / 32); i++) {
-    EXPECT_EQ(
-        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
-        src[i % 4]);
+  for (uint64_t i = 0; i < (VL / 32); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 4)),
+              src[i % 4]);
   }
-  for (int i = 0; i < (VL / 32); i++) {
+  for (uint64_t i = 0; i < (VL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 8) + (i * 4)), src[i % 4]);
   }
 
@@ -6451,80 +6540,67 @@ TEST_P(InstSve, st1w) {
     st1w {z1.s}, p1, [x2, x3, lsl #2]
   )");
 
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 64) + (VL / 2) + (i * 4)),
               src[i % 4]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((VL / 64) + 16 + (i * 4)), src[i % 4]);
   }
 
-  // 64-bit
-  // initialHeapData_.resize(64);
-  // uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
-  // heap64[0] = 0xDEADBEEFDEADBEEF;
-  // heap64[1] = 0x1234567812345678;
-  // heap64[2] = 0x9876543298765432;
-  // heap64[3] = 0xABCDEF01ABCDEF01;
-  // heap64[4] = 0xDEADBEEFDEADBEEF;
-  // heap64[5] = 0x1234567812345678;
-  // heap64[6] = 0x9876543298765432;
-  // heap64[7] = 0xABCDEF01ABCDEF01;
+  // 64 - bit
+  initialHeapData_.resize(VL / 8);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> srcA = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  std::vector<uint64_t> srcB = {0xDEADBEEFDEADBEEF, 0x1234567812345678,
+                                0x9876543298765432, 0xABCDEF01ABCDEF01};
+  fillHeapCombined(heap64, srcA, srcB, VL / 64);
 
-  // RUN_AARCH64(R"(
-  //   # Get heap address
-  //   mov x0, 0
-  //   mov x8, 214
-  //   svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-  //   mov x1, #0
-  //   mov x4, #64
-  //   mov x5, #3
-  //   ptrue p0.d
-  //   ld1w {z0.d}, p0/z, [x0, x1, lsl #3]
-  //   ld1w {z2.d}, p0/z, [x0, x1, lsl #3]
-  //   st1w {z0.d}, p0, [sp, x1, lsl #2]
-  //   st1w {z2.d}, p0, [x4, x5, lsl #2]
-  // )");
-  // CHECK_NEON(0, uint64_t,
-  //            {0xDEADBEEFDEADBEEFu, 0x1234567812345678u,
-  //            0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u, 0xDEADBEEFDEADBEEFu,
-  //             0x1234567812345678u, 0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u});
-  // CHECK_NEON(2, uint64_t,
-  //            {0xDEADBEEFDEADBEEFu, 0x1234567812345678u,
-  //            0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u, 0xDEADBEEFDEADBEEFu,
-  //             0x1234567812345678u, 0x9876543298765432u,
-  //             0xABCDEF01ABCDEF01u});
+    sub sp, sp, #4095
 
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()),
-  // 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()
-  // + 4),
-  //           0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 8),
-  //           0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 12),
-  //           0xABCDEF01);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 16),
-  //           0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 20),
-  //           0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 24),
-  //           0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 28),
-  //           0xABCDEF01);
+    ptrue p0.d
+    mov x2, #0
+    mov x5, #16
+    addvl x2, x2, #1
+    udiv x2, x2, x5
+    mov x3, #2
+    whilelo p1.d, xzr, x2
 
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4)), 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 4), 0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 8), 0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 12), 0xABCDEF01);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 16), 0xDEADBEEF);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 20), 0x12345678);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 24), 0x98765432);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 * 4) + 28), 0xABCDEF01);
+    mov x1, #0
+    mov x6, #64
+    mov x7, #3
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
+    st1w {z0.d}, p1, [sp, x1, lsl #2]
+    st1w {z2.d}, p0, [x6, x7, lsl #2]
+  )");
+
+  CHECK_NEON(0, uint64_t, fillNeonCombined<uint64_t>(srcA, {0ull}, VL / 8));
+  CHECK_NEON(2, uint64_t, fillNeonCombined<uint64_t>(srcA, srcB, VL / 8));
+
+  std::array<uint32_t, (256 / sizeof(uint32_t))> srcC =
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0ul}, VL / 16);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 4)),
+              srcC[i]);
+  }
+
+  std::array<uint32_t, (256 / sizeof(uint32_t))> srcD =
+      fillNeonCombined<uint32_t>(
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01},
+          {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, VL / 16);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(64 + (3 + i) * 4), srcD[i]);
+  }
 }
 
 TEST_P(InstSve, str_predicate) {
@@ -6543,9 +6619,10 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #0, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4095 + i),
-              0xFF);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 4095 + i),
+        0xFF);
   }
 
   fillHeap<uint8_t>(heap8, {0xDE}, VL / 64);
@@ -6560,8 +6637,8 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #1, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() -
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64)) + i),
               0xDE);
   }
@@ -6578,8 +6655,8 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #2, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() -
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64) * 2) + i),
               0x12);
   }
@@ -6596,8 +6673,8 @@ TEST_P(InstSve, str_predicate) {
     ldr p0, [x0, #0, mul vl]
     str p0, [sp, #3, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() -
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() -
                                       (4095 - (VL / 64) * 3) + i),
               0x98);
   }
@@ -6625,12 +6702,12 @@ TEST_P(InstSve, str_vector) {
     str z0, [sp, #0, mul vl]
     str z1, [x1, #4, mul vl]
   )");
-  for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(
-        getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 + (i * 8)),
-        src[i % 8]);
+  for (uint64_t i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() -
+                                       4095 + (i * 8)),
+              src[i % 8]);
   }
-  for (int i = 0; i < (VL / 64); i++) {
+  for (uint64_t i = 0; i < (VL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>((VL / 8) + (VL / 2) + (i * 8)),
               src[i % 8]);
   }
@@ -6728,7 +6805,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint8_t> result8;
   int i1 = 0;
   int i2 = 10;
-  for (int i = 0; i < VL / 16; i++) {
+  for (uint64_t i = 0; i < VL / 16; i++) {
     result8.push_back(i1);
     result8.push_back(i2);
     i1 += 2;
@@ -6746,7 +6823,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint16_t> result16;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 32; i++) {
+  for (uint64_t i = 0; i < VL / 32; i++) {
     result16.push_back(i1);
     result16.push_back(i2);
     i1 += 2;
@@ -6764,7 +6841,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint32_t> result32;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     result32.push_back(i1);
     result32.push_back(i2);
     i1 += 2;
@@ -6782,7 +6859,7 @@ TEST_P(InstSve, trn1) {
   std::vector<uint64_t> result64;
   i1 = 0;
   i2 = 10;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     result64.push_back(i1);
     result64.push_back(i2);
     i1 += 2;
@@ -6802,7 +6879,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint8_t> result8;
   int i1 = 1;
   int i2 = 11;
-  for (int i = 0; i < VL / 16; i++) {
+  for (uint64_t i = 0; i < VL / 16; i++) {
     result8.push_back(i1);
     result8.push_back(i2);
     i1 += 2;
@@ -6820,7 +6897,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint16_t> result16;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 32; i++) {
+  for (uint64_t i = 0; i < VL / 32; i++) {
     result16.push_back(i1);
     result16.push_back(i2);
     i1 += 2;
@@ -6838,7 +6915,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint32_t> result32;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 64; i++) {
+  for (uint64_t i = 0; i < VL / 64; i++) {
     result32.push_back(i1);
     result32.push_back(i2);
     i1 += 2;
@@ -6856,7 +6933,7 @@ TEST_P(InstSve, trn2) {
   std::vector<uint64_t> result64;
   i1 = 1;
   i2 = 11;
-  for (int i = 0; i < VL / 128; i++) {
+  for (uint64_t i = 0; i < VL / 128; i++) {
     result64.push_back(i1);
     result64.push_back(i2);
     i1 += 2;
@@ -7933,7 +8010,7 @@ TEST_P(InstSve, zip) {
 }
 
 #if SIMENG_LLVM_VERSION >= 14
-// If LLVm version supports SVE2 :
+// If LLVM version supports SVE2 :
 TEST_P(InstSve, psel) {
   RUN_AARCH64(R"(
     mov w13, #0

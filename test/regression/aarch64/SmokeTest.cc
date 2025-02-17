@@ -3,6 +3,7 @@
 namespace {
 
 using SmokeTest = AArch64RegressionTest;
+using namespace simeng::arch::aarch64;
 
 // Test that a trivial instruction will execute
 TEST_P(SmokeTest, instruction) {
@@ -10,6 +11,8 @@ TEST_P(SmokeTest, instruction) {
     orr x0, xzr, #7
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 7u);
+  EXPECT_GROUP(R"(orr x0, xzr, #7)",
+               InstructionGroups::INT_SIMPLE_LOGICAL_NOSHIFT);
 }
 
 // Test a loop executing 1024 times, adding 3 to w1 each time
@@ -34,8 +37,10 @@ TEST_P(SmokeTest, stack) {
     str w0, [sp, -4]
     str w1, [sp, -8]
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 7u);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8), 42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 4),
+            7u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 8),
+            42u);
 }
 
 // Test that we can store values to the heap
@@ -59,9 +64,11 @@ TEST_P(SmokeTest, heap) {
 
 INSTANTIATE_TEST_SUITE_P(
     AArch64, SmokeTest,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}")),
-                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                      std::make_tuple(INORDER, "{}"),
+                      std::make_tuple(OUTOFORDER,
+                                      "{L1-Data-Memory: "
+                                      "{Interface-Type: Fixed}}")),
     paramToString);
 
 }  // namespace

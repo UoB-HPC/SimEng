@@ -22,6 +22,8 @@ class PipelineDecodeUnitTest : public testing::Test {
         decodeUnit(input, output, predictor),
         uop(new MockInstruction),
         uopPtr(uop),
+        uop2(new MockInstruction),
+        uop2Ptr(uop2),
         sourceRegisters({{0, 0}}) {}
 
  protected:
@@ -33,6 +35,8 @@ class PipelineDecodeUnitTest : public testing::Test {
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
+  MockInstruction* uop2;
+  std::shared_ptr<Instruction> uop2Ptr;
 
   std::vector<Register> sourceRegisters;
 };
@@ -49,9 +53,6 @@ TEST_F(PipelineDecodeUnitTest, TickEmpty) {
 TEST_F(PipelineDecodeUnitTest, Tick) {
   input.getHeadSlots()[0] = {uopPtr};
 
-  EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
-      .WillOnce(Return(std::tuple<bool, uint64_t>(false, 0)));
-
   decodeUnit.tick();
 
   // Check result uop is the same as the one provided
@@ -60,30 +61,26 @@ TEST_F(PipelineDecodeUnitTest, Tick) {
 
   // Check no flush was requested
   EXPECT_EQ(decodeUnit.shouldFlush(), false);
+  EXPECT_EQ(decodeUnit.getEarlyFlushes(), 0);
 }
 
-// Tests that the decode unit requests a flush when a non-branch is mispredicted
-TEST_F(PipelineDecodeUnitTest, Flush) {
-  input.getHeadSlots()[0] = {uopPtr};
-
-  uop->setInstructionAddress(2);
-
-  // Return branch type as unconditional by default
-  ON_CALL(*uop, getBranchType())
-      .WillByDefault(Return(BranchType::Unconditional));
-
-  EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
-      .WillOnce(Return(std::tuple<bool, uint64_t>(true, 1)));
-  EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
-
-  // Check the predictor is updated with the correct instruction address and PC
-  EXPECT_CALL(predictor, update(2, false, 1, BranchType::Unconditional));
+// Tests that PurgeFlushed empties the microOps queue
+TEST_F(PipelineDecodeUnitTest, purgeFlushed) {
+  input.getHeadSlots()[0] = {uopPtr, uop2Ptr};
 
   decodeUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0].get(), uop);
+  EXPECT_EQ(input.getHeadSlots()[0].size(), 0);
 
-  // Check that a flush was correctly requested
-  EXPECT_EQ(decodeUnit.shouldFlush(), true);
-  EXPECT_EQ(decodeUnit.getFlushAddress(), 1);
+  // Clear micro-ops queue
+  decodeUnit.purgeFlushed();
+  // Swap output head and tail
+  output.tick();
+
+  decodeUnit.tick();
+  EXPECT_EQ(output.getTailSlots()[0], nullptr);
+  EXPECT_EQ(output.getHeadSlots()[0].get(), uop);
+  EXPECT_EQ(input.getHeadSlots()[0].size(), 0);
 }
 
 }  // namespace pipeline

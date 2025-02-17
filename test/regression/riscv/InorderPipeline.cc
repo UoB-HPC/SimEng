@@ -31,8 +31,7 @@ TEST_P(inorderPipeline, prematureMulticycleHalting) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, inorderPipeline,
-                         ::testing::Values(std::make_tuple(INORDER,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(INORDER, "{}")),
                          paramToString);
 
 }  // namespace

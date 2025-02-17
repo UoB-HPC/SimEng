@@ -12,17 +12,18 @@ int Trace::writeCycleOut(char* str, uint64_t traceId, std::string model) {
     // char buffer[1000];
     // If the model is an o3 pipeline
     if (model == std::string("outoforder")) {
-      sprintf(str,
-              "%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64
-              ":%" PRId64 ":%" PRId64 ":0x%02X:%d:%" PRId64 ":%s\n",
-              fetch.cycle, element.decode, element.rename, element.dispatch,
-              element.issue, element.complete, element.retire, fetch.address,
-              fetch.microOpNum, traceId, fetch.disasm.c_str());
+      snprintf(str, 4096,
+               "%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64
+               ":%" PRId64 ":%" PRId64 ":0x%02llX:%d:%" PRId64 ":%s\n",
+               fetch.cycle, element.decode, element.rename, element.dispatch,
+               element.issue, element.complete, element.retire, fetch.address,
+               fetch.microOpNum, traceId, fetch.disasm.c_str());
     } else {
-      sprintf(str,
-              "%" PRId64 ":%" PRId64 ":%" PRId64 ":%#010x:%d:%" PRId64 ":%s\n",
-              fetch.cycle, element.decode, element.complete, fetch.address,
-              fetch.microOpNum, traceId, fetch.disasm.c_str());
+      snprintf(str, 4096,
+               "%" PRId64 ":%" PRId64 ":%" PRId64 ":%#010llx:%d:%" PRId64
+               ":%s\n",
+               fetch.cycle, element.decode, element.complete, fetch.address,
+               fetch.microOpNum, traceId, fetch.disasm.c_str());
     }
     // Kept so we can print for gem5 and compare visualisers
     // if(model == std::string("outoforder")){
@@ -51,11 +52,14 @@ int Trace::writeCycleOut(char* str, uint64_t traceId, std::string model) {
 int Trace::writeProbeOut(char* str, uint64_t index, int newline, int start) {
   if (!start) {
     if (newline)
-      sprintf(str, "\n%d,%" PRId64 "", probeTrace_.event, probeTrace_.insn_num);
+      snprintf(str, 4096, "\n%d,%" PRId64 "", probeTrace_.event,
+               probeTrace_.insn_num);
     else
-      sprintf(str, ":%d,%" PRId64 "", probeTrace_.event, probeTrace_.insn_num);
+      snprintf(str, 4096, ":%d,%" PRId64 "", probeTrace_.event,
+               probeTrace_.insn_num);
   } else {
-    sprintf(str, "%d,%" PRId64 "", probeTrace_.event, probeTrace_.insn_num);
+    snprintf(str, 4096, "%d,%" PRId64 "", probeTrace_.event,
+             probeTrace_.insn_num);
   }
   int val = 1;
   return val;

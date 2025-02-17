@@ -2,27 +2,10 @@
 
 #include <vector>
 
+#include "simeng/Register.hh"
 #include "simeng/RegisterValue.hh"
 
 namespace simeng {
-
-/** A generic register identifier. */
-struct Register {
-  /** An identifier representing the type of register - e.g. 0 = general, 1 =
-   * vector. Used to determine which register file to access. */
-  uint8_t type;
-
-  /** A tag identifying the register. May correspond to either physical or
-   * architectural register, depending on point of usage. */
-  uint16_t tag;
-
-  /** Check for equality of two register identifiers. */
-  bool operator==(const Register& other) const;
-
-  /** Check for inequality of two register identifiers. */
-  bool operator!=(const Register& other) const;
-};
-std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
 /** Defines the structure of a register file. */
 struct RegisterFileStructure {
@@ -30,6 +13,10 @@ struct RegisterFileStructure {
   uint16_t bytes;
   /** The number of registers. */
   uint16_t quantity;
+  /** Check for the equality of two RegisterFileStructure structs. */
+  bool operator==(const RegisterFileStructure& other) const {
+    return (bytes == other.bytes) && (quantity == other.quantity);
+  }
 };
 
 /** A processor register file set. Holds the physical registers for each

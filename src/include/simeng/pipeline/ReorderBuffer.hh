@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "simeng/Instruction.hh"
+#include "simeng/branchpredictors/BranchPredictor.hh"
 #include "simeng/control.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/RegisterAliasTable.hh"
@@ -46,7 +47,7 @@ class ReorderBuffer {
   /** Constructs a reorder buffer of maximum size `maxSize`, supplying a
    * reference to the register alias table. */
   ReorderBuffer(
-      unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
+      uint32_t maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       std::function<void(uint64_t branchAddress)> sendLoopBoundary,
       BranchPredictor& predictor, uint16_t loopBufSize,
@@ -58,10 +59,10 @@ class ReorderBuffer {
   void commitMicroOps(uint64_t insnId);
 
   /** Commit and remove up to `maxCommitSize` instructions. */
-  unsigned int commit(unsigned int maxCommitSize);
+  unsigned int commit(uint64_t maxCommitSize);
 
   /** Flush all instructions with a sequence ID greater than `afterSeqId`. */
-  void flush(uint64_t afterSeqId);
+  void flush(uint64_t afterInsnId);
 
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;
@@ -77,15 +78,21 @@ class ReorderBuffer {
    * discovered memory order violation. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the sequence ID associated with the most recently discovered
+  /** Retrieve the instruction ID associated with the most recently discovered
    * memory order violation. */
-  uint64_t getFlushSeqId() const;
+  uint64_t getFlushInsnId() const;
 
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;
 
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
+
+  /** Retrieve the number of branch mispredictions. */
+  uint64_t getBranchMispredictedCount() const;
+
+  /** Retrieve the number of retired brancehs. */
+  uint64_t getRetiredBranchesCount() const;
 
  private:
   /** A reference to the register alias table. */
@@ -95,7 +102,7 @@ class ReorderBuffer {
   LoadStoreQueue& lsq_;
 
   /** The maximum size of the ROB. */
-  unsigned int maxSize_;
+  uint32_t maxSize_;
 
   /** A function to call upon exception generation. */
   std::function<void(std::shared_ptr<Instruction>)> raiseException_;
@@ -144,8 +151,14 @@ class ReorderBuffer {
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
 
-  /** The number of speculatived loads which violated load-store ordering. */
+  /** The number of speculative loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  /** The number of branch mispredictions that were observed. */
+  uint64_t branchMispredicts_ = 0;
+
+  /** The number of retired branch instructions */
+  uint64_t retiredBranches_ = 0;
 };
 
 }  // namespace pipeline

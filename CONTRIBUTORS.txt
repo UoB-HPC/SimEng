@@ -12,6 +12,8 @@ Current development team:
   Finn Wilkinson
   Rahat Muneeb
   Daniel Weaver
+  Alex Cockrean
+  Joseph Moore
 
 Additional Contributors:
   Ainsley Rutterford

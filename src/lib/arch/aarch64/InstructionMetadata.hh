@@ -25,6 +25,19 @@ struct InstructionMetadata {
   /** Constructs an invalid metadata object containing the invalid encoding. */
   InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
 
+  /* Returns the current exception state of the metadata */
+  InstructionException getMetadataException() const {
+    return metadataException_;
+  }
+
+  /* Returns a bool stating whether an exception has been encountered */
+  bool getMetadataExceptionEncountered() const {
+    return metadataExceptionEncountered_;
+  }
+
+  /* Return extra information about the exception */
+  std::string getExceptionString() const { return exceptionString_; }
+
   /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
@@ -40,7 +53,7 @@ struct InstructionMetadata {
   static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
   /** The maximum number of operands as defined in Capstone */
   static const size_t MAX_OPERANDS =
-      sizeof(cs_arm64::operands) / sizeof(cs_arm64_op);
+      sizeof(cs_aarch64::operands) / sizeof(cs_aarch64_op);
 
   /** The instruction's mnemonic ID. */
   unsigned int id;
@@ -52,7 +65,7 @@ struct InstructionMetadata {
   uint8_t encoding[4];
 
   /** The instruction's mnemonic. */
-  char mnemonic[CS_MNEMONIC_SIZE];
+  std::string mnemonic;
   /** The remainder of the instruction's assembly representation. */
   std::string operandStr;
 
@@ -75,22 +88,25 @@ struct InstructionMetadata {
   uint8_t cc;
   /** Whether this instruction sets the condition flags. */
   bool setsFlags;
-  /** Whether this instruction performs a base-address register writeback
-   * operation. */
-  bool writeback;
+
+  /** Whether this instruction is an alias. */
+  bool isAlias;
 
   /** The explicit operands. */
-  cs_arm64_op operands[MAX_OPERANDS];
+  cs_aarch64_op operands[MAX_OPERANDS];
+
   /** The number of explicit operands. */
   uint8_t operandCount;
 
  private:
-  /** Detect instruction aliases and update metadata to match the de-aliased
-   * instruction. */
-  void revertAliasing();
+  /** The current exception state of this instruction. */
+  InstructionException metadataException_ = InstructionException::None;
 
-  /** Flag the instruction as invalid due to a detected unsupported alias. */
-  void aliasNYI();
+  /** Whether an exception has been encountered. */
+  bool metadataExceptionEncountered_ = false;
+
+  /** Additional information to print to the user */
+  std::string exceptionString_ = "";
 };
 
 }  // namespace aarch64

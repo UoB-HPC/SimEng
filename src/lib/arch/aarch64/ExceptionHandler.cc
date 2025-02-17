@@ -15,9 +15,9 @@ namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, kernel::Linux& linux_)
+    memory::MemoryInterface& memory, kernel::Linux& linux_)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
-      core(core),
+      core_(core),
       memory_(memory),
       linux_(linux_) {
   resumeHandling_ = [this]() { return init(); };
@@ -27,7 +27,7 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
   InstructionException exception = instruction_.getException();
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
@@ -109,7 +109,7 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
 
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
+          int64_t totalRead = linux_.getdents64(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -117,23 +117,18 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
-          while (iLength > 0) {
-            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          while (totalRead > 0) {
+            uint8_t len =
+                totalRead > 128 ? 128 : static_cast<uint8_t>(totalRead);
             stateChange.memoryAddresses.push_back({iDst, len});
             stateChange.memoryAddressValues.push_back({iSrc, len});
             iDst += len;
             iSrc += len;
-            iLength -= len;
+            totalRead -= len;
           }
           return concludeSyscall(stateChange);
         });
@@ -151,7 +146,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_.read(fd, dataBuffer.data(), count);
+          int64_t totalRead = linux_.read(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -159,17 +154,13 @@ bool ExceptionHandler::init() {
             return concludeSyscall(stateChange);
           }
 
-          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t iLength = static_cast<uint64_t>(totalRead);
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -186,7 +177,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          int64_t retval = linux_.write(fd, dataBuffer_.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -210,7 +201,7 @@ bool ExceptionHandler::init() {
         // generates the memory write requests.
         auto invokeKernel = [=]() {
           // The iov structure has been read into `dataBuffer`
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
 
           // Allocate buffers to hold the data read by the kernel
           std::vector<std::vector<uint8_t>> buffers(iovcnt);
@@ -236,7 +227,8 @@ bool ExceptionHandler::init() {
           }
 
           // Build list of memory write operations
-          int64_t bytesRemaining = totalRead;
+          // totalRead not negative due to above check so cast is safe
+          uint64_t bytesRemaining = static_cast<uint64_t>(totalRead);
           for (int64_t i = 0; i < iovcnt; i++) {
             // Get pointer and size of the buffer
             uint64_t iDst = iovdata[i * 2 + 0];
@@ -281,8 +273,8 @@ bool ExceptionHandler::init() {
         // Create the final handler in the chain, which invokes the kernel
         std::function<bool()> last = [=]() {
           // Rebuild the iovec structures using pointers to `dataBuffer` data
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+          uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
           for (int64_t i = 0; i < iovcnt; i++) {
             iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
 
@@ -292,7 +284,7 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
+          int64_t retval = linux_.writev(fd, dataBuffer_.data(), iovcnt);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -301,7 +293,7 @@ bool ExceptionHandler::init() {
         // Build the chain of buffer loads backwards through the iov buffers
         for (int64_t i = iovcnt - 1; i >= 0; i--) {
           last = [=]() {
-            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
             uint64_t ptr = iovdata[i * 2 + 0];
             uint64_t len = iovdata[i * 2 + 1];
             return readBufferThen(ptr, len, last);
@@ -334,20 +326,21 @@ bool ExceptionHandler::init() {
         int64_t flag = registerFileSet.get(R3).get<int64_t>();
 
         char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
-        return readStringThen(
-            filename, filenamePtr, kernel::Linux::LINUX_PATH_MAX,
-            [=](auto length) {
-              // Invoke the kernel
-              kernel::stat statOut;
-              uint64_t retval = linux_.newfstatat(dfd, filename, statOut, flag);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] filename;
-              stateChange.memoryAddresses.push_back(
-                  {statbufPtr, sizeof(statOut)});
-              stateChange.memoryAddressValues.push_back(statOut);
-              return concludeSyscall(stateChange);
-            });
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                kernel::stat statOut;
+                                uint64_t retval = linux_.newfstatat(
+                                    dfd, filename, statOut, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                stateChange.memoryAddresses.push_back(
+                                    {statbufPtr, sizeof(statOut)});
+                                stateChange.memoryAddressValues.push_back(
+                                    {statOut, sizeof(statOut)});
+                                return concludeSyscall(stateChange);
+                              });
 
         break;
       }
@@ -397,7 +390,7 @@ bool ExceptionHandler::init() {
       }
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
+        uint64_t systemTimer = core_.getSystemTimer();
 
         uint64_t seconds;
         uint64_t nanoseconds;
@@ -431,9 +424,9 @@ bool ExceptionHandler::init() {
           // Currently, only a single CPU bitmask is supported
           if (bitmask != 1) {
             printException(instruction_);
-            std::cout
-                << "Unexpected CPU affinity mask returned in exception handler"
-                << std::endl;
+            std::cout << "\n[SimEng:ExceptionHandler] Unexpected CPU affinity "
+                         "mask returned in exception handler"
+                      << std::endl;
             return fatal();
           }
           uint64_t retval = (pid == 0) ? 1 : 0;
@@ -453,14 +446,14 @@ bool ExceptionHandler::init() {
       }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
-        // current use of this syscall is to setup error handlers. Simualted
+        // current use of this syscall is to setup error handlers. Simulated
         // code is expected to work so no need for these handlers.
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 135: {  // rt_sigprocmask
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
-        // current use of this syscall is to setup error handlers. Simualted
+        // current use of this syscall is to setup error handlers. Simulated
         // code is expected to work so no need for these handlers.
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
@@ -502,7 +495,7 @@ bool ExceptionHandler::init() {
       case 169: {  // gettimeofday
         uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
         uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
+        uint64_t systemTimer = core_.getSystemTimer();
 
         kernel::timeval tv;
         kernel::timeval tz;
@@ -620,15 +613,16 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
         size_t buflen = registerFileSet.get(R1).get<size_t>();
 
-        char buf[buflen];
+        std::vector<char> buf;
         for (size_t i = 0; i < buflen; i++) {
-          buf[i] = (uint8_t)rand();
+          buf.push_back((uint8_t)rand());
         }
 
         stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
 
         stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
-        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+        stateChange.memoryAddressValues.push_back(
+            RegisterValue(buf.data(), buflen));
 
         break;
       }
@@ -649,57 +643,86 @@ bool ExceptionHandler::init() {
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
-    // Retrieve register file structure from architecture
-    auto regFileStruct =
-        instruction_.getArchitecture().getRegisterFileStructures();
+    // Get Architecture
+    const Architecture& arch = instruction_.getArchitecture();
+    // Retrieve register file structure from SimInfo
+    auto regFileStruct = config::SimInfo::getArchRegStruct();
     // Retrieve metadata from architecture
     auto metadata = instruction_.getMetadata();
 
-    // Update SVCR value
-    const uint64_t svcrBits = static_cast<uint64_t>(metadata.operands[0].svcr);
-    const uint8_t imm = metadata.operands[1].imm;
-    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
     uint64_t newSVCR = 0;
+    const uint64_t currSVCR = arch.getSVCRval();
 
-    if (imm == 0) {
-      // Zero out relevant bits dictated by svcrBits
-      const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
-      newSVCR = currSVCR & mask;
-    } else if (imm == 1) {
-      // Enable relevant bits, dictated by svcrBits
-      const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
-      newSVCR = currSVCR | mask;
+    // Check if exception was called by AArch64_MSR (msr systemreg, xt) or
+    // AArch64_MSRpstatesvcrImm1 (msr svcr<sm|za|smza>, #imm)
+    if (metadata.opcode == Opcode::AArch64_MSR) {
+      newSVCR = instruction_.getSourceOperands()[0].get<uint64_t>();
+    } else if (metadata.opcode == Opcode::AArch64_MSRpstatesvcrImm1) {
+      // Ensure operand metadata is as expected
+      assert(metadata.operands[0].type == AARCH64_OP_SYSALIAS);
+      assert(metadata.operands[0].sysop.sub_type == AARCH64_OP_SVCR);
+      // extract SVCR bits
+      const uint64_t svcrBits =
+          static_cast<uint64_t>(metadata.operands[0].sysop.alias.svcr);
+      // Ensure SVCR Bits are valid
+      assert(svcrBits == AARCH64_SVCR_SVCRSM ||
+             svcrBits == AARCH64_SVCR_SVCRZA ||
+             svcrBits == AARCH64_SVCR_SVCRSMZA);
+
+      const uint64_t imm = metadata.operands[1].imm;
+      assert((imm == 0 || imm == 1) &&
+             "[SimEng:ExceptionHandler] SVCR Instruction invalid - Imm value "
+             "can only be 0 or 1");
+      // Zero out SM & ZA bits as appropriate
+      newSVCR = currSVCR & ~(svcrBits);
+      // Update only relevant bits of SVCR
+      newSVCR = newSVCR | (svcrBits * imm);
     } else {
-      // Invalid instruction
-      assert("SVCR Instruction invalid - Imm value can only be 0 or 1");
+      std::cerr << "[SimEng::ExceptionHandler] SVCR system register exception "
+                   "triggered by incorrect instruction. Opcode "
+                << metadata.opcode << std::endl;
+      exit(1);
     }
-    instruction_.getArchitecture().setSVCRval(newSVCR);
+    arch.setSVCRval(newSVCR);
 
     // Initialise vectors for all registers & values
     std::vector<Register> regs;
     std::vector<RegisterValue> regValues;
 
-    // Add Vector/Predicate registers + 0 values (zeroed out on Streaming Mode
-    // context switch)
+    // If SVCR.ZA has changed state then zero out ZA and ZT0 registers
+    if (exception != InstructionException::StreamingModeUpdate) {
+      if ((newSVCR & AARCH64_SVCR_SVCRZA) != (currSVCR & AARCH64_SVCR_SVCRZA)) {
+        for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
+             i++) {
+          regs.push_back({RegisterType::MATRIX, i});
+          regValues.push_back(RegisterValue(0, 256));
+        }
+        regs.push_back({RegisterType::TABLE, 0});
+        regValues.push_back(RegisterValue(0, 64));
+      }
+    }
+    // If SVCR.SM has changed state then zero out SVE, NEON, Predicate
+    // registers, else don't
     if (exception != InstructionException::ZAregisterStatusUpdate) {
-      for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
-           i++) {
-        regs.push_back({RegisterType::VECTOR, i});
-        regValues.push_back(RegisterValue(0, 256));
-        if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
-          regs.push_back({RegisterType::PREDICATE, i});
-          regValues.push_back(RegisterValue(0, 32));
+      if ((newSVCR & AARCH64_SVCR_SVCRSM) != (currSVCR & AARCH64_SVCR_SVCRSM)) {
+        for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
+             i++) {
+          regs.push_back({RegisterType::VECTOR, i});
+          regValues.push_back(RegisterValue(0, 256));
+          if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
+            regs.push_back({RegisterType::PREDICATE, i});
+            regValues.push_back(RegisterValue(0, 32));
+          }
         }
       }
     }
-    // Zero out ZA register (zeroed out on ZA-reg context switch)
-    if (exception != InstructionException::StreamingModeUpdate) {
-      for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
-           i++) {
-        regs.push_back({RegisterType::MATRIX, i});
-        regValues.push_back(RegisterValue(0, 256));
-      }
-    }
+
+    // Update SVCR system register in regFile
+    regs.push_back({RegisterType::SYSTEM,
+                    static_cast<uint16_t>(
+                        arch.getSystemRegisterTag(AARCH64_SYSREG_SVCR))});
+    regValues.push_back(RegisterValue(newSVCR, 8));
+
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
     return concludeSyscall(stateChange);
   }
@@ -770,7 +793,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
     return;
   }
 
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
   const auto dirfd = registerFileSet.get(R0).get<int64_t>();
   const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
@@ -823,7 +846,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   auto completedReads = memory_.getCompletedReads();
   auto response =
       std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](const MemoryReadResult& response) {
+                   [&](const memory::MemoryReadResult& response) {
                      return response.requestId == instruction_.getSequenceId();
                    });
   if (response == completedReads.end()) {
@@ -834,7 +857,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   assert(response->data && "unhandled failed read in exception handler");
   uint8_t bytesRead = response->target.size;
   const uint8_t* data = response->data.getAsVector<uint8_t>();
-  dataBuffer.insert(dataBuffer.end(), data, data + bytesRead);
+  dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
   memory_.clearCompletedReads();
 
   // If there is more data, rerun this function for next chunk
@@ -860,7 +883,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
+      std::cout << "unallocated instruction encoding";
       break;
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
@@ -927,6 +950,12 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler]       opcode ID: " << metadata.opcode
             << std::endl;
+
+  std::string extraInformation = metadata.getExceptionString();
+  if (!extraInformation.empty()) {
+    std::cout << "[SimEng:ExceptionHandler]     Extra information: "
+              << extraInformation << std::endl;
+  }
 }
 
 bool ExceptionHandler::fatal() {

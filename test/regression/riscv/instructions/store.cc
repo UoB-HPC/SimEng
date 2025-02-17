@@ -3,6 +3,7 @@
 namespace {
 
 using InstStore = RISCVRegressionTest;
+using namespace simeng::arch::riscv::InstructionGroups;
 
 TEST_P(InstStore, sb) {
   initialHeapData_.resize(16);
@@ -23,6 +24,8 @@ TEST_P(InstStore, sb) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 32);
   EXPECT_EQ(getMemoryValue<uint32_t>(33), 0x0012AA56);
   EXPECT_EQ(getMemoryValue<uint32_t>(37), 0x00005400);
+
+  EXPECT_GROUP(R"(sb t6, 6(a0))", STORE_INT);
 }
 
 TEST_P(InstStore, sh) {
@@ -49,6 +52,8 @@ TEST_P(InstStore, sh) {
   EXPECT_EQ(getMemoryValue<uint32_t>(64), 0x1200AA78);
   EXPECT_EQ(getMemoryValue<uint32_t>(69), 0x00015400);
   EXPECT_EQ(getMemoryValue<uint32_t>(73), 0x0054AA00);
+
+  EXPECT_GROUP(R"(sh t6, 10(a0))", STORE_INT);
 }
 
 TEST_P(InstStore, sw) {
@@ -78,7 +83,10 @@ TEST_P(InstStore, sw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 64);
   EXPECT_EQ(getMemoryValue<uint64_t>(64), 0xAAADBE000000AA78);
   EXPECT_EQ(getMemoryValue<uint64_t>(69), 0x0087015400AAADBE);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()), 0x5400AA00);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer()),
+            0x5400AA00);
+
+  EXPECT_GROUP(R"(sw t6, 0(sp))", STORE_INT);
 }
 
 TEST_P(InstStore, sd) {
@@ -107,13 +115,14 @@ TEST_P(InstStore, sd) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 68);
   EXPECT_EQ(getMemoryValue<uint64_t>(64), 0x0154000000AA5678);
   EXPECT_EQ(getMemoryValue<uint64_t>(68), 0x8765000001540000);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 4),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() + 4),
             0x000154000000AA01);
+
+  EXPECT_GROUP(R"(sd t6, 4(sp))", STORE_INT);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstStore,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

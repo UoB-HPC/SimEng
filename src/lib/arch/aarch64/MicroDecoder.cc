@@ -7,63 +7,62 @@ namespace arch {
 namespace aarch64 {
 
 std::unordered_map<uint32_t, std::vector<Instruction>>
-    MicroDecoder::microDecodeCache;
-std::forward_list<InstructionMetadata> MicroDecoder::microMetadataCache;
+    MicroDecoder::microDecodeCache_;
+std::forward_list<InstructionMetadata> MicroDecoder::microMetadataCache_;
 
-MicroDecoder::MicroDecoder(YAML::Node config)
+MicroDecoder::MicroDecoder(ryml::ConstNodeRef config)
     : instructionSplit_(config["Core"]["Micro-Operations"].as<bool>()) {}
 
 MicroDecoder::~MicroDecoder() {
-  microDecodeCache.clear();
-  microMetadataCache.clear();
+  microDecodeCache_.clear();
+  microMetadataCache_.clear();
 }
 
-bool MicroDecoder::detectOverlap(arm64_reg registerA, arm64_reg registerB) {
+bool MicroDecoder::detectOverlap(aarch64_reg registerA, aarch64_reg registerB) {
   // Early checks on equivalent register ISA names
   if (registerA == registerB) return true;
-  if ((registerA == ARM64_REG_WZR || registerA == ARM64_REG_XZR) &&
-      (registerB == ARM64_REG_WZR || registerB == ARM64_REG_XZR))
+  if ((registerA == AARCH64_REG_WZR || registerA == AARCH64_REG_XZR) &&
+      (registerB == AARCH64_REG_WZR || registerB == AARCH64_REG_XZR))
     return true;
-  if ((registerA == ARM64_REG_WSP || registerA == ARM64_REG_SP) &&
-      (registerB == ARM64_REG_WSP || registerB == ARM64_REG_SP))
+  if ((registerA == AARCH64_REG_WSP || registerA == AARCH64_REG_SP) &&
+      (registerB == AARCH64_REG_WSP || registerB == AARCH64_REG_SP))
     return true;
 
   // Arrays to hold register identifiers
-  std::array<arm64_reg, 2> registers = {registerA, registerB};
+  std::array<aarch64_reg, 2> registers = {registerA, registerB};
   std::array<bool, 2> isGP = {false, false};
   std::array<uint8_t, 2> indexes = {0, 0};
   // Get index of each register and whether they are general purpose
   for (int i = 0; i < 2; i++) {
-    if (registers[i] == ARM64_REG_FP) {
+    if (registers[i] == AARCH64_REG_FP) {
       isGP[i] = true;
       indexes[i] = 29;
-    } else if (registers[i] == ARM64_REG_LR) {
+    } else if (registers[i] == AARCH64_REG_LR) {
       isGP[i] = true;
       indexes[i] = 30;
     } else {
-      arm64_reg base = (arm64_reg)0;
-      if (registers[i] >= ARM64_REG_V0) {
-        base = ARM64_REG_V0;
-      } else if (registers[i] >= ARM64_REG_Z0) {
-        base = ARM64_REG_Z0;
-      } else if (registers[i] >= ARM64_REG_X0) {
-        base = ARM64_REG_X0;
+      aarch64_reg base = (aarch64_reg)0;
+      // No need to check V registers as they are encoded as Q or D registers
+      if (registers[i] >= AARCH64_REG_Z0) {
+        base = AARCH64_REG_Z0;
+      } else if (registers[i] >= AARCH64_REG_X0) {
+        base = AARCH64_REG_X0;
         isGP[i] = true;
-      } else if (registers[i] >= ARM64_REG_W0) {
-        base = ARM64_REG_W0;
+      } else if (registers[i] >= AARCH64_REG_W0) {
+        base = AARCH64_REG_W0;
         isGP[i] = true;
-      } else if (registers[i] >= ARM64_REG_S0) {
-        base = ARM64_REG_S0;
-      } else if (registers[i] >= ARM64_REG_Q0) {
-        base = ARM64_REG_Q0;
-      } else if (registers[i] >= ARM64_REG_P0) {
-        base = ARM64_REG_P0;
-      } else if (registers[i] >= ARM64_REG_H0) {
-        base = ARM64_REG_H0;
-      } else if (registers[i] >= ARM64_REG_D0) {
-        base = ARM64_REG_D0;
-      } else if (registers[i] >= ARM64_REG_B0) {
-        base = ARM64_REG_B0;
+      } else if (registers[i] >= AARCH64_REG_S0) {
+        base = AARCH64_REG_S0;
+      } else if (registers[i] >= AARCH64_REG_Q0) {
+        base = AARCH64_REG_Q0;
+      } else if (registers[i] >= AARCH64_REG_P0) {
+        base = AARCH64_REG_P0;
+      } else if (registers[i] >= AARCH64_REG_H0) {
+        base = AARCH64_REG_H0;
+      } else if (registers[i] >= AARCH64_REG_D0) {
+        base = AARCH64_REG_D0;
+      } else if (registers[i] >= AARCH64_REG_B0) {
+        base = AARCH64_REG_B0;
       }
       indexes[i] = registers[i] - base;
     }
@@ -87,12 +86,210 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
     output[0] = std::make_shared<Instruction>(macroOp);
   } else {
     // Try and find instruction splitting entry in cache
-    auto iter = microDecodeCache.find(word);
-    if (iter == microDecodeCache.end()) {
+    auto iter = microDecodeCache_.find(word);
+    if (iter == microDecodeCache_.end()) {
       // Get macro-operation metadata to create micro-operation metadata from
       InstructionMetadata metadata = macroOp.getMetadata();
       std::vector<Instruction> cacheVector;
       switch (metadata.opcode) {
+        case Opcode::AArch64_LD1Fourv16b:
+        case Opcode::AArch64_LD1Fourv1d:
+        case Opcode::AArch64_LD1Fourv2d:
+        case Opcode::AArch64_LD1Fourv2s:
+        case Opcode::AArch64_LD1Fourv4h:
+        case Opcode::AArch64_LD1Fourv4s:
+        case Opcode::AArch64_LD1Fourv8b:
+        case Opcode::AArch64_LD1Fourv8h: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+          // ldr uop 2
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[2].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            2 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+          // ldr uop 3
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[3].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            3 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1Fourv16b_POST:
+        case Opcode::AArch64_LD1Fourv2d_POST:
+        case Opcode::AArch64_LD1Fourv4s_POST:
+        case Opcode::AArch64_LD1Fourv8h_POST: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+          // ldr uop 2
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[2].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            2 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+          // ldr uop 3
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[3].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            3 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+          // offset generation uop
+          if (metadata.operands[5].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[4].mem.base,
+                metadata.operands[5].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(
+                createImmOffsetUop(architecture, metadata.operands[4].mem.base,
+                                   64, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1Fourv1d_POST:
+        case Opcode::AArch64_LD1Fourv2s_POST:
+        case Opcode::AArch64_LD1Fourv8b_POST:
+        case Opcode::AArch64_LD1Fourv4h_POST: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+          // ldr uop 2
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[2].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            2 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+          // ldr uop 3
+          cacheVector.push_back(
+              createLdrUop(architecture, metadata.operands[3].reg,
+                           {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
+                            3 * dataSize},
+                           capstoneHandle, true, 2, dataSize));
+          // offset generation uop
+          if (metadata.operands[5].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[4].mem.base,
+                metadata.operands[5].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(
+                createImmOffsetUop(architecture, metadata.operands[4].mem.base,
+                                   32, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1Twov16b:
+        case Opcode::AArch64_LD1Twov1d:
+        case Opcode::AArch64_LD1Twov2d:
+        case Opcode::AArch64_LD1Twov2s:
+        case Opcode::AArch64_LD1Twov4h:
+        case Opcode::AArch64_LD1Twov4s:
+        case Opcode::AArch64_LD1Twov8b:
+        case Opcode::AArch64_LD1Twov8h: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1Twov16b_POST:
+        case Opcode::AArch64_LD1Twov2d_POST:
+        case Opcode::AArch64_LD1Twov4s_POST:
+        case Opcode::AArch64_LD1Twov8h_POST: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+          // offset generation uop
+          if (metadata.operands[3].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[2].mem.base,
+                metadata.operands[3].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(
+                createImmOffsetUop(architecture, metadata.operands[2].mem.base,
+                                   32, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_LD1Twov1d_POST:
+        case Opcode::AArch64_LD1Twov2s_POST:
+        case Opcode::AArch64_LD1Twov4h_POST:
+        case Opcode::AArch64_LD1Twov8b_POST: {
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // ldr uop 0
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[0].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // ldr uop 1
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[1].reg,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, true, 2, dataSize));
+          // offset generation uop
+          if (metadata.operands[3].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[2].mem.base,
+                metadata.operands[3].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(
+                createImmOffsetUop(architecture, metadata.operands[2].mem.base,
+                                   16, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
         case Opcode::AArch64_LDPDi:
         case Opcode::AArch64_LDPQi:
         case Opcode::AArch64_LDPSi:
@@ -113,17 +310,17 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // ldr uop 0
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[orderA].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID,
                metadata.operands[2].mem.disp + (orderA * dataSize)},
               capstoneHandle, false, 1, dataSize));
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[orderB].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID,
                metadata.operands[2].mem.disp + (orderB * dataSize)},
               capstoneHandle, true, 2, dataSize));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_LDPDpost:
@@ -137,19 +334,19 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // ldr uop 0
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
               capstoneHandle, false, 2, dataSize));
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[2].mem.base,
               metadata.operands[3].imm, capstoneHandle, true));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_LDPDpre:
@@ -166,15 +363,15 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // ldr uop 0
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // ldr uop 1
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
               capstoneHandle, true, 2, dataSize));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_LDRBpost:
@@ -190,14 +387,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // ldr uop
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
-              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[1].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[1].mem.base,
               metadata.operands[2].imm, capstoneHandle, true));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_LDRBpre:
@@ -217,10 +414,10 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // ldr uop
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
-              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[1].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, true, 1, dataSize));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STPDi:
@@ -236,7 +433,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store0 address uop
           cacheVector.push_back(
               createStrUop(architecture,
-                           {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+                           {metadata.operands[2].mem.base, AARCH64_REG_INVALID,
                             metadata.operands[2].mem.disp},
                            capstoneHandle, false, 1, dataSize));
           // store0 data uop
@@ -246,14 +443,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store1 address uop
           cacheVector.push_back(
               createStrUop(architecture,
-                           {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+                           {metadata.operands[2].mem.base, AARCH64_REG_INVALID,
                             metadata.operands[2].mem.disp + dataSize},
                            capstoneHandle, false, 2, dataSize));
           // store1 data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[1].reg, capstoneHandle, true, 2));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STPDpost:
@@ -269,7 +466,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store0 address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // store0 data uop
           cacheVector.push_back(createSDUop(architecture,
@@ -278,7 +475,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store1 address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
               capstoneHandle, false, 2, dataSize));
           // store1 data uop
           cacheVector.push_back(createSDUop(architecture,
@@ -289,7 +486,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[2].mem.base,
               metadata.operands[3].imm, capstoneHandle, true));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STPDpre:
@@ -309,7 +506,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store0 address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // store0 data uop
           cacheVector.push_back(createSDUop(architecture,
@@ -318,13 +515,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store1 address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[2].mem.base, ARM64_REG_INVALID, dataSize},
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
               capstoneHandle, false, 2, dataSize));
           // store1 data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[1].reg, capstoneHandle, true, 2));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STRBpost:
@@ -342,7 +539,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[1].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // store data uop
           cacheVector.push_back(createSDUop(architecture,
@@ -353,7 +550,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
               architecture, metadata.operands[1].mem.base,
               metadata.operands[2].imm, capstoneHandle, true));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STRBpre:
@@ -375,13 +572,13 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store address uop
           cacheVector.push_back(createStrUop(
               architecture,
-              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0},
+              {metadata.operands[1].mem.base, AARCH64_REG_INVALID, 0},
               capstoneHandle, false, 1, dataSize));
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_STRBui:
@@ -399,14 +596,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store address uop
           cacheVector.push_back(
               createStrUop(architecture,
-                           {metadata.operands[1].mem.base, ARM64_REG_INVALID,
+                           {metadata.operands[1].mem.base, AARCH64_REG_INVALID,
                             metadata.operands[1].mem.disp},
                            capstoneHandle, false, 1, dataSize));
           // store data uop
           cacheVector.push_back(createSDUop(
               architecture, metadata.operands[0].reg, capstoneHandle, true, 1));
 
-          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
         default: {
@@ -430,92 +627,187 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
 }
 
 cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
-  cs_arm64 info = default_info;
+  cs_aarch64 info = default_info;
   cs_detail detail = default_detail;
   info.op_count = opTypes.size();
 
-  for (int op = 0; op < opTypes.size(); op++) {
+  for (size_t op = 0; op < opTypes.size(); op++) {
     info.operands[op] = default_op;
     switch (opTypes[op].type) {
-      case arm64_op_type::ARM64_OP_REG: {
-        info.operands[op].type = ARM64_OP_REG;
-        info.operands[op].reg = ARM64_REG_INVALID;
+      case aarch64_op_type::AARCH64_OP_REG: {
+        info.operands[op].type = AARCH64_OP_REG;
+        info.operands[op].reg = AARCH64_REG_INVALID;
         if (opTypes[op].isDestination) {
           info.operands[op].access = CS_AC_WRITE;
         }
         break;
       }
-      case arm64_op_type::ARM64_OP_IMM: {
-        info.operands[op].type = ARM64_OP_IMM;
+      case aarch64_op_type::AARCH64_OP_IMM: {
+        info.operands[op].type = AARCH64_OP_IMM;
         info.operands[op].imm = 0;
         break;
       }
-      case arm64_op_type::ARM64_OP_MEM: {
-        info.operands[op].type = ARM64_OP_MEM;
-        info.operands[op].mem = {ARM64_REG_INVALID, ARM64_REG_INVALID, 0};
+      case aarch64_op_type::AARCH64_OP_MEM: {
+        info.operands[op].type = AARCH64_OP_MEM;
+        info.operands[op].mem = {AARCH64_REG_INVALID, AARCH64_REG_INVALID, 0};
         break;
       }
-      case arm64_op_type::ARM64_OP_INVALID:
-      case arm64_op_type::ARM64_OP_FP:
-      case arm64_op_type::ARM64_OP_CIMM:
-      case arm64_op_type::ARM64_OP_REG_MRS:
-      case arm64_op_type::ARM64_OP_REG_MSR:
-      case arm64_op_type::ARM64_OP_PSTATE:
-      case arm64_op_type::ARM64_OP_SYS:
-      case arm64_op_type::ARM64_OP_SVCR:
-      case arm64_op_type::ARM64_OP_PREFETCH:
-      case arm64_op_type::ARM64_OP_BARRIER:
-      case arm64_op_type::ARM64_OP_SME_INDEX:
+      case aarch64_op_type::AARCH64_OP_INVALID:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_MEM_REG:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_MEM_IMM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_FP:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_CIMM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_REG_MRS:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_REG_MSR:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_IMPLICIT_IMM_0:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SVCR:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_AT:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_DB:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_DC:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_ISB:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_TSB:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_PRFM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SVEPRFM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_RPRFM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_PSTATEIMM0_15:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_PSTATEIMM0_1:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_PSB:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_BTI:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SVEPREDPAT:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SVEVECLENSPECIFIER:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SME:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_IMM_RANGE:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_TLBI:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_IC:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_DBNXS:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_EXACTFPIMM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SYSREG:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SYSIMM:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_SYSALIAS:
+        [[fallthrough]];
+      case aarch64_op_type::AARCH64_OP_PRED:
         break;
     }
   }
-  detail.arm64 = info;
+  detail.aarch64 = info;
   return detail;
 }
 
 Instruction MicroDecoder::createImmOffsetUop(const Architecture& architecture,
-                                             arm64_reg base, int64_t offset,
+                                             aarch64_reg base, int64_t offset,
                                              csh capstoneHandle,
                                              bool lastMicroOp,
                                              int microOpIndex) {
-  cs_detail off_imm_detail =
-      createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_REG}, {ARM64_OP_IMM}});
-  off_imm_detail.arm64.operands[0].reg = base;
-  off_imm_detail.arm64.operands[1].reg = base;
-  off_imm_detail.arm64.operands[2].imm = offset;
+  cs_detail off_imm_detail = createDefaultDetail(
+      {{AARCH64_OP_REG, 1}, {AARCH64_OP_REG}, {AARCH64_OP_IMM}});
+  off_imm_detail.aarch64.operands[0].reg = base;
+  off_imm_detail.aarch64.operands[1].reg = base;
+  off_imm_detail.aarch64.operands[2].imm = offset;
 
-  cs_insn off_imm_cs = {arm64_insn::ARM64_INS_ADD,
+  cs_insn off_imm_cs = {aarch64_insn::AARCH64_INS_ADD,
+                        aarch64_insn::AARCH64_INS_INVALID,
                         0x0,
                         4,
                         "",
                         "micro_offset_imm",
                         "",
+                        false,
+                        false,
                         &off_imm_detail,
                         MicroOpcode::OFFSET_IMM};
 
   InstructionMetadata off_imm_metadata(off_imm_cs);
-  microMetadataCache.emplace_front(off_imm_metadata);
-  Instruction off_imm(architecture, microMetadataCache.front(),
+  microMetadataCache_.emplace_front(off_imm_metadata);
+  Instruction off_imm(architecture, microMetadataCache_.front(),
                       MicroOpInfo({true, MicroOpcode::OFFSET_IMM, 0,
                                    lastMicroOp, microOpIndex}));
   off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
   return off_imm;
 }
 
+Instruction MicroDecoder::createRegOffsetUop(
+    const Architecture& architecture, aarch64_reg base, aarch64_reg offset,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex) {
+  cs_detail off_reg_detail = createDefaultDetail(
+      {{AARCH64_OP_REG, 1}, {AARCH64_OP_REG}, {AARCH64_OP_REG}});
+  off_reg_detail.aarch64.operands[0].reg = base;
+  off_reg_detail.aarch64.operands[1].reg = base;
+  off_reg_detail.aarch64.operands[2].reg = offset;
+
+  cs_insn off_reg_cs = {aarch64_insn::AARCH64_INS_ADD,
+                        aarch64_insn::AARCH64_INS_INVALID,
+                        0x0,
+                        4,
+                        "",
+                        "micro_offset_reg",
+                        "",
+                        false,
+                        false,
+                        &off_reg_detail,
+                        MicroOpcode::OFFSET_REG};
+
+  InstructionMetadata off_reg_metadata(off_reg_cs);
+  microMetadataCache_.emplace_front(off_reg_metadata);
+  Instruction off_reg(architecture, microMetadataCache_.front(),
+                      MicroOpInfo({true, MicroOpcode::OFFSET_REG, 0,
+                                   lastMicroOp, microOpIndex}));
+  off_reg.setExecutionInfo(architecture.getExecutionInfo(off_reg));
+  return off_reg;
+}
+
 Instruction MicroDecoder::createLdrUop(const Architecture& architecture,
-                                       arm64_reg dest, arm64_op_mem mem,
+                                       aarch64_reg dest, aarch64_op_mem mem,
                                        csh capstoneHandle, bool lastMicroOp,
                                        int microOpIndex, uint8_t dataSize) {
   cs_detail ldr_detail =
-      createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_MEM}});
-  ldr_detail.arm64.operands[0].reg = dest;
-  ldr_detail.arm64.operands[1].mem = mem;
-  cs_insn ldr_cs = {
-      arm64_insn::ARM64_INS_LDR, 0x0, 4, "", "micro_ldr", "", &ldr_detail,
-      MicroOpcode::LDR_ADDR};
+      createDefaultDetail({{AARCH64_OP_REG, 1}, {AARCH64_OP_MEM}});
+  ldr_detail.aarch64.operands[0].reg = dest;
+  ldr_detail.aarch64.operands[1].mem = mem;
+  cs_insn ldr_cs = {aarch64_insn::AARCH64_INS_LDR,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_ldr",
+                    "",
+                    false,
+                    false,
+                    &ldr_detail,
+                    MicroOpcode::LDR_ADDR};
   InstructionMetadata ldr_metadata(ldr_cs);
-  microMetadataCache.emplace_front(ldr_metadata);
-  Instruction ldr(architecture, microMetadataCache.front(),
+  microMetadataCache_.emplace_front(ldr_metadata);
+  Instruction ldr(architecture, microMetadataCache_.front(),
                   MicroOpInfo({true, MicroOpcode::LDR_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
@@ -523,34 +815,50 @@ Instruction MicroDecoder::createLdrUop(const Architecture& architecture,
 }
 
 Instruction MicroDecoder::createSDUop(const Architecture& architecture,
-                                      arm64_reg src, csh capstoneHandle,
+                                      aarch64_reg src, csh capstoneHandle,
                                       bool lastMicroOp, int microOpIndex) {
-  cs_detail sd_detail = createDefaultDetail({{ARM64_OP_REG}});
-  sd_detail.arm64.operands[0].reg = src;
-  cs_insn sd_cs = {
-      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_sd", "", &sd_detail,
-      MicroOpcode::STR_DATA};
+  cs_detail sd_detail = createDefaultDetail({{AARCH64_OP_REG}});
+  sd_detail.aarch64.operands[0].reg = src;
+  cs_insn sd_cs = {aarch64_insn::AARCH64_INS_STR,
+                   aarch64_insn::AARCH64_INS_INVALID,
+                   0x0,
+                   4,
+                   "",
+                   "micro_sd",
+                   "",
+                   false,
+                   false,
+                   &sd_detail,
+                   MicroOpcode::STR_DATA};
   InstructionMetadata sd_metadata(sd_cs);
-  microMetadataCache.emplace_front(sd_metadata);
+  microMetadataCache_.emplace_front(sd_metadata);
   Instruction sd(
-      architecture, microMetadataCache.front(),
+      architecture, microMetadataCache_.front(),
       MicroOpInfo({true, MicroOpcode::STR_DATA, 0, lastMicroOp, microOpIndex}));
   sd.setExecutionInfo(architecture.getExecutionInfo(sd));
   return sd;
 }
 
 Instruction MicroDecoder::createStrUop(const Architecture& architecture,
-                                       arm64_op_mem mem, csh capstoneHandle,
+                                       aarch64_op_mem mem, csh capstoneHandle,
                                        bool lastMicroOp, int microOpIndex,
                                        uint8_t dataSize) {
-  cs_detail str_detail = createDefaultDetail({{ARM64_OP_MEM}});
-  str_detail.arm64.operands[0].mem = mem;
-  cs_insn str_cs = {
-      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_str", "", &str_detail,
-      MicroOpcode::STR_DATA};
+  cs_detail str_detail = createDefaultDetail({{AARCH64_OP_MEM}});
+  str_detail.aarch64.operands[0].mem = mem;
+  cs_insn str_cs = {aarch64_insn::AARCH64_INS_STR,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_str",
+                    "",
+                    false,
+                    false,
+                    &str_detail,
+                    MicroOpcode::STR_ADDR};
   InstructionMetadata str_metadata(str_cs);
-  microMetadataCache.emplace_front(str_metadata);
-  Instruction str(architecture, microMetadataCache.front(),
+  microMetadataCache_.emplace_front(str_metadata);
+  Instruction str(architecture, microMetadataCache_.front(),
                   MicroOpInfo({true, MicroOpcode::STR_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   str.setExecutionInfo(architecture.getExecutionInfo(str));

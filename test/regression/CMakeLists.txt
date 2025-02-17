@@ -20,6 +20,3 @@ target_link_libraries(regression-test-base ${LLVM_LIBS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(aarch64) 
 add_subdirectory(riscv)
-
-# Link to yaml-cpp libraries
-target_link_libraries(regression-test-base yaml-cpp)

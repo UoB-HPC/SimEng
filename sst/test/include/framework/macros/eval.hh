@@ -6,11 +6,11 @@
 
 // This MACRO defines the source code each expression expands into. This MACRO
 // also adds the line number on which this MACRO is defined in the source code.
-#define GENERIC_EXPECT_WITH_LINE(A, OP, B, line, SRC)      \
-  {                                                        \
-    ExpressionHandler handler = ExpressionHandler();       \
-    handler.handleExpression(ExprBuilder() << A OP B, SRC, \
-                             static_cast<uint64_t>(line)); \
+#define GENERIC_EXPECT_WITH_LINE(A, OP, B, line, SRC)        \
+  {                                                          \
+    ExpressionHandler handler = ExpressionHandler();         \
+    handler.handleExpression((ExprBuilder() << A) OP B, SRC, \
+                             static_cast<uint64_t>(line));   \
   }
 
 // This MACRO defines the source code each String expression expands into. This

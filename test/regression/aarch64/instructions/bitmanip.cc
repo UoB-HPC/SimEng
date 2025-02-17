@@ -3,11 +3,12 @@
 namespace {
 
 using InstBitmanip = AArch64RegressionTest;
+using namespace simeng::arch::aarch64::InstructionGroups;
 
 TEST_P(InstBitmanip, bfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -29,7 +30,7 @@ TEST_P(InstBitmanip, bfm) {
 
   // 64-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1
@@ -172,7 +173,7 @@ TEST_P(InstBitmanip, rev) {
 TEST_P(InstBitmanip, sbfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -207,7 +208,7 @@ TEST_P(InstBitmanip, sbfm) {
 
   // 64-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1
@@ -243,12 +244,23 @@ TEST_P(InstBitmanip, sbfm) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x78);
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0x5678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0x12345678);
+
+  EXPECT_GROUP(R"(sbfm w4, w0, #30, #27)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sbfm x6, x0, #32, #22)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxtb w7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sxtb x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxth w7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+  EXPECT_GROUP(R"(sxth x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
+
+  EXPECT_GROUP(R"(sxtw x7, w0)", INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(InstBitmanip, ubfm) {
   // 32-bit
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov w0, wzr
     sub w1, w0, #1
     sub w2, w0, #1
@@ -269,7 +281,7 @@ TEST_P(InstBitmanip, ubfm) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
 
   RUN_AARCH64(R"(
-    # Fill desintation registers with 1s
+    # Fill destination registers with 1s
     mov x0, xzr
     sub x1, x0, #1
     sub x2, x0, #1
@@ -291,8 +303,7 @@ TEST_P(InstBitmanip, ubfm) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

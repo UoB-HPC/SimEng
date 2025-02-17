@@ -10,6 +10,260 @@
 namespace {
 
 using MicroOp = AArch64RegressionTest;
+using namespace simeng::arch::aarch64;
+
+TEST_P(MicroOp, ld1Two) {
+  initialHeapData_.resize(32);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0x66554433221100FF;
+  heap[1] = 0xEEDDCCBBAA998877;
+  heap[2] = 0x66554433221100FF;
+  heap[3] = 0xEEDDCCBBAA998877;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ld1 {v0.16b, v1.16b}, [x0]
+    ld1 {v2.8b, v3.8b}, [x0]
+    ld1 {v4.8h, v5.8h}, [x0]
+    ld1 {v6.4h, v7.4h}, [x0]
+    ld1 {v8.4s, v9.4s}, [x0]
+    ld1 {v10.2s, v11.2s}, [x0]
+    ld1 {v12.2d, v13.2d}, [x0]
+    ld1 {v14.1d, v15.1d}, [x0]
+  )");
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(3, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(4, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(5, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(6, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(7, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+
+  CHECK_NEON(8, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(9, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(10, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(11, uint32_t, {0xAA998877, 0xEEDDCCBB});
+
+  CHECK_NEON(12, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(13, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(14, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(15, uint64_t, {0xEEDDCCBBAA998877});
+}
+
+TEST_P(MicroOp, ld1TwoPost) {
+  initialHeapData_.resize(192);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  bool aORb = true;
+  uint64_t valueA = 0x66554433221100FF;
+  uint64_t valueB = 0xEEDDCCBBAA998877;
+  for (int i = 0; i < 24; i++) {
+    heap[i] = aORb ? valueA : valueB;
+    aORb = !aORb;
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #32
+    mov x2, #16
+
+    ld1 {v0.16b, v1.16b}, [x0], #32
+    ld1 {v2.8b, v3.8b}, [x0], #16
+    ld1 {v4.8h, v5.8h}, [x0], x1
+    ld1 {v6.4h, v7.4h}, [x0], x2
+    ld1 {v8.4s, v9.4s}, [x0], #32
+    ld1 {v10.2s, v11.2s}, [x0], #16
+    ld1 {v12.2d, v13.2d}, [x0], x1
+    ld1 {v14.1d, v15.1d}, [x0], x2
+  )");
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(3, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(4, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(5, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(6, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(7, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+
+  CHECK_NEON(8, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(9, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(10, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(11, uint32_t, {0xAA998877, 0xEEDDCCBB});
+
+  CHECK_NEON(12, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(13, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(14, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(15, uint64_t, {0xEEDDCCBBAA998877});
+}
+
+TEST_P(MicroOp, ld1Four) {
+  initialHeapData_.resize(64);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0x66554433221100FF;
+  heap[1] = 0xEEDDCCBBAA998877;
+  heap[2] = 0x66554433221100FF;
+  heap[3] = 0xEEDDCCBBAA998877;
+  heap[4] = 0x66554433221100FF;
+  heap[5] = 0xEEDDCCBBAA998877;
+  heap[6] = 0x66554433221100FF;
+  heap[7] = 0xEEDDCCBBAA998877;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ld1 {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]
+    ld1 {v4.8b, v5.8b, v6.8b, v7.8b}, [x0]
+    ld1 {v8.8h, v9.8h, v10.8h, v11.8h}, [x0]
+    ld1 {v12.4h, v13.4h, v14.4h, v15.4h}, [x0]
+    ld1 {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ld1 {v20.2s, v21.2s, v22.2s, v23.2s}, [x0]
+    ld1 {v24.2d, v25.2d, v26.2d, v27.2d}, [x0]
+    ld1 {v28.1d, v29.1d, v30.1d, v31.1d}, [x0]
+  )");
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(3, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(4, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(5, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(6, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(7, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(8, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(9, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(10, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(11, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(12, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(13, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(14, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(15, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+
+  CHECK_NEON(16, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(17, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(18, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(19, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(20, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(21, uint32_t, {0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(22, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(23, uint32_t, {0xAA998877, 0xEEDDCCBB});
+
+  CHECK_NEON(24, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(25, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(26, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(27, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(28, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(29, uint64_t, {0xEEDDCCBBAA998877});
+  CHECK_NEON(30, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(31, uint64_t, {0xEEDDCCBBAA998877});
+}
+
+TEST_P(MicroOp, ld1FourPost) {
+  initialHeapData_.resize(384);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  bool aORb = true;
+  uint64_t valueA = 0x66554433221100FF;
+  uint64_t valueB = 0xEEDDCCBBAA998877;
+  for (int i = 0; i < 48; i++) {
+    heap[i] = aORb ? valueA : valueB;
+    aORb = !aORb;
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ld1 {v0.16b, v1.16b, v2.16b, v3.16b}, [x0]
+    ld1 {v4.8b, v5.8b, v6.8b, v7.8b}, [x0]
+    ld1 {v8.8h, v9.8h, v10.8h, v11.8h}, [x0]
+    ld1 {v12.4h, v13.4h, v14.4h, v15.4h}, [x0]
+    ld1 {v16.4s, v17.4s, v18.4s, v19.4s}, [x0]
+    ld1 {v20.2s, v21.2s, v22.2s, v23.2s}, [x0]
+    ld1 {v24.2d, v25.2d, v26.2d, v27.2d}, [x0]
+    ld1 {v28.1d, v29.1d, v30.1d, v31.1d}, [x0]
+  )");
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(2, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(3, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(4, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(5, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+  CHECK_NEON(6, uint8_t, {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  CHECK_NEON(7, uint8_t, {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(8, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(9, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(10, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(11, uint16_t,
+             {0x00FF, 0x2211, 0x4433, 0x6655, 0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(12, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(13, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+  CHECK_NEON(14, uint16_t, {0x00FF, 0x2211, 0x4433, 0x6655});
+  CHECK_NEON(15, uint16_t, {0x8877, 0xAA99, 0xCCBB, 0xEEDD});
+
+  CHECK_NEON(16, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(17, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(18, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(19, uint32_t, {0x221100FF, 0x66554433, 0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(20, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(21, uint32_t, {0xAA998877, 0xEEDDCCBB});
+  CHECK_NEON(22, uint32_t, {0x221100FF, 0x66554433});
+  CHECK_NEON(23, uint32_t, {0xAA998877, 0xEEDDCCBB});
+
+  CHECK_NEON(24, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(25, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(26, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(27, uint64_t, {0x66554433221100FF, 0xEEDDCCBBAA998877});
+  CHECK_NEON(28, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(29, uint64_t, {0xEEDDCCBBAA998877});
+  CHECK_NEON(30, uint64_t, {0x66554433221100FF});
+  CHECK_NEON(31, uint64_t, {0xEEDDCCBBAA998877});
+}
 
 TEST_P(MicroOp, loadPairD) {
   initialHeapData_.resize(48);
@@ -39,6 +293,10 @@ TEST_P(MicroOp, loadPairD) {
   CHECK_NEON(6, double, {-3.0});
   CHECK_NEON(7, double, {1.0});
   CHECK_NEON(8, double, {-1.0});
+
+  EXPECT_GROUP(R"(ldp d1, d2, [x0], #16)", InstructionGroups::LOAD_SCALAR,
+               InstructionGroups::LOAD_SCALAR,
+               InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
 }
 
 TEST_P(MicroOp, loadPairQ) {
@@ -394,14 +652,22 @@ TEST_P(MicroOp, storePairD) {
     stp d4, d5, [sp, #16]
     stp d6, d7, [sp, #-16]!
   )");
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1024), -5.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1016), -3.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1008), 3.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1000), 5.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 992), -1.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 984), -0.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 976), 0.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 968), 1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1024),
+            -5.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1016),
+            -3.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1008),
+            3.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1000),
+            5.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 992),
+            -1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 984),
+            -0.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 976),
+            0.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 968),
+            1.5);
 }
 
 TEST_P(MicroOp, storePairQ) {
@@ -441,37 +707,37 @@ TEST_P(MicroOp, storePairQ) {
     stp q4, q5, [sp, #32]
     stp q6, q7, [sp, #-32]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
             0xABCDEFABCDEFABCD);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
             0xCAFEABBACAFEABBA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 992),
             0x9876543212345678);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 984),
             0xFEDCBAFEDCBAFEDC);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 976),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 976),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 968),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 968),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 960),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 960),
             0x9876543212345678);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 952),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 952),
             0xFEDCBAFEDCBAFEDC);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 944),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 944),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 936),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 936),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 928),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 928),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 920),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 920),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 912),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 912),
             0xABCDEFABCDEFABCD);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 904),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 904),
             0xCAFEABBACAFEABBA);
 }
 
@@ -493,14 +759,22 @@ TEST_P(MicroOp, storePairS) {
     stp s4, s5, [sp, #8]
     stp s6, s7, [sp, #-8]!
   )");
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1024), -5.0f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1020), -3.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1016), 3.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1012), 5.0f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1008), -1.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1004), -0.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1000), 0.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 996), 1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1024),
+            -5.0f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1020),
+            -3.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1016),
+            3.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1012),
+            5.0f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1008),
+            -1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1004),
+            -0.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1000),
+            0.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 996),
+            1.5f);
 }
 
 TEST_P(MicroOp, storePairW) {
@@ -521,14 +795,22 @@ TEST_P(MicroOp, storePairW) {
     stp w4, w5, [sp, #8]
     stp w6, w7, [sp, #-8]!
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1020), 24);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1016), 84);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1012), 96);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1008), 36);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1004), 48);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1000), 60);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 996), 72);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1020),
+            24);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1016),
+            84);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1012),
+            96);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1008),
+            36);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1004),
+            48);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1000),
+            60);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 996),
+            72);
 }
 
 TEST_P(MicroOp, storePairX) {
@@ -549,14 +831,22 @@ TEST_P(MicroOp, storePairX) {
     stp x4, x5, [sp, #16]
     stp x6, x7, [sp, #-16]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 24);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 84);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 96);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992), 36);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984), 48);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 976), 60);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 968), 72);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
+            24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
+            84);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
+            96);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 992),
+            36);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 984),
+            48);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 976),
+            60);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 968),
+            72);
 }
 
 TEST_P(MicroOp, storeB) {
@@ -584,10 +874,14 @@ TEST_P(MicroOp, storeB) {
     str b2, [sp, #1]
     str b3, [sp, #-1]!
   )");
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1024), 0xAB);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1023), 0xFE);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1022), 0xBA);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1021), 0xCA);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 1024),
+            0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 1023),
+            0xFE);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 1022),
+            0xBA);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getInitialStackPointer() - 1021),
+            0xCA);
 }
 
 TEST_P(MicroOp, storeD) {
@@ -604,10 +898,14 @@ TEST_P(MicroOp, storeD) {
     str d2, [sp, #8]
     str d3, [sp, #-8]!
   )");
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1024), -3.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1016), 3.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1008), -1.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 1000), 1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1024),
+            -3.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1016),
+            3.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1008),
+            -1.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getInitialStackPointer() - 1000),
+            1.5);
 }
 
 TEST_P(MicroOp, storeH) {
@@ -635,13 +933,13 @@ TEST_P(MicroOp, storeH) {
     str h2, [sp, #2]
     str h3, [sp, #-2]!
   )");
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1024),
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 1024),
             0xABBA);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1022),
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 1022),
             0x5678);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1020),
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 1020),
             0xCAFE);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 1018),
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getInitialStackPointer() - 1018),
             0x1234);
 }
 
@@ -674,21 +972,21 @@ TEST_P(MicroOp, storeQ) {
     str q2, [sp, #16]
     str q3, [sp, #-16]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
             0xABBACAFEABBACAFE);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
             0x1234567898765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 992),
             0xABCDEFABCDEFABCD);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 984),
             0xCAFEABBACAFEABBA);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 976),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 976),
             0x9876543212345678);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 968),
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 968),
             0xFEDCBAFEDCBAFEDC);
 }
 
@@ -706,10 +1004,14 @@ TEST_P(MicroOp, storeS) {
     str s2, [sp, #4]
     str s3, [sp, #-4]!
   )");
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1024), -3.0f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1020), 3.0f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1016), -1.5f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 1012), 1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1024),
+            -3.0f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1020),
+            3.0f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1016),
+            -1.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getInitialStackPointer() - 1012),
+            1.5f);
 }
 
 TEST_P(MicroOp, storeW) {
@@ -726,10 +1028,14 @@ TEST_P(MicroOp, storeW) {
     str w2, [sp, #4]
     str w3, [sp, #-4]!
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1020), 48);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1016), 24);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1012), 36);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1020),
+            48);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1016),
+            24);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 1012),
+            36);
 }
 
 TEST_P(MicroOp, storeX) {
@@ -746,10 +1052,14 @@ TEST_P(MicroOp, storeX) {
     str x2, [sp, #8]
     str x3, [sp, #-8]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 48);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 24);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 36);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
+            48);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
+            24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
+            36);
 }
 
 TEST_P(MicroOp, storeThenLoad) {
@@ -773,10 +1083,14 @@ TEST_P(MicroOp, storeThenLoad) {
     ldr x7, [sp, #8]
     ldr x8, [sp, #-8]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 48);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 24);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 36);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
+            48);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
+            24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
+            36);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 24);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 36);
@@ -808,14 +1122,22 @@ TEST_P(MicroOp, storeThenLoadPair) {
     ldp x12, x13, [sp, #16]
     ldp x14, x15, [sp, #-16]!
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 12);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 24);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 84);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 96);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992), 36);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984), 48);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 976), 60);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 968), 72);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1024),
+            12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1016),
+            24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1008),
+            84);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 1000),
+            96);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 992),
+            36);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 984),
+            48);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 976),
+            60);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getInitialStackPointer() - 968),
+            72);
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(9), 24);
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 36);
@@ -829,9 +1151,11 @@ TEST_P(MicroOp, storeThenLoadPair) {
 INSTANTIATE_TEST_SUITE_P(
     AArch64, MicroOp,
     ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{Micro-Operations: True}")),
-        std::make_tuple(INORDER, YAML::Load("{Micro-Operations: True}")),
-        std::make_tuple(OUTOFORDER, YAML::Load("{Micro-Operations: True}"))),
+        std::make_tuple(EMULATION, "{Core: {Micro-Operations: True}}"),
+        std::make_tuple(INORDER, "{Core: {Micro-Operations: True}}"),
+        std::make_tuple(OUTOFORDER,
+                        "{Core: {Micro-Operations: True}, L1-Data-Memory: "
+                        "{Interface-Type: Fixed}}")),
     paramToString);
 
 }  // namespace

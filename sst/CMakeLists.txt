@@ -6,7 +6,7 @@ target_include_directories(sstsimeng PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sstsimeng PUBLIC ${SST_INSTALL_DIR}/include)
 # Including libsimeng.so
 target_include_directories(sstsimeng PUBLIC ${PROJECT_SOURCE_DIR}/src/lib)
-# Including capstone and yaml
+# Including capstone
 target_include_directories(sstsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(sstsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -28,7 +28,7 @@ target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_SST __STDC_FORMAT_MACR
 # The commmand had to be replaced as some extra flags added using target_include_directories
 target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_lookup)
 
-# Linking yaml and libsimeng.so libraries to sstsimeng.so
+# Linking libsimeng.so libraries to sstsimeng.so
 target_link_libraries(sstsimeng PUBLIC libsimeng)
 
 if (SIMENG_ENABLE_TESTS)

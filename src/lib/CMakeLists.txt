@@ -14,8 +14,15 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
+    branchpredictors/AlwaysNotTakenPredictor.cc
+    branchpredictors/GenericPredictor.cc
+    branchpredictors/PerceptronPredictor.cc
+    config/ModelConfig.cc
+    config/SimInfo.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
+    memory/FixedLatencyMemoryInterface.cc
+    memory/FlatMemoryInterface.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -32,17 +39,11 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
-    AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc
     control.cc
     Elf.cc
-    FixedLatencyMemoryInterface.cc
-    FlatMemoryInterface.cc
-    GenericPredictor.cc
-    Instruction.cc
-    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
@@ -56,8 +57,10 @@ add_library(libsimeng SHARED ${SIMENG_SOURCES} ${SIMENG_HEADERS})
 set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone yaml-cpp)
+target_include_directories(libsimeng PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(libsimeng capstone)
+# Only enable compiler warnings for our code
+target_compile_options(libsimeng PRIVATE ${SIMENG_COMPILE_OPTIONS})
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
@@ -68,4 +71,4 @@ install(TARGETS libsimeng DESTINATION lib)
 get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
 get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
 get_target_property(SIMENG_VERSION libsimeng VERSION)
-configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh)
+configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${CMAKE_CURRENT_BINARY_DIR}/simeng/version.hh)

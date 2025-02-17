@@ -19,7 +19,6 @@
 #include "SimEngMemInterface.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
 
@@ -204,13 +203,24 @@ class SimEngCoreWrapper : public SST::Component {
   std::shared_ptr<char> processMemory_;
 
   /** Reference to SimEng instruction memory. */
-  std::shared_ptr<simeng::MemoryInterface> instructionMemory_;
+  std::shared_ptr<simeng::memory::MemoryInterface> instructionMemory_;
 
   /** Reference to SimEngMemInterface used for interfacing with SST. */
   std::shared_ptr<SimEngMemInterface> dataMemory_;
 
   /** Number of clock iterations. */
   int iterations_;
+
+  int probeIndex;
+  uint64_t probeCycle;
+  int start;
+  std::string traceWriteOut;
+  char* traceStr;
+  std::string probeWriteOut;
+  char* probeStr;
+
+  std::ofstream traceOut;
+  std::ofstream probeOut;
 
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;

@@ -65,6 +65,7 @@ RISC-V regression suite
 
 The RISC-V regression test suite is located under the ``test/regression/riscv/`` directory. Within this can be found the following test cases:
 
+- Exception: Test non-supervisor call based exceptions.
 - instructions/: This directory holds tests for the functionality of each implemented instruction and their pseudoinstructions.
 - LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.
 - SmokeTest: Trivial ISA related tests.

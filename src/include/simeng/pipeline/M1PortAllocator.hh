@@ -19,7 +19,7 @@ class M1PortAllocator : public PortAllocator {
    * a port type which denotes the matching requirements of said instruction
    * groups. */
   M1PortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement,
-                  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement);
+                  std::vector<std::pair<uint16_t, uint64_t>> rsArrangement);
 
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.
@@ -35,7 +35,7 @@ class M1PortAllocator : public PortAllocator {
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
   void setRSSizeGetter(
-      std::function<void(std::vector<uint64_t>&)> rsSizes) override;
+      std::function<void(std::vector<uint32_t>&)> rsSizes) override;
 
   /** Tick the port allocator to allow it to process internal tasks. */
   void tick() override;
@@ -50,13 +50,13 @@ class M1PortAllocator : public PortAllocator {
    * that port. */
   std::vector<uint16_t> weights;
 
-  std::vector<uint64_t> rsFreeSpaces;
+  std::vector<uint32_t> rsFreeSpaces;
 
   /** Get the current capacity of the reservation stations */
-  std::function<void(std::vector<uint64_t>&)> rsSizes_;
+  std::function<void(std::vector<uint32_t>&)> rsSizes_;
 
   /** Mapping from port index to reservation station <index, size> */
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement_;
+  std::vector<std::pair<uint16_t, uint64_t>> rsArrangement_;
 };
 
 }  // namespace pipeline

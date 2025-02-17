@@ -7,25 +7,53 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-span<const MemoryAccessTarget> Instruction::generateAddresses() {
-  assert((isLoad() || isStoreAddress()) &&
-         "generateAddresses called on non-load-or-store instruction");
+span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
+  assert(
+      (isInstruction(InsnType::isLoad) || isInstruction(InsnType::isStore)) &&
+      "generateAddresses called on non-load-or-store instruction");
 
   uint64_t address;
-  if (isLoad() && isStoreAddress() && isAtomic()) {
+  if (isInstruction(InsnType::isLoad) && isInstruction(InsnType::isStore) &&
+      isInstruction(InsnType::isAtomic)) {
     // Atomics
-    address = operands[1].get<uint64_t>();
-  } else if (isLoad()) {
-    address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+    // Metadata operands[2] corresponds to instruction sourceRegValues[1]
+    assert(metadata_.operands[2].type == RISCV_OP_MEM &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[1].get<uint64_t>();
+  } else if (isInstruction(InsnType::isLoad) &&
+             isInstruction(InsnType::isAtomic)) {
+    // Load reserved
+    // Metadata operands[1] corresponds to instruction sourceRegValues[0]
+    assert(metadata_.operands[1].type == RISCV_OP_MEM &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[0].get<uint64_t>();
+  } else if (isInstruction(InsnType::isStore) &&
+             isInstruction(InsnType::isAtomic)) {
+    // Store conditional
+    assert(metadata_.operands[2].type == RISCV_OP_MEM &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[1].get<uint64_t>();
+  } else if (isInstruction(InsnType::isLoad)) {
+    assert(metadata_.operands[1].type == RISCV_OP_MEM &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+    address = sourceValues_[0].get<uint64_t>() + sourceImm_;
   } else {
-    address = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+    assert((metadata_.operands[1].type == RISCV_OP_MEM) &&
+           "metadata_ operand not of correct type during RISC-V address "
+           "generation");
+
+    address = sourceValues_[1].get<uint64_t>() + sourceImm_;
   }
 
   // Atomics
-  if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
-      metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {  // Atomics
+  if (Opcode::RISCV_AMOADD_D <= metadata_.opcode &&
+      metadata_.opcode <= Opcode::RISCV_AMOXOR_W_RL) {  // Atomics
     // THIS IS DEPENDENT ON CAPSTONE ENCODING AND COULD BREAK IF CHANGED
-    int size = ((metadata.opcode - 182) / 4) % 2;  // 1 = Word, 0 = Double
+    int size = ((metadata_.opcode - 182) / 4) % 2;  // 1 = Word, 0 = Double
     if (size == 1) {
       // Word
       setMemoryAddresses({{address, 4}});
@@ -36,10 +64,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     return getGeneratedAddresses();
   }
 
-  switch (metadata.opcode) {
+  switch (metadata_.opcode) {
     case Opcode::RISCV_SD:
       [[fallthrough]];
-    case Opcode::RISCV_LD: {
+    case Opcode::RISCV_LD:
+      [[fallthrough]];
+    case Opcode::RISCV_FSD:
+      [[fallthrough]];
+    case Opcode::RISCV_FLD: {
       setMemoryAddresses({{address, 8}});
       break;
     }
@@ -47,7 +79,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       [[fallthrough]];
     case Opcode::RISCV_LW:
       [[fallthrough]];
-    case Opcode::RISCV_LWU: {
+    case Opcode::RISCV_LWU:
+      [[fallthrough]];
+    case Opcode::RISCV_FSW:
+      [[fallthrough]];
+    case Opcode::RISCV_FLW: {
       setMemoryAddresses({{address, 4}});
       break;
     }
@@ -76,7 +112,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_LR_W_RL:
       [[fallthrough]];
     case Opcode::RISCV_LR_W_AQ_RL: {
-      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 4}});
       break;
     }
     case Opcode::RISCV_LR_D:
@@ -86,7 +122,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_LR_D_RL:
       [[fallthrough]];
     case Opcode::RISCV_LR_D_AQ_RL: {
-      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+      setMemoryAddresses({{sourceValues_[0].get<uint64_t>(), 8}});
       break;
     }
     case Opcode::RISCV_SC_W:
@@ -96,7 +132,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_SC_W_RL:
       [[fallthrough]];
     case Opcode::RISCV_SC_W_AQ_RL: {
-      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+      setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 4}});
       break;
     }
     case Opcode::RISCV_SC_D:
@@ -106,7 +142,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_SC_D_RL:
       [[fallthrough]];
     case Opcode::RISCV_SC_D_AQ_RL: {
-      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 8}});
       break;
     }
     default:

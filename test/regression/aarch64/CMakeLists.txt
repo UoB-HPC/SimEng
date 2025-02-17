@@ -22,9 +22,16 @@ add_executable(regression-aarch64
                instructions/store.cc
                instructions/sve.cc
                )
+
+configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+
 target_include_directories(regression-aarch64 PRIVATE
-                           ${CMAKE_CURRENT_SOURCE_DIR})
+                            ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(regression-aarch64 PRIVATE
+                            ${CMAKE_CURRENT_BINARY_DIR})
+
 target_link_libraries(regression-aarch64 regression-test-base)
+target_compile_options(regression-aarch64 PRIVATE ${SIMENG_COMPILE_OPTIONS})
 
 # Define a macro so that tests can find data files
 target_compile_definitions(regression-aarch64 PRIVATE

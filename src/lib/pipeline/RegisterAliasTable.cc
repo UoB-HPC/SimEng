@@ -39,7 +39,7 @@ RegisterAliasTable::RegisterAliasTable(
     historyTable_[type].resize(physCount);
     destinationTable_[type].resize(physCount);
   }
-};
+}
 
 Register RegisterAliasTable::getMapping(Register architectural) const {
   // Asserts to ensure mapping isn't attempted for an out-of-bound index (i.e.
@@ -50,7 +50,7 @@ Register RegisterAliasTable::getMapping(Register architectural) const {
          "Invalid register type. Cannot find RAT mapping.");
 
   auto tag = mappingTable_[architectural.type][architectural.tag];
-  return {architectural.type, tag};
+  return {architectural.type, tag, true};
 }
 
 bool RegisterAliasTable::canAllocate(uint8_t type,
@@ -84,7 +84,7 @@ Register RegisterAliasTable::allocate(Register architectural) {
   mappingTable_[architectural.type][architectural.tag] = tag;
   destinationTable_[architectural.type][tag] = architectural.tag;
 
-  return {architectural.type, tag};
+  return {architectural.type, tag, true};
 }
 
 void RegisterAliasTable::commit(Register physical) {
@@ -93,16 +93,17 @@ void RegisterAliasTable::commit(Register physical) {
   auto oldTag = historyTable_[physical.type][physical.tag];
   freeQueues_[physical.type].push(oldTag);
 }
+
 void RegisterAliasTable::rewind(Register physical) {
+  assert(physical.renamed &&
+         "Attempted to rewind a physical register which hasn't been subject to "
+         "the register renaming scheme");
   // Find which architectural tag this referred to
   auto destinationTag = destinationTable_[physical.type][physical.tag];
   // Rewind the mapping table to the old physical tag
   mappingTable_[physical.type][destinationTag] =
       historyTable_[physical.type][physical.tag];
   // Add the rewound physical tag back to the free queue
-  freeQueues_[physical.type].push(physical.tag);
-}
-void RegisterAliasTable::free(Register physical) {
   freeQueues_[physical.type].push(physical.tag);
 }
 

@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(FetchContent)
+include(CheckCXXCompilerFlag)
+include(ProcessorCount)
 set(FETCHCONTENT_QUIET OFF)
 
 # FetchContent_MakeAvailable was introduced in 3.14
@@ -13,21 +15,15 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
     endif()
 endmacro()
 
-# Need an additional macro for LLVM as a sub-directory needs to be targeted for llvm-14.0.5
-macro(FetchContent_MakeAvailable_SubDir_Args NAME SUBDIR ARGS)
-    FetchContent_GetProperties(${NAME})
-    if(NOT ${NAME}_POPULATED)
-        FetchContent_Populate(${NAME})
-        add_subdirectory(${${NAME}_SOURCE_DIR}/${SUBDIR}/ ${${NAME}_BINARY_DIR} ${ARGS})
-    endif()
-endmacro()
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
-# we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
-
+# we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a relatively small part of it
 FetchContent_Declare(
-  llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.5/llvm-14.0.5.src.tar.xz
-  URL_HASH MD5=6bd202e403d950c78985048ce499a518
+        llvm
+         URL https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/llvm-project-18.1.8.src.tar.xz
+         URL_HASH MD5=81cd0be5ae6f1ad8961746116d426a96
 )
 
 FetchContent_Declare(
@@ -38,27 +34,17 @@ FetchContent_Declare(
   GIT_PROGRESS   TRUE
 )
 
-FetchContent_Declare(
-  yaml-cpp
-  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-  # the latest tagged version (0.6.3) is fairly old and doesn't contain the needed CMake stuff for this to work properly
-  # hence we pick the latest working commit
-  GIT_TAG        a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
-  GIT_PROGRESS   TRUE
-)
-
+# WARNING: When updating capstone version, we MUST make a new, discrete branch in the UoB-HPC Capstone fork to ensure
+#          current / previous SimEng versions continue to operate correctly.
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG next
+  GIT_TAG next-update # Branch for SimEng version 0.9.7
   GIT_PROGRESS TRUE
-
-  # Old Git tag pre-Armv9.2
-  # GIT_TAG e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
 )
 
 cmake_policy(SET CMP0048 NEW)
-project(SimEng VERSION 0.9.4 LANGUAGES C CXX)
+project(SimEng VERSION 0.9.6 LANGUAGES C CXX)
 
 # If no build type was defined, default to Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -79,8 +65,8 @@ set(CMAKE_MACOSX_RPATH 1)
 # Enable PIC for libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Enable additional compiler warnings for all targets
-add_compile_options(-Wall)
+# Create variable to enable additional compiler warnings for SimEng targets only
+set(SIMENG_COMPILE_OPTIONS -Wall -pedantic -Werror) #-Wextra
 
 # Disable RTTI for all targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
@@ -97,36 +83,46 @@ set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "Disable Capstone shared library")
 set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "Disable cstool build")
 set(CAPSTONE_INSTALL OFF CACHE BOOL "Disable install of capstone")
 
-set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "Disable A32 support")
+set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "Disable Arm32 support")
 set(CAPSTONE_MIPS_SUPPORT OFF CACHE BOOL "Disable MIPS support")
-set(CAPSTONE_X86_SUPPORT OFF CACHE BOOL "Disable x86 support")
 set(CAPSTONE_PPC_SUPPORT OFF CACHE BOOL "Disable PowerPC support")
+set(CAPSTONE_X86_SUPPORT OFF CACHE BOOL "Disable x86 support")
 set(CAPSTONE_SPARC_SUPPORT OFF CACHE BOOL "Disable Sparc support")
-set(CAPSTONE_SYSZ_SUPPORT OFF CACHE BOOL "Disable SystemZ support")
+set(CAPSTONE_SYSTEMZ_SUPPORT OFF CACHE BOOL "Disable SystemZ support")
 set(CAPSTONE_XCORE_SUPPORT OFF CACHE BOOL "Disable XCore support")
 set(CAPSTONE_M68K_SUPPORT OFF CACHE BOOL "Disable M68K support")
-set(CAPSTONE_TMS320C64X_SUPPORT OFF CACHE BOOL "Disable TMS320C64x")
+set(CAPSTONE_TMS320C64X_SUPPORT OFF CACHE BOOL "Disable TMS320C64x support")
 set(CAPSTONE_M680X_SUPPORT OFF CACHE BOOL "Disable M680x support")
 set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "Disable EVM support")
-set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "Disable WASM support")
+set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
+set(CAPSTONE_SH_SUPPORT OFF CACHE BOOL "Disable SH support")
+set(CAPSTONE_TRICORE_SUPPORT OFF CACHE BOOL "Disable TriCore support")
+set(CAPSTONE_ALPHA_SUPPORT OFF CACHE BOOL "Disable Alpha support")
+set(CAPSTONE_HPPA_SUPPORT OFF CACHE BOOL "Disable HPPA support")
+set(CAPSTONE_LOONGARCH_SUPPORT OFF CACHE BOOL "Disable LoongArch support")
+
 
 FetchContent_MakeAvailable_Args(capstone-lib EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
-## Setup yaml-cpp ##
-set(YAML_CPP_BUILD_TESTS OFF)
-set(YAML_CPP_INSTALL OFF)
-
-FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
+# Enable the single RYML header to be packaged into the SimEng shared library
+set(RYML_SHARED ON)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
-option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
+
+# Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
+# They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
+# TODO: Remove once SST integration has updated to SST version 13 or later - the use of unary and binary functions are removed in later versions.
+if(APPLE)
+  add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
+endif()
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
@@ -153,50 +149,95 @@ if(SIMENG_ENABLE_TESTS)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
 
       # Check LLVM version
-    if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "14.1"))
-      message(FATAL_ERROR "LLVM version must be >= 8.0 and <= 14.0")
+    if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "18.2"))
+      message(FATAL_ERROR "LLVM version must be >= 8.0 and < 18.2")
     endif()
 
       # Print message containing if the full test suite will run
     if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
       message(STATUS "LLVM version does not support AArch64 extensions SME or SVE2. These test suites will be skipped.")
     endif()
+    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "18.0")
+      message(STATUS "LLVM version does not support AArch64 extensions SME2. These test suites will be skipped.")
+    endif()
 
   else()
+    # If external LLVM not provided, download LLVM and build only what we need. Then point SimEng to use this sub-build
+    FetchContent_GetProperties(llvm)
+    if(NOT llvm_POPULATED)
+        FetchContent_Populate(llvm)
 
-    set(LLVM_TARGETS_TO_BUILD "AArch64;RISCV" CACHE INTERNAL "")
+        set(COMMAND_ECHO_OPTION "")
+        # COMMAND_ECHO supported only in CMake >= 3.15
+        if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.15")
+            set(COMMAND_ECHO_OPTION COMMAND_ECHO STDOUT)
+        endif()
 
-    set(LLVM_BUILD_RUNTIME OFF)
+        execute_process(
+                COMMAND ${CMAKE_COMMAND}
+                -S ${llvm_SOURCE_DIR}/llvm
+                -B ${llvm_BINARY_DIR}
+                -DCMAKE_WARN_DEPRECATED=OFF
+                -DCMAKE_INSTALL_MESSAGE=LAZY
+                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                -DCMAKE_INSTALL_PREFIX=${llvm_BINARY_DIR}/dist
+                -DCMAKE_SKIP_RPATH=OFF # keep the rpath prefix to avoid libLLVM.so
+                -DCMAKE_VERBOSE_MAKEFILE=${CMAKE_VERBOSE_MAKEFILE}
+                -G${CMAKE_GENERATOR}
 
-    set(LLVM_BUILD_TOOLS OFF)
-    set(LLVM_INCLUDE_TOOLS OFF)
+                -DLLVM_INCLUDE_BENCHMARKS=OFF
+                -DLLVM_INCLUDE_TESTS=OFF
+                -DLLVM_INCLUDE_DOCS=OFF
+                -DLLVM_INCLUDE_EXAMPLES=OFF
+                -DLLVM_BUILD_TESTS=OFF
+                -DLLVM_BUILD_DOCS=OFF
+                -DLLVM_BUILD_RUNTIME=OFF
+                -DLLVM_BUILD_TOOLS=OFF
+                -DLLVM_BUILD_EXAMPLES=OFF
+                -DLLVM_ENABLE_BINDINGS=OFF
+                -DLLVM_ENABLE_WARNINGS=OFF
+                "-DLLVM_TARGETS_TO_BUILD=AArch64\\;RISCV"
 
-    set(LLVM_BUILD_EXAMPLES OFF)
-    set(LLVM_INCLUDE_EXAMPLES OFF)
+                ${COMMAND_ECHO_OPTION}
+                RESULT_VARIABLE SUCCESS)
 
-    set(LLVM_BUILD_TESTS OFF)
-    set(LLVM_INCLUDE_TESTS OFF)
+        # TODO: replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        if (NOT SUCCESS EQUAL "0")
+            message(FATAL_ERROR "LLVM configure did not succeed")
+        else ()
+            message(STATUS "LLVM configuration complete, starting build...")
+        endif ()
 
-    set(LLVM_BUILD_BENCHMARKS OFF)
-    set(LLVM_INCLUDE_BENCHMARKS OFF)
+        ProcessorCount(NPROC)
+        execute_process(
+                COMMAND ${CMAKE_COMMAND}
+                --build ${llvm_BINARY_DIR}
+                --target
+                # The full list of targets can be discovered via `ninja -t targets` inside the build
+                install-LLVMObject
+                install-LLVMAArch64AsmParser
+                install-LLVMRISCVAsmParser
+                # We also include the headers and CMake exports for a *complete* build
+                install-llvm-headers
+                install-cmake-exports
+                -j ${NPROC}
 
-    set(LLVM_BUILD_DOCS OFF)
-    set(LLVM_INCLUDE_DOCS OFF)
+                ${COMMAND_ECHO_OPTION}
+                RESULT_VARIABLE SUCCESS)
 
-    set(LLVM_INCLUDE_DOCS OFF)
-    set(LLVM_ENABLE_BINDINGS OFF)
-    set(LLVM_INSTALL_UTILS OFF)
-
-    # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
-    FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
-    # make sure we get the headers too
-    include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
+        # TODO: replace with COMMAND_ERROR_IS_FATAL in the future (>= 3.19)
+        if (NOT SUCCESS EQUAL "0")
+            message(FATAL_ERROR "LLVM build did not succeed")
+        endif ()
+    endif()
 
     find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
-    # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
+    # we just assume it's good because it must be whitelisted in FetchContent_Declare
 endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
@@ -219,7 +260,7 @@ endif()
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
-    DEPENDS unittests regression-aarch64 regression-riscv
+    DEPENDS unittests regression-aarch64 regression-riscv integrationtests
   )
 endif()
 
@@ -240,7 +281,7 @@ if (SIMENG_ENABLE_SST)
     endif()
   else()
     message(WARNING "SST build was selected but SST install directory was not specified.
-    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")
   endif()
 endif()
 
