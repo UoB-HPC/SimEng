@@ -58,6 +58,18 @@ class AArch64InstructionTest : public testing::Test {
                    &rawInsn_cbz);
     cbzMetadata = std::make_unique<InstructionMetadata>(rawInsn_cbz);
 
+    // psel
+    cs_insn rawInsn_psel;
+    cs_detail rawDetail_psel;
+    rawInsn_psel.detail = &rawDetail_psel;
+    size_t size_psel = 4;
+    uint64_t address_psel = 0;
+    const uint8_t* encoding_psel =
+        reinterpret_cast<const uint8_t*>(pselInstrBytes.data());
+    cs_disasm_iter(capstoneHandle, &encoding_psel, &size_psel, &address_psel,
+                   &rawInsn_psel);
+    pselMetadata = std::make_unique<InstructionMetadata>(rawInsn_psel);
+
     const uint8_t* badEncoding =
         reinterpret_cast<const uint8_t*>(invalidInstrBytes.data());
     invalidMetadata = std::make_unique<InstructionMetadata>(badEncoding);
@@ -74,6 +86,8 @@ class AArch64InstructionTest : public testing::Test {
   std::array<uint8_t, 4> ldpInstrBytes = {0x61, 0x08, 0x40, 0xA9};
   // cbz x2, #0x28
   std::array<uint8_t, 4> cbzInstrBytes = {0x42, 0x01, 0x00, 0xB4};
+  // psel	p4, p0, p2.s[w13, 0]
+  std::array<uint8_t, 4> pselInstrBytes = {0x44, 0x40, 0x31, 0x25};
   std::array<uint8_t, 4> invalidInstrBytes = {0x20, 0x00, 0x02, 0x8c};
 
   // A Capstone decoding library handle, for decoding instructions.
@@ -85,6 +99,7 @@ class AArch64InstructionTest : public testing::Test {
   std::unique_ptr<InstructionMetadata> fdivMetadata;
   std::unique_ptr<InstructionMetadata> ldpMetadata;
   std::unique_ptr<InstructionMetadata> cbzMetadata;
+  std::unique_ptr<InstructionMetadata> pselMetadata;
   std::unique_ptr<InstructionMetadata> invalidMetadata;
   std::unique_ptr<MicroOpInfo> uopInfo;
   InstructionException exception;
@@ -182,7 +197,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x44);
   EXPECT_EQ(insn.getInstructionId(), 13);
@@ -248,7 +263,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH_NOSHIFT);
   EXPECT_EQ(insn.getInstructionAddress(), 0x43);
   EXPECT_EQ(insn.getInstructionId(), 15);
@@ -461,38 +476,6 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   EXPECT_EQ(insn.getException(), InstructionException::DataAbort);
 }
 
-// Test to check logic around early branch misprediction logic
-TEST_F(AArch64InstructionTest, earlyBranchMisprediction) {
-  // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
-  insn.setInstructionAddress(64);
-
-  // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  EXPECT_FALSE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-
-  // Set prediction and ensure expected state changes / outcomes are seen
-  pred = {true, 0x4848};
-  insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  // Check logic of `checkEarlyBranchMisprediction` which is different for
-  // non-branch instructions
-  EXPECT_FALSE(insn.isBranch());
-  tup = {true, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-}
-
 // Test that a correct prediction (branch taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_taken) {
   // insn is `cbz x2, #0x28`
@@ -507,8 +490,6 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 80 + 0x28};
@@ -536,8 +517,6 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where a branch isn't taken is handled correctly
   pred = {false, 80 + 4};
@@ -565,8 +544,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - target is wrong
   pred = {true, 80 + 0x28};
@@ -594,8 +571,6 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - taken is wrong
   pred = {true, 100 + 0x28};

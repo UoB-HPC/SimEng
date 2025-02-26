@@ -372,12 +372,6 @@ class Instruction : public simeng::Instruction {
   /** Retrieve supplied memory data. */
   span<const RegisterValue> getData() const override;
 
-  /** Early misprediction check; see if it's possible to determine whether the
-   * next instruction address was mispredicted without executing the
-   * instruction. Returns a {mispredicted, target} tuple representing whether
-   * the instruction was mispredicted, and the correct target address. */
-  std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
-
   /** Retrieve branch type. */
   BranchType getBranchType() const override;
 

@@ -32,7 +32,7 @@ Queue-Sizes:
   Load: 40
   Store: 24
 Port-Allocator:
-  Type: A64FX
+  Type: Balanced
 Branch-Predictor:
   Type: "Perceptron"
   BTB-Tag-Bits: 11
@@ -80,7 +80,7 @@ Ports:
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support: 
+    Instruction-Group-Support: 
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -88,7 +88,7 @@ Ports:
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -98,6 +98,7 @@ Ports:
     Portname: BR
     Instruction-Group-Support:
     - BRANCH
+# Define example SME unit
   8:
     Portname: SME
     Instruction-Group-Support:

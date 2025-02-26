@@ -178,7 +178,7 @@ TEST_F(RiscVInstructionTest, invalidInsn_1) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::EncodingUnallocated);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH);
   EXPECT_EQ(insn.getInstructionAddress(), 0x44);
   EXPECT_EQ(insn.getInstructionId(), 13);
@@ -242,7 +242,7 @@ TEST_F(RiscVInstructionTest, invalidInsn_2) {
   }
   EXPECT_EQ(insn.getException(), InstructionException::HypervisorCall);
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
-  // Default Group
+  // Default Group for instruction that is not decoded
   EXPECT_EQ(insn.getGroup(), InstructionGroups::INT_SIMPLE_ARTH);
   EXPECT_EQ(insn.getInstructionAddress(), 0x43);
   EXPECT_EQ(insn.getInstructionId(), 15);
@@ -435,38 +435,6 @@ TEST_F(RiscVInstructionTest, supplyData_dataAbort) {
   EXPECT_EQ(insn.getException(), InstructionException::DataAbort);
 }
 
-// Test to check logic around early branch misprediction logic
-TEST_F(RiscVInstructionTest, earlyBranchMisprediction) {
-  // Insn is `div	a3, a3, a0`
-  Instruction insn = Instruction(arch, *divMetadata.get());
-  insn.setInstructionAddress(64);
-
-  // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  EXPECT_FALSE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-
-  // Set prediction and ensure expected state changes / outcomes are seen
-  pred = {true, 0x4848};
-  insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
-  EXPECT_TRUE(matchingPred);
-  EXPECT_FALSE(insn.wasBranchTaken());
-  EXPECT_EQ(insn.getBranchAddress(), 0);
-  EXPECT_EQ(insn.getBranchType(), BranchType::Unknown);
-  // Check logic of `checkEarlyBranchMisprediction` which is different for
-  // non-branch instructions
-  EXPECT_FALSE(insn.isBranch());
-  tup = {true, insn.getInstructionAddress() + 4};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
-}
-
 // Test that a correct prediction (branch taken) is handled correctly
 TEST_F(RiscVInstructionTest, correctPred_taken) {
   // insn is `bgeu a5, a4, -86`
@@ -481,8 +449,6 @@ TEST_F(RiscVInstructionTest, correctPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 400 - 86};
@@ -511,8 +477,6 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test a correct prediction where a branch isn't taken is handled correctly
   // imm operand 0x28 has 4 added implicitly by dissassembler
@@ -542,8 +506,6 @@ TEST_F(RiscVInstructionTest, incorrectPred_target) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - target is wrong
   // imm operand 0x28 has 4 added implicitly by dissassembler
@@ -573,8 +535,6 @@ TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_EQ(insn.getBranchType(), BranchType::Conditional);
   EXPECT_TRUE(insn.isBranch());
-  std::tuple<bool, uint64_t> tup = {false, 0};
-  EXPECT_EQ(insn.checkEarlyBranchMisprediction(), tup);
 
   // Test an incorrect prediction is handled correctly - taken is wrong
   // imm operand 0x28 has 4 added implicitly by dissassembler

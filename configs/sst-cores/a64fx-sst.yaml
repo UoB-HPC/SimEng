@@ -29,7 +29,7 @@ Queue-Sizes:
   Load: 40
   Store: 24
 Port-Allocator:
-  Type: A64FX
+  Type: Balanced
 Branch-Predictor:
   Type: "Perceptron"
   BTB-Tag-Bits: 11
