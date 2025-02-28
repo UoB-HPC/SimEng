@@ -81,11 +81,9 @@ class SimInfo {
    * execution of a test suite). */
   static void reBuild();
 
-  /** Set `roiCyclesEnabled_` to true. */
-  static void enableRoiCycles();
-
-  /** Set `roiCyclesEnabled_` to false. */
-  static void disableRoiCycles();
+  /** Set `roiCyclesEnabled_` to true if currently false, or to false if
+   * currently true. */
+  static void changeRoiCycles();
 
   /** Get the value of `roiCyclesEnabled_`. */
   static bool getRoiCyclesEnabled();

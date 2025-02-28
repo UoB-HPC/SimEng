@@ -61,6 +61,12 @@ void Instruction::SMdisabled() {
   return;
 }
 
+void Instruction::updateROICycles() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::ROICycles;
+  return;
+}
+
 void Instruction::execute() {
   assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
@@ -2912,12 +2918,10 @@ void Instruction::execute() {
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // Hints used with loops to start and stop ROI cycle counters in OoO
         // core
-        if (metadata_.operands[0].imm == 0x40) {
-          // Start counter
-          config::SimInfo::enableRoiCycles();
-        } else if (metadata_.operands[0].imm == 0x41) {
-          // Stop counter
-          config::SimInfo::disableRoiCycles();
+        if ((metadata_.operands[0].imm == 0x40) ||
+            (metadata_.operands[0].imm == 0x41)) {
+          // Start or Stop the counter
+          return updateROICycles();
         }
         break;
       }

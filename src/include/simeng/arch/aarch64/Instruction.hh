@@ -61,7 +61,8 @@ enum class InstructionException {
   ZAregisterStatusUpdate,
   SMZAUpdate,
   ZAdisabled,
-  SMdisabled
+  SMdisabled,
+  ROICycles
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
@@ -472,6 +473,9 @@ class Instruction : public simeng::Instruction {
 
   /** Generate a SMdisabled exception. */
   void SMdisabled();
+
+  /* Generate a ROICycles exception. */
+  void updateROICycles();
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
