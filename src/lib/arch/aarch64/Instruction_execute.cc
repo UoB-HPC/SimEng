@@ -2910,7 +2910,15 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
-        // TODO: Observe hints
+        // Hints used with loops to start and stop ROI cycle counters in OoO
+        // core
+        if (metadata_.operands[0].imm == 0x40) {
+          // Start counter
+          config::SimInfo::enableRoiCycles();
+        } else if (metadata_.operands[0].imm == 0x41) {
+          // Stop counter
+          config::SimInfo::disableRoiCycles();
+        }
         break;
       }
       case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}

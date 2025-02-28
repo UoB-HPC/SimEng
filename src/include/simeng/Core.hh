@@ -110,6 +110,9 @@ class Core {
   /** The number of times this core has been ticked. */
   uint64_t ticks_ = 0;
 
+  /** The number of times this core has been ticked in the ROI. */
+  uint64_t roiTicks_ = 0;
+
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
 

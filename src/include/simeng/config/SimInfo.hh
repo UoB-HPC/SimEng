@@ -81,6 +81,15 @@ class SimInfo {
    * execution of a test suite). */
   static void reBuild();
 
+  /** Set `roiCyclesEnabled_` to true. */
+  static void enableRoiCycles();
+
+  /** Set `roiCyclesEnabled_` to false. */
+  static void disableRoiCycles();
+
+  /** Get the value of `roiCyclesEnabled_`. */
+  static bool getRoiCyclesEnabled();
+
  private:
   SimInfo();
 
@@ -123,6 +132,9 @@ class SimInfo {
 
   /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
+
+  /** Whether cycles should be added to ROI counter. */
+  bool roiCyclesEnabled_ = false;
 };
 
 }  // namespace config
