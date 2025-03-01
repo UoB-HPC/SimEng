@@ -725,7 +725,14 @@ bool ExceptionHandler::init() {
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
     return concludeSyscall(stateChange);
   } else if (exception == InstructionException::ROICycles) {
-    config::SimInfo::changeRoiCycles();
+    int val = instruction_.getMetadata().operands[0].imm;
+    if (val == 0x40) {
+      // Set to start
+      config::SimInfo::changeRoiCycles(true);
+    } else if (val == 0x41) {
+      // Set to stop
+      config::SimInfo::changeRoiCycles(false);
+    }
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, {}, {}};
     return concludeSyscall(stateChange);
   }

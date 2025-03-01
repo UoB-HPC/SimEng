@@ -63,8 +63,8 @@ bool SimInfo::getGenSpecFiles() { return getInstance()->genSpecialFiles_; }
 
 void SimInfo::reBuild() { getInstance()->extractValues(); }
 
-void SimInfo::changeRoiCycles() {
-  getInstance()->roiCyclesEnabled_ = !getInstance()->roiCyclesEnabled_;
+void SimInfo::changeRoiCycles(bool newVal) {
+  getInstance()->roiCyclesEnabled_ = newVal;
 }
 
 bool SimInfo::getRoiCyclesEnabled() { return getInstance()->roiCyclesEnabled_; }
