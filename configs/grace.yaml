@@ -36,7 +36,7 @@ Branch-Predictor:
   RAS-entries: 8
   Fallback-Static-Predictor: "Always-Taken"
   Tage-Table-Bits: 12
-  Num-Tage-Tables: 6
+  Num-Tage-Tables: 8
   Tag-Length: 8
 L1-Data-Memory:
   Interface-Type: Fixed
