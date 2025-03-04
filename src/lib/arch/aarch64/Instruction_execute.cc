@@ -170,6 +170,64 @@ void Instruction::execute() {
             memoryData_.size(), {0, 0}));
         break;
       }
+      case MicroOpcode::ST1_VEC_DATA: {
+        // Uop format st1x zn.x, pg/`
+        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+
+        // Given unknown data type, work in uint8
+        const uint8_t* t1 = sourceValues_[0].getAsVector<uint8_t>();
+        const uint16_t partition_num = VL_bits / (8 * dataSize_);
+        std::array<uint8_t, 256> mdata;
+        uint16_t md_size = 0;
+
+        for (uint16_t i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull
+                                    << ((i % (64 / dataSize_)) * dataSize_);
+          if (p[i / (64 / dataSize_)] & shifted_active) {
+            // For number of uint8 in dataSize_, add to mdata
+            for (uint8_t j = 0; j < dataSize_; j++) {
+              mdata[md_size] = t1[i * dataSize_ + j];
+              md_size++;
+            }
+            bytesMoved_ += dataSize_;
+          } else if (md_size) {
+            memoryData_.push_back(RegisterValue((char*)mdata.data(), md_size));
+            md_size = 0;
+          }
+        }
+        if (md_size) {
+          memoryData_.push_back(RegisterValue((char*)mdata.data(), md_size));
+        }
+        // Set false addresses after memoryData has been filled
+        setMemoryAddresses(std::vector<memory::MemoryAccessTarget>(
+            memoryData_.size(), {0, 0}));
+        break;
+      }
+      case MicroOpcode::ST4_MULVEC_DATA: {
+        // Uop format st4x zti, pg, [xn...]
+        //
+        // Instruction stores 4 registers in an interleaved fashion.
+        // So, as each uop has one source register, each element must get its
+        // own address.
+        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+
+        // Given unknown data type, work in uint8
+        const uint8_t* t1 = sourceValues_[0].getAsVector<uint8_t>();
+        const uint16_t partition_num = VL_bits / (8 * dataSize_);
+
+        for (uint16_t i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull
+                                    << ((i % (64 / dataSize_)) * dataSize_);
+          if (p[i / (64 / dataSize_)] & shifted_active) {
+            memoryData_.push_back(
+                RegisterValue((char*)t1 + (i * dataSize_), dataSize_));
+          }
+        }
+        // Set false addresses after memoryData has been filled
+        setMemoryAddresses(std::vector<memory::MemoryAccessTarget>(
+            memoryData_.size(), {0, 0}));
+        break;
+      }
       default:
         return executionNYI();
     }
@@ -195,6 +253,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ADDPv2i64: {  // addp vd.2d, vn.2d, vm.2d
         results_[0] = vecAddp_3ops<uint64_t, 2>(sourceValues_);
+        break;
+      }
+      case Opcode::AArch64_ADDPv2i32: {  // addp vd.2s, vn.2s, vm.2s
+        results_[0] = vecAddp_3ops<uint32_t, 2>(sourceValues_);
         break;
       }
       case Opcode::AArch64_ADDPv2i64p: {  // addp dd, vn.2d
@@ -6775,6 +6837,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_UDOTv16i8: {  // udot vd.4s, vn.16b, vm.16b
         results_[0] = vecUdot<4>(sourceValues_, metadata_);
+        break;
+      }
+      case Opcode::AArch64_UDOTv8i8: {  // udot vd.2s, vn.8b, vm.8b
+        results_[0] = vecUdot<2>(sourceValues_, metadata_);
         break;
       }
       case Opcode::AArch64_UDOTlanev16i8: {  // udot vd.4s, vn.16b, vm.4b[index]

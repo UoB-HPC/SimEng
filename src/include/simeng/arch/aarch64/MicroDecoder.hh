@@ -95,6 +95,22 @@ class MicroDecoder {
                                      int microOpIndex, uint8_t dataSize,
                                      uint8_t numVecs);
 
+  /** Create a store data uop for a SVE ST1X instruction with
+   * predicate-as-mask predication from a source register and a capstone
+   * predicate operand. */
+  Instruction createSt1VecDataUop(const Architecture& architecture,
+                                  aarch64_reg src, aarch64_op_pred pred,
+                                  csh capstoneHandle, bool lastMicroOp,
+                                  int microOpIndex, uint8_t dataSize);
+
+  /** Create a store address uop for a SVE ST1X instruction
+   * with predicate-as-maskr predication from a capstone predicate operand and
+   * a capstone memory operand. */
+  Instruction createSt1VecAddrUop(const Architecture& architecture,
+                                  aarch64_op_pred pred, aarch64_op_mem mem,
+                                  csh capstoneHandle, bool lastMicroOp,
+                                  int microOpIndex, uint8_t dataSize);
+
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;
 

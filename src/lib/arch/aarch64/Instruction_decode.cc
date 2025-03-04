@@ -514,11 +514,15 @@ void Instruction::decode() {
       }
     } else {
       if ((microOpcode_ != MicroOpcode::STR_DATA) &&
-          (microOpcode_ != MicroOpcode::ST1_MULVEC_DATA)) {
+          (microOpcode_ != MicroOpcode::ST1_MULVEC_DATA) &&
+          (microOpcode_ != MicroOpcode::ST1_VEC_DATA) &&
+          (microOpcode_ != MicroOpcode::ST4_MULVEC_DATA)) {
         setInstructionType(InsnType::isStoreAddress);
       }
       if ((microOpcode_ != MicroOpcode::STR_ADDR) &&
-          (microOpcode_ != MicroOpcode::ST1_MULVEC_ADDR)) {
+          (microOpcode_ != MicroOpcode::ST1_MULVEC_ADDR) &&
+          (microOpcode_ != MicroOpcode::ST1_VEC_ADDR) &&
+          (microOpcode_ != MicroOpcode::ST4_MULVEC_ADDR)) {
         setInstructionType(InsnType::isStoreData);
       }
     }

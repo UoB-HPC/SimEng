@@ -125,6 +125,69 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case MicroOpcode::ST1_VEC_ADDR: {
+        // Uop format st1x pg, [xn, xm, lsl #imm] (#imm is 3 for x=d, or 2 for
+        // x=w) Uop format st1x pg, [xn{, #imm, mul vl}]
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+
+        const uint16_t VL_bytes = VL_bits / 8;
+        uint64_t offset;
+        if (metadata_.operands[1].mem.index != AARCH64_REG_INVALID) {
+          // Using register offset - lsl  by #imm (equivalent to multiplying by
+          // dataSize bytes)
+          offset = sourceValues_[2].get<uint64_t>() * dataSize_;
+
+        } else {
+          // Using imm offset - multiply offset imm by VL in bytes
+          offset = metadata_.operands[1].mem.disp * VL_bytes;
+        }
+        uint64_t addr = sourceValues_[1].get<uint64_t>() + offset;
+
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        generatePredicatedContiguousAddressBlocks(
+            addr, (VL_bytes / dataSize_), dataSize_, dataSize_, p, addresses);
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case MicroOpcode::ST4_MULVEC_ADDR: {
+        // Uop format st4x, pg, [xn, xm, lsl #imm] (#imm is 3 for x=d, or 2 for
+        // x=w)
+        //
+        // Instruction stores 4 registers in an interleaved fashion.
+        // So, as each uop has one source register, each element must get its
+        // own address.
+        // Further, the stride between each element's address (assuming all are
+        // active) is 4 * dataSize_.
+
+        const uint8_t myIndex = microOpIndex_ - 1;
+        const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
+
+        const uint16_t VL_bytes = VL_bits / 8;
+        uint64_t offset;
+        if (metadata_.operands[1].mem.index != AARCH64_REG_INVALID) {
+          // Using register offset - lsl by #imm (equivalent to multiplying by
+          // dataSize bytes)
+          offset = sourceValues_[2].get<uint64_t>() * dataSize_;
+
+        } else {
+          // Using imm offset - multiply offset imm by VL in bytes
+          offset = metadata_.operands[1].mem.disp * VL_bytes;
+        }
+        uint64_t addr = sourceValues_[1].get<uint64_t>() + offset;
+        // Add dataSize * myIndex to `addr` to get correct address of element 0
+        addr += dataSize_ * myIndex;
+
+        std::vector<simeng::memory::MemoryAccessTarget> addresses;
+        for (uint16_t i = 0; i < (VL_bytes / dataSize_); i++) {
+          uint64_t shifted_active = 1ull
+                                    << ((i % (64 / dataSize_)) * dataSize_);
+          if (p[i / (64 / dataSize_)] & shifted_active) {
+            addresses.push_back({addr + (4 * dataSize_ * i), dataSize_});
+          }
+        }
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       default:
         exceptionEncountered_ = true;
         exception_ = InstructionException::ExecutionNotYetImplemented;

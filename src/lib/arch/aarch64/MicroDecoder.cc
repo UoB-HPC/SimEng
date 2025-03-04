@@ -767,6 +767,110 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
+        case Opcode::AArch64_ST1Onev4s_POST: {
+          // str with post-index splits into a store address, store data,
+          // and address offset generation uop
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // store address uop
+          cacheVector.push_back(createStrUop(
+              architecture,
+              {metadata.operands[1].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // store data uop
+          cacheVector.push_back(createSDUop(architecture,
+                                            metadata.operands[0].reg,
+                                            capstoneHandle, false, 1));
+          // offset generation uop
+          if (metadata.operands[2].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[1].mem.base,
+                metadata.operands[2].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(createImmOffsetUop(
+                architecture, metadata.operands[1].mem.base,
+                metadata.operands[2].imm, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_ST1Twov4s_POST:
+        case Opcode::AArch64_ST1Twov2d_POST: {
+          // str with post-index splits into a store address, store data,
+          // and address offset generation uop
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // store address uop 1
+          cacheVector.push_back(createStrUop(
+              architecture,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, 0},
+              capstoneHandle, false, 1, dataSize));
+          // store data uop 1
+          cacheVector.push_back(createSDUop(architecture,
+                                            metadata.operands[0].reg,
+                                            capstoneHandle, false, 1));
+          // store address uop 2
+          cacheVector.push_back(createStrUop(
+              architecture,
+              {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
+              capstoneHandle, false, 2, dataSize));
+          // store data uop 2
+          cacheVector.push_back(createSDUop(architecture,
+                                            metadata.operands[1].reg,
+                                            capstoneHandle, false, 2));
+          // offset generation uop
+          if (metadata.operands[3].type == AARCH64_OP_REG) {
+            cacheVector.push_back(createRegOffsetUop(
+                architecture, metadata.operands[2].mem.base,
+                metadata.operands[3].reg, capstoneHandle, true));
+          } else {
+            cacheVector.push_back(createImmOffsetUop(
+                architecture, metadata.operands[2].mem.base,
+                metadata.operands[3].imm, capstoneHandle, true));
+          }
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_ST1D_IMM:
+        case Opcode::AArch64_ST1D: {
+          // st1d splits into one store address and one store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+
+          // store0 address uop
+          cacheVector.push_back(createSt1VecAddrUop(
+              architecture, metadata.operands[1].pred, metadata.operands[2].mem,
+              capstoneHandle, false, 1, 8));
+          // store0 data uop
+          cacheVector.push_back(createSt1VecDataUop(
+              architecture, metadata.operands[0].reg, metadata.operands[1].pred,
+              capstoneHandle, true, 1, 8));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_ST1W:
+        case Opcode::AArch64_ST1W_IMM: {
+          // st1w splits into one store address and one store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+
+          // store0 address uop
+          cacheVector.push_back(createSt1VecAddrUop(
+              architecture, metadata.operands[1].pred, metadata.operands[2].mem,
+              capstoneHandle, false, 1, 4));
+          // store0 data uop
+          cacheVector.push_back(createSt1VecDataUop(
+              architecture, metadata.operands[0].reg, metadata.operands[1].pred,
+              capstoneHandle, true, 1, 4));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
         default: {
           // No supported splitting for this Instruction so return
           // macro-operation
@@ -1118,6 +1222,60 @@ Instruction MicroDecoder::createSt1MulVecAddrUop(
   microMetadataCache_.emplace_front(str_metadata);
   Instruction str(architecture, microMetadataCache_.front(),
                   MicroOpInfo({true, MicroOpcode::ST1_MULVEC_ADDR, dataSize,
+                               lastMicroOp, microOpIndex}));
+  str.setExecutionInfo(architecture.getExecutionInfo(str));
+  return str;
+}
+
+Instruction MicroDecoder::createSt1VecDataUop(
+    const Architecture& architecture, aarch64_reg src, aarch64_op_pred pred,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize) {
+  cs_detail sd_detail =
+      createDefaultDetail({{AARCH64_OP_REG}, {AARCH64_OP_PRED}});
+  sd_detail.aarch64.operands[0].reg = src;
+  sd_detail.aarch64.operands[1].pred = pred;
+  cs_insn sd_cs = {aarch64_insn::AARCH64_INS_ST1,
+                   aarch64_insn::AARCH64_INS_INVALID,
+                   0x0,
+                   4,
+                   "",
+                   "micro_st1VecData",
+                   "",
+                   false,
+                   false,
+                   &sd_detail,
+                   MicroOpcode::ST1_VEC_DATA};
+  InstructionMetadata sd_metadata(sd_cs);
+  microMetadataCache_.emplace_front(sd_metadata);
+  Instruction sd(architecture, microMetadataCache_.front(),
+                 MicroOpInfo({true, MicroOpcode::ST1_VEC_DATA, dataSize,
+                              lastMicroOp, microOpIndex}));
+  sd.setExecutionInfo(architecture.getExecutionInfo(sd));
+  return sd;
+}
+
+Instruction MicroDecoder::createSt1VecAddrUop(
+    const Architecture& architecture, aarch64_op_pred pred, aarch64_op_mem mem,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize) {
+  cs_detail str_detail =
+      createDefaultDetail({{AARCH64_OP_PRED}, {AARCH64_OP_MEM}});
+  str_detail.aarch64.operands[0].pred = pred;
+  str_detail.aarch64.operands[1].mem = mem;
+  cs_insn str_cs = {aarch64_insn::AARCH64_INS_ST1,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_st1VecAddr",
+                    "",
+                    false,
+                    false,
+                    &str_detail,
+                    MicroOpcode::ST1_VEC_ADDR};
+  InstructionMetadata str_metadata(str_cs);
+  microMetadataCache_.emplace_front(str_metadata);
+  Instruction str(architecture, microMetadataCache_.front(),
+                  MicroOpInfo({true, MicroOpcode::ST1_VEC_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   str.setExecutionInfo(architecture.getExecutionInfo(str));
   return str;
