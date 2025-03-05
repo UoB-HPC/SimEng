@@ -376,7 +376,7 @@ void Instruction::decode() {
         sourceOperandsPending_++;
       }
     } else if (op.type == AARCH64_OP_PRED) {
-      if (i == 0) setInstructionType(InsnType::isPredicate);
+      if (i == 0 && !isMicroOp_) setInstructionType(InsnType::isPredicate);
       if (op.access == CS_AC_READ) {
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.pred.reg);
         sourceRegisterCount_++;
@@ -561,7 +561,9 @@ void Instruction::decode() {
       }
     }
   } else if ((microOpcode_ == MicroOpcode::STR_DATA) ||
-             (microOpcode_ == MicroOpcode::ST1_MULVEC_DATA)) {
+             (microOpcode_ == MicroOpcode::ST1_MULVEC_DATA) ||
+             (microOpcode_ == MicroOpcode::ST1_VEC_DATA) ||
+             (microOpcode_ == MicroOpcode::ST4_MULVEC_DATA)) {
     // Edge case for identifying store data micro-operation
     setInstructionType(InsnType::isStoreData);
   }

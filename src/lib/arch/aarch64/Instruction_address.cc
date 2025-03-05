@@ -126,8 +126,8 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case MicroOpcode::ST1_VEC_ADDR: {
-        // Uop format st1x pg, [xn, xm, lsl #imm] (#imm is 3 for x=d, or 2 for
-        // x=w) Uop format st1x pg, [xn{, #imm, mul vl}]
+        // Uop format st1x pg, [xn, xm, lsl #imm] or st1x pg, [xn{, #imm, mul
+        // vl}]
         const uint64_t* p = sourceValues_[0].getAsVector<uint64_t>();
 
         const uint16_t VL_bytes = VL_bits / 8;
