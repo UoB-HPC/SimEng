@@ -32,7 +32,7 @@ Queue-Sizes:
   Load: 40
   Store: 24
 Port-Allocator:
-  Type: A64FX
+  Type: Balanced
 Branch-Predictor:
   Type: "Tage"
   BTB-Tag-Bits: 11
@@ -61,6 +61,17 @@ Ports:
     Instruction-Group-Support:
     - FP
     - SVE
+    # For A64FX, SVE indexed FMLA/UDOT has an IPC of 1.0 due to dependant micro-ops. NEON indexed FMLA has an IPC of 0.5 due to dependant micro-ops, sequential decode, and these micro-ops competing for both FL* units.
+    # Hence, we restrict these specific opcodes to a single port (FLA), and the NEON variant has its throughput reduced below to 2 cycles to halve the IPC.
+    Instruction-Opcode-Support:
+    - 7284 # AArch64_UDOT_ZZZI_S
+    - 7288 # AArch64_UDOTlanev16i8
+    - 7289 # AArch64_UDOTlanev8i8
+    - 3250 # AArch64_FMLA_ZZZI_D
+    - 3252 # AArch64_FMLA_ZZZI_S
+    - 3258 # AArch64_FMLAv2i32_indexed
+    - 3259 # AArch64_FMLAv2i64_indexed
+    - 3263 # AArch64_FMLAv4i32_indexed
   1:
     Portname: PR
     Instruction-Group-Support:
@@ -85,7 +96,7 @@ Ports:
     - INT_DIV_OR_SQRT
   5:
     Portname: EAGA
-    Instruction-Support: 
+    Instruction-Group-Support: 
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -93,7 +104,7 @@ Ports:
     - INT_SIMPLE_CMP
   6:
     Portname: EAGB
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
@@ -277,120 +288,140 @@ Latencies:
 # NOTE: Any changes to the capstone opcode list could invalidate the mapping between ARM instructions and the values below
   11:
     Instruction-Opcodes:
-     - 2640
-     - 2642
-     - 2644
-     - 3253
-     - 3254
-     - 3255
-     - 3258
-     - 3259
-     - 3262
-     - 3263
-     - 3265
-     - 3310
-     - 3311
-     - 3312
-     - 3315
-     - 3316
-     - 3319
-     - 3320
-     - 3322
-     - 3371
-     - 3372
-     - 3373
-     - 3376
-     - 3377
-     - 3380
-     - 3381
-     - 3383
-     - 3396
-     - 3397
-     - 3398
-     - 3401
-     - 3402
-     - 3405
-     - 3406
-     - 3408
-     - 4731
-     - 4733
-     - 4735
-     - 4737
-     - 4748
-     - 4750
-     - 4752
-     - 4754
-     - 4883
-     - 4885
-     - 4887
-     - 4889
-     - 5691
-     - 5693
-     - 5695
-     - 5697
-     - 5735
-     - 5737
-     - 5739
-     - 5741
-     - 5783
-     - 5785
-     - 5787
-     - 5789
-     - 5891
-     - 5892
-     - 5893
-     - 5895
-     - 5897
-     - 5899
-     - 5916
-     - 5917
-     - 5918
-     - 5920
-     - 5922
-     - 5924
-     - 5950
-     - 5952
-     - 5954
-     - 5956
-     - 5958
-     - 5960
-     - 5973
-     - 5974
-     - 5975
-     - 5977
-     - 5979
-     - 5981
-     - 6034
-     - 6036
-     - 6038
-     - 6040
-     - 6042
-     - 6044
-     - 6053
-     - 6055
-     - 6057
-     - 6059
-     - 6061
-     - 6063
-     - 6072
-     - 6074
-     - 6076
-     - 6078
-     - 6080
-     - 6082
-     - 7466
-     - 7468
-     - 7470
-     - 7472
-     - 7510
-     - 7512
-     - 7514
-     - 7516
-     - 7556
-     - 7558
-     - 7560
+      - 2640
+      - 2642
+      - 2644
+      - 3250  # AArch64_FMLA_ZZZI_D
+      - 3251
+      - 3252  # AArch64_FMLA_ZZZI_S
+      - 3253
+      - 3254
+      - 3255
+      # - 3258
+      # - 3259
+      - 3262
+      # - 3263
+      - 3265
+      - 3310
+      - 3311
+      - 3312
+      - 3315
+      - 3316
+      - 3319
+      - 3320
+      - 3322
+      - 3371
+      - 3372
+      - 3373
+      - 3376
+      - 3377
+      - 3380
+      - 3381
+      - 3383
+      - 3396
+      - 3397
+      - 3398
+      - 3401
+      - 3402
+      - 3405
+      - 3406
+      - 3408
+      - 4731
+      - 4733
+      - 4735
+      - 4737
+      - 4748
+      - 4750
+      - 4752
+      - 4754
+      - 4883
+      - 4885
+      - 4887
+      - 4889
+      - 5691
+      - 5693
+      - 5695
+      - 5697
+      - 5735
+      - 5737
+      - 5739
+      - 5741
+      - 5783
+      - 5785
+      - 5787
+      - 5789
+      - 5891
+      - 5892
+      - 5893
+      - 5895
+      - 5897
+      - 5899
+      - 5916
+      - 5917
+      - 5918
+      - 5920
+      - 5922
+      - 5924
+      - 5950
+      - 5952
+      - 5954
+      - 5956
+      - 5958
+      - 5960
+      - 5973
+      - 5974
+      - 5975
+      - 5977
+      - 5979
+      - 5981
+      - 6034
+      - 6036
+      - 6038
+      - 6040
+      - 6042
+      - 6044
+      - 6053
+      - 6055
+      - 6057
+      - 6059
+      - 6061
+      - 6063
+      - 6072
+      - 6074
+      - 6076
+      - 6078
+      - 6080
+      - 6082
+      - 7284    # AArch64_UDOT_ZZZI_S
+      # - 7288
+      # - 7289
+      - 7466
+      - 7468
+      - 7470
+      - 7472
+      - 7510
+      - 7512
+      - 7514
+      - 7516
+      - 7556
+      - 7558
+      - 7560
+      - 7562
+      - 7276    # AArch64_UDOT_VG4_M4ZZI_BtoS
+      - 3241    # AArch64_FMLA_VG4_M4ZZI_D
+      - 3243    # AArch64_FMLA_VG4_M4ZZI_S
     Execution-Latency: 15
     Execution-Throughput: 1
+# For NEON, IPC should be 0.5
+  11:
+    Instruction-Opcodes:
+      - 3258  # AArch64_FMLAv2i32_indexed
+      - 3259  # AArch64_FMLAv2i64_indexed
+      - 3263  # AArch64_FMLAv4i32_indexed
+      - 7288  # AArch64_UDOTlanev16i8
+      - 7289  # AArch64_UDOTlanev8i8
+    Execution-Latency: 15
+    Execution-Throughput: 2
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:
