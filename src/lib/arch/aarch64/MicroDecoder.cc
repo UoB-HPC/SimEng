@@ -871,6 +871,52 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
+
+        case Opcode::AArch64_ST4W:
+        case Opcode::AArch64_ST4W_IMM: {
+          // st4w splits into four store address and four store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+
+          // store0 address uop
+          cacheVector.push_back(createSt4MulVecAddrUop(
+              architecture, metadata.operands[4].pred, metadata.operands[5].mem,
+              capstoneHandle, false, 1, 4));
+          // store0 data uop
+          cacheVector.push_back(createSt4MulVecDataUop(
+              architecture, metadata.operands[0].reg, metadata.operands[4].pred,
+              capstoneHandle, false, 1, 4));
+
+          // store1 address uop
+          cacheVector.push_back(createSt4MulVecAddrUop(
+              architecture, metadata.operands[4].pred, metadata.operands[5].mem,
+              capstoneHandle, false, 2, 4));
+          // store1 data uop
+          cacheVector.push_back(createSt4MulVecDataUop(
+              architecture, metadata.operands[1].reg, metadata.operands[4].pred,
+              capstoneHandle, false, 2, 4));
+
+          // store2 address uop
+          cacheVector.push_back(createSt4MulVecAddrUop(
+              architecture, metadata.operands[4].pred, metadata.operands[5].mem,
+              capstoneHandle, false, 3, 4));
+          // store2 data uop
+          cacheVector.push_back(createSt4MulVecDataUop(
+              architecture, metadata.operands[2].reg, metadata.operands[4].pred,
+              capstoneHandle, false, 3, 4));
+
+          // store3 address uop
+          cacheVector.push_back(createSt4MulVecAddrUop(
+              architecture, metadata.operands[4].pred, metadata.operands[5].mem,
+              capstoneHandle, false, 4, 4));
+          // store3 data uop
+          cacheVector.push_back(createSt4MulVecDataUop(
+              architecture, metadata.operands[3].reg, metadata.operands[4].pred,
+              capstoneHandle, true, 4, 4));
+
+          iter = microDecodeCache_.try_emplace(word, cacheVector).first;
+          break;
+        }
         default: {
           // No supported splitting for this Instruction so return
           // macro-operation
@@ -1276,6 +1322,60 @@ Instruction MicroDecoder::createSt1VecAddrUop(
   microMetadataCache_.emplace_front(str_metadata);
   Instruction str(architecture, microMetadataCache_.front(),
                   MicroOpInfo({true, MicroOpcode::ST1_VEC_ADDR, dataSize,
+                               lastMicroOp, microOpIndex}));
+  str.setExecutionInfo(architecture.getExecutionInfo(str));
+  return str;
+}
+
+Instruction MicroDecoder::createSt4MulVecDataUop(
+    const Architecture& architecture, aarch64_reg src, aarch64_op_pred pred,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize) {
+  cs_detail sd_detail =
+      createDefaultDetail({{AARCH64_OP_REG}, {AARCH64_OP_PRED}});
+  sd_detail.aarch64.operands[0].reg = src;
+  sd_detail.aarch64.operands[1].pred = pred;
+  cs_insn sd_cs = {aarch64_insn::AARCH64_INS_ST4,
+                   aarch64_insn::AARCH64_INS_INVALID,
+                   0x0,
+                   4,
+                   "",
+                   "micro_st4MulVecData",
+                   "",
+                   false,
+                   false,
+                   &sd_detail,
+                   MicroOpcode::ST4_MULVEC_DATA};
+  InstructionMetadata sd_metadata(sd_cs);
+  microMetadataCache_.emplace_front(sd_metadata);
+  Instruction sd(architecture, microMetadataCache_.front(),
+                 MicroOpInfo({true, MicroOpcode::ST4_MULVEC_DATA, dataSize,
+                              lastMicroOp, microOpIndex}));
+  sd.setExecutionInfo(architecture.getExecutionInfo(sd));
+  return sd;
+}
+
+Instruction MicroDecoder::createSt4MulVecAddrUop(
+    const Architecture& architecture, aarch64_op_pred pred, aarch64_op_mem mem,
+    csh capstoneHandle, bool lastMicroOp, int microOpIndex, uint8_t dataSize) {
+  cs_detail str_detail =
+      createDefaultDetail({{AARCH64_OP_PRED}, {AARCH64_OP_MEM}});
+  str_detail.aarch64.operands[0].pred = pred;
+  str_detail.aarch64.operands[1].mem = mem;
+  cs_insn str_cs = {aarch64_insn::AARCH64_INS_ST4,
+                    aarch64_insn::AARCH64_INS_INVALID,
+                    0x0,
+                    4,
+                    "",
+                    "micro_st4MulVecAddr",
+                    "",
+                    false,
+                    false,
+                    &str_detail,
+                    MicroOpcode::ST4_MULVEC_ADDR};
+  InstructionMetadata str_metadata(str_cs);
+  microMetadataCache_.emplace_front(str_metadata);
+  Instruction str(architecture, microMetadataCache_.front(),
+                  MicroOpInfo({true, MicroOpcode::ST4_MULVEC_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   str.setExecutionInfo(architecture.getExecutionInfo(str));
   return str;
