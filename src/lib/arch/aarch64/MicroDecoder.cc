@@ -788,9 +788,10 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
                 architecture, metadata.operands[1].mem.base,
                 metadata.operands[2].reg, capstoneHandle, true));
           } else {
+            // For this Insn, #imm offset for Post index is stored in mem.disp
             cacheVector.push_back(createImmOffsetUop(
                 architecture, metadata.operands[1].mem.base,
-                metadata.operands[2].imm, capstoneHandle, true));
+                metadata.operands[1].mem.disp, capstoneHandle, true));
           }
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
@@ -827,9 +828,10 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
                 architecture, metadata.operands[2].mem.base,
                 metadata.operands[3].reg, capstoneHandle, true));
           } else {
+            // For this Insn, #imm offset for Post index is stored in mem.disp
             cacheVector.push_back(createImmOffsetUop(
                 architecture, metadata.operands[2].mem.base,
-                metadata.operands[3].imm, capstoneHandle, true));
+                metadata.operands[2].mem.disp, capstoneHandle, true));
           }
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
@@ -871,7 +873,6 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
         }
-
         case Opcode::AArch64_ST4W:
         case Opcode::AArch64_ST4W_IMM: {
           // st4w splits into four store address and four store data uops
