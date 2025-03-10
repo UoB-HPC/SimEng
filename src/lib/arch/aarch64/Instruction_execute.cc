@@ -6887,7 +6887,18 @@ void Instruction::execute() {
         results_[0] = {out, 256};
         break;
       }
-      case Opcode::AArch64_UMLALv4i32_indexed: {  // umlal2 vd.2d, vn.4s,
+      case Opcode::AArch64_UMLALv4i16_v4i32: {  // umlal vd.4s, vn.4h, vm.4h
+        const uint32_t* vd = sourceValues_[0].getAsVector<uint32_t>();
+        const uint16_t* vn = sourceValues_[1].getAsVector<uint16_t>();
+        const uint16_t* vm = sourceValues_[2].getAsVector<uint16_t>();
+        uint32_t out[4] = {vd[0], vd[1], vd[2], vd[3]};
+        for (int i = 0; i < 4; i++) {
+          out[i] += static_cast<uint32_t>(vn[i]) * static_cast<uint32_t>(vm[i]);
+        }
+        results_[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_UMLALv4i32_indexed: {  // umlal vd.2d, vn.4s,
                                                   // vm.s[index]
         const uint64_t* vd = sourceValues_[0].getAsVector<uint64_t>();
         const uint32_t* vn = sourceValues_[1].getAsVector<uint32_t>();
