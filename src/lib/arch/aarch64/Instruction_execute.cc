@@ -3985,6 +3985,17 @@ void Instruction::execute() {
         results_[3] = {out[3], 256};
         break;
       }
+      case Opcode::AArch64_LD1i8: {  // ld1 {vd.b}[index], [xn]
+        // LOAD
+        const int index = metadata_.operands[0].vector_index;
+        const uint8_t* vt = sourceValues_[0].getAsVector<uint8_t>();
+        uint8_t out[16];
+        for (int i = 0; i < 16; i++) {
+          out[i] = (i == index) ? memoryData_[0].get<uint8_t>() : vt[i];
+        }
+        results_[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
         // LOAD
         const int index = metadata_.operands[0].vector_index;

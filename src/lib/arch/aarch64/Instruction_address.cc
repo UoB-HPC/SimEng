@@ -229,6 +229,10 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({(n + m), static_cast<uint16_t>(VL_bits / 8)});
         break;
       }
+      case Opcode::AArch64_LD1i8: {  // ld1 {vd.b}[index], [xn]
+        setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 1}});
+        break;
+      }
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
         setMemoryAddresses({{sourceValues_[1].get<uint64_t>(), 4}});
         break;
