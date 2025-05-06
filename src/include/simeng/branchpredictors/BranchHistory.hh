@@ -68,7 +68,7 @@ class BranchHistory {
       if (i == 0) {
         history_[i] |= ((isTaken) ? 1 : 0);
       } else {
-        history_[i] |= (((history_[i - 1] & (1ull << 63)) > 0) ? 1 : 0);
+        history_[i] |= (history_[i - 1] & 0x80000000) >> 63;
       }
     }
   }
