@@ -94,7 +94,7 @@ class BranchHistory {
     for (uint8_t i = 0; i <= (size_ / 64); i++) {
       history_[i] >>= 1;
       if (i < (size_ / 64)) {
-        history_[i] |= (((history_[i + 1] & 1) > 0) ? (1ull << 63) : 0);
+        history_[i] |= (history_[i + 1] & 1ull) << 63;
       }
     }
   }
