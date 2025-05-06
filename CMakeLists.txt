@@ -30,7 +30,7 @@ FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
   # this versions requires CMake >= 2.8.12 which silences the deprecation warning
-  GIT_TAG        release-1.14.0
+  GIT_TAG        v1.14.0
   GIT_PROGRESS   TRUE
 )
 
