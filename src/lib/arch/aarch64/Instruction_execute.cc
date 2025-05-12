@@ -5996,8 +5996,8 @@ void Instruction::execute() {
                                                // vt4.2d}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = auto RegisterValue(
-              (char*)sourceValues_[i].getAsVector<uint64_t>(),
+          memoryData_[i] = RegisterValue(
+              sourceValues_[i].getAsVector<uint64_t>().ptr,
               2 * sizeof(uint64_t));
         }
         // if #imm post-index, value can only be 64
@@ -6012,8 +6012,8 @@ void Instruction::execute() {
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = auto RegisterValue(
-              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+          memoryData_[i] = RegisterValue(
+              sourceValues_[i].getAsVector<uint32_t>().ptr,
               2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
@@ -6028,8 +6028,8 @@ void Instruction::execute() {
                                           // vt4.4s}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = auto RegisterValue(
-              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+          memoryData_[i] = RegisterValue(
+              sourceValues_[i].getAsVector<uint32_t>().ptr,
               4 * sizeof(uint32_t));
         }
         break;
@@ -6038,8 +6038,8 @@ void Instruction::execute() {
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = auto RegisterValue(
-              (char*)sourceValues_[i].getAsVector<uint32_t>(),
+          memoryData_[i] = RegisterValue(
+              sourceValues_[i].getAsVector<uint32_t>().ptr,
               4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
