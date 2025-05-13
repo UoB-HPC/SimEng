@@ -49,7 +49,7 @@ struct Elf64_Phdr {
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
-  Elf(std::string path, char** imagePointer);
+  Elf(std::string path, uint8_t** imagePointer);
   ~Elf();
 
   /** Returns the process image size */

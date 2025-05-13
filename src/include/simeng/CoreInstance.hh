@@ -60,7 +60,7 @@ class CoreInstance {
   std::shared_ptr<simeng::memory::MemoryInterface> getInstructionMemory() const;
 
   /** Getter for a shared pointer to the created process image. */
-  std::shared_ptr<char> getProcessImage() const;
+  std::shared_ptr<uint8_t> getProcessImage() const;
 
   /** Getter for the size of the created process image. */
   uint64_t getProcessImageSize() const;
@@ -114,7 +114,7 @@ class CoreInstance {
   uint64_t processMemorySize_;
 
   /** The process memory space. */
-  std::shared_ptr<char> processMemory_;
+  std::shared_ptr<uint8_t> processMemory_;
 
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;

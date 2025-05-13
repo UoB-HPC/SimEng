@@ -115,16 +115,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         for (uint16_t row = 0; row < rowCount; row++) {
-          const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
+          const auto zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
+          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint64_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Element in 1st source pred corresponding to horizontal
           //    slice is TRUE
@@ -149,16 +147,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint32_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint32_t>();
 
         for (uint16_t row = 0; row < rowCount; row++) {
-          const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
+          const auto zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
+          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint32_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Element in 1st source pred corresponding to horizontal
           //    slice is TRUE
@@ -183,16 +179,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         for (uint16_t row = 0; row < rowCount; row++) {
-          const uint64_t* zaRow = sourceValues_[row].getAsVector<uint64_t>();
+          const auto zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          std::memcpy(out, zaRow, rowCount * sizeof(uint64_t));
+          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint64_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
           //  - Element in 2nd source pred corresponding to vertical
@@ -220,16 +214,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint32_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint32_t>();
 
         for (uint16_t row = 0; row < rowCount; row++) {
-          const uint32_t* zaRow = sourceValues_[row].getAsVector<uint32_t>();
+          const auto zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          std::memcpy(out, zaRow, rowCount * sizeof(uint32_t));
+          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint32_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
           //  - Element in 2nd source pred corresponding to vertical
@@ -1384,8 +1376,7 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
-        const auto zaRow =
-            sourceValues_[2 + sliceNum].getAsVector<uint8_t>();
+        const auto zaRow = sourceValues_[2 + sliceNum].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
         for (int elem = 0; elem < rowCount; elem++) {
@@ -1406,15 +1397,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
                  metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* zaRow =
-            sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
+        const auto zaRow = sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (int elem = 0; elem < rowCount; elem++) {
@@ -1435,15 +1425,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 16;
-        const uint16_t* zd = sourceValues_[0].getAsVector<uint16_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint16_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
                  metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
-        const uint16_t* zaRow =
-            sourceValues_[2 + sliceNum].getAsVector<uint16_t>();
+        const auto zaRow = sourceValues_[2 + sliceNum].getAsVector<uint16_t>();
 
         uint16_t out[128] = {0};
         for (int elem = 0; elem < rowCount; elem++) {
@@ -1464,13 +1453,12 @@ void Instruction::execute() {
 
         const uint16_t rowCount = VL_bits / 128;
         // Use uint64_t as no 128-bit
-        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             sourceValues_[2 + rowCount].get<uint32_t>() % rowCount;
         // Use uint64_t as no 128-bit
-        const uint64_t* zaRow =
-            sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
+        const auto zaRow = sourceValues_[2 + sliceNum].getAsVector<uint64_t>();
 
         // Use uint64_t as no 128-bit
         uint64_t out[32] = {0};
@@ -1498,15 +1486,14 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint32_t* zd = sourceValues_[0].getAsVector<uint32_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint32_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
                  metadata_.operands[2].sme.slice_offset.imm)) %
             rowCount;
-        const uint32_t* zaRow =
-            sourceValues_[2 + sliceNum].getAsVector<uint32_t>();
+        const auto zaRow = sourceValues_[2 + sliceNum].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (int elem = 0; elem < rowCount; elem++) {
@@ -1527,8 +1514,8 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 8;
-        const uint8_t* zd = sourceValues_[0].getAsVector<uint8_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint8_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
@@ -1555,8 +1542,8 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
@@ -1583,8 +1570,8 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 16;
-        const uint16_t* zd = sourceValues_[0].getAsVector<uint16_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint16_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
@@ -1611,8 +1598,8 @@ void Instruction::execute() {
 
         const uint16_t rowCount = VL_bits / 128;
         // Use uint64_t as no 128-bit
-        const uint64_t* zd = sourceValues_[0].getAsVector<uint64_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             sourceValues_[2 + rowCount].get<uint32_t>() % rowCount;
 
@@ -1623,8 +1610,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((elem % 4) * 16);
           if (pg[elem / 4] & shifted_active) {
             // Need to move two consecutive 64-bit elements
-            const uint64_t* zaRow =
-                sourceValues_[2 + elem].getAsVector<uint64_t>();
+            const auto zaRow = sourceValues_[2 + elem].getAsVector<uint64_t>();
             out[2 * elem] = zaRow[2 * sliceNum];
             out[2 * elem + 1] = zaRow[2 * sliceNum + 1];
           } else {
@@ -1644,8 +1630,8 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint32_t* zd = sourceValues_[0].getAsVector<uint32_t>();
-        const uint64_t* pg = sourceValues_[1].getAsVector<uint64_t>();
+        const auto zd = sourceValues_[0].getAsVector<uint32_t>();
+        const auto pg = sourceValues_[1].getAsVector<uint64_t>();
         const uint32_t sliceNum =
             (sourceValues_[2 + rowCount].get<uint32_t>() +
              static_cast<uint32_t>(
@@ -2361,17 +2347,16 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const double* zn = sourceValues_[rowCount + 2].getAsVector<double>();
-        const double* zm = sourceValues_[rowCount + 3].getAsVector<double>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<double>();
+        const auto zm = sourceValues_[rowCount + 3].getAsVector<double>();
 
         // zn is row, zm is col
         for (int row = 0; row < rowCount; row++) {
           double outRow[32] = {0};
           uint64_t shifted_active_row = 1ull << ((row % 8) * 8);
-          const double* zadaRow = sourceValues_[row].getAsVector<double>();
+          const auto zadaRow = sourceValues_[row].getAsVector<double>();
           for (int col = 0; col < rowCount; col++) {
             double zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 8) * 8);
@@ -2393,17 +2378,16 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t rowCount = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[rowCount].getAsVector<uint64_t>();
-        const uint64_t* pm =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const float* zn = sourceValues_[rowCount + 2].getAsVector<float>();
-        const float* zm = sourceValues_[rowCount + 3].getAsVector<float>();
+        const auto pn = sourceValues_[rowCount].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<float>();
+        const auto zm = sourceValues_[rowCount + 3].getAsVector<float>();
 
         // zn is row, zm is col
         for (int row = 0; row < rowCount; row++) {
           float outRow[64] = {0};
           uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
-          const float* zadaRow = sourceValues_[row].getAsVector<float>();
+          const auto zadaRow = sourceValues_[row].getAsVector<float>();
           for (int col = 0; col < rowCount; col++) {
             float zadaElem = zadaRow[col];
             uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
@@ -3012,10 +2996,9 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint8_t* zaRow = sourceValues_[sliceNum].getAsVector<uint8_t>();
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
+        const auto zaRow = sourceValues_[sliceNum].getAsVector<uint8_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
         for (uint16_t elem = 0; elem < rowCount; elem++) {
@@ -3045,11 +3028,9 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         uint64_t out[32] = {0};
         for (uint16_t elem = 0; elem < rowCount; elem++) {
@@ -3079,11 +3060,9 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint16_t* zaRow = sourceValues_[sliceNum].getAsVector<uint16_t>();
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint16_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint16_t>();
+        const auto zaRow = sourceValues_[sliceNum].getAsVector<uint16_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint16_t>();
 
         uint16_t out[128] = {0};
         for (uint16_t elem = 0; elem < rowCount; elem++) {
@@ -3110,13 +3089,11 @@ void Instruction::execute() {
         const uint32_t sliceNum =
             sourceValues_[rowCount].get<uint32_t>() % rowCount;
         // Use uint64_t in place of 128-bit
-        const uint64_t* zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
+        const auto zaRow = sourceValues_[sliceNum].getAsVector<uint64_t>();
 
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
         // Use uint64_t in place of 128-bit
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         // Use uint64_t in place of 128-bit
         uint64_t out[32] = {0};
@@ -3153,11 +3130,9 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint32_t* zaRow = sourceValues_[sliceNum].getAsVector<uint32_t>();
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint32_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+        const auto zaRow = sourceValues_[sliceNum].getAsVector<uint32_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint32_t>();
 
         uint32_t out[64] = {0};
         for (uint16_t elem = 0; elem < rowCount; elem++) {
@@ -3187,14 +3162,13 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint8_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          const uint8_t* row = sourceValues_[i].getAsVector<uint8_t>();
+          const auto row = sourceValues_[i].getAsVector<uint8_t>();
           uint8_t out[256] = {0};
-          memcpy(out, row, rowCount * sizeof(uint8_t));
+          memcpy(out, row.ptr, rowCount * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
           if (pg[i / 64] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3214,15 +3188,13 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          memcpy(out, row, rowCount * sizeof(uint64_t));
+          memcpy(out, row.ptr, rowCount * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3242,15 +3214,13 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint16_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint16_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint16_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          const uint16_t* row = sourceValues_[i].getAsVector<uint16_t>();
+          const auto row = sourceValues_[i].getAsVector<uint16_t>();
           uint16_t out[128] = {0};
-          memcpy(out, row, rowCount * sizeof(uint16_t));
+          memcpy(out, row.ptr, rowCount * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (pg[i / 32] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3266,18 +3236,16 @@ void Instruction::execute() {
         const uint16_t rowCount = VL_bits / 128;
         const uint32_t sliceNum =
             sourceValues_[rowCount].get<uint32_t>() % rowCount;
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
         // Use uint64_t in place of 128-bit
-        const uint64_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint64_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
           // Use uint64_t in place of 128-bit
-          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           // *2 in memcpy as need 128-bit elements but using uint64_t
-          memcpy(out, row, rowCount * sizeof(uint64_t) * 2);
+          memcpy(out, row.ptr, rowCount * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
@@ -3302,15 +3270,13 @@ void Instruction::execute() {
              static_cast<uint32_t>(
                  metadata_.operands[0].sme.slice_offset.imm)) %
             rowCount;
-        const uint64_t* pg =
-            sourceValues_[rowCount + 1].getAsVector<uint64_t>();
-        const uint32_t* zn =
-            sourceValues_[rowCount + 2].getAsVector<uint32_t>();
+        const auto pg = sourceValues_[rowCount + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[rowCount + 2].getAsVector<uint32_t>();
 
         for (uint16_t i = 0; i < rowCount; i++) {
-          const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
+          const auto row = sourceValues_[i].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          memcpy(out, row, rowCount * sizeof(uint32_t));
+          memcpy(out, row.ptr, rowCount * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3353,12 +3319,12 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 8;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint16_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
 
         uint8_t out[256] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3424,7 +3390,7 @@ void Instruction::execute() {
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
+        const auto data = memoryData_[0].getAsVector<uint16_t>();
 
         uint16_t out[128] = {0};
         for (int i = 0; i < partition_num; i++) {
@@ -3452,12 +3418,12 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 128;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum = ws % partition_num;
         // Use uint64_t as no 128-bit type
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         // Use uint64_t as no 128-bit type
         uint64_t out[32] = {0};
@@ -3490,7 +3456,7 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
@@ -3523,17 +3489,17 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 8;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          const uint8_t* row = sourceValues_[i].getAsVector<uint8_t>();
+          const auto row = sourceValues_[i].getAsVector<uint8_t>();
           uint8_t out[256] = {0};
-          memcpy(out, row, partition_num * sizeof(uint8_t));
+          memcpy(out, row.ptr, partition_num * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
           if (pg[i / 64] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3550,17 +3516,17 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          memcpy(out, row, partition_num * sizeof(uint64_t));
+          memcpy(out, row.ptr, partition_num * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3577,17 +3543,17 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
-        const uint16_t* data = memoryData_[0].getAsVector<uint16_t>();
+        const auto data = memoryData_[0].getAsVector<uint16_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          const uint16_t* row = sourceValues_[i].getAsVector<uint16_t>();
+          const auto row = sourceValues_[i].getAsVector<uint16_t>();
           uint16_t out[128] = {0};
-          memcpy(out, row, partition_num * sizeof(uint16_t));
+          memcpy(out, row.ptr, partition_num * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (pg[i / 32] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3604,19 +3570,19 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 128;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum = ws % partition_num;
         // Using uint64_t as no 128-bit data type
-        const uint64_t* data = memoryData_[0].getAsVector<uint64_t>();
+        const auto data = memoryData_[0].getAsVector<uint64_t>();
 
         for (int i = 0; i < partition_num; i++) {
           // Using uint64_t as no 128-bit data type
-          const uint64_t* row = sourceValues_[i].getAsVector<uint64_t>();
+          const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           // *2 in memcpy as need 128-bit but using uint64_t
-          memcpy(out, row, partition_num * sizeof(uint64_t) * 2);
+          memcpy(out, row.ptr, partition_num * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
@@ -3636,7 +3602,7 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
@@ -3644,9 +3610,9 @@ void Instruction::execute() {
         const auto data = memoryData_[0].getAsVector<uint32_t>();
 
         for (int i = 0; i < partition_num; i++) {
-          const uint32_t* row = sourceValues_[i].getAsVector<uint32_t>();
+          const auto row = sourceValues_[i].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          memcpy(out, row, partition_num * sizeof(uint32_t));
+          memcpy(out, row.ptr, partition_num * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
             out[sliceNum] = data[i];
@@ -4174,8 +4140,9 @@ void Instruction::execute() {
         // LOAD
         const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        std::vector<const uint64_t*> data = {
-            auto memoryData_[1].getAsVector<uint64_t>()};
+        std::vector<safePointer<uint64_t>> data = {
+            memoryData_[0].getAsVector<uint64_t>(),
+            memoryData_[1].getAsVector<uint64_t>()};
         uint64_t out[2][32] = {{0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4225,9 +4192,10 @@ void Instruction::execute() {
         // LOAD
         const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        std::vector<const uint64_t*> data = {
-            auto memoryData_[1].getAsVector<uint64_t>(),
-            auto memoryData_[2].getAsVector<uint64_t>()};
+        std::vector<safePointer<uint64_t>> data = {
+            memoryData_[0].getAsVector<uint64_t>(),
+            memoryData_[1].getAsVector<uint64_t>(),
+            memoryData_[2].getAsVector<uint64_t>()};
         uint64_t out[3][32] = {{0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4250,9 +4218,11 @@ void Instruction::execute() {
         // LOAD
         const auto p = sourceValues_[0].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;
-        std::vector<const uint64_t*> data = {
-            auto memoryData_[1].getAsVector<uint64_t>(),
-            auto memoryData_[3].getAsVector<uint64_t>()};
+        std::vector<safePointer<uint64_t>> data = {
+          memoryData_[0].getAsVector<uint64_t>(),
+          memoryData_[1].getAsVector<uint64_t>(),
+          memoryData_[2].getAsVector<uint64_t>(),
+          memoryData_[3].getAsVector<uint64_t>()};
         uint64_t out[4][32] = {{0}, {0}, {0}, {0}};
 
         for (int i = 0; i < partition_num; i++) {
@@ -4649,7 +4619,7 @@ void Instruction::execute() {
             wn +
             static_cast<uint32_t>(metadata_.operands[0].sme.slice_offset.imm);
 
-        const uint8_t* data = memoryData_[0].getAsVector<uint8_t>();
+        const auto data = memoryData_[0].getAsVector<uint8_t>();
         uint8_t out[256] = {0};
         for (uint16_t i = 0; i < rowCount; i++) {
           out[i] = data[i];
@@ -5333,17 +5303,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
-        const int16_t* zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -5371,17 +5341,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
-        const int8_t* zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];
@@ -5409,17 +5379,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
-        const int16_t* zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -5447,17 +5417,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
-        const int8_t* zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];
@@ -5594,14 +5564,13 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 8;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
-        const uint8_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint8_t>();
+        const auto tileSlice = sourceValues_[sliceNum].getAsVector<uint8_t>();
         memoryData_ = sve_merge_store_data<uint8_t>(tileSlice, pg, VL_bits);
         break;
       }
@@ -5613,14 +5582,14 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
-            auto + 1].getAsVector<uint64_t>();
+        const auto pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
-        const uint64_t* tileSlice =
-            auto sourceValues_[sliceNum].getAsVector<uint64_t>();
+        const auto tileSlice =
+           sourceValues_[sliceNum].getAsVector<uint64_t>();
         memoryData_ = sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
         break;
       }
@@ -5632,14 +5601,13 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
-        const uint16_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint16_t>();
+        const auto tileSlice = sourceValues_[sliceNum].getAsVector<uint16_t>();
         memoryData_ = sve_merge_store_data<uint16_t>(tileSlice, pg, VL_bits);
         break;
       }
@@ -5651,14 +5619,13 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 128;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum = ws % partition_num;
 
         // Using uint64_t as no 128-bit type
-        const uint64_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint64_t>();
+        const auto tileSlice = sourceValues_[sliceNum].getAsVector<uint64_t>();
 
         // Need to combine active adjacent elements into RegisterValues and
         // place into each memoryData_ index.
@@ -5674,14 +5641,14 @@ void Instruction::execute() {
           } else if (memData.size() > 0) {
             // Predicate false, save current data
             memoryData_[index] = RegisterValue(
-                (char*)memData.data(), memData.size() * sizeof(uint64_t));
+                reinterpret_cast<uint8_t*>(memData.data()), memData.size() * sizeof(uint64_t));
             index++;
             memData.clear();
           }
         }
         // Check if final data needs putting into memoryData_
         if (memData.size() > 0) {
-          memoryData_[index] = RegisterValue((char*)memData.data(),
+          memoryData_[index] = RegisterValue(reinterpret_cast<uint8_t*>(memData.data()),
                                              memData.size() * sizeof(uint64_t));
         }
         break;
@@ -5694,14 +5661,13 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
 
-        const uint32_t* tileSlice =
-            sourceValues_[sliceNum].getAsVector<uint32_t>();
+        const auto tileSlice = sourceValues_[sliceNum].getAsVector<uint32_t>();
         memoryData_ = sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
         break;
       }
@@ -5713,7 +5679,7 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 8;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
@@ -5729,7 +5695,7 @@ void Instruction::execute() {
                 sourceValues_[x].getAsVector<uint8_t>()[sliceNum]);
           } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)memData.data(), memData.size());
+                RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size());
             index++;
             memData.clear();
           }
@@ -5737,7 +5703,7 @@ void Instruction::execute() {
 
         if (memData.size() > 0) {
           memoryData_[index] =
-              RegisterValue((char*)memData.data(), memData.size());
+              RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size());
         }
         break;
       }
@@ -5749,8 +5715,8 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 64;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
-            auto + 1].getAsVector<uint64_t>();
+        const auto pg =
+            sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5765,7 +5731,7 @@ void Instruction::execute() {
                 sourceValues_[x].getAsVector<uint64_t>()[sliceNum]);
           } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)memData.data(), memData.size() * 8);
+                RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 8);
             index++;
             memData.clear();
           }
@@ -5773,7 +5739,7 @@ void Instruction::execute() {
 
         if (memData.size() > 0) {
           memoryData_[index] =
-              RegisterValue((char*)memData.data(), memData.size() * 8);
+              RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 8);
         }
         break;
       }
@@ -5785,8 +5751,8 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 16;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
-            auto + 1].getAsVector<uint64_t>();
+        const auto pg =
+          sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5801,7 +5767,7 @@ void Instruction::execute() {
                 sourceValues_[x].getAsVector<uint16_t>()[sliceNum]);
           } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)memData.data(), memData.size() * 2);
+                RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 2);
             index++;
             memData.clear();
           }
@@ -5809,7 +5775,7 @@ void Instruction::execute() {
 
         if (memData.size() > 0) {
           memoryData_[index] =
-              RegisterValue((char*)memData.data(), memData.size() * 2);
+              RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 2);
         }
         break;
       }
@@ -5821,7 +5787,7 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 128;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum = ws % partition_num;
@@ -5842,7 +5808,7 @@ void Instruction::execute() {
           } else if (memData.size() > 0) {
             // Predicate false, save current data
             memoryData_[index] = RegisterValue(
-                (char*)memData.data(), memData.size() * sizeof(uint64_t));
+                reinterpret_cast<uint8_t*>(memData.data()), memData.size() * sizeof(uint64_t));
             index++;
             memData.clear();
           }
@@ -5850,7 +5816,7 @@ void Instruction::execute() {
 
         // Check if final data needs putting into memoryData_
         if (memData.size() > 0) {
-          memoryData_[index] = RegisterValue((char*)memData.data(),
+          memoryData_[index] = RegisterValue(reinterpret_cast<uint8_t*>(memData.data()),
                                              memData.size() * sizeof(uint64_t));
         }
         break;
@@ -5863,8 +5829,8 @@ void Instruction::execute() {
 
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = sourceValues_[partition_num].get<uint32_t>();
-        const uint64_t* pg =
-            auto + 1].getAsVector<uint64_t>();
+        const auto pg =
+          sourceValues_[partition_num + 1].getAsVector<uint64_t>();
 
         const uint32_t sliceNum =
             (ws + metadata_.operands[0].sme.slice_offset.imm) % partition_num;
@@ -5879,7 +5845,7 @@ void Instruction::execute() {
                 sourceValues_[x].getAsVector<uint32_t>()[sliceNum]);
           } else if (memData.size() > 0) {
             memoryData_[index] =
-                RegisterValue((char*)memData.data(), memData.size() * 4);
+                RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 4);
             index++;
             memData.clear();
           }
@@ -5887,7 +5853,7 @@ void Instruction::execute() {
 
         if (memData.size() > 0) {
           memoryData_[index] =
-              RegisterValue((char*)memData.data(), memData.size() * 4);
+              RegisterValue(reinterpret_cast<uint8_t*>(memData.data()), memData.size() * 4);
         }
         break;
       }
@@ -5960,7 +5926,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              auto RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
+               RegisterValue(sourceValues_[i].getAsVector<uint8_t>().ptr,
                                  16 * sizeof(uint8_t));
         }
         break;
@@ -5971,7 +5937,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              auto RegisterValue((char*)sourceValues_[i].getAsVector<uint8_t>(),
+              RegisterValue(sourceValues_[i].getAsVector<uint8_t>().ptr,
                                  16 * sizeof(uint8_t));
         }
         // if #imm post-index, value can only be 64
@@ -5986,8 +5952,8 @@ void Instruction::execute() {
                                           // vt4.2d}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = auto RegisterValue(
-              (char*)sourceValues_[i].getAsVector<uint64_t>(),
+          memoryData_[i] = RegisterValue(
+              sourceValues_[i].getAsVector<uint64_t>().ptr,
               2 * sizeof(uint64_t));
         }
         break;
@@ -5996,9 +5962,9 @@ void Instruction::execute() {
                                                // vt4.2d}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = RegisterValue(
-              sourceValues_[i].getAsVector<uint64_t>().ptr,
-              2 * sizeof(uint64_t));
+          memoryData_[i] =
+              RegisterValue(sourceValues_[i].getAsVector<uint64_t>().ptr,
+                            2 * sizeof(uint64_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -6012,9 +5978,9 @@ void Instruction::execute() {
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = RegisterValue(
-              sourceValues_[i].getAsVector<uint32_t>().ptr,
-              2 * sizeof(uint32_t));
+          memoryData_[i] =
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+                            2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6028,9 +5994,9 @@ void Instruction::execute() {
                                           // vt4.4s}, [xn|sp]
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = RegisterValue(
-              sourceValues_[i].getAsVector<uint32_t>().ptr,
-              4 * sizeof(uint32_t));
+          memoryData_[i] =
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+                            4 * sizeof(uint32_t));
         }
         break;
       }
@@ -6038,9 +6004,9 @@ void Instruction::execute() {
                                                // vt4.4s}, [xn|sp], <#imm|xm>
         // STORE
         for (int i = 0; i < 4; i++) {
-          memoryData_[i] = RegisterValue(
-              sourceValues_[i].getAsVector<uint32_t>().ptr,
-              4 * sizeof(uint32_t));
+          memoryData_[i] =
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+                            4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
         const uint64_t postIndex =
@@ -6054,8 +6020,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint8_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
-        memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue(t.ptr, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 16 * sizeof(uint8_t));
         break;
       }
       case Opcode::AArch64_ST1Twov16b_POST: {  // st1 {vt.16b, vt2.16b},
@@ -6063,8 +6029,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint8_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue((char*)t, 16 * sizeof(uint8_t));
-        memoryData_[1] = RegisterValue((char*)t2, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue(t.ptr, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 16 * sizeof(uint8_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6078,8 +6044,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint64_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
-        memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue(t.ptr, 2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 2 * sizeof(uint64_t));
         break;
       }
       case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
@@ -6087,8 +6053,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint64_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
-        memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue(t.ptr,  2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 2 * sizeof(uint64_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6102,8 +6068,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint32_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
-        memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue(t.ptr, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 4 * sizeof(uint32_t));
         break;
       }
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
@@ -6111,8 +6077,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint32_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
-        memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue(t.ptr, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue(t2.ptr, 4 * sizeof(uint32_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6243,13 +6209,13 @@ void Instruction::execute() {
           } else if (inActiveBlock) {
             inActiveBlock = false;
             memoryData_[index] = RegisterValue(
-                (char*)memData.data(), sizeof(uint64_t) * memData.size());
+                reinterpret_cast<uint8_t*>(memData.data()), sizeof(uint64_t) * memData.size());
             index++;
           }
         }
         // Add final block if needed
         if (inActiveBlock)
-          memoryData_[index] = RegisterValue((char*)memData.data(),
+          memoryData_[index] = RegisterValue(reinterpret_cast<uint8_t*>(memData.data()),
                                              sizeof(uint64_t) * memData.size());
 
         break;
@@ -6261,8 +6227,8 @@ void Instruction::execute() {
         const auto t2 = sourceValues_[1].getAsVector<float>();
         std::vector<float> m1 = {t1[0], t2[0], t1[1], t2[1]};
         std::vector<float> m2 = {t1[2], t2[2], t1[3], t2[3]};
-        memoryData_[0] = RegisterValue((char*)m1.data(), 4 * sizeof(float));
-        memoryData_[1] = RegisterValue((char*)m2.data(), 4 * sizeof(float));
+        memoryData_[0] = RegisterValue(reinterpret_cast<uint8_t*>(m1.data()), 4 * sizeof(float));
+        memoryData_[1] = RegisterValue(reinterpret_cast<uint8_t*>(m2.data()), 4 * sizeof(float));
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
             (metadata_.operands[3].type == AARCH64_OP_REG)
@@ -6467,7 +6433,7 @@ void Instruction::execute() {
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
         const auto p = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue((char*)p, partition_num);
+        memoryData_[0] = RegisterValue(p.ptr, partition_num);
         break;
       }
       case Opcode::AArch64_STR_ZA: {  // str za[wv, #imm], [xn|sp{, #imm, mul
@@ -6480,16 +6446,16 @@ void Instruction::execute() {
         const uint32_t wv = sourceValues_[zaRowCount].get<uint32_t>();
         const uint32_t imm = metadata_.operands[0].sme.slice_offset.imm;
 
-        const uint8_t* zaRow =
+        const auto zaRow =
             sourceValues_[(wv + imm) % zaRowCount].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue((char*)zaRow, zaRowCount);
+        memoryData_[0] = RegisterValue(zaRow.ptr, zaRowCount);
         break;
       }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;
         const auto z = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue((char*)z, partition_num);
+        memoryData_[0] = RegisterValue(z.ptr, partition_num);
         break;
       }
       case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
@@ -6676,17 +6642,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
-        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -6714,17 +6680,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
-        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];
@@ -6752,17 +6718,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int16_t* zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
-        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -6790,17 +6756,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const int8_t* zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
-        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<int8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];
@@ -7080,17 +7046,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint16_t* zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
-        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           uint64_t outRow[32] = {0};
-          const uint64_t* zadaRow = sourceValues_[row].getAsVector<uint64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<uint64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             uint64_t sum = zadaRow[col];
@@ -7118,17 +7084,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
-        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           uint32_t outRow[64] = {0};
-          const uint32_t* zadaRow = sourceValues_[row].getAsVector<uint32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<uint32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             uint32_t sum = zadaRow[col];
@@ -7156,17 +7122,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint16_t* zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
-        const uint16_t* zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           uint64_t outRow[32] = {0};
-          const uint64_t* zadaRow = sourceValues_[row].getAsVector<uint64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<uint64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             uint64_t sum = zadaRow[col];
@@ -7194,17 +7160,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
-        const uint8_t* zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<uint8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           uint32_t outRow[64] = {0};
-          const uint32_t* zadaRow = sourceValues_[row].getAsVector<uint32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<uint32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             uint32_t sum = zadaRow[col];
@@ -7299,17 +7265,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint16_t* zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
-        const int16_t* zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -7337,17 +7303,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
-        const int8_t* zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];
@@ -7375,17 +7341,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 64;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint16_t* zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
-        const int16_t* zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint16_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int16_t>();
 
         // zn is a SVLd x 4 sub matrix
         // zm is a 4 x SVLd sub matrix
         // Resulting SVLd x SVLd matrix has results widened to 64-bit
         for (int row = 0; row < tileDim; row++) {
           int64_t outRow[32] = {0};
-          const int64_t* zadaRow = sourceValues_[row].getAsVector<int64_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int64_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int64_t sum = zadaRow[col];
@@ -7413,17 +7379,17 @@ void Instruction::execute() {
         if (!ZAenabled) return ZAdisabled();
 
         const uint16_t tileDim = VL_bits / 32;
-        const uint64_t* pn = sourceValues_[tileDim].getAsVector<uint64_t>();
-        const uint64_t* pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
-        const uint8_t* zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
-        const int8_t* zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
+        const auto pn = sourceValues_[tileDim].getAsVector<uint64_t>();
+        const auto pm = sourceValues_[tileDim + 1].getAsVector<uint64_t>();
+        const auto zn = sourceValues_[tileDim + 2].getAsVector<uint8_t>();
+        const auto zm = sourceValues_[tileDim + 3].getAsVector<int8_t>();
 
         // zn is a SVLs x 4 sub matrix
         // zm is a 4 x SVLs sub matrix
         // Resulting SVLs x SVLs matrix has results widened to 32-bit
         for (int row = 0; row < tileDim; row++) {
           int32_t outRow[64] = {0};
-          const int32_t* zadaRow = sourceValues_[row].getAsVector<int32_t>();
+          const auto zadaRow = sourceValues_[row].getAsVector<int32_t>();
           for (int col = 0; col < tileDim; col++) {
             // Get corresponding output element
             int32_t sum = zadaRow[col];

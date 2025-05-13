@@ -337,7 +337,7 @@ std::shared_ptr<memory::MemoryInterface> CoreInstance::getInstructionMemory()
   return instructionMemory_;
 }
 
-std::shared_ptr<char> CoreInstance::getProcessImage() const {
+std::shared_ptr<uint8_t> CoreInstance::getProcessImage() const {
   return processMemory_;
 }
 

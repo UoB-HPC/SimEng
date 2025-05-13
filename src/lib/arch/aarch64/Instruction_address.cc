@@ -1058,7 +1058,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
                                               // [<xn|sp>{, xm}]
         // SME
         const uint16_t partition_num = VL_bits / 8;
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
         const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;
@@ -1104,7 +1104,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
                                               // [<xn|sp>{, xm, lsl #1}]
         // SME
         const uint16_t partition_num = VL_bits / 16;
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
         const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;
@@ -1127,7 +1127,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
                                               // [<xn|sp>{, xm, lsl #4}]
         // SME
         const uint16_t partition_num = VL_bits / 128;
-        const uint64_t* pg =
+        const auto pg =
             sourceValues_[partition_num + 1].getAsVector<uint64_t>();
         const uint64_t n = sourceValues_[partition_num + 2].get<uint64_t>();
         uint64_t m = 0;

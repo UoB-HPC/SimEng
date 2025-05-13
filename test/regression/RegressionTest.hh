@@ -124,7 +124,7 @@ class RegressionTest
   std::unique_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** The process memory. */
-  char* processMemory_ = nullptr;
+  uint8_t* processMemory_ = nullptr;
 
   /** The output written to stdout during the test. */
   std::string stdout_;

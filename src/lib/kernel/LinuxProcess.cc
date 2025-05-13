@@ -23,7 +23,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
       commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
-  char* unwrappedProcImgPtr;
+  uint8_t* unwrappedProcImgPtr;
   Elf elf(commandLine[0], &unwrappedProcImgPtr);
   if (!elf.isValid()) {
     return;
@@ -47,7 +47,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
 
-  char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
+  uint8_t* temp =
+      (uint8_t*)realloc(unwrappedProcImgPtr, size_ * sizeof(uint8_t));
   if (temp == NULL) {
     free(unwrappedProcImgPtr);
     std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
@@ -59,7 +60,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   unwrappedProcImgPtr = temp;
 
   createStack(&unwrappedProcImgPtr);
-  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
+  processImage_ = std::shared_ptr<uint8_t>(unwrappedProcImgPtr, free);
 }
 
 LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
@@ -81,11 +82,11 @@ LinuxProcess::LinuxProcess(span<const uint8_t> instructions,
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  char* unwrappedProcImgPtr = (char*)calloc(size_, sizeof(char));
+  uint8_t* unwrappedProcImgPtr = (uint8_t*)calloc(size_, sizeof(uint8_t));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
 
   createStack(&unwrappedProcImgPtr);
-  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
+  processImage_ = std::shared_ptr<uint8_t>(unwrappedProcImgPtr, free);
 }
 
 LinuxProcess::~LinuxProcess() {}
@@ -102,8 +103,8 @@ std::string LinuxProcess::getPath() const { return commandLine_[0]; }
 
 bool LinuxProcess::isValid() const { return isValid_; }
 
-std::shared_ptr<char> LinuxProcess::getProcessImage() const {
-  return std::shared_ptr<char>(processImage_);
+std::shared_ptr<uint8_t> LinuxProcess::getProcessImage() const {
+  return std::shared_ptr<uint8_t>(processImage_);
 }
 
 uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
@@ -112,7 +113,7 @@ uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
 uint64_t LinuxProcess::getInitialStackPointer() const { return stackPointer_; }
 
-void LinuxProcess::createStack(char** processImage) {
+void LinuxProcess::createStack(uint8_t** processImage) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
   // The argv and env strings are added to the top of the stack first and the
@@ -128,7 +129,7 @@ void LinuxProcess::createStack(char** processImage) {
   // Program arguments (argc, argv[])
   initialStackFrame.push_back(commandLine_.size());  // argc
   for (size_t i = 0; i < commandLine_.size(); i++) {
-    char* argvi = commandLine_[i].data();
+    uint8_t* argvi = reinterpret_cast<uint8_t*>(commandLine_[i].data());
     for (size_t j = 0; j < commandLine_[i].size(); j++) {
       stringBytes.push_back(argvi[j]);
     }
@@ -193,7 +194,8 @@ void LinuxProcess::createStack(char** processImage) {
   stackPointer_ -= stackOffset;
 
   // Copy initial stack frame to process memory
-  char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
+  uint8_t* stackFrameBytes =
+      reinterpret_cast<uint8_t*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             (*processImage) + stackPointer_);
 }

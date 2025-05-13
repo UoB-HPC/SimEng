@@ -190,6 +190,9 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   struct ::stat statbuf;
   int64_t retval = ::fstatat(hostDfd, new_pathname.c_str(), &statbuf, flag);
 
+  std::cout << "retval = " << retval << " errno = " << errno << std::endl;
+
+
   // Copy results to output struct
   out.dev = statbuf.st_dev;
   out.ino = statbuf.st_ino;
