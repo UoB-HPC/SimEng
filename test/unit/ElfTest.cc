@@ -22,7 +22,7 @@ class ElfTest : public testing::Test {
   const uint64_t known_phdrTableAddress = 4194368;
   const uint64_t known_processImageSize = 5040480;
 
-  char* unwrappedProcImgPtr;
+  uint8_t* unwrappedProcImgPtr;
 };
 
 // Test that a valid ELF file can be created

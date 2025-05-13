@@ -131,9 +131,9 @@ TEST_F(PipelineDispatchIssueUnitTest, singleInstr) {
   EXPECT_CALL(*uop, getSourceRegisters())
       .WillOnce(Return(span<Register>(srcRegs)));
   EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
-  EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0, 8)));
+  EXPECT_CALL(*uop, supplyOperand(0, RegisterValue(0ull, 8)));
   EXPECT_CALL(*uop, isOperandReady(1)).WillOnce(Return(false));
-  EXPECT_CALL(*uop, supplyOperand(1, RegisterValue(0, 8)));
+  EXPECT_CALL(*uop, supplyOperand(1, RegisterValue(0ull, 8)));
   EXPECT_CALL(*uop, getDestinationRegisters())
       .WillOnce(Return(span<Register>(destRegs)));
 

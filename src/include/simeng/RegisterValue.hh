@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <memory>
 
 #include "simeng/Pool.hh"
@@ -50,7 +51,12 @@ class RegisterValue {
       // T* view = reinterpret_cast<T*>(this->localValue);
       // view[0] = value;
 
-      memcpy(this->localValue, &value, bytes);
+      size_t numBytesToCopy = bytes;
+      if (bytes > sizeof(T)) {
+        numBytesToCopy = sizeof(T);
+      }
+
+      memcpy(this->localValue, &value, numBytesToCopy);
 
       // if (bytes > sizeof(T)) {
       //   // Zero the remaining bytes not set by the provided value

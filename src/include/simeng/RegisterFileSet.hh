@@ -24,6 +24,7 @@ struct RegisterFileStructure {
 class RegisterFileSet {
  public:
   /** Constructs a set of register files, defined by `registerFileStructures`.
+   *  Initialisation can't be assumed to be 0.
    */
   RegisterFileSet(std::vector<RegisterFileStructure> registerFileStructures);
 

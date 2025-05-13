@@ -9,6 +9,7 @@ RegisterFileSet::RegisterFileSet(
     : registerFiles(registerFileStructures.size()) {
   for (size_t type = 0; type < registerFileStructures.size(); type++) {
     const auto& structure = registerFileStructures[type];
+    // Initialisation won't always be 0
     registerFiles[type] = std::vector<RegisterValue>(
         structure.quantity, RegisterValue(0, structure.bytes));
   }

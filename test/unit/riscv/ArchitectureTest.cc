@@ -151,9 +151,10 @@ TEST_F(RiscVArchitectureTest, updateSystemTimerRegisters) {
   Register cycleSystemReg = {
       RegisterType::SYSTEM,
       static_cast<uint16_t>(arch->getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
+  regFile.set(cycleSystemReg, {0ull, 8});
 
   uint64_t ticks = 30;
-  EXPECT_EQ(regFile.get(cycleSystemReg), RegisterValue(0, 8));
+  EXPECT_EQ(regFile.get(cycleSystemReg), RegisterValue(0ull, 8));
   arch->updateSystemTimerRegisters(&regFile, ticks);
   EXPECT_EQ(regFile.get(cycleSystemReg), RegisterValue(ticks, 8));
 }

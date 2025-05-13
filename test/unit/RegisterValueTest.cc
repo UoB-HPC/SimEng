@@ -26,7 +26,7 @@ TEST(RegisterValueTest, Cast) {
 TEST(RegisterValueTest, MismatchedSizesZeroed) {
   uint32_t value = 0;
   auto registerValue = simeng::RegisterValue(value, 8);
-  EXPECT_EQ(registerValue.get<uint64_t>(), 0);
+  EXPECT_EQ(registerValue.get<uint64_t>(), 0ull);
 }
 
 // Tests that low bits of stored values can be read correctly

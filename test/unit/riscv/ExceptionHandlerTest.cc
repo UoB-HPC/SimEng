@@ -66,8 +66,8 @@ TEST_F(RiscVExceptionHandlerTest, testSyscall) {
   insn->setInstructionAddress(insnAddr);
 
   // Setup register file for `uname` syscall (chosen as minimal functionality)
-  archRegFileSet.set(R0, RegisterValue(1234, 8));
-  archRegFileSet.set(R7, RegisterValue(160, 8));
+  archRegFileSet.set(R0, RegisterValue(1234ull, 8));
+  archRegFileSet.set(R7, RegisterValue(160ull, 8));
 
   // Create ExceptionHandler
   ExceptionHandler handler(insn, core, memory, kernel);
@@ -307,8 +307,8 @@ TEST_F(RiscVExceptionHandlerTest, readBufferThen) {
   uint64_t length = 192;
 
   // Initialise data to "read" from MockMemory
-  std::vector<char> dataVec(length, 'q');
-  std::vector<char> dataVec2(length, 'q');
+  std::vector<uint8_t> dataVec(length, 'q');
+  std::vector<uint8_t> dataVec2(length, 'q');
   // Initialise the two required targets (128-bytes per read request in
   // readBufferThen())
   memory::MemoryAccessTarget tar1 = {ptr, 128};

@@ -165,7 +165,7 @@ TEST_F(AArch64ArchitectureTest, getInitialState) {
       {RegisterType::SYSTEM,
        (uint16_t)arch->getSystemRegisterTag(AARCH64_SYSREG_DCZID_EL0)}};
   std::vector<RegisterValue> regVals = {{kernel.getInitialStackPointer(), 8},
-                                        {20, 8}};
+                                        {20ull, 8}};
 
   arch::ProcessStateChange changes = arch->getInitialState();
   EXPECT_EQ(changes.type, arch::ChangeType::REPLACEMENT);
@@ -187,7 +187,13 @@ TEST_F(AArch64ArchitectureTest, getStreamingVectorLength) {
 }
 
 TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
-  RegisterFileSet regFile = config::SimInfo::getArchRegStruct();
+  auto regFile = RegisterFileSet(config::SimInfo::getArchRegStruct());
+
+  // Ensure registers start at 0
+  regFile.set({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
+                                            AARCH64_SYSREG_CNTVCT_EL0)}, {0ull,8});
+  regFile.set({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
+                                            AARCH64_SYSREG_PMCCNTR_EL0)}, {0ull,8});
 
   uint8_t vctCount = 0;
   // In A64FX, Timer frequency = (2.5 * 1e9) / (100 * 1e6) = 18
@@ -211,7 +217,7 @@ TEST_F(AArch64ArchitectureTest, updateSystemTimerRegisters) {
             .get({RegisterType::SYSTEM, (uint16_t)arch->getSystemRegisterTag(
                                             AARCH64_SYSREG_CNTVCT_EL0)})
             .get<uint64_t>(),
-        vctCount);
+        static_cast<uint64_t>(vctCount));
   }
 }
 

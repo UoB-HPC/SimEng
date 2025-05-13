@@ -26,14 +26,17 @@ TEST_F(ArchitecturalRegisterFileSetTest, readWrite) {
     const Register r0 = {i, 0};
     const Register rMax = {i, maxRegTag};
 
-    EXPECT_EQ(archRegFileSet.get(r0), RegisterValue(0, regSize));
-    EXPECT_EQ(archRegFileSet.get(rMax), RegisterValue(0, regSize));
+    archRegFileSet.set(r0, RegisterValue(0ull, regSize));
+    archRegFileSet.set(rMax, RegisterValue(0ull, regSize));
 
-    archRegFileSet.set(r0, RegisterValue(20, regSize));
-    archRegFileSet.set(rMax, RegisterValue(40, regSize));
+    EXPECT_EQ(archRegFileSet.get(r0), RegisterValue(0ull, regSize));
+    EXPECT_EQ(archRegFileSet.get(rMax), RegisterValue(0ull, regSize));
 
-    EXPECT_EQ(archRegFileSet.get(r0), RegisterValue(20, regSize));
-    EXPECT_EQ(archRegFileSet.get(rMax), RegisterValue(40, regSize));
+    archRegFileSet.set(r0, RegisterValue(20ull, regSize));
+    archRegFileSet.set(rMax, RegisterValue(40ull, regSize));
+
+    EXPECT_EQ(archRegFileSet.get(r0), RegisterValue(20ull, regSize));
+    EXPECT_EQ(archRegFileSet.get(rMax), RegisterValue(40ull, regSize));
   }
 }
 
