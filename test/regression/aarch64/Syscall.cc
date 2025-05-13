@@ -771,7 +771,7 @@ TEST_P(Syscall, newfstatat) {
   ::fstatat(AT_FDCWD, filepath, &statbufRef, 0);
 
   // Check fstatat returned 0
-  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
 
   // Check fstatat buf matches reference
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart()),
