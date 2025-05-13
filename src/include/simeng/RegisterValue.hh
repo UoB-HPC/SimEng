@@ -31,8 +31,6 @@ struct safePointer {
 /** Global memory pool used by RegisterValue class. */
 extern Pool pool;
 
-
-// TODO the data is NOT immutable as per AArch64_LD1_MXIPXX_V_D. We should change the class to enforce immutability or concede this functionality
 /** A class that holds an arbitrary region of immutable data, providing
  * casting and data accessor functions. For values smaller than or equal to
  * `MAX_LOCAL_BYTES`, this data is held in a local value, otherwise memory is
@@ -47,32 +45,21 @@ class RegisterValue {
   template <class T,
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
   RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
+    // Ensure the high bits are zeroed
+    size_t numBytesToCopy = bytes;
+    if (bytes > sizeof(T)) {
+      numBytesToCopy = sizeof(T);
+    }
+
     if (isLocal()) {
-      // T* view = reinterpret_cast<T*>(this->localValue);
-      // view[0] = value;
-
-      size_t numBytesToCopy = bytes;
-      if (bytes > sizeof(T)) {
-        numBytesToCopy = sizeof(T);
-      }
-
       memcpy(this->localValue, &value, numBytesToCopy);
-
-      // if (bytes > sizeof(T)) {
-      //   // Zero the remaining bytes not set by the provided value
-      //   std::fill<char*, uint16_t>(this->localValue + sizeof(T),
-      //                              this->localValue + bytes, 0);
-      // }
     } else {
-      void* data = pool.allocate(bytes);
+      uint8_t* data = static_cast<uint8_t*>(pool.allocate(bytes));
       std::memset(data, 0, bytes);
-
-      T* view = reinterpret_cast<T*>(data);
-      view[0] = value;
+      memcpy(data, &value, numBytesToCopy);
 
       this->ptr = std::shared_ptr<uint8_t>(
-          static_cast<uint8_t*>(data),
-          [bytes](void* ptr) { pool.deallocate(ptr, bytes); });
+          data, [bytes](uint8_t* ptr) { pool.deallocate(ptr, bytes); });
     }
   }
 

@@ -16,7 +16,6 @@ class RegisterFileSetTest : public ::testing::Test {
 };
 
 // Ensure RegisterFileSet is constructed correctly
-// TODO THIS WILL FAIL AS REGS DON'T GET SET TO 0 WHEN INITIALISED
 TEST_F(RegisterFileSetTest, validConstruction) {
   for (uint8_t i = 0; i < regFileStruct.size(); i++) {
     for (uint16_t j = 0; j < regFileStruct[i].quantity; j++) {
