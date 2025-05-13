@@ -4,8 +4,6 @@
 
 namespace simeng {
 
-// Pool pool = Pool();
-
 RegisterValue::RegisterValue() : bytes(0) {}
 
 RegisterValue::operator bool() const { return (bytes > 0); }

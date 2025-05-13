@@ -274,7 +274,7 @@ void RegressionTest::assemble(const char* source, const char* triple,
                                 options));
   ASSERT_NE(asmParser, nullptr) << "Failed to create LLVM target asm parser";
   asmParser->setTargetParser(*targetAsmParser);
-  
+
   // Run asm parser to generate assembled object code
   ASSERT_FALSE(asmParser->Run(false));
 

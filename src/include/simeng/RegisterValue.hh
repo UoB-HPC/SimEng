@@ -13,6 +13,9 @@ namespace simeng {
 
 inline Pool pool = Pool();
 
+/** Global memory pool used by RegisterValue class. */
+extern Pool pool;
+
 template <typename T>
 struct safePointer {
   // public:
@@ -28,8 +31,6 @@ struct safePointer {
   const uint8_t* ptr;
 };
 
-/** Global memory pool used by RegisterValue class. */
-extern Pool pool;
 
 /** A class that holds an arbitrary region of immutable data, providing
  * casting and data accessor functions. For values smaller than or equal to
