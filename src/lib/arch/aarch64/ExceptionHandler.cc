@@ -120,7 +120,7 @@ bool ExceptionHandler::init() {
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const uint8_t*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (totalRead > 0) {
             uint8_t len =
                 totalRead > 128 ? 128 : static_cast<uint8_t>(totalRead);
@@ -160,7 +160,7 @@ bool ExceptionHandler::init() {
           uint64_t iLength = static_cast<uint64_t>(totalRead);
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const uint8_t*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -799,7 +799,6 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
   uint8_t buffer[kernel::Linux::LINUX_PATH_MAX];
-  // TODO check reinterpret cast is safe here
   auto result = linux_.readlinkat(dirfd, path.data(),
                                   reinterpret_cast<char*>(buffer), bufSize);
 
