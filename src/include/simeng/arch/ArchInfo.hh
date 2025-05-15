@@ -12,7 +12,7 @@ namespace arch {
 /** A class to hold and generate architecture specific configuration options. */
 class ArchInfo {
  public:
-  virtual ~ArchInfo(){};
+  virtual ~ArchInfo() {};
 
   /** Get the set of system register enums currently supported. */
   virtual const std::vector<uint64_t>& getSysRegEnums() const = 0;
