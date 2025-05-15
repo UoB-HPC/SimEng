@@ -68,8 +68,6 @@ uint64_t rbit(srcValContainer& sourceValues,
  * Returns array of uint8_t with number of elements = bytes in T. */
 template <typename T>
 std::array<uint8_t, sizeof(T)> rev(srcValContainer& sourceValues) {
-  // auto bytes = sourceValues[0].getAsVector<uint8_t>();
-
   std::array<uint8_t, sizeof(T)> forward;
   sourceValues[0].getAsVector<uint8_t>().copyTo(&forward, sizeof(T));
   std::array<uint8_t, sizeof(T)> reversed;

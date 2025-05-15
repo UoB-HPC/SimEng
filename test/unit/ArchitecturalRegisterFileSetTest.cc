@@ -26,9 +26,6 @@ TEST_F(ArchitecturalRegisterFileSetTest, readWrite) {
     const Register r0 = {i, 0};
     const Register rMax = {i, maxRegTag};
 
-    archRegFileSet.set(r0, RegisterValue(0ull, regSize));
-    archRegFileSet.set(rMax, RegisterValue(0ull, regSize));
-
     EXPECT_EQ(archRegFileSet.get(r0), RegisterValue(0ull, regSize));
     EXPECT_EQ(archRegFileSet.get(rMax), RegisterValue(0ull, regSize));
 

@@ -87,9 +87,9 @@ RegisterValue vecBicShift_imm(
  * Returns correctly formatted RegisterValue. */
 template <int I>
 RegisterValue vecBitwiseInsert(srcValContainer& sourceValues, bool isBif) {
-  const safePointer<unsigned long> d = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<unsigned long> n = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<unsigned long> m = sourceValues[2].getAsVector<uint64_t>();
+  const auto d = sourceValues[0].getAsVector<uint64_t>();
+  const auto n = sourceValues[1].getAsVector<uint64_t>();
+  const auto m = sourceValues[2].getAsVector<uint64_t>();
   uint64_t out[2] = {0};
   for (int i = 0; i < (I / 8); i++) {
     out[i] =
@@ -105,9 +105,9 @@ RegisterValue vecBitwiseInsert(srcValContainer& sourceValues, bool isBif) {
  * Returns correctly formatted RegisterValue. */
 template <int I>
 RegisterValue vecBsl(srcValContainer& sourceValues) {
-  const safePointer<unsigned long> d = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<unsigned long> n = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<unsigned long> m = sourceValues[2].getAsVector<uint64_t>();
+  const auto d = sourceValues[0].getAsVector<uint64_t>();
+  const auto n = sourceValues[1].getAsVector<uint64_t>();
+  const auto m = sourceValues[2].getAsVector<uint64_t>();
   uint64_t out[2] = {0};
   for (int i = 0; i < (I / 8); i++) {
     out[i] = (d[i] & n[i]) | (~d[i] & m[i]);
@@ -142,7 +142,7 @@ RegisterValue vecCompare(srcValContainer& sourceValues, bool cmpToZero,
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecCountPerByte(srcValContainer& sourceValues) {
-  const safePointer<unsigned char> n = sourceValues[0].getAsVector<uint8_t>();
+  const auto n = sourceValues[0].getAsVector<uint8_t>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     for (size_t j = 0; j < (sizeof(T) * 8); j++) {
@@ -569,9 +569,7 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
   // Concatenate the vectors
   T temp[2 * I];
   n.copyTo(temp, sizeof(T) * I);
-  // memcpy(temp, n.ptr, sizeof(T) * I);
   m.copyTo(temp + (sizeof(T) * I),sizeof(T) * I);
-  // memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
   // Compare each adjacent pair of elements
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -594,9 +592,6 @@ RegisterValue vecUMinP(srcValContainer& sourceValues) {
   T temp[2 * I];
   n.copyTo(temp, sizeof(T) * I);
   m.copyTo(temp + (sizeof(T) * I), sizeof(T) * I);
-
-  // memcpy(temp, n.ptr, sizeof(T) * I);
-  // memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
 
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -829,7 +824,7 @@ RegisterValue vecTbl(
   assert(I == 8 || I == 16);
 
   // Vm contains the indices to fetch from table
-  const safePointer<unsigned char> Vm =
+  const auto Vm =
       sourceValues[metadata.operandCount - 2]
           .getAsVector<uint8_t>();  // final operand is vecMovi_imm
 
@@ -841,7 +836,7 @@ RegisterValue vecTbl(
   const uint16_t tableSize = 16 * n_table_regs;
   std::vector<uint8_t> table(tableSize, 0);
   for (uint8_t i = 0; i < n_table_regs; i++) {
-    const safePointer<unsigned char> currentVector = sourceValues[i].getAsVector<uint8_t>();
+    const auto currentVector = sourceValues[i].getAsVector<uint8_t>();
     for (uint8_t j = 0; j < 16; j++) {
       table[16 * i + j] = currentVector[j];
     }

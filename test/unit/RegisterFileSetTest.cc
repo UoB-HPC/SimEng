@@ -33,9 +33,6 @@ TEST_F(RegisterFileSetTest, readWrite) {
     const Register r0 = {i, 0};
     const Register rMax = {i, maxRegTag};
 
-    regFileSet.set(r0, RegisterValue(0ull, regSize));
-    regFileSet.set(rMax, RegisterValue(0ull, regSize));
-
     EXPECT_EQ(regFileSet.get(r0), RegisterValue(0ull, regSize));
     EXPECT_EQ(regFileSet.get(rMax), RegisterValue(0ull, regSize));
 

@@ -57,7 +57,7 @@ class RegisterValue {
   template <class T,
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
   RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
-    // Ensure the high bits are zeroed
+    // Ensure the high bits remain zeroed
     size_t numBytesToCopy = bytes;
     if (bytes > sizeof(T)) {
       numBytesToCopy = sizeof(T);
@@ -78,7 +78,8 @@ class RegisterValue {
   /** Create a new RegisterValue of size `capacity`, copying `bytes`
    * from `ptr`.
    */
-  RegisterValue(const uint8_t* ptr, uint16_t bytes, uint16_t capacity)
+  template <typename T>
+  RegisterValue(const T* ptr, uint16_t bytes, uint16_t capacity)
       : bytes(capacity) {
     assert(capacity >= bytes && "Capacity is less than requested bytes");
     uint8_t* dest;
@@ -95,7 +96,8 @@ class RegisterValue {
   }
 
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
-  RegisterValue(const uint8_t* ptr, uint16_t bytes)
+  template <typename T>
+  RegisterValue(const T* ptr, uint16_t bytes)
       : RegisterValue(ptr, bytes, bytes) {}
 
   /** Create a new RegisterValue of size 'bytes', copy data from the safePointer

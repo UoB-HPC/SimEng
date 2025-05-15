@@ -15,8 +15,8 @@ namespace aarch64 {
 template <typename T>
 RegisterValue sveAdd_3ops(srcValContainer& sourceValues,
                           const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -34,7 +34,7 @@ RegisterValue sveAdd_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   const T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -56,7 +56,7 @@ RegisterValue sveAddPredicated_const(
     const uint16_t VL_bits) {
   bool isFP = std::is_floating_point<T>::value;
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> d = sourceValues[1].getAsVector<T>();
+  const auto d = sourceValues[1].getAsVector<T>();
   const auto con = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -79,8 +79,8 @@ template <typename T>
 RegisterValue sveAddPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> d = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto d = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -101,7 +101,7 @@ template <typename T>
 RegisterValue sveAddvPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   uint64_t out = 0;
@@ -123,8 +123,8 @@ RegisterValue sveAdr_packedOffsets(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -146,8 +146,8 @@ std::tuple<std::array<uint64_t, 4>, uint8_t> sveCmpPredicated_toPred(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool cmpToImm, std::function<bool(T, T)> func) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = !cmpToImm ? sourceValues[2].getAsVector<T>() : safePointer<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = !cmpToImm ? sourceValues[2].getAsVector<T>() : safePointer<T>();
   T imm = cmpToImm ? static_cast<T>(metadata.operands[3].imm) : 0;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -210,8 +210,8 @@ std::array<uint64_t, 4> sveComparePredicated_vecsToPred(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits, bool cmpToZero, std::function<bool(T, T)> func) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = !cmpToZero ? sourceValues[2].getAsVector<T>() : safePointer<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = !cmpToZero ? sourceValues[2].getAsVector<T>() : safePointer<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   std::array<uint64_t, 4> out = {0};
@@ -303,7 +303,7 @@ RegisterValue sveDup_vecIndexed(
     const uint16_t VL_bits) {
   const uint16_t index =
       static_cast<uint16_t>(metadata.operands[1].vector_index);
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -324,9 +324,9 @@ RegisterValue sveDup_vecIndexed(
 template <typename T>
 RegisterValue sveFabsPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -351,7 +351,7 @@ RegisterValue sveFaddaPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
   const T n = sourceValues[1].get<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -376,8 +376,8 @@ RegisterValue sveFcaddPredicated(
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> dn = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto dn = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
   const uint32_t imm = metadata.operands[4].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -420,10 +420,10 @@ RegisterValue sveFcmlaPredicated(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> da = sourceValues[0].getAsVector<T>();
+  const auto da = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
   const uint32_t imm = metadata.operands[4].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -470,7 +470,7 @@ RegisterValue sveFcpy_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> dn = sourceValues[0].getAsVector<T>();
+  const auto dn = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
   const T imm = metadata.operands[2].fp;
 
@@ -601,8 +601,8 @@ template <typename T, bool Reversed = false>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
     srcValContainer& sourceValues, const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> dn = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto dn = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -628,10 +628,10 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
 template <typename T>
 RegisterValue sveFmadPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -652,10 +652,10 @@ RegisterValue sveFmadPredicated_vecs(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFmlsPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -676,10 +676,10 @@ RegisterValue sveFmlsPredicated_vecs(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFmsbPredicated_vecs(srcValContainer& sourceValues,
                                      const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -699,8 +699,8 @@ RegisterValue sveFmsbPredicated_vecs(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFmul_3ops(srcValContainer& sourceValues,
                            const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -716,9 +716,9 @@ RegisterValue sveFmul_3ops(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFnegPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -740,10 +740,10 @@ RegisterValue sveFnegPredicated(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFnmlsPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -765,10 +765,10 @@ RegisterValue sveFnmlsPredicated(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveFnmsbPredicated(srcValContainer& sourceValues,
                                  const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
-  const safePointer<T> a = sourceValues[3].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
+  const auto a = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -790,9 +790,9 @@ RegisterValue sveFnmsbPredicated(srcValContainer& sourceValues,
 template <typename T>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue>
 sveFrintnPredicated(srcValContainer& sourceValues, const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -828,9 +828,9 @@ sveFrintnPredicated(srcValContainer& sourceValues, const uint16_t VL_bits) {
 template <typename T>
 RegisterValue sveFsqrtPredicated_2vecs(srcValContainer& sourceValues,
                                        const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -871,7 +871,7 @@ RegisterValue sveInc_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
 
   const uint8_t imm = static_cast<uint8_t>(metadata.operands[2].imm);
 
@@ -966,8 +966,8 @@ RegisterValue sveLogicOpPredicated_3vecs(srcValContainer& sourceValues,
                                          const uint16_t VL_bits,
                                          std::function<T(T, T)> func) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> dn = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto dn = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -989,8 +989,8 @@ template <typename T>
 RegisterValue sveLogicOpUnPredicated_3vecs(srcValContainer& sourceValues,
                                            const uint16_t VL_bits,
                                            std::function<T(T, T)> func) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1008,7 +1008,7 @@ RegisterValue sveLsl_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   const T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1029,7 +1029,7 @@ RegisterValue sveMax_vecImm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T imm = static_cast<T>(metadata.operands[2].imm);
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1049,8 +1049,8 @@ template <typename T>
 RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1072,10 +1072,10 @@ RegisterValue sveMaxPredicated_vecs(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveMlaPredicated_vecs(srcValContainer& sourceValues,
                                     const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
-  const safePointer<T> m = sourceValues[3].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
+  const auto m = sourceValues[3].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1098,9 +1098,9 @@ RegisterValue sveMlaIndexed_vecs(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata,
     const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
   const size_t index = static_cast<size_t>(metadata.operands[2].vector_index);
 
   const uint16_t elemsPer128 = 128 / (sizeof(T) * 8);
@@ -1126,7 +1126,7 @@ RegisterValue sveMovprfxPredicated_destToZero(srcValContainer& sourceValues,
                                               const uint16_t VL_bits) {
   // TODO: Adopt hint logic of the MOVPRFX instruction
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1150,9 +1150,9 @@ template <typename T>
 RegisterValue sveMovprfxPredicated_destUnchanged(srcValContainer& sourceValues,
                                                  const uint16_t VL_bits) {
   // TODO: Adopt hint logic of the MOVPRFX instruction
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1179,13 +1179,9 @@ RegisterValue sveMulPredicated(
     const uint16_t VL_bits, bool useImm) {
   bool isFP = std::is_floating_point<T>::value;
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = !useImm ? sourceValues[2].getAsVector<T>() : safePointer<T>() ;
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = !useImm ? sourceValues[2].getAsVector<T>() : safePointer<T>() ;
   T imm = useImm ? (isFP ? metadata.operands[3].fp : metadata.operands[3].imm) : T();
-  // if (useImm)
-  //   imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
-  // else
-  //   m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1211,8 +1207,8 @@ template <typename T, typename TT>
 RegisterValue sveMulhPredicated(srcValContainer& sourceValues,
                                 const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1248,8 +1244,8 @@ RegisterValue sveMulhPredicated(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveOrr_3vecs(srcValContainer& sourceValues,
                            const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1366,7 +1362,7 @@ std::array<uint64_t, 4> sveRev_predicates(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveRev_vecs(srcValContainer& sourceValues,
                           const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1387,8 +1383,8 @@ template <typename T>
 RegisterValue sveSel_zpzz(srcValContainer& sourceValues,
                           const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1408,7 +1404,7 @@ RegisterValue sveSel_zpzz(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveSminv(srcValContainer& sourceValues, const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out = std::numeric_limits<T>::max();
@@ -1427,8 +1423,8 @@ RegisterValue sveSminv(srcValContainer& sourceValues, const uint16_t VL_bits) {
 template <typename T>
 RegisterValue sveSub_3vecs(srcValContainer& sourceValues,
                            const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1447,8 +1443,8 @@ template <typename T>
 RegisterValue sveSubrPredicated_3vecs(srcValContainer& sourceValues,
                                       const uint16_t VL_bits) {
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> dn = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto dn = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1475,7 +1471,7 @@ RegisterValue sveSubPredicated_imm(
     const uint16_t VL_bits) {
   bool isFP = std::is_floating_point<T>::value;
   const auto p = sourceValues[0].getAsVector<uint64_t>();
-  const safePointer<T> dn = sourceValues[1].getAsVector<T>();
+  const auto dn = sourceValues[1].getAsVector<T>();
   const auto imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -1501,9 +1497,9 @@ RegisterValue sveSubPredicated_imm(
 template <typename T, typename C>
 RegisterValue sveSxtPredicated(srcValContainer& sourceValues,
                                const uint16_t VL_bits) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const auto p = sourceValues[1].getAsVector<uint64_t>();
-  const safePointer<T> n = sourceValues[2].getAsVector<T>();
+  const auto n = sourceValues[2].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1526,8 +1522,8 @@ RegisterValue sveSxtPredicated(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveTrn1_3vecs(srcValContainer& sourceValues,
                             const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1545,8 +1541,8 @@ RegisterValue sveTrn1_3vecs(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveTrn2_3vecs(srcValContainer& sourceValues,
                             const uint16_t VL_bits) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1611,8 +1607,8 @@ uint64_t sveUqdec(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveUzp_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
                           bool isUzp1) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1702,8 +1698,8 @@ std::array<uint64_t, 4> sveZip_preds(srcValContainer& sourceValues,
 template <typename T>
 RegisterValue sveZip_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
                           bool isZip2) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
   T out[256 / sizeof(T)] = {0};
@@ -1738,7 +1734,8 @@ std::vector<RegisterValue> sve_merge_store_data(const safePointer<T> d, const sa
 
   // Determine size of array based on the size of the memory access (This is
   // the C specifier in sve instructions)
-  std::array<C, 256 / sizeof(C)> mData;
+  C mData[256/sizeof(C)];
+  // std::array<C, 256 / sizeof(C)> mData;
   uint16_t mdSize = 0;
 
   for (uint16_t x = 0; x < numVecElems; x++) {
@@ -1749,13 +1746,13 @@ std::vector<RegisterValue> sve_merge_store_data(const safePointer<T> d, const sa
       mdSize++;
     } else if (mdSize) {
       outputData.push_back(
-          RegisterValue(reinterpret_cast<uint8_t*>(mData.data()), mdSize * sizeof(C)));
+          RegisterValue(mData, mdSize * sizeof(C), mdSize * sizeof(C)));
       mdSize = 0;
     }
   }
   if (mdSize) {
     outputData.push_back(
-        RegisterValue(reinterpret_cast<uint8_t*>(mData.data()), mdSize * sizeof(C)));
+        RegisterValue(mData, mdSize * sizeof(C), mdSize * sizeof(C)));
   }
   return outputData;
 }
