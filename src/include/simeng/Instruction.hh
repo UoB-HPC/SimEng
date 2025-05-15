@@ -29,7 +29,7 @@ struct ExecutionInfo {
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {
  public:
-  virtual ~Instruction(){};
+  virtual ~Instruction() {};
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
