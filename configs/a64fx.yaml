@@ -31,10 +31,15 @@ Queue-Sizes:
 Port-Allocator:
   Type: Balanced
 Branch-Predictor:
-  Type: "Perceptron"
+  Type: "TAGE"
   BTB-Tag-Bits: 11
+  Saturating-Count-Bits: 2
   Global-History-Length: 19
   RAS-entries: 8
+  Fallback-Static-Predictor: "Always-Taken"
+  TAGE-Table-Bits: 12
+  Num-TAGE-Tables: 6
+  Tag-Length: 8
 L1-Data-Memory:
   Interface-Type: Fixed
 L1-Instruction-Memory:

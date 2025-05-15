@@ -11,6 +11,7 @@
 #include "simeng/branchpredictors/AlwaysNotTakenPredictor.hh"
 #include "simeng/branchpredictors/GenericPredictor.hh"
 #include "simeng/branchpredictors/PerceptronPredictor.hh"
+#include "simeng/branchpredictors/TAGEPredictor.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/memory/FixedLatencyMemoryInterface.hh"

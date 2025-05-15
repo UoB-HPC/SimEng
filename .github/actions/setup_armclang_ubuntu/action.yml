@@ -20,10 +20,10 @@ runs:
         export DEBIAN_FRONTEND=noninteractive
 
         # Update package lists
-        apt-get update
+        apt-get update --fix-missing
 
         # Install essential packages
-        apt-get install -y \
+        apt-get install -y --fix-missing \
           software-properties-common \
           sudo \
           wget \
