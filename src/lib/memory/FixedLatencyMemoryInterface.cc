@@ -35,7 +35,7 @@ void FixedLatencyMemoryInterface::tick() {
 
       auto ptr = memory_ + target.address;
       // Copy the data from the RegisterValue to memory
-      memcpy(ptr, request.data.getAsVector<char>().ptr, target.size);
+      request.data.getAsVector<char>().copyTo(ptr, target.size);
     } else {
       // Read: read data into `completedReads`
       if (target.address + target.size > size_ ||

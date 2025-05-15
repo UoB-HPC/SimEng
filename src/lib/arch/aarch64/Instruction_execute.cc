@@ -122,7 +122,7 @@ void Instruction::execute() {
         for (uint16_t row = 0; row < rowCount; row++) {
           const auto zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint64_t));
+          zaRow.copyTo(out, rowCount * sizeof(uint64_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Element in 1st source pred corresponding to horizontal
           //    slice is TRUE
@@ -154,7 +154,7 @@ void Instruction::execute() {
         for (uint16_t row = 0; row < rowCount; row++) {
           const auto zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint32_t));
+          zaRow.copyTo(out, rowCount * sizeof(uint32_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Element in 1st source pred corresponding to horizontal
           //    slice is TRUE
@@ -186,7 +186,7 @@ void Instruction::execute() {
         for (uint16_t row = 0; row < rowCount; row++) {
           const auto zaRow = sourceValues_[row].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint64_t));
+          zaRow.copyTo(out, rowCount * sizeof(uint64_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
           //  - Element in 2nd source pred corresponding to vertical
@@ -221,7 +221,7 @@ void Instruction::execute() {
         for (uint16_t row = 0; row < rowCount; row++) {
           const auto zaRow = sourceValues_[row].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          std::memcpy(out, zaRow.ptr, rowCount * sizeof(uint32_t));
+          zaRow.copyTo(out, rowCount * sizeof(uint32_t));
           // Slice element is active IFF all of the following conditions hold:
           //  - Corresponding element in 1st source pred is TRUE
           //  - Element in 2nd source pred corresponding to vertical
@@ -3168,7 +3168,7 @@ void Instruction::execute() {
         for (uint16_t i = 0; i < rowCount; i++) {
           const auto row = sourceValues_[i].getAsVector<uint8_t>();
           uint8_t out[256] = {0};
-          memcpy(out, row.ptr, rowCount * sizeof(uint8_t));
+          row.copyTo(out, rowCount * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
           if (pg[i / 64] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3194,7 +3194,7 @@ void Instruction::execute() {
         for (uint16_t i = 0; i < rowCount; i++) {
           const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          memcpy(out, row.ptr, rowCount * sizeof(uint64_t));
+          row.copyTo(out, rowCount * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3220,7 +3220,7 @@ void Instruction::execute() {
         for (uint16_t i = 0; i < rowCount; i++) {
           const auto row = sourceValues_[i].getAsVector<uint16_t>();
           uint16_t out[128] = {0};
-          memcpy(out, row.ptr, rowCount * sizeof(uint16_t));
+          row.copyTo(out, rowCount * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (pg[i / 32] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3245,7 +3245,7 @@ void Instruction::execute() {
           const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           // *2 in memcpy as need 128-bit elements but using uint64_t
-          memcpy(out, row.ptr, rowCount * sizeof(uint64_t) * 2);
+          row.copyTo(out, rowCount * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
@@ -3276,7 +3276,7 @@ void Instruction::execute() {
         for (uint16_t i = 0; i < rowCount; i++) {
           const auto row = sourceValues_[i].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          memcpy(out, row.ptr, rowCount * sizeof(uint32_t));
+          row.copyTo(out, rowCount * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) out[sliceNum] = zn[i];
           results_[i] = {out, 256};
@@ -3499,7 +3499,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           const auto row = sourceValues_[i].getAsVector<uint8_t>();
           uint8_t out[256] = {0};
-          memcpy(out, row.ptr, partition_num * sizeof(uint8_t));
+          row.copyTo(out, partition_num * sizeof(uint8_t));
           uint64_t shifted_active = 1ull << (i % 64);
           if (pg[i / 64] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3526,7 +3526,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
-          memcpy(out, row.ptr, partition_num * sizeof(uint64_t));
+          row.copyTo(out, partition_num * sizeof(uint64_t));
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (pg[i / 8] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3553,7 +3553,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           const auto row = sourceValues_[i].getAsVector<uint16_t>();
           uint16_t out[128] = {0};
-          memcpy(out, row.ptr, partition_num * sizeof(uint16_t));
+          row.copyTo(out, partition_num * sizeof(uint16_t));
           uint64_t shifted_active = 1ull << ((i % 32) * 2);
           if (pg[i / 32] & shifted_active) {
             out[sliceNum] = data[i];
@@ -3582,7 +3582,7 @@ void Instruction::execute() {
           const auto row = sourceValues_[i].getAsVector<uint64_t>();
           uint64_t out[32] = {0};
           // *2 in memcpy as need 128-bit but using uint64_t
-          memcpy(out, row.ptr, partition_num * sizeof(uint64_t) * 2);
+          row.copyTo(out, partition_num * sizeof(uint64_t) * 2);
           // For 128-bit there are 16-bit for each active element
           uint64_t shifted_active = 1ull << ((i % 4) * 16);
           if (pg[i / 4] & shifted_active) {
@@ -3612,7 +3612,7 @@ void Instruction::execute() {
         for (int i = 0; i < partition_num; i++) {
           const auto row = sourceValues_[i].getAsVector<uint32_t>();
           uint32_t out[64] = {0};
-          memcpy(out, row.ptr, partition_num * sizeof(uint32_t));
+          row.copyTo(out, partition_num * sizeof(uint32_t));
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (pg[i / 16] & shifted_active) {
             out[sliceNum] = data[i];
@@ -5926,7 +5926,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-               RegisterValue(sourceValues_[i].getAsVector<uint8_t>().ptr,
+               RegisterValue(sourceValues_[i].getAsVector<uint8_t>(),
                                  16 * sizeof(uint8_t));
         }
         break;
@@ -5937,7 +5937,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue(sourceValues_[i].getAsVector<uint8_t>().ptr,
+              RegisterValue(sourceValues_[i].getAsVector<uint8_t>(),
                                  16 * sizeof(uint8_t));
         }
         // if #imm post-index, value can only be 64
@@ -5953,7 +5953,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] = RegisterValue(
-              sourceValues_[i].getAsVector<uint64_t>().ptr,
+              sourceValues_[i].getAsVector<uint64_t>(),
               2 * sizeof(uint64_t));
         }
         break;
@@ -5963,7 +5963,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue(sourceValues_[i].getAsVector<uint64_t>().ptr,
+              RegisterValue(sourceValues_[i].getAsVector<uint64_t>(),
                             2 * sizeof(uint64_t));
         }
         // if #imm post-index, value can only be 64
@@ -5979,7 +5979,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>(),
                             2 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 32
@@ -5995,7 +5995,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>(),
                             4 * sizeof(uint32_t));
         }
         break;
@@ -6005,7 +6005,7 @@ void Instruction::execute() {
         // STORE
         for (int i = 0; i < 4; i++) {
           memoryData_[i] =
-              RegisterValue(sourceValues_[i].getAsVector<uint32_t>().ptr,
+              RegisterValue(sourceValues_[i].getAsVector<uint32_t>(),
                             4 * sizeof(uint32_t));
         }
         // if #imm post-index, value can only be 64
@@ -6020,8 +6020,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint8_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue(t.ptr, 16 * sizeof(uint8_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue(t, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue(t2, 16 * sizeof(uint8_t));
         break;
       }
       case Opcode::AArch64_ST1Twov16b_POST: {  // st1 {vt.16b, vt2.16b},
@@ -6029,8 +6029,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint8_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue(t.ptr, 16 * sizeof(uint8_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 16 * sizeof(uint8_t));
+        memoryData_[0] = RegisterValue(t, 16 * sizeof(uint8_t));
+        memoryData_[1] = RegisterValue(t2, 16 * sizeof(uint8_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6044,8 +6044,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint64_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData_[0] = RegisterValue(t.ptr, 2 * sizeof(uint64_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue(t, 2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue(t2, 2 * sizeof(uint64_t));
         break;
       }
       case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
@@ -6053,8 +6053,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint64_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint64_t>();
-        memoryData_[0] = RegisterValue(t.ptr,  2 * sizeof(uint64_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 2 * sizeof(uint64_t));
+        memoryData_[0] = RegisterValue(t,  2 * sizeof(uint64_t));
+        memoryData_[1] = RegisterValue(t2, 2 * sizeof(uint64_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6068,8 +6068,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint32_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData_[0] = RegisterValue(t.ptr, 4 * sizeof(uint32_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue(t, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue(t2, 4 * sizeof(uint32_t));
         break;
       }
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
@@ -6077,8 +6077,8 @@ void Instruction::execute() {
         // STORE
         const auto t = sourceValues_[0].getAsVector<uint32_t>();
         const auto t2 = sourceValues_[1].getAsVector<uint32_t>();
-        memoryData_[0] = RegisterValue(t.ptr, 4 * sizeof(uint32_t));
-        memoryData_[1] = RegisterValue(t2.ptr, 4 * sizeof(uint32_t));
+        memoryData_[0] = RegisterValue(t, 4 * sizeof(uint32_t));
+        memoryData_[1] = RegisterValue(t2, 4 * sizeof(uint32_t));
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -6433,7 +6433,7 @@ void Instruction::execute() {
         const uint64_t PL_bits = VL_bits / 8;
         const uint16_t partition_num = PL_bits / 8;
         const auto p = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue(p.ptr, partition_num);
+        memoryData_[0] = RegisterValue(p, partition_num);
         break;
       }
       case Opcode::AArch64_STR_ZA: {  // str za[wv, #imm], [xn|sp{, #imm, mul
@@ -6448,14 +6448,14 @@ void Instruction::execute() {
 
         const auto zaRow =
             sourceValues_[(wv + imm) % zaRowCount].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue(zaRow.ptr, zaRowCount);
+        memoryData_[0] = RegisterValue(zaRow, zaRowCount);
         break;
       }
       case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
         // STORE
         const uint16_t partition_num = VL_bits / 8;
         const auto z = sourceValues_[0].getAsVector<uint8_t>();
-        memoryData_[0] = RegisterValue(z.ptr, partition_num);
+        memoryData_[0] = RegisterValue(z, partition_num);
         break;
       }
       case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]

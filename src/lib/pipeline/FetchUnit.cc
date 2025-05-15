@@ -112,12 +112,10 @@ void FetchUnit::tick() {
       // Data has been successfully read, move into fetch buffer
       // TODO: Handle memory faults
       assert(fetched[fetchIndex].data && "Memory read failed");
-      const uint8_t* fetchData =
-          fetched[fetchIndex].data.getAsVector<uint8_t>().ptr;
 
       // Copy fetched data to fetch buffer after existing data
-      std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
-                  blockSize_ - bufferOffset);
+      fetched[fetchIndex].data.getAsVector<uint8_t>().copyTo(
+          fetchBuffer_ + bufferedBytes_, blockSize_ - bufferOffset, bufferOffset);
 
       bufferedBytes_ += blockSize_ - bufferOffset;
       buffer = fetchBuffer_;

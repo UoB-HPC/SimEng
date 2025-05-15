@@ -13,8 +13,8 @@ namespace aarch64 {
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecAdd_3ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = static_cast<T>(n[i] + m[i]);
@@ -29,8 +29,8 @@ RegisterValue vecAdd_3ops(srcValContainer& sourceValues) {
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecAddp_3ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   uint8_t offset = I / 2;
   for (int i = 0; i < I; i++) {
@@ -50,8 +50,8 @@ RegisterValue vecAddp_3ops(srcValContainer& sourceValues) {
  * Returns correctly formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecBic_3ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = n[i] & ~m[i];
@@ -69,7 +69,7 @@ template <typename T, int I>
 RegisterValue vecBicShift_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
                       metadata.operands[1].shift.type,
                       metadata.operands[1].shift.value);
@@ -124,8 +124,8 @@ RegisterValue vecBsl(srcValContainer& sourceValues) {
 template <typename T, int I>
 RegisterValue vecCompare(srcValContainer& sourceValues, bool cmpToZero,
                          std::function<bool(T, T)> func) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = !cmpToZero ? sourceValues[1].getAsVector<T>() : safePointer<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = !cmpToZero ? sourceValues[1].getAsVector<T>() : safePointer<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
@@ -181,8 +181,8 @@ template <typename T, int I>
 RegisterValue vecExtVecs_index(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
   T out[16 / sizeof(T)] = {0};
 
@@ -203,8 +203,8 @@ RegisterValue vecExtVecs_index(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFabd(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = std::fabs(n[i] - m[i]);
@@ -219,7 +219,7 @@ RegisterValue vecFabd(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFabs_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = std::fabs(n[i]);
@@ -238,8 +238,8 @@ RegisterValue vecFabs_2ops(srcValContainer& sourceValues) {
 template <typename T, typename C, int I>
 RegisterValue vecFCompare(srcValContainer& sourceValues, bool cmpToZero,
                           std::function<bool(T, T)> func) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = !cmpToZero ? sourceValues[1].getAsVector<T>() : safePointer<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = !cmpToZero ? sourceValues[1].getAsVector<T>() : safePointer<T>();
   C out[16 / sizeof(C)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
@@ -257,7 +257,7 @@ RegisterValue vecFCompare(srcValContainer& sourceValues, bool cmpToZero,
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
 RegisterValue vecFcvtl(srcValContainer& sourceValues, bool isFcvtl2) {
-  const safePointer<N> n = sourceValues[0].getAsVector<N>();
+  const auto n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtl2 ? I : 0); i < (isFcvtl2 ? (I * 2) : I); i++) {
     out[isFcvtl2 ? (i - I) : i] = static_cast<D>(n[i]);
@@ -273,7 +273,7 @@ RegisterValue vecFcvtl(srcValContainer& sourceValues, bool isFcvtl2) {
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
 RegisterValue vecFcvtn(srcValContainer& sourceValues, bool isFcvtn2) {
-  const safePointer<N> n = sourceValues[0].getAsVector<N>();
+  const auto n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   for (int i = (isFcvtn2 ? (I / 2) : 0); i < I; i++) {
     out[i] = static_cast<D>(n[isFcvtn2 ? (i - (I / 2)) : i]);
@@ -289,7 +289,7 @@ RegisterValue vecFcvtn(srcValContainer& sourceValues, bool isFcvtn2) {
  * Returns correctly formatted RegisterValue. */
 template <typename D, typename N, int I>
 RegisterValue vecFcvtzs(srcValContainer& sourceValues) {
-  const safePointer<N> n = sourceValues[0].getAsVector<N>();
+  const auto n = sourceValues[0].getAsVector<N>();
   D out[16 / sizeof(D)] = {0};
   // TODO: Handle NaNs, denorms, and saturation
   for (int i = 0; i < I; i++) {
@@ -306,9 +306,9 @@ RegisterValue vecFcvtzs(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmla_3vecs(srcValContainer& sourceValues) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] + n[i] * m[i];
@@ -324,8 +324,8 @@ RegisterValue vecFmla_3vecs(srcValContainer& sourceValues) {
 template <typename T, int I>
 std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> vecFDiv(
     srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     if (m[i] == 0)
@@ -346,8 +346,8 @@ template <typename T, int I>
 RegisterValue vecFmlaIndexed_3vecs(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
   int index = metadata.operands[2].vector_index;
   const T m = sourceValues[2].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
@@ -365,9 +365,9 @@ RegisterValue vecFmlaIndexed_3vecs(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFmls_3vecs(srcValContainer& sourceValues) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
-  const safePointer<T> m = sourceValues[2].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
+  const auto m = sourceValues[2].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = d[i] - (n[i] * m[i]);
@@ -385,8 +385,8 @@ template <typename T, int I>
 RegisterValue vecFmlsIndexed_3vecs(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
   int index = metadata.operands[2].vector_index;
   const T m = sourceValues[2].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
@@ -407,7 +407,7 @@ RegisterValue vecFmulIndexed_vecs(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
   int index = metadata.operands[2].vector_index;
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   const T m = sourceValues[1].getAsVector<T>()[index];
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -423,7 +423,7 @@ RegisterValue vecFmulIndexed_vecs(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFneg_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = -n[i];
@@ -438,7 +438,7 @@ RegisterValue vecFneg_2ops(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFsqrt_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = ::sqrt(n[i]);
@@ -453,7 +453,7 @@ RegisterValue vecFsqrt_2ops(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFrsqrte_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = 1.0f / sqrtf(n[i]);
@@ -469,8 +469,8 @@ RegisterValue vecFrsqrte_2ops(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecFrsqrts_3ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = (3.0f - n[i] * m[i]) / 2.0f;
@@ -488,8 +488,8 @@ template <typename T, int I>
 RegisterValue vecIns_2Index(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
-  const safePointer<T> n = sourceValues[1].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -510,7 +510,7 @@ template <typename T, typename R, int I>
 RegisterValue vecInsIndex_gpr(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> d = sourceValues[0].getAsVector<T>();
+  const auto d = sourceValues[0].getAsVector<T>();
   const T n = sourceValues[1].get<R>();
   T out[16 / sizeof(T)] = {0};
 
@@ -530,7 +530,7 @@ RegisterValue vecInsIndex_gpr(
 template <typename T, int I>
 RegisterValue vecLogicOp_2vecs(srcValContainer& sourceValues,
                                std::function<T(T)> func) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i]);
@@ -547,8 +547,8 @@ RegisterValue vecLogicOp_2vecs(srcValContainer& sourceValues,
 template <typename T, int I>
 RegisterValue vecLogicOp_3vecs(srcValContainer& sourceValues,
                                std::function<T(T, T)> func) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
     out[i] = func(n[i], m[i]);
@@ -563,13 +563,15 @@ RegisterValue vecLogicOp_3vecs(srcValContainer& sourceValues,
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecUMaxP(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   // Concatenate the vectors
   T temp[2 * I];
-  memcpy(temp, n.ptr, sizeof(T) * I);
-  memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
+  n.copyTo(temp, sizeof(T) * I);
+  // memcpy(temp, n.ptr, sizeof(T) * I);
+  m.copyTo(temp + (sizeof(T) * I),sizeof(T) * I);
+  // memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
   // Compare each adjacent pair of elements
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -585,13 +587,16 @@ RegisterValue vecUMaxP(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecUMinP(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   // Concatenate the vectors
   T temp[2 * I];
-  memcpy(temp, n.ptr, sizeof(T) * I);
-  memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
+  n.copyTo(temp, sizeof(T) * I);
+  m.copyTo(temp + (sizeof(T) * I), sizeof(T) * I);
+
+  // memcpy(temp, n.ptr, sizeof(T) * I);
+  // memcpy(temp + (sizeof(T) * I), m.ptr, sizeof(T) * I);
 
   T out[I];
   for (int i = 0; i < I; i++) {
@@ -607,7 +612,7 @@ RegisterValue vecUMinP(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecMaxnmp_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
   T out = n[0];
@@ -624,7 +629,7 @@ RegisterValue vecMaxnmp_2ops(srcValContainer& sourceValues) {
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecMinv_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   bool isFP = std::is_floating_point<T>::value;
 
   T out = n[0];
@@ -695,7 +700,7 @@ template <typename T, int I>
 RegisterValue vecShlShift_vecImm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   int64_t shift = metadata.operands[2].imm;
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -760,7 +765,7 @@ template <typename T, int I>
 RegisterValue vecSshrShift_imm(
     srcValContainer& sourceValues,
     const simeng::arch::aarch64::InstructionMetadata& metadata) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   uint64_t shift = metadata.operands[2].imm;
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I; i++) {
@@ -776,7 +781,7 @@ RegisterValue vecSshrShift_imm(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int I>
 RegisterValue vecSumElems_2ops(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
   T out = 0;
   for (int i = 0; i < I; i++) {
     out += n[i];
@@ -870,7 +875,7 @@ RegisterValue vecTbl(
  * Returns correctly formatted RegisterValue. */
 template <typename T, int V, int I>
 RegisterValue vecRev(srcValContainer& sourceValues) {
-  const safePointer<T> source = sourceValues[0].getAsVector<T>();
+  const auto source = sourceValues[0].getAsVector<T>();
   int element_size = (sizeof(T) * 8);
   int datasize = I * element_size;
   int container_size = V;
@@ -898,8 +903,8 @@ RegisterValue vecRev(srcValContainer& sourceValues) {
  * Returns formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecTrn1(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -917,8 +922,8 @@ RegisterValue vecTrn1(srcValContainer& sourceValues) {
  * Returns formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecTrn2(srcValContainer& sourceValues) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -936,8 +941,8 @@ RegisterValue vecTrn2(srcValContainer& sourceValues) {
  * Returns formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecUzp(srcValContainer& sourceValues, bool isUzp1) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   for (int i = 0; i < I / 2; i++) {
@@ -957,8 +962,8 @@ RegisterValue vecUzp(srcValContainer& sourceValues, bool isUzp1) {
  * Returns formatted Register Value. */
 template <typename T, int I>
 RegisterValue vecZip(srcValContainer& sourceValues, bool isZip2) {
-  const safePointer<T> n = sourceValues[0].getAsVector<T>();
-  const safePointer<T> m = sourceValues[1].getAsVector<T>();
+  const auto n = sourceValues[0].getAsVector<T>();
+  const auto m = sourceValues[1].getAsVector<T>();
 
   T out[16 / sizeof(T)] = {0};
   int index = isZip2 ? (I / 2) : 0;

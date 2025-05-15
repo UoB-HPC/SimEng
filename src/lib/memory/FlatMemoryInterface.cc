@@ -35,7 +35,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
 
   auto ptr = memory_ + target.address;
   // Copy the data from the RegisterValue to memory
-  memcpy(ptr, data.getAsVector<char>().ptr, target.size);
+  data.getAsVector<char>().copyTo(ptr, target.size);
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

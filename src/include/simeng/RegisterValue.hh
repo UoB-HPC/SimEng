@@ -18,8 +18,9 @@ extern Pool pool;
 
 template <typename T>
 struct safePointer {
-  // public:
-  //  safePointer(const char* ptr) : ptr(ptr) {}
+ public:
+  explicit safePointer(const uint8_t* ptr) : ptr(ptr) {}
+  explicit safePointer() : ptr(nullptr) {}
 
   T operator[](const int i) const {
     T output;
@@ -27,10 +28,20 @@ struct safePointer {
     return output;
   }
 
-  // private:
-  const uint8_t* ptr;
-};
+  void copyTo(void* dest, const size_t bytes) const {
+    memcpy(dest, ptr, bytes);
+  }
 
+  void copyTo(void* dest, const size_t bytes, const uint64_t offset) {
+    memcpy(dest, ptr + offset, bytes);
+  }
+
+ private:
+  const uint8_t* ptr;
+
+  // Give RegisterValue access to the underlying pointer
+  friend class RegisterValue;
+};
 
 /** A class that holds an arbitrary region of immutable data, providing
  * casting and data accessor functions. For values smaller than or equal to
@@ -55,12 +66,12 @@ class RegisterValue {
     if (isLocal()) {
       memcpy(this->localValue, &value, numBytesToCopy);
     } else {
-      uint8_t* data = static_cast<uint8_t*>(pool.allocate(bytes));
-      std::memset(data, 0, bytes);
-      memcpy(data, &value, numBytesToCopy);
-
       this->ptr = std::shared_ptr<uint8_t>(
-          data, [bytes](uint8_t* ptr) { pool.deallocate(ptr, bytes); });
+          static_cast<uint8_t*>(pool.allocate(bytes)),
+          [bytes](uint8_t* ptr) { pool.deallocate(ptr, bytes); });
+
+      std::memset(this->ptr.get(), 0, bytes);
+      memcpy(this->ptr.get(), &value, numBytesToCopy);
     }
   }
 
@@ -86,6 +97,12 @@ class RegisterValue {
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
   RegisterValue(const uint8_t* ptr, uint16_t bytes)
       : RegisterValue(ptr, bytes, bytes) {}
+
+  /** Create a new RegisterValue of size 'bytes', copy data from the safePointer
+   * 'sptr'. */
+  template <typename T>
+  RegisterValue(const safePointer<T> sptr, uint16_t bytes)
+      : RegisterValue(sptr.ptr, bytes) {}
 
   /** Create a new RegisterValue by copying bytes from a fixed-size array. The
    * resultant RegisterValue will have size `C` (defaulting to the no. of
@@ -113,7 +130,6 @@ class RegisterValue {
            "data held");
     if (isLocal()) {
       return safePointer<T>{this->localValue};
-      // return reinterpret_cast<const T*>(localValue);
     } else {
       return safePointer<T>{ptr.get()};
     }

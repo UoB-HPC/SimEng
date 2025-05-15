@@ -858,8 +858,10 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   // Append data to buffer
   assert(response->data && "unhandled failed read in exception handler");
   uint8_t bytesRead = response->target.size;
-  const uint8_t* data = response->data.getAsVector<uint8_t>().ptr;
+  uint8_t* data = (uint8_t*)malloc(bytesRead);
+  response->data.getAsVector<uint8_t>().copyTo(data, bytesRead);
   dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
+  free(data);
   memory_.clearCompletedReads();
 
   // If there is more data, rerun this function for next chunk
