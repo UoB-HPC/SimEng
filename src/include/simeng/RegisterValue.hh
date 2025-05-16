@@ -11,10 +11,8 @@
 
 namespace simeng {
 
-inline Pool pool = Pool();
-
 /** Global memory pool used by RegisterValue class. */
-extern Pool pool;
+inline Pool pool = Pool();
 
 template <typename T>
 struct safePointer {
