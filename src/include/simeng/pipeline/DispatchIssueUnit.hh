@@ -96,6 +96,10 @@ class DispatchIssueUnit {
   /** Retrieve the current sizes and capacities of the reservation stations*/
   void getRSSizes(std::vector<uint32_t>&) const;
 
+  std::unordered_map<uint64_t, uint64_t> getIssuedTo() const {
+    return issuedTo_;
+  }
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
@@ -144,6 +148,8 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  std::unordered_map<uint64_t, uint64_t> issuedTo_;
 };
 
 }  // namespace pipeline

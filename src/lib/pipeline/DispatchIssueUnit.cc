@@ -166,6 +166,7 @@ void DispatchIssueUnit::issue() {
       // Inform the port allocator that an instruction issued
       portAllocator_.issued(i);
       issued++;
+      issuedTo_[i]++;
 
       assert(rs.currentSize > 0);
       rs.currentSize--;

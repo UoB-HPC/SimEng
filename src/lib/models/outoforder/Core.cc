@@ -236,6 +236,13 @@ std::map<std::string, std::string> Core::getStats() const {
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
+  auto issuedTo = dispatchIssueUnit_.getIssuedTo();
+  std::cout << "\n\n\tIssue port statistics:\n";
+  for (size_t i = 0; i < issuePorts_.size(); i++) {
+    std::cout << "\t\tPort " << i << " = " << issuedTo[i] << std::endl;
+  }
+  std::cout << "\n\n";
+
   return {
       {"cycles", std::to_string(ticks_)},
       {"cycles.roi", std::to_string(roiTicks_)},
