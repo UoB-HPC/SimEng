@@ -532,8 +532,8 @@ void Instruction::decode() {
 
     if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
-      if ((AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
-           metadata_.operands[0].reg <= AARCH64_REG_Z31)) {
+      if (AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
+          metadata_.operands[0].reg <= AARCH64_REG_Z31) {
         setInstructionType(InsnType::isSVEData);
       } else if ((metadata_.operands[0].reg <= AARCH64_REG_S31 &&
                   metadata_.operands[0].reg >= AARCH64_REG_Q0) ||
