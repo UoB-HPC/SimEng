@@ -110,19 +110,19 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
-              capstoneHandle, true, 2, dataSize));
+              capstoneHandle, false, 2, dataSize));
           // ldr uop 2
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[2].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             2 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, false, 3, dataSize));
           // ldr uop 3
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[3].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             3 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, true, 4, dataSize));
 
           iter = microDecodeCache_.try_emplace(word, cacheVector).first;
           break;
@@ -141,19 +141,19 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
-              capstoneHandle, true, 2, dataSize));
+              capstoneHandle, false, 2, dataSize));
           // ldr uop 2
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[2].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             2 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, false, 3, dataSize));
           // ldr uop 3
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[3].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             3 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, false, 4, dataSize));
           // offset generation uop
           if (metadata.operands[5].type == AARCH64_OP_REG) {
             cacheVector.push_back(createRegOffsetUop(
@@ -182,19 +182,19 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[4].mem.base, AARCH64_REG_INVALID, dataSize},
-              capstoneHandle, true, 2, dataSize));
+              capstoneHandle, false, 2, dataSize));
           // ldr uop 2
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[2].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             2 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, false, 3, dataSize));
           // ldr uop 3
           cacheVector.push_back(
               createLdrUop(architecture, metadata.operands[3].reg,
                            {metadata.operands[4].mem.base, AARCH64_REG_INVALID,
                             3 * dataSize},
-                           capstoneHandle, true, 2, dataSize));
+                           capstoneHandle, false, 4, dataSize));
           // offset generation uop
           if (metadata.operands[5].type == AARCH64_OP_REG) {
             cacheVector.push_back(createRegOffsetUop(
@@ -246,7 +246,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
-              capstoneHandle, true, 2, dataSize));
+              capstoneHandle, false, 2, dataSize));
           // offset generation uop
           if (metadata.operands[3].type == AARCH64_OP_REG) {
             cacheVector.push_back(createRegOffsetUop(
@@ -275,7 +275,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[1].reg,
               {metadata.operands[2].mem.base, AARCH64_REG_INVALID, dataSize},
-              capstoneHandle, true, 2, dataSize));
+              capstoneHandle, false, 2, dataSize));
           // offset generation uop
           if (metadata.operands[3].type == AARCH64_OP_REG) {
             cacheVector.push_back(createRegOffsetUop(
