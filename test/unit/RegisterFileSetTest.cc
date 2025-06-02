@@ -20,7 +20,7 @@ TEST_F(RegisterFileSetTest, validConstruction) {
   for (uint8_t i = 0; i < regFileStruct.size(); i++) {
     for (uint16_t j = 0; j < regFileStruct[i].quantity; j++) {
       const Register reg = {i, j};
-      EXPECT_EQ(regFileSet.get(reg), RegisterValue(0, regFileStruct[i].bytes));
+      EXPECT_EQ(regFileSet.get(reg), RegisterValue(0ull, regFileStruct[i].bytes));
     }
   }
 }
@@ -33,14 +33,14 @@ TEST_F(RegisterFileSetTest, readWrite) {
     const Register r0 = {i, 0};
     const Register rMax = {i, maxRegTag};
 
-    EXPECT_EQ(regFileSet.get(r0), RegisterValue(0, regSize));
-    EXPECT_EQ(regFileSet.get(rMax), RegisterValue(0, regSize));
+    EXPECT_EQ(regFileSet.get(r0), RegisterValue(0ull, regSize));
+    EXPECT_EQ(regFileSet.get(rMax), RegisterValue(0ull, regSize));
 
-    regFileSet.set(r0, RegisterValue(20, regSize));
-    regFileSet.set(rMax, RegisterValue(40, regSize));
+    regFileSet.set(r0, RegisterValue(20ull, regSize));
+    regFileSet.set(rMax, RegisterValue(40ull, regSize));
 
-    EXPECT_EQ(regFileSet.get(r0), RegisterValue(20, regSize));
-    EXPECT_EQ(regFileSet.get(rMax), RegisterValue(40, regSize));
+    EXPECT_EQ(regFileSet.get(r0), RegisterValue(20ull, regSize));
+    EXPECT_EQ(regFileSet.get(rMax), RegisterValue(40ull, regSize));
   }
 }
 

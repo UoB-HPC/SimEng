@@ -9,8 +9,9 @@ class FlatMemoryInterfaceTest : public testing::Test {
 
  protected:
   static constexpr uint16_t memorySize = 4;
-  std::array<char, memorySize> memoryData = {(char)0xFE, (char)0xCA, (char)0xBA,
-                                             (char)0xAB};
+  std::array<uint8_t, memorySize> memoryData = {
+      static_cast<uint8_t>(0xFE), static_cast<uint8_t>(0xCA), static_cast<uint8_t>(0xBA),
+                                             static_cast<uint8_t>(0xAB)};
 
   simeng::RegisterValue value = {0xDEADBEEF, 4};
   simeng::RegisterValue value_oversized = {0xDEADBEEFDEADBEEF, 8};

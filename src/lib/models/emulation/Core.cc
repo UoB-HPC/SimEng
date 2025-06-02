@@ -34,7 +34,11 @@ Core::Core(memory::MemoryInterface& instructionMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  fetchBuffer_ = new uint8_t[FETCH_SIZE];
 }
+
+Core::~Core() { delete[] fetchBuffer_; }
 
 void Core::tick() {
   if (hasHalted_) return;
@@ -53,9 +57,10 @@ void Core::tick() {
   // We only fetch one instruction at a time, so only ever one result in
   // complete reads
   const auto& instructionBytes = instructionMemory_.getCompletedReads()[0].data;
+  instructionBytes.getAsVector<uint8_t>().copyTo(fetchBuffer_, FETCH_SIZE);
+
   // Predecode fetched data
-  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<uint8_t>(),
-                                  FETCH_SIZE, pc_, macroOp_);
+  auto bytesRead = isa_.predecode(fetchBuffer_, FETCH_SIZE, pc_, macroOp_);
   // Clear the fetched data
   instructionMemory_.clearCompletedReads();
 

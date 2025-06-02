@@ -87,7 +87,7 @@ class LinuxProcess {
   uint64_t getPageSize() const;
 
   /** Get a shared_ptr to process image. */
-  std::shared_ptr<char> getProcessImage() const;
+  std::shared_ptr<uint8_t> getProcessImage() const;
 
   /** Get the size of the process image. */
   uint64_t getProcessImageSize() const;
@@ -112,7 +112,7 @@ class LinuxProcess {
   const uint64_t HEAP_SIZE;
 
   /** Create and populate the initial process stack. */
-  void createStack(char** processImage);
+  void createStack(uint8_t** processImage);
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -148,7 +148,7 @@ class LinuxProcess {
   bool isValid_ = false;
 
   /** Shared pointer to processImage. */
-  std::shared_ptr<char> processImage_;
+  std::shared_ptr<uint8_t> processImage_;
 };
 
 }  // namespace kernel

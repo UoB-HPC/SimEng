@@ -6,7 +6,7 @@ namespace simeng {
 
 namespace memory {
 
-FlatMemoryInterface::FlatMemoryInterface(char* memory, size_t size)
+FlatMemoryInterface::FlatMemoryInterface(uint8_t* memory, size_t size)
     : memory_(memory), size_(size) {}
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
@@ -17,7 +17,7 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
     return;
   }
 
-  const char* ptr = memory_ + target.address;
+  const uint8_t* ptr = memory_ + target.address;
 
   // Copy the data at the requested memory address into a RegisterValue
   completedReads_.push_back(
@@ -35,7 +35,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
 
   auto ptr = memory_ + target.address;
   // Copy the data from the RegisterValue to memory
-  memcpy(ptr, data.getAsVector<char>(), target.size);
+  data.getAsVector<char>().copyTo(ptr, target.size);
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

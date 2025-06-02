@@ -36,14 +36,14 @@ TEST_F(MappedRegisterFileSetTest, getSet) {
     const Register rMax = {i, maxRegTag};
 
     std::vector<Register> physRegs;
-    for (int j = 2; j < 12; j++) {
+    for (uint64_t j = 2; j < 12; j++) {
       physRegs.push_back(rat.allocate(rMax));
       RegisterValue regVal = RegisterValue(j, regSize);
       mappedRegFile.set(rMax, regVal);
       EXPECT_EQ(mappedRegFile.get(rMax), regVal);
     }
 
-    for (int k = 0; k < 10; k++) {
+    for (uint64_t k = 0; k < 10; k++) {
       // RAT constructed where Arch-Phys mapping is 1:1. So, first re-mapped
       // value will be to maxArchRegRag + 1
       EXPECT_EQ(physRegs[k].tag, maxRegTag + k + 1);

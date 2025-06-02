@@ -328,7 +328,7 @@ TEST_F(RiscVInstructionTest, supplyOperand) {
   EXPECT_FALSE(insn.isOperandReady(1));
 
   // Define mock register values for source registers
-  RegisterValue val = {0xABBACAFE, 8};
+  RegisterValue val = {static_cast<uint64_t>(0xABBACAFE), 8};
   // Supply values for all source registers
   insn.supplyOperand(0, val);
   insn.supplyOperand(1, val);
@@ -347,7 +347,7 @@ TEST_F(RiscVInstructionTest, supplyOperand) {
   insn.execute();
   EXPECT_TRUE(insn.hasExecuted());
   auto results = insn.getResults();
-  RegisterValue refRes = {0x00000001, 8};
+  RegisterValue refRes = {static_cast<uint64_t>(0x00000001), 8};
   EXPECT_EQ(results.size(), 1);
   EXPECT_EQ(results[0], refRes);
 }
@@ -377,7 +377,7 @@ TEST_F(RiscVInstructionTest, supplyData) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 8};
+  RegisterValue addr = {0x480ull, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -416,7 +416,7 @@ TEST_F(RiscVInstructionTest, supplyData_dataAbort) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 8};
+  RegisterValue addr = {0x480ull, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -470,7 +470,7 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   insn.setInstructionAddress(400);
 
   // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
+  BranchPrediction pred = {false, 0ull};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
@@ -483,8 +483,8 @@ TEST_F(RiscVInstructionTest, correctPred_notTaken) {
   pred = {false, 400 + 4};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
-  insn.supplyOperand(0, RegisterValue(0, 8));
-  insn.supplyOperand(1, RegisterValue(3, 8));
+  insn.supplyOperand(0, RegisterValue(0ull, 8));
+  insn.supplyOperand(1, RegisterValue(3ull, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
@@ -528,7 +528,7 @@ TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   insn.setInstructionAddress(400);
 
   // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
+  BranchPrediction pred = {false, 0ull};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
@@ -541,8 +541,8 @@ TEST_F(RiscVInstructionTest, incorrectPred_taken) {
   pred = {true, 400 - 86};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
-  insn.supplyOperand(0, RegisterValue(0, 8));
-  insn.supplyOperand(1, RegisterValue(3, 8));
+  insn.supplyOperand(0, RegisterValue(0ull, 8));
+  insn.supplyOperand(1, RegisterValue(3ull, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());

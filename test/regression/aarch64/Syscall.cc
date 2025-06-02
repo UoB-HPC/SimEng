@@ -446,14 +446,14 @@ TEST_P(Syscall, file_read) {
 
   // Check result of readv operations
   const char refReadv[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* dataReadv = processMemory_ + process_->getHeapStart();
+  uint8_t* dataReadv = processMemory_ + process_->getHeapStart();
   for (size_t i = 0; i < strlen(refReadv); i++) {
     EXPECT_EQ(dataReadv[i], refReadv[i]) << "at index i=" << i << '\n';
   }
 
   // Check result of read operation
   const char refRead[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  char* dataRead = processMemory_ + process_->getInitialStackPointer() - 64;
+  uint8_t* dataRead = processMemory_ + process_->getInitialStackPointer() - 64;
   for (size_t i = 0; i < strlen(refRead); i++) {
     EXPECT_EQ(dataRead[i], refRead[i]) << "at index i=" << i << '\n';
   }
@@ -619,7 +619,7 @@ TEST_P(Syscall, readlinkat) {
   )");
 
   EXPECT_EQ(getGeneralRegister<int64_t>(0), reference.size());
-  char* data = processMemory_ + process_->getHeapStart() + 15;
+  uint8_t* data = processMemory_ + process_->getHeapStart() + 15;
   for (size_t i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference.c_str()[i]) << "at index i=" << i << '\n';
   }
@@ -771,7 +771,7 @@ TEST_P(Syscall, newfstatat) {
   ::fstatat(AT_FDCWD, filepath, &statbufRef, 0);
 
   // Check fstatat returned 0
-  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
 
   // Check fstatat buf matches reference
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart()),
@@ -1107,7 +1107,7 @@ TEST_P(Syscall, uname) {
   EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
 
   // Check utsname struct in memory
-  char* data = processMemory_ + process_->getHeapStart();
+  uint8_t* data = processMemory_ + process_->getHeapStart();
   const char sysname[] = "Linux";
   for (size_t i = 0; i < strlen(sysname); i++) EXPECT_EQ(data[i], sysname[i]);
 

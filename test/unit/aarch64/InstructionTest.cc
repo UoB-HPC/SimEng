@@ -411,7 +411,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 8};
+  RegisterValue addr = {0x480ull, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -455,7 +455,7 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 8};
+  RegisterValue addr = {0x480ull, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
@@ -483,7 +483,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   insn.setInstructionAddress(80);
 
   // Check initial state of an instruction's branch related options
-  BranchPrediction pred = {false, 0};
+  BranchPrediction pred = {false, 0ull};
   bool matchingPred = (insn.getBranchPrediction() == pred);
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
@@ -495,7 +495,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
-  insn.supplyOperand(0, RegisterValue(0, 8));
+  insn.supplyOperand(0, RegisterValue(0ull, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
   EXPECT_TRUE(insn.wasBranchTaken());
@@ -549,7 +549,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
   matchingPred = (insn.getBranchPrediction() == pred);
-  insn.supplyOperand(0, RegisterValue(0, 8));
+  insn.supplyOperand(0, RegisterValue(0ull, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
   EXPECT_TRUE(insn.wasBranchTaken());

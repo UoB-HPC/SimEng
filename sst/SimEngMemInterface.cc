@@ -76,6 +76,11 @@ std::vector<StandardMem::Request*> SimEngMemInterface::makeSSTRequests(
 std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size) {
   std::vector<StandardMem::Request*> requests;
+
+  // TODO avoid malloc and copy altogether
+  uint8_t* data = (uint8_t*)malloc(size);
+  aggrReq->data.getAsVector<char>().copyTo(data, size);
+
   uint64_t dataIndex = 0;
   // Determine the number of cache-lines needed to store the data in the write
   // request
@@ -102,7 +107,6 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
 
     // Fill the payload vector currReqSize number of bytes starting
     // and inclusive of the dataIndex.
-    const char* data = aggrReq->data.getAsVector<char>();
     memcpy((void*)&payload[0], &(data[dataIndex]), currReqSize);
     StandardMem::Request* writeReq =
         new StandardMem::Write(addrStart, currReqSize, payload);
@@ -111,6 +115,7 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     addrStart += currReqSize;
     requests.push_back(writeReq);
   }
+  free(data);
   return requests;
 }
 

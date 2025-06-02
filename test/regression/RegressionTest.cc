@@ -56,7 +56,7 @@ void RegressionTest::createArchitecture(const char* source, const char* triple,
   // This instance of procImgPtr pointer needs to be shared because
   // getMemoryValue in RegressionTest.hh uses reference to the class
   // member processMemory_
-  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
+  std::shared_ptr<uint8_t> procImgPtr = process_->getProcessImage();
   processMemory_ = procImgPtr.get();
 
   // Populate the heap with initial data (specified by the test being run)

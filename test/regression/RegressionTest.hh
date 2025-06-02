@@ -104,7 +104,7 @@ class RegressionTest
 
   /** Get a pointer to the value of an architectural vector register. */
   template <typename T>
-  const T* getVectorRegister(simeng::Register reg) const {
+  simeng::safePointer<T> getVectorRegister(simeng::Register reg) const {
     return core_->getArchitecturalRegisterFileSet().get(reg).getAsVector<T>();
   }
 
@@ -124,7 +124,7 @@ class RegressionTest
   std::unique_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** The process memory. */
-  char* processMemory_ = nullptr;
+  uint8_t* processMemory_ = nullptr;
 
   /** The output written to stdout during the test. */
   std::string stdout_;

@@ -23,6 +23,8 @@ class Core : public simeng::Core {
        memory::MemoryInterface& dataMemory, uint64_t entryPoint,
        uint64_t programByteLength, const arch::Architecture& isa);
 
+  ~Core();
+
   /** Tick the core. */
   void tick() override;
 
@@ -73,6 +75,8 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  uint8_t* fetchBuffer_;
 };
 
 }  // namespace emulation

@@ -46,8 +46,8 @@ bool ExceptionHandler::init() {
         uint8_t outSize = static_cast<uint8_t>(out.size());
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         stateChange.memoryAddresses.push_back({argp, outSize});
-        stateChange.memoryAddressValues.push_back(
-            RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+        stateChange.memoryAddressValues.push_back(RegisterValue(
+            reinterpret_cast<const uint8_t*>(out.data()), outSize));
         break;
       }
       case 46: {  // ftruncate
@@ -118,7 +118,7 @@ bool ExceptionHandler::init() {
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (totalRead > 0) {
             uint8_t len =
                 totalRead > 128 ? 128 : static_cast<uint8_t>(totalRead);
@@ -158,7 +158,7 @@ bool ExceptionHandler::init() {
           uint64_t iLength = static_cast<uint64_t>(totalRead);
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -237,7 +237,7 @@ bool ExceptionHandler::init() {
             bytesRemaining -= iLength;
 
             // Write data for this buffer in 128-byte chunks
-            auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
+            auto iSrc = reinterpret_cast<const uint8_t*>(buffers[i].data());
             while (iLength > 0) {
               uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
               stateChange.memoryAddresses.push_back({iDst, len});
@@ -327,7 +327,7 @@ bool ExceptionHandler::init() {
         return readStringThen(filename, filenamePtr,
                               kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
                                 // Invoke the kernel
-                                kernel::stat statOut;
+                                kernel::stat statOut = {};
                                 uint64_t retval = linux_.newfstatat(
                                     dfd, filename, statOut, flag);
                                 ProcessStateChange stateChange = {
@@ -611,7 +611,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
         size_t buflen = registerFileSet.get(R1).get<size_t>();
 
-        std::vector<char> buf;
+        std::vector<uint8_t> buf;
         for (size_t i = 0; i < buflen; i++) {
           buf.push_back((uint8_t)rand());
         }
@@ -778,8 +778,9 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
-  char buffer[kernel::Linux::LINUX_PATH_MAX];
-  auto result = linux_.readlinkat(dirfd, path.data(), buffer, bufSize);
+  uint8_t buffer[kernel::Linux::LINUX_PATH_MAX];
+  auto result = linux_.readlinkat(dirfd, path.data(),
+                                  reinterpret_cast<char*>(buffer), bufSize);
 
   if (result < 0) {
     // TODO: Handle error case
@@ -794,7 +795,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   ProcessStateChange stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
 
   // Slice the returned path into <256-byte chunks for writing
-  const char* bufPtr = buffer;
+  const uint8_t* bufPtr = buffer;
   for (size_t i = 0; i < bytesCopied; i += 256) {
     uint8_t size = std::min<uint64_t>(bytesCopied - i, 256ul);
     stateChange.memoryAddresses.push_back({bufAddress + i, size});
@@ -836,8 +837,11 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   // Append data to buffer
   assert(response->data && "unhandled failed read in exception handler");
   uint8_t bytesRead = response->target.size;
-  const uint8_t* data = response->data.getAsVector<uint8_t>();
+  // TODO clean up malloc
+  uint8_t* data = (uint8_t*)malloc(bytesRead);
+  response->data.getAsVector<uint8_t>().copyTo(data, bytesRead);
   dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
+  free(data);
   memory_.clearCompletedReads();
 
   // If there is more data, rerun this function for next chunk

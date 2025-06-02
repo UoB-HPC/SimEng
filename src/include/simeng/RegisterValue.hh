@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 #include <memory>
 
 #include "simeng/Pool.hh"
@@ -11,10 +12,37 @@
 namespace simeng {
 
 /** Global memory pool used by RegisterValue class. */
-extern Pool pool;
+inline Pool pool = Pool();
 
-/** A class that holds an arbitrary region of immutable data, providing casting
- * and data accessor functions. For values smaller than or equal to
+template <typename T>
+struct safePointer {
+ public:
+  explicit safePointer(const uint8_t* ptr) : ptr(ptr) {}
+  explicit safePointer() : ptr(nullptr) {}
+
+  T operator[](const int i) const {
+    T output;
+    memcpy(&output, ptr + (i * sizeof(T)), sizeof(T));
+    return output;
+  }
+
+  void copyTo(void* dest, const size_t bytes) const {
+    memcpy(dest, ptr, bytes);
+  }
+
+  void copyTo(void* dest, const size_t bytes, const uint64_t offset) {
+    memcpy(dest, ptr + offset, bytes);
+  }
+
+ private:
+  const uint8_t* ptr;
+
+  // Give RegisterValue access to the underlying pointer
+  friend class RegisterValue;
+};
+
+/** A class that holds an arbitrary region of immutable data, providing
+ * casting and data accessor functions. For values smaller than or equal to
  * `MAX_LOCAL_BYTES`, this data is held in a local value, otherwise memory is
  * allocated and the data is stored there. */
 class RegisterValue {
@@ -27,41 +55,38 @@ class RegisterValue {
   template <class T,
             typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
   RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
+    // Ensure the high bits remain zeroed
+    size_t numBytesToCopy = bytes;
+    if (bytes > sizeof(T)) {
+      numBytesToCopy = sizeof(T);
+    }
+
     if (isLocal()) {
-      T* view = reinterpret_cast<T*>(this->value);
-      view[0] = value;
-
-      if (bytes > sizeof(T)) {
-        // Zero the remaining bytes not set by the provided value
-        std::fill<char*, uint16_t>(this->value + sizeof(T), this->value + bytes,
-                                   0);
-      }
+      memcpy(this->localValue, &value, numBytesToCopy);
     } else {
-      void* data = pool.allocate(bytes);
-      std::memset(data, 0, bytes);
+      this->ptr = std::shared_ptr<uint8_t>(
+          static_cast<uint8_t*>(pool.allocate(bytes)),
+          [bytes](uint8_t* ptr) { pool.deallocate(ptr, bytes); });
 
-      T* view = reinterpret_cast<T*>(data);
-      view[0] = value;
-
-      this->ptr = std::shared_ptr<char>(
-          static_cast<char*>(data),
-          [bytes](void* ptr) { pool.deallocate(ptr, bytes); });
+      std::memset(this->ptr.get(), 0, bytes);
+      memcpy(this->ptr.get(), &value, numBytesToCopy);
     }
   }
 
   /** Create a new RegisterValue of size `capacity`, copying `bytes`
    * from `ptr`.
    */
-  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
+  template <typename T>
+  RegisterValue(const T* ptr, uint16_t bytes, uint16_t capacity)
       : bytes(capacity) {
     assert(capacity >= bytes && "Capacity is less than requested bytes");
-    char* dest;
+    uint8_t* dest;
     if (isLocal()) {
-      dest = this->value;
+      dest = this->localValue;
     } else {
-      dest = static_cast<char*>(pool.allocate(capacity));
+      dest = static_cast<uint8_t*>(pool.allocate(capacity));
       std::memset(dest, 0, capacity);
-      this->ptr = std::shared_ptr<char>(
+      this->ptr = std::shared_ptr<uint8_t>(
           dest, [capacity](void* ptr) { pool.deallocate(ptr, capacity); });
     }
     assert(dest && "Attempted to dereference a NULL pointer");
@@ -69,36 +94,44 @@ class RegisterValue {
   }
 
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
-  RegisterValue(const char* ptr, uint16_t bytes)
+  template <typename T>
+  RegisterValue(const T* ptr, uint16_t bytes)
       : RegisterValue(ptr, bytes, bytes) {}
 
+  /** Create a new RegisterValue of size 'bytes', copy data from the safePointer
+   * 'sptr'. */
+  template <typename T>
+  RegisterValue(const safePointer<T> sptr, uint16_t bytes)
+      : RegisterValue(sptr.ptr, bytes) {}
+
   /** Create a new RegisterValue by copying bytes from a fixed-size array. The
-   * resultant RegisterValue will have size `C` (defaulting to the no. of bytes
-   * in the array).
+   * resultant RegisterValue will have size `C` (defaulting to the no. of
+   * bytes in the array).
    */
   template <class T, size_t N>
   RegisterValue(T (&array)[N], size_t C = N * sizeof(T))
-      : RegisterValue(reinterpret_cast<const char*>(array), sizeof(T) * N, C) {}
+      : RegisterValue(reinterpret_cast<const uint8_t*>(array), sizeof(T) * N,
+                      C) {}
 
   /** Read the encapsulated raw memory as a specified datatype. */
   template <class T>
   T get() const {
-    return *getAsVector<T>();
+    return getAsVector<T>()[0];
   }
 
   /** Retrieve a pointer to the encapsulated raw memory, reinterpreted as
    * the specified datatype. */
   template <class T>
-  const T* getAsVector() const {
+  safePointer<T> getAsVector() const {
     static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guaranteed");
     assert(bytes > 0 && "Attempted to access an uninitialised RegisterValue");
     assert(sizeof(T) <= bytes &&
            "Attempted to access a RegisterValue as a datatype larger than the "
            "data held");
     if (isLocal()) {
-      return reinterpret_cast<const T*>(value);
+      return safePointer<T>{this->localValue};
     } else {
-      return reinterpret_cast<const T*>(ptr.get());
+      return safePointer<T>{ptr.get()};
     }
   }
 
@@ -124,17 +157,17 @@ class RegisterValue {
   uint16_t bytes = 0;
 
   /** The underlying pointer each instance references. */
-  std::shared_ptr<char> ptr;
+  std::shared_ptr<uint8_t> ptr;
 
   /** The underlying local member value. Aligned to 8 bytes to prevent
    * potential alignment issue when casting. */
-  alignas(8) char value[MAX_LOCAL_BYTES];
+  alignas(8) uint8_t localValue[MAX_LOCAL_BYTES] = {};
 };
 
 inline bool operator==(const RegisterValue& lhs, const RegisterValue& rhs) {
   if (lhs.size() == rhs.size()) {
-    auto lhV = lhs.getAsVector<char>();
-    auto rhV = rhs.getAsVector<char>();
+    auto lhV = lhs.getAsVector<uint8_t>();
+    auto rhV = rhs.getAsVector<uint8_t>();
     for (size_t i = 0; i < lhs.size(); i++) {
       if (lhV[i] != rhV[i]) return false;
     }

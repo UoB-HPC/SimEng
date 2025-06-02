@@ -57,7 +57,7 @@ class AArch64ExceptionHandlerTest : public ::testing::Test {
 // - InstructionException::SMZAUpdate
 // All system calls are tested in /test/regression/aarch64/Syscall.cc
 
-// Test that a syscall is processed sucessfully
+// Test that a syscall is processed successfully
 TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
   // Create "syscall" instruction
   uint64_t insnAddr = 0x4;
@@ -70,8 +70,8 @@ TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
   insn->setInstructionAddress(insnAddr);
 
   // Setup register file for `uname` syscall (chosen as minimal functionality)
-  archRegFileSet.set(R0, RegisterValue(1234, 8));
-  archRegFileSet.set(R8, RegisterValue(160, 8));
+  archRegFileSet.set(R0, RegisterValue(1234ull, 8));
+  archRegFileSet.set(R8, RegisterValue(160ull, 8));
 
   // Create ExceptionHandler
   ExceptionHandler handler(insn, core, memory, kernel);
@@ -308,8 +308,8 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   uint64_t length = 192;
 
   // Initialise data to "read" from MockMemory
-  std::vector<char> dataVec(length, 'q');
-  std::vector<char> dataVec2(length, 'q');
+  std::vector<uint8_t> dataVec(length, 'q');
+  std::vector<uint8_t> dataVec2(length, 'q');
   // Initialise the two required targets (128-bytes per read request in
   // readBufferThen())
   memory::MemoryAccessTarget tar1 = {ptr, 128};

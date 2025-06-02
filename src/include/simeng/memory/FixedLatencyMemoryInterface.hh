@@ -41,7 +41,7 @@ struct FixedLatencyMemoryInterfaceRequest {
 /** A memory interface where all requests respond with a fixed latency. */
 class FixedLatencyMemoryInterface : public MemoryInterface {
  public:
-  FixedLatencyMemoryInterface(char* memory, size_t size, uint16_t latency);
+  FixedLatencyMemoryInterface(uint8_t* memory, size_t size, uint16_t latency);
 
   /** Queue a read request from the supplied target location.
    *
@@ -67,7 +67,7 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
 
  private:
   /** The array representing the memory system to access. */
-  char* memory_;
+  uint8_t* memory_;
   /** The size of accessible memory. */
   size_t size_;
   /** A vector containing all completed read requests. */

@@ -242,7 +242,7 @@ class AArch64RegressionTest : public RegressionTest {
 #if SIMENG_LLVM_VERSION < 14
     return "+sve,+lse";
 #elif SIMENG_LLVM_VERSION < 18
-    return "+sve,+lse,+sve2,+sme,+sme-f64";
+    return "+sve,+lse,+sve2,+sme,+sme-f64,+sme-i64";
 #else
     return "+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
 #endif
@@ -256,7 +256,7 @@ class AArch64RegressionTest : public RegressionTest {
   template <typename T>
   void checkNeonRegister(uint8_t tag,
                          const std::array<T, (256 / sizeof(T))>& values) const {
-    const T* data = RegressionTest::getVectorRegister<T>(
+    const auto data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
       EXPECT_NEAR(data[i], values[i], 0.0005)
@@ -272,7 +272,7 @@ class AArch64RegressionTest : public RegressionTest {
   template <typename T>
   void checkPredicateRegister(
       uint8_t tag, const std::array<T, (32 / sizeof(T))>& values) const {
-    const T* data = RegressionTest::getVectorRegister<T>(
+    const auto data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::PREDICATE, tag});
     for (unsigned i = 0; i < (32 / sizeof(T)); i++) {
       EXPECT_NEAR(data[i], values[i], 0.0005)
@@ -312,7 +312,7 @@ class AArch64RegressionTest : public RegressionTest {
     }
     uint16_t reg_tag = base + (index * tileTypeCount);
 
-    const T* data = getMatrixRegisterRow<T>(reg_tag);
+    const auto data = getMatrixRegisterRow<T>(reg_tag);
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
       EXPECT_NEAR(data[i], values[i], 0.0005)
           << "Mismatch for element " << i << ".";
@@ -383,7 +383,7 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Get a pointer to the value of an architectural matrix register row. */
   template <typename T>
-  const T* getMatrixRegisterRow(uint16_t tag) const {
+  const simeng::safePointer<T> getMatrixRegisterRow(uint16_t tag) const {
     return RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::MATRIX, tag});
   }
