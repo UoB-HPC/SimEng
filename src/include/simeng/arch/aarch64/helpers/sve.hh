@@ -1852,7 +1852,8 @@ RegisterValue sveZip_vecs(srcValContainer& sourceValues, const uint16_t VL_bits,
  * Return a vector of RegisterValues.  */
 template <typename T, typename C = T>
 std::vector<RegisterValue> sve_merge_store_data(const T* d, const uint64_t* p,
-                                                uint16_t vl_bits) {
+                                                uint16_t vl_bits,
+                                                uint64_t& bytesMoved) {
   std::vector<RegisterValue> outputData;
 
   uint16_t numVecElems = (vl_bits / (8 * sizeof(T)));
@@ -1869,6 +1870,7 @@ std::vector<RegisterValue> sve_merge_store_data(const T* d, const uint64_t* p,
     uint64_t shiftedActive = 1ull << ((x % predsPer64) * sizeof(T));
     if (p[x / predsPer64] & shiftedActive) {
       mData[mdSize] = static_cast<C>(d[x]);
+      bytesMoved += sizeof(C);
       mdSize++;
     } else if (mdSize) {
       outputData.push_back(

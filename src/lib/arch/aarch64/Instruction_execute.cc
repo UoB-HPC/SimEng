@@ -1557,6 +1557,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FADDPv2f64: {  // faddp vd.2d, vn.2d, vm.2d
         results_[0] = vecAddp_3ops<double, 2>(sourceValues_);
+        ops_ += 2;
         break;
       }
       case Opcode::AArch64_FADDPv2i32p: {  // faddp dd, vn.2s
@@ -1569,6 +1570,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FADDPv4f32: {  // faddp vd.4s, vn.4s, vm.4s
         results_[0] = vecAddp_3ops<float, 4>(sourceValues_);
+        ops_ += 4;
         break;
       }
       case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
@@ -2333,10 +2335,26 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FMLA_ZPmZZ_D: {  // fmla zd.d, pg/m, zn.d, zm.d
         results_[0] = sveMlaPredicated_vecs<double>(sourceValues_, VL_bits);
+
+        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        for (int i = 0; i < (VL_bits / 64); i++) {
+          uint64_t shifted_active =
+              1ull << ((i % (64 / sizeof(double))) * sizeof(double));
+          if (p[i / (64 / sizeof(double))] & shifted_active) ops_ += 2;
+          // out[i] = d[i] + (n[i] * m[i]);
+        }
         break;
       }
       case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
         results_[0] = sveMlaPredicated_vecs<float>(sourceValues_, VL_bits);
+
+        const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
+        for (int i = 0; i < (VL_bits / 32); i++) {
+          uint64_t shifted_active =
+              1ull << ((i % (64 / sizeof(float))) * sizeof(float));
+          if (p[i / (64 / sizeof(float))] & shifted_active) ops_ += 2;
+          // out[i] = d[i] + (n[i] * m[i]);
+        }
         break;
       }
       case Opcode::AArch64_FMLAv2f32: {  // fmla vd.2s, vn.2s, vm.2s
@@ -2346,15 +2364,18 @@ void Instruction::execute() {
       case Opcode::AArch64_FMLA_ZZZI_D: {  // fmla zda.d, zn.d, zm.d[index]
         results_[0] =
             sveMlaIndexed_vecs<double>(sourceValues_, metadata_, VL_bits);
+        ops_ += 2 * (VL_bits / 64);
         break;
       }
       case Opcode::AArch64_FMLA_ZZZI_S: {  // fmla zda.s, zn.s, zm.s[index]
         results_[0] =
             sveMlaIndexed_vecs<float>(sourceValues_, metadata_, VL_bits);
+        ops_ += 2 * (VL_bits / 32);
         break;
       }
       case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
         results_[0] = vecFmla_3vecs<double, 2>(sourceValues_);
+        ops_ += (128 / 64) * 2;
         break;
       }
       case Opcode::AArch64_FMLAv2i32_indexed: {  // fmla vd.2s, vn.2s,
@@ -2365,15 +2386,18 @@ void Instruction::execute() {
       case Opcode::AArch64_FMLAv2i64_indexed: {  // fmla vd.2d, vn.2d,
                                                  // vm.d[index]
         results_[0] = vecFmlaIndexed_3vecs<double, 2>(sourceValues_, metadata_);
+        ops_ += (128 / 64) * 2;
         break;
       }
       case Opcode::AArch64_FMLAv4f32: {  // fmla vd.4s, vn.4s, vm.4s
         results_[0] = vecFmla_3vecs<float, 4>(sourceValues_);
+        ops_ += (128 / 32) * 2;
         break;
       }
       case Opcode::AArch64_FMLAv4i32_indexed: {  // fmla vd.4s, vn.4s,
                                                  // vm.s[index]
         results_[0] = vecFmlaIndexed_3vecs<float, 4>(sourceValues_, metadata_);
+        ops_ += (128 / 32) * 2;
         break;
       }
       case Opcode::AArch64_FMLS_ZPmZZ_D: {  // fmls zd.d, pg/m, zn.d, zm.d
@@ -2978,7 +3002,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
-        // Hints used with loops to start and stop ROI cycle counters in OoO
+        // Hints used with loops_to start and stop ROI cycle counters in OoO
         // core
         if ((metadata_.operands[0].imm == 0x40) ||
             (metadata_.operands[0].imm == 0x41)) {
@@ -3382,6 +3406,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
             out[i] = data[i];
+            bytesMoved_ += 8;
           } else {
             out[i] = 0;
           }
@@ -3456,6 +3481,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
             out[i] = data[i];
+            bytesMoved_ += 8;
           } else {
             out[i] = 0;
           }
@@ -3601,6 +3627,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
           if (p[i / 8] & shifted_active) {
             mini[i] = data[i];
+            bytesMoved_ += 8;
           }
         }
 
@@ -3625,6 +3652,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
             mini[i] = data[i];
+            bytesMoved_ += 4;
           }
         }
 
@@ -3651,6 +3679,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
             mini[i] = data[i];
+            bytesMoved_ += 4;
           }
         }
 
@@ -3833,6 +3862,7 @@ void Instruction::execute() {
         results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
         results_[2] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
         results_[3] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
+        bytesMoved_ += 4 * (128 / 8);
         break;
       }
       case Opcode::AArch64_LD1Fourv16b_POST:  // ld1 {vt1.16b, vt2.16b, vt3.16b,
@@ -3854,6 +3884,7 @@ void Instruction::execute() {
         results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
         results_[3] = memoryData_[2].zeroExtend(memoryData_[2].size(), 256);
         results_[4] = memoryData_[3].zeroExtend(memoryData_[3].size(), 256);
+        bytesMoved_ += 4 * (128 / 8);
         break;
       }
       case Opcode::AArch64_LD1Twov16b:  // ld1 {vt1.16b, vt2.16b}, [xn]
@@ -3864,6 +3895,7 @@ void Instruction::execute() {
         // LOAD
         results_[0] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         results_[1] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
+        bytesMoved_ += 2 * (128 / 8);
         break;
       }
       case Opcode::AArch64_LD1Twov16b_POST:  // ld1 {vt1.16b, vt2.16b}, [xn],
@@ -3886,6 +3918,7 @@ void Instruction::execute() {
         results_[0] = sourceValues_[0].get<uint64_t>() + postIndex;
         results_[1] = memoryData_[0].zeroExtend(memoryData_[0].size(), 256);
         results_[2] = memoryData_[1].zeroExtend(memoryData_[1].size(), 256);
+        bytesMoved_ += 2 * (128 / 8);
         break;
       }
       case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
@@ -3900,6 +3933,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
             out[i] = data[i];
+            bytesMoved_ += 4;
           } else {
             out[i] = 0;
           }
@@ -3920,6 +3954,7 @@ void Instruction::execute() {
           uint64_t shifted_active = 1ull << ((i % 16) * 4);
           if (p[i / 16] & shifted_active) {
             out[i] = data[i];
+            bytesMoved_ += 4;
           } else {
             out[i] = 0;
           }
@@ -5398,7 +5433,8 @@ void Instruction::execute() {
 
         const uint64_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint64_t>();
-        memoryData_ = sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint64_t>(tileSlice, pg, VL_bits, bytesMoved_);
 
         break;
       }
@@ -5453,7 +5489,8 @@ void Instruction::execute() {
 
         const uint32_t* tileSlice =
             sourceValues_[sliceNum].getAsVector<uint32_t>();
-        memoryData_ = sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint32_t>(tileSlice, pg, VL_bits, bytesMoved_);
 
         break;
       }
@@ -5530,7 +5567,7 @@ void Instruction::execute() {
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1B_IMM: {  // st1b {zt.b}, pg, [xn{, #imm, mul vl}]
@@ -5538,7 +5575,7 @@ void Instruction::execute() {
         const uint8_t* d = sourceValues_[0].getAsVector<uint8_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits);
+        memoryData_ = sve_merge_store_data<uint8_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
@@ -5546,7 +5583,8 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint64_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
@@ -5554,7 +5592,8 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint64_t>(d, p, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint64_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1D_2Z:  // st1d {zt1.d, zt2.d}, png, [xn, xm, lsl
@@ -5579,10 +5618,10 @@ void Instruction::execute() {
           }
         }
 
-        memoryData_ =
-            sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
-        std::vector<RegisterValue> out2 =
-            sve_merge_store_data<uint64_t>(t2, preds[1].data(), VL_bits);
+        memoryData_ = sve_merge_store_data<uint64_t>(t1, preds[0].data(),
+                                                     VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out2 = sve_merge_store_data<uint64_t>(
+            t2, preds[1].data(), VL_bits, bytesMoved_);
         memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         break;
       }
@@ -5606,14 +5645,14 @@ void Instruction::execute() {
           }
         }
 
-        memoryData_ =
-            sve_merge_store_data<uint64_t>(t1, preds[0].data(), VL_bits);
-        std::vector<RegisterValue> out2 =
-            sve_merge_store_data<uint64_t>(t2, preds[1].data(), VL_bits);
-        std::vector<RegisterValue> out3 =
-            sve_merge_store_data<uint64_t>(t3, preds[2].data(), VL_bits);
-        std::vector<RegisterValue> out4 =
-            sve_merge_store_data<uint64_t>(t4, preds[3].data(), VL_bits);
+        memoryData_ = sve_merge_store_data<uint64_t>(t1, preds[0].data(),
+                                                     VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out2 = sve_merge_store_data<uint64_t>(
+            t2, preds[1].data(), VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out3 = sve_merge_store_data<uint64_t>(
+            t3, preds[2].data(), VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out4 = sve_merge_store_data<uint64_t>(
+            t4, preds[3].data(), VL_bits, bytesMoved_);
         memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         memoryData_.insert(memoryData_.end(), out3.begin(), out3.end());
         memoryData_.insert(memoryData_.end(), out4.begin(), out4.end());
@@ -5718,6 +5757,7 @@ void Instruction::execute() {
         // STORE
         const uint32_t* vt = sourceValues_[0].getAsVector<uint32_t>();
         memoryData_[0] = RegisterValue((char*)vt, 4 * sizeof(uint32_t));
+        bytesMoved_ += (128 / 8);
 
         // if #imm post-index, value can only be 16
         const uint64_t postIndex =
@@ -5757,6 +5797,7 @@ void Instruction::execute() {
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
         memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
         memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        bytesMoved_ += 2 * (128 / 8);
         break;
       }
       case Opcode::AArch64_ST1Twov2d_POST: {  // st1 {vt.2d, vt2.2d},
@@ -5766,6 +5807,7 @@ void Instruction::execute() {
         const uint64_t* t2 = sourceValues_[1].getAsVector<uint64_t>();
         memoryData_[0] = RegisterValue((char*)t, 2 * sizeof(uint64_t));
         memoryData_[1] = RegisterValue((char*)t2, 2 * sizeof(uint64_t));
+        bytesMoved_ += 2 * (128 / 8);
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -5781,6 +5823,7 @@ void Instruction::execute() {
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
         memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
         memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        bytesMoved_ += 4 * (128 / 8);
         break;
       }
       case Opcode::AArch64_ST1Twov4s_POST: {  // st1 {vt.4s, vt2.4s},
@@ -5790,6 +5833,7 @@ void Instruction::execute() {
         const uint32_t* t2 = sourceValues_[1].getAsVector<uint32_t>();
         memoryData_[0] = RegisterValue((char*)t, 4 * sizeof(uint32_t));
         memoryData_[1] = RegisterValue((char*)t2, 4 * sizeof(uint32_t));
+        bytesMoved_ += 4 * (128 / 8);
 
         // if #imm post-index, value can only be 32
         const uint64_t postIndex =
@@ -5804,14 +5848,8 @@ void Instruction::execute() {
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        for (int i = 0; i < (VL_bits / 32); i++) {
-          uint64_t shifted_active = 1ull << ((i % 16) * 4);
-          if (p[i / 16] & shifted_active) {
-            bytesMoved_ += 4;
-          }
-        }
-
-        memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint32_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
@@ -5819,7 +5857,8 @@ void Instruction::execute() {
         const uint64_t* d = sourceValues_[0].getAsVector<uint64_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint64_t, uint32_t>(d, p, VL_bits);
+        memoryData_ = sve_merge_store_data<uint64_t, uint32_t>(d, p, VL_bits,
+                                                               bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
@@ -5827,7 +5866,8 @@ void Instruction::execute() {
         const uint32_t* d = sourceValues_[0].getAsVector<uint32_t>();
         const uint64_t* p = sourceValues_[1].getAsVector<uint64_t>();
 
-        memoryData_ = sve_merge_store_data<uint32_t>(d, p, VL_bits);
+        memoryData_ =
+            sve_merge_store_data<uint32_t>(d, p, VL_bits, bytesMoved_);
         break;
       }
       case Opcode::AArch64_ST1W_2Z:  // st1w {zt1.s, zt2.s}, png, [xn, xm, lsl
@@ -5852,10 +5892,10 @@ void Instruction::execute() {
           }
         }
 
-        memoryData_ =
-            sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
-        std::vector<RegisterValue> out2 =
-            sve_merge_store_data<uint32_t>(t2, preds[1].data(), VL_bits);
+        memoryData_ = sve_merge_store_data<uint32_t>(t1, preds[0].data(),
+                                                     VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out2 = sve_merge_store_data<uint32_t>(
+            t2, preds[1].data(), VL_bits, bytesMoved_);
         memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         break;
       }
@@ -5879,14 +5919,14 @@ void Instruction::execute() {
           }
         }
 
-        memoryData_ =
-            sve_merge_store_data<uint32_t>(t1, preds[0].data(), VL_bits);
-        std::vector<RegisterValue> out2 =
-            sve_merge_store_data<uint32_t>(t2, preds[1].data(), VL_bits);
-        std::vector<RegisterValue> out3 =
-            sve_merge_store_data<uint32_t>(t3, preds[2].data(), VL_bits);
-        std::vector<RegisterValue> out4 =
-            sve_merge_store_data<uint32_t>(t4, preds[3].data(), VL_bits);
+        memoryData_ = sve_merge_store_data<uint32_t>(t1, preds[0].data(),
+                                                     VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out2 = sve_merge_store_data<uint32_t>(
+            t2, preds[1].data(), VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out3 = sve_merge_store_data<uint32_t>(
+            t3, preds[2].data(), VL_bits, bytesMoved_);
+        std::vector<RegisterValue> out4 = sve_merge_store_data<uint32_t>(
+            t4, preds[3].data(), VL_bits, bytesMoved_);
         memoryData_.insert(memoryData_.end(), out2.begin(), out2.end());
         memoryData_.insert(memoryData_.end(), out3.begin(), out3.end());
         memoryData_.insert(memoryData_.end(), out4.begin(), out4.end());
