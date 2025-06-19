@@ -71,6 +71,7 @@ span<const memory::MemoryAccessTarget> Instruction::generateAddresses() {
         generateContiguousAddresses(
             sourceValues_[0].get<uint64_t>() + metadata_.operands[0].mem.disp,
             1, dataSize_, addresses);
+        bytesMoved_ += dataSize_;
 
         setMemoryAddresses(addresses);
         break;

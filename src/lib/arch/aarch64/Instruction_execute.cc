@@ -92,6 +92,7 @@ void Instruction::execute() {
         for (size_t dest = 0; dest < getDestinationRegisters().size(); dest++) {
           results_[dest] = memoryData_[dest].zeroExtend(dataSize_, regSize);
         }
+        bytesMoved_ += dataSize_;
         break;
       }
       case MicroOpcode::OFFSET_IMM: {
@@ -221,6 +222,7 @@ void Instruction::execute() {
           if (p[i / (64 / dataSize_)] & shifted_active) {
             memoryData_.push_back(
                 RegisterValue((char*)t1 + (i * dataSize_), dataSize_));
+            bytesMoved_ += dataSize_;
           }
         }
         // Set false addresses after memoryData has been filled
