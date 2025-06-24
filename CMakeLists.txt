@@ -116,6 +116,7 @@ option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
+option(SIMENG_ENABLE_BF16 "Enable __bf16 instruction execution logic" OFF)
 
 # Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
 # They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
@@ -155,10 +156,9 @@ if(SIMENG_ENABLE_TESTS)
 
       # Print message containing if the full test suite will run
     if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
-      message(STATUS "LLVM version does not support AArch64 extensions SME or SVE2. These test suites will be skipped.")
-    endif()
-    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "18.0")
-      message(STATUS "LLVM version does not support AArch64 extensions SME2. These test suites will be skipped.")
+      message(STATUS "LLVM version does not support AArch64 extensions SVE2, SVE2.1, SME, or SME2. Related tests will fail.")
+    elseif (${LLVM_PACKAGE_VERSION} VERSION_LESS "18.0")
+      message(STATUS "LLVM version does not support AArch64 extensions SME2 or SVE2.1. Related test will fail.")
     endif()
 
   else()

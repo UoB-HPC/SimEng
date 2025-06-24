@@ -639,8 +639,8 @@ void Instruction::decode() {
       }
     }
   } else {
-    // For SME instructions, resize the following structures to have the
-    // exact amount of space required
+    // For SME instructions (not using ZT0), resize the following structures to
+    // have the exact amount of space required
     sourceRegisters_.resize(sourceRegisterCount_);
     destinationRegisters_.resize(destinationRegisterCount_);
     sourceValues_.resize(sourceRegisterCount_);

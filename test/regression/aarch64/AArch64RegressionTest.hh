@@ -190,6 +190,23 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
     checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
+/** Check each element of the Lookup Table register ZT0 against expected values.
+ *
+ * The `type` argument is the C++ data type to use for value comparisons. The
+ * third argument should be an initializer list containing one value for each
+ * register element (for a total of `(64 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare zt0 to some expected 32-bit uint64 values.
+ *     CHECK_TABLE(0, uint32_t, {1, 2, 3, 4, ..., 16});
+ */
+#define CHECK_TABLE(type, ...)                 \
+  {                                            \
+    SCOPED_TRACE("<<== error generated here"); \
+    checkTableRegister<type>(__VA_ARGS__);     \
+  }
+
 /** A helper macro to predecode the first instruction in a snippet of Armv9.2-a
  * assembly code and check the assigned group(s) for each micro-op matches the
  * expected group(s). Returns from the calling function if a fatal error occurs.
@@ -239,13 +256,16 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Get the subtarget feature string based on LLVM version being used */
   std::string getSubtargetFeaturesString() {
-#if SIMENG_LLVM_VERSION < 14
-    return "+sve,+lse";
-#elif SIMENG_LLVM_VERSION < 18
-    return "+sve,+lse,+sve2,+sme,+sme-f64";
-#else
-    return "+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
+    std::string features = "+dotprod,+sve,+lse";
+#if SIMENG_LLVM_VERSION > 13
+    // "+dotprod,+sve,+lse,+sve2,+sme,+sme-f64";
+    features += ",+sve2,+sme,+sme-f64";
 #endif
+#if SIMENG_LLVM_VERSION > 17
+    // "+dotprod,+sve,+lse,+sve2,+sme,+sme-f64f64,+sme-i16i64,+sme2";
+    features += "f64,+sme-i16i64,+sme2";
+#endif
+    return features;
   }
 
   /** Check the elements of a Neon register.
@@ -354,6 +374,21 @@ class AArch64RegressionTest : public RegressionTest {
       uint16_t reg_tag = base + (i * tileTypeCount);
       const T data_i = getMatrixRegisterRow<T>(reg_tag)[index];
       EXPECT_NEAR(data_i, values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
+    }
+  }
+
+  /** Check the elements of the ZT0 lookup table register.
+   *
+   * This should be invoked via the `CHECK_TABLE` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkTableRegister(const std::array<T, (64 / sizeof(T))>& values) const {
+    const T* data = RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::TABLE, 0});
+    for (unsigned i = 0; i < (64 / sizeof(T)); i++) {
+      EXPECT_NEAR(data[i], values[i], 0.0005)
           << "Mismatch for element " << i << ".";
     }
   }

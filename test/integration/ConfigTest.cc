@@ -24,7 +24,8 @@ TEST(ConfigTest, Default) {
       aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
       aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
       aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
-      aarch64_sysreg::AARCH64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_SVCR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR2_EL0};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},
@@ -380,7 +381,8 @@ TEST(ConfigTest, configFromFile) {
       aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
       aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
       aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
-      aarch64_sysreg::AARCH64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_SVCR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR2_EL0};
   EXPECT_EQ(simeng::config::SimInfo::getSysRegVec(), sysRegisterEnums);
   std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},

@@ -3648,6 +3648,65 @@ TEST_P(InstNeon, trn) {
   CHECK_NEON(8, uint64_t, {0x1e1c1a1816141210, 0x1f1d1b1917151311});
 }
 
+TEST_P(InstNeon, udot) {
+  // udot by element
+  initialHeapData_.resize(128);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFFFFF00FF;
+  heap64[1] = 0x01234567ABBACAFE;
+  heap64[2] = 0xFEDCBA9876543210;
+  heap64[3] = 0xDEADCAFEABBABEEF;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    movi v2.4s, #3
+    movi v3.4s, #4
+    movi v4.4s, #5
+    movi v5.4s, #6
+
+    udot v2.2s, v1.8b, v0.4b[0]
+    udot v3.4s, v1.16b, v0.4b[1]
+    udot v4.2s, v1.8b, v0.4b[2]
+    udot v5.4s, v1.16b, v0.4b[3]
+  )");
+  CHECK_NEON(0, uint64_t, {0xDEADBEEFFFFF00FF, 0x01234567ABBACAFE});
+  CHECK_NEON(1, uint64_t, {0xFEDCBA9876543210, 0xDEADCAFEABBABEEF});
+  CHECK_NEON(2, uint32_t, {0xd929, 0x26f91, 0x0, 0x0});
+  CHECK_NEON(3, uint32_t, {0xd328, 0x288e8, 0x27e25, 0x2b87f});
+  CHECK_NEON(4, uint32_t, {0xc333, 0x2731b, 0x0, 0x0});
+  CHECK_NEON(5, uint32_t, {0x1fe2, 0x8e62, 0xad7e, 0xb52f});
+
+  // udot by vector
+  initialHeapData_.resize(128);
+  heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFFFFFFFFF;
+  heap64[1] = 0x01234567ABBACAFE;
+  heap64[2] = 0xFEDCBA98FFFFFFFF;
+  heap64[3] = 0xDEADCAFEABBABEEF;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    movi v2.4s, #3
+
+    udot v2.4s, v1.16b, v0.16b
+  )");
+  CHECK_NEON(0, uint64_t, {0xDEADBEEFFFFFFFFF, 0x01234567ABBACAFE});
+  CHECK_NEON(1, uint64_t, {0xFEDCBA98FFFFFFFF, 0xDEADCAFEABBABEEF});
+  CHECK_NEON(2, uint32_t, {0x3F807, 0x288E7, 0x27C6E, 0xB52C});
+}
+
 TEST_P(InstNeon, uzp) {
   initialHeapData_.resize(128);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
@@ -3721,6 +3780,92 @@ TEST_P(InstNeon, uzp) {
   CHECK_NEON(6, uint32_t, {0xe0c0a08, 0xf0d0b09, 0x0, 0x0});
   CHECK_NEON(7, uint32_t, {0xe0c0a08, 0x1e1c1a18, 0xf0d0b09, 0x1f1d1b19});
   CHECK_NEON(8, uint64_t, {0x1e1c1a1816141210, 0x1f1d1b1917151311});
+}
+
+TEST_P(InstNeon, umlal) {
+  // uint32 to uint64, lower half
+  RUN_AARCH64(R"(
+    mov w0, #-1
+    mov w1, #344
+    mov v0.s[0], w0
+    mov v0.s[3], w1
+
+    mov w2, #-1
+    mov w3, #3
+    mov v1.s[0], w2
+    mov v1.s[1], w3
+
+    mov v2.d[0], xzr
+    mov v2.d[1], xzr
+    mov v3.d[0], xzr
+    mov v3.d[1], xzr
+
+    umlal v2.2d, v1.2s, v0.s[0]
+    umlal v3.2d, v1.2s, v0.s[3]
+  )");
+  CHECK_NEON(0, uint32_t, {UINT32_MAX, 0, 0, 344});
+  CHECK_NEON(2, uint64_t, {18446744065119617025ull, 12884901885ull});
+  CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
+
+  // uint32 to uint64, upper half
+  RUN_AARCH64(R"(
+    mov w0, #-1
+    mov w1, #344
+    mov v0.s[0], w0
+    mov v0.s[3], w1
+
+    mov w2, #-1
+    mov w3, #3
+    mov v1.s[2], w2
+    mov v1.s[3], w3
+
+    mov v2.d[0], xzr
+    mov v2.d[1], xzr
+    mov v3.d[0], xzr
+    mov v3.d[1], xzr
+
+    umlal2 v2.2d, v1.4s, v0.s[0]
+    umlal2 v3.2d, v1.4s, v0.s[3]
+  )");
+  CHECK_NEON(0, uint32_t, {UINT32_MAX, 0, 0, 344});
+  CHECK_NEON(2, uint64_t, {18446744065119617025ull, 12884901885ull});
+  CHECK_NEON(3, uint64_t, {1477468749480ull, 1032ull});
+}
+
+TEST_P(InstNeon, umull) {
+  // uint16_t to uint32_t
+  initialHeapData_.resize(32);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  heap16[0] = UINT16_MAX;
+  heap16[1] = 0;
+  heap16[2] = 1234;
+  heap16[3] = 0xBEEF;
+  heap16[4] = 0xABBA;
+  heap16[5] = 0xCAFE;
+  heap16[6] = 0xDEAD;
+  heap16[7] = 0xACDC;
+
+  heap16[8] = UINT16_MAX;
+  heap16[9] = 0xACDC;
+  heap16[10] = 0xCAFE;
+  heap16[11] = 0xABBA;
+  heap16[12] = 0xBEEF;
+  heap16[13] = 0xDEAD;
+  heap16[14] = 9876;
+  heap16[15] = 0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+
+    umull v2.4s, v0.4h, v1.4h
+  )");
+  CHECK_NEON(2, uint32_t, {4294836225u, 0, 64126044u, 2148818598u});
 }
 
 TEST_P(InstNeon, zip) {

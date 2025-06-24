@@ -8,6 +8,52 @@ namespace {
 using InstSme = AArch64RegressionTest;
 
 #if SIMENG_LLVM_VERSION >= 14
+
+TEST_P(InstSme, add) {
+  // uint32_T, vgx2, vecs with ZA
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z0.b, #8
+    dup z1.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z0.b, z1.b
+    umopa za1.s, p0/m, p1/m, z0.b, z1.b
+    umopa za2.s, p0/m, p1/m, z0.b, z1.b
+    umopa za3.s, p0/m, p1/m, z0.b, z1.b
+
+    # Set 2 of the za rows
+    mov w8, #1
+    dup z0.s, #8
+    dup z1.s, #3
+    add za.s[w8, #1, vgx2], {z0.s, z1.s}
+  )");
+  const uint16_t zaStride = (SVL / 8) / 2;
+  const uint16_t zaHalfIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({104}, (SVL / 8)));
+    } else if (i == zaStride + zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({99}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, addha) {
   // 32-bit
   RUN_AARCH64(R"(
@@ -136,6 +182,496 @@ TEST_P(InstSme, addha) {
   }
 }
 
+TEST_P(InstSme, mova_zaToVecs) {
+  // 2 vectors
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # Set 4 of the za rows
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+
+    # Extravt un-updated values
+    mov w9, #0
+    mova {z20.d, z21.d}, za.d[w9, #0, vgx2]
+    # Extract 0th and 2nd updated rows
+    mov {z24.d, z25.d}, za.d[w8, #1, vgx2]
+    # Extract 1st and 3rd updated rows (get new offset into each half)
+    addvl x10, x10, #1
+    mov x20, #4
+    udiv x10, x10, x20
+    mov {z26.d, z27.d}, za.d[w10, #2, vgx2]
+  )");
+  // Check extracted un-effected rows (two uint32_t values of 96 equal one
+  // uint64_t value of 412316860512)
+  CHECK_NEON(20, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(21, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  // Check extracted effected rows (two uint32_t values concatonated into one
+  // uint64_t value)
+  CHECK_NEON(24, uint64_t, fillNeon<uint64_t>({2044404433372}, SVL / 8));
+  CHECK_NEON(25, uint64_t, fillNeon<uint64_t>({2370821947944}, SVL / 8));
+  CHECK_NEON(26, uint64_t, fillNeon<uint64_t>({2207613190658}, SVL / 8));
+  CHECK_NEON(27, uint64_t, fillNeon<uint64_t>({2534030705230}, SVL / 8));
+
+  // 4 vectors
+  initialHeapData_.resize(SVL / 8);
+  heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  src = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # Set 4 of the za rows
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+
+    mov w9, #0
+    mova {z20.d - z23.d}, za.d[w9, #0, vgx4]
+    mov {z24.d - z27.d}, za.d[w8, #1, vgx4]
+  )");
+  // Check extracted un-effected rows (two uint32_t values of 96 equal one
+  // uint64_t value of 412316860512)
+  CHECK_NEON(20, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(21, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(22, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  CHECK_NEON(23, uint64_t, fillNeon<uint64_t>({412316860512}, SVL / 8));
+  // Check extracted effected rows (two uint32_t values concatonated into one
+  // uint64_t value)
+  CHECK_NEON(24, uint64_t, fillNeon<uint64_t>({2044404433372}, SVL / 8));
+  CHECK_NEON(25, uint64_t, fillNeon<uint64_t>({2207613190658}, SVL / 8));
+  CHECK_NEON(26, uint64_t, fillNeon<uint64_t>({2370821947944}, SVL / 8));
+  CHECK_NEON(27, uint64_t, fillNeon<uint64_t>({2534030705230}, SVL / 8));
+}
+
+TEST_P(InstSme, mova_tilesToVecs) {
+  // uint8_t; 4 vectors
+  initialHeapData_.resize(SVL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src, SVL / 16);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov w12, #0
+    ptrue p0.s
+
+    # Pre-fill first 4 rows of za0.b
+    ld1w {za0h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za1h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za2h.s[w12, 0]}, p0/z, [x0]
+    ld1w {za3h.s[w12, 0]}, p0/z, [x0]
+
+
+    mova {z4.b-z7.b}, za0h.b[w12, 0:3]
+    
+    # Test Alias
+    mov w13, #1
+    dup z11.b, #3
+    mov {z8.b-z11.b}, za0h.b[w13, 0:3]
+  )");
+  for (int i = 4; i <= 10; i++) {
+    CHECK_NEON(
+        i, uint8_t,
+        fillNeon<uint8_t>({0xEF, 0xBE, 0xAD, 0xDE, 0x78, 0x56, 0x34, 0x12, 0x32,
+                           0x54, 0x76, 0x98, 0x01, 0xEF, 0xCD, 0xAB},
+                          SVL / 8));
+  }
+  CHECK_NEON(11, uint8_t, fillNeon<uint8_t>({0x00}, SVL / 8));
+}
+
+TEST_P(InstSme, fadd) {
+  // Float, VGx2
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.s, #3.0
+    fdup z2.s, #8.0
+    ptrue p0.s
+    ptrue p1.s
+    fmopa za0.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za1.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za2.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za3.s, p0/m, p1/m, z1.s, z2.s
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.s, #-2.5
+    fdup z5.s, #3.0
+
+    fadd za.s[w8, #1, vgx2], {z4.s, z5.s}
+  )");
+  const uint16_t zaStride = (SVL / 8) / 2;
+  const uint16_t zaHalfIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({21.5f}, (SVL / 8)));
+    } else if (i == zaStride + zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({27.0f}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.0f}, (SVL / 8)));
+    }
+  }
+
+  // Double, VGx2
+  initialHeapData_.resize(SVL / 8);
+  heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  src = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0
+    fdup z1.d, #3.0
+    fdup z2.d, #8.0
+    ptrue p0.d
+    ptrue p1.d
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za1.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za2.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za3.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za4.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za5.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za6.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za7.d, p0/m, p1/m, z1.d, z2.d
+
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.d, #-2.5
+    fdup z5.d, #3.0
+
+    fadd za.d[w8, #1, vgx2], {z4.d, z5.d}
+  )");
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({21.5}, (SVL / 8)));
+    } else if (i == zaStride + zaHalfIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({27.0}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.0}, (SVL / 8)));
+    }
+  }
+}
+
+TEST_P(InstSme, fmla_multiVecs) {
+  // float, vgx4
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.s, #3.0
+    fdup z2.s, #8.0
+    ptrue p0.s
+    ptrue p1.s
+    fmopa za0.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za1.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za2.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za3.s, p0/m, p1/m, z1.s, z2.s
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.s, #0.25
+    fdup z5.s, #1.5
+    fdup z6.s, #-0.5
+    fdup z7.s, #-2.5
+    fdup z8.s, #3.0
+    fdup z9.s, #4.0
+    fdup z10.s, #5.0
+    fdup z11.s, #6.0
+
+    fmla za.s[w8, #1, vgx4], {z4.s - z7.s}, {z8.s - z11.s}
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0f
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.75f}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({30.0f}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({21.5f}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({9.0f}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.0f}, (SVL / 8)));
+    }
+  }
+
+  // double, vgx4
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0
+    fdup z1.d, #3.0
+    fdup z2.d, #8.0
+    ptrue p0.d
+    ptrue p1.d
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za1.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za2.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za3.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za4.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za5.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za6.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za7.d, p0/m, p1/m, z1.d, z2.d
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.d, #0.25
+    fdup z5.d, #1.5
+    fdup z6.d, #-0.5
+    fdup z7.d, #-2.5
+    fdup z8.d, #3.0
+    fdup z9.d, #4.0
+    fdup z10.d, #5.0
+    fdup z11.d, #6.0
+
+    fmla za.d[w8, #1, vgx4], {z4.d - z7.d}, {z8.d - z11.d}
+  )");
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.75}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({30.0}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({21.5}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({9.0}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.0}, (SVL / 8)));
+    }
+  }
+}
+
+TEST_P(InstSme, fmla_indexed_vgx4) {
+  // float
+  initialHeapData_.resize(SVL);
+  float* heapf = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> srcf = {0.0f, 1.0f, 2.0f, 3.0f};
+  fillHeap<float>(heapf, srcf, SVL / 4);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.s, #3.0
+    fdup z2.s, #8.0
+    ptrue p0.s
+    ptrue p1.s
+    fmopa za0.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za1.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za2.s, p0/m, p1/m, z1.s, z2.s
+    fmopa za3.s, p0/m, p1/m, z1.s, z2.s
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.s, #0.25
+    fdup z5.s, #1.5
+    fdup z6.s, #-0.5
+    fdup z7.s, #-2.5
+    ld1w {z10.s}, p0/z, [x0]
+
+    fmla za.s[w8, #1, vgx4], {z4.s - z7.s}, z10.s[2]
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0f
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.5f}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({27.0f}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({23.0f}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({19.0f}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0f throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, float,
+                    fillNeon<float>({24.0f}, (SVL / 8)));
+    }
+  }
+
+  // double
+  initialHeapData_.resize(SVL);
+  double* heapd = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> srcd = {2.0f, 3.0f};
+  fillHeap<double>(heapd, srcd, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 24.0f
+    fdup z1.d, #3.0
+    fdup z2.d, #8.0
+    ptrue p0.d
+    ptrue p1.d
+    fmopa za0.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za1.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za2.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za3.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za4.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za5.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za6.d, p0/m, p1/m, z1.d, z2.d
+    fmopa za7.d, p0/m, p1/m, z1.d, z2.d
+
+    # initialise registers
+    mov w8, #1
+    fdup z4.d, #0.25
+    fdup z5.d, #1.5
+    fdup z6.d, #-0.5
+    fdup z7.d, #-2.5
+    ld1d {z10.d}, p0/z, [x0]
+
+    fmla za.d[w8, #1, vgx4], {z4.d - z7.d}, z10.d[0]
+  )");
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm value of 2.0f
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.5}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({27.0}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({23.0}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({19.0}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 24.0 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, double,
+                    fillNeon<double>({24.0}, (SVL / 8)));
+    }
+  }
+}
 TEST_P(InstSme, addva) {
   // 32-bit
   RUN_AARCH64(R"(
@@ -1168,6 +1704,21 @@ TEST_P(InstSme, mova_q_vecToTile) {
       CHECK_MAT_ROW(AARCH64_REG_ZAQ0, i, uint64_t, offRow);
     }
   }
+}
+
+TEST_P(InstSme, rdsvl) {
+  RUN_AARCH64(R"(
+  rdsvl x0, #-32
+  rdsvl x1, #-3
+  rdsvl x2, #0
+  rdsvl x3, #3
+  rdsvl x4, #31
+)");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), (SVL / 8) * -32);
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), (SVL / 8) * -3);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), (SVL / 8) * 3);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), (SVL / 8) * 31);
 }
 
 TEST_P(InstSme, fmopa) {
@@ -3410,13 +3961,207 @@ TEST_P(InstSme, usmops) {
   }
 }
 
+TEST_P(InstSme, udot_Indexed_vgx4) {
+  // 8-bit to 32-bit widening
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # initialise registers
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm values of {8, 9, 10, 11}
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({476}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({514}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({552}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({590}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
+TEST_P(InstSme, udot_vgx4) {
+  // 8-bit to 32-bit widening
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # initialise registers
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z8.b}, p0/z, [x0]
+    ld1b {z9.b}, p0/z, [x0]
+    ld1b {z10.b}, p0/z, [x0]
+    ld1b {z11.b}, p0/z, [x0]
+
+    udot za.s[w8, #1, vgx4], {z4.b - z7.b}, {z8.b - z11.b}
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({156, 316, 476, 636}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({162, 338, 514, 690}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({168, 360, 552, 744}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({174, 382, 590, 798}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
+TEST_P(InstSme, uvdot_indexed_vgx4) {
+  // 8-bit to 32-bit widening
+  initialHeapData_.resize(SVL / 8);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  std::vector<uint8_t> src = {0, 1, 2,  3,  4,  5,  6,  7,
+                              8, 9, 10, 11, 12, 13, 14, 15};
+  fillHeap<uint8_t>(heap8, src, SVL / 8);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    zero {za}
+
+    # Pre-fill all of za with 96 (uint32_t)
+    dup z1.b, #8
+    dup z2.b, #3
+    ptrue p0.b
+    ptrue p1.b
+    umopa za0.s, p0/m, p1/m, z1.b, z2.b
+    umopa za1.s, p0/m, p1/m, z1.b, z2.b
+    umopa za2.s, p0/m, p1/m, z1.b, z2.b
+    umopa za3.s, p0/m, p1/m, z1.b, z2.b
+
+    # initialise registers
+    mov w8, #1
+    dup z4.b, #10
+    dup z5.b, #11
+    dup z6.b, #12
+    dup z7.b, #13
+    ld1b {z10.b}, p0/z, [x0]
+
+    uvdot za.s[w8, #1, vgx4], {z4.b - z7.b}, z10.b[2]
+  )");
+  const uint16_t zaStride = (SVL / 8) / 4;
+  const uint16_t zaQuartIndex = 2;
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
+    // Effected rows all use same zm values of {8, 9, 10, 11}
+    if (i == zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({538}, (SVL / 8)));
+    } else if (i == zaStride + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({538}, (SVL / 8)));
+    } else if (i == (2 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({538}, (SVL / 8)));
+    } else if (i == (3 * zaStride) + zaQuartIndex) {
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({538}, (SVL / 8)));
+    } else {
+      // un-effected rows should still be 96 throughout
+      CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint32_t,
+                    fillNeon<uint32_t>({96}, (SVL / 8)));
+    }
+  }
+}
+
 TEST_P(InstSme, zero) {
+  // ZT0
+  RUN_AARCH64(R"(
+    smstart
+
+    zero {zt0}
+  )");
+  CHECK_TABLE(uint64_t, {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0});
+
+  // ZA tiles
   RUN_AARCH64(R"(
     smstart
 
     zero {za}
   )");
-  for (uint64_t i = 0; i < (SVL / 8); i++) {
+  for (uint16_t i = 0; i < (SVL / 8); i++) {
     CHECK_MAT_ROW(AARCH64_REG_ZA, i, uint64_t,
                   fillNeon<uint64_t>({0}, SVL / 8));
   }
@@ -3453,7 +4198,7 @@ TEST_P(InstSme, zero) {
 
     zero {za0.s, za2.s}
   )");
-  for (uint64_t i = 0; i < (SVL / 32); i++) {
+  for (uint16_t i = 0; i < (SVL / 32); i++) {
     CHECK_MAT_ROW(AARCH64_REG_ZAS0, i, uint32_t,
                   fillNeon<uint32_t>({0}, SVL / 8));
     CHECK_MAT_ROW(AARCH64_REG_ZAS2, i, uint32_t,
@@ -3467,6 +4212,7 @@ TEST_P(InstSme, zero) {
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSme,
                          ::testing::ValuesIn(genCoreTypeSVLPairs(EMULATION)),
                          paramToString);
+
 #else
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(InstSme);
 #endif

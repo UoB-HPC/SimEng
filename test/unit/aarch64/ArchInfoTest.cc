@@ -23,7 +23,8 @@ class AArch64ArchInfoTest : public ::testing::Test {
       aarch64_sysreg::AARCH64_SYSREG_MIDR_EL1,
       aarch64_sysreg::AARCH64_SYSREG_CNTVCT_EL0,
       aarch64_sysreg::AARCH64_SYSREG_PMCCNTR_EL0,
-      aarch64_sysreg::AARCH64_SYSREG_SVCR};
+      aarch64_sysreg::AARCH64_SYSREG_SVCR,
+      aarch64_sysreg::AARCH64_SYSREG_TPIDR2_EL0};
 
   const std::vector<simeng::RegisterFileStructure> archRegStruct = {
       {8, 32},

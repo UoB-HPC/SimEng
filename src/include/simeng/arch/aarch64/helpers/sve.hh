@@ -626,6 +626,27 @@ std::enable_if_t<std::is_floating_point_v<T>, RegisterValue> sveFDivPredicated(
   return {out, 256};
 }
 
+/** Helper function for SVE instructions with the format `faddv rd, pg, zn.
+ * D represents the source vector element type and the destination scalar
+ * register type (i.e. for zn.s and sd, D = float).
+ * Returns correctly formatted RegisterValue. */
+template <typename D>
+RegisterValue sveFaddv_predicated(srcValContainer& sourceValues,
+                                  const uint16_t VL_bits) {
+  const uint64_t* p = sourceValues[0].getAsVector<uint64_t>();
+  const D* zn = sourceValues[1].getAsVector<D>();
+
+  const uint16_t partition_num = VL_bits / (8 * sizeof(D));
+  D out[256 / sizeof(D)] = {0};
+  for (int i = 0; i < partition_num; i++) {
+    uint64_t shifted_active = 1ull << ((i % (64 / sizeof(D))) * sizeof(D));
+    if (p[i / (64 / sizeof(D))] & shifted_active) {
+      out[0] += zn[i];
+    }
+  }
+  return {out, 256};
+}
+
 /** Helper function for SVE instructions with the format `fmad zd, pg/m, zn,
  * zm`.
  * T represents the type of sourceValues (e.g. for zn.d, T = double).
@@ -1319,6 +1340,40 @@ std::array<uint64_t, 4> svePtrue(
   return out;
 }
 
+/** Helper function for SVE instructions with the format `ptrue pnd.
+ * T represents the type of sourceValues (e.g. for pnd.d, T = uint64_t).
+ * Returns an array of 4 uint64_t elements. */
+template <typename T>
+std::array<uint64_t, 4> svePtrue_counter(const uint16_t VL_bits) {
+  // Predicate as counter is 16-bits and has the following encoding:
+  //    - Up to first 4 bits (named LSZ) encode the element size (0b1, 0b10,
+  //    0b100, 0b1000 for b h s d respectively)
+  //            - bits 0->LSZ
+  //    - Bits LSZ -> 14 represent a uint of the number of consecutive elements
+  //    from element 0 that are active / inactive
+  //            - If invert bit = 0 it is number of active elements
+  //            - If invert bit = 1 it is number of inactive elements
+  //    - Bit 15 represents the invert bit
+  std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+  // Set invert bit to 1 and count to 0 so that the first 0 elements are FALSE.
+  // This is how the spec defines all true to be encoded.
+  out[0] |= 0b1000000000000000;
+
+  // Set Element size field
+  if (sizeof(T) == 1) {
+    out[0] |= 0b1;
+  } else if (sizeof(T) == 2) {
+    out[0] |= 0b10;
+  } else if (sizeof(T) == 4) {
+    out[0] |= 0b100;
+  } else if (sizeof(T) == 8) {
+    out[0] |= 0b1000;
+  }
+
+  return out;
+}
+
 /** Helper function for SVE instructions with the format `punpk<hi,lo> pd.h,
  * pn.b`.
  * If `isHI` = false, then PUNPKLO is performed.
@@ -1559,6 +1614,69 @@ RegisterValue sveTrn2_3vecs(srcValContainer& sourceValues,
   for (int i = 0; i < (partition_num / 2); i++) {
     out[2 * i] = n[(2 * i) + 1];
     out[(2 * i) + 1] = m[(2 * i) + 1];
+  }
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `udot zd, zn, zm`.
+ * D represents the element type of the destination register (i.e. for zd.s,
+ * D = uint32_t).
+ * N represents the element type of the source registers (i.e. for zn.b, N =
+ * uint8_t).
+ * W represents how many source elements are multiplied to form an output
+ * element (i.e. for 4-way, W = 4).
+ * Returns correctly formatted RegisterValue. */
+template <typename D, typename N, int W>
+RegisterValue sveUdot(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const D* zd = sourceValues[0].getAsVector<D>();
+  const N* zn = sourceValues[1].getAsVector<N>();
+  const N* zm = sourceValues[2].getAsVector<N>();
+
+  D out[256 / sizeof(D)] = {0};
+  for (size_t i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
+    out[i] = zd[i];
+    for (int j = 0; j < W; j++) {
+      out[i] +=
+          (static_cast<D>(zn[(W * i) + j]) * static_cast<N>(zm[(W * i) + j]));
+    }
+  }
+  return {out, 256};
+}
+
+/** Helper function for SVE instructions with the format `udot zd, zn,
+ * zm[index]`.
+ * D represents the element type of the destination register (i.e. for uint32_t,
+ * D = uint32_t).
+ * N represents the element type of the source registers (i.e. for uint8_t, N =
+ * uint8_t).
+ * W represents how many source elements are multiplied to form an output
+ * element (i.e. for 4-way, W = 4).
+ * Returns correctly formatted RegisterValue. */
+template <typename D, typename N, int W>
+RegisterValue sveUdot_indexed(
+    srcValContainer& sourceValues,
+    const simeng::arch::aarch64::InstructionMetadata& metadata,
+    const uint16_t VL_bits) {
+  const D* zd = sourceValues[0].getAsVector<D>();
+  const N* zn = sourceValues[1].getAsVector<N>();
+  const N* zm = sourceValues[2].getAsVector<N>();
+  const int index = metadata.operands[2].vector_index;
+
+  D out[256 / sizeof(D)] = {0};
+  for (size_t i = 0; i < (VL_bits / (sizeof(D) * 8)); i++) {
+    D acc = zd[i];
+    // Index into zm selects which D-type element within each 128-bit vector
+    // segment to use
+    int base = i - (i % (128 / (sizeof(D) * 8)));
+    int zmIndex = base + index;
+    for (int j = 0; j < W; j++) {
+      acc += (static_cast<D>(zn[(W * i) + j]) *
+              static_cast<N>(zm[(W * zmIndex) + j]));
+    }
+    out[i] = acc;
   }
   return {out, 256};
 }
