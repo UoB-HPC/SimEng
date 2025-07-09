@@ -81,15 +81,25 @@ Core::Core(memory::MemoryInterface& instructionMemory,
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
       blockingGroups.push_back(grp.as<uint16_t>());
     }
-    executionUnits_.emplace_back(
-        issuePorts_[i], completionSlots_[i],
-        [this](auto regs, auto values) {
-          dispatchIssueUnit_.forwardOperands(regs, values);
-        },
-        [this](auto uop) { loadStoreQueue_.startLoad(uop); },
-        [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-        [](auto uop) { uop->setCommitReady(); },
-        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
+    auto eu = pipeline::ExecuteUnit(
+          issuePorts_[i], completionSlots_[i],
+          [this](auto regs, auto values) {
+            dispatchIssueUnit_.forwardOperands(regs, values);
+          },
+          [this](auto uop) { loadStoreQueue_.startLoad(uop); },
+          [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
+          [](auto uop) { uop->setCommitReady(); },
+          config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
+
+    if (config["Execution-Units"][i].has_child("Offloaded-Group-Nums")) {
+      // Create a special EU, capable of offloading instructions to an accelerator
+      // TODO Use a special offloading EU
+      std::cout << "Offloading found: " << i << std::endl;
+      executionUnits_.push_back(eu);
+    } else {
+      // No offloading
+      executionUnits_.push_back(eu);
+    }
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint32_t>& sizeVec) {

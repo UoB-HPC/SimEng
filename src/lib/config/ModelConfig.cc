@@ -57,26 +57,26 @@ void ModelConfig::validate() {
   recursiveValidate(expectations_, configTree_.rootref());
   postValidation();
 
-  std::string missingStr = missing_.str();
-  std::string invalidStr = invalid_.str();
+  const std::string missingStr = missing_.str();
+  const std::string invalidStr = invalid_.str();
   // Print all missing fields
-  if (missingStr.length()) {
+  if (!missingStr.empty()) {
     std::cerr << "[SimEng:ModelConfig] The following fields are missing from "
                  "the provided "
                  "configuration file:\n"
               << missingStr << std::endl;
   }
   // Print all invalid values
-  if (invalidStr.length()) {
+  if (!invalidStr.empty()) {
     std::cerr << "[SimEng:ModelConfig] The following values are invalid for "
                  "their associated field:\n"
               << invalidStr << std::endl;
   }
   // Stop execution if the config file didn't pass checks
-  if (missingStr.length() || invalidStr.length()) exit(1);
+  if (!missingStr.empty() || !invalidStr.empty()) exit(1);
 }
 
-void ModelConfig::reGenerateDefault(ISA isa, bool force) {
+void ModelConfig::reGenerateDefault(const ISA isa, const bool force) {
   // Only re-generate the default config file if it hasn't already been
   // generated for the specified ISA
   if (!force && (isa_ == isa && isDefault_)) return;
@@ -98,7 +98,7 @@ void ModelConfig::generateDefault() {
 }
 
 void ModelConfig::constructDefault(ExpectationNode expectations,
-                                   size_t root_id) {
+                                   const size_t root_id) {
   // Iterate over the expectations supplied
   for (const auto& child : expectations.getChildren()) {
     std::string key = child.getKey();
@@ -258,14 +258,14 @@ void ModelConfig::setExpectations(bool isDefault) {
       // Ensure the key "Core:ISA" exists before querying the associated YAML
       // node
       if (configTree_["Core"].has_child(ryml::to_csubstr("ISA"))) {
-        ValidationResult result =
+        const auto [valid, message] =
             expectations_["Core"]["ISA"].validateConfigNode(
                 configTree_["Core"]["ISA"]);
-        std::string ISA = configTree_["Core"]["ISA"].as<std::string>();
-        if (!result.valid) {
+        const auto ISA = configTree_["Core"]["ISA"].as<std::string>();
+        if (!valid) {
           std::cerr
               << "[SimEng:ModelConfig] Invalid ISA value of \"" << ISA
-              << "\" passed in config file due to \"" << result.message
+              << "\" passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
           exit(1);
@@ -306,7 +306,7 @@ void ModelConfig::setExpectations(bool isDefault) {
   expectations_["Core"]["Simulation-Mode"].setValueSet(
       std::vector<std::string>{"emulation", "inorderpipelined", "outoforder"});
 
-  const float clockFreqUpperBound = 10.f;
+  constexpr float clockFreqUpperBound = 10.f;
   expectations_["Core"].addChild(
       ExpectationNode::createExpectation<float>(1.f, "Clock-Frequency-GHz"));
   expectations_["Core"]["Clock-Frequency-GHz"].setValueBounds(
@@ -323,16 +323,15 @@ void ModelConfig::setExpectations(bool isDefault) {
       // associated YAML node
       if (configTree_["Core"].has_child(
               ryml::to_csubstr("Clock-Frequency-GHz"))) {
-        ValidationResult result =
+        const auto [valid, message] =
             expectations_["Core"]["Clock-Frequency-GHz"].validateConfigNode(
                 configTree_["Core"]["Clock-Frequency-GHz"]);
-        float clockFreq =
+        const auto clockFreq =
             configTree_["Core"]["Clock-Frequency-GHz"].as<float>();
-        if (!result.valid) {
+        if (!valid) {
           std::cerr
               << "[SimEng:ModelConfig] Invalid Clock-Frequency-GHz value of \""
-              << clockFreq << "\" passed in config file due to \""
-              << result.message
+              << clockFreq << "\" passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
           exit(1);
@@ -544,10 +543,10 @@ void ModelConfig::setExpectations(bool isDefault) {
       // Ensure the key "Branch-Predictor:Type" exists before querying the
       // associated YAML node
       if (configTree_["Branch-Predictor"].has_child(ryml::to_csubstr("Type"))) {
-        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-             "Generic") ||
-            (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-             "TAGE")) {
+        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+                "Generic" ||
+            configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+                "TAGE") {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(
                   2, "Saturating-Count-Bits"));
@@ -561,8 +560,8 @@ void ModelConfig::setExpectations(bool isDefault) {
               .setValueSet(
                   std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
         }
-        if ((configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-             "TAGE")) {
+        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+            "TAGE") {
           expectations_["Branch-Predictor"].addChild(
               ExpectationNode::createExpectation<uint8_t>(12,
                                                           "TAGE-Table-Bits"));
@@ -705,16 +704,16 @@ void ModelConfig::setExpectations(bool isDefault) {
   std::vector<std::string> portnames = {"0"};
   if (!isDefault) {
     portnames = {};
-    // An index value used in case of error
-    uint16_t idx = 0;
     // Get all portnames defined in the config file and ensure they are unique
     if (configTree_.rootref().has_child(ryml::to_csubstr("Ports"))) {
+      // An index value used in case of error
+      uint16_t idx = 0;
       for (ryml::NodeRef child : configTree_["Ports"]) {
-        ValidationResult result =
+        const auto [valid, message] =
             expectations_["Ports"][wildcard]["Portname"].validateConfigNode(
                 child["Portname"]);
-        std::string portname = child["Portname"].as<std::string>();
-        if (result.valid) {
+        const auto portname = child["Portname"].as<std::string>();
+        if (valid) {
           if (std::find(portnames.begin(), portnames.end(), portname) ==
               portnames.end()) {
             portnames.push_back(portname);
@@ -725,7 +724,7 @@ void ModelConfig::setExpectations(bool isDefault) {
           std::cerr
               << "[SimEng:ModelConfig] Invalid portname for port " << idx
               << ", namely \"" << portname
-              << "\", passed in config file due to \"" << result.message
+              << "\", passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
           exit(1);
@@ -865,9 +864,9 @@ void ModelConfig::setExpectations(bool isDefault) {
       1, UINT16_MAX);
 }
 
-void ModelConfig::recursiveValidate(ExpectationNode expectation,
+void ModelConfig::recursiveValidate(const ExpectationNode& expectation,
                                     ryml::NodeRef node,
-                                    std::string hierarchyString) {
+                                    const std::string& hierarchyString) {
   // Iterate over passed expectations
   for (auto& child : expectation.getChildren()) {
     std::string nodeKey = child.getKey();
@@ -876,17 +875,16 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
     if (nodeKey == wildcard) {
       for (ryml::NodeRef rymlChild : node) {
         // An index value used in case of error
-        std::string idx =
+        const auto idx =
             std::string(rymlChild.key().data(), rymlChild.key().size());
-        ValidationResult result = child.validateConfigNode(rymlChild);
-        if (!result.valid)
-          invalid_ << "\t- "
-                   << hierarchyString + idx + " " + result.message + "\n";
+        const auto [valid, message] = child.validateConfigNode(rymlChild);
+        if (!valid)
+          invalid_ << "\t- " << hierarchyString << idx << " " << message
+                   << "\n";
         recursiveValidate(child, rymlChild, hierarchyString + idx + ":");
       }
     } else if (node.has_child(ryml::to_csubstr(nodeKey))) {
-      // If the config file contains the key of the expectation node, get
-      // it
+      // If the config file contains the key of the expectation node, get it
       ryml::NodeRef rymlChild = node[ryml::to_csubstr(nodeKey)];
       if (child.isSequence()) {
         // If the expectation node is a sequence, then treat the ryml::NodeRef
@@ -894,22 +892,21 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
         // node
         int idx = 0;
         for (ryml::NodeRef grndchild : rymlChild) {
-          ValidationResult result = child.validateConfigNode(grndchild);
-          if (!result.valid)
-            invalid_ << "\t- "
-                     << hierarchyString + nodeKey + ":" + std::to_string(idx) +
-                            " " + result.message + "\n";
+          const auto [valid, message] = child.validateConfigNode(grndchild);
+          if (!valid)
+            invalid_ << "\t- " << hierarchyString << nodeKey << ":"
+                     << std::to_string(idx) << " " << message << "\n";
           idx++;
         }
       } else {
         // If the expectation node is not a sequence, validate the config
         // option against the current expectations and if it has children,
         // validate those recursively
-        ValidationResult result = child.validateConfigNode(rymlChild);
-        if (!result.valid)
-          invalid_ << "\t- "
-                   << hierarchyString + nodeKey + " " + result.message + "\n";
-        if (child.getChildren().size()) {
+        const auto [valid, message] = child.validateConfigNode(rymlChild);
+        if (!valid)
+          invalid_ << "\t- " << hierarchyString << nodeKey << " " << message
+                   << "\n";
+        if (!child.getChildren().empty()) {
           recursiveValidate(child, rymlChild, hierarchyString + nodeKey + ":");
         }
       }
@@ -918,11 +915,11 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
       // create it as a child to the config ryml::NodeRef supplied. If the
       // config option is optional, a default value will be injected,
       // otherwise the validation will fail
-      ryml::NodeRef rymlChild = node.append_child() << ryml::key(nodeKey);
-      ValidationResult result = child.validateConfigNode(rymlChild);
-      if (!result.valid)
-        invalid_ << "\t- "
-                 << hierarchyString + nodeKey + " " + result.message + "\n";
+      const ryml::NodeRef rymlChild = node.append_child() << ryml::key(nodeKey);
+      const auto [valid, message] = child.validateConfigNode(rymlChild);
+      if (!valid)
+        invalid_ << "\t- " << hierarchyString << nodeKey << " " << message
+                 << "\n";
     }
   }
 }
@@ -930,10 +927,10 @@ void ModelConfig::recursiveValidate(ExpectationNode expectation,
 void ModelConfig::postValidation() {
   // Ensure package_count size is a less than or equal to the core count,
   // and that the core count can be divided by the package count
-  uint64_t packageCount =
+  const auto packageCount =
       configTree_["CPU-Info"]["Package-Count"].as<uint64_t>();
-  uint64_t coreCount = configTree_["CPU-Info"]["Core-Count"].as<uint64_t>();
-  if (!((packageCount <= coreCount) && (coreCount % packageCount == 0))) {
+  const auto coreCount = configTree_["CPU-Info"]["Core-Count"].as<uint64_t>();
+  if (!(packageCount <= coreCount && coreCount % packageCount == 0)) {
     invalid_ << "\t- Package-Count must be a Less-than or equal to Core-Count, "
                 "and Core-Count must be divisible by Package-Count\n";
   }
@@ -963,7 +960,7 @@ void ModelConfig::postValidation() {
     } else {
       node.append_child() << ryml::key("Blocking-Group-Nums") |= ryml::SEQ;
     }
-    // Read in each bloacking group and place its corresponding group number
+    // Read in each blocking group and place its corresponding group number
     // into the new config option.
     std::queue<uint16_t> blockingGroups;
     for (ryml::NodeRef child : node["Blocking-Groups"]) {
@@ -979,18 +976,33 @@ void ModelConfig::postValidation() {
     } else if (isa_ == ISA::RV64) {
       groupInheritance = arch::riscv::groupInheritance_;
     }
-    while (blockingGroups.size()) {
+    while (!blockingGroups.empty()) {
       // Determine if there's any inheritance
       if (groupInheritance.find(blockingGroups.front()) !=
           groupInheritance.end()) {
-        std::vector<uint16_t> inheritedGroups =
+        const auto& inheritedGroups =
             groupInheritance.at(blockingGroups.front());
-        for (size_t k = 0; k < inheritedGroups.size(); k++) {
-          blockingGroups.push(inheritedGroups[k]);
-          node["Blocking-Group-Nums"].append_child() << inheritedGroups[k];
+        for (auto inheritedGroup : inheritedGroups) {
+          blockingGroups.push(inheritedGroup);
+          node["Blocking-Group-Nums"].append_child() << inheritedGroup;
         }
       }
       blockingGroups.pop();
+    }
+
+    // TODO: Add this option to the docs
+    // Clear or create a new Offloaded-Group-Nums config option (if needed)
+    if (!node.has_child("Offloaded-Groups")) continue;
+    if (node.has_child("Offloaded-Group-Nums")) {
+      node["Offloaded-Group-Nums"].clear_children();
+    } else {
+      node.append_child() << ryml::key("Offloaded-Group-Nums") |= ryml::SEQ;
+    }
+    // Read in each group and place its corresponding group number into the
+    // new config option
+    for (ryml::NodeRef child : node["Offloaded-Groups"]) {
+      ryml::NodeRef newChild = node["Offloaded-Group-Nums"].append_child();
+      newChild << groupMapping_[child.as<std::string>()];
     }
   }
   for (ryml::NodeRef node : configTree_["Latencies"]) {
@@ -1022,7 +1034,7 @@ void ModelConfig::postValidation() {
   uint16_t idx = 0;
   // Read all available port names.
   for (ryml::NodeRef node : configTree_["Ports"]) {
-    std::string portname = node["Portname"].as<std::string>();
+    const auto portname = node["Portname"].as<std::string>();
     portnames.push_back(portname);
     portIndexes[portname] = idx++;
   }
@@ -1035,9 +1047,8 @@ void ModelConfig::postValidation() {
       node.append_child() << ryml::key("Port-Nums") |= ryml::SEQ;
     }
     for (size_t i = 0; i < node["Ports"].num_children(); i++) {
-      std::string portname = node["Ports"][i].as<std::string>();
-      std::vector<std::string>::iterator itr =
-          std::find(portnames.begin(), portnames.end(), portname);
+      const auto portname = node["Ports"][i].as<std::string>();
+      auto itr = std::find(portnames.begin(), portnames.end(), portname);
       // If a port is yet to be marked as linked, remove it from portnames
       if (itr != portnames.end()) {
         portnames.erase(itr);
@@ -1064,12 +1075,11 @@ void ModelConfig::postValidation() {
 
   // Ensure the L1-[Data|Instruction]-Memory:Interface-Type restrictions are
   // enforced
-  std::string simMode =
-      configTree_["Core"]["Simulation-Mode"].as<std::string>();
+  const auto simMode = configTree_["Core"]["Simulation-Mode"].as<std::string>();
   // Currently, only outoforder core types can use non-Flat L1-Data-Memory
   // interfaces
   if (simMode != "outoforder") {
-    std::string l1dType =
+    const auto l1dType =
         configTree_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
     if (l1dType != "Flat")
       invalid_ << "\t- Only a Flat L1-Data-Memory Interface-Type may be used "
@@ -1079,7 +1089,7 @@ void ModelConfig::postValidation() {
   }
 
   // Currently, only a Flat L1-Instruction-Memory:Interface-Type is supported
-  std::string l1iType =
+  const auto l1iType =
       configTree_["L1-Instruction-Memory"]["Interface-Type"].as<std::string>();
   if (l1iType != "Flat")
     invalid_ << "\t- Only a 'Flat' L1-Instruction-Memory Interface-Type is "

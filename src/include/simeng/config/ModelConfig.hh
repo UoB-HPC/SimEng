@@ -74,8 +74,8 @@ class ModelConfig {
    * calling ExpectationNode validate functionality on each associated config
    * option. A `hierarchyString` is used for printouts concerning errored
    * validation. */
-  void recursiveValidate(ExpectationNode expectation, ryml::NodeRef node,
-                         std::string hierarchyString = "");
+  void recursiveValidate(const ExpectationNode& expectation, ryml::NodeRef node,
+                         const std::string& hierarchyString = "");
 
   /** A set of formatting and checks performed on the config file after its
    * validation is complete. */
