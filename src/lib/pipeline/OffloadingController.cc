@@ -1,6 +1,5 @@
 #include "simeng/pipeline/OffloadingController.hh"
 
-#include <iostream>
 #include <utility>
 
 namespace simeng {
@@ -24,26 +23,48 @@ OffloadingController::getPassThroughPort() noexcept {
 
 void OffloadingController::tick() {
   auto uop = std::move(input_.getHeadSlots()[0]);
-  if (uop == nullptr || uop->isFlushed()) return;
-
-  if (filter_(uop)) {
-    // Offloading to an accelerator
-    offload(std::move(uop));
+  std::optional<std::shared_ptr<Instruction>> received;
+  if (uop != nullptr && !uop->isFlushed()) {
+    if (filter_(uop)) {
+      // Offloading to an accelerator
+      received = gateway_.tick(std::move(uop));
+    } else {
+      // Forwarding to the associated Execute Unit
+      passThroughOutput_.getTailSlots()[0] = std::move(uop);
+      received = gateway_.tick({});
+    }
   } else {
-    // Forwarding to the associated Execute Unit
-    passThroughOutput_.getTailSlots()[0] = std::move(uop);
+    received = gateway_.tick({});
   }
 
   passThroughOutput_.tick();
+  if (received.has_value()) {
+    write_received(std::move(received.value()));
+  }
 }
 
-void OffloadingController::offload(std::shared_ptr<Instruction> uop) {
-  // TODO: Implement offloading circuitry
-  assert(false && "Not implemented");
+void OffloadingController::write_received(
+    std::shared_ptr<Instruction> uop) const {
+  if (uop->exceptionEncountered()) {
+    raiseException_(uop);
+    return;
+  }
+
+  // TODO: Branch misprediction (see ExecuteUnit.cc:140)
+
+  forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
+  offloadedOutput_.getTailSlots()[0] = std::move(uop);
 }
 
-void OffloadingController::purgeFlushed() {
-  // TODO: Implement flushing after the internal pipeline has been added
+void OffloadingController::purgeFlushed() { gateway_.purgeFlushed(); }
+
+OffloadingController::AcceleratorPacket::AcceleratorPacket(
+    const std::shared_ptr<Instruction>& insn)
+    : insn_(insn) {}
+
+void OffloadingController::AcceleratorPacket::updateInstruction(
+    std::shared_ptr<Instruction>& insn) {
+  insn.swap(insn_);
 }
 
 }  // namespace pipeline
