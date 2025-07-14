@@ -36,6 +36,7 @@ set(SIMENG_SOURCES
     pipeline/FetchUnit.cc
     pipeline/LoadStoreQueue.cc
     pipeline/MappedRegisterFileSet.cc
+    pipeline/OffloadingController.cc
     pipeline/RegisterAliasTable.cc
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc

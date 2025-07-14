@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <utility>
 
 namespace simeng {
 namespace pipeline {
@@ -13,13 +14,13 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    bool pipelined, const std::vector<uint16_t>& blockingGroups)
+    const bool pipelined, const std::vector<uint16_t>& blockingGroups)
     : input_(input),
       output_(output),
-      forwardOperands_(forwardOperands),
-      handleLoad_(handleLoad),
-      handleStore_(handleStore),
-      raiseException_(raiseException),
+      forwardOperands_(std::move(forwardOperands)),
+      handleLoad_(std::move(handleLoad)),
+      handleStore_(std::move(handleStore)),
+      raiseException_(std::move(raiseException)),
       pipelined_(pipelined),
       blockingGroups_(blockingGroups) {}
 
@@ -35,12 +36,12 @@ void ExecuteUnit::tick() {
     if (uop != nullptr) {
       if (!uop->isFlushed()) {
         // Retrieve execution latency from the instruction
-        auto latency = uop->getLatency();
+        const auto latency = uop->getLatency();
         cycles_++;
         // Block uop execution if appropriate
         if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
                       uop->getGroup()) != blockingGroups_.end()) {
-          if (operationsStalled_.size() == 0) {
+          if (operationsStalled_.empty()) {
             // Add uop to pipeline
             pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
             pipeline_.back().insn = std::move(uop);
@@ -50,14 +51,14 @@ void ExecuteUnit::tick() {
             operationsStalled_.push_back(nullptr);
             operationsStalled_.back() = std::move(uop);
           }
-        } else if (latency == 1 && pipeline_.size() == 0) {
+        } else if (latency == 1 && pipeline_.empty()) {
           // Pipeline is empty and insn will execute this cycle; bypass
           execute(uop);
         } else {
           // This instruction may take more than a single cycle; check for a
           // stall. For unpipelined units, the unit will stall for the full
           // instruction duration.
-          auto stallCycles =
+          const auto stallCycles =
               pipelined_ ? uop->getStallCycles() : uop->getLatency();
           if (stallCycles > 1) {
             stallUntil_ = tickCounter_ + stallCycles - 1;
@@ -73,18 +74,18 @@ void ExecuteUnit::tick() {
     }
   }
 
-  if (pipeline_.size() == 0) {
+  if (pipeline_.empty()) {
     return;
   }
 
-  auto& head = pipeline_.front();
-  if (head.readyAt <= tickCounter_) {
+  auto& [insn, readyAt] = pipeline_.front();
+  if (readyAt <= tickCounter_) {
     // Check if the completion of an operation would unblock
     // another stalled operation.
     if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
-                  head.insn->getGroup()) != blockingGroups_.end()) {
+                  insn->getGroup()) != blockingGroups_.end()) {
       operationsStalled_.pop_front();
-      if (operationsStalled_.size() > 0) {
+      if (!operationsStalled_.empty()) {
         // Add uop to pipeline
         auto& uop = operationsStalled_.front();
         pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
@@ -92,7 +93,7 @@ void ExecuteUnit::tick() {
         operationsStalled_.front() = pipeline_.back().insn;
       }
     }
-    execute(head.insn);
+    execute(insn);
     pipeline_.pop_front();
   }
 }
@@ -157,7 +158,7 @@ uint64_t ExecuteUnit::getFlushAddress() const { return pc_; }
 uint64_t ExecuteUnit::getFlushInsnId() const { return flushAfter_; }
 
 void ExecuteUnit::purgeFlushed() {
-  if (pipeline_.size() == 0) {
+  if (pipeline_.empty()) {
     return;
   }
 
@@ -169,33 +170,30 @@ void ExecuteUnit::purgeFlushed() {
   // Iterate over the pipeline and remove flushed instructions
   auto it = pipeline_.begin();
   while (it != pipeline_.end()) {
-    auto& entry = *it;
-    if (entry.insn->isFlushed()) {
+    const auto& [insn, _] = *it;
+    if (insn->isFlushed()) {
       it = pipeline_.erase(it);
     } else {
-      it++;
+      ++it;
     }
   }
 
   // If first blocking in-flight instruction is flushed, ensure another
   // non-flushed stalled instruction takes it place in the pipeline if
   // available.
-  bool replace = false;
-  if (operationsStalled_.size() > 0 &&
-      operationsStalled_.front()->isFlushed()) {
-    replace = true;
-  }
+  const bool replace =
+      !operationsStalled_.empty() && operationsStalled_.front()->isFlushed();
   auto itStall = operationsStalled_.begin();
   while (itStall != operationsStalled_.end()) {
-    auto& entry = *itStall;
+    const auto& entry = *itStall;
     if (entry->isFlushed()) {
       itStall = operationsStalled_.erase(itStall);
     } else {
-      itStall++;
+      ++itStall;
     }
   }
 
-  if (replace && operationsStalled_.size() > 0) {
+  if (replace && !operationsStalled_.empty()) {
     // Add uop to pipeline
     auto& uop = operationsStalled_.front();
     pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
@@ -209,7 +207,7 @@ uint64_t ExecuteUnit::getCycles() const { return cycles_; }
 bool ExecuteUnit::isEmpty() const {
   // Execution unit is considered empty if no instructions are present in the
   // pipeline_ and operationsStalled_ queues
-  if (pipeline_.size() != 0 || operationsStalled_.size() != 0) {
+  if (!pipeline_.empty() || !operationsStalled_.empty()) {
     return false;
   }
   return true;

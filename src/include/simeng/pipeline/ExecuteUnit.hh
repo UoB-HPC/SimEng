@@ -88,8 +88,8 @@ class ExecuteUnit {
   bool pipelined_;
 
   /** The execution unit's internal pipeline, holding instructions until their
-   * execution latency has expired and they are ready for their final results to
-   * be calculated and forwarded. */
+   * execution latency has expired, and they are ready for their final results
+   * to be calculated and forwarded. */
   std::deque<ExecutionUnitPipelineEntry> pipeline_;
 
   /** A group of operation types that are blocked whilst a similar operation

@@ -11,10 +11,11 @@ namespace models {
 namespace outoforder {
 
 Core::Core(memory::MemoryInterface& instructionMemory,
-           memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
-           uint64_t entryPoint, const arch::Architecture& isa,
-           BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, ryml::ConstNodeRef config)
+           memory::MemoryInterface& dataMemory,
+           const uint64_t processMemorySize, const uint64_t entryPoint,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           pipeline::PortAllocator& portAllocator,
+           const ryml::ConstNodeRef config)
     : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
@@ -30,7 +31,8 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(
           config["Execution-Units"].num_children() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
+              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>() +
+              countOffloadingCompletionSlots(config),
           {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
@@ -47,7 +49,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
           loadStoreQueue_,
-          [this](auto instruction) { raiseException(instruction); },
+          [this](const auto& instruction) { raiseException(instruction); },
           [this](auto branchAddress) {
             fetchUnit_.registerLoopBoundary(branchAddress);
           },
@@ -61,7 +63,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          [](auto uop) { uop->setCommitReady(); },
+          [](const auto& uop) { uop->setCommitReady(); },
           config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
           config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
           config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
@@ -81,25 +83,48 @@ Core::Core(memory::MemoryInterface& instructionMemory,
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
       blockingGroups.push_back(grp.as<uint16_t>());
     }
-    auto eu = pipeline::ExecuteUnit(
-          issuePorts_[i], completionSlots_[i],
-          [this](auto regs, auto values) {
-            dispatchIssueUnit_.forwardOperands(regs, values);
-          },
-          [this](auto uop) { loadStoreQueue_.startLoad(uop); },
-          [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-          [](auto uop) { uop->setCommitReady(); },
-          config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
+
+    auto& euInput = issuePorts_[i];
+    const auto forwardOperands = [this](auto regs, auto values) {
+      dispatchIssueUnit_.forwardOperands(regs, values);
+    };
+    const auto raiseException = [](const auto& uop) { uop->setCommitReady(); };
 
     if (config["Execution-Units"][i].has_child("Offloaded-Group-Nums")) {
-      // Create a special EU, capable of offloading instructions to an accelerator
-      // TODO Use a special offloading EU
-      std::cout << "Offloading found: " << i << std::endl;
-      executionUnits_.push_back(eu);
-    } else {
-      // No offloading
-      executionUnits_.push_back(eu);
+      // Insert an offloading controller before the EU
+
+      // Gather instruction groups to offload
+      auto groups = config["Execution-Units"][i]["Offloaded-Group-Nums"];
+      std::vector<uint16_t> offloadedGroups;
+      offloadedGroups.reserve(groups.num_children());
+      for (auto grp : groups) {
+        offloadedGroups.push_back(grp.as<uint16_t>());
+      }
+
+      // Allocate a new completion slot
+      // (for results coming from the accelerator)
+      const auto outputIndex =
+          config["Execution-Units"].num_children() +
+          config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>() +
+          offloadingControllers_.size();
+
+      // Create the controller and set up connection to the associated EU
+      auto controller = pipeline::OffloadingController(
+          issuePorts_[i], completionSlots_[outputIndex], forwardOperands,
+          raiseException, [](const auto& uop) {
+            // TODO: Implement proper filtering
+            return false;
+          });
+      // euInput = controller.getPassThroughPort();
+      offloadingControllers_.push_back(controller);
     }
+
+    executionUnits_.emplace_back(
+        euInput, completionSlots_[i], std::move(forwardOperands),
+        [this](const auto& uop) { loadStoreQueue_.startLoad(uop); },
+        [this](const auto& uop) { loadStoreQueue_.supplyStoreData(uop); },
+        std::move(raiseException),
+        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint32_t>& sizeVec) {
@@ -107,7 +132,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
   });
 
   // Query and apply initial state
-  auto state = isa.getInitialState();
+  const auto state = isa.getInitialState();
   applyStateChange(state);
 }
 
@@ -137,6 +162,11 @@ void Core::tick() {
   for (auto& eu : executionUnits_) {
     // Tick each execution unit
     eu.tick();
+  }
+  for (auto& ctrl : offloadingControllers_) {
+    // Tick each offloading controller -- this has to be done after the EUs to
+    // ensure propagation latency
+    ctrl.tick();
   }
 
   loadStoreQueue_.tick();
@@ -186,14 +216,14 @@ bool Core::hasHalted() const {
     return false;
   }
 
-  auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
+  const auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
   for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-    if (decodeSlots[slot].size() > 0) {
+    if (!decodeSlots[slot].empty()) {
       return false;
     }
   }
 
-  auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
+  const auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
   for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
     if (renameSlots[slot] != nullptr) {
       return false;
@@ -215,31 +245,34 @@ uint64_t Core::getInstructionsRetiredCount() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = reorderBuffer_.getInstructionsCommittedCount();
-  auto ipc = retired / static_cast<float>(ticks_);
+  const auto retired = reorderBuffer_.getInstructionsCommittedCount();
+  const auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
 
-  auto branchStalls = fetchUnit_.getBranchStalls();
+  const auto branchStalls = fetchUnit_.getBranchStalls();
 
-  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
+  const auto earlyFlushes = decodeUnit_.getEarlyFlushes();
 
-  auto allocationStalls = renameUnit_.getAllocationStalls();
-  auto robStalls = renameUnit_.getROBStalls();
-  auto lqStalls = renameUnit_.getLoadQueueStalls();
-  auto sqStalls = renameUnit_.getStoreQueueStalls();
+  const auto allocationStalls = renameUnit_.getAllocationStalls();
+  const auto robStalls = renameUnit_.getROBStalls();
+  const auto lqStalls = renameUnit_.getLoadQueueStalls();
+  const auto sqStalls = renameUnit_.getStoreQueueStalls();
 
-  auto rsStalls = dispatchIssueUnit_.getRSStalls();
-  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
-  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
-  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
+  const auto rsStalls = dispatchIssueUnit_.getRSStalls();
+  const auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
+  const auto backendStalls = dispatchIssueUnit_.getBackendStalls();
+  const auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  uint64_t totalBranchesFetched = fetchUnit_.getBranchFetchedCount();
-  uint64_t totalBranchesRetired = reorderBuffer_.getRetiredBranchesCount();
-  uint64_t totalBranchMispredicts = reorderBuffer_.getBranchMispredictedCount();
+  const uint64_t totalBranchesFetched = fetchUnit_.getBranchFetchedCount();
+  const uint64_t totalBranchesRetired =
+      reorderBuffer_.getRetiredBranchesCount();
+  const uint64_t totalBranchMispredicts =
+      reorderBuffer_.getBranchMispredictedCount();
 
-  auto branchMissRate = 100.0 * static_cast<double>(totalBranchMispredicts) /
-                        static_cast<double>(totalBranchesRetired);
+  const auto branchMissRate = 100.0 *
+                              static_cast<double>(totalBranchMispredicts) /
+                              static_cast<double>(totalBranchesRetired);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
@@ -312,21 +345,22 @@ void Core::processExceptionHandler() {
     return;
   }
 
-  bool success = exceptionHandler_->tick();
+  const bool success = exceptionHandler_->tick();
   if (!success) {
     // Exception handler requires further ticks to complete
     return;
   }
 
-  const auto& result = exceptionHandler_->getResult();
+  const auto& [fatal, instructionAddress, stateChange] =
+      exceptionHandler_->getResult();
 
-  if (result.fatal) {
+  if (fatal) {
     hasHalted_ = true;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
-    fetchUnit_.updatePC(result.instructionAddress);
-    applyStateChange(result.stateChange);
+    fetchUnit_.updatePC(instructionAddress);
+    applyStateChange(stateChange);
   }
 
   exceptionHandler_ = nullptr;
@@ -382,6 +416,9 @@ void Core::flushIfNeeded() {
     for (auto& eu : executionUnits_) {
       eu.purgeFlushed();
     }
+    for (auto& ctrl : offloadingControllers_) {
+      ctrl.purgeFlushed();
+    }
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -399,6 +436,15 @@ void Core::flushIfNeeded() {
 
     flushes_++;
   }
+}
+
+size_t Core::countOffloadingCompletionSlots(const ryml::ConstNodeRef config) {
+  size_t count = 0;
+  const auto euCount = config["Execution-Units"].num_children();
+  for (size_t i = 0; i < euCount; i++) {
+    if (config["Execution-Units"][i].has_child("Offloaded-Group-Nums")) count++;
+  }
+  return count;
 }
 
 }  // namespace outoforder

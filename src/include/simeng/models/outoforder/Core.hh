@@ -8,6 +8,7 @@
 #include "simeng/pipeline/FetchUnit.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/MappedRegisterFileSet.hh"
+#include "simeng/pipeline/OffloadingController.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/pipeline/RegisterAliasTable.hh"
@@ -62,7 +63,11 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
-  const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
+  /** Returns the number of additional completion slots needed to support
+   * offloading, based on the provided configuration. */
+  static size_t countOffloadingCompletionSlots(ryml::ConstNodeRef config);
+
+  const std::vector<RegisterFileStructure> physicalRegisterStructures_;
 
   const std::vector<uint16_t> physicalRegisterQuantities_;
 
@@ -108,6 +113,11 @@ class Core : public simeng::Core {
   /** The set of execution units; executes uops and sends to writeback, also
    * forwarding results to dispatch/issue. */
   std::vector<pipeline::ExecuteUnit> executionUnits_;
+
+  /** The set of offloading controllers; diverts specialized instructions to
+   * accelerators and sends results to writeback, also forwarding to
+   * dispatch/issue. */
+  std::vector<pipeline::OffloadingController> offloadingControllers_;
 
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
