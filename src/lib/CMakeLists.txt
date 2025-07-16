@@ -24,6 +24,7 @@ set(SIMENG_SOURCES
     kernel/LinuxProcess.cc
     memory/FixedLatencyMemoryInterface.cc
     memory/FlatMemoryInterface.cc
+    models/accelerator/SmeAccelerator.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -41,6 +42,7 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
+    Accelerator.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc

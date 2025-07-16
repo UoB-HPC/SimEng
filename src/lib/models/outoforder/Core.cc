@@ -84,7 +84,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       blockingGroups.push_back(grp.as<uint16_t>());
     }
 
-    auto& euInput = issuePorts_[i];
+    auto* euInput = &issuePorts_[i];
     const auto forwardOperands = [this](auto regs, auto values) {
       dispatchIssueUnit_.forwardOperands(regs, values);
     };
@@ -110,17 +110,21 @@ Core::Core(memory::MemoryInterface& instructionMemory,
 
       // Create the controller and set up connection to the associated EU
       auto controller = pipeline::OffloadingController(
-          issuePorts_[i], completionSlots_[outputIndex], forwardOperands,
-          raiseException, [](const auto& uop) {
+          *euInput, completionSlots_[outputIndex], forwardOperands,
+          raiseException,
+          [](const auto& uop) {
             // TODO: Implement proper filtering
-            return false;
-          });
-      // euInput = controller.getPassThroughPort();
+            return true;
+          },
+          // TODO: Refctor this to SST (and don't leak memory)
+          new pipeline::OffloadingController::connection_t(),
+          new pipeline::OffloadingController::connection_t());
+      euInput = &controller.getPassThroughPort();
       offloadingControllers_.push_back(controller);
     }
 
     executionUnits_.emplace_back(
-        euInput, completionSlots_[i], std::move(forwardOperands),
+        *euInput, completionSlots_[i], std::move(forwardOperands),
         [this](const auto& uop) { loadStoreQueue_.startLoad(uop); },
         [this](const auto& uop) { loadStoreQueue_.supplyStoreData(uop); },
         std::move(raiseException),

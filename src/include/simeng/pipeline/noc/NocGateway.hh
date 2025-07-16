@@ -11,47 +11,50 @@ namespace noc {
 
 /** A Network-on-Chip gateway for sending and receiving packets,
  * parametrized over both out-bound and in-bound packet data types. */
-template <typename Out, typename In>
+template <typename Out, typename OutP, typename In = Out, typename InP = OutP>
 class NocGateway {
-  using opt_insn_t = std::optional<std::shared_ptr<Instruction>>;
-
  public:
-  /** Tick the gateway. Propagates elements in the internal pipeline,
-   * inserting the provided uop into a queue (if applicable), and returning
-   * the latest processed instruction (if there is one). */
-  opt_insn_t tick(opt_insn_t uop) {
-    // Operations are performed in reverse to preserve latencies
+  /** The function type for sending packets over the NoC. It takes a reference
+   * to the packet and returns whether it has been successfully sent. */
+  using send_fn_t = std::function<bool(const NocPacket<OutP>&)>;
 
-    const auto insn = decode();
-    receive();
+  /** The function type for receiving packets from the NoC. Returns the latest
+   * packet received from the network, if there are any. */
+  using receive_fn_t = std::function<std::optional<NocPacket<InP>>()>;
+
+  NocGateway(send_fn_t send, receive_fn_t receive)
+      : send_(send), receive_(receive) {}
+
+  /** Tick the out-bound part of the gateway. Propagates elements in the
+   * internal pipeline, inserting the provided item into a queue
+   * (if applicable), and sending packets over the NoC. */
+  void tickOutbound(std::optional<Out> item) {
+    // Operations are performed in reverse to preserve latencies
     send();
     encode();
-    schedule(std::move(uop));
-
-    return insn;
+    schedule(std::move(item));
   }
 
-  /** Purge flushed instructions from the internal pipeline. */
-  void purgeFlushed() {
-    const auto& endec = endec_;
-    purgeQueue<std::shared_ptr<Instruction>>(
-        encodeQueue_, [](const auto& insn) { return insn->isFlushed(); });
-    purgeQueue<NocPacket<Out>>(sendQueue_, [endec](const auto& packet) {
-      return endec.isPacketFlushed(packet);
-    });
-    purgeQueue<NocPacket<In>>(decodeQueue_, [endec](const auto& packet) {
-      return endec.isPacketFlushed(packet);
-    });
+  /** Tick the in-bound part of the gateway. Propagates elements in the internal
+   * pipeline, receiving packets from the NoC, and returning the latest
+   * processed item (if there is one). */
+  std::optional<In> tickInbound() {
+    // Operations are performed in reverse to preserve latencies
+    auto item = decode();
+    receive();
+    return item;
   }
+
+  // TODO: Flushing?
 
  private:
-  /** Puts the provided uop at the back of the encoding queue. */
-  void schedule(opt_insn_t uop) {
-    if (!uop.has_value()) return;
-    encodeQueue_.push_back(std::move(uop.value()));
+  /** Puts the provided item at the back of the encoding queue. */
+  void schedule(std::optional<Out> item) {
+    if (!item.has_value()) return;
+    encodeQueue_.push_back(std::move(item.value()));
   }
 
-  /** Takes out an instruction from the front of the encoding queue, encodes it,
+  /** Takes out an item from the front of the encoding queue, encodes it,
    * and puts the resulting packet at the back of the sending queue. */
   void encode() {
     if (encodeQueue_.empty()) return;
@@ -64,56 +67,49 @@ class NocGateway {
   /** Takes out a packet from the front of the sending queue,
    * and sends it over the network. */
   void send() {
-    // TODO: Implement sending
+    if (sendQueue_.empty()) return;
+
+    if (send_(sendQueue_.front())) {
+      // Packet successfully sent, remove from the queue
+      sendQueue_.pop_front();
+    }
   }
 
   /** Receives an incoming packet (if there is one),
    * and puts it at the back of the decoding queue. */
   void receive() {
-    // TODO: Implement receiving
-
-    if (sendQueue_.empty()) return;
-    decodeQueue_.push_back(std::move(sendQueue_.front()));
-    sendQueue_.pop_front();
+    auto packet = receive_();
+    if (!packet.has_value()) return;
+    decodeQueue_.push_back(std::move(packet.value()));
   }
 
   /** Takes out a packet from the front of the decoding queue, decodes it,
-   * and returns the resulting instruction. */
-  opt_insn_t decode() {
+   * and returns the resulting item. */
+  std::optional<In> decode() {
     if (decodeQueue_.empty()) return {};
 
     auto packet = std::move(decodeQueue_.front());
     decodeQueue_.pop_front();
-    return endec_.decode(std::move(packet));
-  }
-
-  /** Removes all the flushed elements from the provided queue, based on the
-   * `isFlushed` check. */
-  template <typename T>
-  static void purgeQueue(std::deque<T>& queue,
-                         std::function<bool(const T&)> isFlushed) {
-    auto it = queue.begin();
-    while (it != queue.end()) {
-      const auto& item = *it;
-      if (isFlushed(item)) {
-        it = queue.erase(it);
-      } else {
-        ++it;
-      }
-    }
+    return endec_.template decode<In>(std::move(packet));
   }
 
   /** Packet Endec (encoder/decoder). */
-  NocEndec<Out, In> endec_;
+  NocEndec<OutP, InP> endec_;
 
-  /** A queue for instructions to be packetized. */
-  std::deque<std::shared_ptr<Instruction>> encodeQueue_;
+  /** A queue for items to be packetized. */
+  std::deque<Out> encodeQueue_;
 
   /** A queue for packets to be sent over the NoC. */
-  std::deque<NocPacket<Out>> sendQueue_;
+  std::deque<NocPacket<OutP>> sendQueue_;
 
   /** A queue for packets received from the NoC, waiting to be decoded. */
-  std::deque<NocPacket<In>> decodeQueue_;
+  std::deque<NocPacket<InP>> decodeQueue_;
+
+  /** A function for sending packets over the NoC. */
+  send_fn_t send_;
+
+  /** A function for receiving packets from the NoC. */
+  receive_fn_t receive_;
 };
 
 }  // namespace noc

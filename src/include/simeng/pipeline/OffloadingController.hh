@@ -2,7 +2,9 @@
 
 #include <vector>
 
+#include "simeng/Accelerator.hh"
 #include "simeng/Instruction.hh"
+#include "simeng/models/accelerator/SmeAccelerator.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/noc/NocGateway.hh"
 
@@ -35,18 +37,22 @@ class OffloadingController {
       std::function<bool(const std::shared_ptr<Instruction>&)>;
 
  public:
+  // TODO: Temporary, remove this
+  using connection_t = std::optional<noc::NocPacket<AcceleratorPacket>>;
+
   /** Constructs an offloading controller with references to an input and output
    * buffer, handlers for forwarding operands and exceptions, and a filter for
    * deciding whether an instruction should be diverted to an accelerator. */
   OffloadingController(port& input, port& output,
                        forward_operands forwardOperands,
                        raise_exception raiseException,
-                       instruction_filter filter);
+                       instruction_filter filter, connection_t* out_,
+                       connection_t* in_);
 
   /** Returns a port that should be connected to an ExecuteUnit; all
   instructions that are not supposed to be diverted to the accelerator will be
   forwarded to this port. */
-  port& getPassThroughPort() noexcept;
+  port& getPassThroughPort() const noexcept;
 
   /** Tick the controller. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -61,32 +67,19 @@ class OffloadingController {
   //       (separate from exceptions)? Should that even be possible?
 
  private:
-  /** A NoC packet data to be sent to the accelerator. */
-  struct AcceleratorPacket {
-    /** The instruction to execute. */
-    std::shared_ptr<Instruction> insn_;
-
-    /** Creates new packet data based on the provided instruction. */
-    explicit AcceleratorPacket(const std::shared_ptr<Instruction>& insn);
-
-    /** Updates the provided instruction's data based on the result data stored
-     * in the packet. */
-    void updateInstruction(std::shared_ptr<Instruction>& insn);
-  };
-
   /** Sends the resolved uop back to the regular pipeline's output buffer, also
    * forwarding the results to dispatch/issue.  */
   void write_received(std::shared_ptr<Instruction> uop) const;
 
   /** A Network-on-Chip gateway for communicating with the accelerator. */
-  noc::NocGateway<AcceleratorPacket, AcceleratorPacket> gateway_;
+  noc::NocGateway<std::shared_ptr<Instruction>, AcceleratorPacket> gateway_;
 
   /** A buffer of instructions to inspect. */
   port& input_;
 
   /** A buffer for forwarding instructions that should not be diverted to the
    * accelerator. */
-  port passThroughOutput_;
+  std::shared_ptr<port> passThroughOutput_;
 
   /** A buffer for writing instructions executed by the accelerator into. */
   port& offloadedOutput_;
@@ -102,7 +95,8 @@ class OffloadingController {
    * instruction should be sent to the accelerator. */
   instruction_filter filter_;
 
- // TODO: Add accelerator instance.
+  // TODO: Move accelerator to SST
+  models::accelerator::SmeAccelerator accelerator_;
 };
 
 }  // namespace pipeline
