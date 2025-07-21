@@ -111,14 +111,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
       // Create the controller and set up connection to the associated EU
       auto controller = pipeline::OffloadingController(
           *euInput, completionSlots_[outputIndex], forwardOperands,
-          raiseException,
-          [](const auto& uop) {
-            // TODO: Implement proper filtering
-            return true;
-          },
-          // TODO: Refctor this to SST (and don't leak memory)
-          new pipeline::OffloadingController::connection_t(),
-          new pipeline::OffloadingController::connection_t());
+          raiseException);
       euInput = &controller.getPassThroughPort();
       offloadingControllers_.push_back(controller);
     }

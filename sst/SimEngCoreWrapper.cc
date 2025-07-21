@@ -13,12 +13,13 @@
 using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
 
-SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
-    : SST::Component(id) {
+SimEngCoreWrapper::SimEngCoreWrapper(const ComponentId_t id,
+                                     const Params& params)
+    : Component(id) {
   output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + ":@p:@l ", 999, 0,
-               SST::Output::STDOUT);
+               Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
-                         new SST::Clock::Handler<SimEngCoreWrapper>(
+                         new Clock::Handler<SimEngCoreWrapper>(
                              this, &SimEngCoreWrapper::clockTick));
 
   // Extract variables from config.py
@@ -32,7 +33,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   heapStr_ = params.find<std::string>("heap", "");
   debug_ = params.find<bool>("debug", false);
 
-  if (executablePath_.length() == 0 && !assembleWithSource_) {
+  if (executablePath_.empty() && !assembleWithSource_) {
     output_.verbose(CALL_INFO, 10, 0,
                     "SimEng executable binary filepath not provided.");
     std::exit(EXIT_FAILURE);
@@ -46,7 +47,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   iterations_ = 0;
 
   // Instantiate the StandardMem Interface defined in config.py
-  sstMem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
+  sstMem_ = loadUserSubComponent<StandardMem>(
       "memory", ComponentInfo::SHARE_NONE, clock_,
       new StandardMem::Handler<SimEngCoreWrapper>(
           this, &SimEngCoreWrapper::handleMemoryEvent));
@@ -56,12 +57,28 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
   handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 
+  // TODO: Configure accelerators based on a config file
+  //       and only if that file is provided
+  // Accelerator setup
+  coreToAcceleratorLink_ = configureSelfLink("core_accelerator_link");
+  acceleratorToCoreLink_ = configureSelfLink("accelerator_core_link");
+  if (coreToAcceleratorLink_ == nullptr || acceleratorToCoreLink_ == nullptr) {
+    output_.verbose(CALL_INFO, 1, 0,
+                    "Could not configure links to/from the accelerator.");
+    std::exit(EXIT_FAILURE);
+  }
+  acceleratorClock_ =
+      registerClock(params.find<std::string>("acceleratorClock", "2GHz"),
+                    new Clock::Handler<SimEngCoreWrapper>(
+                        this, &SimEngCoreWrapper::acceleratorClockTick),
+                    false);
+
   // Protected methods from SST::Component used to start simulation
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
 }
 
-SimEngCoreWrapper::~SimEngCoreWrapper() {}
+SimEngCoreWrapper::~SimEngCoreWrapper() = default;
 
 void SimEngCoreWrapper::setup() {
   sstMem_->setup();
@@ -71,6 +88,7 @@ void SimEngCoreWrapper::setup() {
   startTime_ = std::chrono::high_resolution_clock::now();
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void SimEngCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
   memEvent->handle(handlers_);
 }
@@ -79,14 +97,14 @@ void SimEngCoreWrapper::finish() {
   output_.verbose(CALL_INFO, 1, 0,
                   "Simulation complete. Finalising stats....\n");
 
-  auto endTime = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      endTime - startTime_)
-                      .count();
-  double khz =
-      (iterations_ / (static_cast<double>(duration) / 1000.0)) / 1000.0;
-  uint64_t retired = core_->getInstructionsRetiredCount();
-  double mips = (retired / (static_cast<double>(duration))) / 1000.0;
+  const auto endTime = std::chrono::high_resolution_clock::now();
+  const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            endTime - startTime_)
+                            .count();
+  const double khz =
+      iterations_ / (static_cast<double>(duration) / 1000.0) / 1000.0;
+  const uint64_t retired = core_->getInstructionsRetiredCount();
+  const double mips = retired / static_cast<double>(duration) / 1000.0;
 
   // Print stats
   std::cout << "\n";
@@ -100,46 +118,50 @@ void SimEngCoreWrapper::finish() {
             << mips << " MIPS)" << std::endl;
 }
 
-void SimEngCoreWrapper::init(unsigned int phase) {
+void SimEngCoreWrapper::init(const unsigned int phase) {
   sstMem_->init(phase);
   // Init can have multiple phases, only fabricate the core once at phase 0
   if (phase == 0) {
+    configureOffloadingLogic();
     fabricateSimEngCore();
+    fabricateSimEngAccelerator();
   }
 }
 
-bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
+bool SimEngCoreWrapper::clockTick(const Cycle_t currentCycle) {
   // Tick the core and memory interfaces until the program has halted
-  if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
-    // Tick the data memory.
-    dataMemory_->tick();
-
-    // Tick the core.
-    core_->tick();
-
-    // Tick the instruction memory.
-    instructionMemory_->tick();
-
-    iterations_++;
-
-    return false;
-  } else {
+  if (core_->hasHalted() && !dataMemory_->hasPendingRequests()) {
     // Protected method from SST::Component used to end SST simulation
     primaryComponentOKToEndSim();
     return true;
   }
+
+  // Tick the data memory.
+  dataMemory_->tick();
+
+  // Tick the core.
+  core_->tick();
+
+  // Tick the instruction memory.
+  instructionMemory_->tick();
+
+  iterations_++;
+
+  return false;
 }
-std::string SimEngCoreWrapper::trimSpaces(std::string strArgs) {
+
+std::string SimEngCoreWrapper::trimSpaces(const std::string& argsStr) {
   int trailingEnd = -1;
   int leadingEnd = -1;
-  for (int x = 0; x < strArgs.size(); x++) {
-    int end = strArgs.size() - 1 - x;
+  const int size = static_cast<int>(argsStr.size());
+  for (int x = 0; x < size; x++) {
+    const int end = size - 1 - x;
     // Find the index, from the start of the string, which is not a space.
-    if (strArgs.at(x) != ' ' && leadingEnd == -1) {
+    if (argsStr.at(x) != ' ' && leadingEnd == -1) {
       leadingEnd = x;
     }
     // Find the index, from the end of the string, which is not a space.
-    if (strArgs.at(end) != ' ' && trailingEnd == -1) {
+    if (argsStr.at(end) != ' ' && trailingEnd == -1) {
       trailingEnd = end;
     }
     if (trailingEnd != -1 && leadingEnd != -1) {
@@ -149,18 +171,19 @@ std::string SimEngCoreWrapper::trimSpaces(std::string strArgs) {
   // The string has leading or trailing spaces, return the substring which
   // doesn't have those spaces.
   if (trailingEnd != -1 && leadingEnd != -1) {
-    return strArgs.substr(leadingEnd, trailingEnd - leadingEnd + 1);
+    return argsStr.substr(leadingEnd, trailingEnd - leadingEnd + 1);
   }
   // The string does not have leading or trailing spaces, return the original
   // string.
-  return strArgs;
-};
+  return argsStr;
+}
 
-std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
-  std::string trimmedStrArgs = trimSpaces(strArgs);
-  std::string str = "";
+std::vector<std::string> SimEngCoreWrapper::splitArgs(
+    const std::string& argString) const {
+  const std::string trimmedStrArgs = trimSpaces(argString);
+  std::string str;
   std::vector<std::string> args;
-  std::size_t argSize = trimmedStrArgs.size();
+  const std::size_t argSize = trimmedStrArgs.size();
   bool escapeSingle = false;
   bool escapeDouble = false;
   bool captureEscape = false;
@@ -171,8 +194,8 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
   for (int x = 0; x < argSize; x++) {
     index = x;
-    bool escaped = escapeDouble || escapeSingle;
-    char currChar = trimmedStrArgs.at(x);
+    const bool escaped = escapeDouble || escapeSingle;
+    const char currChar = trimmedStrArgs.at(x);
     if (captureEscape) {
       captureEscape = false;
       str += currChar;
@@ -190,7 +213,7 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
       // e.g "arg1=1 arg2='"Hi"' arg3=2" will be parsed as
       // std::vector<std::string>{arg1=1, arg2="Hi", arg3=2}
       if (currChar == '\'' && escapeSingle) {
-        escapeSingle = 0;
+        escapeSingle = false;
       }
       // If a portion of the argument string starts with a double quote (") and
       // we encounter another double quote, capture the substring enclosed by a
@@ -199,13 +222,13 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
       // e.g "arg1=1 arg2="James' Car" arg3=2" will be parsed as
       // std::vector<std::string>{arg1=1, arg2=James' Car, arg3=2}
       else if (currChar == '\"' && escapeDouble) {
-        escapeDouble = 0;
+        escapeDouble = false;
       } else {
         str += currChar;
       }
     } else {
       if (currChar == ' ') {
-        if (str != "") {
+        if (!str.empty()) {
           args.push_back(str);
           str = "";
         }
@@ -214,12 +237,12 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
       // any char inside a set of ("") without producing any delimiting or
       // escape behavior.
       else if (currChar == '\"') {
-        escapeDouble = 1;
+        escapeDouble = true;
         // Check for escape character ('), this signals the algorithm to capture
         // any char inside a set of ('') without producing any delimiting or
         // escape behavior.
       } else if (currChar == '\'') {
-        escapeSingle = 1;
+        escapeSingle = true;
       } else {
         str += currChar;
       }
@@ -232,7 +255,7 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
            characters/strings are escaped properly within a set single or 
            double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
-    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index "
+    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occurred at index "
               << index << " of the argument string - substring: "
               << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -243,50 +266,50 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
 void SimEngCoreWrapper::initialiseHeapData() {
   std::vector<uint8_t> initialHeapData;
-  std::vector<uint64_t> heapVals = splitHeapStr();
-  uint64_t heapSize = heapVals.size() * 8;
+  const std::vector<uint64_t> heapVals = splitHeapStr();
+  const uint64_t heapSize = heapVals.size() * 8;
   initialHeapData.resize(heapSize);
-  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
+  const auto heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
   for (size_t x = 0; x < heapVals.size(); x++) {
     heap[x] = heapVals[x];
   }
-  uint64_t heapStart = coreInstance_->getHeapStart();
+  const uint64_t heapStart = coreInstance_->getHeapStart();
   std::copy(initialHeapData.begin(), initialHeapData.end(),
             coreInstance_->getProcessImage().get() + heapStart);
 }
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-  uint8_t* assembled_source = NULL;
+  uint8_t* assembled_source = nullptr;
   size_t assembled_source_size = 0;
   if (assembleWithSource_) {
     output_.verbose(CALL_INFO, 1, 0,
                     "Assembling source instructions using LLVM\n");
-    Assembler assemble = Assembler(source_);
+    auto assemble = Assembler(source_);
     assembled_source = assemble.getAssembledSource();
     assembled_source_size = assemble.getAssembledSourceSize();
   }
-  if (simengConfigPath_ != "") {
+  if (!simengConfigPath_.empty()) {
     // Set the global config file to one at the file path defined
-    simeng::config::SimInfo::setConfig(simengConfigPath_);
+    config::SimInfo::setConfig(simengConfigPath_);
 
-    coreInstance_ = assembleWithSource_
-                        ? std::make_unique<simeng::CoreInstance>(
-                              assembled_source, assembled_source_size)
-                        : std::make_unique<simeng::CoreInstance>(
-                              executablePath_, executableArgs_);
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<CoreInstance>(assembled_source,
+                                             assembled_source_size)
+            : std::make_unique<CoreInstance>(executablePath_, executableArgs_);
   } else {
     output_.verbose(CALL_INFO, 1, 0,
                     "No SimEng configuration provided. Using the default "
                     "a64fx-sst.yaml configuration file.\n");
     // Set the global config file to the default a64fx-sst.yaml file
-    simeng::config::SimInfo::setConfig(a64fxConfigPath_);
+    config::SimInfo::setConfig(a64fxConfigPath_);
 
-    coreInstance_ = assembleWithSource_
-                        ? std::make_unique<simeng::CoreInstance>(
-                              assembled_source, assembled_source_size)
-                        : std::make_unique<simeng::CoreInstance>(
-                              executablePath_, executableArgs_);
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<CoreInstance>(assembled_source,
+                                             assembled_source_size)
+            : std::make_unique<CoreInstance>(executablePath_, executableArgs_);
   }
   if (config::SimInfo::getSimMode() != config::SimulationMode::Outoforder) {
     output_.verbose(CALL_INFO, 1, 0,
@@ -339,43 +362,89 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   std::cout << std::endl;
 
   // Output general simulation details
-  std::cout << "[SimEng] Running in "
-            << simeng::config::SimInfo::getSimModeStr() << " mode" << std::endl;
+  std::cout << "[SimEng] Running in " << config::SimInfo::getSimModeStr()
+            << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath_;
   for (const auto& arg : executableArgs_) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: "
-            << simeng::config::SimInfo::getConfigPath() << std::endl;
-  std::cout << "[SimEng] ISA: " << simeng::config::SimInfo::getISAString()
+  std::cout << "[SimEng] Config file: " << config::SimInfo::getConfigPath()
             << std::endl;
+  std::cout << "[SimEng] ISA: " << config::SimInfo::getISAString() << std::endl;
   std::cout << "[SimEng] Auto-generated Special File directory: ";
-  if (simeng::config::SimInfo::getGenSpecFiles())
+  if (config::SimInfo::getGenSpecFiles())
     std::cout << "True";
   else
     std::cout << "False";
   std::cout << std::endl;
   std::cout << "[SimEng] Special File directory used: "
-            << simeng::config::SimInfo::getConfig()["CPU-Info"]
-                                                   ["Special-File-Dir-Path"]
-                                                       .as<std::string>()
+            << config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
+                   .as<std::string>()
             << std::endl;
-  std::cout << "[SimEng] Number of Cores: "
-            << simeng::config::SimInfo::getConfig()["CPU-Info"]["Core-Count"]
-                   .as<uint16_t>()
-            << std::endl;
+  std::cout
+      << "[SimEng] Number of Cores: "
+      << config::SimInfo::getConfig()["CPU-Info"]["Core-Count"].as<uint16_t>()
+      << std::endl;
 }
 
-std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {
+std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() const {
   std::vector<uint64_t> out;
-  std::string acc = "";
-  for (size_t a = 0; a < heapStr_.size(); a++) {
-    if (heapStr_[a] == ',') {
-      out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+  std::string acc;
+  for (const char a : heapStr_) {
+    if (a == ',') {
+      out.push_back(std::stoull(acc));
       acc = "";
     } else {
-      acc += heapStr_[a];
+      acc += a;
     }
   }
-  out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+  out.push_back(std::stoull(acc));
   return out;
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+bool SimEngCoreWrapper::acceleratorClockTick(Cycle_t currentCycle) {
+  accelerator_->tick();
+  return false;
+}
+
+void SimEngCoreWrapper::configureOffloadingLogic() {
+  auto logic = std::make_unique<config::OffloadingLogic>(
+      [](const auto&) { return true; },
+      [this](const auto& packet) {
+        coreToAcceleratorLink_->send(new OffloadingEvent(packet));
+        return true;
+      },
+      [this] {
+        const auto* event =
+            dynamic_cast<OffloadingEvent*>(acceleratorToCoreLink_->recv());
+
+        if (event == nullptr) {
+          return std::optional<OffloadingEvent::packet_t>();
+        }
+
+        auto packet = event->packet_;
+        delete event;
+        return std::optional(std::move(packet));
+      });
+  config::SimInfo::setOffloadingLogic(std::move(logic));
+}
+
+void SimEngCoreWrapper::fabricateSimEngAccelerator() {
+  accelerator_ = std::make_unique<models::accelerator::SmeAccelerator>(
+      [this](const auto& packet) {
+        acceleratorToCoreLink_->send(new OffloadingEvent(packet));
+        return true;
+      },
+      [this] {
+        const auto* event =
+            dynamic_cast<OffloadingEvent*>(coreToAcceleratorLink_->recv());
+
+        if (event == nullptr) {
+          return std::optional<OffloadingEvent::packet_t>();
+        }
+
+        auto packet = event->packet_;
+        delete event;
+        return std::optional(std::move(packet));
+      });
 }

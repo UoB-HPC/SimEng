@@ -1,7 +1,9 @@
 // clang-format off
 // DO NOT MOVE FROM TOP OF FILE - https://github.com/sstsimulator/sst-core/issues/865
+// ReSharper disable once CppMissingIncludeGuard
 #include <sst/core/sst_config.h>
 // clang-format on
+#pragma once
 #include <sst/core/component.h>
 #include <sst/core/eli/elementinfo.h>
 #include <sst/core/interfaces/stdMem.h>
@@ -34,47 +36,47 @@ namespace SSTSimEng {
 /**
  * A Wrapper class registered as a custom SST::Component to participate in an
  * SST simulation. The SimEng core as well as componets/interfaces from SST
- * required to ensure a succesful integration are instantiated and configured in
- * this class as well. This class acts as the point of main contact for clock
- * ticks recieved from SST and hence is also responsible for ticking the SimEng
- * core and other classes assosciated to it.
+ * required to ensure a successful integration are instantiated and configured
+ * in this class as well. This class acts as the point of main contact for clock
+ * ticks received from SST and hence is also responsible for ticking the SimEng
+ * core and other classes associated to it.
  */
-class SimEngCoreWrapper : public SST::Component {
+class SimEngCoreWrapper : public Component {
  public:
-  SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params);
-  ~SimEngCoreWrapper();
+  SimEngCoreWrapper(ComponentId_t id, const Params& params);
+  ~SimEngCoreWrapper() override;
 
-  /** SST lifecycle methods (in-order of invocation) overriden from
+  /** SST lifecycle methods (in-order of invocation) overridden from
    * SST::Component. */
 
   /**
    * This is the init lifecycle method present in all SST::Components.
-   * Here it is overriden to include init calls to all other SST::Components
-   * which are contained inside SimEngCoreWrapper. It is neccessary to call all
+   * Here it is overridden to include init calls to all other SST::Components
+   * which are contained inside SimEngCoreWrapper. It is necessary to call all
    * lifecycle methods for SST::Component(s).
    */
-  void init(unsigned int phase);
+  void init(unsigned int phase) override;
 
   /**
    * This is the setup lifecycle method present in all SST::Components.
-   * Here it is overriden to include setup calls to all other SST::Components
-   * which are contained inside SimEngCoreWrapper. It is neccessary to call all
+   * Here it is overridden to include setup calls to all other SST::Components
+   * which are contained inside SimEngCoreWrapper. It is necessary to call all
    * lifecycle methods for SST::Component(s).
    */
-  void setup();
+  void setup() override;
 
   /**
    * This is the finish lifecycle method present in all SST::Components.
-   * Here it is overriden to finish statistics about the SimEng simulation.
+   * Here it is overridden to finish statistics about the SimEng simulation.
    */
-  void finish();
+  void finish() override;
 
   /**
-   * The clockTick is a method present in all SST::Components. This fuction
+   * The clockTick is a method present in all SST::Components. This function
    * is called everytime the SST clock ticks. The current clock cycle is passed
    * as an argument by SST. The SimEng core ticks in this method.
    */
-  bool clockTick(SST::Cycle_t currentCycle);
+  bool clockTick(Cycle_t currentCycle);
 
   /**
    * This handle event method is registered to StandardMem interface. This
@@ -142,14 +144,15 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Method to split the passed executable argument's string into a vector of
    * individual arguments. */
-  std::vector<std::string> splitArgs(std::string argString);
+  [[nodiscard]] std::vector<std::string> splitArgs(
+      const std::string& argString) const;
 
   /** This method trims any leading or trailing spaces in a string. */
-  std::string trimSpaces(std::string argsStr);
+  static std::string trimSpaces(const std::string& argsStr);
 
   /** This method splits the comma separated heap string into a vector of
    * uint32_t values. */
-  std::vector<uint64_t> splitHeapStr();
+  [[nodiscard]] std::vector<uint64_t> splitHeapStr() const;
 
   /** Initialises heap data specified by the testing framework. */
   void initialiseHeapData();
@@ -160,10 +163,10 @@ class SimEngCoreWrapper : public SST::Component {
    * This class has in-built method for different levels of severity and can
    * also be configured to output information like line-number and filename.
    */
-  SST::Output output_;
+  Output output_;
 
   /**
-   * SST clock for the component register with the custom component
+   * SST clock for the component registered with the custom component
    * during instantiation using the registerClock method provided
    * by SST.
    */
@@ -172,14 +175,14 @@ class SimEngCoreWrapper : public SST::Component {
   /**
    * SST::Interfaces::StandardMem interface responsible for converting
    * SST::StandardMem::Request(s) into SST memory events to be passed
-   * down the memory heirarchy.
+   * down the memory hierarchy.
    */
   StandardMem* sstMem_;
 
   // SimEng properties
   /** Reference to the CoreInstance class responsible for creating the core to
    * be simulated. */
-  std::unique_ptr<simeng::CoreInstance> coreInstance_;
+  std::unique_ptr<CoreInstance> coreInstance_;
 
   /** Reference to SimEng core. */
   std::shared_ptr<simeng::Core> core_;
@@ -196,14 +199,14 @@ class SimEngCoreWrapper : public SST::Component {
   /** The cache line width for SST. */
   uint64_t cacheLineWidth_;
 
-  /** Maximum address availbale to SimEng for memory purposes. */
+  /** Maximum address available to SimEng for memory purposes. */
   uint64_t maxAddrMemory_;
 
   /** Reference to the process memory used in SimEng. */
   std::shared_ptr<char> processMemory_;
 
   /** Reference to SimEng instruction memory. */
-  std::shared_ptr<simeng::memory::MemoryInterface> instructionMemory_;
+  std::shared_ptr<memory::MemoryInterface> instructionMemory_;
 
   /** Reference to SimEngMemInterface used for interfacing with SST. */
   std::shared_ptr<SimEngMemInterface> dataMemory_;
@@ -221,7 +224,7 @@ class SimEngCoreWrapper : public SST::Component {
   /** String which holds source instructions to be assembled. (if any)*/
   std::string source_;
 
-  /** Boolean which indicates whether or not to assemble by source. */
+  /** Boolean which indicates whether to assemble by source. */
   bool assembleWithSource_ = false;
 
   /** Heap contents as string. */
@@ -234,6 +237,56 @@ class SimEngCoreWrapper : public SST::Component {
   const std::string a64fxConfigPath_ =
       std::string(SIMENG_BUILD_DIR) +
       "/simeng-configs/sst-cores/a64fx-sst.yaml";
+
+  // TODO: Move to a separate wrapper once `OffloadingEvent` is serializable
+  // External Accelerator stuff
+ public:
+  /** An `SST::Event` for sending `AcceleratorPacket`s. */
+  struct OffloadingEvent final : Event {
+    using packet_t = pipeline::noc::NocPacket<AcceleratorPacket>;
+    packet_t packet_;
+
+    explicit OffloadingEvent(packet_t packet) : packet_(std::move(packet)) {}
+
+    // TODO: Figure out how to serialize AcceleratorPacket
+    //       (i.e. a polymorphic Instruction)
+    NotSerializable(OffloadingEvent);
+  };
+
+  /**
+   * This function is called everytime the SST clock assigned to the accelerator
+   * ticks. The current clock cycle is passed as an argument by SST. The SimEng
+   * accelerator ticks in this method.
+   */
+  bool acceleratorClockTick(Cycle_t currentCycle);
+
+ private:
+  /**
+   * Configures when and how instructions should be offloaded to an
+   * accelerator.
+   *
+   * <b>THIS METHOD HAS TO RUN BEFORE `fabricateSimEngCore()`!</b>
+   */
+  void configureOffloadingLogic();
+
+  /** Assembles a SimEng accelerator. */
+  void fabricateSimEngAccelerator();
+
+  /**
+   * SST clock for the accelerator register with the custom component
+   * during instantiation using the registerClock method provided
+   * by SST.
+   */
+  TimeConverter* acceleratorClock_;
+
+  /** An SST::Link connecting the core to the accelerator. */
+  Link* coreToAcceleratorLink_;
+
+  /** An SST::Link connecting the accelerator to the core. */
+  Link* acceleratorToCoreLink_;
+
+  /** An instance of an accelerator. */
+  std::unique_ptr<Accelerator> accelerator_;
 };
 
 }  // namespace SSTSimEng

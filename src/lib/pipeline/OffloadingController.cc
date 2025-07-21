@@ -7,41 +7,15 @@ namespace pipeline {
 
 OffloadingController::OffloadingController(port& input, port& output,
                                            forward_operands forwardOperands,
-                                           raise_exception raiseException,
-                                           instruction_filter filter,
-                                           connection_t* out_,
-                                           connection_t* in_)
-    : gateway_(
-          // TODO: Refactor when moving to SST
-          [out_](const auto& packet) {
-            if (out_->has_value()) return false;
-            *out_ = packet;
-            return true;
-          },
-          [in_] {
-            auto packet = *in_;
-            in_->reset();
-            return packet;
-          }),
+                                           raise_exception raiseException)
+    : gateway_(config::SimInfo::getOffloadingLogic().send_,
+               config::SimInfo::getOffloadingLogic().receive_),
       input_(input),
       passThroughOutput_(std::make_shared<port>(1, nullptr)),
       offloadedOutput_(output),
       forwardOperands_(std::move(forwardOperands)),
       raiseException_(std::move(raiseException)),
-      filter_(std::move(filter)),
-      accelerator_(
-          // TODO: Refactor when moving to SST
-          [in_](const auto& packet) {
-            if (in_->has_value()) return false;
-            *in_ = packet;
-            return true;
-          },
-          [out_] {
-            auto packet = *out_;
-            out_->reset();
-            return packet;
-          },
-          true, {}) {}
+      filter_(config::SimInfo::getOffloadingLogic().filter_) {}
 
 OffloadingController::port& OffloadingController::getPassThroughPort()
     const noexcept {
@@ -63,7 +37,6 @@ void OffloadingController::tick() {
 
   // TODO: What if the gateway is stalling?
   gateway_.tickOutbound(std::move(outbound));
-  accelerator_.tick();
   auto received = gateway_.tickInbound();
   if (received.has_value()) {
     write_received(std::move(received.value()));

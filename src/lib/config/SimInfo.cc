@@ -7,10 +7,12 @@ ryml::ConstNodeRef SimInfo::getConfig() {
   return getInstance()->validatedConfig_.crootref();
 }
 
-void SimInfo::setConfig(std::string path) { getInstance()->makeConfig(path); }
+void SimInfo::setConfig(std::string path) {
+  getInstance()->makeConfig(std::move(path));
+}
 
 void SimInfo::addToConfig(std::string configAdditions) {
-  getInstance()->modelConfig_.addConfigOptions(configAdditions);
+  getInstance()->modelConfig_.addConfigOptions(std::move(configAdditions));
   // Replace the validated config with new instance with the supplied
   // additional values
   getInstance()->validatedConfig_ = getInstance()->modelConfig_.getConfig();
@@ -18,7 +20,7 @@ void SimInfo::addToConfig(std::string configAdditions) {
   getInstance()->extractValues();
 }
 
-void SimInfo::generateDefault(ISA isa, bool force) {
+void SimInfo::generateDefault(const ISA isa, const bool force) {
   if (isa == ISA::AArch64)
     getInstance()->modelConfig_.reGenerateDefault(ISA::AArch64, force);
   else if (isa == ISA::RV64)
@@ -43,11 +45,11 @@ ISA SimInfo::getISA() { return getInstance()->isa_; }
 
 std::string SimInfo::getISAString() { return getInstance()->isaString_; }
 
-const std::vector<simeng::RegisterFileStructure>& SimInfo::getArchRegStruct() {
+const std::vector<RegisterFileStructure>& SimInfo::getArchRegStruct() {
   return getInstance()->archInfo_->getArchRegStruct();
 }
 
-const std::vector<simeng::RegisterFileStructure>& SimInfo::getPhysRegStruct() {
+const std::vector<RegisterFileStructure>& SimInfo::getPhysRegStruct() {
   return getInstance()->archInfo_->getPhysRegStruct();
 }
 
@@ -83,7 +85,7 @@ void SimInfo::makeConfig(std::string path) {
   modelConfig_ = ModelConfig(path);
 
   // Update config path to be the passed path
-  configFilePath_ = path;
+  configFilePath_ = std::move(path);
 
   // Update the validated config file
   validatedConfig_ = modelConfig_.getConfig();
@@ -104,7 +106,7 @@ void SimInfo::extractValues() {
   }
 
   // Get Simulation mode
-  std::string mode =
+  const auto mode =
       validatedConfig_["Core"]["Simulation-Mode"].as<std::string>();
   if (mode == "emulation") {
     mode_ = SimulationMode::Emulation;
@@ -120,6 +122,14 @@ void SimInfo::extractValues() {
   // Get if the special files directory should be created
   genSpecialFiles_ =
       validatedConfig_["CPU-Info"]["Generate-Special-Dir"].as<bool>();
+}
+
+const OffloadingLogic& SimInfo::getOffloadingLogic() {
+  return *getInstance()->offloadingLogic_;
+}
+
+void SimInfo::setOffloadingLogic(std::unique_ptr<OffloadingLogic> logic) {
+  getInstance()->offloadingLogic_ = std::move(logic);
 }
 
 }  // namespace config

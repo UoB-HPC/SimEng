@@ -8,6 +8,7 @@
 #include "simeng/arch/aarch64/ArchInfo.hh"
 #include "simeng/arch/riscv/ArchInfo.hh"
 #include "simeng/config/ModelConfig.hh"
+#include "simeng/config/OffloadingLogic.hh"
 #include "simeng/config/yaml/ryml.hh"
 
 #define DEFAULT_STR "Default"
@@ -58,11 +59,11 @@ class SimInfo {
 
   /** A getter function to retrieve a vector of {size, number} pairs describing
    * the available architectural registers. */
-  static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct();
+  static const std::vector<RegisterFileStructure>& getArchRegStruct();
 
   /** A getter function to retrieve a vector of {size, number} pairs describing
    * the available physical registers. */
-  static const std::vector<simeng::RegisterFileStructure>& getPhysRegStruct();
+  static const std::vector<RegisterFileStructure>& getPhysRegStruct();
 
   /** A getter function to retrieve a vector of uint16_t values describing
    * the quantities of physical registers available. */
@@ -72,7 +73,7 @@ class SimInfo {
    * all the system registers that should be utilised in simulation. */
   static const std::vector<uint64_t>& getSysRegVec();
 
-  /** A getter function to retrieve whether or not the special files
+  /** A getter function to retrieve whether the special files
    * directories should be generated. */
   static bool getGenSpecFiles();
 
@@ -80,6 +81,12 @@ class SimInfo {
    * if the configuration used changes during simulation (e.g. during the
    * execution of a test suite). */
   static void reBuild();
+
+  /** A getter function to retrieve the offloading configuration. */
+  static const OffloadingLogic& getOffloadingLogic();
+
+  /** A setter function to set the offloading configuration. */
+  static void setOffloadingLogic(std::unique_ptr<OffloadingLogic> logic);
 
  private:
   SimInfo();
@@ -123,6 +130,9 @@ class SimInfo {
 
   /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
+
+  /** Configuration related to offloading. */
+  std::unique_ptr<OffloadingLogic> offloadingLogic_;
 };
 
 }  // namespace config

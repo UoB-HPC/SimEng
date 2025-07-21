@@ -2,11 +2,11 @@
 
 #include <vector>
 
-#include "simeng/Accelerator.hh"
 #include "simeng/Instruction.hh"
+#include "simeng/config/OffloadingLogic.hh"
+#include "simeng/config/SimInfo.hh"
 #include "simeng/models/accelerator/SmeAccelerator.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
-#include "simeng/pipeline/noc/NocGateway.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -31,23 +31,15 @@ class OffloadingController {
    */
   using offloaded_groups = std::vector<uint16_t>;
 
-  /** An alias for a function that determines whether an instruction should be
-   * diverted to an accelerator or not. */
-  using instruction_filter =
-      std::function<bool(const std::shared_ptr<Instruction>&)>;
+  using logic_t = config::OffloadingLogic;
 
  public:
-  // TODO: Temporary, remove this
-  using connection_t = std::optional<noc::NocPacket<AcceleratorPacket>>;
-
   /** Constructs an offloading controller with references to an input and output
    * buffer, handlers for forwarding operands and exceptions, and a filter for
    * deciding whether an instruction should be diverted to an accelerator. */
   OffloadingController(port& input, port& output,
                        forward_operands forwardOperands,
-                       raise_exception raiseException,
-                       instruction_filter filter, connection_t* out_,
-                       connection_t* in_);
+                       raise_exception raiseException);
 
   /** Returns a port that should be connected to an ExecuteUnit; all
   instructions that are not supposed to be diverted to the accelerator will be
@@ -72,7 +64,7 @@ class OffloadingController {
   void write_received(std::shared_ptr<Instruction> uop) const;
 
   /** A Network-on-Chip gateway for communicating with the accelerator. */
-  noc::NocGateway<std::shared_ptr<Instruction>, AcceleratorPacket> gateway_;
+  logic_t::gateway_t gateway_;
 
   /** A buffer of instructions to inspect. */
   port& input_;
@@ -93,10 +85,7 @@ class OffloadingController {
   /** A function handle that determines whether an instruction should be
    * diverted to an accelerator. A return value of true indicates that the
    * instruction should be sent to the accelerator. */
-  instruction_filter filter_;
-
-  // TODO: Move accelerator to SST
-  models::accelerator::SmeAccelerator accelerator_;
+  logic_t::instruction_filter filter_;
 };
 
 }  // namespace pipeline
