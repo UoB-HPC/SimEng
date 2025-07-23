@@ -9,11 +9,12 @@ std::shared_ptr<Instruction> AcceleratorPacket::into() {
   return std::move(insn_);
 }
 
-Accelerator::Accelerator(gateway_t::send_fn_t send_fn,
+Accelerator::Accelerator(const id_t id, gateway_t::send_fn_t send_fn,
                          gateway_t::receive_fn_t receive_fn)
     : input_(std::make_shared<pipeline_buffer_t>(1, nullptr)),
       output_(std::make_shared<pipeline_buffer_t>(1, nullptr)),
-      gateway_(std::move(send_fn), std::move(receive_fn)) {}
+      gateway_(std::move(send_fn), std::move(receive_fn)),
+      id_(id) {}
 
 void Accelerator::tick() {
   if (input_->getTailSlots()[0] == nullptr) {
@@ -38,5 +39,7 @@ void Accelerator::tick() {
   input_->tick();
   output_->tick();
 }
+
+Accelerator::id_t Accelerator::getId() const noexcept { return id_; }
 
 }  // namespace simeng

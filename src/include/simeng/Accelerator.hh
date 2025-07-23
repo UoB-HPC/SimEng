@@ -25,16 +25,27 @@ class Accelerator {
                                               AcceleratorPacket>;
 
  public:
+  /** A unique identifier of an accelerator instance.
+   * The value of 0 indicates the core (i.e. no accelerator). */
+  using id_t = uint16_t;
+
+  /** An ID signifying no accelerator
+   * (see `simeng::config::OffloadingLogic::instruction_filter`). */
+  constexpr static id_t NO_ACCELERATOR = 0;
+
   using send_fn_t = gateway_t::send_fn_t;
   using receive_fn_t = gateway_t::receive_fn_t;
 
-  Accelerator(send_fn_t send_fn, receive_fn_t receive_fn);
+  Accelerator(id_t id, send_fn_t send_fn, receive_fn_t receive_fn);
 
   virtual ~Accelerator() = default;
 
   /** Tick the accelerator. Propagates instructions through the internal
    * pipeline, including communication over the NoC. */
   void tick();
+
+  /** Returns the unique identifier of this accelerator instance. */
+  id_t getId() const noexcept;
 
  protected:
   //  TODO: Add a note mentioning the need for stalling if `output_` has a
@@ -55,6 +66,9 @@ class Accelerator {
  private:
   /** A Network-on-Chip gateway for communicating with the Core. */
   gateway_t gateway_;
+
+  /** The unique identifier of this accelerator instance. */
+  id_t id_;
 };
 
 }  // namespace simeng

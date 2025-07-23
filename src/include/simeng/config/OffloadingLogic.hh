@@ -8,11 +8,12 @@ namespace simeng {
 namespace config {
 
 struct OffloadingLogic {
-  /** An alias for a function that determines whether an instruction should be
-   * diverted to an accelerator. A return value of true indicates that
-   * the instruction should be sent to the accelerator. */
+  /** An alias for a function that determines which accelerator (if any)
+   * should an instruction be diverted to. It returns the ID of the accelerator,
+   * with a value of 0 indicating that the instruction should not be offloaded.
+   */
   using instruction_filter =
-      std::function<bool(const std::shared_ptr<Instruction>&)>;
+      std::function<Accelerator::id_t(const std::shared_ptr<Instruction>&)>;
 
   /** The type of the NoC gateway used offloading instructions. */
   using gateway_t = pipeline::noc::NocGateway<std::shared_ptr<Instruction>,
@@ -33,7 +34,7 @@ struct OffloadingLogic {
   /** Creates a default offloading logic object -- it never offloads, and both
    * sending and receiving always fail. */
   OffloadingLogic()
-      : filter_([](const auto&) { return false; }),
+      : filter_([](const auto&) { return Accelerator::NO_ACCELERATOR; }),
         send_([](const auto&) { return false; }),
         receive_([] {
           return std::optional<pipeline::noc::NocPacket<AcceleratorPacket>>();

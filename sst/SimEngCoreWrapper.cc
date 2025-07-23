@@ -407,22 +407,33 @@ bool SimEngCoreWrapper::acceleratorClockTick(Cycle_t currentCycle) {
   return false;
 }
 
+// TODO: Add dynamic mapping for multiple accelerators
+//       (probably from a config file)
+constexpr static Accelerator::id_t SME_ACCELERATOR_ID = 1;
+
 void SimEngCoreWrapper::configureOffloadingLogic() {
   auto logic = std::make_unique<config::OffloadingLogic>(
-      [](const auto&) { return true; },
+      [](const auto& insn) {
+        // TODO: Proper mapping if multiple accelerators
+        //       (possibly from a config file)
+        if (models::accelerator::SmeAccelerator::shouldAccelerate(insn))
+          return SME_ACCELERATOR_ID;
+
+        return Accelerator::NO_ACCELERATOR;
+      },
       [this](const auto& packet) {
         coreToAcceleratorLink_->send(new OffloadingEvent(packet));
         return true;
       },
       [this] {
-        const auto* event =
+        auto* event =
             dynamic_cast<OffloadingEvent*>(acceleratorToCoreLink_->recv());
 
         if (event == nullptr) {
           return std::optional<OffloadingEvent::packet_t>();
         }
 
-        auto packet = event->packet_;
+        auto packet = std::move(event->packet_);
         delete event;
         return std::optional(std::move(packet));
       });
@@ -431,19 +442,22 @@ void SimEngCoreWrapper::configureOffloadingLogic() {
 
 void SimEngCoreWrapper::fabricateSimEngAccelerator() {
   accelerator_ = std::make_unique<models::accelerator::SmeAccelerator>(
+      // TODO: Assign unique IDs if multiple accelerators
+      //       (probably get from config file)
+      SME_ACCELERATOR_ID,
       [this](const auto& packet) {
         acceleratorToCoreLink_->send(new OffloadingEvent(packet));
         return true;
       },
       [this] {
-        const auto* event =
+        auto* event =
             dynamic_cast<OffloadingEvent*>(coreToAcceleratorLink_->recv());
 
         if (event == nullptr) {
           return std::optional<OffloadingEvent::packet_t>();
         }
 
-        auto packet = event->packet_;
+        auto packet = std::move(event->packet_);
         delete event;
         return std::optional(std::move(packet));
       });
