@@ -63,9 +63,11 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
-  /** Returns the number of additional completion slots needed to support
-   * offloading, based on the provided configuration. */
-  static size_t countOffloadingCompletionSlots(ryml::ConstNodeRef config);
+  /** Returns whether offloading has been enabled in the provided config. */
+  static bool isOffloadingEnabled(const ryml::ConstNodeRef& config);
+
+  /** Whether offloading has been enabled for this core. */
+  const bool offloadingEnabled_;
 
   const std::vector<RegisterFileStructure> physicalRegisterStructures_;
 
@@ -80,8 +82,14 @@ class Core : public simeng::Core {
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
-  /** The buffer between decode and rename. */
+  /** The buffer between decode and rename
+   * (or the Offloading Controller, see `offloadingToRenameBuffer_`). */
   pipeline::PipelineBuffer<std::shared_ptr<Instruction>> decodeToRenameBuffer_;
+
+  /** The pipeline buffer between the Offloading Controller and rename.
+   * Only used if offloading is enabled (see `offloadingEnabled_`). */
+  pipeline::PipelineBuffer<std::shared_ptr<Instruction>>
+      offloadingToRenameBuffer_;
 
   /** The buffer between rename and dispatch/issue. */
   pipeline::PipelineBuffer<std::shared_ptr<Instruction>>
@@ -114,11 +122,6 @@ class Core : public simeng::Core {
    * forwarding results to dispatch/issue. */
   std::vector<pipeline::ExecuteUnit> executionUnits_;
 
-  /** The set of offloading controllers; diverts specialized instructions to
-   * accelerators and sends results to writeback, also forwarding to
-   * dispatch/issue. */
-  std::vector<pipeline::OffloadingController> offloadingControllers_;
-
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
 
@@ -131,6 +134,11 @@ class Core : public simeng::Core {
   /** The port allocator unit; allocates a port that an instruction will be
    * issued from based on a defined algorithm. */
   pipeline::PortAllocator& portAllocator_;
+
+  /** The offloading controller; diverts specialized instructions
+   * to accelerators and sends results to writeback, also forwarding
+   * to dispatch/issue. */
+  pipeline::OffloadingController offloadingController_;
 
   /** Core commit width; maximum number of instruction that can be committed per
    * cycle. */

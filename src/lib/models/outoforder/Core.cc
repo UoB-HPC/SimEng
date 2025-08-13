@@ -17,6 +17,7 @@ Core::Core(memory::MemoryInterface& instructionMemory,
            pipeline::PortAllocator& portAllocator,
            const ryml::ConstNodeRef config)
     : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
+      offloadingEnabled_(isOffloadingEnabled(config)),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
       registerAliasTable_(config::SimInfo::getArchRegStruct(),
@@ -26,21 +27,24 @@ Core::Core(memory::MemoryInterface& instructionMemory,
                            {}),
       decodeToRenameBuffer_(
           config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
+      offloadingToRenameBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
       renameToDispatchBuffer_(
           config["Pipeline-Widths"]["FrontEnd"].as<uint16_t>(), nullptr),
       issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
       completionSlots_(
           config["Execution-Units"].num_children() +
               config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>() +
-              countOffloadingCompletionSlots(config),
+              1,  // One slot for offloading controller
           {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
-      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
-                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures_.size()),
+      renameUnit_(offloadingEnabled_ ? offloadingToRenameBuffer_
+                                     : decodeToRenameBuffer_,
+                  renameToDispatchBuffer_, reorderBuffer_, registerAliasTable_,
+                  loadStoreQueue_, physicalRegisterStructures_.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
                          portAllocator, physicalRegisterQuantities_),
       writebackUnit_(
@@ -74,6 +78,13 @@ Core::Core(memory::MemoryInterface& instructionMemory,
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       portAllocator_(portAllocator),
+      offloadingController_(
+          decodeToRenameBuffer_, offloadingToRenameBuffer_,
+          completionSlots_[completionSlots_.size() - 1],
+          [this](auto regs, auto values) {
+            dispatchIssueUnit_.forwardOperands(regs, values);
+          },
+          [](const auto& uop) { uop->setCommitReady(); }),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<uint16_t>()),
       branchPredictor_(branchPredictor) {
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
@@ -83,44 +94,14 @@ Core::Core(memory::MemoryInterface& instructionMemory,
          config["Execution-Units"][i]["Blocking-Group-Nums"]) {
       blockingGroups.push_back(grp.as<uint16_t>());
     }
-
-    auto* euInput = &issuePorts_[i];
-    const auto forwardOperands = [this](auto regs, auto values) {
-      dispatchIssueUnit_.forwardOperands(regs, values);
-    };
-    const auto raiseException = [](const auto& uop) { uop->setCommitReady(); };
-
-    if (config["Execution-Units"][i].has_child("Offloaded-Group-Nums")) {
-      // Insert an offloading controller before the EU
-
-      // Gather instruction groups to offload
-      auto groups = config["Execution-Units"][i]["Offloaded-Group-Nums"];
-      std::vector<uint16_t> offloadedGroups;
-      offloadedGroups.reserve(groups.num_children());
-      for (auto grp : groups) {
-        offloadedGroups.push_back(grp.as<uint16_t>());
-      }
-
-      // Allocate a new completion slot
-      // (for results coming from the accelerator)
-      const auto outputIndex =
-          config["Execution-Units"].num_children() +
-          config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>() +
-          offloadingControllers_.size();
-
-      // Create the controller and set up connection to the associated EU
-      auto controller = pipeline::OffloadingController(
-          *euInput, completionSlots_[outputIndex], forwardOperands,
-          raiseException);
-      euInput = &controller.getPassThroughPort();
-      offloadingControllers_.push_back(controller);
-    }
-
     executionUnits_.emplace_back(
-        *euInput, completionSlots_[i], std::move(forwardOperands),
+        issuePorts_[i], completionSlots_[i],
+        [this](auto regs, auto values) {
+          dispatchIssueUnit_.forwardOperands(regs, values);
+        },
         [this](const auto& uop) { loadStoreQueue_.startLoad(uop); },
         [this](const auto& uop) { loadStoreQueue_.supplyStoreData(uop); },
-        std::move(raiseException),
+        [](const auto& uop) { uop->setCommitReady(); },
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
@@ -154,16 +135,14 @@ void Core::tick() {
   // Tick units
   fetchUnit_.tick();
   decodeUnit_.tick();
+  if (offloadingEnabled_) {
+    offloadingController_.tick();
+  }
   renameUnit_.tick();
   dispatchIssueUnit_.tick();
   for (auto& eu : executionUnits_) {
     // Tick each execution unit
     eu.tick();
-  }
-  for (auto& ctrl : offloadingControllers_) {
-    // Tick each offloading controller -- this has to be done after the EUs to
-    // ensure propagation latency
-    ctrl.tick();
   }
 
   loadStoreQueue_.tick();
@@ -176,6 +155,9 @@ void Core::tick() {
   // as these will now loop around and become the tail.
   fetchToDecodeBuffer_.tick();
   decodeToRenameBuffer_.tick();
+  if (offloadingEnabled_) {
+    offloadingToRenameBuffer_.tick();
+  }
   renameToDispatchBuffer_.tick();
   for (auto& issuePort : issuePorts_) {
     issuePort.tick();
@@ -224,6 +206,15 @@ bool Core::hasHalted() const {
   for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
     if (renameSlots[slot] != nullptr) {
       return false;
+    }
+  }
+
+  if (offloadingEnabled_) {
+    const auto offloadingSlots = offloadingToRenameBuffer_.getHeadSlots();
+    for (size_t slot = 0; slot < offloadingToRenameBuffer_.getWidth(); slot++) {
+      if (offloadingSlots[slot] != nullptr) {
+        return false;
+      }
     }
   }
 
@@ -310,6 +301,11 @@ void Core::handleException() {
   branchPredictor_.flushBranchesInBufferFromSelf(decodeToRenameBuffer_);
   decodeToRenameBuffer_.fill(nullptr);
   decodeToRenameBuffer_.stall(false);
+
+  if (offloadingEnabled_) {
+    offloadingToRenameBuffer_.fill(nullptr);
+    offloadingToRenameBuffer_.stall(false);
+  }
 
   // Instructions in this buffer are already accounted for in the ROB so no
   // need to check for branch instructions in this buffer
@@ -400,6 +396,12 @@ void Core::flushIfNeeded() {
     decodeToRenameBuffer_.fill(nullptr);
     decodeToRenameBuffer_.stall(false);
 
+    if (offloadingEnabled_) {
+      branchPredictor_.flushBranchesInBufferFromSelf(offloadingToRenameBuffer_);
+      offloadingToRenameBuffer_.fill(nullptr);
+      offloadingToRenameBuffer_.stall(false);
+    }
+
     // Instructions in this buffer are already accounted for in the ROB so no
     // need to check for branch instructions in this buffer
     renameToDispatchBuffer_.fill(nullptr);
@@ -408,13 +410,13 @@ void Core::flushIfNeeded() {
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer_.flush(lowestInsnId);
     decodeUnit_.purgeFlushed();
+    if (offloadingEnabled_) {
+      offloadingController_.purgeFlushed();
+    }
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
     for (auto& eu : executionUnits_) {
       eu.purgeFlushed();
-    }
-    for (auto& ctrl : offloadingControllers_) {
-      ctrl.purgeFlushed();
     }
 
     flushes_++;
@@ -435,13 +437,9 @@ void Core::flushIfNeeded() {
   }
 }
 
-size_t Core::countOffloadingCompletionSlots(const ryml::ConstNodeRef config) {
-  size_t count = 0;
-  const auto euCount = config["Execution-Units"].num_children();
-  for (size_t i = 0; i < euCount; i++) {
-    if (config["Execution-Units"][i].has_child("Offloaded-Group-Nums")) count++;
-  }
-  return count;
+bool Core::isOffloadingEnabled(const ryml::ConstNodeRef& config) {
+  return config["Core"].has_child("Offloading-Enabled") &&
+         config["Core"]["Offloading-Enabled"].as<bool>();
 }
 
 }  // namespace outoforder

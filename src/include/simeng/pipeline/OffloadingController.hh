@@ -7,6 +7,7 @@
 #include "simeng/config/SimInfo.hh"
 #include "simeng/models/accelerator/SmeAccelerator.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
+#include "simeng/pipeline/noc/OffloadingPayload.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -32,23 +33,18 @@ class OffloadingController {
   using offloaded_groups = std::vector<uint16_t>;
 
   using logic_t = config::OffloadingLogic;
+  using payload_t = noc::OffloadingPayload;
 
  public:
   /** Constructs an offloading controller with references to an input and output
    * buffer, handlers for forwarding operands and exceptions, and a filter for
    * deciding whether an instruction should be diverted to an accelerator. */
-  OffloadingController(port& input, port& output,
+  OffloadingController(port& input, port& rename, port& output,
                        forward_operands forwardOperands,
                        raise_exception raiseException);
 
-  /** Returns a port that should be connected to an ExecuteUnit; all
-  instructions that are not supposed to be diverted to the accelerator will be
-  forwarded to this port. */
-  port& getPassThroughPort() const noexcept;
-
-  /** Tick the controller. Places incoming instructions into the pipeline and
-   * executes an instruction that has reached the head of the pipeline, if
-   * present. */
+  /** Tick the controller. Inspects incoming instructions and sends the
+   * specialized ones to the accelerator. */
   void tick();
 
   /** Purge flushed instructions from the internal pipeline. */
@@ -60,8 +56,8 @@ class OffloadingController {
 
  private:
   /** Sends the resolved uop back to the regular pipeline's output buffer, also
-   * forwarding the results to dispatch/issue.  */
-  void write_received(std::shared_ptr<Instruction> uop) const;
+   * forwarding the results to dispatch/issue. */
+  void write_received(const payload_t& payload);
 
   /** A Network-on-Chip gateway for communicating with the accelerator. */
   logic_t::gateway_t gateway_;
@@ -69,12 +65,11 @@ class OffloadingController {
   /** A buffer of instructions to inspect. */
   port& input_;
 
-  /** A buffer for forwarding instructions that should not be diverted to the
-   * accelerator. */
-  std::shared_ptr<port> passThroughOutput_;
+  /** A buffer for writing inspected uops into. */
+  port& rename_;
 
-  /** A buffer for writing instructions executed by the accelerator into. */
-  port& offloadedOutput_;
+  /** A buffer for writing uops executed by an accelerator into. */
+  port& output_;
 
   /** A function handle called when forwarding operands. */
   const forward_operands forwardOperands_;
@@ -86,6 +81,15 @@ class OffloadingController {
    * diverted to an accelerator. A return value of true indicates that the
    * instruction should be sent to the accelerator. */
   logic_t::instruction_filter filter_;
+
+  /** The next ID for an outbound payload. */
+  payload_t::id_t nextId_ = 0;
+
+  /** A queue for outbound instructions. */
+  std::deque<payload_t::id_t> pending_;
+
+  /** A registry of currently offloaded instructions. */
+  std::unordered_map<payload_t::id_t, std::shared_ptr<Instruction>> offloaded_;
 };
 
 }  // namespace pipeline

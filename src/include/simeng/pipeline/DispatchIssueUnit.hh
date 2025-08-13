@@ -71,7 +71,7 @@ class DispatchIssueUnit {
 
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
-  void forwardOperands(const span<Register>& destinations,
+  void forwardOperands(const span<Register>& registers,
                        const span<RegisterValue>& values);
 
   /** Clear the RS of all flushed instructions. */

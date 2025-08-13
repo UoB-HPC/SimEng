@@ -125,10 +125,10 @@ void SimInfo::extractValues() {
 }
 
 const OffloadingLogic& SimInfo::getOffloadingLogic() {
-  return *getInstance()->offloadingLogic_;
+  return getInstance()->offloadingLogic_;
 }
 
-void SimInfo::setOffloadingLogic(std::unique_ptr<OffloadingLogic> logic) {
+void SimInfo::setOffloadingLogic(OffloadingLogic logic) {
   getInstance()->offloadingLogic_ = std::move(logic);
 }
 

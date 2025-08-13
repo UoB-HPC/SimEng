@@ -42,6 +42,14 @@ class MockInstruction : public Instruction {
 
   MOCK_METHOD1(setExecutionInfo, void(const ExecutionInfo& info));
 
+  std::unique_ptr<Instruction> clone() const override {
+    auto clone = std::make_unique<MockInstruction>();
+    baseCloneInto(clone.get());
+    return clone;
+  }
+
+  bool canBeOffloaded() const override { return false; }
+
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;

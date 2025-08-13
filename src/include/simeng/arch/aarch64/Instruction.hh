@@ -27,22 +27,22 @@ using destValContainer =
 
 namespace RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
-const uint8_t GENERAL = 0;
+constexpr uint8_t GENERAL = 0;
 /** The 128|2048 bit vector register set: [v|z]0-31. */
-const uint8_t VECTOR = 1;
+constexpr uint8_t VECTOR = 1;
 /** The 32 bit predicate register set: p0-15. */
-const uint8_t PREDICATE = 2;
+constexpr uint8_t PREDICATE = 2;
 /** The 4-bit NZCV condition flag register. */
-const uint8_t NZCV = 3;
+constexpr uint8_t NZCV = 3;
 /** The system registers. */
-const uint8_t SYSTEM = 4;
+constexpr uint8_t SYSTEM = 4;
 /** The [256-byte x (SVL / 8)] SME matrix register za. */
-const uint8_t MATRIX = 5;
+constexpr uint8_t MATRIX = 5;
 /** The fixed width (512-bit) SME ZT0 table register. */
-const uint8_t TABLE = 6;
+constexpr uint8_t TABLE = 6;
 
 /** A special register value representing the zero register. */
-const Register ZERO_REGISTER = {GENERAL, (uint16_t)-1};
+constexpr Register ZERO_REGISTER = {GENERAL, static_cast<uint16_t>(-1)};
 }  // namespace RegisterType
 
 /** The various exceptions that can be raised by an individual instruction. */
@@ -66,13 +66,13 @@ enum class InstructionException {
 
 /** The opcodes of simeng aarch64 micro-operations. */
 namespace MicroOpcode {
-const uint8_t OFFSET_IMM = 0;
-const uint8_t OFFSET_REG = 1;
-const uint8_t LDR_ADDR = 2;
-const uint8_t STR_ADDR = 3;
-const uint8_t STR_DATA = 4;
+constexpr uint8_t OFFSET_IMM = 0;
+constexpr uint8_t OFFSET_REG = 1;
+constexpr uint8_t LDR_ADDR = 2;
+constexpr uint8_t STR_ADDR = 3;
+constexpr uint8_t STR_DATA = 4;
 // INVALID is the default value reserved for non-micro-operation instructions
-const uint8_t INVALID = 255;
+constexpr uint8_t INVALID = 255;
 }  // namespace MicroOpcode
 
 /** A struct to group micro-operation information together. */
@@ -85,13 +85,13 @@ struct MicroOpInfo {
 };
 
 /** Get the size of the data to be accessed from/to memory. */
-inline uint8_t getDataSize(cs_aarch64_op op) {
+inline uint8_t getDataSize(const cs_aarch64_op op) {
   // No V-register enum identifiers exist. Instead, depending on whether a full
   // or half vector is accessed, a Q or D register is used instead.
   // A `is_vreg` bool in `op` defines if we are using v-vector registers.
   if (op.is_vreg && ((AARCH64_REG_D0 <= op.reg && op.reg <= AARCH64_REG_D31) ||
                      (AARCH64_REG_Q0 <= op.reg && op.reg <= AARCH64_REG_Q31))) {
-    AArch64Layout_VectorLayout vas = op.vas;
+    const AArch64Layout_VectorLayout vas = op.vas;
     assert(vas != AARCH64LAYOUT_INVALID && "Invalid VAS type");
     switch (vas) {
       case AARCH64LAYOUT_VL_16B:
@@ -122,7 +122,6 @@ inline uint8_t getDataSize(cs_aarch64_op op) {
                   << op.reg << " and `vas` value of " << vas << ". Exiting..."
                   << std::endl;
         exit(1);
-        break;
     }
   }
 
@@ -243,7 +242,6 @@ inline uint8_t getDataSize(cs_aarch64_op op) {
   }
 
   assert(false && "Failed to find register in macroOp metadata");
-  return 0;
 }
 
 // AArch64 Instruction Identifier Masks
@@ -302,15 +300,16 @@ std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
   for (int r = 0; r < V; r++) {
     for (uint16_t i = 0; i < elemsPerVec; i++) {
       // Move bit to next position based on element type
-      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      const uint64_t shifted_active = 1ull
+                                      << (i % (64 / sizeof(T)) * sizeof(T));
       // If invert = True (invert bit = 1), predElemCount dictates number of
       // initial inactive elements.
       // If invert = False (invert bit = 0), it indicates the number of initial
       // active elements.
       if (static_cast<uint64_t>(r * elemsPerVec) + i < predElemCount) {
-        out[r][i / (64 / sizeof(T))] |= (invert) ? 0 : shifted_active;
+        out[r][i / (64 / sizeof(T))] |= invert ? 0 : shifted_active;
       } else {
-        out[r][i / (64 / sizeof(T))] |= (invert) ? shifted_active : 0;
+        out[r][i / (64 / sizeof(T))] |= invert ? shifted_active : 0;
       }
     }
   }
@@ -318,7 +317,7 @@ std::vector<std::array<uint64_t, 4>> predAsCounterToMasks(
 }
 
 /** A basic Armv9.2-a implementation of the `Instruction` interface. */
-class Instruction : public simeng::Instruction {
+class Instruction final : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
@@ -330,6 +329,9 @@ class Instruction : public simeng::Instruction {
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata,
               InstructionException exception);
+
+  /** Performs a polymorphic deep copy of the object. */
+  std::unique_ptr<simeng::Instruction> clone() const override;
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
@@ -405,7 +407,7 @@ class Instruction : public simeng::Instruction {
   /** Get this instruction's supported set of ports. */
   const std::vector<uint16_t>& getSupportedPorts() override;
 
-  /** Set this instruction's execution information including it's execution
+  /** Set this instruction's execution information including its execution
    * latency and throughput, and the set of ports which support it. */
   void setExecutionInfo(const ExecutionInfo& info) override;
 
@@ -432,8 +434,8 @@ class Instruction : public simeng::Instruction {
 
   /** Tests whether this instruction has the given identifier set. */
   constexpr bool isInstruction(InsnType identifier) const {
-    return (instructionIdentifier_ &
-            static_cast<std::underlying_type_t<InsnType>>(identifier));
+    return instructionIdentifier_ &
+           static_cast<std::underlying_type_t<InsnType>>(identifier);
   }
 
   /** Generate an ExecutionNotYetImplemented exception. */

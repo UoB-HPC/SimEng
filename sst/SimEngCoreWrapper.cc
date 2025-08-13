@@ -147,6 +147,7 @@ bool SimEngCoreWrapper::clockTick(const Cycle_t currentCycle) {
 
   iterations_++;
 
+  accelerator_->tick();
   return false;
 }
 
@@ -402,8 +403,8 @@ std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() const {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-bool SimEngCoreWrapper::acceleratorClockTick(Cycle_t currentCycle) {
-  accelerator_->tick();
+bool SimEngCoreWrapper::acceleratorClockTick(const Cycle_t currentCycle) {
+  // std::endl; accelerator_->tick();
   return false;
 }
 
@@ -412,7 +413,7 @@ bool SimEngCoreWrapper::acceleratorClockTick(Cycle_t currentCycle) {
 constexpr static Accelerator::id_t SME_ACCELERATOR_ID = 1;
 
 void SimEngCoreWrapper::configureOffloadingLogic() {
-  auto logic = std::make_unique<config::OffloadingLogic>(
+  auto logic = config::OffloadingLogic(
       [](const auto& insn) {
         // TODO: Proper mapping if multiple accelerators
         //       (possibly from a config file)
@@ -421,6 +422,10 @@ void SimEngCoreWrapper::configureOffloadingLogic() {
 
         return Accelerator::NO_ACCELERATOR;
       },
+      {{SME_ACCELERATOR_ID,
+        models::accelerator::SmeAccelerator::isInstructionReady}},
+      {{SME_ACCELERATOR_ID,
+        models::accelerator::SmeAccelerator::isOperandOffloaded}},
       [this](const auto& packet) {
         coreToAcceleratorLink_->send(new OffloadingEvent(packet));
         return true;
@@ -441,6 +446,21 @@ void SimEngCoreWrapper::configureOffloadingLogic() {
 }
 
 void SimEngCoreWrapper::fabricateSimEngAccelerator() {
+  // TODO Extract to an AcceleratorInstance object
+  const auto config_ports = config::SimInfo::getConfig()["Ports"];
+  std::vector<std::vector<uint16_t>> portArrangement(
+      config_ports.num_children());
+  for (size_t i = 0; i < config_ports.num_children(); i++) {
+    auto config_groups = config_ports[i]["Instruction-Group-Support-Nums"];
+    // Read groups in associated port
+    for (size_t j = 0; j < config_groups.num_children(); j++) {
+      auto grp = config_groups[j].as<uint16_t>();
+      portArrangement[i].push_back(grp);
+    }
+  }
+  acceleratorPortAllocator_ =
+      std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
+
   accelerator_ = std::make_unique<models::accelerator::SmeAccelerator>(
       // TODO: Assign unique IDs if multiple accelerators
       //       (probably get from config file)
@@ -460,5 +480,6 @@ void SimEngCoreWrapper::fabricateSimEngAccelerator() {
         auto packet = std::move(event->packet_);
         delete event;
         return std::optional(std::move(packet));
-      });
+      },
+      *dataMemory_, *acceleratorPortAllocator_);
 }

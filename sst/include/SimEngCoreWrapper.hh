@@ -285,6 +285,9 @@ class SimEngCoreWrapper : public Component {
   /** An SST::Link connecting the accelerator to the core. */
   Link* acceleratorToCoreLink_;
 
+  /** Port Allocator for the accelerator. */
+  std::unique_ptr<pipeline::BalancedPortAllocator> acceleratorPortAllocator_;
+
   /** An instance of an accelerator. */
   std::unique_ptr<Accelerator> accelerator_;
 };

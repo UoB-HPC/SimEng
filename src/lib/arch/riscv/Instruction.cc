@@ -21,10 +21,17 @@ Instruction::Instruction(const Architecture& architecture,
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
-                         InstructionException exception)
-    : architecture_(architecture), metadata_(metadata) {
-  exception_ = exception;
+                         const InstructionException exception)
+    : architecture_(architecture), metadata_(metadata), exception_(exception) {
   exceptionEncountered_ = true;
+}
+
+std::unique_ptr<simeng::Instruction> Instruction::clone() const {
+  // TODO: If at any point the Instruction's copy constructor stops being
+  //       equivalent to performing a deep copy, this method need to be updated
+  auto clone = std::make_unique<Instruction>(*this);
+  baseCloneInto(clone.get());
+  return clone;
 }
 
 const span<Register> Instruction::getSourceRegisters() const {
@@ -41,14 +48,14 @@ const span<Register> Instruction::getDestinationRegisters() const {
           destinationRegisterCount_};
 }
 
-void Instruction::renameSource(uint16_t i, Register renamed) {
+void Instruction::renameSource(const uint16_t i, const Register renamed) {
   sourceRegisters_[i] = renamed;
 }
-void Instruction::renameDestination(uint16_t i, Register renamed) {
+void Instruction::renameDestination(const uint16_t i, const Register renamed) {
   destinationRegisters_[i] = renamed;
 }
 
-void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
+void Instruction::supplyOperand(const uint16_t i, const RegisterValue& value) {
   assert(!canExecute() &&
          "Attempted to provide an operand to a ready-to-execute instruction");
   assert(value.size() > 0 &&
@@ -58,7 +65,8 @@ void Instruction::supplyOperand(uint16_t i, const RegisterValue& value) {
   sourceOperandsPending_--;
 }
 
-bool Instruction::isOperandReady(int index) const {
+bool Instruction::isOperandReady(const int index) const {
+  // ReSharper disable once CppRedundantCastExpression
   return static_cast<bool>(sourceValues_[index]);
 }
 
@@ -72,7 +80,8 @@ span<const memory::MemoryAccessTarget> Instruction::getGeneratedAddresses()
   return {memoryAddresses_.data(), memoryAddresses_.size()};
 }
 
-void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
+void Instruction::supplyData(const uint64_t address,
+                             const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses_.size(); i++) {
     if (memoryAddresses_[i].address == address && !memoryData_[i]) {
       if (!data) {
@@ -130,10 +139,12 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
-bool Instruction::canExecute() const { return (sourceOperandsPending_ == 0); }
+bool Instruction::canExecute() const { return sourceOperandsPending_ == 0; }
+
+bool Instruction::canBeOffloaded() const { return false; }
 
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
-  if (supportedPorts_.size() == 0) {
+  if (supportedPorts_.empty()) {
     exception_ = InstructionException::NoAvailablePort;
     exceptionEncountered_ = true;
   }

@@ -99,16 +99,18 @@ void RenameUnit::tick() {
     auto& sourceRegisters = uop->getSourceRegisters();
     for (size_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
-      if (!uop->isOperandReady(i)) {
+      if (!uop->isOperandReady(i) && !uop->isOperandOffloaded(i)) {
         uop->renameSource(i, rat_.getMapping(reg));
       }
     }
 
     // Allocate destination registers
-    for (size_t i = 0; i < destinationRegisters.size(); i++) {
-      const auto& reg = destinationRegisters[i];
-      if (rat_.canRename(reg.type)) {
-        uop->renameDestination(i, rat_.allocate(reg));
+    if (!uop->isOffloaded()) {
+      for (size_t i = 0; i < destinationRegisters.size(); i++) {
+        const auto& reg = destinationRegisters[i];
+        if (rat_.canRename(reg.type)) {
+          uop->renameDestination(i, rat_.allocate(reg));
+        }
       }
     }
 

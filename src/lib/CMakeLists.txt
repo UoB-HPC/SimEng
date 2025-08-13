@@ -47,6 +47,7 @@ set(SIMENG_SOURCES
     CMakeLists.txt
     CoreInstance.cc
     Elf.cc
+    Instruction.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
@@ -74,3 +75,4 @@ get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
 get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
 get_target_property(SIMENG_VERSION libsimeng VERSION)
 configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${CMAKE_CURRENT_BINARY_DIR}/simeng/version.hh)
+

@@ -28,6 +28,8 @@ struct requestEntry {
  * Holds in-flight memory access requests to ensure load/store consistency. */
 class LoadStoreQueue {
  public:
+  int id_;
+
   /** Constructs a combined load/store queue model, simulating a shared queue
    * for both load and store instructions, supplying completion slots for loads
    * and an operand forwarding handler. */

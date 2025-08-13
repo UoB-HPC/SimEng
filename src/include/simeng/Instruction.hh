@@ -28,8 +28,14 @@ struct ExecutionInfo {
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {
+  using accelerator_id_t = uint16_t;
+  static constexpr accelerator_id_t NO_ACCELERATOR = 0;
+
  public:
-  virtual ~Instruction() {};
+  virtual ~Instruction() {}
+
+  /** Performs a polymorphic deep copy of the object. */
+  virtual std::unique_ptr<Instruction> clone() const = 0;
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getSourceRegisters() const = 0;
@@ -106,129 +112,127 @@ class Instruction {
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
 
-  /** Set this instruction's execution information including it's execution
+  /** Set this instruction's execution information including its execution
    * latency and throughput, and the set of ports which support it. */
   virtual void setExecutionInfo(const ExecutionInfo& info) = 0;
 
   /** Set this instruction's sequence ID. */
-  void setSequenceId(uint64_t seqId) { sequenceId_ = seqId; }
+  void setSequenceId(uint64_t seqId);
 
   /** Retrieve this instruction's sequence ID. */
-  uint64_t getSequenceId() const { return sequenceId_; }
+  uint64_t getSequenceId() const;
 
   /** Set this instruction's instruction ID. */
-  void setInstructionId(uint64_t insnId) { instructionId_ = insnId; }
+  void setInstructionId(uint64_t insnId);
 
   /** Retrieve this instruction's instruction ID. */
-  uint64_t getInstructionId() const { return instructionId_; }
+  uint64_t getInstructionId() const;
 
   /** Set this instruction's instruction memory address. */
-  void setInstructionAddress(uint64_t address) {
-    instructionAddress_ = address;
-  }
+  void setInstructionAddress(uint64_t address);
 
   /** Get this instruction's instruction memory address. */
-  uint64_t getInstructionAddress() const { return instructionAddress_; }
+  uint64_t getInstructionAddress() const;
 
   /** Supply a branch prediction. */
-  void setBranchPrediction(BranchPrediction prediction) {
-    prediction_ = prediction;
-  }
+  void setBranchPrediction(BranchPrediction prediction);
 
   /** Get a branch prediction. */
-  BranchPrediction getBranchPrediction() const { return prediction_; }
+  BranchPrediction getBranchPrediction() const;
 
   /** Retrieve branch address. */
-  uint64_t getBranchAddress() const { return branchAddress_; }
+  uint64_t getBranchAddress() const;
 
   /** Was the branch taken? */
-  bool wasBranchTaken() const { return branchTaken_; }
+  bool wasBranchTaken() const;
 
   /** Check for misprediction. */
-  bool wasBranchMispredicted() const {
-    assert(executed_ &&
-           "Branch misprediction check requires instruction to have executed");
-    // Flag as mispredicted if taken state was wrongly predicted, or taken
-    // and predicted target is wrong
-    return ((branchTaken_ != prediction_.isTaken) ||
-            (prediction_.target != branchAddress_));
-  }
+  bool wasBranchMispredicted() const;
 
   /** Check whether an exception has been encountered while processing this
    * instruction. */
-  bool exceptionEncountered() const { return exceptionEncountered_; }
+  bool exceptionEncountered() const;
 
   /** Check whether all required data has been supplied. */
-  bool hasAllData() const { return (dataPending_ == 0); }
+  bool hasAllData() const;
 
   /** Check whether the instruction has executed and has results ready to
    * write back. */
-  bool hasExecuted() const { return executed_; }
+  bool hasExecuted() const;
 
   /** Retrieve the number of cycles this instruction will take to execute. */
-  uint16_t getLatency() const { return latency_; }
+  uint16_t getLatency() const;
 
   /** Retrieve the number of cycles this instruction will block the unit
    * executing it. */
-  uint16_t getStallCycles() const { return stallCycles_; }
+  uint16_t getStallCycles() const;
 
   /** Retrieve the number of cycles this instruction will take to be processed
    * by the LSQ. */
-  uint16_t getLSQLatency() const { return lsqExecutionLatency_; }
+  uint16_t getLSQLatency() const;
+
+  /** Marks this instruction as being offloaded to the specified accelerator.
+   * Note that this ID cannot be equal to `Accelerator::NO_ACCELERATOR`. */
+  void markOffloaded(accelerator_id_t accelerator);
+
+  /** Marks this instruction as being on the accelerator. */
+  void markAccelerated();
+
+  /** Check whether this instruction is ready to be offloaded. */
+  virtual bool canBeOffloaded() const;
+
+  /** Returns whether this instruction is being offloaded to an accelerator. */
+  bool isOffloaded() const noexcept;
+
+  /** Check whether operand at index `i` is only present on an accelerator
+   * and should be ignored on the core. */
+  bool isOperandOffloaded(int i) const;
 
   /** Set the micro-operation in an awaiting commit signal state. */
-  void setWaitingCommit() { waitingCommit_ = true; }
+  void setWaitingCommit();
 
   /** Is the micro-operation in an awaiting commit state? */
-  bool isWaitingCommit() const { return waitingCommit_; }
+  bool isWaitingCommit() const;
 
   /** Mark the instruction as ready to commit. */
-  void setCommitReady() { canCommit_ = true; }
+  void setCommitReady();
 
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
-  bool canCommit() const { return canCommit_; }
+  bool canCommit() const;
 
   /** Mark this instruction as flushed. */
-  void setFlushed() { flushed_ = true; }
+  void setFlushed();
 
   /** Check whether this instruction has been flushed. */
-  bool isFlushed() const { return flushed_; }
+  bool isFlushed() const;
 
   /** Is this a micro-operation? */
-  bool isMicroOp() const { return isMicroOp_; }
+  bool isMicroOp() const;
 
   /** Is this the last uop in the possible sequence of decoded uops? */
-  bool isLastMicroOp() const { return isLastMicroOp_; }
+  bool isLastMicroOp() const;
 
   /** Get arbitrary micro-operation index. */
-  int getMicroOpIndex() const { return microOpIndex_; }
+  int getMicroOpIndex() const;
 
  protected:
+  /** Copies all data into `dest`
+   * (i.e. performs a deep copy of this abstract class). */
+  void baseCloneInto(Instruction* dest) const;
+
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
-      const std::vector<memory::MemoryAccessTarget>& addresses) {
-    memoryData_.resize(addresses.size());
-    memoryAddresses_ = addresses;
-    dataPending_ = addresses.size();
-  }
+      const std::vector<memory::MemoryAccessTarget>& addresses);
 
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
-  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses) {
-    dataPending_ = addresses.size();
-    memoryData_.resize(addresses.size());
-    memoryAddresses_ = std::move(addresses);
-  }
+  void setMemoryAddresses(std::vector<memory::MemoryAccessTarget>&& addresses);
 
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
-  void setMemoryAddresses(memory::MemoryAccessTarget address) {
-    dataPending_ = 1;
-    memoryData_.resize(1);
-    memoryAddresses_.push_back(address);
-  }
+  void setMemoryAddresses(memory::MemoryAccessTarget address);
 
   // Instruction Info
   /** This instruction's instruction ID used to group micro-operations together
@@ -242,8 +246,12 @@ class Instruction {
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress_ = 0;
 
+  // Offloading
+  /** Which accelerator (if any) is this instruction being offloaded to. */
+  accelerator_id_t offloaded_ = NO_ACCELERATOR;
+
   // Execution
-  /** Whether or not this instruction has been executed. */
+  /** Whether this instruction has been executed. */
   bool executed_ = false;
 
   /** The number of cycles this instruction takes to execute. */
@@ -260,7 +268,7 @@ class Instruction {
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint16_t> supportedPorts_ = {};
 
-  /** Whether or not this instruction is ready to commit. */
+  /** Whether this instruction is ready to commit. */
   bool canCommit_ = false;
 
   // Memory
@@ -304,7 +312,7 @@ class Instruction {
   /** Is a resultant micro-operation from an instruction split? */
   bool isMicroOp_ = false;
 
-  /** Whether or not this instruction is the last uop in the possible sequence
+  /** Whether this instruction is the last uop in the possible sequence
    * of decoded uops. Default case is that it is. */
   bool isLastMicroOp_ = true;
 

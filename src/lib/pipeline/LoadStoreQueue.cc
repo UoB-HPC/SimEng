@@ -9,6 +9,8 @@
 namespace simeng {
 namespace pipeline {
 
+static int nextLsqId = 0;
+
 /** Check whether requests `a` and `b` overlap. */
 bool requestsOverlap(memory::MemoryAccessTarget a,
                      memory::MemoryAccessTarget b) {
@@ -18,16 +20,17 @@ bool requestsOverlap(memory::MemoryAccessTarget a,
 }
 
 LoadStoreQueue::LoadStoreQueue(
-    unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
-    span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+    const unsigned int maxCombinedSpace, memory::MemoryInterface& memory,
+    const span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
-    uint16_t permittedRequests, uint16_t permittedLoads,
-    uint16_t permittedStores)
-    : completionSlots_(completionSlots),
-      forwardOperands_(forwardOperands),
-      raiseException_(raiseException),
+    const bool exclusive, const uint16_t loadBandwidth,
+    const uint16_t storeBandwidth, const uint16_t permittedRequests,
+    const uint16_t permittedLoads, const uint16_t permittedStores)
+    : id_(nextLsqId++),
+      completionSlots_(completionSlots),
+      forwardOperands_(std::move(forwardOperands)),
+      raiseException_(std::move(raiseException)),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       memory_(memory),
@@ -39,17 +42,18 @@ LoadStoreQueue::LoadStoreQueue(
       reqLimits_{permittedLoads, permittedStores} {}
 
 LoadStoreQueue::LoadStoreQueue(
-    unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
+    const unsigned int maxLoadQueueSpace, const unsigned int maxStoreQueueSpace,
     memory::MemoryInterface& memory,
-    span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+    const span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
-    uint16_t permittedRequests, uint16_t permittedLoads,
-    uint16_t permittedStores)
-    : completionSlots_(completionSlots),
-      forwardOperands_(forwardOperands),
-      raiseException_(raiseException),
+    const bool exclusive, const uint16_t loadBandwidth,
+    const uint16_t storeBandwidth, const uint16_t permittedRequests,
+    const uint16_t permittedLoads, const uint16_t permittedStores)
+    : id_(nextLsqId++),
+      completionSlots_(completionSlots),
+      forwardOperands_(std::move(forwardOperands)),
+      raiseException_(std::move(raiseException)),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
@@ -64,23 +68,20 @@ LoadStoreQueue::LoadStoreQueue(
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
     return getCombinedSpace();
-  } else {
-    return getLoadQueueSplitSpace();
   }
+  return getLoadQueueSplitSpace();
 }
 unsigned int LoadStoreQueue::getStoreQueueSpace() const {
   if (combined_) {
     return getCombinedSpace();
-  } else {
-    return getStoreQueueSplitSpace();
   }
+  return getStoreQueueSplitSpace();
 }
 unsigned int LoadStoreQueue::getTotalSpace() const {
   if (combined_) {
     return getCombinedSpace();
-  } else {
-    return getLoadQueueSplitSpace() + getStoreQueueSplitSpace();
   }
+  return getLoadQueueSplitSpace() + getStoreQueueSplitSpace();
 }
 
 unsigned int LoadStoreQueue::getLoadQueueSplitSpace() const {
@@ -102,7 +103,7 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& ld_addresses = insn->getGeneratedAddresses();
-  if (ld_addresses.size() == 0) {
+  if (ld_addresses.empty()) {
     // Early execution if not addresses need to be accessed
     insn->execute();
 
@@ -123,30 +124,29 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                              .reqAddresses;
     // Store load addresses temporarily so that conflictions are
     // only registered once on most recent (program order) store
-    std::list<simeng::memory::MemoryAccessTarget> temp_load_addr(
-        ld_addresses.begin(), ld_addresses.end());
+    std::list temp_load_addr(ld_addresses.begin(), ld_addresses.end());
 
     // Detect reordering conflicts
-    if (storeQueue_.size() > 0) {
-      uint64_t seqId = insn->getSequenceId();
+    if (!storeQueue_.empty()) {
+      const auto seqId = insn->getSequenceId();
       for (auto itSt = storeQueue_.rbegin(); itSt != storeQueue_.rend();
-           itSt++) {
+           ++itSt) {
         const auto& store = itSt->first;
         // If entry is earlier in the program order than load, detect conflicts
         if (store->getSequenceId() < seqId) {
           const auto& str_addresses = store->getGeneratedAddresses();
           // Iterate over possible matches between store and load addresses
-          for (const auto& str : str_addresses) {
+          for (const auto& [address, size] : str_addresses) {
             auto itLd = temp_load_addr.begin();
             while (itLd != temp_load_addr.end()) {
               // If conflict exists, register in conflictionMap_ and delay
               // load request(s) until conflicting store retires
-              if (itLd->address == str.address) {
+              if (itLd->address == address) {
                 // Load access size must be no larger than the store access size
                 // to ensure all data is encapsulated in the later forwarding
-                if (itLd->size <= str.size) {
-                  conflictionMap_[store->getSequenceId()][str.address]
-                      .push_back({insn, itLd->size});
+                if (itLd->size <= size) {
+                  conflictionMap_[store->getSequenceId()][address].emplace_back(
+                      insn, itLd->size);
                 } else {
                   // To ensure load doesn't match on an earlier store, generate
                   // load request for address
@@ -156,7 +156,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                 // registered again
                 itLd = temp_load_addr.erase(itLd);
               } else {
-                itLd++;
+                ++itLd;
               }
             }
           }
@@ -179,12 +179,12 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   const int microOpNum = insn->getMicroOpIndex();
 
   // Get data
-  span<const simeng::RegisterValue> data = insn->getData();
+  const auto data = insn->getData();
 
   // Find storeQueue_ entry which is linked to the store data operation
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
-    auto& entry = itSt->first;
+    const auto& entry = itSt->first;
     // Pair entry and incoming store data operation with macroOp identifier and
     // microOp index value pre-determined in microDecoder
     if (entry->getInstructionId() == macroOpNum &&
@@ -192,24 +192,23 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
       // Supply data to be stored by operations
       itSt->second = data;
       break;
-    } else {
-      itSt++;
     }
+    ++itSt;
   }
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
-  assert(storeQueue_.size() > 0 &&
+  assert(!storeQueue_.empty() &&
          "Attempted to commit a store from an empty queue");
   assert(storeQueue_.front().first->getSequenceId() == uop->getSequenceId() &&
          "Attempted to commit a store that wasn't present at the front of the "
          "store queue");
 
   const auto& addresses = uop->getGeneratedAddresses();
-  span<const simeng::RegisterValue> data = storeQueue_.front().second;
+  const auto data = storeQueue_.front().second;
 
   // Early exit if there's no addresses to process
-  if (addresses.size() == 0) {
+  if (addresses.empty()) {
     storeQueue_.pop_front();
     return false;
   }
@@ -228,22 +227,22 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
-  for (const auto& load : requestedLoads_) {
+  for (const auto& [id, insn] : requestedLoads_) {
     // Skip loads that are younger than the oldest violating load
     if (violatingLoad_ &&
-        load.second->getSequenceId() > violatingLoad_->getSequenceId())
+        insn->getSequenceId() > violatingLoad_->getSequenceId())
       continue;
     // Violation invalid if the load and store entries are generated by the same
     // uop
-    if (load.second->getSequenceId() != uop->getSequenceId()) {
-      const auto& loadedAddresses = load.second->getGeneratedAddresses();
+    if (insn->getSequenceId() != uop->getSequenceId()) {
+      const auto& loadedAddresses = insn->getGeneratedAddresses();
       // Iterate over store addresses
       for (const auto& storeReq : addresses) {
         // Iterate over load addresses
         for (const auto& loadReq : loadedAddresses) {
           // Check for overlapping requests, and flush if discovered
           if (requestsOverlap(storeReq, loadReq)) {
-            violatingLoad_ = load.second;
+            violatingLoad_ = insn;
           }
         }
       }
@@ -256,12 +255,12 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     for (size_t i = 0; i < addresses.size(); i++) {
       const auto& itAddr = itSt->second.find(addresses[i].address);
       if (itAddr != itSt->second.end()) {
-        for (const auto& pair : itAddr->second) {
-          const auto& load = pair.first;
-          load->supplyData(addresses[i].address,
-                           data[i].zeroExtend(
-                               std::min(pair.second, (uint16_t)data[i].size()),
-                               pair.second));
+        for (const auto& [load, bytes] : itAddr->second) {
+          load->supplyData(
+              addresses[i].address,
+              data[i].zeroExtend(
+                  std::min(bytes, static_cast<uint16_t>(data[i].size())),
+                  bytes));
           if (load->hasAllData()) {
             // This load has completed
             load->execute();
@@ -282,7 +281,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 }
 
 void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
-  assert(loadQueue_.size() > 0 &&
+  assert(!loadQueue_.empty() &&
          "Attempted to commit a load from an empty queue");
   assert(loadQueue_.front()->getSequenceId() == uop->getSequenceId() &&
          "Attempted to commit a load that wasn't present at the front of the "
@@ -293,11 +292,10 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
     const auto& entry = *it;
     if (entry->isLoad()) {
       requestedLoads_.erase(entry->getSequenceId());
-      it = loadQueue_.erase(it);
+      loadQueue_.erase(it);
       break;
-    } else {
-      it++;
     }
+    ++it;
   }
 }
 
@@ -310,7 +308,7 @@ void LoadStoreQueue::purgeFlushed() {
       requestedLoads_.erase(entry->getSequenceId());
       itLd = loadQueue_.erase(itLd);
     } else {
-      itLd++;
+      ++itLd;
     }
   }
 
@@ -323,23 +321,21 @@ void LoadStoreQueue::purgeFlushed() {
       conflictionMap_.erase(entry->getSequenceId());
       itSt = storeQueue_.erase(itSt);
     } else {
-      itSt++;
+      ++itSt;
     }
   }
 
   // Remove flushed loads from confliction queue
-  for (auto itCnflct = conflictionMap_.begin();
-       itCnflct != conflictionMap_.end(); itCnflct++) {
+  for (auto& [_, addrs] : conflictionMap_) {
     // Iterate over addresses of store
-    for (auto itAddr = itCnflct->second.begin();
-         itAddr != itCnflct->second.end(); itAddr++) {
+    for (auto& [addr, conflicts] : addrs) {
       // Iterate over vector of instructions conflicting with store address
-      auto pair = itAddr->second.begin();
-      while (pair != itAddr->second.end()) {
+      auto pair = conflicts.begin();
+      while (pair != conflicts.end()) {
         if (pair->first->isFlushed()) {
-          pair = itAddr->second.erase(pair);
+          pair = conflicts.erase(pair);
         } else {
-          pair++;
+          ++pair;
         }
       }
     }
@@ -353,13 +349,13 @@ void LoadStoreQueue::purgeFlushed() {
       if (itInsn->insn->isFlushed()) {
         itInsn = itLdReq->second.erase(itInsn);
       } else {
-        itInsn++;
+        ++itInsn;
       }
     }
-    if (itLdReq->second.size() == 0) {
+    if (itLdReq->second.empty()) {
       itLdReq = requestLoadQueue_.erase(itLdReq);
     } else {
-      itLdReq++;
+      ++itLdReq;
     }
   }
   auto itStReq = requestStoreQueue_.begin();
@@ -369,13 +365,13 @@ void LoadStoreQueue::purgeFlushed() {
       if (itInsn->insn->isFlushed()) {
         itInsn = itStReq->second.erase(itInsn);
       } else {
-        itInsn++;
+        ++itInsn;
       }
     }
-    if (itStReq->second.size() == 0) {
+    if (itStReq->second.empty()) {
       itStReq = requestStoreQueue_.erase(itStReq);
     } else {
-      itStReq++;
+      ++itStReq;
     }
   }
 }
@@ -396,13 +392,13 @@ void LoadStoreQueue::tick() {
     std::pair<bool, uint64_t> earliestLoad;
     std::pair<bool, uint64_t> earliestStore;
     // Determine if a load request can be scheduled
-    if (requestLoadQueue_.size() == 0 || exceededLimits[accessType::LOAD]) {
+    if (requestLoadQueue_.empty() || exceededLimits[LOAD]) {
       earliestLoad = {false, 0};
     } else {
       earliestLoad = {true, itLoad->first};
     }
     // Determine if a store request can be scheduled
-    if (requestStoreQueue_.size() == 0 || exceededLimits[accessType::STORE]) {
+    if (requestStoreQueue_.empty() || exceededLimits[STORE]) {
       earliestStore = {false, 0};
     } else {
       earliestStore = {true, itStore->first};
@@ -410,8 +406,8 @@ void LoadStoreQueue::tick() {
     // Choose between available requests favouring those constructed earlier
     // (store requests on a tie)
     if (earliestLoad.first) {
-      chooseLoad = !(earliestStore.first &&
-                     (earliestLoad.second >= earliestStore.second));
+      chooseLoad =
+          !(earliestStore.first && earliestLoad.second >= earliestStore.second);
     } else if (!earliestStore.first) {
       break;
     }
@@ -419,7 +415,7 @@ void LoadStoreQueue::tick() {
     // Get next request to schedule
     auto& itReq = chooseLoad ? itLoad : itStore;
     auto itInsn = itReq->second.begin();
-    auto bandwidth = chooseLoad ? loadBandwidth_ : storeBandwidth_;
+    const auto bandwidth = chooseLoad ? loadBandwidth_ : storeBandwidth_;
 
     // Check if earliest request is ready
     if (itReq->first <= tickCounter_) {
@@ -437,8 +433,8 @@ void LoadStoreQueue::tick() {
         // Schedule requests from the queue of addresses in
         // request[Load|Store]Queue_ entry
         auto& addressQueue = itInsn->reqAddresses;
-        while (addressQueue.size()) {
-          const simeng::memory::MemoryAccessTarget req =
+        while (!addressQueue.empty()) {
+          const memory::MemoryAccessTarget req =
               addressQueue.front();  // Speculatively increment count of this
                                      // request type
           reqCounts[isStore]++;
@@ -450,7 +446,8 @@ void LoadStoreQueue::tick() {
             exceededLimits = {true, true};
             itInsn = itReq->second.end();
             break;
-          } else if (reqCounts[isStore] > reqLimits_[isStore]) {
+          }
+          if (reqCounts[isStore] > reqLimits_[isStore]) {
             // No more requests of this type can be scheduled this cycle
             exceededLimits[isStore] = true;
             // Remove speculative increment to ensure it doesn't count for
@@ -483,14 +480,14 @@ void LoadStoreQueue::tick() {
         }
         // Remove entry from vector if all of its requests have been
         // scheduled
-        if (addressQueue.size() == 0) {
+        if (addressQueue.empty()) {
           itInsn = itReq->second.erase(itInsn);
         }
       }
 
       // If all uops for currently selected cycle in request[Load|Store]Queue_
       // have been scheduled, erase entry
-      if (itReq->second.size() == 0) {
+      if (itReq->second.empty()) {
         if (chooseLoad) {
           itReq = requestLoadQueue_.erase(itReq);
         } else {
@@ -503,14 +500,13 @@ void LoadStoreQueue::tick() {
   }
 
   // Process completed read requests
-  for (const auto& response : memory_.getCompletedReads()) {
-    const auto& address = response.target.address;
-    const auto& data = response.data;
+  for (const auto& [target, data, requestId] : memory_.getCompletedReads()) {
+    const auto& address = target.address;
 
     // TODO: Detect and handle non-fatal faults (e.g. page fault)
 
     // Find instruction that requested the memory read
-    const auto& itr = requestedLoads_.find(response.requestId);
+    const auto& itr = requestedLoads_.find(requestId);
     if (itr == requestedLoads_.end()) {
       continue;
     }
@@ -534,12 +530,15 @@ void LoadStoreQueue::tick() {
       completedLoads_.push(load);
     }
   }
-  memory_.clearCompletedReads();
+  // TODO: Figure out a better way to clear the reads
+  if (id_ == nextLsqId - 1) {
+    memory_.clearCompletedReads();
+  }
 
   // Pop from the front of the completed loads queue and send to writeback
   size_t count = 0;
-  while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
-    const auto& insn = completedLoads_.front();
+  while (!completedLoads_.empty() && count < completionSlots_.size()) {
+    auto& insn = completedLoads_.front();
 
     // Don't process load instruction if it has been flushed
     if (insn->isFlushed()) {

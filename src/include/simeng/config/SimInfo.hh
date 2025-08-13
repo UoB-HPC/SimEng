@@ -3,7 +3,6 @@
 #include <iostream>
 #include <string>
 
-#include "simeng/Instruction.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/aarch64/ArchInfo.hh"
 #include "simeng/arch/riscv/ArchInfo.hh"
@@ -86,7 +85,7 @@ class SimInfo {
   static const OffloadingLogic& getOffloadingLogic();
 
   /** A setter function to set the offloading configuration. */
-  static void setOffloadingLogic(std::unique_ptr<OffloadingLogic> logic);
+  static void setOffloadingLogic(OffloadingLogic logic);
 
  private:
   SimInfo();
@@ -132,7 +131,7 @@ class SimInfo {
   bool genSpecialFiles_;
 
   /** Configuration related to offloading. */
-  std::unique_ptr<OffloadingLogic> offloadingLogic_;
+  OffloadingLogic offloadingLogic_;
 };
 
 }  // namespace config

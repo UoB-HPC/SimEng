@@ -18,14 +18,14 @@ struct InstructionMetadata;
 
 namespace RegisterType {
 /** The 64-bit general purpose register set. */
-const uint8_t GENERAL = 0;
+constexpr uint8_t GENERAL = 0;
 /** The 64-bit bit floating point register set. */
-const uint8_t FLOAT = 1;
+constexpr uint8_t FLOAT = 1;
 /** The system registers. */
-const uint8_t SYSTEM = 2;
+constexpr uint8_t SYSTEM = 2;
 
 /** A special register value representing the zero register. */
-const Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
+constexpr Register ZERO_REGISTER = {GENERAL, (uint16_t)0};
 }  // namespace RegisterType
 
 /** The various exceptions that can be raised by an individual instruction. */
@@ -72,11 +72,11 @@ enum class InsnType : uint16_t {
 
 /** The maximum number of source registers any supported RISC-V instruction
  * can have. */
-const uint8_t MAX_SOURCE_REGISTERS = 3;
+constexpr uint8_t MAX_SOURCE_REGISTERS = 3;
 
 /** The maximum number of destination registers any supported RISC-V
  * instruction can have. */
-const uint8_t MAX_DESTINATION_REGISTERS = 1;
+constexpr uint8_t MAX_DESTINATION_REGISTERS = 1;
 
 /** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
@@ -90,6 +90,9 @@ class Instruction : public simeng::Instruction {
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata,
               InstructionException exception);
+
+  /** Performs a polymorphic deep copy of the object. */
+  std::unique_ptr<simeng::Instruction> clone() const override;
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getSourceRegisters() const override;
@@ -159,6 +162,9 @@ class Instruction : public simeng::Instruction {
    * is ready to execute. */
   bool canExecute() const override;
 
+  /** Check whether this instruction is ready to be offloaded. */
+  bool canBeOffloaded() const override;
+
   /** Execute the instruction. */
   void execute() override;
 
@@ -192,15 +198,15 @@ class Instruction : public simeng::Instruction {
 
   /** Tests whether this instruction has the given identifier set. */
   constexpr bool isInstruction(InsnType identifier) const {
-    return (instructionIdentifier_ &
-            static_cast<std::underlying_type_t<InsnType>>(identifier));
+    return instructionIdentifier_ &
+           static_cast<std::underlying_type_t<InsnType>>(identifier);
   }
 
   /** For instructions with a valid rm field, extract the rm value and change
    * the CPP rounding mode accordingly, then call the function "operation"
    * before reverting the CPP rounding mode to its initial value. "Operation"
    * should contain the entire execution logic of the instruction */
-  void setStaticRoundingModeThen(std::function<void(void)> operation);
+  void setStaticRoundingModeThen(std::function<void()> operation);
 
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();

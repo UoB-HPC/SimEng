@@ -13,11 +13,18 @@ struct OffloadingLogic {
    * with a value of 0 indicating that the instruction should not be offloaded.
    */
   using instruction_filter =
-      std::function<Accelerator::id_t(const std::shared_ptr<Instruction>&)>;
+      std::function<Accelerator::id_t(const Instruction&)>;
 
   /** The type of the NoC gateway used offloading instructions. */
-  using gateway_t = pipeline::noc::NocGateway<std::shared_ptr<Instruction>,
-                                              AcceleratorPacket>;
+  using gateway_t = Accelerator::gateway_t;
+
+  /** An alias for a function that decides whether an offloaded instruction is
+   * ready to be sent to the associated accelerator. */
+  using is_ready_t = std::function<bool(const Instruction&)>;
+
+  /** An alias for a function which checks whether the specified register
+   * is present on an accelerator and should be ignored on the core. */
+  using operand_filter = std::function<bool(const Register&)>;
 
   /** A function handle that determines whether an instruction should be
    * diverted to an accelerator. */
@@ -41,11 +48,48 @@ struct OffloadingLogic {
         }) {}
 
   /** Creates an offloading logic object based on provided parameters. */
-  OffloadingLogic(instruction_filter filter, gateway_t::send_fn_t send,
-                  gateway_t::receive_fn_t receive)
+  OffloadingLogic(
+      instruction_filter filter,
+      std::unordered_map<Accelerator::id_t, is_ready_t> isReadyVTable,
+      std::unordered_map<Accelerator::id_t, operand_filter> operandFilterVTable,
+      gateway_t::send_fn_t send, gateway_t::receive_fn_t receive)
       : filter_(std::move(filter)),
         send_(std::move(send)),
-        receive_(std::move(receive)) {}
+        receive_(std::move(receive)),
+        isReadyVTable_(std::move(isReadyVTable)),
+        operandFilterVTable_(std::move(operandFilterVTable)) {}
+
+  /** Checks if an instruction is ready to be sent to the associated
+   * accelerator. */
+  bool isInstructionReady(const Accelerator::id_t accelerator,
+                          const Instruction& insn) const {
+    const auto iter = isReadyVTable_.find(accelerator);
+    assert(iter != isReadyVTable_.end() &&
+           "Cannot check instruction readiness: unknown accelerator ID");
+    const auto& isReady = iter->second;
+    return isReady(insn);
+  }
+
+  /** Checks whether `reg` is present on an accelerator and should be ignored
+   * on the core. */
+  bool isOperandOffloaded(const Accelerator::id_t accelerator,
+                          const Register& reg) const {
+    const auto iter = operandFilterVTable_.find(accelerator);
+    assert(iter != operandFilterVTable_.end() &&
+           "Cannot check operand: unknown accelerator ID");
+    const auto& operandCheck = iter->second;
+    return operandCheck(reg);
+  }
+
+ private:
+  /** A mapping from accelerator ID to a function which checks if an
+   * instruction is ready to be sent to the associated accelerator. */
+  std::unordered_map<Accelerator::id_t, is_ready_t> isReadyVTable_;
+
+  /** A mapping from accelerator ID to a function which checks whether
+   * a register is present on an accelerator and should be ignored on the core.
+   */
+  std::unordered_map<Accelerator::id_t, operand_filter> operandFilterVTable_;
 };
 
 }  // namespace config

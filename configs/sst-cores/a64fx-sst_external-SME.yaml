@@ -9,6 +9,7 @@ Core:
   Micro-Operations: True
   Vector-Length: 512
   Streaming-Vector-Length: 512
+  Offloading-Enabled: True
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 48
@@ -189,8 +190,6 @@ Execution-Units:
     - INT_DIV_OR_SQRT
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT
-    Offloaded-Groups:
-      - SME
 Latencies:
   0:
     Instruction-Groups: 
