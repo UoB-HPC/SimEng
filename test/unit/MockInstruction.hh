@@ -48,6 +48,9 @@ class MockInstruction : public Instruction {
     return clone;
   }
 
+  void moveOffloadedResultsImpl(
+      std::shared_ptr<Instruction>& offloadedSrc) override {}
+
   bool canBeOffloaded() const override { return false; }
 
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {

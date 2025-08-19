@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <utility>
 
 namespace simeng {
 namespace pipeline {
@@ -16,8 +17,8 @@ ReorderBuffer::ReorderBuffer(
     : rat_(rat),
       lsq_(lsq),
       maxSize_(maxSize),
-      raiseException_(raiseException),
-      sendLoopBoundary_(sendLoopBoundary),
+      raiseException_(std::move(raiseException)),
+      sendLoopBoundary_(std::move(sendLoopBoundary)),
       predictor_(predictor),
       loopBufSize_(loopBufSize),
       loopDetectionThreshold_(loopDetectionThreshold) {}
@@ -33,11 +34,10 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   buffer_.push_back(insn);
 }
 
-void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  if (buffer_.size()) {
+void ReorderBuffer::commitMicroOps(const uint64_t insnId) {
+  if (!buffer_.empty()) {
     size_t index = 0;
     uint64_t firstOp = UINT64_MAX;
-    bool validForCommit = false;
     bool foundFirstInstance = false;
 
     // Find first instance of uop belonging to macro-op instruction
@@ -50,12 +50,14 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
     }
 
     if (foundFirstInstance) {
+      bool validForCommit = false;
       // If found, see if all uops are committable
       for (; index < buffer_.size(); index++) {
         if (buffer_[index]->getInstructionId() != insnId) break;
         if (!buffer_[index]->isWaitingCommit()) {
           return;
-        } else if (buffer_[index]->isLastMicroOp()) {
+        }
+        if (buffer_[index]->isLastMicroOp()) {
           // all microOps must be in ROB for the commit to be valid
           validForCommit = true;
         }
@@ -70,18 +72,32 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       }
     }
   }
-  return;
 }
 
-unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
+unsigned int ReorderBuffer::commit(const uint64_t maxCommitSize) {
   shouldFlush_ = false;
-  size_t maxCommits =
+  const size_t maxCommits =
+      // ReSharper disable once CppRedundantCastExpression
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
 
-  unsigned int n;
-  for (n = 0; n < maxCommits; n++) {
-    auto& uop = buffer_[0];
+  unsigned int n = 0;
+  std::shared_ptr<Instruction> offloadedBatch = nullptr;
+  for (; n < maxCommits; n++) {
+    auto& uop = buffer_.front();
     if (!uop->canCommit()) {
+      if (uop->isOffloaded()) {
+        // Mark a batch of offloaded instructions as waiting commit
+        // (i.e. non-speculative, can be sent to the accelerator)
+        for (size_t i = 0; i < maxCommits - n; i++) {
+          const auto& insn = buffer_[i];
+          if (!insn->isOffloaded()) break;
+          insn->setWaitingAcceleratorCommit();
+        }
+      }
+
+      break;
+    }
+
       break;
     }
 
@@ -94,26 +110,27 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     }
 
     const auto& destinations = uop->getDestinationRegisters();
-    for (size_t i = 0; i < destinations.size(); i++) {
-      rat_.commit(destinations[i]);
+    for (const auto destination : destinations) {
+      rat_.commit(destination);
     }
 
     // If it's a memory op, commit the entry at the head of the respective queue
-    if (uop->isLoad()) {
-      lsq_.commitLoad(uop);
-    }
-    if (uop->isStoreAddress()) {
-      bool violationFound = lsq_.commitStore(uop);
-      if (violationFound) {
-        loadViolations_++;
-        // Memory order violation found; aborting commits and flushing
-        auto load = lsq_.getViolatingLoad();
-        shouldFlush_ = true;
-        flushAfter_ = load->getInstructionId() - 1;
-        pc_ = load->getInstructionAddress();
+    if (!uop->isOffloaded()) {
+      if (uop->isLoad()) {
+        lsq_.commitLoad(uop);
+      }
+      if (uop->isStoreAddress()) {
+        if (lsq_.commitStore(uop)) {
+          loadViolations_++;
+          // Memory order violation found; aborting commits and flushing
+          const auto load = lsq_.getViolatingLoad();
+          shouldFlush_ = true;
+          flushAfter_ = load->getInstructionId() - 1;
+          pc_ = load->getInstructionAddress();
 
-        buffer_.pop_front();
-        return n + 1;
+          buffer_.pop_front();
+          return n + 1;
+        }
       }
     }
 
@@ -126,7 +143,7 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
       } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
         // Mismatch on branch outcome, reset
         increment = false;
-      } else if ((instructionsCommitted_ - branchCounter_.first.commitNumber) >
+      } else if (instructionsCommitted_ - branchCounter_.first.commitNumber >
                  loopBufSize_) {
         // Loop too big to fit in loop buffer, reset
         increment = false;
@@ -167,22 +184,32 @@ unsigned int ReorderBuffer::commit(uint64_t maxCommitSize) {
     buffer_.pop_front();
   }
 
+  // Flush after commiting the whole batch of offloaded instructions to prevent
+  // memory ordering issues
+  if (offloadedBatch != nullptr && !buffer_.empty() &&
+      !buffer_.front()->isOffloaded()) {
+    shouldFlush_ = true;
+    flushAfter_ = offloadedBatch->getInstructionId();
+    pc_ = buffer_.front()->getInstructionAddress();
+  }
+
   return n;
 }
 
-void ReorderBuffer::flush(uint64_t afterInsnId) {
+void ReorderBuffer::flush(const uint64_t afterInsnId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterInsnId`
   while (!buffer_.empty()) {
-    auto& uop = buffer_.back();
-    if (uop->getInstructionId() <= afterInsnId) {
+    const auto& uop = buffer_.back();
+    if (uop->getInstructionId() <= afterInsnId &&
+        afterInsnId != static_cast<uint64_t>(-1)) {
       break;
     }
 
     // To rewind destination registers in correct history order, rewinding of
     // register renaming is done backwards
     auto destinations = uop->getDestinationRegisters();
-    for (int i = destinations.size() - 1; i >= 0; i--) {
+    for (int i = static_cast<int>(destinations.size()) - 1; i >= 0; i--) {
       const auto& reg = destinations[i];
       // Only rewind the register if it was renamed
       if (reg.renamed) rat_.rewind(reg);
@@ -225,5 +252,19 @@ uint64_t ReorderBuffer::getBranchMispredictedCount() const {
 uint64_t ReorderBuffer::getRetiredBranchesCount() const {
   return retiredBranches_;
 }
+
+std::shared_ptr<Instruction> ReorderBuffer::findInstructionAfter(
+    const std::shared_ptr<Instruction>& insn) const {
+  auto it = buffer_.begin();
+  while (it != buffer_.end()) {
+    if (it->get() == insn.get()) {
+      ++it;
+      break;
+    }
+    ++it;
+  }
+  return it != buffer_.end() ? *it : nullptr;
+}
+
 }  // namespace pipeline
 }  // namespace simeng

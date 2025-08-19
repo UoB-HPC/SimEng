@@ -24,7 +24,7 @@ struct OffloadingLogic {
 
   /** An alias for a function which checks whether the specified register
    * is present on an accelerator and should be ignored on the core. */
-  using operand_filter = std::function<bool(const Register&)>;
+  using register_filter = std::function<bool(const Register&)>;
 
   /** A function handle that determines whether an instruction should be
    * diverted to an accelerator. */
@@ -44,14 +44,14 @@ struct OffloadingLogic {
       : filter_([](const auto&) { return Accelerator::NO_ACCELERATOR; }),
         send_([](const auto&) { return false; }),
         receive_([] {
-          return std::optional<pipeline::noc::NocPacket<AcceleratorPacket>>();
+          return std::optional<NocPacket<AcceleratorPacket>>();
         }) {}
 
   /** Creates an offloading logic object based on provided parameters. */
   OffloadingLogic(
       instruction_filter filter,
       std::unordered_map<Accelerator::id_t, is_ready_t> isReadyVTable,
-      std::unordered_map<Accelerator::id_t, operand_filter> operandFilterVTable,
+      std::unordered_map<Accelerator::id_t, register_filter> operandFilterVTable,
       gateway_t::send_fn_t send, gateway_t::receive_fn_t receive)
       : filter_(std::move(filter)),
         send_(std::move(send)),
@@ -72,7 +72,7 @@ struct OffloadingLogic {
 
   /** Checks whether `reg` is present on an accelerator and should be ignored
    * on the core. */
-  bool isOperandOffloaded(const Accelerator::id_t accelerator,
+  bool isRegisterOffloaded(const Accelerator::id_t accelerator,
                           const Register& reg) const {
     const auto iter = operandFilterVTable_.find(accelerator);
     assert(iter != operandFilterVTable_.end() &&
@@ -89,7 +89,7 @@ struct OffloadingLogic {
   /** A mapping from accelerator ID to a function which checks whether
    * a register is present on an accelerator and should be ignored on the core.
    */
-  std::unordered_map<Accelerator::id_t, operand_filter> operandFilterVTable_;
+  std::unordered_map<Accelerator::id_t, register_filter> operandFilterVTable_;
 };
 
 }  // namespace config

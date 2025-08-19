@@ -7,7 +7,9 @@ namespace simeng {
 
 void Instruction::setSequenceId(const uint64_t seqId) { sequenceId_ = seqId; }
 
-uint64_t Instruction::getSequenceId() const { return sequenceId_; }
+uint64_t Instruction::getSequenceId() const { return sequenceId_.value_or(0); }
+
+bool Instruction::isSequenceIdValid() const { return sequenceId_.has_value(); }
 
 void Instruction::setInstructionId(const uint64_t insnId) {
   instructionId_ = insnId;
@@ -64,12 +66,16 @@ void Instruction::markOffloaded(const accelerator_id_t accelerator) {
 
 void Instruction::markAccelerated() {
   offloaded_ = Accelerator::NO_ACCELERATOR;
+  sequenceId_.reset();
+  waitingAcceleratorCommit_ = false;
 }
 
 bool Instruction::canBeOffloaded() const {
-  if (offloaded_ == Accelerator::NO_ACCELERATOR) return false;
+  if (!isOffloaded()) return false;
 
-  // TODO: Wait until not speculative
+  // Wait until not speculative
+  if (!isWaitingAcceleratorCommit()) return false;
+
   const auto& logic = config::SimInfo::getOffloadingLogic();
   return logic.isInstructionReady(offloaded_, *this);
 }
@@ -78,12 +84,36 @@ bool Instruction::isOffloaded() const noexcept {
   return offloaded_ != Accelerator::NO_ACCELERATOR;
 }
 
-bool Instruction::isOperandOffloaded(const int i) const {
+void Instruction::setWaitingAcceleratorCommit() noexcept {
+  waitingAcceleratorCommit_ = true;
+}
+
+void Instruction::setAcceleratorCommited() noexcept {
+  waitingAcceleratorCommit_ = false;
+}
+
+bool Instruction::isWaitingAcceleratorCommit() const noexcept {
+  return waitingAcceleratorCommit_;
+}
+
+bool Instruction::isRegisterOffloaded(const Register& reg) const {
   if (offloaded_ == Accelerator::NO_ACCELERATOR) return false;
 
-  const auto& reg = getSourceRegisters()[i];
   const auto& logic = config::SimInfo::getOffloadingLogic();
-  return logic.isOperandOffloaded(offloaded_, reg);
+  return logic.isRegisterOffloaded(offloaded_, reg);
+}
+
+void Instruction::moveOffloadedResults(
+    std::shared_ptr<Instruction>& offloadedSrc) {
+  executed_ = offloadedSrc->executed_;
+  memoryAddresses_ = offloadedSrc->memoryAddresses_;
+  memoryData_ = offloadedSrc->memoryData_;
+  dataPending_ = offloadedSrc->dataPending_;
+  branchAddress_ = offloadedSrc->branchAddress_;
+  branchTaken_ = offloadedSrc->branchTaken_;
+  exceptionEncountered_ = offloadedSrc->exceptionEncountered_;
+  moveOffloadedResultsImpl(offloadedSrc);
+  offloadedSrc = nullptr;
 }
 
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
@@ -109,6 +139,7 @@ void Instruction::baseCloneInto(Instruction* dest) const {
   dest->sequenceId_ = sequenceId_;
   dest->instructionAddress_ = instructionAddress_;
   dest->offloaded_ = offloaded_;
+  dest->waitingAcceleratorCommit_ = waitingAcceleratorCommit_;
   dest->executed_ = executed_;
   dest->latency_ = latency_;
   dest->lsqExecutionLatency_ = lsqExecutionLatency_;

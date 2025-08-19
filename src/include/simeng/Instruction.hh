@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "capstone/capstone.h"
@@ -28,10 +29,15 @@ struct ExecutionInfo {
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
 class Instruction {
+ public:
+  /** A unique identifier of an accelerator instance.
+   * The value of 0 indicates no accelerator. */
   using accelerator_id_t = uint16_t;
+
+  /** An ID signifying no accelerator
+   * (see `simeng::config::OffloadingLogic::instruction_filter`). */
   static constexpr accelerator_id_t NO_ACCELERATOR = 0;
 
- public:
   virtual ~Instruction() {}
 
   /** Performs a polymorphic deep copy of the object. */
@@ -122,6 +128,9 @@ class Instruction {
   /** Retrieve this instruction's sequence ID. */
   uint64_t getSequenceId() const;
 
+  /** Whether this instruction's sequence ID is valid. */
+  bool isSequenceIdValid() const;
+
   /** Set this instruction's instruction ID. */
   void setInstructionId(uint64_t insnId);
 
@@ -184,9 +193,23 @@ class Instruction {
   /** Returns whether this instruction is being offloaded to an accelerator. */
   bool isOffloaded() const noexcept;
 
+  /** Marks the instruction as waiting for accelerator to commit. */
+  void setWaitingAcceleratorCommit() noexcept;
+
+  /** Mark the instruction as commited by the accelerator. */
+  void setAcceleratorCommited() noexcept;
+
+  /** Returns whether this instruction is waiting to be commited
+   * by the accelerator. */
+  bool isWaitingAcceleratorCommit() const noexcept;
+
   /** Check whether operand at index `i` is only present on an accelerator
    * and should be ignored on the core. */
-  bool isOperandOffloaded(int i) const;
+  bool isRegisterOffloaded(const Register& reg) const;
+
+  /** Moves relevant execution information from `offloadedSrc` into `this`,
+   * invalidating `offloadedSrc`.  */
+  void moveOffloadedResults(std::shared_ptr<Instruction>& offloadedSrc);
 
   /** Set the micro-operation in an awaiting commit signal state. */
   void setWaitingCommit();
@@ -217,6 +240,11 @@ class Instruction {
   int getMicroOpIndex() const;
 
  protected:
+  /** Moves relevant execution information from `offloadedSrc` into `this`.
+   * Implementors are allowed to invalidate data in `offloadedSrc`. */
+  virtual void moveOffloadedResultsImpl(
+      std::shared_ptr<Instruction>& offloadedSrc) = 0;
+
   /** Copies all data into `dest`
    * (i.e. performs a deep copy of this abstract class). */
   void baseCloneInto(Instruction* dest) const;
@@ -241,7 +269,7 @@ class Instruction {
 
   /** This instruction's sequence ID; a higher ID represents a chronologically
    * newer instruction. */
-  uint64_t sequenceId_ = 0;
+  std::optional<uint64_t> sequenceId_ = std::nullopt;
 
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress_ = 0;
@@ -249,6 +277,10 @@ class Instruction {
   // Offloading
   /** Which accelerator (if any) is this instruction being offloaded to. */
   accelerator_id_t offloaded_ = NO_ACCELERATOR;
+
+  /** Whether the micro-operation in waiting for the accelerator to return
+   * results. */
+  bool waitingAcceleratorCommit_ = false;
 
   // Execution
   /** Whether this instruction has been executed. */

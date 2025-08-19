@@ -38,6 +38,18 @@ std::unique_ptr<simeng::Instruction> Instruction::clone() const {
   return clone;
 }
 
+void Instruction::moveOffloadedResultsImpl(
+    std::shared_ptr<simeng::Instruction>& offloadedSrc) {
+  // NOLINTBEGIN(*-pro-type-static-cast-downcast)
+  const auto& src = *static_cast<Instruction*>(offloadedSrc.get());
+  // NOLINTEND(*-pro-type-static-cast-downcast)
+  sourceValues_ = src.sourceValues_;
+  results_ = src.results_;
+  exception_ = src.exception_;
+  sourceOperandsPending_ = src.sourceOperandsPending_;
+  dataSize_ = src.dataSize_;
+}
+
 const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }

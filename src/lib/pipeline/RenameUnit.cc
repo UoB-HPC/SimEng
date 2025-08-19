@@ -1,17 +1,16 @@
 #include "simeng/pipeline/RenameUnit.hh"
 
 #include <algorithm>
-#include <iostream>
 
 namespace simeng {
 namespace pipeline {
 
-RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
-                       PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
+RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& input,
+                       PipelineBuffer<std::shared_ptr<Instruction>>& output,
                        ReorderBuffer& rob, RegisterAliasTable& rat,
-                       LoadStoreQueue& lsq, uint16_t registerTypes)
-    : input_(fromDecode),
-      output_(toDispatch),
+                       LoadStoreQueue& lsq, const uint16_t registerTypes)
+    : input_(input),
+      output_(output),
       reorderBuffer_(rob),
       rat_(rat),
       lsq_(lsq),
@@ -50,8 +49,8 @@ void RenameUnit::tick() {
     }
 
     // If it's a memory op, make sure there's space in the respective queue
-    bool isLoad = uop->isLoad();
-    bool isStore = uop->isStoreAddress();
+    const bool isLoad = uop->isLoad() && !uop->isOffloaded();
+    const bool isStore = uop->isStoreAddress() && !uop->isOffloaded();
     if (isLoad) {
       if (lsq_.getLoadQueueSpace() == 0) {
         lqStalls_++;
@@ -72,6 +71,9 @@ void RenameUnit::tick() {
     // Count the number of each type of destination registers needed, and ensure
     // enough free registers exist to allocate them.
     for (const auto& reg : destinationRegisters) {
+      // Skip offloaded registers
+      if (uop->isOffloaded() && uop->isRegisterOffloaded(reg)) continue;
+
       // Check whether renaming is allowed, otherwise we need to serialize
       if (!rat_.canRename(reg.type)) {
         serialize = true;
@@ -99,18 +101,17 @@ void RenameUnit::tick() {
     auto& sourceRegisters = uop->getSourceRegisters();
     for (size_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
-      if (!uop->isOperandReady(i) && !uop->isOperandOffloaded(i)) {
+      if (!uop->isOperandReady(static_cast<int>(i)) &&
+          !uop->isRegisterOffloaded(reg)) {
         uop->renameSource(i, rat_.getMapping(reg));
       }
     }
 
     // Allocate destination registers
-    if (!uop->isOffloaded()) {
-      for (size_t i = 0; i < destinationRegisters.size(); i++) {
-        const auto& reg = destinationRegisters[i];
-        if (rat_.canRename(reg.type)) {
-          uop->renameDestination(i, rat_.allocate(reg));
-        }
+    for (size_t i = 0; i < destinationRegisters.size(); i++) {
+      const auto& reg = destinationRegisters[i];
+      if (!uop->isRegisterOffloaded(reg) && rat_.canRename(reg.type)) {
+        uop->renameDestination(i, rat_.allocate(reg));
       }
     }
 

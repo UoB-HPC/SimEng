@@ -1,7 +1,5 @@
 #include "simeng/pipeline/WritebackUnit.hh"
 
-#include <iostream>
-
 namespace simeng {
 namespace pipeline {
 
@@ -11,19 +9,19 @@ WritebackUnit::WritebackUnit(
     std::function<void(uint64_t insnId)> flagMicroOpCommits)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
-      flagMicroOpCommits_(flagMicroOpCommits) {}
+      flagMicroOpCommits_(std::move(flagMicroOpCommits)) {}
 
 void WritebackUnit::tick() {
-  for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
-    auto& uop = completionSlots_[slot].getHeadSlots()[0];
-
-    if (uop == nullptr) {
-      continue;
-    }
+  for (auto& completionSlot : completionSlots_) {
+    auto uop = std::move(completionSlot.getHeadSlots()[0]);
+    if (uop == nullptr) continue;
 
     auto& results = uop->getResults();
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
+      // Skip offloaded registers
+      if (uop->isRegisterOffloaded(destinations[i])) continue;
+
       // Write results to register file
       registerFileSet_.set(destinations[i], results[i]);
     }
@@ -35,8 +33,6 @@ void WritebackUnit::tick() {
       uop->setCommitReady();
       instructionsWritten_++;
     }
-
-    completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }
 }
 

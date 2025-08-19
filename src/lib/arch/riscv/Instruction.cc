@@ -34,6 +34,11 @@ std::unique_ptr<simeng::Instruction> Instruction::clone() const {
   return clone;
 }
 
+void Instruction::moveOffloadedResultsImpl(
+    std::shared_ptr<simeng::Instruction>& offloadedSrc) {
+  assert(false && "Unimplemented");
+}
+
 const span<Register> Instruction::getSourceRegisters() const {
   return {const_cast<Register*>(sourceRegisters_.data()), sourceRegisterCount_};
 }

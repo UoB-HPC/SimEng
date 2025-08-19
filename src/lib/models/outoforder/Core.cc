@@ -317,6 +317,9 @@ void Core::handleException() {
   // is up-to-date with the register mapping table
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
+  if (offloadingEnabled_) {
+    offloadingController_.purgeFlushed();
+  }
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
   for (auto& eu : executionUnits_) {
@@ -361,28 +364,40 @@ void Core::processExceptionHandler() {
 
 void Core::flushIfNeeded() {
   // Check for flush
-  bool euFlush = false;
-  uint64_t targetAddress = 0;
-  uint64_t lowestInsnId = 0;
+
+  // pair<targetAddress, lowestInsnId>
+  std::optional<std::pair<uint64_t, uint64_t>> flush{};
   for (const auto& eu : executionUnits_) {
-    if (eu.shouldFlush() && (!euFlush || eu.getFlushInsnId() < lowestInsnId)) {
-      euFlush = true;
-      lowestInsnId = eu.getFlushInsnId();
-      targetAddress = eu.getFlushAddress();
+    if (eu.shouldFlush()) {
+      if (!flush.has_value() || eu.getFlushInsnId() < flush.value().second) {
+        flush = {eu.getFlushAddress(), eu.getFlushInsnId()};
+      }
     }
   }
-  if (euFlush || reorderBuffer_.shouldFlush()) {
+  if (flush.has_value() || reorderBuffer_.shouldFlush() ||
+      offloadingController_.shouldFlush()) {
     // Flush was requested in an out-of-order stage.
     // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
     // Rename/Dispatch)
 
-    if (reorderBuffer_.shouldFlush() &&
-        (!euFlush || reorderBuffer_.getFlushInsnId() < lowestInsnId)) {
-      // If the reorder buffer found an older instruction to flush up to, do
-      // that instead
-      lowestInsnId = reorderBuffer_.getFlushInsnId();
-      targetAddress = reorderBuffer_.getFlushAddress();
+    if (reorderBuffer_.shouldFlush()) {
+      if (!flush.has_value() ||
+          reorderBuffer_.getFlushInsnId() < flush.value().second) {
+        flush = {reorderBuffer_.getFlushAddress(),
+                 reorderBuffer_.getFlushInsnId()};
+      }
     }
+    if (offloadingController_.shouldFlush()) {
+      const auto& cause = offloadingController_.getFlushInsn();
+      const auto flushId = cause->getInstructionId();
+      if (!flush.has_value() || flushId < flush.value().second) {
+        const auto flushAddr =
+            reorderBuffer_.findInstructionAfter(cause)->getInstructionAddress();
+        flush = {flushAddr, flushId};
+      }
+    }
+    assert(flush.has_value());
+    const auto [targetAddress, lowestInsnId] = flush.value();
 
     // Check for branch instructions in buffer, and flush them from the BP.
     // Then empty the buffers
@@ -423,7 +438,7 @@ void Core::flushIfNeeded() {
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
-    targetAddress = decodeUnit_.getFlushAddress();
+    const auto targetAddress = decodeUnit_.getFlushAddress();
 
     // Check for branch instructions in buffer, and flush them from the BP.
     // Then empty the buffers

@@ -414,7 +414,7 @@ constexpr static Accelerator::id_t SME_ACCELERATOR_ID = 1;
 
 void SimEngCoreWrapper::configureOffloadingLogic() {
   auto logic = config::OffloadingLogic(
-      [](const auto& insn) {
+      [](const Instruction& insn) {
         // TODO: Proper mapping if multiple accelerators
         //       (possibly from a config file)
         if (models::accelerator::SmeAccelerator::shouldAccelerate(insn))
@@ -425,8 +425,8 @@ void SimEngCoreWrapper::configureOffloadingLogic() {
       {{SME_ACCELERATOR_ID,
         models::accelerator::SmeAccelerator::isInstructionReady}},
       {{SME_ACCELERATOR_ID,
-        models::accelerator::SmeAccelerator::isOperandOffloaded}},
-      [this](const auto& packet) {
+        models::accelerator::SmeAccelerator::isRegisterOffloaded}},
+      [this](const OffloadingEvent::packet_t& packet) {
         coreToAcceleratorLink_->send(new OffloadingEvent(packet));
         return true;
       },
@@ -465,7 +465,7 @@ void SimEngCoreWrapper::fabricateSimEngAccelerator() {
       // TODO: Assign unique IDs if multiple accelerators
       //       (probably get from config file)
       SME_ACCELERATOR_ID,
-      [this](const auto& packet) {
+      [this](const OffloadingEvent::packet_t& packet) {
         acceleratorToCoreLink_->send(new OffloadingEvent(packet));
         return true;
       },

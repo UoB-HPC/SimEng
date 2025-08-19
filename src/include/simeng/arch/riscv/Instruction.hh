@@ -186,6 +186,11 @@ class Instruction : public simeng::Instruction {
   InstructionException getException() const;
 
  private:
+  /** Moves relevant execution information from `offloadedSrc` into `this`.
+   * Implementors are allowed to invalidate data in `offloadedSrc`. */
+  void moveOffloadedResultsImpl(
+      std::shared_ptr<simeng::Instruction>& offloadedSrc) override;
+
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();

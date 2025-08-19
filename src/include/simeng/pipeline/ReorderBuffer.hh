@@ -28,12 +28,12 @@ struct latestBranch {
  *  binary_search. */
 struct idCompare {
   bool operator()(const std::shared_ptr<Instruction>& first,
-                  const uint64_t second) {
+                  const uint64_t second) const {
     return first->getInstructionId() < second;
   }
 
   bool operator()(const uint64_t first,
-                  const std::shared_ptr<Instruction>& second) {
+                  const std::shared_ptr<Instruction>& second) const {
     return first < second->getInstructionId();
   }
 };
@@ -89,8 +89,14 @@ class ReorderBuffer {
   /** Retrieve the number of branch mispredictions. */
   uint64_t getBranchMispredictedCount() const;
 
-  /** Retrieve the number of retired brancehs. */
+  /** Retrieve the number of retired branches. */
   uint64_t getRetiredBranchesCount() const;
+
+  /** Tries to find an instruction that follows the one provided.
+   * Returns `nullptr` if the provided instruction is not in the ROB,
+   * or it is the last one. */
+  std::shared_ptr<Instruction> findInstructionAfter(
+      const std::shared_ptr<Instruction>& insn) const;
 
  private:
   /** A reference to the register alias table. */
@@ -108,7 +114,7 @@ class ReorderBuffer {
   /** A function to send an instruction at a detected loop boundary. */
   std::function<void(uint64_t branchAddress)> sendLoopBoundary_;
 
-  /** Whether or not a loop has been detected. */
+  /** Whether a loop has been detected. */
   bool loopDetected_ = false;
 
   /** A reference to the current branch predictor. */

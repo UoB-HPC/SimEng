@@ -243,7 +243,7 @@ class SimEngCoreWrapper : public Component {
  public:
   /** An `SST::Event` for sending `AcceleratorPacket`s. */
   struct OffloadingEvent final : Event {
-    using packet_t = pipeline::noc::NocPacket<AcceleratorPacket>;
+    using packet_t = NocPacket<AcceleratorPacket>;
     packet_t packet_;
 
     explicit OffloadingEvent(packet_t packet) : packet_(std::move(packet)) {}

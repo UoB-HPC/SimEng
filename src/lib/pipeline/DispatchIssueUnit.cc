@@ -98,7 +98,7 @@ void DispatchIssueUnit::tick() {
       for (uint16_t i = 0; static_cast<size_t>(i) < sourceRegisters.size();
            i++) {
         const auto& reg = sourceRegisters[i];
-        if (uop->isOperandOffloaded(i) || uop->isOperandReady(i)) continue;
+        if (uop->isRegisterOffloaded(reg) || uop->isOperandReady(i)) continue;
 
         // The operand hasn't already been supplied
         if (scoreboard_[reg.type][reg.tag]) {
@@ -114,6 +114,13 @@ void DispatchIssueUnit::tick() {
           // and offloaded instructions are never ready to execute (on the core)
           dependencyMatrix_[reg.type][reg.tag].push_back({uop, 0, i});
         }
+      }
+
+      // Set scoreboard for all relevant destination registers as not ready
+      auto& destinationRegisters = uop->getDestinationRegisters();
+      for (const auto& reg : destinationRegisters) {
+        if (uop->isRegisterOffloaded(reg)) continue;
+        scoreboard_[reg.type][reg.tag] = false;
       }
 
       input_.getHeadSlots()[slot] = nullptr;

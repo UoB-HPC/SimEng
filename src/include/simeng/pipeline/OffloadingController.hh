@@ -49,15 +49,19 @@ class OffloadingController {
 
   /** Purge flushed instructions from the internal pipeline. */
   void purgeFlushed();
-  // TODO: What should happen when flushing? How to flush the accelerator?
 
-  // TODO: What happens if an instruction on the accelerator causes a flush
-  //       (separate from exceptions)? Should that even be possible?
+  /** Query whether an accelerator requested a flush in the most recent
+   * cycle. */
+  bool shouldFlush() const;
+
+  /** Retrieve the instruction associated with the most recently requested
+   * flush. */
+  const std::shared_ptr<Instruction>& getFlushInsn() const;
 
  private:
   /** Sends the resolved uop back to the regular pipeline's output buffer, also
    * forwarding the results to dispatch/issue. */
-  void write_received(const payload_t& payload);
+  void write_received(payload_t payload);
 
   /** A Network-on-Chip gateway for communicating with the accelerator. */
   logic_t::gateway_t gateway_;
@@ -90,6 +94,17 @@ class OffloadingController {
 
   /** A registry of currently offloaded instructions. */
   std::unordered_map<payload_t::id_t, std::shared_ptr<Instruction>> offloaded_;
+
+  /** Information about flushes triggered by accelerators. */
+  struct FlushInfo {
+    /** The payload ID of the causing the flush. */
+    payload_t::id_t causeId;
+    /** The instruction causing the flush. */
+    std::shared_ptr<Instruction> flushAfter;
+  };
+
+  /** Information about the last flush triggered by an accelerator. */
+  std::optional<FlushInfo> flush_ = std::nullopt;
 };
 
 }  // namespace pipeline

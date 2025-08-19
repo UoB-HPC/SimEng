@@ -5,6 +5,7 @@
 #include "simeng/branchpredictors/AlwaysNotTakenPredictor.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
+#include "simeng/pipeline/MappedRegisterFileSet.hh"
 #include "simeng/pipeline/RenameUnit.hh"
 #include "simeng/pipeline/WritebackUnit.hh"
 
@@ -15,7 +16,7 @@ namespace accelerator {
 class SmeAccelerator : public Accelerator {
  public:
   explicit SmeAccelerator(
-      id_t id, send_fn_t send_fn, receive_fn_t receive_fn,
+      id_t id, gateway_t::send_fn_t send_fn, gateway_t::receive_fn_t receive_fn,
       memory::MemoryInterface& dataMemory,
       pipeline::PortAllocator& portAllocator,
       ryml::ConstNodeRef config = config::SimInfo::getConfig());
@@ -30,18 +31,34 @@ class SmeAccelerator : public Accelerator {
 
   /** A predicate function for checking whether a register is present
    * on the accelerator and should be ignored on the core. */
-  static bool isOperandOffloaded(const Register& reg);
-
- protected:
-  void tickImpl() override;
-
-  std::shared_ptr<Instruction> mapIncoming(
-      std::shared_ptr<Instruction> insn) override;
+  static bool isRegisterOffloaded(const Register& reg);
 
  private:
+  /** Concrete implementation of ticking this accelerator. */
+  void tickImpl() override;
+
+  /** Marks the instruction as accelerated and adds it to `insns_`. */
+  void mapIncoming(std::shared_ptr<Instruction>& insn) override;
+
   /** Determines whether the provided register is a vector/matrix register. */
   static bool isSmeRegister(const Register& reg);
 
+  /** Flushes the pipeline if required. */
+  void flushIfNeeded();
+
+  /** Raise an exception to the core, providing the generating instruction. */
+  void raiseException(const std::shared_ptr<Instruction>& instruction);
+
+  /** Handle an exception raised during the cycle. */
+  void handleException();
+
+  /** Handle Modifying the register state on an SME state change. */
+  void handleSmeStateChange(const arch::aarch64::Instruction& instruction);
+
+  /** Flush the SME accelerator. */
+  void flush(uint64_t flushAfter);
+
+  /** Stub branch predictor */
   AlwaysNotTakenPredictor branchPredictor_;
 
   /** The core's register file set. */
@@ -53,6 +70,9 @@ class SmeAccelerator : public Accelerator {
 
   /** The core's register alias table. */
   pipeline::RegisterAliasTable registerAliasTable_;
+
+  /** The mapped register file set. */
+  pipeline::MappedRegisterFileSet mappedRegisterFileSet_;
 
   /** The buffer between rename and dispatch/issue. */
   pipeline::PipelineBuffer<std::shared_ptr<Instruction>>
@@ -98,6 +118,10 @@ class SmeAccelerator : public Accelerator {
 
   /** A queue of in-flight instructions. */
   std::deque<std::shared_ptr<Instruction>> insns_;
+
+  /** A pointer to the instruction responsible for generating an exception
+   * during this cycle, if any. */
+  std::optional<std::shared_ptr<Instruction>> exceptionInsn_ = std::nullopt;
 };
 
 }  // namespace accelerator
