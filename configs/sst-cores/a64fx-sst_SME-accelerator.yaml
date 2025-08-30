@@ -1,22 +1,15 @@
 # The following resources where utilised to create the config file and naming schemes:
 # https://github.com/fujitsu/A64FX
 
-Core:
+Accelerator:
   ISA: AArch64
+  Type: SME
   Simulation-Mode: outoforder
   Clock-Frequency-GHz: 1.8
   Timer-Frequency-MHz: 100
   Micro-Operations: True
   Vector-Length: 512
   Streaming-Vector-Length: 512
-  Offloading-Enabled: True
-Fetch:
-  Fetch-Block-Size: 32
-  Loop-Buffer-Size: 48
-  Loop-Detection-Threshold: 4
-Process-Image:
-  Heap-Size: 1073741824
-  Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
@@ -34,11 +27,6 @@ Queue-Sizes:
   Store: 24
 Port-Allocator:
   Type: Balanced
-Branch-Predictor:
-  Type: "Perceptron"
-  BTB-Tag-Bits: 11
-  Global-History-Length: 19
-  RAS-entries: 8
 L1-Data-Memory:
   Interface-Type: External
 L1-Instruction-Memory:
@@ -56,27 +44,21 @@ Ports:
     Portname: FLA
     Instruction-Group-Support:
     - FP
+    - SVE
   1:
-    Portname: PR
-    Instruction-Group-Support:
-    - PREDICATE
-  2:
     Portname: EXA
     Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
     - STORE_DATA
-  3:
+  2:
     Portname: FLB
     Instruction-Group-Support:
     - FP_SIMPLE
     - FP_MUL
-  4:
-    Portname: EXB
-    Instruction-Group-Support:
-    - INT_SIMPLE
-    - INT_DIV_OR_SQRT
-  5:
+    - SVE_SIMPLE
+    - SVE_MUL
+  3:
     Portname: EAGA
     Instruction-Group-Support:
     - LOAD
@@ -84,7 +66,7 @@ Ports:
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
-  6:
+  4:
     Portname: EAGB
     Instruction-Group-Support:
     - LOAD
@@ -92,14 +74,9 @@ Ports:
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
-  7:
-    Portname: BR
+  5:
+    Portname: SME
     Instruction-Group-Support:
-    - BRANCH
-  8:
-    Portname: SVE
-    Instruction-Group-Support:
-    - SVE
     - SME
 Reservation-Stations:
   0:
@@ -107,14 +84,12 @@ Reservation-Stations:
     Dispatch-Rate: 2
     Ports:
     - FLA
-    - PR
     - EXA
   1:
     Size: 20
     Dispatch-Rate: 2
     Ports:
     - FLB
-    - EXB
   2:
     Size: 10
     Dispatch-Rate: 1
@@ -126,15 +101,10 @@ Reservation-Stations:
     Ports:
       - EAGB
   4:
-    Size: 19
-    Dispatch-Rate: 1
-    Ports:
-      - BR
-  5:
     Size: 20
     Dispatch-Rate: 1
     Ports:
-      - SVE
+      - SME
 Execution-Units:
   0:
     Pipelined: True
@@ -169,24 +139,6 @@ Execution-Units:
   5:
     Pipelined: True
     Blocking-Groups: 
-    - INT_DIV_OR_SQRT
-    - FP_DIV_OR_SQRT
-    - SVE_DIV_OR_SQRT
-  6:
-    Pipelined: True
-    Blocking-Groups: 
-    - INT_DIV_OR_SQRT
-    - FP_DIV_OR_SQRT
-    - SVE_DIV_OR_SQRT
-  7:
-    Pipelined: True
-    Blocking-Groups: 
-    - INT_DIV_OR_SQRT
-    - FP_DIV_OR_SQRT
-    - SVE_DIV_OR_SQRT
-  8:
-    Pipelined: True
-    Blocking-Groups:
     - INT_DIV_OR_SQRT
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT

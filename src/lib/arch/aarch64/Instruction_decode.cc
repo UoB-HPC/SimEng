@@ -70,22 +70,23 @@ static const std::unordered_set<std::string> mulOps = {
  *******************/
 
 // Extract bit `start` of `value`
-constexpr bool bit(uint32_t value, uint8_t start) {
-  return (value >> start) & 1;
+constexpr bool bit(const uint32_t value, const uint8_t start) {
+  return value >> start & 1;
 }
 
 // Extract bits `start` to `start+width` of `value`
-constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
-  return ((value >> start) & ((1 << width) - 1));
+constexpr uint32_t bits(uint32_t const value, const uint8_t start,
+                        const uint8_t width) {
+  return (value >> start) & ((1 << width) - 1);
 }
 
 // Generate a NZCV register identifier
 constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
 // Sign-extend a bitstring of length `currentLength`
-constexpr int32_t signExtend(uint32_t value, int currentLength) {
-  uint32_t mask = (0xFFFFFFFF) << currentLength;
-  bool negative = bit(value, currentLength - 1);
+constexpr int32_t signExtend(const uint32_t value, const int currentLength) {
+  const uint32_t mask = 0xFFFFFFFF << currentLength;
+  const bool negative = bit(value, currentLength - 1);
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
@@ -96,7 +97,7 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
  * `aarch64_reg` enum. Updates to the Capstone library version may cause this to
  * break.
  * */
-Register csRegToRegister(aarch64_reg reg) {
+Register csRegToRegister(const aarch64_reg reg) {
   // Do not need check for AARCH64_REG_Vn as in Capstone, they are aliased as Qn
   // (full vector) or Dn (half vector).
   // As D and Q registers are also of type RegisterType::VECTOR, the outcome
@@ -200,17 +201,15 @@ Register csRegToRegister(aarch64_reg reg) {
   }
 
   assert(false && "Decoding failed due to unknown register identifier");
-  return {std::numeric_limits<uint8_t>::max(),
-          std::numeric_limits<uint16_t>::max()};
 }
 
 /** Returns a full set of rows from the ZA matrix register that make up the
  * supplied SME tile register. */
-std::vector<Register> getZARowVectors(aarch64_reg reg,
+std::vector<Register> getZARowVectors(const aarch64_reg reg,
                                       const uint64_t SVL_bits) {
   std::vector<Register> outRegs;
   // Get SVL in bytes (will equal total number of implemented ZA rows)
-  uint64_t SVL = SVL_bits / 8;
+  const uint64_t SVL = SVL_bits / 8;
 
   uint8_t base = 0;
   uint8_t tileTypeCount = 0;
@@ -237,9 +236,10 @@ std::vector<Register> getZARowVectors(aarch64_reg reg,
   // other sub-tiles in its group; rather than sequentially - as per the AArch64
   // specification.
   // i.e. zah0 would have rows {0,2,4,6,...}; zah1 would have rows {1,3,5,7,...}
-  for (uint16_t i = 0; i < (SVL / tileTypeCount); i++) {
-    outRegs.push_back(
-        {RegisterType::MATRIX, uint16_t(base + (i * tileTypeCount))});
+  outRegs.reserve(SVL / tileTypeCount);
+  for (uint64_t i = 0; i < SVL / tileTypeCount; i++) {
+    outRegs.push_back({RegisterType::MATRIX,
+                       static_cast<uint16_t>(base + i * tileTypeCount)});
   }
 
   return outRegs;
@@ -249,28 +249,28 @@ std::vector<Register> getZARowVectors(aarch64_reg reg,
  * DECODING LOGIC
  *****************/
 void Instruction::decode() {
-  if (metadata_.id == AARCH64_INS_INVALID) {
+  if (metadata_->id == AARCH64_INS_INVALID) {
     exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
     return;
   }
 
-  // Extract implicit writes, including pre/post index writeback
-  for (size_t i = 0; i < metadata_.implicitDestinationCount; i++) {
+  // Extract implicit writes, including pre-/post-index writeback
+  for (size_t i = 0; i < metadata_->implicitDestinationCount; i++) {
     destinationRegisters_[destinationRegisterCount_] = csRegToRegister(
-        static_cast<aarch64_reg>(metadata_.implicitDestinations[i]));
+        static_cast<aarch64_reg>(metadata_->implicitDestinations[i]));
     destinationRegisterCount_++;
   }
 
   // Extract implicit reads
-  for (size_t i = 0; i < metadata_.implicitSourceCount; i++) {
+  for (size_t i = 0; i < metadata_->implicitSourceCount; i++) {
     // TODO: Implement FPCR usage properly
     // Ignore implicit reading of FPCR
-    if (static_cast<aarch64_reg>(metadata_.implicitSources[i]) ==
+    if (static_cast<aarch64_reg>(metadata_->implicitSources[i]) ==
         AARCH64_REG_FPCR)
       continue;
-    sourceRegisters_[sourceOperandsPending_] =
-        csRegToRegister(static_cast<aarch64_reg>(metadata_.implicitSources[i]));
+    sourceRegisters_[sourceOperandsPending_] = csRegToRegister(
+        static_cast<aarch64_reg>(metadata_->implicitSources[i]));
     sourceRegisterCount_++;
     sourceOperandsPending_++;
   }
@@ -278,11 +278,11 @@ void Instruction::decode() {
   bool accessesMemory = false;
 
   // Extract explicit register accesses
-  for (size_t i = 0; i < metadata_.operandCount; i++) {
-    const auto& op = metadata_.operands[i];
+  for (size_t i = 0; i < metadata_->operandCount; i++) {
+    const auto& op = metadata_->operands[i];
 
     if (op.type == AARCH64_OP_REG) {  // Register operand
-      if ((op.access & cs_ac_type::CS_AC_WRITE)) {
+      if (op.access & CS_AC_WRITE) {
         if (op.reg != AARCH64_REG_WZR && op.reg != AARCH64_REG_XZR) {
           // Determine the data type the instruction operates on based on the
           // register operand used
@@ -306,15 +306,14 @@ void Instruction::decode() {
           destinationRegisterCount_++;
         }
       }
-      if (op.access & cs_ac_type::CS_AC_READ) {
+      if (op.access & CS_AC_READ) {
         // Add register reads to destinations
         sourceRegisters_[sourceRegisterCount_] = csRegToRegister(op.reg);
         sourceRegisterCount_++;
         sourceOperandsPending_++;
 
         // Identify shift operands
-        if (op.shift.type != aarch64_shifter::AARCH64_SFT_INVALID &&
-            op.shift.value > 0) {
+        if (op.shift.type != AARCH64_SFT_INVALID && op.shift.value > 0) {
           setInstructionType(InsnType::isShift);
         }
       }
@@ -348,22 +347,22 @@ void Instruction::decode() {
       results_.addSMEOperand(regs.size());
       sourceRegisters_.addSMEOperand(regs.size());
       sourceValues_.addSMEOperand(regs.size());
-      for (size_t i = 0; i < regs.size(); i++) {
+      for (const auto reg : regs) {
         // If READ access, we only need to add SME rows to source registers.
         // If WRITE access, then we need to add SME rows to destination
         // registers AND source registers. The latter is required to maintain
-        // any un-updated rows if an SME op will specifies
-        // one row (or column) to write to.
-        sourceRegisters_[sourceRegisterCount_] = regs[i];
+        // any un-updated rows if an SME op specifies one row (or column)
+        // to write to.
+        sourceRegisters_[sourceRegisterCount_] = reg;
         sourceRegisterCount_++;
         sourceOperandsPending_++;
-        if (op.access & cs_ac_type::CS_AC_WRITE) {
-          destinationRegisters_[destinationRegisterCount_] = regs[i];
+        if (op.access & CS_AC_WRITE) {
+          destinationRegisters_[destinationRegisterCount_] = reg;
           destinationRegisterCount_++;
         }
       }
       if (op.sme.type == AARCH64_SME_OP_TILE_VEC) {
-        // SME tile has slice determined by register and immidiate.
+        // SME tile has slice determined by register and immediate.
         // Add base register to source operands
         sourceRegisters_[sourceRegisterCount_] =
             csRegToRegister(op.sme.slice_reg);
@@ -389,7 +388,7 @@ void Instruction::decode() {
         sourceOperandsPending_++;
       }
     } else if (op.type == AARCH64_OP_SYSREG) {
-      int32_t sysRegTag =
+      const int32_t sysRegTag =
           architecture_.getSystemRegisterTag(op.sysop.reg.sysreg);
       // Check SYSREG is supported
       if (sysRegTag == -1) {
@@ -407,29 +406,29 @@ void Instruction::decode() {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount_++;
       }
-    } else if (metadata_.operands[0].type == AARCH64_OP_SYSALIAS &&
-               metadata_.operands[0].sysop.sub_type == AARCH64_OP_SVCR) {
+    } else if (metadata_->operands[0].type == AARCH64_OP_SYSALIAS &&
+               metadata_->operands[0].sysop.sub_type == AARCH64_OP_SVCR) {
       // This case is for instruction alias SMSTART and SMSTOP. Updating of SVCR
       // value is done via an exception so no registers required.
     }
   }
 
   // Identify branches
-  for (size_t i = 0; i < metadata_.groupCount; i++) {
-    if (metadata_.groups[i] == AARCH64_GRP_JUMP ||
-        metadata_.groups[i] == AARCH64_GRP_CALL ||
-        metadata_.groups[i] == AARCH64_GRP_RET ||
-        metadata_.groups[i] == AARCH64_GRP_BRANCH_RELATIVE) {
+  for (size_t i = 0; i < metadata_->groupCount; i++) {
+    if (metadata_->groups[i] == AARCH64_GRP_JUMP ||
+        metadata_->groups[i] == AARCH64_GRP_CALL ||
+        metadata_->groups[i] == AARCH64_GRP_RET ||
+        metadata_->groups[i] == AARCH64_GRP_BRANCH_RELATIVE) {
       setInstructionType(InsnType::isBranch);
     }
   }
 
   // Identify branch type
   if (isInstruction(InsnType::isBranch)) {
-    switch (metadata_.opcode) {
+    switch (metadata_->opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
-        knownOffset_ = metadata_.operands[0].imm;
+        knownOffset_ = metadata_->operands[0].imm;
         break;
       case Opcode::AArch64_BR: {  // br xn
         branchType_ = BranchType::Unconditional;
@@ -437,18 +436,18 @@ void Instruction::decode() {
       }
       case Opcode::AArch64_BL:  // bl #imm
         branchType_ = BranchType::SubroutineCall;
-        knownOffset_ = metadata_.operands[0].imm;
+        knownOffset_ = metadata_->operands[0].imm;
         break;
       case Opcode::AArch64_BLR: {  // blr xn
         branchType_ = BranchType::SubroutineCall;
         break;
       }
       case Opcode::AArch64_Bcc: {  // b.cond label
-        if (metadata_.operands[0].imm < 0)
+        if (metadata_->operands[0].imm < 0)
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownOffset_ = metadata_.operands[0].imm;
+        knownOffset_ = metadata_->operands[0].imm;
         break;
       }
       case Opcode::AArch64_CBNZW:  // cbnz wn, #imm
@@ -458,11 +457,11 @@ void Instruction::decode() {
       case Opcode::AArch64_CBZW:  // cbz wn, #imm
         [[fallthrough]];
       case Opcode::AArch64_CBZX: {  // cbz xn, #imm
-        if (metadata_.operands[1].imm < 0)
+        if (metadata_->operands[1].imm < 0)
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownOffset_ = metadata_.operands[1].imm;
+        knownOffset_ = metadata_->operands[1].imm;
         break;
       }
       case Opcode::AArch64_TBNZW:  // tbnz wn, #imm, label
@@ -472,11 +471,11 @@ void Instruction::decode() {
       case Opcode::AArch64_TBZW:  // tbz wn, #imm, label
         [[fallthrough]];
       case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
-        if (metadata_.operands[2].imm < 0)
+        if (metadata_->operands[2].imm < 0)
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownOffset_ = metadata_.operands[2].imm;
+        knownOffset_ = metadata_->operands[2].imm;
         break;
       }
       case Opcode::AArch64_RET:  // ret {xt}
@@ -490,12 +489,12 @@ void Instruction::decode() {
   // Identify loads/stores
   if (accessesMemory) {
     // Set size of data to be stored if it hasn't already been set
-    if (!isMicroOp_) dataSize_ = getDataSize(metadata_.operands[0]);
+    if (!isMicroOp_) dataSize_ = getDataSize(metadata_->operands[0]);
 
     // Check first operand access to determine if it's a load or store
-    if (metadata_.operands[0].access & CS_AC_WRITE) {
-      if (metadata_.id == AARCH64_INS_STXR ||
-          metadata_.id == AARCH64_INS_STLXR) {
+    if (metadata_->operands[0].access & CS_AC_WRITE) {
+      if (metadata_->id == AARCH64_INS_STXR ||
+          metadata_->id == AARCH64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         if (microOpcode_ != MicroOpcode::STR_DATA) {
@@ -517,34 +516,34 @@ void Instruction::decode() {
     }
 
     // LDADD* are considered to be both a load and a store
-    if (Opcode::AArch64_LDADDAB <= metadata_.opcode &&
-        metadata_.opcode <= Opcode::AArch64_LDADDX) {
+    if (Opcode::AArch64_LDADDAB <= metadata_->opcode &&
+        metadata_->opcode <= Opcode::AArch64_LDADDX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
 
     // CASAL* are considered to be both a load and a store
-    if (Opcode::AArch64_CASALB <= metadata_.opcode &&
-        metadata_.opcode <= Opcode::AArch64_CASALX) {
+    if (Opcode::AArch64_CASALB <= metadata_->opcode &&
+        metadata_->opcode <= Opcode::AArch64_CASALX) {
       setInstructionType(InsnType::isLoad);
       setInstructionType(InsnType::isStoreData);
     }
 
     if (isInstruction(InsnType::isStoreData)) {
       // Identify store instruction group
-      if (AARCH64_REG_Z0 <= metadata_.operands[0].reg &&
-          metadata_.operands[0].reg <= AARCH64_REG_Z31) {
+      if (AARCH64_REG_Z0 <= metadata_->operands[0].reg &&
+          metadata_->operands[0].reg <= AARCH64_REG_Z31) {
         setInstructionType(InsnType::isSVEData);
-      } else if ((metadata_.operands[0].reg <= AARCH64_REG_S31 &&
-                  metadata_.operands[0].reg >= AARCH64_REG_Q0) ||
-                 (metadata_.operands[0].reg <= AARCH64_REG_H31 &&
-                  metadata_.operands[0].reg >= AARCH64_REG_B0)) {
+      } else if ((metadata_->operands[0].reg <= AARCH64_REG_S31 &&
+                  metadata_->operands[0].reg >= AARCH64_REG_Q0) ||
+                 (metadata_->operands[0].reg <= AARCH64_REG_H31 &&
+                  metadata_->operands[0].reg >= AARCH64_REG_B0)) {
         setInstructionType(InsnType::isScalarData);
-      } else if (metadata_.operands[0].is_vreg) {
+      } else if (metadata_->operands[0].is_vreg) {
         setInstructionType(InsnType::isVectorData);
-      } else if ((metadata_.operands[0].reg >= AARCH64_REG_ZAB0 &&
-                  metadata_.operands[0].reg <= AARCH64_REG_ZT0) ||
-                 metadata_.operands[0].reg == AARCH64_REG_ZA) {
+      } else if ((metadata_->operands[0].reg >= AARCH64_REG_ZAB0 &&
+                  metadata_->operands[0].reg <= AARCH64_REG_ZT0) ||
+                 metadata_->operands[0].reg == AARCH64_REG_ZA) {
         setInstructionType(InsnType::isSMEData);
       }
     }
@@ -552,20 +551,20 @@ void Instruction::decode() {
     // Edge case for identifying store data micro-operation
     setInstructionType(InsnType::isStoreData);
   }
-  if (metadata_.opcode == Opcode::AArch64_LDRXl ||
-      metadata_.opcode == Opcode::AArch64_LDRSWl) {
+  if (metadata_->opcode == Opcode::AArch64_LDRXl ||
+      metadata_->opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must
     // be marked as loads manually
     setInstructionType(InsnType::isLoad);
   }
 
   // Identify Logical (bitwise) instructions
-  if (logicalOps.find(metadata_.mnemonic) != logicalOps.end()) {
+  if (logicalOps.find(metadata_->mnemonic) != logicalOps.end()) {
     setInstructionType(InsnType::isLogical);
   }
 
   // Identify comparison insturctions (excluding atomic LD-CMP-STR)
-  if (cmpOps.find(metadata_.mnemonic) != cmpOps.end()) {
+  if (cmpOps.find(metadata_->mnemonic) != cmpOps.end()) {
     setInstructionType(InsnType::isCompare);
     // Capture those floating point compare instructions with no destination
     // register
@@ -579,7 +578,7 @@ void Instruction::decode() {
   }
 
   // Identify convert instructions
-  if (cvtOps.find(metadata_.mnemonic) != cvtOps.end()) {
+  if (cvtOps.find(metadata_->mnemonic) != cvtOps.end()) {
     setInstructionType(InsnType::isConvert);
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -591,45 +590,45 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  if (divsqrtOps.find(metadata_.mnemonic) != divsqrtOps.end()) {
+  if (divsqrtOps.find(metadata_->mnemonic) != divsqrtOps.end()) {
     setInstructionType(InsnType::isDivideOrSqrt);
   }
 
   // Identify multiply operations
-  if (mulOps.find(metadata_.mnemonic) != mulOps.end()) {
+  if (mulOps.find(metadata_->mnemonic) != mulOps.end()) {
     setInstructionType(InsnType::isMultiply);
   }
 
   // Catch exceptions to the above identifier assignments
   // Uncaught predicate assignment due to lacking destination register
-  if (metadata_.opcode == Opcode::AArch64_PTEST_PP) {
+  if (metadata_->opcode == Opcode::AArch64_PTEST_PP) {
     setInstructionType(InsnType::isPredicate);
   }
   // Uncaught float data assignment for FMOV move to general instructions
-  if (((Opcode::AArch64_FMOVD0 <= metadata_.opcode &&
-        metadata_.opcode <= Opcode::AArch64_FMOVS0) ||
-       (Opcode::AArch64_FMOVDXHighr <= metadata_.opcode &&
-        metadata_.opcode <= Opcode::AArch64_FMOVXHr)) &&
+  if (((Opcode::AArch64_FMOVD0 <= metadata_->opcode &&
+        metadata_->opcode <= Opcode::AArch64_FMOVS0) ||
+       (Opcode::AArch64_FMOVDXHighr <= metadata_->opcode &&
+        metadata_->opcode <= Opcode::AArch64_FMOVXHr)) &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
-  if ((Opcode::AArch64_SMOVvi16to32 <= metadata_.opcode &&
-       metadata_.opcode <= Opcode::AArch64_SMOVvi8to64_idx0) ||
-      (Opcode::AArch64_UMOVvi16 <= metadata_.opcode &&
-       metadata_.opcode <= Opcode::AArch64_UMOVvi8_idx0)) {
+  if ((Opcode::AArch64_SMOVvi16to32 <= metadata_->opcode &&
+       metadata_->opcode <= Opcode::AArch64_SMOVvi8to64_idx0) ||
+      (Opcode::AArch64_UMOVvi16 <= metadata_->opcode &&
+       metadata_->opcode <= Opcode::AArch64_UMOVvi8_idx0)) {
     setInstructionType(InsnType::isVectorData);
   }
   // Uncaught float data assignment for FCVT convert to general instructions
-  if ((Opcode::AArch64_FCVTASUWDr <= metadata_.opcode &&
-       metadata_.opcode <= Opcode::AArch64_FCVT_ZPmZ_StoH) &&
+  if (Opcode::AArch64_FCVTASUWDr <= metadata_->opcode &&
+      metadata_->opcode <= Opcode::AArch64_FCVT_ZPmZ_StoH &&
       !(isInstruction(InsnType::isScalarData) ||
         isInstruction(InsnType::isVectorData))) {
     setInstructionType(InsnType::isScalarData);
   }
 
-  if (!(isInstruction(InsnType::isSMEData))) {
+  if (!isInstruction(InsnType::isSMEData)) {
     // Catch zero register references and pre-complete those operands - not
     // applicable to SME instructions
     for (uint16_t i = 0; i < sourceRegisterCount_; i++) {

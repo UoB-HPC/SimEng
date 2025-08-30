@@ -1,7 +1,10 @@
+// NOLINTBEGIN(*-pro-type-static-cast-downcast)
+
 #include "../ConfigInit.hh"
 #include "../MockCore.hh"
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
+#include "arch/aarch64/InstructionMetadata.hh"
 #include "gmock/gmock.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -12,11 +15,11 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-using ::testing::HasSubstr;
-using ::testing::Return;
-using ::testing::ReturnRef;
+using testing::HasSubstr;
+using testing::Return;
+using testing::ReturnRef;
 
-class AArch64ExceptionHandlerTest : public ::testing::Test {
+class AArch64ExceptionHandlerTest : public testing::Test {
  public:
   AArch64ExceptionHandlerTest()
       : kernel(config::SimInfo::getConfig()["CPU-Info"]["Special-File-Dir-Path"]
@@ -51,22 +54,28 @@ class AArch64ExceptionHandlerTest : public ::testing::Test {
   static constexpr Register R8 = {RegisterType::GENERAL, 8};
 };
 
+std::shared_ptr<InstructionMetadata> extractMetadata(
+    const std::shared_ptr<simeng::Instruction>& insn) {
+  const auto* ptr = static_cast<Instruction*>(insn.get());
+  return std::make_shared<InstructionMetadata>(ptr->getMetadata());
+}
+
 // The following exceptions are tested in /test/regression/aarch64/Exception.cc
 // - InstructionException::StreamingModeUpdate,
 // - InstructionException::ZAregisterStatusUpdate,
 // - InstructionException::SMZAUpdate
 // All system calls are tested in /test/regression/aarch64/Syscall.cc
 
-// Test that a syscall is processed sucessfully
+// Test that a syscall is processed successfully
 TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
   // Create "syscall" instruction
   uint64_t insnAddr = 0x4;
   MacroOp uops;
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  InstructionException exception = InstructionException::SupervisorCall;
-  std::shared_ptr<Instruction> insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  auto exception = InstructionException::SupervisorCall;
+  auto insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   insn->setInstructionAddress(insnAddr);
 
   // Setup register file for `uname` syscall (chosen as minimal functionality)
@@ -81,29 +90,28 @@ TEST_F(AArch64ExceptionHandlerTest, testSyscall) {
       .WillByDefault(ReturnRef(archRegFileSet));
   EXPECT_CALL(core, getArchitecturalRegisterFileSet()).Times(1);
   bool retVal = handler.tick();
-  ExceptionResult result = handler.getResult();
+  const auto& [fatal, instructionAddress, stateChange] = handler.getResult();
 
   EXPECT_TRUE(retVal);
-  EXPECT_FALSE(result.fatal);
-  EXPECT_EQ(result.instructionAddress, insnAddr + 4);
-  EXPECT_EQ(result.stateChange.type, ChangeType::REPLACEMENT);
-  std::vector<Register> modRegs = {R0};
-  EXPECT_EQ(result.stateChange.modifiedRegisters, modRegs);
+  EXPECT_FALSE(fatal);
+  EXPECT_EQ(instructionAddress, insnAddr + 4);
+  EXPECT_EQ(stateChange.type, ChangeType::REPLACEMENT);
+  std::vector modRegs = {R0};
+  EXPECT_EQ(stateChange.modifiedRegisters, modRegs);
   std::vector<RegisterValue> modRegVals = {{0ull, 8}};
-  EXPECT_EQ(result.stateChange.modifiedRegisterValues, modRegVals);
-  std::vector<memory::MemoryAccessTarget> modMemTargets = {
-      {1234, 6},
-      {1234 + 65, 25},
-      {1234 + (65 * 2), 7},
-      {1234 + (65 * 3), 39},
-      {1234 + (65 * 4), 8}};
-  EXPECT_EQ(result.stateChange.memoryAddresses, modMemTargets);
-  std::vector<RegisterValue> modMemVals = {
+  EXPECT_EQ(stateChange.modifiedRegisterValues, modRegVals);
+  std::vector<memory::MemoryAccessTarget> modMemTargets = {{1234, 6},
+                                                           {1234 + 65, 25},
+                                                           {1234 + 65 * 2, 7},
+                                                           {1234 + 65 * 3, 39},
+                                                           {1234 + 65 * 4, 8}};
+  EXPECT_EQ(stateChange.memoryAddresses, modMemTargets);
+  std::vector modMemVals = {
       RegisterValue("Linux"), RegisterValue("simeng.hpc.cs.bris.ac.uk"),
       RegisterValue("4.14.0"),
       RegisterValue("#1 SimEng Mon Apr 29 16:28:37 UTC 2019"),
       RegisterValue("aarch64")};
-  EXPECT_EQ(result.stateChange.memoryAddressValues, modMemVals);
+  EXPECT_EQ(stateChange.memoryAddressValues, modMemVals);
 }
 
 // Test that `readStringThen()` operates as expected
@@ -115,7 +123,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen) {
   // Initialise variables
   size_t retVal = 0;
   char* buffer;
-  buffer = (char*)malloc(256);
+  buffer = static_cast<char*>(malloc(256));
   for (int i = 0; i < 256; i++) {
     buffer[i] = 'q';
   }
@@ -124,14 +132,12 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen) {
 
   memory::MemoryAccessTarget target1 = {addr, 1};
   memory::MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
-  span<memory::MemoryReadResult> res1Span =
-      span<memory::MemoryReadResult>(&res1, 1);
+  auto res1Span = span(&res1, 1);
 
   memory::MemoryAccessTarget target2 = {addr + 1, 1};
   memory::MemoryReadResult res2 = {target2,
                                    RegisterValue(static_cast<int>('\0'), 1), 1};
-  span<memory::MemoryReadResult> res2Span =
-      span<memory::MemoryReadResult>(&res2, 1);
+  auto res2Span = span(&res2, 1);
 
   // On first call to readStringThen, expect return of false and retVal to still
   // be 0, and buffer to be filled with `q`
@@ -174,7 +180,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen) {
   EXPECT_EQ(retVal, 0);
   for (int i = 0; i < 256; i++) {
     if (i == 0) {
-      EXPECT_EQ(buffer[i], (char)0xAB);
+      EXPECT_EQ(buffer[i], static_cast<char>(0xAB));
     } else {
       EXPECT_EQ(buffer[i], 'q');
     }
@@ -190,7 +196,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen) {
   EXPECT_EQ(retVal, 1);
   for (int i = 0; i < 256; i++) {
     if (i == 0) {
-      EXPECT_EQ(buffer[i], (char)0xAB);
+      EXPECT_EQ(buffer[i], static_cast<char>(0xAB));
     } else if (i == 1) {
       EXPECT_EQ(buffer[i], '\0');
     } else {
@@ -203,18 +209,17 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen) {
 // away
 TEST_F(AArch64ExceptionHandlerTest, readStringThen_maxLen0) {
   // Create new mock instruction and ExceptionHandler
-  std::shared_ptr<MockInstruction> uopPtr(new MockInstruction);
+  const std::shared_ptr<MockInstruction> uopPtr(new MockInstruction);
   ExceptionHandler handler(uopPtr, core, memory, kernel);
   size_t retVal = 100;
-  char* buffer;
-  buffer = (char*)malloc(256);
+  const auto buffer = static_cast<char*>(malloc(256));
   for (int i = 0; i < 256; i++) {
     buffer[i] = 'q';
   }
-  uint64_t addr = 1024;
-  int maxLen = 0;
+  constexpr uint64_t addr = 1024;
+  constexpr int maxLen = 0;
 
-  bool outcome =
+  const bool outcome =
       handler.readStringThen(buffer, addr, maxLen, [&retVal](auto length) {
         retVal = length;
         return true;
@@ -236,7 +241,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen_maxLenReached) {
   // Initialise variables
   size_t retVal = 100;
   char* buffer;
-  buffer = (char*)malloc(256);
+  buffer = static_cast<char*>(malloc(256));
   for (int i = 0; i < 256; i++) {
     buffer[i] = 'q';
   }
@@ -245,8 +250,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen_maxLenReached) {
 
   memory::MemoryAccessTarget target1 = {addr, 1};
   memory::MemoryReadResult res1 = {target1, RegisterValue(0xAB, 1), 1};
-  span<memory::MemoryReadResult> res1Span =
-      span<memory::MemoryReadResult>(&res1, 1);
+  auto res1Span = span(&res1, 1);
 
   // On first call to readStringThen, expect return of false and retVal to still
   // be 0, and buffer to be filled with `q`
@@ -288,7 +292,7 @@ TEST_F(AArch64ExceptionHandlerTest, readStringThen_maxLenReached) {
   EXPECT_EQ(retVal, 1);
   for (int i = 0; i < 256; i++) {
     if (i == 0) {
-      EXPECT_EQ(buffer[i], (char)0xAB);
+      EXPECT_EQ(buffer[i], static_cast<char>(0xAB));
     } else {
       EXPECT_EQ(buffer[i], 'q');
     }
@@ -308,8 +312,8 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   uint64_t length = 192;
 
   // Initialise data to "read" from MockMemory
-  std::vector<char> dataVec(length, 'q');
-  std::vector<char> dataVec2(length, 'q');
+  std::vector dataVec(length, 'q');
+  std::vector dataVec2(length, 'q');
   // Initialise the two required targets (128-bytes per read request in
   // readBufferThen())
   memory::MemoryAccessTarget tar1 = {ptr, 128};
@@ -329,7 +333,7 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   // readBufferThen and a memory read request to have occurred
   EXPECT_CALL(memory, requestRead(tar1, uopPtr->getSequenceId())).Times(1);
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
-  bool outcome = handler.readBufferThen(ptr, length, [&retVal]() {
+  bool outcome = handler.readBufferThen(ptr, length, [&retVal] {
     retVal = 10;
     return true;
   });
@@ -348,11 +352,10 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
 
   // Call tick() again, simulating completed read + new read requested as still
   // data to fetch
-  ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<memory::MemoryReadResult>(&res1, 1)));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(span(&res1, 1)));
   // Make sure clearCompletedReads() alters functionality of getCompletedReads()
   ON_CALL(memory, clearCompletedReads())
-      .WillByDefault(::testing::InvokeWithoutArgs([&]() {
+      .WillByDefault(testing::InvokeWithoutArgs([&] {
         ON_CALL(memory, getCompletedReads())
             .WillByDefault(Return(span<memory::MemoryReadResult>()));
       }));
@@ -363,14 +366,13 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
   EXPECT_FALSE(outcome);
   EXPECT_EQ(retVal, 0);
   EXPECT_EQ(handler.dataBuffer_.size(), 128);
-  for (size_t i = 0; i < handler.dataBuffer_.size(); i++) {
-    EXPECT_EQ(handler.dataBuffer_[i], 'q');
+  for (const auto i : handler.dataBuffer_) {
+    EXPECT_EQ(i, 'q');
   }
 
   // One final call to tick() to get last bits of data from memory and call
   // then()
-  ON_CALL(memory, getCompletedReads())
-      .WillByDefault(Return(span<memory::MemoryReadResult>(&res2, 1)));
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(span(&res2, 1)));
   EXPECT_CALL(memory, getCompletedReads()).Times(1);
   EXPECT_CALL(memory, clearCompletedReads()).Times(1);
   outcome = handler.tick();
@@ -385,15 +387,15 @@ TEST_F(AArch64ExceptionHandlerTest, readBufferThen) {
 // Test that `readBufferThen()` calls then if length is 0
 TEST_F(AArch64ExceptionHandlerTest, readBufferThen_length0) {
   // Create new mock instruction and ExceptionHandler
-  std::shared_ptr<MockInstruction> uopPtr(new MockInstruction);
+  const std::shared_ptr<MockInstruction> uopPtr(new MockInstruction);
   ExceptionHandler handler(uopPtr, core, memory, kernel);
 
-  const size_t expectedVal = 10;
+  constexpr size_t expectedVal = 10;
   uint64_t retVal = 0;
-  uint64_t ptr = 0;
-  uint64_t length = 0;
+  constexpr uint64_t ptr = 0;
+  constexpr uint64_t length = 0;
 
-  bool outcome = handler.readBufferThen(ptr, length, [&retVal]() {
+  const bool outcome = handler.readBufferThen(ptr, length, [&retVal] {
     retVal = 10;
     return true;
   });
@@ -411,16 +413,19 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   // Create instruction for EncodingUnallocated
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
-  InstructionException exception = InstructionException::EncodingUnallocated;
-  std::shared_ptr<Instruction> insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  auto exception = InstructionException::EncodingUnallocated;
+  auto insn = std::make_shared<Instruction>(
+      arch,
+      std::make_shared<InstructionMetadata>(
+          static_cast<Instruction*>(uops[0].get())->getMetadata()),
+      exception);
   // Create ExceptionHandler
   ExceptionHandler handler_0(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   std::stringstream buffer;
   std::streambuf* sbuf = std::cout.rdbuf();  // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());           // Redirect cout to buffer
-  handler_0.printException(*static_cast<Instruction*>(insn.get()));
+  handler_0.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered unallocated "
@@ -432,14 +437,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::ExecutionNotYetImplemented;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_1(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_1.printException(*static_cast<Instruction*>(insn.get()));
+  handler_1.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered execution "
@@ -451,14 +456,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::MisalignedPC;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_3(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_3.printException(*static_cast<Instruction*>(insn.get()));
+  handler_3.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered misaligned "
@@ -470,14 +475,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::DataAbort;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_4(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_4.printException(*static_cast<Instruction*>(insn.get()));
+  handler_4.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(
       buffer.str(),
@@ -489,14 +494,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::SupervisorCall;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_5(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_5.printException(*static_cast<Instruction*>(insn.get()));
+  handler_5.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(
       buffer.str(),
@@ -509,14 +514,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::HypervisorCall;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_6(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_6.printException(*static_cast<Instruction*>(insn.get()));
+  handler_6.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(
       buffer.str(),
@@ -529,14 +534,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::SecureMonitorCall;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_7(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_7.printException(*static_cast<Instruction*>(insn.get()));
+  handler_7.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "secure monitor call exception"));
@@ -547,14 +552,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::NoAvailablePort;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_8(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_8.printException(*static_cast<Instruction*>(insn.get()));
+  handler_8.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "unsupported execution port exception"));
@@ -565,14 +570,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::UnmappedSysReg;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_9(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_9.printException(*static_cast<Instruction*>(insn.get()));
+  handler_9.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "unmapped system register exception"));
@@ -583,14 +588,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::StreamingModeUpdate;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_10(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_10.printException(*static_cast<Instruction*>(insn.get()));
+  handler_10.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "streaming mode update exception"));
@@ -601,14 +606,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::ZAregisterStatusUpdate;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_11(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_11.printException(*static_cast<Instruction*>(insn.get()));
+  handler_11.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(), HasSubstr("[SimEng:ExceptionHandler] Encountered "
                                       "ZA register status update exception"));
@@ -619,14 +624,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::SMZAUpdate;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_12(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_12.printException(*static_cast<Instruction*>(insn.get()));
+  handler_12.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered streaming mode "
@@ -638,14 +643,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::ZAdisabled;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_13(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_13.printException(*static_cast<Instruction*>(insn.get()));
+  handler_13.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered ZA register "
@@ -657,14 +662,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::SMdisabled;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_14(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_14.printException(*static_cast<Instruction*>(insn.get()));
+  handler_14.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered SME execution "
@@ -676,14 +681,14 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
   arch.predecode(validInstrBytes.data(), validInstrBytes.size(), insnAddr,
                  uops);
   exception = InstructionException::None;
-  insn = std::make_shared<Instruction>(
-      arch, static_cast<Instruction*>(uops[0].get())->getMetadata(), exception);
+  insn =
+      std::make_shared<Instruction>(arch, extractMetadata(uops[0]), exception);
   // Create ExceptionHandler
   ExceptionHandler handler_15(insn, core, memory, kernel);
   // Capture std::cout and tick exceptionHandler
   sbuf = std::cout.rdbuf();         // Save cout's buffer
   std::cout.rdbuf(buffer.rdbuf());  // Redirect cout to buffer
-  handler_15.printException(*static_cast<Instruction*>(insn.get()));
+  handler_15.printException(*insn);
   std::cout.rdbuf(sbuf);  // Restore cout
   EXPECT_THAT(buffer.str(),
               HasSubstr("[SimEng:ExceptionHandler] Encountered unknown (id: "
@@ -695,3 +700,5 @@ TEST_F(AArch64ExceptionHandlerTest, printException) {
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
+
+// NOLINTEND(*-pro-type-static-cast-downcast)

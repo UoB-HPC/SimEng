@@ -10,23 +10,25 @@ namespace accelerator {
 
 using namespace arch;
 
-SmeAccelerator::SmeAccelerator(const id_t id, gateway_t::send_fn_t send_fn,
+SmeAccelerator::SmeAccelerator(gateway_t::send_fn_t send_fn,
                                gateway_t::receive_fn_t receive_fn,
                                memory::MemoryInterface& dataMemory,
                                pipeline::PortAllocator& portAllocator,
-                               const ryml::ConstNodeRef config)
-    : Accelerator(id, std::move(send_fn), std::move(receive_fn)),
-      registerFileSet_(config::SimInfo::getPhysRegStruct()),
-      physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
-      physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
-      registerAliasTable_(config::SimInfo::getArchRegStruct(),
+                               std::shared_ptr<config::AcceleratorInfo> info)
+    : Accelerator(std::move(info), std::move(send_fn), std::move(receive_fn)),
+      registerFileSet_(info_->getPhysRegStruct()),
+      physicalRegisterStructures_(info_->getPhysRegStruct()),
+      physicalRegisterQuantities_(info_->getPhysRegQuantities()),
+      registerAliasTable_(info_->getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       renameToDispatchBuffer_(input_->getWidth(), nullptr),
-      issuePorts_(config["Execution-Units"].num_children(), {1, nullptr}),
+      issuePorts_(info_->getConfig()["Execution-Units"].num_children(),
+                  {1, nullptr}),
       completionSlots_(
-          config["Execution-Units"].num_children() +
-              config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>(),
+          info_->getConfig()["Execution-Units"].num_children() +
+              info_->getConfig()["Pipeline-Widths"]["LSQ-Completion"]
+                  .as<uint16_t>(),
           {1, nullptr}),
       renameUnit_(*input_, renameToDispatchBuffer_, reorderBuffer_,
                   registerAliasTable_, loadStoreQueue_,
@@ -37,29 +39,35 @@ SmeAccelerator::SmeAccelerator(const id_t id, gateway_t::send_fn_t send_fn,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       reorderBuffer_(
-          config["Queue-Sizes"]["ROB"].as<uint32_t>(), registerAliasTable_,
-          loadStoreQueue_, [this](const auto& insn) { raiseException(insn); },
-          [](auto) {}, branchPredictor_, 0, 0),
+          info_->getConfig()["Queue-Sizes"]["ROB"].as<uint32_t>(),
+          registerAliasTable_, loadStoreQueue_,
+          [this](const auto& insn) { raiseException(insn); }, [](auto) {},
+          branchPredictor_, 0, 0),
       loadStoreQueue_(
-          config["Queue-Sizes"]["Load"].as<uint32_t>(),
-          config["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
-          {completionSlots_.data() + config["Execution-Units"].num_children(),
-           config["Pipeline-Widths"]["LSQ-Completion"].as<uint16_t>()},
+          info_->getConfig()["Queue-Sizes"]["Load"].as<uint32_t>(),
+          info_->getConfig()["Queue-Sizes"]["Store"].as<uint32_t>(), dataMemory,
+          {completionSlots_.data() +
+               info_->getConfig()["Execution-Units"].num_children(),
+           info_->getConfig()["Pipeline-Widths"]["LSQ-Completion"]
+               .as<uint16_t>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
           [](const auto& uop) { uop->setCommitReady(); },
-          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
-          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+          info_->getConfig()["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          info_->getConfig()["LSQ-L1-Interface"]["Load-Bandwidth"]
               .as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+          info_->getConfig()["LSQ-L1-Interface"]["Store-Bandwidth"]
               .as<uint16_t>(),
-          config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+          info_->getConfig()["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+              .as<uint16_t>(),
+          info_->getConfig()["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+              .as<uint16_t>(),
+          info_->getConfig()["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
       portAllocator_(portAllocator),
       commitWidth_(output_->getWidth()) {
+  const auto& config = info_->getConfig();
   for (size_t i = 0; i < config["Execution-Units"].num_children(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -285,7 +293,7 @@ void SmeAccelerator::handleSmeStateChange(
   // Get Architecture
   const auto& arch = instruction.getArchitecture();
   // Retrieve register file structure from SimInfo
-  const auto& regFileStruct = config::SimInfo::getArchRegStruct();
+  const auto& regFileStruct = info_->getArchRegStruct();
   // Retrieve metadata from architecture
   const auto& metadata = instruction.getMetadata();
   const auto exception = instruction.getException();
@@ -322,8 +330,7 @@ void SmeAccelerator::handleSmeStateChange(
               << metadata.opcode << std::endl;
     exit(1);
   }
-  // TODO: Should `arch` be updated here?
-  // arch.setSVCRval(newSVCR);
+  arch.setSVCRval(newSVCR);
 
   // Initialize vectors for all registers & values
   std::vector<Register> regs;

@@ -85,7 +85,7 @@ struct MicroOpInfo {
 };
 
 /** Get the size of the data to be accessed from/to memory. */
-inline uint8_t getDataSize(const cs_aarch64_op op) {
+inline uint8_t getDataSize(const cs_aarch64_op& op) {
   // No V-register enum identifiers exist. Instead, depending on whether a full
   // or half vector is accessed, a Q or D register is used instead.
   // A `is_vreg` bool in `op` defines if we are using v-vector registers.
@@ -322,13 +322,16 @@ class Instruction final : public simeng::Instruction {
   /** Construct an instruction instance by decoding a provided instruction word.
    */
   Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata,
+              std::shared_ptr<const InstructionMetadata> metadata,
               MicroOpInfo microOpInfo = MicroOpInfo());
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata,
+              std::shared_ptr<const InstructionMetadata> metadata,
               InstructionException exception);
+
+  /** Deserializes an instruction from the provided span of bytes. */
+  Instruction(const Architecture& architecture, span<uint8_t>& serialized);
 
   /** Performs a polymorphic deep copy of the object. */
   std::unique_ptr<simeng::Instruction> clone() const override;
@@ -427,6 +430,9 @@ class Instruction final : public simeng::Instruction {
   void moveOffloadedResultsImpl(
       std::shared_ptr<simeng::Instruction>& offloadedSrc) override;
 
+  /** Serializes the concrete type into the provided buffer. */
+  void serializeIntoImpl(std::vector<uint8_t>& buffer) const override;
+
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
@@ -468,7 +474,7 @@ class Instruction final : public simeng::Instruction {
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
-  const InstructionMetadata& metadata_;
+  std::shared_ptr<const InstructionMetadata> metadata_;
 
   /** An operandContainer of source registers. */
   srcRegContainer sourceRegisters_;

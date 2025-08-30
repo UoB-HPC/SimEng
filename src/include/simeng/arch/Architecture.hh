@@ -79,7 +79,12 @@ class Architecture {
 
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                          const uint64_t iterations) const = 0;
+                                          uint64_t iterations) const = 0;
+
+  /** Reads the provided buffer, deserializing the data into an Instruction
+   * object. */
+  virtual std::unique_ptr<Instruction> deserializeFrom(
+      span<uint8_t>& buffer) const = 0;
 
  protected:
   /** A Capstone decoding library handle, for decoding instructions. */

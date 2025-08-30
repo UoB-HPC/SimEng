@@ -1,3 +1,4 @@
+// NOLINTBEGIN(*-no-recursion)
 #define RYML_SINGLE_HDR_DEFINE_NOW
 #include "simeng/config/ModelConfig.hh"
 
@@ -5,6 +6,7 @@
 
 #include "arch/aarch64/InstructionMetadata.hh"
 #include "arch/riscv/InstructionMetadata.hh"
+#include "simeng/config/AcceleratorType.hh"
 
 namespace simeng {
 namespace config {
@@ -21,7 +23,8 @@ namespace AARCH64Opcode {
 #include "AArch64GenInstrInfo.inc"
 }  // namespace AARCH64Opcode
 
-ModelConfig::ModelConfig(std::string path) {
+ModelConfig::ModelConfig(const std::string& path, const bool accelerator)
+    : accelerator_(accelerator) {
   // Reset ryml::Tree used to represent the config file
   configTree_.clear();
   configTree_.rootref() |= ryml::MAP;
@@ -31,13 +34,31 @@ ModelConfig::ModelConfig(std::string path) {
   // Check for file existence
   if (!file.is_open()) {
     std::cerr << "[SimEng:ModelConfig] Could not read " << path << std::endl;
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   // Read in the contents of the file and create a ryml:Tree from it
   std::stringstream buffer;
   buffer << file.rdbuf();
   configTree_ = ryml::parse_in_arena(ryml::to_csubstr(buffer.str()));
   file.close();
+
+  // Rename nodes for accelerators
+  {
+    auto config = configTree_.rootref();
+    if (accelerator_ && config.has_child("Accelerator")) {
+      auto accNode = config["Accelerator"];
+      // Rename by prepending the ISA for easier instantiation
+      if (accNode.has_child("Type") && accNode.has_child("ISA")) {
+        auto type = accNode["Type"].as<std::string>();
+        auto isa = accNode["ISA"].as<std::string>();
+        auto fullType = acceleratorTypeNameFromConfig(isa, type);
+        accNode["Type"] << fullType;
+      }
+
+      // Rename to Core for compatibility with other parts of the codebase
+      accNode.set_key("Core");
+    }
+  }
 
   // Set the expectations of the config file and validate the config values
   // within the passed config file
@@ -73,13 +94,13 @@ void ModelConfig::validate() {
               << invalidStr << std::endl;
   }
   // Stop execution if the config file didn't pass checks
-  if (!missingStr.empty() || !invalidStr.empty()) exit(1);
+  if (!missingStr.empty() || !invalidStr.empty()) exit(EXIT_FAILURE);
 }
 
 void ModelConfig::reGenerateDefault(const ISA isa, const bool force) {
   // Only re-generate the default config file if it hasn't already been
   // generated for the specified ISA
-  if (!force && (isa_ == isa && isDefault_)) return;
+  if (!force && isa_ == isa && isDefault_) return;
   isa_ = isa;
   generateDefault();
 }
@@ -167,9 +188,9 @@ void ModelConfig::constructDefault(ExpectationNode expectations,
   }
 }
 
-void ModelConfig::addConfigOptions(std::string config) {
-  // Construct a temporary ryml:Tree so that the values held in the passed
-  // config string can be appropriately extracted
+void ModelConfig::addConfigOptions(const std::string& config) {
+  // Construct a temporary ryml:Tree so that the values held
+  // in the passed config string can be appropriately extracted
   ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(config));
 
   // Add/replace the passed config options in `configTree_` and re-run
@@ -195,14 +216,14 @@ void ModelConfig::addConfigOptions(std::string config) {
   validate();
 }
 
-void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
+void ModelConfig::recursiveAdd(ryml::NodeRef node, const size_t id) {
   // Iterate over the config options supplied
   for (ryml::NodeRef child : node.children()) {
     ryml::NodeRef ref;
-    // If the config option doesn't already exists, add it. Otherwise get the
+    // If the config option doesn't already exist, add it. Otherwise, get the
     // reference to it
     if (!configTree_.ref(id).has_child(child.key())) {
-      std::string key = std::string(child.key().data(), child.key().size());
+      auto key = std::string(child.key().data(), child.key().size());
       ref = configTree_.ref(id).append_child() << ryml::key(key);
       // Set any appropriate ryml::NodeRef types
       if (child.is_map()) {
@@ -234,7 +255,7 @@ void ModelConfig::recursiveAdd(ryml::NodeRef node, size_t id) {
   }
 }
 
-void ModelConfig::setExpectations(bool isDefault) {
+void ModelConfig::setExpectations(const bool isDefault) {
   // Reset expectations
   expectations_ = {};
 
@@ -268,7 +289,7 @@ void ModelConfig::setExpectations(bool isDefault) {
               << "\" passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
-          exit(1);
+          exit(EXIT_FAILURE);
         }
         // Set isa_
         if (ISA == "AArch64") {
@@ -282,14 +303,14 @@ void ModelConfig::setExpectations(bool isDefault) {
                "\"Core:ISA\" but it doesn't exist. Cannot continue with config "
                "validation. Exiting."
             << std::endl;
-        exit(1);
+        exit(EXIT_FAILURE);
       }
     } else {
       std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
                    "\"Core\" but it doesn't exist. Cannot continue with config "
                    "validation. Exiting."
                 << std::endl;
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
   createGroupMapping();
@@ -298,6 +319,12 @@ void ModelConfig::setExpectations(bool isDefault) {
     expectations_["Core"].addChild(
         ExpectationNode::createExpectation<bool>(false, "Compressed"));
     expectations_["Core"]["Compressed"].setValueSet(std::vector{false, true});
+  }
+
+  // Accelerator type
+  if (accelerator_) {
+    expectations_["Core"].addChild(
+        ExpectationNode::createExpectation<std::string>("Undefined", "Type"));
   }
 
   expectations_["Core"].addChild(
@@ -334,7 +361,7 @@ void ModelConfig::setExpectations(bool isDefault) {
               << clockFreq << "\" passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
-          exit(1);
+          exit(EXIT_FAILURE);
         }
 
         tFreqUpperBound = clockFreq * 1000;
@@ -344,14 +371,14 @@ void ModelConfig::setExpectations(bool isDefault) {
                      "Cannot continue with config "
                      "validation. Exiting."
                   << std::endl;
-        exit(1);
+        exit(EXIT_FAILURE);
       }
     } else {
       std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
                    "\"Core\" but it doesn't exist. Cannot continue with config "
                    "validation. Exiting."
                 << std::endl;
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
 
@@ -379,35 +406,41 @@ void ModelConfig::setExpectations(bool isDefault) {
   }
 
   // Fetch
-  expectations_.addChild(ExpectationNode::createExpectation("Fetch"));
+  if (!accelerator_) {
+    expectations_.addChild(ExpectationNode::createExpectation("Fetch"));
 
-  expectations_["Fetch"].addChild(
-      ExpectationNode::createExpectation<uint16_t>(32, "Fetch-Block-Size"));
-  expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(std::vector<uint16_t>{
-      4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768});
+    expectations_["Fetch"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(32, "Fetch-Block-Size"));
+    expectations_["Fetch"]["Fetch-Block-Size"].setValueSet(
+        std::vector<uint16_t>{4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096,
+                              8192, 16384, 32768});
 
-  expectations_["Fetch"].addChild(
-      ExpectationNode::createExpectation<uint16_t>(32, "Loop-Buffer-Size"));
-  expectations_["Fetch"]["Loop-Buffer-Size"].setValueBounds<uint16_t>(
-      0, UINT16_MAX);
+    expectations_["Fetch"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(32, "Loop-Buffer-Size"));
+    expectations_["Fetch"]["Loop-Buffer-Size"].setValueBounds<uint16_t>(
+        0, UINT16_MAX);
 
-  expectations_["Fetch"].addChild(ExpectationNode::createExpectation<uint16_t>(
-      5, "Loop-Detection-Threshold"));
-  expectations_["Fetch"]["Loop-Detection-Threshold"].setValueBounds<uint16_t>(
-      0, UINT16_MAX);
+    expectations_["Fetch"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(
+            5, "Loop-Detection-Threshold"));
+    expectations_["Fetch"]["Loop-Detection-Threshold"].setValueBounds<uint16_t>(
+        0, UINT16_MAX);
+  }
 
   // Process-Image
-  expectations_.addChild(ExpectationNode::createExpectation("Process-Image"));
+  if (!accelerator_) {
+    expectations_.addChild(ExpectationNode::createExpectation("Process-Image"));
 
-  expectations_["Process-Image"].addChild(
-      ExpectationNode::createExpectation<uint64_t>(100000, "Heap-Size"));
-  expectations_["Process-Image"]["Heap-Size"].setValueBounds<uint64_t>(
-      1, UINT64_MAX);
+    expectations_["Process-Image"].addChild(
+        ExpectationNode::createExpectation<uint64_t>(100000, "Heap-Size"));
+    expectations_["Process-Image"]["Heap-Size"].setValueBounds<uint64_t>(
+        1, UINT64_MAX);
 
-  expectations_["Process-Image"].addChild(
-      ExpectationNode::createExpectation<uint64_t>(100000, "Stack-Size"));
-  expectations_["Process-Image"]["Stack-Size"].setValueBounds<uint64_t>(
-      1, UINT64_MAX);
+    expectations_["Process-Image"].addChild(
+        ExpectationNode::createExpectation<uint64_t>(100000, "Stack-Size"));
+    expectations_["Process-Image"]["Stack-Size"].setValueBounds<uint64_t>(
+        1, UINT64_MAX);
+  }
 
   // Register-Set
   expectations_.addChild(ExpectationNode::createExpectation("Register-Set"));
@@ -511,89 +544,95 @@ void ModelConfig::setExpectations(bool isDefault) {
       std::vector<std::string>{"Balanced", "A64FX", "M1"});
 
   // Branch-Predictor
-  expectations_.addChild(
-      ExpectationNode::createExpectation("Branch-Predictor"));
+  if (!accelerator_) {
+    expectations_.addChild(
+        ExpectationNode::createExpectation("Branch-Predictor"));
 
-  expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
-  expectations_["Branch-Predictor"]["Type"].setValueSet(
-      std::vector<std::string>{"Generic", "Perceptron", "TAGE"});
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<std::string>("Perceptron", "Type"));
+    expectations_["Branch-Predictor"]["Type"].setValueSet(
+        std::vector<std::string>{"Generic", "Perceptron", "TAGE"});
 
-  expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
-  expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(1,
-                                                                            64);
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<uint8_t>(8, "BTB-Tag-Bits"));
+    expectations_["Branch-Predictor"]["BTB-Tag-Bits"].setValueBounds<uint8_t>(
+        1, 64);
 
-  expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<uint16_t>(8, "Global-History-Length"));
-  expectations_["Branch-Predictor"]["Global-History-Length"]
-      .setValueBounds<uint16_t>(1, 32);
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(8,
+                                                     "Global-History-Length"));
+    expectations_["Branch-Predictor"]["Global-History-Length"]
+        .setValueBounds<uint16_t>(1, 32);
 
-  expectations_["Branch-Predictor"].addChild(
-      ExpectationNode::createExpectation<uint16_t>(8, "RAS-entries"));
-  expectations_["Branch-Predictor"]["RAS-entries"].setValueBounds<uint16_t>(
-      1, UINT16_MAX);
+    expectations_["Branch-Predictor"].addChild(
+        ExpectationNode::createExpectation<uint16_t>(8, "RAS-entries"));
+    expectations_["Branch-Predictor"]["RAS-entries"].setValueBounds<uint16_t>(
+        1, UINT16_MAX);
 
-  // The saturating counter bits and the fallback predictor
-  // are relevant to the GenericPredictor only
-  if (!isDefault) {
-    // Ensure the key "Branch-Predictor" exists before querying the associated
-    // YAML node
-    if (configTree_.rootref().has_child(ryml::to_csubstr("Branch-Predictor"))) {
-      // Ensure the key "Branch-Predictor:Type" exists before querying the
-      // associated YAML node
-      if (configTree_["Branch-Predictor"].has_child(ryml::to_csubstr("Type"))) {
-        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-                "Generic" ||
-            configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-                "TAGE") {
-          expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(
-                  2, "Saturating-Count-Bits"));
-          expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
-              .setValueBounds<uint8_t>(1, 64);
+    // The saturating counter bits and the fallback predictor
+    // are relevant to the GenericPredictor only
+    if (!isDefault) {
+      // Ensure the key "Branch-Predictor" exists before querying the associated
+      // YAML node
+      if (configTree_.rootref().has_child(
+              ryml::to_csubstr("Branch-Predictor"))) {
+        // Ensure the key "Branch-Predictor:Type" exists before querying the
+        // associated YAML node
+        if (configTree_["Branch-Predictor"].has_child(
+                ryml::to_csubstr("Type"))) {
+          if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+                  "Generic" ||
+              configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+                  "TAGE") {
+            expectations_["Branch-Predictor"].addChild(
+                ExpectationNode::createExpectation<uint8_t>(
+                    2, "Saturating-Count-Bits"));
+            expectations_["Branch-Predictor"]["Saturating-Count-Bits"]
+                .setValueBounds<uint8_t>(1, 64);
 
-          expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<std::string>(
-                  "Always-Taken", "Fallback-Static-Predictor"));
-          expectations_["Branch-Predictor"]["Fallback-Static-Predictor"]
-              .setValueSet(
-                  std::vector<std::string>{"Always-Taken", "Always-Not-Taken"});
-        }
-        if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
-            "TAGE") {
-          expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(12,
-                                                          "TAGE-Table-Bits"));
-          expectations_["Branch-Predictor"]["TAGE-Table-Bits"]
-              .setValueBounds<uint8_t>(1, UINT8_MAX);
+            expectations_["Branch-Predictor"].addChild(
+                ExpectationNode::createExpectation<std::string>(
+                    "Always-Taken", "Fallback-Static-Predictor"));
+            expectations_["Branch-Predictor"]["Fallback-Static-Predictor"]
+                .setValueSet(std::vector<std::string>{"Always-Taken",
+                                                      "Always-Not-Taken"});
+          }
+          if (configTree_["Branch-Predictor"]["Type"].as<std::string>() ==
+              "TAGE") {
+            expectations_["Branch-Predictor"].addChild(
+                ExpectationNode::createExpectation<uint8_t>(12,
+                                                            "TAGE-Table-Bits"));
+            expectations_["Branch-Predictor"]["TAGE-Table-Bits"]
+                .setValueBounds<uint8_t>(1, UINT8_MAX);
 
-          expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(6,
-                                                          "Num-TAGE-Tables"));
-          expectations_["Branch-Predictor"]["Num-TAGE-Tables"]
-              .setValueBounds<uint8_t>(1, UINT8_MAX);
+            expectations_["Branch-Predictor"].addChild(
+                ExpectationNode::createExpectation<uint8_t>(6,
+                                                            "Num-TAGE-Tables"));
+            expectations_["Branch-Predictor"]["Num-TAGE-Tables"]
+                .setValueBounds<uint8_t>(1, UINT8_MAX);
 
-          expectations_["Branch-Predictor"].addChild(
-              ExpectationNode::createExpectation<uint8_t>(8, "Tag-Length"));
-          expectations_["Branch-Predictor"]["Tag-Length"]
-              .setValueBounds<uint8_t>(1, UINT8_MAX);
+            expectations_["Branch-Predictor"].addChild(
+                ExpectationNode::createExpectation<uint8_t>(8, "Tag-Length"));
+            expectations_["Branch-Predictor"]["Tag-Length"]
+                .setValueBounds<uint8_t>(1, UINT8_MAX);
+          }
+        } else {
+          std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
+                       "\"Branch-Predictor:Type\" but it doesn't exist. "
+                       "Cannot continue with config "
+                       "validation. Exiting."
+                    << std::endl;
+          exit(EXIT_FAILURE);
         }
       } else {
-        std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
-                     "\"Branch-Predictor:Type\" but it doesn't exist. "
-                     "Cannot continue with config "
-                     "validation. Exiting."
-                  << std::endl;
-        exit(1);
+        std::cerr
+            << "[SimEng:ModelConfig] Attempted to access config key "
+               "\"Branch-Predictor\" but it doesn't exist. Cannot continue "
+               "with config "
+               "validation. Exiting."
+            << std::endl;
+        exit(EXIT_FAILURE);
       }
-    } else {
-      std::cerr << "[SimEng:ModelConfig] Attempted to access config key "
-                   "\"Branch-Predictor\" but it doesn't exist. Cannot continue "
-                   "with config "
-                   "validation. Exiting."
-                << std::endl;
-      exit(1);
     }
   }
 
@@ -607,14 +646,16 @@ void ModelConfig::setExpectations(bool isDefault) {
       std::vector<std::string>{"Flat", "Fixed", "External"});
 
   // L1-Instruction-Memory
-  expectations_.addChild(
-      ExpectationNode::createExpectation("L1-Instruction-Memory"));
+  if (!accelerator_) {
+    expectations_.addChild(
+        ExpectationNode::createExpectation("L1-Instruction-Memory"));
 
-  expectations_["L1-Instruction-Memory"].addChild(
-      ExpectationNode::createExpectation<std::string>("Flat",
-                                                      "Interface-Type"));
-  expectations_["L1-Instruction-Memory"]["Interface-Type"].setValueSet(
-      std::vector<std::string>{"Flat", "Fixed", "External"});
+    expectations_["L1-Instruction-Memory"].addChild(
+        ExpectationNode::createExpectation<std::string>("Flat",
+                                                        "Interface-Type"));
+    expectations_["L1-Instruction-Memory"]["Interface-Type"].setValueSet(
+        std::vector<std::string>{"Flat", "Fixed", "External"});
+  }
 
   // LSQ-L1-Interface
   expectations_.addChild(
@@ -638,7 +679,7 @@ void ModelConfig::setExpectations(bool isDefault) {
 
   // AArch64 requires a vector length of at least 128, requiring a minimum of 16
   // byte load/store bandwidths
-  // For RV64, the the minimum required load/store bandwidth is 8 bytes
+  // For RV64, the minimum required load/store bandwidth is 8 bytes
   if (isa_ == ISA::AArch64) {
     expectations_["LSQ-L1-Interface"]["Load-Bandwidth"]
         .setValueBounds<uint16_t>(16, UINT16_MAX);
@@ -727,7 +768,7 @@ void ModelConfig::setExpectations(bool isDefault) {
               << "\", passed in config file due to \"" << message
               << "\" error. Cannot continue with config validation. Exiting."
               << std::endl;
-          exit(1);
+          exit(EXIT_FAILURE);
         }
         idx++;
       }
@@ -891,7 +932,7 @@ void ModelConfig::recursiveValidate(const ExpectationNode& expectation,
         // as a parent and validate all its children against the expectation
         // node
         int idx = 0;
-        for (ryml::NodeRef grndchild : rymlChild) {
+        for (const auto grndchild : rymlChild) {
           const auto [valid, message] = child.validateConfigNode(grndchild);
           if (!valid)
             invalid_ << "\t- " << hierarchyString << nodeKey << ":"
@@ -1277,3 +1318,4 @@ void ModelConfig::createGroupMapping() {
 
 }  // namespace config
 }  // namespace simeng
+// NOLINTEND(*-no-recursion)

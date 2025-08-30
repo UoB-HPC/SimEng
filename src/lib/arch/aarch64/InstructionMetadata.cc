@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cstring>
 
+#include "simeng/serialization.hh"
+
 namespace simeng {
 namespace arch {
 namespace aarch64 {
@@ -284,7 +286,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 }
 
 InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
-                                         uint8_t bytes)
+                                         const uint8_t bytes)
     : id(AARCH64_INS_INVALID),
       opcode(Opcode::INSTRUCTION_LIST_END),
       implicitSourceCount(0),
@@ -297,6 +299,52 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
   std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
+}
+
+// NOLINTBEGIN(*-pro-type-member-init)
+InstructionMetadata::InstructionMetadata(span<uint8_t>& serialized) {
+  deserialize_field(serialized, id);
+  deserialize_field(serialized, opcode);
+  deserialize_field(serialized, encoding);
+  deserialize_vector(serialized, mnemonic);
+  deserialize_vector(serialized, operandStr);
+  deserialize_field(serialized, implicitSources);
+  deserialize_field(serialized, implicitSourceCount);
+  deserialize_field(serialized, implicitDestinations);
+  deserialize_field(serialized, implicitDestinationCount);
+  deserialize_field(serialized, groups);
+  deserialize_field(serialized, groupCount);
+  deserialize_field(serialized, cc);
+  deserialize_field(serialized, setsFlags);
+  deserialize_field(serialized, isAlias);
+  deserialize_field(serialized, operands);
+  deserialize_field(serialized, operandCount);
+  deserialize_field(serialized, metadataException_);
+  deserialize_field(serialized, metadataExceptionEncountered_);
+  deserialize_vector(serialized, exceptionString_);
+}
+// NOLINTEND(*-pro-type-member-init)
+
+void InstructionMetadata::serializeInto(std::vector<uint8_t>& buffer) const {
+  serialize_field(buffer, id);
+  serialize_field(buffer, opcode);
+  serialize_field(buffer, encoding);
+  serialize_vector(buffer, mnemonic);
+  serialize_vector(buffer, operandStr);
+  serialize_field(buffer, implicitSources);
+  serialize_field(buffer, implicitSourceCount);
+  serialize_field(buffer, implicitDestinations);
+  serialize_field(buffer, implicitDestinationCount);
+  serialize_field(buffer, groups);
+  serialize_field(buffer, groupCount);
+  serialize_field(buffer, cc);
+  serialize_field(buffer, setsFlags);
+  serialize_field(buffer, isAlias);
+  serialize_field(buffer, operands);
+  serialize_field(buffer, operandCount);
+  serialize_field(buffer, metadataException_);
+  serialize_field(buffer, metadataExceptionEncountered_);
+  serialize_vector(buffer, exceptionString_);
 }
 
 }  // namespace aarch64

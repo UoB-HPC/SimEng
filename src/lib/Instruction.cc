@@ -2,8 +2,66 @@
 
 #include "simeng/Accelerator.hh"
 #include "simeng/config/SimInfo.hh"
+#include "simeng/serialization.hh"
 
 namespace simeng {
+
+Instruction::Instruction(span<uint8_t>& serialized) {
+  deserialize_field(serialized, instructionId_);
+  deserialize_field(serialized, sequenceId_);
+  deserialize_field(serialized, instructionAddress_);
+  deserialize_field(serialized, offloaded_);
+  deserialize_field(serialized, waitingAcceleratorCommit_);
+  deserialize_field(serialized, executed_);
+  deserialize_field(serialized, latency_);
+  deserialize_field(serialized, lsqExecutionLatency_);
+  deserialize_field(serialized, stallCycles_);
+  deserialize_vector(serialized, supportedPorts_);
+  deserialize_field(serialized, canCommit_);
+  deserialize_vector(serialized, memoryAddresses_);
+  deserialize_regval_vector(serialized, memoryData_);
+  deserialize_field(serialized, dataPending_);
+  deserialize_field(serialized, prediction_);
+  deserialize_field(serialized, branchAddress_);
+  deserialize_field(serialized, branchTaken_);
+  deserialize_field(serialized, branchType_);
+  deserialize_field(serialized, knownOffset_);
+  deserialize_field(serialized, flushed_);
+  deserialize_field(serialized, exceptionEncountered_);
+  deserialize_field(serialized, isMicroOp_);
+  deserialize_field(serialized, isLastMicroOp_);
+  deserialize_field(serialized, waitingCommit_);
+  deserialize_field(serialized, microOpIndex_);
+}
+
+void Instruction::serializeInto(std::vector<uint8_t>& buffer) const {
+  serialize_field(buffer, instructionId_);
+  serialize_field(buffer, sequenceId_);
+  serialize_field(buffer, instructionAddress_);
+  serialize_field(buffer, offloaded_);
+  serialize_field(buffer, waitingAcceleratorCommit_);
+  serialize_field(buffer, executed_);
+  serialize_field(buffer, latency_);
+  serialize_field(buffer, lsqExecutionLatency_);
+  serialize_field(buffer, stallCycles_);
+  serialize_vector(buffer, supportedPorts_);
+  serialize_field(buffer, canCommit_);
+  serialize_vector(buffer, memoryAddresses_);
+  serialize_regval_vector(buffer, memoryData_);
+  serialize_field(buffer, dataPending_);
+  serialize_field(buffer, prediction_);
+  serialize_field(buffer, branchAddress_);
+  serialize_field(buffer, branchTaken_);
+  serialize_field(buffer, branchType_);
+  serialize_field(buffer, knownOffset_);
+  serialize_field(buffer, flushed_);
+  serialize_field(buffer, exceptionEncountered_);
+  serialize_field(buffer, isMicroOp_);
+  serialize_field(buffer, isLastMicroOp_);
+  serialize_field(buffer, waitingCommit_);
+  serialize_field(buffer, microOpIndex_);
+  serializeIntoImpl(buffer);
+}
 
 void Instruction::setSequenceId(const uint64_t seqId) { sequenceId_ = seqId; }
 

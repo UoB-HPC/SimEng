@@ -7,12 +7,13 @@ AcceleratorPacket::AcceleratorPacket(OffloadingPayload payload)
 
 OffloadingPayload AcceleratorPacket::into() { return std::move(payload_); }
 
-Accelerator::Accelerator(const id_t id, gateway_t::send_fn_t send_fn,
+Accelerator::Accelerator(std::shared_ptr<config::AcceleratorInfo> info,
+                         gateway_t::send_fn_t send_fn,
                          gateway_t::receive_fn_t receive_fn)
-    : input_(std::make_shared<pipeline_buffer_t>(1, nullptr)),
+    : info_(std::move(info)),
+      input_(std::make_shared<pipeline_buffer_t>(1, nullptr)),
       output_(std::make_shared<pipeline_buffer_t>(1, nullptr)),
-      gateway_(std::move(send_fn), std::move(receive_fn)),
-      id_(id) {}
+      gateway_(std::move(send_fn), std::move(receive_fn)) {}
 
 void Accelerator::tick() {
   if (!input_->isStalled()) {
@@ -37,7 +38,6 @@ void Accelerator::tick() {
                  "Same instruction instance already in flight");
           insnMeta_[ptr] = {id, seq};
           mapIncoming(insn);
-          // coreSeqToAccInsn_[seq] = insn;
           input_->getTailSlots()[0] = std::move(insn);
           break;
         }
@@ -71,11 +71,6 @@ void Accelerator::tick() {
             }
           }
 
-          // // Purge coreSeqToAccInsn_
-          // for (const auto seq : flushed) {
-          //   coreSeqToAccInsn_.erase(seq);
-          // }
-
           flushing_.reset();
         }
       }
@@ -96,7 +91,6 @@ void Accelerator::tick() {
     const auto [id, seq] = insnMeta_[ptr];
     insnMeta_.erase(ptr);
     output->setSequenceId(seq);
-    // coreSeqToAccInsn_.erase(seq);
     outbound = OffloadingPayload::commit(id, std::move(output));
   }
   gateway_.tickOutbound(std::move(outbound));
@@ -118,7 +112,9 @@ void Accelerator::flush(const std::shared_ptr<Instruction>& flushAfter) {
   input_->stall(false);
 }
 
-Accelerator::id_t Accelerator::getId() const noexcept { return id_; }
+Accelerator::id_t Accelerator::getId() const noexcept {
+  return config::acceleratorIdFromType(info_->getType());
+}
 
 void Accelerator::mapIncoming(std::shared_ptr<Instruction>& insn) {}
 

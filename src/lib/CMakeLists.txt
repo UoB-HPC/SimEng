@@ -18,6 +18,8 @@ set(SIMENG_SOURCES
     branchpredictors/GenericPredictor.cc
     branchpredictors/PerceptronPredictor.cc
     branchpredictors/TAGEPredictor.cc
+    config/AcceleratorInfo.cc
+    config/AcceleratorType.cc
     config/ModelConfig.cc
     config/SimInfo.cc
     kernel/Linux.cc
@@ -28,6 +30,7 @@ set(SIMENG_SOURCES
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
+    pipeline/noc/OffloadingPayload.cc
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
     pipeline/M1PortAllocator.cc
@@ -43,6 +46,7 @@ set(SIMENG_SOURCES
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
     Accelerator.cc
+    AcceleratorInstance.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc

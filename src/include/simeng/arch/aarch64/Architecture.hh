@@ -20,7 +20,16 @@ class Architecture : public arch::Architecture {
   Architecture(kernel::Linux& kernel,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
-  ~Architecture();
+  /** Creates a new architecture specifically for an accelerator. */
+  Architecture(kernel::Linux& kernel,
+               std::shared_ptr<config::AcceleratorInfo> acceleratorInfo);
+
+  ~Architecture() override;
+
+  /** Reads the provided buffer, deserializing the data into an AArch64
+   * Instruction object. */
+  std::unique_ptr<simeng::Instruction> deserializeFrom(
+      span<uint8_t>& buffer) const override;
 
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -52,7 +61,7 @@ class Architecture : public arch::Architecture {
 
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                  const uint64_t iterations) const override;
+                                  uint64_t iterations) const override;
 
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -77,9 +86,12 @@ class Architecture : public arch::Architecture {
   bool isZARegisterEnabled() const;
 
   /** Update the value of SVCRval_. */
-  void setSVCRval(const uint64_t newVal) const;
+  void setSVCRval(uint64_t newVal) const;
 
  private:
+  Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config,
+               std::shared_ptr<config::AcceleratorInfo> acceleratorInfo);
+
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
@@ -88,7 +100,8 @@ class Architecture : public arch::Architecture {
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  mutable std::forward_list<InstructionMetadata> metadataCache_;
+  mutable std::forward_list<std::shared_ptr<InstructionMetadata>>
+      metadataCache_;
 
   /** A reference to a micro decoder object to split macro operations. */
   std::unique_ptr<MicroDecoder> microDecoder_;
@@ -103,14 +116,18 @@ class Architecture : public arch::Architecture {
   mutable uint64_t SVCRval_ = 0;
 
   /** System Register of Virtual Counter Timer. */
-  simeng::Register VCTreg_;
+  Register VCTreg_;
 
   /** System Register of Processor Cycle Counter. */
-  simeng::Register PCCreg_;
+  Register PCCreg_;
 
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
+
+  /** A pointer to accelerator info. Valid if the architecture is connected
+   * to an accelerator instead of a core; `nullptr` otherwise. */
+  const std::shared_ptr<config::AcceleratorInfo> acceleratorInfo_ = nullptr;
 };
 
 }  // namespace aarch64

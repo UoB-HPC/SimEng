@@ -15,11 +15,11 @@ namespace accelerator {
 
 class SmeAccelerator : public Accelerator {
  public:
-  explicit SmeAccelerator(
-      id_t id, gateway_t::send_fn_t send_fn, gateway_t::receive_fn_t receive_fn,
-      memory::MemoryInterface& dataMemory,
-      pipeline::PortAllocator& portAllocator,
-      ryml::ConstNodeRef config = config::SimInfo::getConfig());
+  explicit SmeAccelerator(gateway_t::send_fn_t send_fn,
+                          gateway_t::receive_fn_t receive_fn,
+                          memory::MemoryInterface& dataMemory,
+                          pipeline::PortAllocator& portAllocator,
+                          std::shared_ptr<config::AcceleratorInfo> info);
 
   /** An instruction filter which decides whether it should be offloaded
    * to the SME accelerator. */

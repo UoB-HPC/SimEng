@@ -191,6 +191,9 @@ class Instruction : public simeng::Instruction {
   void moveOffloadedResultsImpl(
       std::shared_ptr<simeng::Instruction>& offloadedSrc) override;
 
+  /** Serializes the concrete type into the provided buffer. */
+  void serializeIntoImpl(std::vector<uint8_t>& buffer) const override;
+
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();

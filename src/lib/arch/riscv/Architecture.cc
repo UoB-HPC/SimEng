@@ -1,6 +1,5 @@
 #include "simeng/arch/riscv/Architecture.hh"
 
-#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <queue>
@@ -11,7 +10,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
+Architecture::Architecture(kernel::Linux& kernel, const ryml::ConstNodeRef config)
     : arch::Architecture(kernel) {
   // Set initial rounding mode for F/D extensions
   // TODO set fcsr accordingly when Zicsr extension supported
@@ -32,8 +31,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     addressAlignmentMask_ = constantsPool::addressAlignMask;
     minInsnLength_ = constantsPool::minInstWidthBytes;
 
-    n = cs_open(CS_ARCH_RISCV, static_cast<cs_mode>(CS_MODE_RISCV64),
-                &capstoneHandle_);
+    n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle_);
   }
 
   if (n != CS_ERR_OK) {
@@ -46,14 +44,13 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   cs_option(capstoneHandle_, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  for (size_t i = 0; i < config::SimInfo::getSysRegVec().size(); i++) {
-    systemRegisterMap_[config::SimInfo::getSysRegVec()[i]] =
-        systemRegisterMap_.size();
+  for (const auto i : config::SimInfo::getSysRegVec()) {
+    systemRegisterMap_[i] = systemRegisterMap_.size();
   }
 
-  cycleSystemReg_ = {
-      RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
+  cycleSystemReg_ = {RegisterType::SYSTEM,
+                     static_cast<uint16_t>(Architecture::getSystemRegisterTag(
+                         RISCV_SYSREG_CYCLE))};
 
   // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -64,11 +61,11 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
   std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
   for (size_t i = 0; i < config["Latencies"].num_children(); i++) {
     ryml::ConstNodeRef port_node = config["Latencies"][i];
-    uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
-    uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
+    const auto latency = port_node["Execution-Latency"].as<uint16_t>();
+    const auto throughput = port_node["Execution-Throughput"].as<uint16_t>();
     for (size_t j = 0; j < port_node["Instruction-Group-Nums"].num_children();
          j++) {
-      uint16_t group = port_node["Instruction-Group-Nums"][j].as<uint16_t>();
+      const auto group = port_node["Instruction-Group-Nums"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Set zero inheritance distance for latency assignment as it's explicitly
@@ -79,20 +76,19 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       groups.push(group);
       // Set a distance counter as 1 to represent 1 level of inheritance
       uint8_t distance = 1;
-      while (groups.size()) {
+      while (!groups.empty()) {
         // Determine if there's any inheritance
         if (groupInheritance_.find(groups.front()) != groupInheritance_.end()) {
-          std::vector<uint16_t> inheritedGroups =
-              groupInheritance_.at(groups.front());
-          for (size_t k = 0; k < inheritedGroups.size(); k++) {
+          const auto& inheritedGroups = groupInheritance_.at(groups.front());
+          for (const auto inheritedGroup : inheritedGroups) {
             // Determine if this group has inherited latency values from a
             // smaller distance
-            if (inheritanceDistance[inheritedGroups[k]] > distance) {
-              groupExecutionInfo_[inheritedGroups[k]].latency = latency;
-              groupExecutionInfo_[inheritedGroups[k]].stallCycles = throughput;
-              inheritanceDistance[inheritedGroups[k]] = distance;
+            if (inheritanceDistance[inheritedGroup] > distance) {
+              groupExecutionInfo_[inheritedGroup].latency = latency;
+              groupExecutionInfo_[inheritedGroup].stallCycles = throughput;
+              inheritanceDistance[inheritedGroup] = distance;
             }
-            groups.push(inheritedGroups[k]);
+            groups.push(inheritedGroup);
           }
         }
         groups.pop();
@@ -102,7 +98,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
     // Store any opcode-based latency override
     for (size_t j = 0; j < port_node["Instruction-Opcodes"].num_children();
          j++) {
-      uint16_t opcode = port_node["Instruction-Opcodes"][j].as<uint16_t>();
+      const auto opcode = port_node["Instruction-Opcodes"][j].as<uint16_t>();
       opcodeExecutionInfo_[opcode].latency = latency;
       opcodeExecutionInfo_[opcode].stallCycles = throughput;
     }
@@ -118,22 +114,21 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       ryml::ConstNodeRef group_node =
           config["Ports"][i]["Instruction-Group-Support-Nums"];
       for (size_t j = 0; j < group_node.num_children(); j++) {
-        uint16_t group = group_node[j].as<uint16_t>();
-        uint16_t newPort = static_cast<uint16_t>(i);
+        const auto group = group_node[j].as<uint16_t>();
+        const auto newPort = static_cast<uint16_t>(i);
 
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
         std::queue<uint16_t> groups;
         groups.push(group);
-        while (groups.size()) {
+        while (!groups.empty()) {
           // Determine if there's any inheritance
           if (groupInheritance_.find(groups.front()) !=
               groupInheritance_.end()) {
-            std::vector<uint16_t> inheritedGroups =
-                groupInheritance_.at(groups.front());
-            for (size_t k = 0; k < inheritedGroups.size(); k++) {
-              groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
-              groups.push(inheritedGroups[k]);
+            const auto& inheritedGroups = groupInheritance_.at(groups.front());
+            for (const auto inheritedGroup : inheritedGroups) {
+              groupExecutionInfo_[inheritedGroup].ports.push_back(newPort);
+              groups.push(inheritedGroup);
             }
           }
           groups.pop();
@@ -145,7 +140,7 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
       for (size_t j = 0; j < opcode_node.num_children(); j++) {
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
-        uint16_t opcode = opcode_node[j].as<uint16_t>();
+        const auto opcode = opcode_node[j].as<uint16_t>();
         opcodeExecutionInfo_.try_emplace(opcode, ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
@@ -155,14 +150,20 @@ Architecture::Architecture(kernel::Linux& kernel, ryml::ConstNodeRef config)
 
 Architecture::~Architecture() { cs_close(&capstoneHandle_); }
 
-uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
-                                uint64_t instructionAddress,
+std::unique_ptr<simeng::Instruction> Architecture::deserializeFrom(
+    span<uint8_t>& buffer) const {
+  assert(false && "Unimplemented");
+}
+
+uint8_t Architecture::predecode(const uint8_t* ptr,
+                                const uint16_t bytesAvailable,
+                                const uint64_t instructionAddress,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISC-V
   // 2-byte when Compressed extension is supported
   if (instructionAddress & addressAlignmentMask_) {
     // Consume 1-byte and raise a misaligned PC exception
-    auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
+    auto metadata = InstructionMetadata(ptr, 1);
     metadataCache_.emplace_front(metadata);
     output.resize(1);
     auto& uop = output[0];
@@ -177,7 +178,7 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
          "Fewer than bytes limit supplied to RISC-V decoder");
 
   // Get the first byte
-  uint8_t firstByte = ((uint8_t*)ptr)[0];
+  uint8_t firstByte = const_cast<uint8_t*>(ptr)[0];
 
   uint32_t insnEncoding = 0;
   size_t insnSize = 4;
@@ -211,7 +212,7 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
     // Calloc memory to ensure rawInsn is initialised with zeros. Errors can
     // occur otherwise as Capstone doesn't update variables for invalid
     // instructions
-    cs_insn* rawInsnPointer = (cs_insn*)calloc(1, sizeof(cs_insn));
+    auto rawInsnPointer = static_cast<cs_insn*>(calloc(1, sizeof(cs_insn)));
     cs_insn rawInsn = *rawInsnPointer;
     assert(rawInsn.size == 0 && "rawInsn not initialised correctly");
 
@@ -223,7 +224,7 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
 
     uint64_t address = 0;
 
-    const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
+    const auto* encoding = ptr;
 
     bool success = cs_disasm_iter(capstoneHandle_, &encoding, &insnSize,
                                   &address, &rawInsn);
@@ -261,7 +262,7 @@ uint8_t Architecture::predecode(const uint8_t* ptr, uint16_t bytesAvailable,
   return iter->second.getMetadata().getInsnLength();
 }
 
-int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
+int32_t Architecture::getSystemRegisterTag(const uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
@@ -280,10 +281,10 @@ ProcessStateChange Architecture::getInitialState() const {
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
 
-  uint64_t stackPointer = linux_.getInitialStackPointer();
+  const auto stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
-  changes.modifiedRegisterValues.push_back(stackPointer);
+  changes.modifiedRegisterValues.emplace_back(stackPointer);
 
   return changes;
 }
@@ -303,12 +304,11 @@ ExecutionInfo Architecture::getExecutionInfo(const Instruction& insn) const {
   if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
     // Replace with overrided values
-    ExecutionInfo overrideInfo =
+    const auto& [latency, stallCycles, ports] =
         opcodeExecutionInfo_.at(insn.getMetadata().opcode);
-    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
-    if (overrideInfo.stallCycles != 0)
-      exeInfo.stallCycles = overrideInfo.stallCycles;
-    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+    if (latency != 0) exeInfo.latency = latency;
+    if (stallCycles != 0) exeInfo.stallCycles = stallCycles;
+    if (!ports.empty()) exeInfo.ports = ports;
   }
   return exeInfo;
 }

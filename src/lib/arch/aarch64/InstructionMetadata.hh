@@ -17,13 +17,19 @@ namespace Opcode {
 
 /** A simplified AArch64-only version of the Capstone instruction structure. */
 struct InstructionMetadata {
- public:
   /** Constructs a metadata object from a Capstone instruction representation.
    */
-  InstructionMetadata(const cs_insn& insn);
+  explicit InstructionMetadata(const cs_insn& insn);
 
   /** Constructs an invalid metadata object containing the invalid encoding. */
-  InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
+  explicit InstructionMetadata(const uint8_t* invalidEncoding,
+                               uint8_t bytes = 4);
+
+  /** Deserializes metadata from the provided span of bytes. */
+  explicit InstructionMetadata(span<uint8_t>& serialized);
+
+  /** Serializes the instruction metadata, writing into the provided buffer. */
+  void serializeInto(std::vector<uint8_t>& buffer) const;
 
   /* Returns the current exception state of the metadata */
   InstructionException getMetadataException() const {
@@ -39,20 +45,21 @@ struct InstructionMetadata {
   std::string getExceptionString() const { return exceptionString_; }
 
   /** The maximum operand string length as defined in Capstone */
-  static const size_t MAX_OPERAND_STR_LENGTH =
+  static constexpr size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
   /** The maximum number of implicit source register as defined in Capstone */
-  static const size_t MAX_IMPLICIT_SOURCES =
+  static constexpr size_t MAX_IMPLICIT_SOURCES =
       sizeof(cs_detail::regs_read) / sizeof(uint16_t);
   /** The maximum number of implicit destination register as defined in Capstone
    */
-  static const size_t MAX_IMPLICIT_DESTINATIONS =
+  static constexpr size_t MAX_IMPLICIT_DESTINATIONS =
       sizeof(cs_detail::regs_write) / sizeof(uint16_t);
   /** The maximum number of groups and instruction can belong to as defined in
    * Capstone */
-  static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
+  static constexpr size_t MAX_GROUPS =
+      sizeof(cs_detail::groups) / sizeof(uint8_t);
   /** The maximum number of operands as defined in Capstone */
-  static const size_t MAX_OPERANDS =
+  static constexpr size_t MAX_OPERANDS =
       sizeof(cs_aarch64::operands) / sizeof(cs_aarch64_op);
 
   /** The instruction's mnemonic ID. */

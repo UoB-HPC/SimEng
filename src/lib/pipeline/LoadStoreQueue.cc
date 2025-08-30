@@ -2,18 +2,14 @@
 
 #include <array>
 #include <cassert>
-#include <cstring>
-#include <iostream>
 #include <list>
 
 namespace simeng {
 namespace pipeline {
 
-static int nextLsqId = 0;
-
 /** Check whether requests `a` and `b` overlap. */
-bool requestsOverlap(memory::MemoryAccessTarget a,
-                     memory::MemoryAccessTarget b) {
+bool requestsOverlap(const memory::MemoryAccessTarget a,
+                     const memory::MemoryAccessTarget b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
   return !(a.address + a.size <= b.address || b.address + b.size <= a.address);
@@ -27,8 +23,7 @@ LoadStoreQueue::LoadStoreQueue(
     const bool exclusive, const uint16_t loadBandwidth,
     const uint16_t storeBandwidth, const uint16_t permittedRequests,
     const uint16_t permittedLoads, const uint16_t permittedStores)
-    : id_(nextLsqId++),
-      completionSlots_(completionSlots),
+    : completionSlots_(completionSlots),
       forwardOperands_(std::move(forwardOperands)),
       raiseException_(std::move(raiseException)),
       maxCombinedSpace_(maxCombinedSpace),
@@ -50,8 +45,7 @@ LoadStoreQueue::LoadStoreQueue(
     const bool exclusive, const uint16_t loadBandwidth,
     const uint16_t storeBandwidth, const uint16_t permittedRequests,
     const uint16_t permittedLoads, const uint16_t permittedStores)
-    : id_(nextLsqId++),
-      completionSlots_(completionSlots),
+    : completionSlots_(completionSlots),
       forwardOperands_(std::move(forwardOperands)),
       raiseException_(std::move(raiseException)),
       maxLoadQueueSpace_(maxLoadQueueSpace),
@@ -530,10 +524,7 @@ void LoadStoreQueue::tick() {
       completedLoads_.push(load);
     }
   }
-  // TODO: Figure out a better way to clear the reads
-  if (id_ == nextLsqId - 1) {
-    memory_.clearCompletedReads();
-  }
+  memory_.clearCompletedReads();
 
   // Pop from the front of the completed loads queue and send to writeback
   size_t count = 0;

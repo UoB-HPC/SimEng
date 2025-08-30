@@ -1,8 +1,6 @@
 #include "simeng/models/outoforder/Core.hh"
 
-#include <algorithm>
 #include <iomanip>
-#include <ios>
 #include <sstream>
 #include <string>
 
@@ -15,9 +13,10 @@ Core::Core(memory::MemoryInterface& instructionMemory,
            const uint64_t processMemorySize, const uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator,
-           const ryml::ConstNodeRef config)
+           const ryml::ConstNodeRef config,
+           const bool offloadingEnabled)
     : simeng::Core(dataMemory, isa, config::SimInfo::getPhysRegStruct()),
-      offloadingEnabled_(isOffloadingEnabled(config)),
+      offloadingEnabled_(offloadingEnabled),
       physicalRegisterStructures_(config::SimInfo::getPhysRegStruct()),
       physicalRegisterQuantities_(config::SimInfo::getPhysRegQuantities()),
       registerAliasTable_(config::SimInfo::getArchRegStruct(),
@@ -450,11 +449,6 @@ void Core::flushIfNeeded() {
 
     flushes_++;
   }
-}
-
-bool Core::isOffloadingEnabled(const ryml::ConstNodeRef& config) {
-  return config["Core"].has_child("Offloading-Enabled") &&
-         config["Core"]["Offloading-Enabled"].as<bool>();
 }
 
 }  // namespace outoforder

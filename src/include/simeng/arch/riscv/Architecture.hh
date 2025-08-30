@@ -19,7 +19,12 @@ class Architecture : public arch::Architecture {
   Architecture(kernel::Linux& kernel,
                ryml::ConstNodeRef config = config::SimInfo::getConfig());
 
-  ~Architecture();
+  ~Architecture() override;
+
+  /** Reads the provided buffer, deserializing the data into an RISC-V
+   * Instruction object. */
+  std::unique_ptr<simeng::Instruction> deserializeFrom(
+      span<uint8_t>& buffer) const override;
 
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (0 if

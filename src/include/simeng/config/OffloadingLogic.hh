@@ -26,6 +26,13 @@ struct OffloadingLogic {
    * is present on an accelerator and should be ignored on the core. */
   using register_filter = std::function<bool(const Register&)>;
 
+  /** A map from accelerator ID to its isReady function. */
+  using is_ready_vtable_t = std::unordered_map<Accelerator::id_t, is_ready_t>;
+
+  /** A map from accelerator ID to its register filter. */
+  using register_filter_vtable_t =
+      std::unordered_map<Accelerator::id_t, register_filter>;
+
   /** A function handle that determines whether an instruction should be
    * diverted to an accelerator. */
   instruction_filter filter_;
@@ -43,16 +50,13 @@ struct OffloadingLogic {
   OffloadingLogic()
       : filter_([](const auto&) { return Accelerator::NO_ACCELERATOR; }),
         send_([](const auto&) { return false; }),
-        receive_([] {
-          return std::optional<NocPacket<AcceleratorPacket>>();
-        }) {}
+        receive_([] { return std::optional<NocPacket<AcceleratorPacket>>(); }) {
+  }
 
   /** Creates an offloading logic object based on provided parameters. */
-  OffloadingLogic(
-      instruction_filter filter,
-      std::unordered_map<Accelerator::id_t, is_ready_t> isReadyVTable,
-      std::unordered_map<Accelerator::id_t, register_filter> operandFilterVTable,
-      gateway_t::send_fn_t send, gateway_t::receive_fn_t receive)
+  OffloadingLogic(instruction_filter filter, is_ready_vtable_t isReadyVTable,
+                  register_filter_vtable_t operandFilterVTable,
+                  gateway_t::send_fn_t send, gateway_t::receive_fn_t receive)
       : filter_(std::move(filter)),
         send_(std::move(send)),
         receive_(std::move(receive)),
@@ -73,7 +77,7 @@ struct OffloadingLogic {
   /** Checks whether `reg` is present on an accelerator and should be ignored
    * on the core. */
   bool isRegisterOffloaded(const Accelerator::id_t accelerator,
-                          const Register& reg) const {
+                           const Register& reg) const {
     const auto iter = operandFilterVTable_.find(accelerator);
     assert(iter != operandFilterVTable_.end() &&
            "Cannot check operand: unknown accelerator ID");
@@ -84,12 +88,12 @@ struct OffloadingLogic {
  private:
   /** A mapping from accelerator ID to a function which checks if an
    * instruction is ready to be sent to the associated accelerator. */
-  std::unordered_map<Accelerator::id_t, is_ready_t> isReadyVTable_;
+  is_ready_vtable_t isReadyVTable_;
 
   /** A mapping from accelerator ID to a function which checks whether
    * a register is present on an accelerator and should be ignored on the core.
    */
-  std::unordered_map<Accelerator::id_t, register_filter> operandFilterVTable_;
+  register_filter_vtable_t operandFilterVTable_;
 };
 
 }  // namespace config

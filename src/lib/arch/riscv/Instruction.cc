@@ -34,6 +34,10 @@ std::unique_ptr<simeng::Instruction> Instruction::clone() const {
   return clone;
 }
 
+void Instruction::serializeIntoImpl(std::vector<uint8_t>& buffer) const {
+  assert(false && "Unimplemented");
+}
+
 void Instruction::moveOffloadedResultsImpl(
     std::shared_ptr<simeng::Instruction>& offloadedSrc) {
   assert(false && "Unimplemented");

@@ -8,15 +8,13 @@
 #include "simeng/arch/riscv/ArchInfo.hh"
 #include "simeng/config/ModelConfig.hh"
 #include "simeng/config/OffloadingLogic.hh"
+#include "simeng/config/SimulationMode.hh"
 #include "simeng/config/yaml/ryml.hh"
 
 #define DEFAULT_STR "Default"
 
 namespace simeng {
 namespace config {
-
-/** Enum representing the possible simulation modes. */
-enum class SimulationMode { Emulation, InOrderPipelined, Outoforder };
 
 /** A SimInfo class to hold values, specified by the constructed ryml::Tree
  * object in the ModelConfig class and manually, used after the instantiation of

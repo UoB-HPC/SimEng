@@ -36,37 +36,37 @@ class MicroDecoder {
   bool detectOverlap(aarch64_reg registerA, aarch64_reg registerB);
 
   /** Create a default cs_detail object from a vector of operand types. */
-  cs_detail createDefaultDetail(std::vector<OpType> opTypes);
+  cs_detail createDefaultDetail(std::vector<OpType> opTypes) const;
 
   /** Create an address offset uop from a base register and an immediate. */
   Instruction createImmOffsetUop(const Architecture& architecture,
                                  aarch64_reg base, int64_t offset,
                                  csh capstoneHandle, bool lastMicroOp = false,
-                                 int microOpIndex = 0);
+                                 int microOpIndex = 0) const;
 
   /** Create an address offset uop from a base register and a register. */
   Instruction createRegOffsetUop(const Architecture& architecture,
                                  aarch64_reg base, aarch64_reg offset,
                                  csh capstoneHandle, bool lastMicroOp = false,
-                                 int microOpIndex = 0);
+                                 int microOpIndex = 0) const;
 
   /** Create a load uop from a destination register and a capstone memory
    * operand. */
   Instruction createLdrUop(const Architecture& architecture, aarch64_reg dest,
                            aarch64_op_mem mem, csh capstoneHandle,
                            bool lastMicroOp = false, int microOpIndex = 0,
-                           uint8_t dataSize = 0);
+                           uint8_t dataSize = 0) const;
 
   /** Create a store data uop from a source register. */
   Instruction createSDUop(const Architecture& architecture, aarch64_reg src,
                           csh capstoneHandle, bool lastMicroOp = false,
-                          int microOpIndex = 0);
+                          int microOpIndex = 0) const;
 
   /** Create a store address uop from a capstone memory
    * operand. */
   Instruction createStrUop(const Architecture& architecture, aarch64_op_mem mem,
                            csh capstoneHandle, bool lastMicroOp = false,
-                           int microOpIndex = 0, uint8_t dataSize = 0);
+                           int microOpIndex = 0, uint8_t dataSize = 0) const;
 
   /** Flag to determine whether instruction splitting is enabled. */
   const bool instructionSplit_;
@@ -79,8 +79,8 @@ class MicroDecoder {
       microDecodeCache_;
 
   /** A cache for newly created instruction metadata. Ensures metadata values
-   * persist for a micro-operations' life cycle. */
-  static std::forward_list<InstructionMetadata> microMetadataCache_;
+   * persist for micro-operations' life cycle. */
+  static std::forward_list<std::shared_ptr<InstructionMetadata>> microMetadataCache_;
 
   // Default objects
   /** Default capstone instruction structure. */

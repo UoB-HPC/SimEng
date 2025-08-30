@@ -3,11 +3,17 @@
 #include "simeng/Instruction.hh"
 
 namespace simeng {
+namespace arch {
+class Architecture;
+}  // namespace arch
+}  // namespace simeng
+
+namespace simeng {
 namespace pipeline {
 namespace noc {
 
 /** The payload sent to the NoC gateway by the offloading controller. */
-// TODO: Split into core->acc & acc->core payloads
+// TODO: Split into separate core->acc & acc->core payloads
 struct OffloadingPayload {
   using id_t = uint64_t;
 
@@ -37,31 +43,29 @@ struct OffloadingPayload {
    * `Schedule` or `Commit`. */
   std::shared_ptr<Instruction> insn_;
 
-  static OffloadingPayload schedule(const id_t id,
-                                    std::shared_ptr<Instruction> insn) {
-    return OffloadingPayload(id, Type::Schedule, std::move(insn));
-  }
+  /** Creates a new payload for scheduling an instruction to be offloaded. */
+  static OffloadingPayload schedule(id_t id, std::shared_ptr<Instruction> insn);
 
-  static OffloadingPayload commit(const id_t id,
-                                  std::shared_ptr<Instruction> insn) {
-    return OffloadingPayload(id, Type::Commit, std::move(insn));
-  }
+  /** Creates a new payload for commiting an offloaded instruction. */
+  static OffloadingPayload commit(id_t id, std::shared_ptr<Instruction> insn);
 
-  static OffloadingPayload flush(const id_t id) {
-    return OffloadingPayload(id, Type::Flush);
-  }
+  /** Creates a new payload for requesting a flush. */
+  static OffloadingPayload flush(id_t id);
 
-  static OffloadingPayload confirmFlush(const id_t id) {
-    return OffloadingPayload(id, Type::Flushed);
-  }
+  /** Creates a new payload for confirming a flush. */
+  static OffloadingPayload confirmFlush(id_t id);
+
+  /** Serializes the payload into the provided buffer. */
+  void serializeInto(std::vector<uint8_t>& buffer) const;
+
+  /** Deserializes the provided bytes, based on the provided architecture. */
+  static OffloadingPayload deserialize(const arch::Architecture& architecture,
+                                       span<uint8_t>& serialized);
 
  private:
-  OffloadingPayload(const id_t id, const Type type,
-                    std::shared_ptr<Instruction> insn)
-      : id_(id), type_(type), insn_(std::move(insn)) {}
+  OffloadingPayload(id_t id, Type type, std::shared_ptr<Instruction> insn);
 
-  OffloadingPayload(const id_t id, const Type type)
-      : id_(id), type_(type), insn_(nullptr) {}
+  OffloadingPayload(id_t id, Type type);
 };
 
 }  // namespace noc

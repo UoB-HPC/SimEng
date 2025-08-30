@@ -3,18 +3,19 @@
 #include <vector>
 
 #include "InstructionMetadata.hh"
+#include "simeng/serialization.hh"
 
 namespace simeng {
 namespace arch {
 namespace aarch64 {
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata,
+                         std::shared_ptr<const InstructionMetadata> metadata,
                          const MicroOpInfo microOpInfo)
     : architecture_(architecture),
-      metadata_(metadata),
-      exception_(metadata.getMetadataException()) {
-  exceptionEncountered_ = metadata.getMetadataExceptionEncountered();
+      metadata_(std::move(metadata)),
+      exception_(metadata_->getMetadataException()) {
+  exceptionEncountered_ = metadata_->getMetadataExceptionEncountered();
   isMicroOp_ = microOpInfo.isMicroOp;
   microOpcode_ = microOpInfo.microOpcode;
   dataSize_ = microOpInfo.dataSize;
@@ -24,18 +25,52 @@ Instruction::Instruction(const Architecture& architecture,
 }
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata,
+                         std::shared_ptr<const InstructionMetadata> metadata,
                          const InstructionException exception)
-    : architecture_(architecture), metadata_(metadata), exception_(exception) {
+    : architecture_(architecture),
+      metadata_(std::move(metadata)),
+      exception_(exception) {
   exceptionEncountered_ = true;
+}
+
+Instruction::Instruction(const Architecture& architecture,
+                         span<uint8_t>& serialized)
+    : simeng::Instruction(serialized), architecture_(architecture) {
+  metadata_ = std::make_shared<InstructionMetadata>(serialized);
+  sourceRegisters_ = srcRegContainer(serialized);
+  deserialize_field(serialized, sourceRegisterCount_);
+  destinationRegisters_ = destRegContainer(serialized);
+  deserialize_field(serialized, destinationRegisterCount_);
+  sourceValues_ = srcValContainer(serialized);
+  results_ = destValContainer(serialized);
+  deserialize_field(serialized, exception_);
+  deserialize_field(serialized, sourceOperandsPending_);
+  deserialize_field(serialized, microOpcode_);
+  deserialize_field(serialized, dataSize_);
+  deserialize_field(serialized, instructionIdentifier_);
 }
 
 std::unique_ptr<simeng::Instruction> Instruction::clone() const {
   // TODO: If at any point the Instruction's copy constructor stops being
-  //       equivalent to performing a deep copy, this method need to be updated
+  //       equivalent to performing a deep copy, this method needs to be updated
   auto clone = std::make_unique<Instruction>(*this);
   baseCloneInto(clone.get());
   return clone;
+}
+
+void Instruction::serializeIntoImpl(std::vector<uint8_t>& buffer) const {
+  metadata_->serializeInto(buffer);
+  serialize_vector(buffer, sourceRegisters_);
+  serialize_field(buffer, sourceRegisterCount_);
+  serialize_vector(buffer, destinationRegisters_);
+  serialize_field(buffer, destinationRegisterCount_);
+  serialize_regval_vector(buffer, sourceValues_);
+  serialize_regval_vector(buffer, results_);
+  serialize_field(buffer, exception_);
+  serialize_field(buffer, sourceOperandsPending_);
+  serialize_field(buffer, microOpcode_);
+  serialize_field(buffer, dataSize_);
+  serialize_field(buffer, instructionIdentifier_);
 }
 
 void Instruction::moveOffloadedResultsImpl(
@@ -172,12 +207,12 @@ bool Instruction::canExecute() const {
 }
 
 const std::vector<uint16_t>& Instruction::getSupportedPorts() {
-  if (supportedPorts_.empty() && !canBeOffloaded()) {
+  if (supportedPorts_.empty() && !isOffloaded()) {
     exception_ = InstructionException::NoAvailablePort;
     exceptionEncountered_ = true;
   }
-  static std::vector<uint16_t> EMPTY{};
-  return offloaded_ ? EMPTY : supportedPorts_;
+
+  return supportedPorts_;
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
@@ -192,7 +227,7 @@ void Instruction::setExecutionInfo(const ExecutionInfo& info) {
 }
 
 const InstructionMetadata& Instruction::getMetadata() const {
-  return metadata_;
+  return *metadata_;
 }
 
 const Architecture& Instruction::getArchitecture() const {

@@ -1,14 +1,11 @@
-// clang-format off
-// DO NOT MOVE FROM TOP OF FILE - https://github.com/sstsimulator/sst-core/issues/865
-#include <sst/core/sst_config.h>
-// clang-format on
-
 #include "SimEngCoreWrapper.hh"
 
 #include <cstdlib>
 #include <iostream>
 
 #include "Assemble.hh"
+#include "OffloadingEvent.hh"
+#include "simeng/AcceleratorInstance.hh"
 
 using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
@@ -32,6 +29,14 @@ SimEngCoreWrapper::SimEngCoreWrapper(const ComponentId_t id,
   assembleWithSource_ = params.find<bool>("assemble_with_source", false);
   heapStr_ = params.find<std::string>("heap", "");
   debug_ = params.find<bool>("debug", false);
+  debugLevel_ =
+      static_cast<DebugLevel>(params.find("debug_level", debug_ ? 2 : 0));
+  {
+    std::vector<std::string> accelerators;
+    params.find_array<std::string>("external_accelerators", accelerators);
+    externalAccelerators_ =
+        AcceleratorInstance::getAcceleratorTypesFromNames(accelerators);
+  }
 
   if (executablePath_.empty() && !assembleWithSource_) {
     output_.verbose(CALL_INFO, 10, 0,
@@ -52,26 +57,22 @@ SimEngCoreWrapper::SimEngCoreWrapper(const ComponentId_t id,
       new StandardMem::Handler<SimEngCoreWrapper>(
           this, &SimEngCoreWrapper::handleMemoryEvent));
 
-  dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
-                                                     maxAddrMemory_, debug_);
+  dataMemory_ = std::make_shared<SimEngMemInterface>(
+      sstMem_, cacheLineWidth_, maxAddrMemory_,
+      debugLevel_ >= DebugLevel::Memory);
 
   handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 
-  // TODO: Configure accelerators based on a config file
-  //       and only if that file is provided
-  // Accelerator setup
-  coreToAcceleratorLink_ = configureSelfLink("core_accelerator_link");
-  acceleratorToCoreLink_ = configureSelfLink("accelerator_core_link");
-  if (coreToAcceleratorLink_ == nullptr || acceleratorToCoreLink_ == nullptr) {
-    output_.verbose(CALL_INFO, 1, 0,
-                    "Could not configure links to/from the accelerator.");
-    std::exit(EXIT_FAILURE);
+  // Configure connection external accelerators
+  if (!externalAccelerators_.empty()) {
+    acceleratorLink_ = configureLink("accelerator_link");
+    if (acceleratorLink_ == nullptr) {
+      output_.verbose(
+          CALL_INFO, 1, 0,
+          "Could not configure the link with external accelerators");
+      std::exit(EXIT_FAILURE);
+    }
   }
-  acceleratorClock_ =
-      registerClock(params.find<std::string>("acceleratorClock", "2GHz"),
-                    new Clock::Handler<SimEngCoreWrapper>(
-                        this, &SimEngCoreWrapper::acceleratorClockTick),
-                    false);
 
   // Protected methods from SST::Component used to start simulation
   registerAsPrimaryComponent();
@@ -120,11 +121,10 @@ void SimEngCoreWrapper::finish() {
 
 void SimEngCoreWrapper::init(const unsigned int phase) {
   sstMem_->init(phase);
-  // Init can have multiple phases, only fabricate the core once at phase 0
-  if (phase == 0) {
-    configureOffloadingLogic();
+  // Init can have multiple phases, only fabricate the core once at the
+  // appropriate phase
+  if (phase == LAST_INIT_PHASE) {
     fabricateSimEngCore();
-    fabricateSimEngAccelerator();
   }
 }
 
@@ -147,7 +147,6 @@ bool SimEngCoreWrapper::clockTick(const Cycle_t currentCycle) {
 
   iterations_++;
 
-  accelerator_->tick();
   return false;
 }
 
@@ -318,6 +317,15 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
                     "archetypes with SST.");
     std::exit(EXIT_FAILURE);
   }
+
+  // Configure offloading logic
+  if (!externalAccelerators_.empty()) {
+    coreInstance_->setOffloadingLogic(
+        externalAccelerators_,
+        [this](const auto& packet) { return sendOffloadingEvent(packet); },
+        [this] { return recvOffloadingEvent(); });
+  }
+
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
 
@@ -385,6 +393,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
       << "[SimEng] Number of Cores: "
       << config::SimInfo::getConfig()["CPU-Info"]["Core-Count"].as<uint16_t>()
       << std::endl;
+  std::cout << std::endl;
 }
 
 std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() const {
@@ -402,84 +411,66 @@ std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() const {
   return out;
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-bool SimEngCoreWrapper::acceleratorClockTick(const Cycle_t currentCycle) {
-  // std::endl; accelerator_->tick();
-  return false;
-}
-
-// TODO: Add dynamic mapping for multiple accelerators
-//       (probably from a config file)
-constexpr static Accelerator::id_t SME_ACCELERATOR_ID = 1;
-
-void SimEngCoreWrapper::configureOffloadingLogic() {
-  auto logic = config::OffloadingLogic(
-      [](const Instruction& insn) {
-        // TODO: Proper mapping if multiple accelerators
-        //       (possibly from a config file)
-        if (models::accelerator::SmeAccelerator::shouldAccelerate(insn))
-          return SME_ACCELERATOR_ID;
-
-        return Accelerator::NO_ACCELERATOR;
-      },
-      {{SME_ACCELERATOR_ID,
-        models::accelerator::SmeAccelerator::isInstructionReady}},
-      {{SME_ACCELERATOR_ID,
-        models::accelerator::SmeAccelerator::isRegisterOffloaded}},
-      [this](const OffloadingEvent::packet_t& packet) {
-        coreToAcceleratorLink_->send(new OffloadingEvent(packet));
-        return true;
-      },
-      [this] {
-        auto* event =
-            dynamic_cast<OffloadingEvent*>(acceleratorToCoreLink_->recv());
-
-        if (event == nullptr) {
-          return std::optional<OffloadingEvent::packet_t>();
-        }
-
-        auto packet = std::move(event->packet_);
-        delete event;
-        return std::optional(std::move(packet));
-      });
-  config::SimInfo::setOffloadingLogic(std::move(logic));
-}
-
-void SimEngCoreWrapper::fabricateSimEngAccelerator() {
-  // TODO Extract to an AcceleratorInstance object
-  const auto config_ports = config::SimInfo::getConfig()["Ports"];
-  std::vector<std::vector<uint16_t>> portArrangement(
-      config_ports.num_children());
-  for (size_t i = 0; i < config_ports.num_children(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Group-Support-Nums"];
-    // Read groups in associated port
-    for (size_t j = 0; j < config_groups.num_children(); j++) {
-      auto grp = config_groups[j].as<uint16_t>();
-      portArrangement[i].push_back(grp);
+bool SimEngCoreWrapper::sendOffloadingEvent(
+    const OffloadingEvent::packet_t& packet) const {
+  if (debugLevel_ >= DebugLevel::Offloading) {
+    switch (packet.data_.payload_.type_) {
+      case OffloadingPayload::Type::Schedule: {
+        const auto* addr = reinterpret_cast<void*>(
+            packet.data_.payload_.insn_->getInstructionAddress());
+        std::cout << "[SimEng:Core] SEND: " << packet.data_.payload_.id_ << " ("
+                  << addr << ')' << std::endl;
+        break;
+      }
+      case OffloadingPayload::Type::Commit: {
+        assert(false && "Cores cannot commit instructions on accelerators");
+      }
+      case OffloadingPayload::Type::Flush: {
+        assert(false && "Cores cannot request flushes from accelerators");
+      }
+      case OffloadingPayload::Type::Flushed: {
+        std::cout << "[SimEng:Core] FLED: " << packet.data_.payload_.id_
+                  << std::endl;
+        break;
+      }
     }
   }
-  acceleratorPortAllocator_ =
-      std::make_unique<pipeline::BalancedPortAllocator>(portArrangement);
 
-  accelerator_ = std::make_unique<models::accelerator::SmeAccelerator>(
-      // TODO: Assign unique IDs if multiple accelerators
-      //       (probably get from config file)
-      SME_ACCELERATOR_ID,
-      [this](const OffloadingEvent::packet_t& packet) {
-        acceleratorToCoreLink_->send(new OffloadingEvent(packet));
-        return true;
-      },
-      [this] {
-        auto* event =
-            dynamic_cast<OffloadingEvent*>(coreToAcceleratorLink_->recv());
+  acceleratorLink_->send(new OffloadingEvent(packet));
+  return true;
+}
 
-        if (event == nullptr) {
-          return std::optional<OffloadingEvent::packet_t>();
-        }
+std::optional<OffloadingEvent::packet_t>
+SimEngCoreWrapper::recvOffloadingEvent() const {
+  const auto* event = dynamic_cast<OffloadingEvent*>(acceleratorLink_->recv());
+  if (event == nullptr) return std::nullopt;
 
-        auto packet = std::move(event->packet_);
-        delete event;
-        return std::optional(std::move(packet));
-      },
-      *dataMemory_, *acceleratorPortAllocator_);
+  auto packet = event->deserialize(coreInstance_->getArch());
+  delete event;
+
+  if (debugLevel_ >= DebugLevel::Offloading) {
+    switch (packet.data_.payload_.type_) {
+      case OffloadingPayload::Type::Schedule: {
+        assert(false &&
+               "Accelerators cannot schedule instructions on the core");
+      }
+      case OffloadingPayload::Type::Commit: {
+        const auto* addr = reinterpret_cast<void*>(
+            packet.data_.payload_.insn_->getInstructionAddress());
+        std::cout << "[SimEng:Core] RECV: " << packet.data_.payload_.id_ << " ("
+                  << addr << ')' << std::endl;
+        break;
+      }
+      case OffloadingPayload::Type::Flush: {
+        std::cout << "[SimEng:Core] FLSH: " << packet.data_.payload_.id_
+                  << std::endl;
+        break;
+      }
+      case OffloadingPayload::Type::Flushed: {
+        assert(false && "Accelerators cannot confirm flushes");
+      }
+    }
+  }
+
+  return std::move(packet);
 }

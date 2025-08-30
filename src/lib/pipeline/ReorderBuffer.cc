@@ -98,6 +98,11 @@ unsigned int ReorderBuffer::commit(const uint64_t maxCommitSize) {
       break;
     }
 
+    // Aggregate offloaded instructions into batches
+    if (uop->isOffloaded()) {
+      offloadedBatch = uop;
+    } else if (offloadedBatch != nullptr) {
+      // Finished commiting offloaded instruction batch
       break;
     }
 

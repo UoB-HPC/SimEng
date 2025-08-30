@@ -29,7 +29,7 @@ class ModelConfig {
  public:
   /** Construct a ModelConfig class by reading in the YAML file and
    * run it through validation and formatting. */
-  ModelConfig(std::string path);
+  ModelConfig(const std::string& path, bool accelerator = false);
 
   /** Default constructor which creates a default configuration file. */
   ModelConfig();
@@ -43,7 +43,7 @@ class ModelConfig {
   void reGenerateDefault(ISA isa, bool force = false);
 
   /** Append/replace config options within the held config file. */
-  void addConfigOptions(std::string config);
+  void addConfigOptions(const std::string& config);
 
  private:
   /** A utility function to pass configTree_ through validation checks and
@@ -97,6 +97,9 @@ class ModelConfig {
 
   /** Whether the config file was created from default values. */
   bool isDefault_ = true;
+
+  /** Whether the config describes a core or an external accelerator. */
+  bool accelerator_ = false;
 
   /** The first node of the tree-like structure containing the expectations of
    * all config options used within the simulation. */

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "simeng/config/AcceleratorInfo.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/noc/NocGateway.hh"
 #include "simeng/pipeline/noc/OffloadingPayload.hh"
@@ -37,8 +38,8 @@ class Accelerator {
    * (see `simeng::config::OffloadingLogic::instruction_filter`). */
   constexpr static id_t NO_ACCELERATOR = Instruction::NO_ACCELERATOR;
 
-  Accelerator(id_t id, gateway_t::send_fn_t send_fn,
-              gateway_t::receive_fn_t receive_fn);
+  Accelerator(std::shared_ptr<config::AcceleratorInfo> info,
+              gateway_t::send_fn_t send_fn, gateway_t::receive_fn_t receive_fn);
 
   virtual ~Accelerator() = default;
 
@@ -69,6 +70,9 @@ class Accelerator {
   /** Clears all instructions coming after the provided instruction. */
   void flush(const std::shared_ptr<Instruction>& flushAfter);
 
+  /** An object holding configuration of the simulated accelerator. */
+  std::shared_ptr<config::AcceleratorInfo> info_;
+
   /** A pipeline buffer holding the latest instruction fetched from the NoC. */
   std::shared_ptr<pipeline_buffer_t> input_;
 
@@ -85,14 +89,8 @@ class Accelerator {
   std::unordered_map<const Instruction*, std::pair<payload_t::id_t, uint64_t>>
       insnMeta_;
 
-  // /** A map from original sequence IDs on the core to in-flight instructions. */
-  // std::unordered_map<uint64_t, std::shared_ptr<Instruction>> coreSeqToAccInsn_;
-
   /** The payload ID of the instruction currently being flushed. */
   std::optional<payload_t::id_t> flushing_;
-
-  /** The unique identifier of this accelerator instance. */
-  id_t id_;
 };
 
 }  // namespace simeng

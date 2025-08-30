@@ -122,6 +122,9 @@ class Instruction {
    * latency and throughput, and the set of ports which support it. */
   virtual void setExecutionInfo(const ExecutionInfo& info) = 0;
 
+  /** Serializes the instruction, writing into the provided buffer. */
+  void serializeInto(std::vector<uint8_t>& buffer) const;
+
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId);
 
@@ -240,10 +243,18 @@ class Instruction {
   int getMicroOpIndex() const;
 
  protected:
+  Instruction() = default;
+
+  /** Deserializes the base instruction from the provided span of bytes. */
+  explicit Instruction(span<uint8_t>& serialized);
+
   /** Moves relevant execution information from `offloadedSrc` into `this`.
    * Implementors are allowed to invalidate data in `offloadedSrc`. */
   virtual void moveOffloadedResultsImpl(
       std::shared_ptr<Instruction>& offloadedSrc) = 0;
+
+  /** Serializes the concrete type into the provided buffer. */
+  virtual void serializeIntoImpl(std::vector<uint8_t>& buffer) const = 0;
 
   /** Copies all data into `dest`
    * (i.e. performs a deep copy of this abstract class). */

@@ -30,7 +30,8 @@ class Core : public simeng::Core {
        memory::MemoryInterface& dataMemory, uint64_t processMemorySize,
        uint64_t entryPoint, const arch::Architecture& isa,
        BranchPredictor& branchPredictor, pipeline::PortAllocator& portAllocator,
-       ryml::ConstNodeRef config = config::SimInfo::getConfig());
+       ryml::ConstNodeRef config = config::SimInfo::getConfig(),
+       bool offloadingEnabled = false);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the

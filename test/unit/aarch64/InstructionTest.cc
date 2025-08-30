@@ -2,7 +2,6 @@
 #include "arch/aarch64/InstructionMetadata.hh"
 #include "gmock/gmock.h"
 #include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/version.hh"
 
 namespace simeng {
 namespace arch {
@@ -28,8 +27,7 @@ class AArch64InstructionTest : public testing::Test {
     rawInsn_fdiv.detail = &rawDetail_fdiv;
     size_t size_fdiv = 4;
     uint64_t address_fdiv = 0;
-    const uint8_t* encoding_fdiv =
-        reinterpret_cast<const uint8_t*>(fdivInstrBytes.data());
+    const uint8_t* encoding_fdiv = fdivInstrBytes.data();
     cs_disasm_iter(capstoneHandle, &encoding_fdiv, &size_fdiv, &address_fdiv,
                    &rawInsn_fdiv);
     fdivMetadata = std::make_unique<InstructionMetadata>(rawInsn_fdiv);
@@ -40,8 +38,7 @@ class AArch64InstructionTest : public testing::Test {
     rawInsn_ldp.detail = &rawDetail_ldp;
     size_t size_ldp = 4;
     uint64_t address_ldp = 0;
-    const uint8_t* encoding_ldp =
-        reinterpret_cast<const uint8_t*>(ldpInstrBytes.data());
+    const uint8_t* encoding_ldp = ldpInstrBytes.data();
     cs_disasm_iter(capstoneHandle, &encoding_ldp, &size_ldp, &address_ldp,
                    &rawInsn_ldp);
     ldpMetadata = std::make_unique<InstructionMetadata>(rawInsn_ldp);
@@ -52,8 +49,7 @@ class AArch64InstructionTest : public testing::Test {
     rawInsn_cbz.detail = &rawDetail_cbz;
     size_t size_cbz = 4;
     uint64_t address_cbz = 0;
-    const uint8_t* encoding_cbz =
-        reinterpret_cast<const uint8_t*>(cbzInstrBytes.data());
+    const uint8_t* encoding_cbz = cbzInstrBytes.data();
     cs_disasm_iter(capstoneHandle, &encoding_cbz, &size_cbz, &address_cbz,
                    &rawInsn_cbz);
     cbzMetadata = std::make_unique<InstructionMetadata>(rawInsn_cbz);
@@ -64,18 +60,16 @@ class AArch64InstructionTest : public testing::Test {
     rawInsn_psel.detail = &rawDetail_psel;
     size_t size_psel = 4;
     uint64_t address_psel = 0;
-    const uint8_t* encoding_psel =
-        reinterpret_cast<const uint8_t*>(pselInstrBytes.data());
+    const uint8_t* encoding_psel = pselInstrBytes.data();
     cs_disasm_iter(capstoneHandle, &encoding_psel, &size_psel, &address_psel,
                    &rawInsn_psel);
     pselMetadata = std::make_unique<InstructionMetadata>(rawInsn_psel);
 
-    const uint8_t* badEncoding =
-        reinterpret_cast<const uint8_t*>(invalidInstrBytes.data());
+    const uint8_t* badEncoding = invalidInstrBytes.data();
     invalidMetadata = std::make_unique<InstructionMetadata>(badEncoding);
   }
 
-  ~AArch64InstructionTest() { cs_close(&capstoneHandle); }
+  ~AArch64InstructionTest() override { cs_close(&capstoneHandle); }
 
  protected:
   ConfigInit configInit = ConfigInit(config::ISA::AArch64, "");
@@ -96,11 +90,11 @@ class AArch64InstructionTest : public testing::Test {
   kernel::Linux os;
   Architecture arch;
 
-  std::unique_ptr<InstructionMetadata> fdivMetadata;
-  std::unique_ptr<InstructionMetadata> ldpMetadata;
-  std::unique_ptr<InstructionMetadata> cbzMetadata;
-  std::unique_ptr<InstructionMetadata> pselMetadata;
-  std::unique_ptr<InstructionMetadata> invalidMetadata;
+  std::shared_ptr<InstructionMetadata> fdivMetadata;
+  std::shared_ptr<InstructionMetadata> ldpMetadata;
+  std::shared_ptr<InstructionMetadata> cbzMetadata;
+  std::shared_ptr<InstructionMetadata> pselMetadata;
+  std::shared_ptr<InstructionMetadata> invalidMetadata;
   std::unique_ptr<MicroOpInfo> uopInfo;
   InstructionException exception;
 };
@@ -108,7 +102,7 @@ class AArch64InstructionTest : public testing::Test {
 // Test that a valid instruction is created correctly
 TEST_F(AArch64InstructionTest, validInsn) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, fdivMetadata, MicroOpInfo());
   // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
   std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
@@ -122,7 +116,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
 
   // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_TRUE(matchingPred);
@@ -173,7 +167,7 @@ TEST_F(AArch64InstructionTest, validInsn) {
 
 // Test that an invalid instruction can be created - invalid due to byte stream
 TEST_F(AArch64InstructionTest, invalidInsn_1) {
-  Instruction insn = Instruction(arch, *invalidMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, invalidMetadata, MicroOpInfo());
   // Define instruction's registers
   std::vector<Register> destRegs = {};
   std::vector<Register> srcRegs = {};
@@ -185,7 +179,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
 
   // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_TRUE(matchingPred);
@@ -238,8 +232,8 @@ TEST_F(AArch64InstructionTest, invalidInsn_1) {
 // Test that an invalid instruction can be created - invalid due to exception
 // provided
 TEST_F(AArch64InstructionTest, invalidInsn_2) {
-  Instruction insn = Instruction(arch, *invalidMetadata.get(),
-                                 InstructionException::HypervisorCall);
+  auto insn =
+      Instruction(arch, invalidMetadata, InstructionException::HypervisorCall);
   // Define instruction's registers
   std::vector<Register> destRegs = {};
   std::vector<Register> srcRegs = {};
@@ -251,7 +245,7 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
 
   // Ensure that all instruction values are as expected after creation
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred) ? true : false;
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_EQ(&insn.getArchitecture(), &arch);
   EXPECT_EQ(insn.getBranchAddress(), 0);
   EXPECT_TRUE(matchingPred);
@@ -304,12 +298,12 @@ TEST_F(AArch64InstructionTest, invalidInsn_2) {
 // Test to ensure that source and operand registers can be renamed correctly
 TEST_F(AArch64InstructionTest, renameRegs) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, fdivMetadata, MicroOpInfo());
   // Define instruction's registers
-  std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
-  std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
-                                   {RegisterType::VECTOR, 1},
-                                   {RegisterType::VECTOR, 0}};
+  const std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
+  const std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
+                                         {RegisterType::VECTOR, 1},
+                                         {RegisterType::VECTOR, 0}};
   // Ensure registers decoded correctly
   EXPECT_EQ(insn.getSourceRegisters().size(), srcRegs.size());
   for (size_t i = 0; i < srcRegs.size(); i++) {
@@ -321,10 +315,10 @@ TEST_F(AArch64InstructionTest, renameRegs) {
   }
 
   // Define renamed registers
-  std::vector<Register> destRegs_new = {{RegisterType::VECTOR, 24}};
-  std::vector<Register> srcRegs_new = {{RegisterType::PREDICATE, 0},
-                                       {RegisterType::VECTOR, 97},
-                                       {RegisterType::VECTOR, 0}};
+  const std::vector<Register> destRegs_new = {{RegisterType::VECTOR, 24}};
+  const std::vector<Register> srcRegs_new = {{RegisterType::PREDICATE, 0},
+                                             {RegisterType::VECTOR, 97},
+                                             {RegisterType::VECTOR, 0}};
   insn.renameDestination(0, destRegs_new[0]);
   insn.renameSource(1, srcRegs_new[1]);
   // Ensure renaming functionality works as expected
@@ -342,7 +336,7 @@ TEST_F(AArch64InstructionTest, renameRegs) {
 // `canExecute`
 TEST_F(AArch64InstructionTest, supplyOperand) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, fdivMetadata, MicroOpInfo());
   // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::VECTOR, 1}};
   std::vector<Register> srcRegs = {{RegisterType::PREDICATE, 0},
@@ -388,7 +382,7 @@ TEST_F(AArch64InstructionTest, supplyOperand) {
 // Test that data can be supplied successfully
 TEST_F(AArch64InstructionTest, supplyData) {
   // Insn is `ldp x1, x2, [x3]`
-  Instruction insn = Instruction(arch, *ldpMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, ldpMetadata, MicroOpInfo());
   // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 1},
                                     {RegisterType::GENERAL, 2}};
@@ -421,7 +415,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
   auto generatedAddresses = insn.getGeneratedAddresses();
   EXPECT_EQ(generatedAddresses.size(), 2);
   for (size_t i = 0; i < generatedAddresses.size(); i++) {
-    EXPECT_EQ(generatedAddresses[i].address, 0x480 + (i * 0x8));
+    EXPECT_EQ(generatedAddresses[i].address, 0x480 + i * 0x8);
     EXPECT_EQ(generatedAddresses[i].size, 8);
   }
 
@@ -443,7 +437,7 @@ TEST_F(AArch64InstructionTest, supplyData) {
 // Test DataAbort Exception is triggered correctly when supplying data
 TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
   // Insn is `ldp x1, x2, [x3]`
-  Instruction insn = Instruction(arch, *ldpMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, ldpMetadata, MicroOpInfo());
   // Define instruction's registers
   std::vector<Register> destRegs = {{RegisterType::GENERAL, 1},
                                     {RegisterType::GENERAL, 2}};
@@ -455,17 +449,17 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
 
   // Supply needed operands
   EXPECT_FALSE(insn.isOperandReady(0));
-  RegisterValue addr = {0x480, 8};
+  const RegisterValue addr = {0x480, 8};
   insn.supplyOperand(0, addr);
   EXPECT_TRUE(insn.isOperandReady(0));
 
   // Generate memory addresses
   EXPECT_EQ(insn.getGeneratedAddresses().size(), 0);
   insn.generateAddresses();
-  auto generatedAddresses = insn.getGeneratedAddresses();
+  const auto generatedAddresses = insn.getGeneratedAddresses();
   EXPECT_EQ(generatedAddresses.size(), 2);
   for (size_t i = 0; i < generatedAddresses.size(); i++) {
-    EXPECT_EQ(generatedAddresses[i].address, 0x480 + (i * 0x8));
+    EXPECT_EQ(generatedAddresses[i].address, 0x480 + i * 0x8);
     EXPECT_EQ(generatedAddresses[i].size, 8);
   }
 
@@ -479,12 +473,12 @@ TEST_F(AArch64InstructionTest, supplyData_dataAbort) {
 // Test that a correct prediction (branch taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_taken) {
   // insn is `cbz x2, #0x28`
-  Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, cbzMetadata, MicroOpInfo());
   insn.setInstructionAddress(80);
 
   // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_EQ(insn.getBranchAddress(), 0);
@@ -494,7 +488,7 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
   // Test a correct prediction where branch is taken is handled correctly
   pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
+  matchingPred = insn.getBranchPrediction() == pred;
   insn.supplyOperand(0, RegisterValue(0, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
@@ -506,12 +500,12 @@ TEST_F(AArch64InstructionTest, correctPred_taken) {
 // Test that a correct prediction (branch not taken) is handled correctly
 TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   // insn is `cbz x2, #0x28`
-  Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, cbzMetadata, MicroOpInfo());
   insn.setInstructionAddress(80);
 
   // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_EQ(insn.getBranchAddress(), 0);
@@ -521,7 +515,7 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
   // Test a correct prediction where a branch isn't taken is handled correctly
   pred = {false, 80 + 4};
   insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
+  matchingPred = insn.getBranchPrediction() == pred;
   insn.supplyOperand(0, RegisterValue(1, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
@@ -533,12 +527,12 @@ TEST_F(AArch64InstructionTest, correctPred_notTaken) {
 // Test that an incorrect prediction (wrong target) is handled correctly
 TEST_F(AArch64InstructionTest, incorrectPred_target) {
   // insn is `cbz x2, #0x28`
-  Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, cbzMetadata, MicroOpInfo());
   insn.setInstructionAddress(100);
 
   // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_EQ(insn.getBranchAddress(), 0);
@@ -548,7 +542,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
   // Test an incorrect prediction is handled correctly - target is wrong
   pred = {true, 80 + 0x28};
   insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
+  matchingPred = insn.getBranchPrediction() == pred;
   insn.supplyOperand(0, RegisterValue(0, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
@@ -560,12 +554,12 @@ TEST_F(AArch64InstructionTest, incorrectPred_target) {
 // Test that an incorrect prediction (wrong taken) is handled correctly
 TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   // insn is `cbz x2, #0x28`
-  Instruction insn = Instruction(arch, *cbzMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, cbzMetadata, MicroOpInfo());
   insn.setInstructionAddress(100);
 
   // Check initial state of an instruction's branch related options
   BranchPrediction pred = {false, 0};
-  bool matchingPred = (insn.getBranchPrediction() == pred);
+  bool matchingPred = insn.getBranchPrediction() == pred;
   EXPECT_TRUE(matchingPred);
   EXPECT_FALSE(insn.wasBranchTaken());
   EXPECT_EQ(insn.getBranchAddress(), 0);
@@ -575,7 +569,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
   // Test an incorrect prediction is handled correctly - taken is wrong
   pred = {true, 100 + 0x28};
   insn.setBranchPrediction(pred);
-  matchingPred = (insn.getBranchPrediction() == pred);
+  matchingPred = insn.getBranchPrediction() == pred;
   insn.supplyOperand(0, RegisterValue(1, 8));
   insn.execute();
   EXPECT_TRUE(matchingPred);
@@ -587,7 +581,7 @@ TEST_F(AArch64InstructionTest, incorrectPred_taken) {
 // Test commit and flush setters such as `setFlushed`, `setCommitReady`, etc.
 TEST_F(AArch64InstructionTest, setters) {
   // Insn is `fdivr z1.s, p0/m, z1.s, z0.s`
-  Instruction insn = Instruction(arch, *fdivMetadata.get(), MicroOpInfo());
+  auto insn = Instruction(arch, fdivMetadata, MicroOpInfo());
 
   EXPECT_FALSE(insn.canCommit());
   insn.setCommitReady();
@@ -611,9 +605,9 @@ TEST_F(AArch64InstructionTest, predAsCounterToMasks_test) {
   ref[1][0] =
       0b0000000000000000000000000000000000000000000000000000000011111111;
   // invert = 0, num active Elems = 24
-  uint64_t pn =
+  constexpr uint64_t pn =
       0b0000000000000000000000000000000000000000000000000000000000110001;
-  auto out = predAsCounterToMasks<uint8_t, 2>(pn, 128);
+  const auto out = predAsCounterToMasks<uint8_t, 2>(pn, 128);
   EXPECT_EQ(out[0][0], ref[0][0]);
   EXPECT_EQ(out[1][0], ref[1][0]);
 
@@ -622,9 +616,9 @@ TEST_F(AArch64InstructionTest, predAsCounterToMasks_test) {
   ref2[3][1] =
       0b0000000100000001000000010000000100000001000000010000000100000001;
   // Invert = 1, num inactive Elems = 56
-  uint64_t pn2 =
+  constexpr uint64_t pn2 =
       0b0000000000000000000000000000000000000000000000001000001110001000;
-  auto out2 = predAsCounterToMasks<uint64_t, 4>(pn2, 1024);
+  const auto out2 = predAsCounterToMasks<uint64_t, 4>(pn2, 1024);
   EXPECT_EQ(out2[0][0], ref2[0][0]);
   EXPECT_EQ(out2[0][1], ref2[0][1]);
   EXPECT_EQ(out2[1][0], ref2[1][0]);

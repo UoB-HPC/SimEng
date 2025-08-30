@@ -6,7 +6,7 @@
 namespace simeng {
 
 /** Mock implementation of the `Instruction` interface. */
-class MockInstruction : public Instruction {
+class MockInstruction final : public Instruction {
  public:
   MOCK_CONST_METHOD0(getSourceRegisters, const span<Register>());
   MOCK_CONST_METHOD0(getSourceOperands, const span<RegisterValue>());
@@ -48,33 +48,37 @@ class MockInstruction : public Instruction {
     return clone;
   }
 
+  void serializeIntoImpl(std::vector<uint8_t>& buffer) const override {
+    assert(false && "Unimplemented");
+  }
+
   void moveOffloadedResultsImpl(
       std::shared_ptr<Instruction>& offloadedSrc) override {}
 
   bool canBeOffloaded() const override { return false; }
 
-  void setBranchResults(bool wasTaken, uint64_t targetAddress) {
+  void setBranchResults(const bool wasTaken, const uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;
   }
 
-  void setExecuted(bool executed) { executed_ = executed; }
+  void setExecuted(const bool executed) { executed_ = executed; }
 
-  void setExceptionEncountered(bool exceptionEncountered) {
+  void setExceptionEncountered(const bool exceptionEncountered) {
     exceptionEncountered_ = exceptionEncountered;
   }
 
-  void setDataPending(uint8_t value) { dataPending_ = value; }
+  void setDataPending(const uint8_t value) { dataPending_ = value; }
 
-  void setLatency(uint16_t cycles) { latency_ = cycles; }
+  void setLatency(const uint16_t cycles) { latency_ = cycles; }
 
-  void setLSQLatency(uint16_t cycles) { lsqExecutionLatency_ = cycles; }
+  void setLSQLatency(const uint16_t cycles) { lsqExecutionLatency_ = cycles; }
 
-  void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
+  void setStallCycles(const uint16_t cycles) { stallCycles_ = cycles; }
 
-  void setIsMicroOp(bool isMicroOp) { isMicroOp_ = isMicroOp; }
+  void setIsMicroOp(const bool isMicroOp) { isMicroOp_ = isMicroOp; }
 
-  void setIsLastMicroOp(bool isLastOp) { isLastMicroOp_ = isLastOp; }
+  void setIsLastMicroOp(const bool isLastOp) { isLastMicroOp_ = isLastOp; }
 };
 
 }  // namespace simeng

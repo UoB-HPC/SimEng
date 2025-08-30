@@ -8,6 +8,7 @@
 #include <sst/core/eli/elementinfo.h>
 #include <sst/core/interfaces/stdMem.h>
 
+#include <OffloadingEvent.hh>
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -22,6 +23,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/SpecialFileDirGen.hh"
+#include "simeng/config/AcceleratorType.hh"
 #include "simeng/version.hh"
 
 using namespace SST;
@@ -42,7 +44,18 @@ namespace SSTSimEng {
  * core and other classes associated to it.
  */
 class SimEngCoreWrapper : public Component {
+  /** Debugging level (a higher level also includes all info from lower levels).
+   */
+  enum class DebugLevel {
+    None = 0,
+    Offloading = 1,
+    Memory = 2,
+  };
+
  public:
+  /** The init phase at which the core will be fabricated. */
+  static constexpr unsigned int LAST_INIT_PHASE = 0;
+
   SimEngCoreWrapper(ComponentId_t id, const Params& params);
   ~SimEngCoreWrapper() override;
 
@@ -133,10 +146,25 @@ class SimEngCoreWrapper : public Component {
        "the heap. This parameter will only be used if "
        "assemble_with_source=true. (string)",
        ""},
+      {"external_accelerators",
+       "An array of external accelerators. The order in this array determines "
+       "the order in which the instruction will be tested whether it should "
+       "be offloaded to a given accelerator. (array of strings)",
+       ""},
       {"debug",
        "Value which enables output statistics that can be parsed by the "
        "testing framework. (boolean)",
-       "false"})
+       "false"},
+      {"debug_level",
+       "Debugging level (a higher level also includes all info from lower "
+       "levels): 0[None], 1[Offloading traffic], 2[Memory requests] (uint)",
+       "0 if debug = FALSE, 2 if debug = TRUE and debug_level unset"})
+
+  SST_ELI_DOCUMENT_PORTS({"accelerator_link",
+                          "Port that connects the core to an accelerator, "
+                          "or a NoC router if there is more than one. Required "
+                          "if `external_accelerators` is not empty.",
+                          {"simeng.OffloadingEvent"}})
 
  private:
   /** Method used to assemble SimEng core. */
@@ -156,6 +184,15 @@ class SimEngCoreWrapper : public Component {
 
   /** Initialises heap data specified by the testing framework. */
   void initialiseHeapData();
+
+  /** A handler function used for sending OffloadingEvents to accelerators. */
+  [[nodiscard]] bool sendOffloadingEvent(
+      const OffloadingEvent::packet_t& packet) const;
+
+  /** A handler function used for receiving OffloadingEvents from accelerators.
+   */
+  [[nodiscard]] std::optional<OffloadingEvent::packet_t> recvOffloadingEvent()
+      const;
 
   // SST properties
   /**
@@ -221,6 +258,9 @@ class SimEngCoreWrapper : public Component {
    */
   SimEngMemInterface::SimEngMemHandlers* handlers_;
 
+  /** An SST::Link between the core and an external SimEng accelerator. */
+  Link* acceleratorLink_;
+
   /** String which holds source instructions to be assembled. (if any)*/
   std::string source_;
 
@@ -230,66 +270,21 @@ class SimEngCoreWrapper : public Component {
   /** Heap contents as string. */
   std::string heapStr_;
 
+  /** A list of external accelerators. The order in this list determines
+   * the order in which an instruction will be tested whether it should
+   * be offloaded to a given accelerator. The list should not contain
+   * duplicates. */
+  std::vector<config::AcceleratorType> externalAccelerators_{};
+
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
 
+  /** Specifies debug verbosity. */
+  DebugLevel debugLevel_ = DebugLevel::None;
+
   /** Path to A64fx model config. */
   const std::string a64fxConfigPath_ =
-      std::string(SIMENG_BUILD_DIR) +
-      "/simeng-configs/sst-cores/a64fx-sst.yaml";
-
-  // TODO: Move to a separate wrapper once `OffloadingEvent` is serializable
-  // External Accelerator stuff
- public:
-  /** An `SST::Event` for sending `AcceleratorPacket`s. */
-  struct OffloadingEvent final : Event {
-    using packet_t = NocPacket<AcceleratorPacket>;
-    packet_t packet_;
-
-    explicit OffloadingEvent(packet_t packet) : packet_(std::move(packet)) {}
-
-    // TODO: Figure out how to serialize AcceleratorPacket
-    //       (i.e. a polymorphic Instruction)
-    NotSerializable(OffloadingEvent);
-  };
-
-  /**
-   * This function is called everytime the SST clock assigned to the accelerator
-   * ticks. The current clock cycle is passed as an argument by SST. The SimEng
-   * accelerator ticks in this method.
-   */
-  bool acceleratorClockTick(Cycle_t currentCycle);
-
- private:
-  /**
-   * Configures when and how instructions should be offloaded to an
-   * accelerator.
-   *
-   * <b>THIS METHOD HAS TO RUN BEFORE `fabricateSimEngCore()`!</b>
-   */
-  void configureOffloadingLogic();
-
-  /** Assembles a SimEng accelerator. */
-  void fabricateSimEngAccelerator();
-
-  /**
-   * SST clock for the accelerator register with the custom component
-   * during instantiation using the registerClock method provided
-   * by SST.
-   */
-  TimeConverter* acceleratorClock_;
-
-  /** An SST::Link connecting the core to the accelerator. */
-  Link* coreToAcceleratorLink_;
-
-  /** An SST::Link connecting the accelerator to the core. */
-  Link* acceleratorToCoreLink_;
-
-  /** Port Allocator for the accelerator. */
-  std::unique_ptr<pipeline::BalancedPortAllocator> acceleratorPortAllocator_;
-
-  /** An instance of an accelerator. */
-  std::unique_ptr<Accelerator> accelerator_;
+      SIMENG_BUILD_DIR "/simeng-configs/sst-cores/a64fx-sst.yaml";
 };
 
 }  // namespace SSTSimEng
