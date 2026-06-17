@@ -8,20 +8,7 @@
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCCodeEmitter.h"
-
-#if defined(__clang__)
-// Prevent errors due to warnings in included file when using clang
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wall"
-#endif
-
 #include "llvm/MC/MCContext.h"
-
-#if defined(__clang__)
-// Allow errors again
-#pragma clang diagnostic pop
-#endif
-
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCObjectFileInfo.h"
 #include "llvm/MC/MCObjectWriter.h"
@@ -35,9 +22,12 @@
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SimOS.hh"
+#include "simeng/OS/SyscallHandler.hh"
+#include "simeng/OperandBypassMap.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/kernel/Linux.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
 
@@ -75,12 +65,16 @@ class RegressionTest
    * extensions. */
   void run(const char* source, const char* triple, const char* extensions);
 
-  /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel) const = 0;
+  /** Create an ISA instance. */
+  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture()
+      const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
+      const = 0;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const = 0;
 
@@ -100,13 +94,15 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
+    uint64_t addr = process_->translate(address);
+    std::vector<char> mem = memory_->getUntimedData(addr, sizeof(T));
     T dest{};
-    std::memcpy(&dest, processMemory_ + address, sizeof(T));
+    std::memcpy(&dest, mem.data(), sizeof(T));
     return dest;
   }
 
   /** The initial data to populate the heap with. */
-  std::vector<uint8_t> initialHeapData_;
+  std::vector<char> initialHeapData_;
 
   /** The maximum number of ticks to run before aborting the test. */
   uint64_t maxTicks_ = UINT64_MAX;
@@ -117,17 +113,20 @@ class RegressionTest
   /** The architecture instance. */
   std::unique_ptr<simeng::arch::Architecture> architecture_;
 
-  /** The process memory. */
-  char* processMemory_ = nullptr;
+  std::shared_ptr<simeng::memory::Mem> memory_;
 
   /** The size of the process memory in bytes. */
   size_t processMemorySize_ = 0;
 
   /** The process that was executed. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
+  std::shared_ptr<simeng::OS::Process> process_;
 
-  /** The core that was used. */
-  std::unique_ptr<simeng::Core> core_ = nullptr;
+  std::shared_ptr<simeng::OS::SimOS> OS_ = nullptr;
+
+  /** The core model used to execute the test code. */
+  std::shared_ptr<simeng::Core> core_ = nullptr;
+
+  std::shared_ptr<simeng::OS::CoreProxy> proxy_ = nullptr;
 
   /** The output written to stdout during the test. */
   std::string stdout_;

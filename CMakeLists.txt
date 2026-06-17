@@ -50,7 +50,7 @@ FetchContent_Declare(
 )
 
 cmake_policy(SET CMP0048 NEW)
-project(SimEng VERSION 0.9.6 LANGUAGES C CXX)
+project(SimEng VERSION 0.9.4 LANGUAGES C CXX)
 
 # If no build type was defined, default to Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -71,8 +71,8 @@ set(CMAKE_MACOSX_RPATH 1)
 # Enable PIC for libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Create variable to enable additional compiler warnings for SimEng targets only
-set(SIMENG_COMPILE_OPTIONS -Wall -pedantic -Werror) #-Wextra
+# Enable additional compiler warnings for all targets
+add_compile_options(-Wall)
 
 # Disable RTTI for all targets
 add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
@@ -113,16 +113,9 @@ set(RYML_SHARED ON)
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
-option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
+option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
-
-# Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
-# They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
-# TODO: Remove once SST integration has updated to SST version 13 or later - the use of unary and binary functions are removed in later versions.
-if(APPLE)
-  add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
-endif()
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
@@ -183,8 +176,6 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_ENABLE_BINDINGS OFF)
     set(LLVM_INSTALL_UTILS OFF)
 
-    set(LLVM_ENABLE_WARNINGS OFF)
-
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
     # make sure we get the headers too
@@ -194,7 +185,7 @@ if(SIMENG_ENABLE_TESTS)
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
-    # we just assume it's good because it must be whitelisted in FetchContent_Declare
+    # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
 endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
@@ -217,7 +208,7 @@ endif()
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
-    DEPENDS unittests regression-aarch64 regression-riscv integrationtests
+    DEPENDS unittests regression-aarch64 regression-riscv
   )
 endif()
 
@@ -226,7 +217,7 @@ add_subdirectory(src)
 add_subdirectory(docs)
 
 if (SIMENG_ENABLE_SST)
-  if (SST_INSTALL_DIR)
+  if (SST_CORE_INSTALL_DIR AND SST_ELEMENTS_INSTALL_DIR)
     add_subdirectory(sst)
     if (SIMENG_ENABLE_SST_TESTS)
       enable_testing()
@@ -237,8 +228,8 @@ if (SIMENG_ENABLE_SST)
       )
     endif()
   else()
-    message(WARNING "SST build was selected but SST install directory was not specified.
-    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+    message(FATAL_ERROR "SST build was selected but one or more SST install directories were not specified.
+    Please specify -DSST_CORE_INSTALL_DIR=<path> and -DSST_ELEMENTS_INSTALL_DIR=<path> for the SST build to proceed.")
   endif()
 endif()
 

@@ -133,6 +133,8 @@ TEST_P(InstAtomic, sc_w) {
     li t5, 15
     li t6, 987
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.w t0, (a0)
     sc.w t5, t6, (a0)
   )");
 
@@ -161,6 +163,8 @@ TEST_P(InstAtomic, sc_w_aq) {
     li t5, 15
     li t6, 987
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.w t0, (a0)
     sc.w.aq t5, t6, (a0)
   )");
 
@@ -187,6 +191,8 @@ TEST_P(InstAtomic, sc_w_rl) {
     li t5, 15
     li t6, 987
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.w t0, (a0)
     sc.w.rl t5, t6, (a0)
   )");
 
@@ -213,6 +219,8 @@ TEST_P(InstAtomic, sc_w_aq_rl) {
     li t5, 15
     li t6, 987
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.w t0, (a0)
     sc.w.aqrl t5, t6, (a0)
   )");
 
@@ -243,6 +251,8 @@ TEST_P(InstAtomic, sc_d) {
 
     addi a0, a0, 2
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.d t0, (a0)
     sc.d t5, t6, (a0)
   )");
 
@@ -273,6 +283,8 @@ TEST_P(InstAtomic, sc_d_aq) {
 
     addi a0, a0, 2
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.d t0, (a0)
     sc.d.aq t5, t6, (a0)
   )");
 
@@ -303,6 +315,8 @@ TEST_P(InstAtomic, sc_d_rl) {
 
     addi a0, a0, 2
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.d t0, (a0)
     sc.d.rl t5, t6, (a0)
   )");
 
@@ -333,6 +347,8 @@ TEST_P(InstAtomic, sc_d_aq_rl) {
 
     addi a0, a0, 2
 
+    # Need Load-Reserved to open a monitor & allow store-conditional to succeed.
+    lr.d t0, (a0)
     sc.d.aqrl t5, t6, (a0)
   )");
 

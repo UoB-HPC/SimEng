@@ -1,0 +1,145 @@
+#include "simeng/memory/FixedLatencyMemory.hh"
+
+#include <algorithm>
+#include <cstdint>
+#include <memory>
+
+#include "simeng/memory/MemPacket.hh"
+
+namespace simeng {
+namespace memory {
+
+/** Check whether requests `a` and `b` overlap. */
+bool requestsOverlap(memory::MemoryAccessTarget a,
+                     memory::MemoryAccessTarget b) {
+  // Check whether one region ends before the other begins, implying no overlap,
+  // and negate
+  return !((a.vaddr + a.size) <= b.vaddr || (b.vaddr + b.size) <= a.vaddr);
+}
+
+FixedLatencyMemory::FixedLatencyMemory(size_t size, uint16_t latency) {
+  memory_ = std::vector<char>(size, '\0');
+  memSize_ = size;
+  latency_ = latency;
+}
+
+size_t FixedLatencyMemory::getMemorySize() { return memSize_; }
+
+void FixedLatencyMemory::requestAccess(std::unique_ptr<MemPacket>& pkt) {
+  if (pkt->ignore()) {
+    handleIgnoredRequest(pkt);
+    memPort_->send(std::move(pkt));
+    return;
+  }
+
+  if (pkt->isUntimed()) {
+    if (pkt->isRequest() && pkt->isWrite()) {
+      // Find any overlaps in data to be written within reqQueue_ and write
+      // early
+      auto reqItr = reqQueue_.begin();
+      while (reqItr != reqQueue_.end()) {
+        if (!((reqItr->req->vaddr_ + reqItr->req->size_) <= pkt->vaddr_ ||
+              (pkt->vaddr_ + pkt->size_) <= reqItr->req->vaddr_)) {
+          handleRequest(reqItr->req);
+          memPort_->send(std::move(reqItr->req));
+          reqItr = reqQueue_.erase(reqItr);
+        } else {
+          reqItr++;
+        }
+      }
+    }
+    handleRequest(pkt);
+    memPort_->send(std::move(pkt));
+    return;
+  }
+
+  LatencyPacket lpkt = {std::move(pkt), ticks_ + latency_};
+  reqQueue_.push_back(std::move(lpkt));
+}
+
+void FixedLatencyMemory::handleReadRequest(std::unique_ptr<MemPacket>& req) {
+  size_t size = req->size_;
+  uint64_t addr = req->paddr_;
+  req->turnIntoReadResponse(
+      std::vector<char>(memory_.begin() + addr, memory_.begin() + addr + size));
+}
+
+void FixedLatencyMemory::handleWriteRequest(std::unique_ptr<MemPacket>& req) {
+  uint64_t address = req->paddr_;
+  std::copy(req->payload().begin(), req->payload().end(),
+            memory_.begin() + address);
+  req->turnIntoWriteResponse();
+}
+
+void FixedLatencyMemory::tick() {
+  ticks_++;
+  while (reqQueue_.size() && reqQueue_.front().endLat <= ticks_) {
+    std::unique_ptr<MemPacket>& pkt = reqQueue_.front().req;
+    handleRequest(pkt);
+    memPort_->send(std::move(pkt));
+    reqQueue_.pop_front();
+  }
+};
+
+void FixedLatencyMemory::sendUntimedData(std::vector<char> data, uint64_t addr,
+                                         size_t size) {
+  std::copy(data.begin(), data.begin() + size, memory_.begin() + addr);
+}
+
+std::vector<char> FixedLatencyMemory::getUntimedData(uint64_t paddr,
+                                                     size_t size) {
+  return std::vector<char>(memory_.begin() + paddr,
+                           memory_.begin() + paddr + size);
+}
+
+void FixedLatencyMemory::handleIgnoredRequest(std::unique_ptr<MemPacket>& pkt) {
+  if (pkt->isRead()) {
+    pkt->turnIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
+  } else {
+    pkt->turnIntoWriteResponse();
+  }
+}
+
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initMemPort() {
+  memPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    this->requestAccess(packet);
+    return;
+  };
+  memPort_->registerReceiver(fn);
+  return memPort_;
+}
+
+std::shared_ptr<Port<std::unique_ptr<MemPacket>>>
+FixedLatencyMemory::initSystemPort() {
+  sysPort_ = std::make_shared<Port<std::unique_ptr<MemPacket>>>();
+  // If the request comes from a system calls, instantly respond
+  auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
+    if (packet->ignore()) {
+      this->handleIgnoredRequest(packet);
+    } else {
+      this->handleRequest(packet);
+    }
+    sysPort_->send(std::move(packet));
+  };
+  sysPort_->registerReceiver(fn);
+  return sysPort_;
+}
+
+void inline FixedLatencyMemory::handleRequest(std::unique_ptr<MemPacket>& req) {
+  if (req->isRequest() && req->isRead()) {
+    handleReadRequest(req);
+  } else if (req->isRequest() && req->isWrite()) {
+    handleWriteRequest(req);
+  } else {
+    std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
+                 "requesting access to memory. Requests to memory should "
+                 "either be of "
+                 "type READ_REQUEST or WRITE_REQUEST."
+              << std::endl;
+    req->markAsFaulty();
+  }
+}
+}  // namespace memory
+}  // namespace simeng

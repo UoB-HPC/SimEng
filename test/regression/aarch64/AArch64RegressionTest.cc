@@ -15,7 +15,7 @@ void AArch64RegressionTest::run(const char* source) {
 #if SIMENG_LLVM_VERSION < 14
   subtargetFeatures = "+sve,+lse";
 #else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme,+sme-f64";
+  subtargetFeatures = "+sve,+lse,+sve2,+sme";
 #endif
 
   RegressionTest::run(source, "aarch64", subtargetFeatures);
@@ -23,7 +23,7 @@ void AArch64RegressionTest::run(const char* source) {
 
 void AArch64RegressionTest::generateConfig() const {
   // Re-generate the default config for the AArch64 ISA
-  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64, true);
+  simeng::config::SimInfo::generateDefault(simeng::config::ISA::AArch64);
 
   // Add the base additional AArch64 test suite config options
   simeng::config::SimInfo::addToConfig(AARCH64_ADDITIONAL_CONFIG);
@@ -47,24 +47,31 @@ void AArch64RegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
-  return std::make_unique<Architecture>(kernel);
+AArch64RegressionTest::createArchitecture() const {
+  return std::make_unique<Architecture>();
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>
-AArch64RegressionTest::createPortAllocator(ryml::ConstNodeRef config) const {
+AArch64RegressionTest::createPortAllocator() const {
   // Extract the port arrangement from the config file
+  ryml::ConstNodeRef config = simeng::config::SimInfo::getConfig();
   std::vector<std::vector<uint16_t>> portArrangement(
       config["Ports"].num_children());
   for (size_t i = 0; i < config["Ports"].num_children(); i++) {
     auto config_groups = config["Ports"][i]["Instruction-Group-Support-Nums"];
     // Read groups in associated port
     for (size_t j = 0; j < config_groups.num_children(); j++) {
-      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
+      portArrangement[i].push_back(
+          simeng::config::SimInfo::getValue<uint16_t>(config_groups[j]));
     }
   }
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
+}
+
+std::unique_ptr<simeng::OperandBypassMap>
+AArch64RegressionTest::createOperandBypassMap(ryml::ConstNodeRef config) const {
+  return std::make_unique<simeng::arch::aarch64::AllToAllBypassMap>();
 }
 
 uint8_t AArch64RegressionTest::getNZCV() const {

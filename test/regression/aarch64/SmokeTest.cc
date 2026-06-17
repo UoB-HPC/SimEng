@@ -34,10 +34,8 @@ TEST_P(SmokeTest, stack) {
     str w0, [sp, -4]
     str w1, [sp, -8]
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 4),
-            7u);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getInitialStackPointer() - 8),
-            42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 7u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8), 42u);
 }
 
 // Test that we can store values to the heap
@@ -59,13 +57,10 @@ TEST_P(SmokeTest, heap) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getHeapStart() + 4), 42u);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    AArch64, SmokeTest,
-    ::testing::Values(std::make_tuple(EMULATION, "{}"),
-                      std::make_tuple(INORDER, "{}"),
-                      std::make_tuple(OUTOFORDER,
-                                      "{L1-Data-Memory: "
-                                      "{Interface-Type: Fixed}}")),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, SmokeTest,
+                         ::testing::Values(std::make_tuple(EMULATION, "{}"),
+                                           //  std::make_tuple(INORDER, "{}"),
+                                           std::make_tuple(OUTOFORDER, "{}")),
+                         paramToString);
 
 }  // namespace

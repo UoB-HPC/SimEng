@@ -274,6 +274,82 @@ TEST_P(InstArithmetic, addsx) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) + (255ul << 4));
 }
 
+TEST_P(InstArithmetic, clz) {
+  // 32-bit
+  initialHeapData_.resize(24);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 0x00000000;
+  heap32[1] = 0x00000001;
+  heap32[2] = 0x0000FFFF;
+  heap32[3] = 0xFFFF0000;
+  heap32[4] = 0x7FFFFFFF;
+  heap32[5] = 0xFFFFFFFF;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr w1, [x0]
+    ldr w2, [x0, #4]
+    ldr w3, [x0, #8]
+    ldr w4, [x0, #12]
+    ldr w5, [x0, #16]
+    ldr w6, [x0, #20]
+
+    clz w7, w1
+    clz w8, w2
+    clz w9, w3
+    clz w10, w4
+    clz w11, w5
+    clz w12, w6
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 31);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
+
+  // 64-bit
+  initialHeapData_.resize(48);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0x0000000000000000;
+  heap64[1] = 0x0000000000000001;
+  heap64[2] = 0x00000000FFFFFFFF;
+  heap64[3] = 0xFFFFFFFF00000000;
+  heap64[4] = 0x7FFFFFFFFFFFFFFF;
+  heap64[5] = 0xFFFFFFFFFFFFFFFF;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr x1, [x0]
+    ldr x2, [x0, #8]
+    ldr x3, [x0, #16]
+    ldr x4, [x0, #24]
+    ldr x5, [x0, #32]
+    ldr x6, [x0, #40]
+
+    clz x7, x1
+    clz x8, x2
+    clz x9, x3
+    clz x10, x4
+    clz x11, x5
+    clz x12, x6
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 63);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
+}
+
 TEST_P(InstArithmetic, movk) {
   // 32-bit
   RUN_AARCH64(R"(

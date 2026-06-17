@@ -3,35 +3,19 @@
 #include "RegressionTest.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/OperandBypassMaps/AllToAllBypassMap.hh"
 
-[[maybe_unused]] static const char* AARCH64_ADDITIONAL_CONFIG = R"YAML(
-{
-  Core:
-    {
-      Clock-Frequency-GHz: 2.5,
-    },
-  Register-Set:
-    {
-      GeneralPurpose-Count: 154,
-      FloatingPoint/SVE-Count: 90,
-      Predicate-Count: 17, 
-      Conditional-Count: 128,
-      Matrix-Count: 2,
-    },
-  L1-Data-Memory:
-    {
-      Interface-Type: Flat,
-    },
-  L1-Instruction-Memory:
-    {
-      Interface-Type: Flat,
-    },
-  Ports:
-    {
-      '0': { Portname: 0, Instruction-Group-Support: [INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME] },
-    },
-}
-)YAML";
+#define AARCH64_ADDITIONAL_CONFIG                                              \
+  ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
+   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
+   "128, Matrix-Count: 2}, Memory-Hierarchy: {Cache-Line-Width: 256, DRAM: "   \
+   "{Size: 500000}}, Ports: {'0': {Portname: 0, Instruction-Group-Support: "   \
+   "[INT, FP, SVE, PREDICATE, LOAD, STORE, BRANCH, SME]}}, CPU-Info: "         \
+   "{Generate-Special-Dir: True, Core-Count: 1, Socket-Count: 1, SMT: 1, "     \
+   "BogoMIPS: 200.00, Features: fp asimd evtstrm sha1 sha2 crc32 atomics "     \
+   "fphp asimdhp cpuid asimdrdm fcma dcpop sve, CPU-Implementer: 0x46, "       \
+   "CPU-Architecture: 8, CPU-Variant: 0x1, CPU-Part: 0x001, CPU-Revision: 0, " \
+   "Package-Count: 1}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
@@ -60,13 +44,14 @@ inline std::string paramToString(
       ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(val.param)));
   if (tempTree.rootref().has_child("Core")) {
     if (tempTree.rootref()["Core"].has_child("Vector-Length")) {
-      vectorLengthString +=
-          "WithVL" + tempTree["Core"]["Vector-Length"].as<std::string>();
+      std::string val;
+      tempTree["Core"]["Vector-Length"] >> val;
+      vectorLengthString += "WithVL" + val;
     }
     if (tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
-      vectorLengthString +=
-          "WithSVL" +
-          tempTree["Core"]["Streaming-Vector-Length"].as<std::string>();
+      std::string val;
+      tempTree["Core"]["Streaming-Vector-Length"] >> val;
+      vectorLengthString += "WithSVL" + val;
     }
   }
   return coreString + vectorLengthString;
@@ -78,10 +63,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeVLPairs(
   std::vector<std::tuple<CoreType, std::string>> coreVLPairs;
   for (uint64_t i = 128; i <= 2048; i += 128) {
     coreVLPairs.push_back(std::make_tuple(
-        type,
-        "{Core: {Vector-Length: " + std::to_string(i) +
-            "}, LSQ-L1-Interface: {Load-Bandwidth: " + std::to_string(i / 8) +
-            ", Store-Bandwidth: " + std::to_string(i / 8) + "}}"));
+        type, "{Core: {Vector-Length: " + std::to_string(i) + "}}"));
   }
   return coreVLPairs;
 }
@@ -92,10 +74,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
   std::vector<std::tuple<CoreType, std::string>> coreSVLPairs;
   for (uint64_t i = 128; i <= 2048; i *= 2) {
     coreSVLPairs.push_back(std::make_tuple(
-        type,
-        "{Core: {Streaming-Vector-Length: " + std::to_string(i) +
-            "}, LSQ-L1-Interface: {Load-Bandwidth: " + std::to_string(i / 8) +
-            ", Store-Bandwidth: " + std::to_string(i / 8) + "}}"));
+        type, "{Core: {Streaming-Vector-Length: " + std::to_string(i) + "}}"));
   }
   return coreSVLPairs;
 }
@@ -103,8 +82,7 @@ inline std::vector<std::tuple<CoreType, std::string>> genCoreTypeSVLPairs(
 /** A helper macro to run a snippet of Armv9.2-a assembly code, returning from
  * the calling function if a fatal error occurs. Four bytes containing zeros are
  * appended to the source to ensure that the program will terminate with an
- * unallocated instruction encoding exception instead of running into the heap.
- */
+ * illegal instruction exception instead of running into the heap. */
 #define RUN_AARCH64(source)                    \
   {                                            \
     std::string sourceWithTerminator = source; \
@@ -200,12 +178,16 @@ class AArch64RegressionTest : public RegressionTest {
   /** Generate a default YAML-formatted configuration. */
   void generateConfig() const override;
 
-  /** Create an ISA instance from a kernel. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel) const override;
+  /** Create an ISA instance. */
+  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture()
+      const override;
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator(
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
+      const override;
+
+  /** Create an OperandBypassMap for an out-of-order core model. */
+  virtual std::unique_ptr<simeng::OperandBypassMap> createOperandBypassMap(
       ryml::ConstNodeRef config =
           simeng::config::SimInfo::getConfig()) const override;
 
@@ -367,13 +349,13 @@ class AArch64RegressionTest : public RegressionTest {
   /** Generate an array representing a NEON register from a source vector and a
    * number of elements defined by a number of bytes used. */
   template <typename T>
-  std::array<T, (256 / sizeof(T))> fillNeon(const std::vector<T>& src,
-                                            uint32_t num_bytes) const {
+  std::array<T, (256 / sizeof(T))> fillNeon(std::vector<T> src,
+                                            int num_bytes) const {
     // Create array to be returned and fill with a default value of 0
     std::array<T, (256 / sizeof(T))> generatedArray;
     generatedArray.fill(0);
     // Fill array by cycling through source elements
-    for (size_t i = 0; i < (num_bytes / sizeof(T)); i++) {
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
       generatedArray[i] = src[i % src.size()];
     }
     return generatedArray;
@@ -406,7 +388,7 @@ class AArch64RegressionTest : public RegressionTest {
     std::array<T, (256 / sizeof(T))> generatedArray;
     generatedArray.fill(0);
     // Fill array by adding an increasing offset value to the base value
-    for (size_t i = 0; i < (num_bytes / sizeof(T)); i++) {
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
       generatedArray[i] = base + (i * offset);
     }
     return generatedArray;
@@ -498,7 +480,7 @@ class AArch64RegressionTest : public RegressionTest {
         ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
     if (tempTree.rootref().has_child("Core") &&
         tempTree.rootref()["Core"].has_child("Vector-Length")) {
-      VL = tempTree["Core"]["Vector-Length"].as<uint64_t>();
+      tempTree["Core"]["Vector-Length"] >> VL;
     }
     return VL;
   }
@@ -512,7 +494,7 @@ class AArch64RegressionTest : public RegressionTest {
         ryml::parse_in_arena(ryml::to_csubstr(std::get<1>(GetParam())));
     if (tempTree.rootref().has_child("Core") &&
         tempTree.rootref()["Core"].has_child("Streaming-Vector-Length")) {
-      SVL = tempTree["Core"]["Streaming-Vector-Length"].as<uint64_t>();
+      tempTree["Core"]["Streaming-Vector-Length"] >> SVL;
     }
     return SVL;
   }

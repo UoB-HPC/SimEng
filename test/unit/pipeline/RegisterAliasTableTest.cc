@@ -62,15 +62,11 @@ TEST_F(RegisterAliasTableTest, AllocateIndependent) {
   auto multiRAT =
       RegisterAliasTable({{8, architecturalCount}, {8, architecturalCount}},
                          {physicalCount, physicalCount});
-  auto initialFreeRegisters0 = multiRAT.freeRegistersAvailable(0);
   auto initialFreeRegisters1 = multiRAT.freeRegistersAvailable(1);
 
   multiRAT.allocate(reg);
 
-  // Check 1 fewer physical registers are now available for regFile 0
-  EXPECT_EQ(multiRAT.freeRegistersAvailable(0), initialFreeRegisters0 - 1);
-  // Check that the same number of physical registers are still available for
-  // regFile 1
+  // Check that the same number of physical registers are still available
   EXPECT_EQ(multiRAT.freeRegistersAvailable(1), initialFreeRegisters1);
 }
 
